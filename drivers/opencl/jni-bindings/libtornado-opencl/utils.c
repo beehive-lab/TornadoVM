@@ -1,0 +1,63 @@
+#include "utils.h"
+#include <stdio.h>
+#include <string.h>
+
+
+#define NSECS_PER_SEC 1000000000ULL
+#include <time.h>
+static unsigned long long start, stop;
+
+void resetAndStartTimer( )
+{
+//        struct timespec t;
+//        clock_gettime(CLOCK_REALTIME,&t);
+//        start = t.tv_sec*NSECS_PER_SEC +  t.tv_nsec;
+}
+
+unsigned long long getElapsedTime( )
+{
+//        struct timespec t;
+//        clock_gettime(CLOCK_REALTIME,&t);
+//        stop = t.tv_sec*NSECS_PER_SEC +  t.tv_nsec;
+//        return (stop-start);
+return 0;
+}
+
+
+
+char *getOpenCLError(char *func,cl_int code){
+    char *str;
+    char *msg = malloc(sizeof(char)*128);
+    memset(msg,'\0',128);
+    switch(code){
+        case CL_SUCCESS:
+            str = "Operation completed successfully.";
+            break;
+        case CL_INVALID_VALUE:
+            str = "CL_INVALID_VALUE";
+            break;
+        case CL_INVALID_DEVICE:
+            str = "CL_INVALID_DEVICE";
+            break;
+        case CL_DEVICE_NOT_AVAILABLE:
+            str = "CL_DEVICE_NOT_AVAILABLE";
+            break;
+        case CL_OUT_OF_HOST_MEMORY:
+            str = "CL_OUT_OF_HOST_MEMORY";
+            break;
+        case CL_INVALID_CONTEXT:
+            str = "CL_INVALID_CONTEXT";
+            break;
+        case CL_INVALID_MEM_OBJECT:
+            str = "CL_INVALID_MEM_OBJECT";
+            break;
+        default:
+            str = "Unknown OpenCL Error";
+    }
+    
+    sprintf(msg,"%s(%d) %s",func,(int) code,str);
+    return msg;
+    
+}
+
+

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+. ${TORNADO_ROOT}/etc/tornado.conf
+
+DEPS=""
+for f in $(ls ${TORNADO_ROOT}/target/*.jar); do
+        DEPS="${DEPS}:${f}"
+done
+
+if [ -z "${CLASSPATH}" ]; then
+	CLASSPATH=${DEPS}
+else
+        CLASSPATH="${CLASSPATH}:${DEPS}"
+fi
+
+CLASSPATH=${CLASSPATH} ${JAVA_CMD} ${JAVA_FLAGS} $@

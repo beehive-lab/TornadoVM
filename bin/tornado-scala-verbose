@@ -1,0 +1,21 @@
+#!/bin/bash
+
+. ${TORNADO_ROOT}/etc/tornado.conf
+
+JAVA_FLAGS="${JAVA_FLAGS} -G:Dump= -G:Log= -G:LogFile="tornado-last" -G:+LogVerbose -G:TraceLIRGeneratorLevel=3 -G:+DumpOnError -G:+PrintCFG"
+
+DEPS=""
+for f in $(ls ${TORNADO_ROOT}/lib/*.jar); do
+        DEPS="${DEPS} ${f}"
+done
+
+DEPS="${DEPS} ${TORNADO_ROOT}/tornado/classes"
+
+for DEP in ${DEPS}; do
+        CLASSPATH="${CLASSPATH}:${DEP}"
+done
+
+export JAVACMD=${JAVA_CMD}
+export CLASSPATH=${CLASSPATH}
+export JAVA_OPTS=${JAVA_FLAGS}
+scala-2.11 $@

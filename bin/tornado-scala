@@ -1,0 +1,19 @@
+#!/bin/bash
+
+. ${TORNADO_ROOT}/etc/tornado.conf
+
+DEPS=""
+for f in $(ls ${TORNADO_ROOT}/lib/*.jar); do
+        DEPS="${DEPS} ${f}"
+done
+
+DEPS="${DEPS} ${TORNADO_ROOT}/tornado/classes"
+
+for DEP in ${DEPS}; do
+        CLASSPATH="${CLASSPATH}:${DEP}"
+done
+
+export JAVACMD=${JAVA_CMD}
+export CLASSPATH=${CLASSPATH}
+export JAVA_OPTS=${JAVA_FLAGS}
+scala-2.11 $@

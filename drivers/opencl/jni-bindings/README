@@ -1,0 +1,5 @@
+Build as follows:
+
+./configure --prefix=${PWD} --with-jdk=${JAVA_HOME}
+make
+make install
