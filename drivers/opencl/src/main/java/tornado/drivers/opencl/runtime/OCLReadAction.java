@@ -25,7 +25,7 @@ public class OCLReadAction implements DataMovementAction {
         final Object object = parameters[0];
         if (object instanceof ObjectReference<?,?>) {
             final ObjectReference<?,?> ref = (ObjectReference<?,?>) object;
-           System.out.printf("reading: ref=%s, object=%s\n", ref.toString(),
+           //System.out.printf("reading: ref=%s, object=%s\n", ref.toString(),
              ref.get().toString());
             if (ref.hasOutstandingWrite()) {
                 final Event lastWrite = ref.getLastWrite().getEvent();
