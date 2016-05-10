@@ -4,29 +4,24 @@
 		<Console name="Console" target="SYSTEM_OUT">
 			<PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
 		</Console>
-    <File name="MyFile" fileName="app.log">
-      <PatternLayout>
-        <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
-      </PatternLayout>
-    </File>
     <Async name="Async">
       <AppenderRef ref="Console"/>
     </Async>
 	</Appenders>
 	<Loggers>
-		<Root level="debug">
+		<Root level="warn">
 			<AppenderRef ref="Console"/>
 		</Root>
-		<Logger name="tornado" level="debug" additivity="false">
+		<Logger name="tornado" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
     		</Logger>
-		<Logger name="tornado.runtime.ObjectReference" level="debug" additivity="false">
+		<Logger name="tornado.runtime.ObjectReference" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
     		</Logger>
-		<Logger name="tornado.graal.opencl.compiler.TornadoCodeGenerator" level="debug" additivity="false">
+		<Logger name="tornado.graal.opencl.compiler.TornadoCodeGenerator" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
     		</Logger>
-		<Logger name="tornado.graal.opencl.compiler.TornadoLIRGenerator" level="debug" additivity="false">
+		<Logger name="tornado.graal.opencl.compiler.TornadoLIRGenerator" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
     		</Logger>
 	</Loggers>
