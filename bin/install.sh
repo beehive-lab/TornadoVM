@@ -1,7 +1,8 @@
 #!/bin/bash
 
-TORNADO_URL=https://${USER}@bitbucket.org/clarksoj/tornado.git
+USER=clarksoj
 TORNADO_ROOT=$1
+TORNADO_URL=https://${USER}@bitbucket.org/clarksoj/tornado_maven.git
 
 # 1. Obtain Tornado from bitbucket
 git clone ${TORNADO_URL} ${TORNADO_ROOT}
@@ -11,6 +12,8 @@ pushd ${TORNADO_ROOT}
 TORNADO_ROOT=${PWD}
 
 # 2. Obtain graal
+git clone https://${USER}@bitbucket.org/clarksoj/graal_patches.git
+
 hg clone http://hg.openjdk.java.net/graal/graal-compiler graal
 pushd graal
 hg up -r 37f65dc8c713
@@ -27,7 +30,7 @@ fi
 
 # Create patch queues and patch the graal source
 hg qinit
-cp -r ../graal-patches/* .hg/patches
+cp -r ../graal_patches/* .hg/patches
 hg qpush -a
 
 # Configure GRAAL in server mode
