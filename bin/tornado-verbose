@@ -5,14 +5,14 @@
 JAVA_FLAGS="${JAVA_FLAGS} -G:Dump= -G:Log= -G:LogFile="tornado-last" -G:+LogVerbose -G:TraceLIRGeneratorLevel=3 -G:+DumpOnError -G:+PrintCFG"
 
 DEPS=""
-for f in $(ls ${TORNADO_ROOT}/lib/*.jar); do
-        DEPS="${DEPS} ${f}"
+for f in $(ls ${TORNADO_ROOT}/target/*.jar); do
+        DEPS="${DEPS}:${f}"
 done
 
-DEPS="${DEPS} ${TORNADO_ROOT}/tornado/classes"
-
-for DEP in ${DEPS}; do
-        CLASSPATH="${CLASSPATH}:${DEP}"
-done
+if [ -z "${CLASSPATH}" ]; then
+        CLASSPATH=${DEPS}
+else
+        CLASSPATH="${CLASSPATH}:${DEPS}"
+fi
 
 CLASSPATH=${CLASSPATH} ${JAVA_CMD} ${JAVA_FLAGS} $@
