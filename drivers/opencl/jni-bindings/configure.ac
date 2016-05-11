@@ -47,7 +47,7 @@ case $host_os in
         ;;
   linux*)
         # Do something specific for linux
-        CUSTOM_CPPFLAGS=""
+        CUSTOM_CPPFLAGS="-std=c99"
         OPENCL_LDFLAGS="-lOpenCL"
         JDK_CPPFLAGS="-I${JDK_ROOT}/include/ -I${JDK_ROOT}/include/linux"
         ;;
