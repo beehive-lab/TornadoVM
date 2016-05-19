@@ -2,8 +2,8 @@ package tornado.collections.types;
 
 import java.nio.FloatBuffer;
 
-import tornado.collections.api.Vector;
-import tornado.collections.api.Payload;
+import tornado.api.Payload;
+import tornado.api.Vector;
 import tornado.collections.math.TornadoMath;
 /**
  * Class that represents a vector of 3x floats

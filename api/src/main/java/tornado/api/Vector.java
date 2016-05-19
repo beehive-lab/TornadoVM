@@ -1,4 +1,4 @@
-package tornado.collections.api;
+package tornado.api;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
