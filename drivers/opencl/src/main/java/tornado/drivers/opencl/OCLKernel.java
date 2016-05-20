@@ -30,9 +30,9 @@ public class OCLKernel extends TornadoLogger {
 
 	native static void clGetKernelInfo(long kernelId, int info, byte[] buffer) throws OCLException;
 	
-	static {
-		System.loadLibrary(OpenCL.OPENCL_LIBRARY);
-	}
+//	static {
+//		System.loadLibrary(OpenCL.OPENCL_LIBRARY);
+//	}
 	
 	public void setArg(int index, ByteBuffer buffer){
 		try {

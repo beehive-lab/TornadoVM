@@ -36,9 +36,9 @@ public class OCLPlatform extends TornadoLogger {
 
 	}
 
-	static {
-		System.loadLibrary(OpenCL.OPENCL_LIBRARY);
-	}
+//	static {
+//		System.loadLibrary(OpenCL.OPENCL_LIBRARY);
+//	}
 
 	native static String clGetPlatformInfo(long id, int info);
 

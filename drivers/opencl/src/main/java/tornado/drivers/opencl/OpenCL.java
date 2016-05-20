@@ -7,7 +7,6 @@ import java.util.List;
 import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoRuntimeException;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.TornadoRuntime;
 
 public class OpenCL {
     public static final String OPENCL_LIBRARY = "tornado-opencl";
@@ -65,7 +64,7 @@ public class OpenCL {
     public static void cleanup() {
         if (initialised) {
             for (OCLPlatform platform : platforms) {
-                Tornado.info("cleaning up platform: %s", platform.getName());
+//                Tornado.info("cleaning up platform: %s", platform.getName());
                 platform.cleanup();
             }
         }

@@ -31,9 +31,9 @@ public class OCLCommandQueue extends TornadoLogger {
 		this.openclVersion = version;
 	}
 
-	static {
-		System.loadLibrary(OpenCL.OPENCL_LIBRARY);
-	}
+//	static {
+//		System.loadLibrary(OpenCL.OPENCL_LIBRARY);
+//	}
 
 	native static void clReleaseCommandQueue(long queueId) throws OCLException;
 

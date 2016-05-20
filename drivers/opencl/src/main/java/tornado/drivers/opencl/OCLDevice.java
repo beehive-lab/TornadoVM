@@ -25,9 +25,9 @@ public class OCLDevice extends TornadoLogger {
 		this.buffer.order(OpenCL.BYTE_ORDER);
 	}
 
-	static {
-		System.loadLibrary(OpenCL.OPENCL_LIBRARY);
-	}
+//	static {
+//		System.loadLibrary(OpenCL.OPENCL_LIBRARY);
+//	}
 
 	native static void clGetDeviceInfo(long id, int info, byte[] buffer);
 

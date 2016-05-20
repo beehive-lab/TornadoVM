@@ -6,6 +6,7 @@ import tornado.drivers.opencl.enums.OCLCommandQueueProperties;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import sun.misc.Unsafe;
@@ -46,7 +47,8 @@ public class OCLContext extends TornadoLogger {
 	private final List<OCLDevice>	devices;
 	private final OCLCommandQueue[]	queues;
 	private final List<OCLProgram>	programs;
-	private final LongBuffer		allocatedRegions;
+	private final long[]			allocatedRegions;
+	private int allocatedRegionCount;
 	private final ByteBuffer		buffer;
 	private final Unsafe			unsafe;
 	private final OCLPlatform		platform;
@@ -57,15 +59,17 @@ public class OCLContext extends TornadoLogger {
 		this.devices = devices;
 		this.queues = new OCLCommandQueue[devices.size()];
 		this.programs = new ArrayList<OCLProgram>();
-		this.allocatedRegions = LongBuffer.allocate(64);
+		this.allocatedRegions = new long[64];
+		this.allocatedRegionCount = 0;
+		Arrays.fill(this.allocatedRegions,-1);
 		this.buffer = ByteBuffer.allocate(128);
 		this.buffer.order(OpenCL.BYTE_ORDER);
 		this.unsafe = RuntimeUtilities.getUnsafe();
 	}
 
-	static {
-		System.loadLibrary(OpenCL.OPENCL_LIBRARY);
-	}
+//	static {
+//		System.loadLibrary(OpenCL.OPENCL_LIBRARY);
+//	}
 
 	native static void clReleaseContext(long id) throws OCLException;
 
@@ -176,8 +180,9 @@ public class OCLContext extends TornadoLogger {
 			for (OCLProgram program : programs)
 				program.cleanup();
 
-			while(allocatedRegions.hasRemaining())
-				clReleaseMemObject(allocatedRegions.get());
+			for(int i=0;i<allocatedRegionCount;i++){
+					clReleaseMemObject(allocatedRegions[i]);
+			}
 
 			for (OCLCommandQueue queue : queues)
 				if (queue != null) queue.cleanup();
@@ -230,7 +235,8 @@ public class OCLContext extends TornadoLogger {
 		try {
 			final OCLBufferResult result =  createBuffer(id, flags, bytes,address);
 			devicePtr = result.getBuffer();
-			allocatedRegions.put(devicePtr);
+			allocatedRegions[allocatedRegionCount]= devicePtr;
+			allocatedRegionCount++;
 			info("buffer allocated %s @ 0x%x",
 					RuntimeUtilities.humanReadableByteCount(bytes, true),
 					devicePtr);
