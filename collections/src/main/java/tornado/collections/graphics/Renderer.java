@@ -1,6 +1,9 @@
 package tornado.collections.graphics;
 
 
+import tornado.api.Parallel;
+import tornado.api.Read;
+import tornado.api.Write;
 import tornado.collections.math.TornadoMath;
 import tornado.collections.types.Byte3;
 import tornado.collections.types.Byte4;
@@ -19,13 +22,13 @@ import tornado.collections.types.VolumeShort2;
 public class Renderer {
     private static final float INVALID = -2f;
 
-    public static void renderLight( ImageByte4 output,
-             ImageFloat3 verticies,  ImageFloat3 normals,
-             Float3 light,  Float3 ambient) {
+    public static void renderLight( @Write ImageByte4 output,
+             @Read ImageFloat3 verticies, @Read ImageFloat3 normals,
+             @Read Float3 light,  @Read Float3 ambient) {
 
-        for (
+        for (@Parallel
         int y = 0; y < output.Y(); y++) {
-            for (
+            for (@Parallel
             int x = 0; x < output.X(); x++) {
 
                 final Float3 normal = normals.get(x, y);
@@ -52,15 +55,15 @@ public class Renderer {
         }
     }
 
-    public static void renderVolume( ImageByte4 output,
-             VolumeShort2 volume,  Float3 volumeDims,
-             Matrix4x4Float view,  float nearPlane,
-             float farPlane,  float smallStep,  float largeStep,
-             Float3 light,  Float3 ambient) {
+    public static void renderVolume(@Write ImageByte4 output,
+             @Read VolumeShort2 volume,  @Read Float3 volumeDims,
+             @Read Matrix4x4Float view,  @Read float nearPlane,
+             @Read float farPlane,  @Read float smallStep,  @Read float largeStep,
+             @Read Float3 light, @Read Float3 ambient) {
 
-        for (
+        for (@Parallel
         int y = 0; y < output.Y(); y++) {
-            for (
+            for (@Parallel
             int x = 0; x < output.X(); x++) {
 
                 final Float4 hit = GraphicsMath.raycastPoint(volume,
@@ -103,9 +106,9 @@ public class Renderer {
         }
     }
 
-    public static void renderNorms(ImageByte3 output, ImageFloat3 normals) {
-        for (int y = 0; y < normals.Y(); y++)
-            for (int x = 0; x < normals.X(); x++) {
+    public static void renderNorms(@Write ImageByte3 output,@Read  ImageFloat3 normals) {
+        for (@Parallel int y = 0; y < normals.Y(); y++)
+            for (@Parallel int x = 0; x < normals.X(); x++) {
 
                 final Float3 normal = normals.get(x, y);
                 final Byte3 pixel = new Byte3();
@@ -124,9 +127,9 @@ public class Renderer {
             }
     }
 
-    public static void renderVertex(ImageByte3 output, ImageFloat3 vertices) {
-        for (int y = 0; y < vertices.Y(); y++)
-            for (int x = 0; x < vertices.X(); x++) {
+    public static void renderVertex(@Write ImageByte3 output,@Read ImageFloat3 vertices) {
+        for (@Parallel int y = 0; y < vertices.Y(); y++)
+            for (@Parallel int x = 0; x < vertices.X(); x++) {
 
                 final Float3 vertex = vertices.get(x, y);
                 final Byte3 pixel = new Byte3();
@@ -145,12 +148,12 @@ public class Renderer {
             }
     }
 
-    public static void renderTrack( ImageByte3 output,
-             ImageFloat8 track) {
+    public static void renderTrack(@Write ImageByte3 output,
+             @Read ImageFloat8 track) {
 
-        for (
+        for (@Parallel
         int y = 0; y < track.Y(); y++)
-            for (
+            for (@Parallel
             int x = 0; x < track.X(); x++) {
 
                 Byte3 pixel = null;
@@ -184,15 +187,15 @@ public class Renderer {
             }
     }
 
-    public static void renderDepth( ImageByte4 output,
-             ImageFloat depthMap,  float nearPlane,
-             float farPlane) {
+    public static void renderDepth(@Write ImageByte4 output,
+             @Read ImageFloat depthMap, @Read float nearPlane,
+            @Read float farPlane) {
         final Byte4 BLACK = new Byte4((byte) 255, (byte) 255, (byte) 255,
                 (byte) 0);
 
-        for (
+        for (@Parallel
         int y = 0; y < depthMap.Y(); y++)
-            for (
+            for (@Parallel
             int x = 0; x < depthMap.X(); x++) {
 
                 float depth = depthMap.get(x, y);
@@ -302,9 +305,9 @@ public class Renderer {
         rgb.setZ((short) (b * 255));
     }
 
-    public static void renderRGB(ImageByte3 output, ImageByte3 video) {
-        for (int y = 0; y < video.Y(); y++)
-            for (int x = 0; x < video.X(); x++)
+    public static void renderRGB(@Write ImageByte3 output,@Read ImageByte3 video) {
+        for (@Parallel int y = 0; y < video.Y(); y++)
+            for (@Parallel int x = 0; x < video.X(); x++)
                 output.set(x, y, video.get(x, y));
     }
 

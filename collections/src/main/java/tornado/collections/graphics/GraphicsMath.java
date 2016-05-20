@@ -11,6 +11,9 @@ import static tornado.collections.types.Float3.min;
 import static tornado.collections.types.Float3.mult;
 import static tornado.collections.types.Float3.normalise;
 import static tornado.collections.types.Float3.sub;
+import tornado.api.Parallel;
+import tornado.api.Read;
+import tornado.api.Write;
 import tornado.collections.types.Float3;
 import tornado.collections.types.Float4;
 import tornado.collections.types.ImageFloat;
@@ -23,12 +26,12 @@ public class GraphicsMath {
 
     private static final float INVALID = -2;
 
-    public static void vertex2normal( ImageFloat3 normals,
-             ImageFloat3 verticies) {
+    public static void vertex2normal(@Write ImageFloat3 normals,
+             @Read ImageFloat3 verticies) {
 
-        for (
+        for (@Parallel
         int y = 0; y < normals.Y(); y++)
-            for (
+            for (@Parallel
             int x = 0; x < normals.X(); x++) {
 
                 final Float3 left = verticies.get(Math.max(x - 1, 0), y);
@@ -54,12 +57,12 @@ public class GraphicsMath {
             }
     }
 
-    public static void depth2vertex( ImageFloat3 verticies,
-             ImageFloat depths,  Matrix4x4Float invK) {
+    public static void depth2vertex( @Write ImageFloat3 verticies,
+             @Read ImageFloat depths, @Read Matrix4x4Float invK) {
 
-        for (
+        for (@Parallel
         int y = 0; y < depths.Y(); y++)
-            for (
+            for (@Parallel
             int x = 0; x < depths.X(); x++) {
 
                 final float depth = depths.get(x, y);

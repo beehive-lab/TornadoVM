@@ -84,13 +84,6 @@
 			<version>4.12</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>graal</groupId>
-			<artifactId>graal</artifactId>
-			<scope>system</scope>
-			<systemPath>${JAVA_HOME}/jre/lib/graal/graal.jar</systemPath>
-			<version>0.0.1</version>
-		</dependency>
 	</dependencies>
 	<modules>
 		<module>collections</module>
