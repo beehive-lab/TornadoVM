@@ -33,5 +33,13 @@
     	<artifactId>tornado-compiler</artifactId>
     	<version>0.0.1-SNAPSHOT</version>
     </dependency>
+    
+    <dependency>
+			<groupId>graal</groupId>
+			<artifactId>graal</artifactId>
+			<scope>system</scope>
+			<systemPath>${JAVA_HOME}/jre/lib/graal/graal.jar</systemPath>
+			<version>0.0.1</version>
+		</dependency>
   </dependencies>
 </project>
