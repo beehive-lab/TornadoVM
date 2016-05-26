@@ -1,3 +1,17 @@
 etc/tornado.env
 target/
+.project
+.classpath
+Makefile
+Makefile.in
+*.lo
+*.la
+*.o
+*.class
+.settings
+.deps
+.libs
+*.log
+*.csv
+autom4te.cache
 
