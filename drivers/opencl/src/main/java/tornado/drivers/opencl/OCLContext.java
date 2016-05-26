@@ -4,7 +4,6 @@ import tornado.drivers.opencl.enums.OCLBufferCreateType;
 import tornado.drivers.opencl.enums.OCLCommandQueueProperties;
 
 import java.nio.ByteBuffer;
-import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,35 +22,35 @@ public class OCLContext extends TornadoLogger {
 		private final long oclBuffer;
 		private final long address;
 		private final int result;
-	
-		public OCLBufferResult(long oclBuffer, long address, int result){
+
+		public OCLBufferResult(long oclBuffer, long address, int result) {
 			this.oclBuffer = oclBuffer;
 			this.address = address;
 			this.result = result;
 		}
-		
-		public long getBuffer(){
+
+		public long getBuffer() {
 			return oclBuffer;
 		}
-		
-		public long getAddress(){
+
+		public long getAddress() {
 			return address;
 		}
-		
-		public int getResult(){
+
+		public int getResult() {
 			return result;
 		}
 	}
-	
-	private final long				id;
-	private final List<OCLDevice>	devices;
-	private final OCLCommandQueue[]	queues;
-	private final List<OCLProgram>	programs;
-	private final long[]			allocatedRegions;
+
+	private final long id;
+	private final List<OCLDevice> devices;
+	private final OCLCommandQueue[] queues;
+	private final List<OCLProgram> programs;
+	private final long[] allocatedRegions;
 	private int allocatedRegionCount;
-	private final ByteBuffer		buffer;
-	private final Unsafe			unsafe;
-	private final OCLPlatform		platform;
+	private final ByteBuffer buffer;
+	private final Unsafe unsafe;
+	private final OCLPlatform platform;
 
 	public OCLContext(OCLPlatform platform, long id, List<OCLDevice> devices) {
 		this.platform = platform;
@@ -61,15 +60,11 @@ public class OCLContext extends TornadoLogger {
 		this.programs = new ArrayList<OCLProgram>();
 		this.allocatedRegions = new long[64];
 		this.allocatedRegionCount = 0;
-		Arrays.fill(this.allocatedRegions,-1);
+		Arrays.fill(this.allocatedRegions, -1);
 		this.buffer = ByteBuffer.allocate(128);
 		this.buffer.order(OpenCL.BYTE_ORDER);
 		this.unsafe = RuntimeUtilities.getUnsafe();
 	}
-
-//	static {
-//		System.loadLibrary(OpenCL.OPENCL_LIBRARY);
-//	}
 
 	native static void clReleaseContext(long id) throws OCLException;
 
@@ -80,14 +75,14 @@ public class OCLContext extends TornadoLogger {
 			long properties) throws OCLException;
 
 	native static long allocateOffHeapMemory(long size, long alignment);
-	
+
 	native static void freeOffHeapMemory(long address);
-	
+
 	native static ByteBuffer asByteBuffer(long address, long size);
-	
+
 	// creates an empty buffer on the device
-	native static OCLBufferResult createBuffer(long contextId, long flags, long size, long  address)
-			throws OCLException;
+	native static OCLBufferResult createBuffer(long contextId, long flags,
+			long size, long address) throws OCLException;
 
 	native static long createSubBuffer(long buffer, long flags, int createType,
 			byte[] createInfo) throws OCLException;
@@ -126,13 +121,18 @@ public class OCLContext extends TornadoLogger {
 		long queueId;
 		try {
 			queueId = clCreateCommandQueue(id, device.getId(), properties);
-			
-			final int platformVersion = Integer.parseInt(platform.getVersion().split(" ")[1].replace(".", "")) * 10;
-			final int deviceVersion = Integer.parseInt(device.getVersion().split(" ")[1].replace(".", "")) * 10;
-			Tornado.info("platform: version=%s (%s) on %s",platformVersion,platform.getVersion(), device.getName());
-			Tornado.info("device  : version=%s (%s) on %s",deviceVersion,device.getVersion(), device.getName());
-			
-			queues[index] = new OCLCommandQueue(queueId, properties, deviceVersion);
+
+			final int platformVersion = Integer.parseInt(platform.getVersion()
+					.split(" ")[1].replace(".", "")) * 10;
+			final int deviceVersion = Integer.parseInt(device.getVersion()
+					.split(" ")[1].replace(".", "")) * 10;
+			Tornado.info("platform: version=%s (%s) on %s", platformVersion,
+					platform.getVersion(), device.getName());
+			Tornado.info("device  : version=%s (%s) on %s", deviceVersion,
+					device.getVersion(), device.getName());
+
+			queues[index] = new OCLCommandQueue(queueId, properties,
+					deviceVersion);
 		} catch (OCLException e) {
 			error(e.getMessage());
 		}
@@ -141,7 +141,7 @@ public class OCLContext extends TornadoLogger {
 	public void createCommandQueue(int index) {
 		long properties = 0;
 		properties |= OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
-		if(Tornado.ENABLE_OOO_EXECUTION)
+		if (Tornado.ENABLE_OOO_EXECUTION)
 			properties |= OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
 		createCommandQueue(index, properties);
 	}
@@ -154,7 +154,7 @@ public class OCLContext extends TornadoLogger {
 	public void createAllCommandQueues() {
 		long properties = 0;
 		properties |= OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
-		if(Tornado.ENABLE_OOO_EXECUTION)
+		if (Tornado.ENABLE_OOO_EXECUTION)
 			properties |= OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
 		createAllCommandQueues(properties);
 	}
@@ -177,17 +177,37 @@ public class OCLContext extends TornadoLogger {
 	public void cleanup() {
 
 		try {
+			long t0 = System.nanoTime();
 			for (OCLProgram program : programs)
 				program.cleanup();
+			long t1 = System.nanoTime();
 
-			for(int i=0;i<allocatedRegionCount;i++){
-					clReleaseMemObject(allocatedRegions[i]);
+			for (int i = 0; i < allocatedRegionCount; i++) {
+				clReleaseMemObject(allocatedRegions[i]);
 			}
+			long t2 = System.nanoTime();
 
 			for (OCLCommandQueue queue : queues)
-				if (queue != null) queue.cleanup();
+				if (queue != null)
+					queue.cleanup();
 
+			long t3 = System.nanoTime();
 			clReleaseContext(id);
+
+			long t4 = System.nanoTime();
+
+			if (Tornado.DEBUG) {
+				System.out.printf("cleanup: %-10s..........%.9f s\n",
+						"programs", (t1 - t0) * 1e-9);
+				System.out.printf("cleanup: %-10s..........%.9f s\n", "memory",
+						(t2 - t1) * 1e-9);
+				System.out.printf("cleanup: %-10s..........%.9f s\n", "queues",
+						(t3 - t2) * 1e-9);
+				System.out.printf("cleanup: %-10s..........%.9f s\n",
+						"context", (t4 - t3) * 1e-9);
+				System.out.printf("cleanup: %-10s..........%.9f s\n", "total",
+						(t4 - t0) * 1e-9);
+			}
 		} catch (OCLException e) {
 			error(e.getMessage());
 			e.printStackTrace();
@@ -200,42 +220,42 @@ public class OCLContext extends TornadoLogger {
 	}
 
 	public OCLDeviceContext createDeviceContext(int index) {
-		Tornado.debug("creating device context for device: %s", devices.get(index)
-				.toString());
+		Tornado.debug("creating device context for device: %s",
+				devices.get(index).toString());
 		createCommandQueue(index);
 		return new OCLDeviceContext(devices.get(index), queues[index], this);
 	}
 
 	/**
 	 * Allocates off-heap memory
+	 * 
 	 * @param bytes
 	 * @return
 	 */
-	public long allocate(long bytes, long alignment){
+	public long allocate(long bytes, long alignment) {
 		final long address = allocateOffHeapMemory(bytes, alignment);
-		if(address == 0)
+		if (address == 0)
 			throw new TornadoInternalError("Unable to allocate off-heap memory");
 		return address;
 	}
-	
-	public ByteBuffer toByteBuffer(long address, long bytes){
-		final ByteBuffer buffer = asByteBuffer(address,bytes);
+
+	public ByteBuffer toByteBuffer(long address, long bytes) {
+		final ByteBuffer buffer = asByteBuffer(address, bytes);
 		buffer.order(OpenCL.BYTE_ORDER);
 		return buffer;
 	}
-	
-	public long createBuffer(long flags, long bytes){
-		return createBuffer(flags,bytes,0L);
+
+	public long createBuffer(long flags, long bytes) {
+		return createBuffer(flags, bytes, 0L);
 	}
-	
-	
-	
+
 	public long createBuffer(long flags, long bytes, long address) {
 		long devicePtr = 0;
 		try {
-			final OCLBufferResult result =  createBuffer(id, flags, bytes,address);
+			final OCLBufferResult result = createBuffer(id, flags, bytes,
+					address);
 			devicePtr = result.getBuffer();
-			allocatedRegions[allocatedRegionCount]= devicePtr;
+			allocatedRegions[allocatedRegionCount] = devicePtr;
 			allocatedRegionCount++;
 			info("buffer allocated %s @ 0x%x",
 					RuntimeUtilities.humanReadableByteCount(bytes, true),
@@ -245,17 +265,22 @@ public class OCLContext extends TornadoLogger {
 		}
 		return devicePtr;
 	}
-	
+
 	@Deprecated
-	public long createSubBuffer(long bufferId, long flags, long offset, long bytes) {
+	public long createSubBuffer(long bufferId, long flags, long offset,
+			long bytes) {
 		long devicePtr = 0;
 		try {
-			
+
 			buffer.clear();
 			buffer.putLong(offset);
 			buffer.putLong(bytes);
-			
-			devicePtr = createSubBuffer(bufferId, flags, OCLBufferCreateType.CL_BUFFER_CREATE_TYPE_REGION.getValue(),buffer.array());
+
+			devicePtr = createSubBuffer(
+					bufferId,
+					flags,
+					OCLBufferCreateType.CL_BUFFER_CREATE_TYPE_REGION.getValue(),
+					buffer.array());
 			debug("sub-buffer allocated %s @ 0x%x",
 					RuntimeUtilities.humanReadableByteCount(bytes, true),
 					devicePtr);
@@ -265,7 +290,7 @@ public class OCLContext extends TornadoLogger {
 		return devicePtr;
 	}
 
-	public int getPlatformIndex(){
+	public int getPlatformIndex() {
 		return platform.getIndex();
 	}
 }
