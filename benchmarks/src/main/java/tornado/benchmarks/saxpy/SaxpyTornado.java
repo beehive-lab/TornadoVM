@@ -4,6 +4,7 @@ import tornado.api.DeviceMapping;
 import tornado.api.Event;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.LinearAlgebraArrays;
+import tornado.collections.math.TornadoMath;
 import tornado.collections.types.FloatOps;
 import tornado.benchmarks.EventList;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
@@ -80,13 +81,8 @@ public class SaxpyTornado extends BenchmarkDriver {
 
         LinearAlgebraArrays.saxpy(alpha, x, result);
 
-        int errors = 0;
-        for (int i = 0; i < numElements; i++) {
-            if (!FloatOps.compareBits(result[i], y[i]))
-                errors++;
-        }
-
-        return (errors == 0);
+        final float ulp = TornadoMath.findULPDistance(y,result);
+        return ulp < MAX_ULP;
     }
 
     public void printSummary() {

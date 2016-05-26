@@ -154,7 +154,6 @@ public class TornadoMath {
 	public static float findULPDistance(float[] value, float[] expected){
 		float maxULP = Float.MIN_VALUE;
 		for(int i=0;i<value.length;i++){
-			//System.out.printf("%f <> %f\n",value[i],expected[i]);
 			maxULP = Math.max(maxULP, FloatOps.findMaxULP(value[i], expected[i]));
 		}
 		return maxULP;

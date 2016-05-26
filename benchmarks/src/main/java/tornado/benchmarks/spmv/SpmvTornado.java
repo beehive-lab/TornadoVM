@@ -5,11 +5,11 @@ import tornado.api.Event;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.LinearAlgebraArrays;
 import tornado.collections.matrix.SparseMatrixUtils.CSRMatrix;
-import tornado.collections.types.FloatOps;
 import tornado.benchmarks.EventList;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.runtime.api.TaskUtils;
 import tornado.runtime.api.ExecutableTask;
+import tornado.collections.math.TornadoMath;
 
 public class SpmvTornado extends BenchmarkDriver {
 
@@ -85,25 +85,9 @@ public class SpmvTornado extends BenchmarkDriver {
 
         LinearAlgebraArrays.spmv(matrix.vals, matrix.cols, matrix.rows, v,
                 matrix.size, ref);
-
-        // try {
-        // spmvTask.execute(matrix.vals, matrix.cols, matrix.rows, v,
-        // matrix.size, ref);
-        // } catch(TornadoRuntimeException e){
-        // e.printStackTrace();
-        // return false;
-        // }
-
-        int errors = 0;
-        for (int i = 0; i < y.length; i++) {
-            if (!FloatOps.compareBits(y[i], ref[i])) {
-                // System.out.printf("error: %f != %f\n",y[i],ref[i]);
-                errors++;
-            }
-        }
-
-        System.out.printf("found %d errors\n", errors);
-        return true; // (errors == 0);
+        
+        final float ulp = TornadoMath.findULPDistance(y,ref);
+        return ulp < MAX_ULP;
     }
 
     public void printSummary() {

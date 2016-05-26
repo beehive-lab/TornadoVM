@@ -88,15 +88,17 @@ public class ConvolveImageTornado extends BenchmarkDriver {
 
         GraphicsKernels.convolveImage(input, filter, result);
 
-        int errors = 0;
+        float maxULP = 0f;
         for (int y = 0; y < output.Y(); y++) {
             for (int x = 0; x < output.X(); x++) {
-                if (!FloatOps.compareBits(output.get(x, y), result.get(x, y))) {
-                    errors++;
+                final float ulp = FloatOps.findMaxULP(output.get(x, y), result.get(x, y));
+                
+            	if (ulp > maxULP) {
+                    maxULP = ulp;
                 }
             }
         }
-        return (errors == 0);
+        return maxULP < MAX_ULP;
     }
 
     public void printSummary() {

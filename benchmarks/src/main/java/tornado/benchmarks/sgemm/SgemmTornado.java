@@ -6,11 +6,13 @@ import tornado.api.DeviceMapping;
 import tornado.api.Event;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.LinearAlgebraArrays;
+import tornado.collections.math.TornadoMath;
 import tornado.collections.types.FloatOps;
 import tornado.benchmarks.EventList;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.runtime.api.TaskUtils;
 import tornado.runtime.api.ExecutableTask;
+
 
 public class SgemmTornado extends BenchmarkDriver {
 
@@ -91,14 +93,8 @@ public class SgemmTornado extends BenchmarkDriver {
 
         LinearAlgebraArrays.sgemm(m, n, m, a, b, result);
 
-        int errors = 0;
-        for (int i = 0; i < c.length; i++) {
-            if (!FloatOps.compareBits(result[i], c[i])) {
-                errors++;
-            }
-        }
-
-        return (errors == 0);
+        final float ulp = TornadoMath.findULPDistance(c,result);
+        return ulp < MAX_ULP;
     }
 
     public void printSummary() {

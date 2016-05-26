@@ -7,6 +7,8 @@ public abstract class BenchmarkDriver {
 															.parseBoolean(System.getProperty(
 																	"tornado.benchmarks.memusage",
 																	"false"));
+	public static final float		MAX_ULP = Float.parseFloat(System.getProperty("tornado.benchmarks.maxulp","5.0"));
+	
 	private long					iterations;
 	private double					elapsed;
 	private boolean					validResult;

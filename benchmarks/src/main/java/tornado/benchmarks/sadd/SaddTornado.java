@@ -4,6 +4,7 @@ import tornado.api.DeviceMapping;
 import tornado.api.Event;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.LinearAlgebraArrays;
+import tornado.collections.math.TornadoMath;
 import tornado.collections.types.FloatOps;
 import tornado.benchmarks.EventList;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
@@ -84,14 +85,8 @@ public class SaddTornado extends BenchmarkDriver {
 
         LinearAlgebraArrays.sadd(a, b, result);
 
-        int errors = 0;
-        for (int i = 0; i < numElements; i++) {
-            if (!FloatOps.compareBits(result[i], c[i])) {
-                errors++;
-            }
-        }
-
-        return (errors == 0);
+        final float ulp = TornadoMath.findULPDistance(c,result);
+        return ulp < MAX_ULP;
     }
 
     public void printSummary() {

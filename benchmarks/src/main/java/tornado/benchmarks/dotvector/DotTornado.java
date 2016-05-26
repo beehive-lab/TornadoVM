@@ -88,9 +88,8 @@ public class DotTornado extends BenchmarkDriver {
 
         GraphicsKernels.dotVector(a, b, result);
 
-        boolean valid = TornadoMath.isEqual(result, c);
-
-        return valid;
+       final float ulp = TornadoMath.findULPDistance(result, c);
+        return ulp < MAX_ULP;
     }
 
     public void printSummary() {

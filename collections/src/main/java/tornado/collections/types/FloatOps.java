@@ -1,5 +1,7 @@
 package tornado.collections.types;
 
+import tornado.collections.math.TornadoMath;
+
 public class FloatOps {
 	public static final float EPSILON = 1e-7f;
 	public static final String fmt = "%.3f";
@@ -30,6 +32,26 @@ public class FloatOps {
 			return true;
 		else 
 			return false;
+	}
+	
+	public static final float findMaxULP(Float2 value, Float2 expected){
+		return TornadoMath.findULPDistance(value.storage, expected.storage);
+	}
+	
+	public static final float findMaxULP(Float3 value, Float3 expected){
+		return TornadoMath.findULPDistance(value.storage, expected.storage);
+	}
+	
+	public static final float findMaxULP(Float4 value, Float4 expected){
+		return TornadoMath.findULPDistance(value.storage, expected.storage);
+	}
+	
+	public static final float findMaxULP(Float6 value, Float6 expected){
+		return TornadoMath.findULPDistance(value.storage, expected.storage);
+	}
+	
+	public static final float findMaxULP(Float8 value, Float8 expected){
+		return TornadoMath.findULPDistance(value.storage, expected.storage);
 	}
 	
 	public static final float findMaxULP(float value, float expected){
