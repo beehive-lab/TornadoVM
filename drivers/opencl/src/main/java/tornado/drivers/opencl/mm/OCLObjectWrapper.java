@@ -23,7 +23,7 @@ import com.oracle.graal.hotspot.HotSpotGraalRuntimeProvider;
 import com.oracle.graal.hotspot.meta.HotSpotResolvedJavaField;
 import com.oracle.graal.hotspot.meta.HotSpotResolvedJavaType;
 
-public class OCLObjectWrapper implements ObjectBuffer<Object> {
+public class OCLObjectWrapper implements ObjectBuffer {
 
     private final boolean vectorObject;
     private int vectorStorageIndex;
@@ -32,7 +32,7 @@ public class OCLObjectWrapper implements ObjectBuffer<Object> {
     private ByteBuffer buffer;
     private HotSpotResolvedJavaType resolvedType;
     private HotSpotResolvedJavaField[] fields;
-    private FieldBuffer<?>[] wrappedFields;
+    private FieldBuffer[] wrappedFields;
 
     private final Class<?> type;
 
@@ -71,11 +71,11 @@ public class OCLObjectWrapper implements ObjectBuffer<Object> {
                 .getInstanceFields(true);
         sortFieldsByOffset();
 
-        wrappedFields = new FieldBuffer<?>[fields.length];
+        wrappedFields = new FieldBuffer[fields.length];
 
         int index = 0;
         // calculate object size
-        bytes = (fields.length > 0) ? fields[0].offset() : 32;
+        bytes = (fields.length > 0) ? fields[0].offset() : fieldsOffset;
         for (HotSpotResolvedJavaField field : fields) {
             final Field reflectedField = getField(type, field.getName());
             final Class<?> type = reflectedField.getType();
@@ -94,7 +94,7 @@ public class OCLObjectWrapper implements ObjectBuffer<Object> {
             bytes += (field.getKind().isObject()) ? 8 : field.getKind()
                     .getByteCount();
 
-            ObjectBuffer<?> wrappedField = null;
+            ObjectBuffer wrappedField = null;
             if (type.isArray()) {
                 if (type == int[].class) {
                     wrappedField = new OCLIntArrayWrapper(device, isFinal);
@@ -149,13 +149,13 @@ public class OCLObjectWrapper implements ObjectBuffer<Object> {
                     RuntimeUtilities.humanReadableByteCount(bytes, true));
         buffer = ByteBuffer.allocate((int) bytes);
         buffer.order(deviceContext.getByteOrder());
-        bufferOffset = deviceContext.getMemoryManager().tryAllocate(bytes,
-                getAlignment());
+        bufferOffset = deviceContext.getMemoryManager().tryAllocate(ref.getClass(),bytes,
+                32,getAlignment());
 
         if (Tornado.DEBUG)
             Tornado.debug("object: object=0x%x @ 0x%x (0x%x)", ref.hashCode(),
                     toAbsoluteAddress(), toRelativeAddress());
-        for (FieldBuffer<?> buffer : wrappedFields)
+        for (FieldBuffer buffer : wrappedFields)
             if (buffer != null)
                 buffer.allocate(ref);
     }
@@ -262,7 +262,7 @@ public class OCLObjectWrapper implements ObjectBuffer<Object> {
             }
 
         }
-        // dump();
+//         dump();
     }
 
     private void deserialise(Object object) {
@@ -296,7 +296,7 @@ public class OCLObjectWrapper implements ObjectBuffer<Object> {
     @Override
     public void write(Object object) {
         if (vectorObject) {
-            final FieldBuffer<?> fieldBuffer = wrappedFields[vectorStorageIndex];
+            final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
             fieldBuffer.write(object);
         } else {
             if (!valid) {
@@ -315,7 +315,7 @@ public class OCLObjectWrapper implements ObjectBuffer<Object> {
     @Override
     public void read(Object object) {
         if (vectorObject) {
-            final FieldBuffer<?> fieldBuffer = wrappedFields[vectorStorageIndex];
+            final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
             fieldBuffer.read(object);
         } else {
             buffer.position(buffer.capacity());
@@ -337,7 +337,7 @@ public class OCLObjectWrapper implements ObjectBuffer<Object> {
 
     private long getVectorAddress(boolean relative) {
         final HotSpotResolvedJavaField resolvedField = fields[vectorStorageIndex];
-        final FieldBuffer<?> fieldBuffer = wrappedFields[vectorStorageIndex];
+        final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
         final long address = (relative) ? fieldBuffer.toRelativeAddress()
                 : fieldBuffer.toAbsoluteAddress();
 
@@ -402,11 +402,11 @@ public class OCLObjectWrapper implements ObjectBuffer<Object> {
         TaskUtils.waitForEvents(events);
 
         if (vectorObject) {
-            final FieldBuffer<?> fieldBuffer = wrappedFields[vectorStorageIndex];
+            final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
             return fieldBuffer.enqueueReadAfterAll(ref, events);
         } else {
             final List<Event> waitEvents = new ArrayList<Event>();
-            for (FieldBuffer<?> fb : wrappedFields) {
+            for (FieldBuffer fb : wrappedFields) {
                 if (fb != null) {
                     waitEvents.add(fb.enqueueReadAfterAll(ref, events));
                 }
@@ -444,7 +444,7 @@ public class OCLObjectWrapper implements ObjectBuffer<Object> {
         final List<Event> waitEvents = new ArrayList<Event>();
 
         if (vectorObject) {
-            final FieldBuffer<?> fieldBuffer = wrappedFields[vectorStorageIndex];
+            final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
             if (!valid) {
                 valid = true;
                 return fieldBuffer.enqueueWriteAfterAll(ref, events);
@@ -462,7 +462,7 @@ public class OCLObjectWrapper implements ObjectBuffer<Object> {
                 valid = true;
             }
 
-            for (FieldBuffer<?> fb : wrappedFields) {
+            for (FieldBuffer fb : wrappedFields) {
                 if (fb != null) {
                     // System.out.printf("field: write %s\n",fb.getFieldName());
                     waitEvents.add(fb.enqueueWriteAfterAll(ref, events));
@@ -475,17 +475,11 @@ public class OCLObjectWrapper implements ObjectBuffer<Object> {
     }
 
     @Override
-    public Event enqueueZeroMemory() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public int getAlignment() {
-        return 16;
+        return 64;
     }
 
-    public FieldBuffer<?> getField(String name) {
+    public FieldBuffer getField(String name) {
         int index = 0;
         for (HotSpotResolvedJavaField field : fields) {
             if (field.getName().equalsIgnoreCase(name)) {
@@ -517,7 +511,7 @@ public class OCLObjectWrapper implements ObjectBuffer<Object> {
         System.out.printf("0x%x:\ttype=%s, num fields=%d (%d)\n",
                 toAbsoluteAddress(), type.getName(), fields.length,
                 wrappedFields.length);
-        for (FieldBuffer<?> fb : wrappedFields)
+        for (FieldBuffer fb : wrappedFields)
             if (fb != null)
                 System.out.printf("\t0x%x\tname=%s\n", fb.toAbsoluteAddress(),
                         fb.getFieldName());

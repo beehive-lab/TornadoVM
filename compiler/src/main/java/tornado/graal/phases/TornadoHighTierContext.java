@@ -1,7 +1,7 @@
 package tornado.graal.phases;
 
-import tornado.api.DeviceMapping;
 import tornado.meta.Meta;
+import tornado.common.DeviceMapping;
 
 import com.oracle.graal.api.meta.ResolvedJavaMethod;
 import com.oracle.graal.phases.OptimisticOptimizations;

@@ -49,7 +49,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 	}
 
 	private Field lookupField(Class<?> type, String field) {
-		Tornado.debug("lookup field: class=%s, field=%s", type.toString(), field);
+//		Tornado.debug("lookup field: class=%s, field=%s", type.toString(), field);
 		Field f = null;
 		try {
 			f = type.getDeclaredField(field);

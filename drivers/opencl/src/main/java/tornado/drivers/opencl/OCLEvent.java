@@ -101,7 +101,7 @@ public class OCLEvent extends TornadoLogger implements Event {
 
 	@Override
 	public String toString() {
-		return String.format("event: name=%s, active time=%f, total time=%f",
+		return String.format("event: name=%s, active time=%.9f, total time=%.9f",
 				name,getExecutionTime() , getTotalTime());
 	}
 

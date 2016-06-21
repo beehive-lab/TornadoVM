@@ -2,16 +2,16 @@ package tornado.benchmarks.convolveimage;
 
 import static tornado.benchmarks.BenchmarkUtils.createFilter;
 import static tornado.benchmarks.BenchmarkUtils.createImage;
-import tornado.api.DeviceMapping;
 import tornado.api.Event;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
 import tornado.collections.types.FloatOps;
 import tornado.collections.types.ImageFloat;
+import tornado.common.DeviceMapping;
 import tornado.benchmarks.EventList;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.ExecutableTask;
+import tornado.runtime.api.CompilableTask;
 
 public class ConvolveImageTornado extends BenchmarkDriver {
 
@@ -20,7 +20,7 @@ public class ConvolveImageTornado extends BenchmarkDriver {
 
     private ImageFloat input, output, filter;
 
-    private ExecutableTask convolve;
+    private CompilableTask convolve;
 
     private Event last;
     private final EventList<Event> events;

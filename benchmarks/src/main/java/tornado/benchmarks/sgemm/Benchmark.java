@@ -2,7 +2,7 @@ package tornado.benchmarks.sgemm;
 
 
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.drivers.opencl.runtime.OCLRuntime;
+import tornado.drivers.opencl.runtime.OCLDriver;
 import tornado.runtime.TornadoRuntime;
 
 public class Benchmark {
@@ -38,7 +38,7 @@ public class Benchmark {
 				"tornado-dummy", tornadoOverhead.getSummary(),
 				refElapsed / tornadoOverhead.getElapsed());
 
-		final OCLRuntime oclRuntime = (OCLRuntime) TornadoRuntime.runtime;
+		final OCLDriver oclRuntime = (OCLDriver) TornadoRuntime.runtime;
 		for (int platformIndex = 0; platformIndex < oclRuntime.getNumPlatforms(); platformIndex++) {
 			for (int deviceIndex = 0; deviceIndex < oclRuntime.getNumDevices(platformIndex); deviceIndex++) {
 				final OCLDeviceMapping device = new OCLDeviceMapping(platformIndex, deviceIndex);

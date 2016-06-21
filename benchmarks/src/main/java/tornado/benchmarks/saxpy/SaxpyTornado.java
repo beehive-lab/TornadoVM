@@ -1,15 +1,15 @@
 package tornado.benchmarks.saxpy;
 
-import tornado.api.DeviceMapping;
 import tornado.api.Event;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.LinearAlgebraArrays;
 import tornado.collections.math.TornadoMath;
 import tornado.collections.types.FloatOps;
+import tornado.common.DeviceMapping;
 import tornado.benchmarks.EventList;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.ExecutableTask;
+import tornado.runtime.api.CompilableTask;
 
 public class SaxpyTornado extends BenchmarkDriver {
 
@@ -19,7 +19,7 @@ public class SaxpyTornado extends BenchmarkDriver {
     private float[] x, y;
     private final float alpha = 2f;
 
-    private ExecutableTask saxpy;
+    private CompilableTask saxpy;
 
     private Event last;
     private final EventList<Event> events;

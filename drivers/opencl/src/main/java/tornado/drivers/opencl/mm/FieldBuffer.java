@@ -10,13 +10,13 @@ import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.runtime.TornadoRuntime;
 
-public class FieldBuffer<T> {
+public class FieldBuffer {
 
 	private final Field				field;
 
-	private final ObjectBuffer<T>	objectBuffer;
+	private final ObjectBuffer	objectBuffer;
 
-	public FieldBuffer(final Field field, final ObjectBuffer<T> objectBuffer) {
+	public FieldBuffer(final Field field, final ObjectBuffer objectBuffer) {
 		this.objectBuffer = objectBuffer;
 		this.field = field;
 	}
@@ -57,10 +57,6 @@ public class FieldBuffer<T> {
 		return objectBuffer.enqueueWriteAfterAll(getFieldValue(ref), events);
 	}
 
-	public Event enqueueZeroMemory() {
-		return objectBuffer.enqueueZeroMemory();
-	}
-
 	public int getAlignment() {
 		return objectBuffer.getAlignment();
 	}
@@ -69,10 +65,10 @@ public class FieldBuffer<T> {
 		return objectBuffer.getBufferOffset();
 	}
 
-	private final T getFieldValue(final Object container) {
-		T value = null;
+	private final Object getFieldValue(final Object container) {
+		Object value = null;
 		try {
-			value = (T) field.get(container);
+			value = field.get(container);
 		} catch (IllegalArgumentException | IllegalAccessException e) {
 			Tornado.warn("Illegal access to field: name=%s, object=0x%x", field.getName(), container.hashCode());
 		}

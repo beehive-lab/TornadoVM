@@ -1,6 +1,7 @@
 package tornado.drivers.opencl.mm;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +40,7 @@ public class OCLByteBuffer {
 	public void allocate(final long numBytes) throws TornadoOutOfMemoryException {
 		bytes = numBytes;
 
-		offset = deviceContext.getMemoryManager().tryAllocate(numBytes, getAlignment());
+		offset = deviceContext.getMemoryManager().tryAllocate(byte[].class,numBytes,0, getAlignment());
 
 		buffer = ByteBuffer.allocate((int) numBytes);
 		buffer.order(deviceContext.getByteOrder());
@@ -149,7 +150,7 @@ public class OCLByteBuffer {
 	}
 
 	public int getAlignment() {
-		return 16;
+		return 64;
 	}
 
 	public long getBufferOffset() {

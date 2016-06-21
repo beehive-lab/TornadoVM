@@ -7,7 +7,6 @@ import tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
 import tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode;
 import tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
 import tornado.drivers.opencl.graal.nodes.SlotsBaseAddressNode;
-import tornado.graal.compiler.TornadoGraphBuilderPlugins;
 import tornado.lang.CompilerInternals;
 
 import com.oracle.graal.api.meta.*;

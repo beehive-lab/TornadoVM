@@ -22,7 +22,7 @@ public class VectorAddFloat {
         Arrays.fill(c, 0);
 
         final TaskGraph graph = new TaskGraph()
-                .add(SimpleMath::vectorAdd, a, b, c).collect(c)
+                .add(SimpleMath::vectorAdd, a, b, c).streamOut(c)
                 .mapAllTo(new OCLDeviceMapping(0, 0));
 
         long start = System.nanoTime();

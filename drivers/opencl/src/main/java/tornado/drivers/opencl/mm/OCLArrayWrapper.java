@@ -9,6 +9,7 @@ import tornado.api.Event;
 import tornado.common.ObjectBuffer;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
+import tornado.common.exceptions.TornadoInternalError;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.OCLEvent;
@@ -18,7 +19,7 @@ import tornado.runtime.api.TaskUtils;
 import com.oracle.graal.api.meta.Kind;
 import com.oracle.graal.hotspot.HotSpotGraalRuntimeProvider;
 
-public abstract class OCLArrayWrapper<T> implements ObjectBuffer<T> {
+public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
 	private final int					arrayHeaderSize;
 
@@ -50,15 +51,26 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer<T> {
 		onDevice = false;
 	}
 
+	@SuppressWarnings("unchecked")
+	private final T cast(Object array){
+		try {
+		return (T) array;
+		} catch (Exception | Error e){
+			TornadoInternalError.shouldNotReachHere("Unable to cast object: " + e.getMessage());
+		}
+		return null;
+	}
+	
 	@Override
-	public void allocate(T ref) throws TornadoOutOfMemoryException {
+	public void allocate(Object value) throws TornadoOutOfMemoryException {
+		final T ref = cast(value);
 		bytes = sizeOf(ref);
 
-		bufferOffset = deviceContext.getMemoryManager().tryAllocate(bytes, getAlignment());
+		bufferOffset = deviceContext.getMemoryManager().tryAllocate(ref.getClass(), bytes, arrayHeaderSize, getAlignment());
 
-		Tornado.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d",
+		Tornado.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x",
 				kind.getJavaName(), RuntimeUtilities.humanReadableByteCount(bytes, true),
-				arrayLengthOffset, arrayHeaderSize);
+				arrayLengthOffset, arrayHeaderSize, bufferOffset);
 		Tornado.info("allocated: %s", toString());
 	}
 
@@ -84,27 +96,32 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer<T> {
 	}
 
 	@Override
-	public Event enqueueRead(final T array) {
+	public Event enqueueRead(final Object value) {
+		final T array = cast(value);
 		final List<Event> waitEvents = new ArrayList<Event>(0);
 		return enqueueReadAfterAll(array, waitEvents);
 	}
 
 	@Override
-	public Event enqueueReadAfter(final T array, final Event event) {
+	public Event enqueueReadAfter(final Object value, final Event event) {
+		final T array = cast(value);
 		final List<Event> waitEvents = new ArrayList<Event>(1);
 		waitEvents.add(event);
 		return enqueueReadAfterAll(array, waitEvents);
 	}
 
 	@Override
-	public Event enqueueReadAfterAll(final T array, final List<Event> events) {
-		// System.out.println("enqueue read after all array...");
-		TaskUtils.waitForEvents(events);
-		deviceContext.sync();
+	public Event enqueueReadAfterAll(final Object value, final List<Event> events) {
+		final T array = cast(value);
+//		 System.out.println("enqueue read after all array...");
+//		TaskUtils.waitForEvents(events);
+//		deviceContext.sync();
 		if (isFinal) {
+//			System.out.printf("final array\n");
 			return enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
 					- arrayHeaderSize, array, events);
 		} else {
+//			System.out.printf("non-final array\n");
 			final List<Event> arrayEvents = new ArrayList<Event>(2);
 			arrayEvents.add(prepareArrayHeader().enqueueReadAfterAll(Collections.emptyList()));
 			arrayEvents.add(enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
@@ -117,21 +134,24 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer<T> {
 			T value, List<Event> waitEvents);
 
 	@Override
-	public Event enqueueWrite(final T array) {
+	public Event enqueueWrite(final Object value) {
+		final T array = cast(value);
 		final List<Event> waitEvents = new ArrayList<Event>(1);
 		return enqueueWriteAfterAll(array, waitEvents);
 	}
 
 	@Override
-	public Event enqueueWriteAfter(final T array, final Event event) {
+	public Event enqueueWriteAfter(final Object value, final Event event) {
+		final T array = cast(value);
 		final List<Event> waitEvents = new ArrayList<Event>(1);
 		waitEvents.add(event);
 		return enqueueWriteAfterAll(array, waitEvents);
 	}
 
 	@Override
-	public Event enqueueWriteAfterAll(final T array, final List<Event> events) {
+	public Event enqueueWriteAfterAll(final Object value, final List<Event> events) {
 		// System.out.println("enqueue write after all array...");
+		final T array = cast(value);
 		TaskUtils.waitForEvents(events);
 
 		if(isFinal && onDevice){
@@ -139,7 +159,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer<T> {
 					- arrayHeaderSize, array, events);
 		} else {
 			final List<Event> arrayEvents = new ArrayList<Event>(2);
-			if (!onDevice || !isFinal) arrayEvents.add(buildArrayHeader(array).enqueueWriteAfterAll(
+			if (!onDevice || !isFinal) arrayEvents.add(buildArrayHeader((T) array).enqueueWriteAfterAll(
 					events));
 			arrayEvents.add(enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
 					- arrayHeaderSize, array, events));
@@ -150,11 +170,6 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer<T> {
 
 	abstract protected OCLEvent enqueueWriteArrayData(long bufferId, long offset, long bytes,
 			T value, List<Event> waitEvents);
-
-	@Override
-	public Event enqueueZeroMemory() {
-		return null;
-	}
 
 	@Override
 	public int getAlignment() {
@@ -194,7 +209,8 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer<T> {
 	}
 
 	@Override
-	public void read(final T array) {
+	public void read(final Object value) {
+		final T array = cast(value);
 		if (validateArrayHeader(array)) {
 			readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize,
 					array, null);
@@ -256,7 +272,8 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer<T> {
 	}
 
 	@Override
-	public void write(final T array) {
+	public void write(final Object value) {
+		final T array = cast(value);
 		buildArrayHeader(array).write();
 		writeArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array,
 				null);

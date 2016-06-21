@@ -1,7 +1,7 @@
 package tornado.drivers.opencl.graal.phases;
 
-import tornado.api.DeviceMapping;
 import tornado.api.enums.TornadoSchedulingStrategy;
+import tornado.common.DeviceMapping;
 import tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
 import tornado.drivers.opencl.graal.nodes.ThreadCount;
 import tornado.drivers.opencl.graal.nodes.ThreadId;

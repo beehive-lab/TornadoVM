@@ -5,6 +5,7 @@ import java.util.List;
 import com.oracle.graal.api.meta.Kind;
 
 import tornado.api.Event;
+import tornado.api.Parallel;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.OCLEvent;
 

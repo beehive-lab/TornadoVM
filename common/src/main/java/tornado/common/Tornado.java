@@ -19,24 +19,24 @@ public final class Tornado {
 
     public static final boolean ENABLE_EXCEPTIONS = Boolean
             .parseBoolean(settings.getProperty("tornado.exceptions.enable",
-                    "false"));
+                    "False"));
     public static final boolean ENABLE_OOO_EXECUTION = Boolean
             .parseBoolean(settings.getProperty("tornado.ooo-execution.enable",
-                    "false"));
+                    "False"));
     public static final boolean FORCE_BLOCKING_API_CALLS = Boolean
             .parseBoolean(settings.getProperty("tornado.opencl.blocking",
-                    "false"));
+                    "False"));
 
     public static final boolean ENABLE_VECTORS = Boolean.parseBoolean(settings
-            .getProperty("tornado.vectors.enable", "true"));
+            .getProperty("tornado.vectors.enable", "True"));
     public static final boolean TORNADO_ENABLE_BIFS = Boolean
-            .parseBoolean(settings.getProperty("tornado.bifs.enable", "false"));
+            .parseBoolean(settings.getProperty("tornado.bifs.enable", "False"));
 
     public static final boolean DEBUG = Boolean.parseBoolean(settings
-            .getProperty("tornado.debug", "false"));
+            .getProperty("tornado.debug", "False"));
 
     public static final boolean ENABLE_MEM_CHECKS = Boolean
-            .parseBoolean(settings.getProperty("tornado.memory.check", "False"));;
+            .parseBoolean(settings.getProperty("tornado.memory.check", "False"));
 
     public static final boolean LOG_EVENTS = Boolean.parseBoolean(settings
             .getProperty("tornado.events.log", "False"));

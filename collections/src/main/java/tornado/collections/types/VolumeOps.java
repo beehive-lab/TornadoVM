@@ -185,10 +185,12 @@ public class VolumeOps {
 				* factorX)
 				+ (vs(volume,upper.getX(), upper.getY(),lower.getZ()) 
 								* factor.getX());
+		
 		final float c01 = (vs(volume, lower.getX(), lower.getY(), upper.getZ()) 
 				* factorX)
 				+ (vs(volume,upper.getX(), lower.getY(),upper.getZ()) 
 						* factor.getX());
+		
 		final float c11 = (vs(volume,lower.getX(), upper.getY(), upper.getZ()) 
 				* factorX)
 				+ (vs(volume, upper.getX(), upper.getY(),upper.getZ()) 
@@ -202,9 +204,12 @@ public class VolumeOps {
 		final float result = c * 0.00003051944088f;
 		
 		return result;
-
 	}
 
+	public static final float vs1(int x, int y, int z, VolumeShort2 v){
+		return vs(v,x,y,z);
+	}
+	
 	public final static float vs(final VolumeShort2 cube, int x, int y, int z) {
 		return cube.get(x, y, z).getX();
 	}

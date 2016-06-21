@@ -13,8 +13,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import tornado.api.DeviceMapping;
 import tornado.api.Event;
+import tornado.common.DeviceMapping;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoInternalError;
@@ -23,11 +23,11 @@ import tornado.drivers.opencl.graal.OpenCLInstalledCode;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.mm.OCLCallStack;
 import tornado.meta.domain.DomainTree;
-import tornado.runtime.api.ExecutableTask;
+import tornado.runtime.api.CompilableTask;
 
 import com.oracle.graal.api.meta.ResolvedJavaMethod;
 
-public class OCLExecutableTask extends ExecutableTask<OCLDeviceContext> {
+public class OCLCompilableTask extends CompilableTask {
 
     private OpenCLInstalledCode activeCode;
     private OCLBackend activeBackend;
@@ -35,7 +35,7 @@ public class OCLExecutableTask extends ExecutableTask<OCLDeviceContext> {
     private final Map<OCLBackend, OpenCLInstalledCode> codeCache;
 
 
-    public OCLExecutableTask(Method method, Object thisObject,
+    public OCLCompilableTask(Method method, Object thisObject,
             Object... args) {
     	super(method,thisObject,args);
         this.codeCache = new HashMap<OCLBackend, OpenCLInstalledCode>();
@@ -45,36 +45,36 @@ public class OCLExecutableTask extends ExecutableTask<OCLDeviceContext> {
         if (activeCode != null && activeCode.isValid()) {
             executeOnDevice();
         } else {
-            executeFallback();
+//            executeFallback();
         }
     }
 
-    public void compile() {
-        long start = System.nanoTime();
-        activeCode = activeBackend.compile(method, resolvedArgs,
-                argumentsAccess, meta);
-        long end = System.nanoTime();
+//    public void compile() {
+//        long start = System.nanoTime();
+//        activeCode = activeBackend.compile(method, resolvedArgs,
+//                argumentsAccess, meta);
+//        long end = System.nanoTime();
+//
+//        compileTime = RuntimeUtilities.elapsedTimeInSeconds(start, end);
+//
+//        domainTree = meta.getProvider(DomainTree.class);
+//
+//        stack = activeBackend.getDeviceContext().getMemoryManager()
+//                .createCallStack(resolvedArgs.length);
+//
+//        // stack.pushArgs(arguments, argumentsAccess, Collections.emptyList());
+//
+//        Tornado.info("stack: %s", stack.toString());
+//    }
 
-        compileTime = RuntimeUtilities.elapsedTimeInSeconds(start, end);
-
-        domainTree = meta.getProvider(DomainTree.class);
-
-        stack = activeBackend.getDeviceContext().getMemoryManager()
-                .createCallStack(resolvedArgs.length);
-
-        // stack.pushArgs(arguments, argumentsAccess, Collections.emptyList());
-
-        Tornado.info("stack: %s", stack.toString());
-    }
-
-    public ExecutableTask<OCLDeviceContext> mapTo(final DeviceMapping mapping) {
+    public CompilableTask mapTo(final DeviceMapping mapping) {
     	super.mapTo(mapping);
 
     	activeBackend = ((OCLDeviceMapping)mapping).getBackend();
         if (codeCache.containsKey(activeBackend))
             activeCode = codeCache.get(activeBackend);
-        else if (shouldCompile)
-            compile();
+//        else if (shouldCompile)
+//            compile();
 
         return this;
     }
@@ -88,17 +88,22 @@ public class OCLExecutableTask extends ExecutableTask<OCLDeviceContext> {
    
 
     protected void scheduleOnDevice(List<Event> waitEvents) {
-        stack.reset();
-        Tornado.debug("building call stack for %s...", method.getName());
-        stack.pushArgs(resolvedArgs, argumentsAccess, waitEvents);
+//        stack.reset();
+        Tornado.debug("scheduling %s...", method.getName());
+        Tornado.debug(toString());
+//        stack.pushArgs(resolvedArgs, argumentsAccess, waitEvents);
 
-        event = activeCode.submit((OCLCallStack) stack, domainTree, waitEvents);
+//        event = activeCode.submit((OCLCallStack) stack, domainTree, waitEvents);
+   
+//        event.waitOn();
+        Tornado.debug("after %s...", method.getName());
+        Tornado.debug(toString());
     }
 
     protected void executeOnDevice() {
         scheduleOnDevice(Collections.emptyList());
-        event.waitOn();
-        stack.getWriteSet().forEach(ref -> ref.read());
+//        event.waitOn();
+//        stack.getWriteSet().forEach(ref -> ref.read());
     }
 
    
@@ -138,9 +143,9 @@ public class OCLExecutableTask extends ExecutableTask<OCLDeviceContext> {
             final byte[] source = Files.readAllBytes(path);
             activeCode = activeBackend.getCodeCache().addMethod(resolvedMethod,
                     source);
-            domainTree = meta.getProvider(DomainTree.class);
-            stack = activeBackend.getDeviceContext().getMemoryManager()
-                    .createCallStack(resolvedArgs.length);
+//            domainTree = meta.getProvider(DomainTree.class);
+//            stack = activeBackend.getDeviceContext().getMemoryManager()
+//                    .createCallStack(resolvedArgs.length);
 
             Tornado.debug("building call stack for %s...", method.getName());
             // stack.pushArgs(arguments, argumentsAccess,
@@ -148,7 +153,7 @@ public class OCLExecutableTask extends ExecutableTask<OCLDeviceContext> {
             // Tornado.debug("execute task %s: call stack @ 0x%x\n",action.method().getName(),((OCLCallStack)
             // stack).toRelativeAddress());
 
-            Tornado.info("stack: %s", stack.toString());
+//            Tornado.info("stack: %s", stack.toString());
         } catch (IOException e) {
             TornadoInternalError.shouldNotReachHere();
         }

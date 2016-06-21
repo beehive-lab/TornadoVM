@@ -77,25 +77,16 @@ import tornado.runtime.TornadoRuntime;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> {
 
-	// % of global memory to allocate
-	private static final long		DEFAULT_HEAP_ALLOCATION	= RuntimeUtilities
-																	.parseSize(System
-																			.getProperty(
-																					"tornado.heap.allocation",
-																					"512MB"));
-	private final static boolean	SHOW_OPENCL				= Boolean.parseBoolean(System
+	
+	public final static boolean	SHOW_OPENCL				= Boolean.parseBoolean(System
 																	.getProperty(
 																			"tornado.opencl.print",
 																			"False"));
-	private final static String		OPENCL_PATH				= System.getProperty(
+	public final static String		OPENCL_PATH				= System.getProperty(
 																	"tornado.opencl.path",
 																	"./opencl");
 
-	public final static boolean		ENABLE_EXCEPTIONS		= Boolean
-																	.parseBoolean(System
-																			.getProperty(
-																					"tornado.opencl.exceptions",
-																					"True"));
+	
 
 	@Override
 	public TargetDescription getTarget() {
@@ -182,9 +173,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
 		 * Retrive the address of the heap on the device
 		 */
 		lookupCode = OCLCompiler.compileCodeForDevice(
-				TornadoRuntime.resolveMethod(getLookupMethod()), null, null, (OCLProviders) getProviders(), this);
+				TornadoRuntime.runtime.resolveMethod(getLookupMethod()), null, null, (OCLProviders) getProviders(), this);
 
-		deviceContext.getMemoryManager().setRegionAddress(readHeapBaseAddress());
+		deviceContext.getMemoryManager().init(this,readHeapBaseAddress());
 	}
 
 	public OCLDeviceContext getDeviceContext() {
@@ -316,13 +307,14 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
 					OpenCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
 					OpenCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
 					OpenCLAssemblerConstants.HEAP_REF_NAME, OpenCLAssemblerConstants.STACK_REF_NAME);
-			// asm.emitStmt("int numArgs = slots[3] >> 32");
-			// asm.emitStmt("printf(\"got %%d args...\\n\",numArgs)");
+//			 asm.emitStmt("int numArgs = slots[3] >> 32");
+//			 asm.emitStmt("printf(\"got %%d args...\\n\",numArgs)");
+//			 asm.emitStmt("for(int i=0;i<numArgs;i++) {  printf(\"arg[%%d]: 0x%%lx\\n\", i, slots[4 + i]); }");
 			asm.eol();
 
 			// asm.emitStmt("printf(\"stack @ %%p\\n\",(ulong) slots)");
 
-			if (ENABLE_EXCEPTIONS) asm.emitStmt("if(slots[0] != 0) return");
+//			if (ENABLE_EXCEPTIONS) asm.emitStmt("if(slots[0] != 0) return");
 
 			// asm.emitStmt("printf(\"no deopt found\\n\")");
 			// asm.emitStmt("printf(\"here\\n\")");
@@ -349,7 +341,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
 
 			for(int i=0;i<locals.length;i++){
 				Local local = locals[i];
-				System.out.printf("local: slot=%d, name=%s, type=%s\n",local.getSlot(),local.getName(),local.getType().resolve(method.getDeclaringClass()));
+//				System.out.printf("local: slot=%d, name=%s, type=%s\n",local.getSlot(),local.getName(),local.getType().resolve(method.getDeclaringClass()));
 			}
 			
 			if (params.length > 0) asm.emit(", ");
@@ -496,7 +488,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
 				parameters, meta, (OCLProviders) getProviders(), this);
 
 		if (SHOW_OPENCL) {
-			String filename = getFile(method.getName());
+			String filename = getFile(method.getName() + "-" + meta.hashCode());
 			Tornado.info("Generated code for device %s - %s\n",
 					deviceContext.getDevice().getName(), filename);
 			try {

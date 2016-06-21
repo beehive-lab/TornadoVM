@@ -6,7 +6,9 @@ import java.util.List;
 
 import tornado.api.Event;
 import tornado.api.enums.TornadoExecutionStatus;
+import tornado.common.CallStack;
 import tornado.common.Tornado;
+import tornado.common.TornadoInstalledCode;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.OCLEvent;
@@ -16,7 +18,9 @@ import tornado.drivers.opencl.OCLProgram;
 import tornado.drivers.opencl.OCLScheduler;
 import tornado.drivers.opencl.mm.OCLByteBuffer;
 import tornado.drivers.opencl.mm.OCLCallStack;
+import tornado.meta.Meta;
 import tornado.meta.domain.DomainTree;
+import tornado.runtime.EmptyEvent;
 import tornado.runtime.ObjectReference;
 import tornado.runtime.api.TaskUtils;
 
@@ -24,8 +28,9 @@ import com.oracle.graal.api.code.InstalledCode;
 import com.oracle.graal.api.code.InvalidInstalledCodeException;
 import com.oracle.graal.api.meta.ResolvedJavaMethod;
 
-public class OpenCLInstalledCode extends InstalledCode {
+public class OpenCLInstalledCode extends InstalledCode implements TornadoInstalledCode {
 
+	//TODO replace with a system property/Tornado setting
 	private final static boolean	DEBUG		= false;
 
 	private final ByteBuffer		buffer		= ByteBuffer.allocate(8);
@@ -53,7 +58,7 @@ public class OpenCLInstalledCode extends InstalledCode {
 		buffer.order(deviceContext.getByteOrder());
 	}
 
-	@Override
+	
 	public void invalidate() {
 		if (valid) {
 			kernel.cleanup();
@@ -62,7 +67,7 @@ public class OpenCLInstalledCode extends InstalledCode {
 
 	}
 
-	@Override
+	
 	public boolean isValid() {
 		return valid;
 	}
@@ -156,23 +161,25 @@ public class OpenCLInstalledCode extends InstalledCode {
 					kernel.getName(), deviceContext.getDevice().getName());
 			Tornado.info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(),
 					stack.toAbsoluteAddress(), stack.toRelativeAddress());
+//			stack.dump();
 		}
 
 //		System.out.println("code submit wait for...");
-		TaskUtils.waitForEvents(events);
+//		TaskUtils.waitForEvents(events);
 		
-		waitEvents.clear();
-		waitEvents.addAll(events);
-		if(stack.getEvent() != null && stack.getEvent().getStatus() != TornadoExecutionStatus.COMPLETE)
-			waitEvents.add(stack.getEvent());
+//		waitEvents.clear();
+//		waitEvents.addAll(events);
+//		if(stack.getEvent() != null && stack.getEvent().getStatus() != TornadoExecutionStatus.COMPLETE)
+//			waitEvents.add(stack.getEvent());
 //		long t1 = System.nanoTime();
 
 //		long address = deviceContext.asMapping().getBackend().readHeapBaseAddress();
 //		if(address != deviceContext.getMemoryManager().toAbsoluteAddress()){
 //			Tornado.fatal("heap has moved!");
 //		}
-		
+//		stack.write();
 		setKernelArgs(stack);
+		events.add( stack.enqueueWrite());
 		
 		if(Tornado.FORCE_BLOCKING_API_CALLS)
 			deviceContext.sync();
@@ -182,9 +189,9 @@ public class OpenCLInstalledCode extends InstalledCode {
 //		long t2 = System.nanoTime();
 		OCLEvent task = null;
 		if (domainTree == null || domainTree.getDepth() == 0) {
-			task = deviceContext.enqueueTask(kernel, waitEvents);
+			task = deviceContext.enqueueTask(kernel, events);
 		} else {
-			task = scheduler.submit(kernel, domainTree, waitEvents);
+			task = scheduler.submit(kernel, domainTree, events);
 		}
 //		long t3 = System.nanoTime();
 		/*
@@ -198,8 +205,8 @@ public class OpenCLInstalledCode extends InstalledCode {
 		/*
 		 * update object refs with write event
 		 */
-		for (ObjectReference<OCLDeviceContext,?> ref : stack.getWriteSet())
-			ref.setLastWrite(deviceContext, task);
+//		for (ObjectReference<OCLDeviceContext,?> ref : stack.getWriteSet())
+//			ref.setLastWrite(deviceContext, task);
 //		long t5 = System.nanoTime();
 
 //		System.out.printf("code-submit: %f, %f, %f, %f, %f\n",
@@ -210,6 +217,12 @@ public class OpenCLInstalledCode extends InstalledCode {
 //				RuntimeUtilities.elapsedTimeInSeconds(t4, t5));
 		
 		return (Tornado.ENABLE_EXCEPTIONS) ? stack.enqueueReadAfter(task) : task;
+	}
+
+
+	@Override
+	public Event launch(CallStack stack, Meta meta, List<Event> waitEvents) {
+		return submit((OCLCallStack) stack, meta.getProvider(DomainTree.class), waitEvents);
 	}
 
 }

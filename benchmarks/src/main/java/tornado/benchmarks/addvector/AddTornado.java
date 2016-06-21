@@ -1,16 +1,16 @@
 package tornado.benchmarks.addvector;
 
-import tornado.api.DeviceMapping;
 import tornado.api.Event;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
 import tornado.collections.types.Float4;
 import tornado.collections.types.FloatOps;
 import tornado.collections.types.VectorFloat4;
+import tornado.common.DeviceMapping;
 import tornado.benchmarks.EventList;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.ExecutableTask;
+import tornado.runtime.api.CompilableTask;
 
 public class AddTornado extends BenchmarkDriver {
 
@@ -19,7 +19,7 @@ public class AddTornado extends BenchmarkDriver {
 
 	private VectorFloat4 a, b, c;
 
-	private ExecutableTask add;
+	private CompilableTask add;
 
 	private Event last;
 	private final EventList<Event> events;

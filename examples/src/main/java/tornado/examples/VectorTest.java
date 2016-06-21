@@ -25,7 +25,7 @@ public class VectorTest {
         final VectorFloat3 results = new VectorFloat3(1);
 
         TaskGraph graph = new TaskGraph()
-                .add(VectorTest::test, value, value, results).collect(results)
+                .add(VectorTest::test, value, value, results).streamOut(results)
                 .mapAllTo(OpenCL.defaultDevice()).schedule();
 
         graph.waitOn();

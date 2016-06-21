@@ -1,6 +1,5 @@
 package tornado.benchmarks.spmv;
 
-import tornado.api.DeviceMapping;
 import tornado.api.Event;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.LinearAlgebraArrays;
@@ -8,8 +7,9 @@ import tornado.collections.matrix.SparseMatrixUtils.CSRMatrix;
 import tornado.benchmarks.EventList;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.ExecutableTask;
+import tornado.runtime.api.CompilableTask;
 import tornado.collections.math.TornadoMath;
+import tornado.common.DeviceMapping;
 
 public class SpmvTornado extends BenchmarkDriver {
 
@@ -19,7 +19,7 @@ public class SpmvTornado extends BenchmarkDriver {
 
     private final DeviceMapping device;
 
-    private ExecutableTask spmv;
+    private CompilableTask spmv;
 
     private Event last;
     private final EventList<Event> events;

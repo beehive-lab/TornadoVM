@@ -6,55 +6,71 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 
-import tornado.api.DeviceMapping;
 import tornado.api.Event;
 import tornado.api.Read;
 import tornado.api.ReadWrite;
 import tornado.api.Write;
 import tornado.api.enums.TornadoExecutionStatus;
+import tornado.common.CallStack;
+import tornado.common.DeviceMapping;
 import tornado.common.RuntimeUtilities;
+import tornado.common.SchedulableTask;
 import tornado.common.enums.Access;
 import tornado.meta.Meta;
 import tornado.meta.domain.DomainTree;
 import tornado.runtime.ObjectReference;
-import tornado.runtime.SchedulableTask;
 import tornado.runtime.TornadoRuntime;
 
-public abstract class ExecutableTask<D> implements SchedulableTask {
+public class CompilableTask implements SchedulableTask {
 
 	protected final Object[] args;
-
 	protected final Access[] argumentsAccess;
 
-	protected double compileTime;
-
-	protected DomainTree domainTree;
-	protected Event event;
+//	protected double compileTime;
+//
+//	protected DomainTree domainTree;
+//	protected Event event;
 	protected final Meta meta;
 
 	protected final Method method;
 	protected final Object[] resolvedArgs;
 	protected boolean shouldCompile;
 
-	protected CallStack<D> stack;
+//	protected CallStack stack;
 
 	protected Access thisAccess;
-	protected final Object thisObject;
+//	protected final Object thisObject;
 
-	public ExecutableTask(Method method, Object thisObject, Object... args) {
+	public CompilableTask(Method method,Object... args) {
 		this.method = method;
-		this.thisObject = thisObject;
+//		this.thisObject = thisObject;
 		this.args = args;
 		this.shouldCompile = true;
 		this.meta = new Meta();
 
-		this.resolvedArgs = copyToArguments();
+		this.resolvedArgs = args;
 
 		argumentsAccess = new Access[resolvedArgs.length];
 		readTaskMetadata();
 	}
-
-	public abstract void compile();
+	
+	public String toString(){
+		final StringBuilder sb = new StringBuilder();
+		
+		sb.append("task: " + method.getName() + "()\n");
+//		if(thisObject!=null){
+//			sb.append(String.format("this : [%s] %s -> %s\n",thisAccess,thisObject,resolvedArgs[0]));
+//		}
+//		final int argOffset = (Modifier.isStatic(method.getModifiers())) ? 0
+//				: 1;
+		for(int i=0;i<args.length;i++){
+			sb.append(String.format("arg  : [%s] %s -> %s\n",argumentsAccess[i],args[i],resolvedArgs[i]));
+		}
+		
+		sb.append("meta : " + meta.toString());
+		
+		return sb.toString();
+	}
 
 	protected Object[] copyToArguments() {
 		final int argOffset = (Modifier.isStatic(method.getModifiers())) ? 0
@@ -64,40 +80,40 @@ public abstract class ExecutableTask<D> implements SchedulableTask {
 
 		if (!Modifier.isStatic(method.getModifiers())) {
 
-			final ObjectReference<?, ?> ref = TornadoRuntime
-					.resolveObject(thisObject);
-			arguments[0] = ref;
+//			final ObjectReference<?, ?> ref = TornadoRuntime
+//					.resolveObject(thisObject);
+//			arguments[0] = thisObject;
 		}
 
 		for (int i = 0; i < args.length; i++) {
 			final Object object = args[i];
-			if (object != null && !RuntimeUtilities.isBoxedPrimitive(object)
-					&& !object.getClass().isPrimitive()) {
-				final ObjectReference<?, ?> ref = TornadoRuntime
-						.resolveObject(object);
-				arguments[i + argOffset] = ref;
-				// System.out.printf("task - arg[%d]: 0x%x (device: 0x%x)\n",i,object.hashCode(),ref.getLastWrite().getBuffer().toAbsoluteAddress());
-			} else {
+//			if (object != null && !RuntimeUtilities.isBoxedPrimitive(object)
+//					&& !object.getClass().isPrimitive()) {
+//				final ObjectReference<?, ?> ref = TornadoRuntime
+//						.resolveObject(object);
+//				arguments[i + argOffset] = ref;
+//				// System.out.printf("task - arg[%d]: 0x%x (device: 0x%x)\n",i,object.hashCode(),ref.getLastWrite().getBuffer().toAbsoluteAddress());
+//			} else {
 				arguments[i + argOffset] = object;
 				// System.out.printf("task - arg[%d]: 0x%x\n",i,object.hashCode());
-			}
+//			}
 			// System.out.printf("task - arg[%d]: 0x%x (device: 0x%x)\n",i,object.hashCode());
 		}
 		return arguments;
 	}
 
-	public abstract void disableJIT();
+//	public abstract void disableJIT();
+//
+//	public abstract void execute();
 
-	public abstract void execute();
-
-	protected void executeFallback() {
-		try {
-			method.invoke(thisObject, args);
-		} catch (IllegalAccessException | IllegalArgumentException
-				| InvocationTargetException e) {
-			e.printStackTrace();
-		}
-	}
+//	protected void executeFallback() {
+//		try {
+//			method.invoke(thisObject, args);
+//		} catch (IllegalAccessException | IllegalArgumentException
+//				| InvocationTargetException e) {
+//			e.printStackTrace();
+//		}
+//	}
 
 	@Override
 	public Object[] getArguments() {
@@ -109,9 +125,9 @@ public abstract class ExecutableTask<D> implements SchedulableTask {
 		return argumentsAccess;
 	}
 
-	public double getCompileTime() {
-		return compileTime;
-	}
+//	public double getCompileTime() {
+//		return compileTime;
+//	}
 
 	// public void dumpCode() {
 	// for (byte b : activeCode.getCode())
@@ -125,15 +141,15 @@ public abstract class ExecutableTask<D> implements SchedulableTask {
 				.getProvider(DeviceMapping.class) : null;
 	}
 
-	@Override
-	public Event getEvent() {
-		return event;
-	}
-
-	@Override
-	public double getExecutionTime() {
-		return event.getExecutionTime();
-	}
+//	@Override
+//	public Event getEvent() {
+//		return event;
+//	}
+//
+//	@Override
+//	public double getExecutionTime() {
+//		return event.getExecutionTime();
+//	}
 
 	public String getMethodName() {
 		return method.getName();
@@ -144,31 +160,31 @@ public abstract class ExecutableTask<D> implements SchedulableTask {
 		return "task - " + method.getName();
 	}
 
+//	@Override
+//	public double getQueuedTime() {
+//		return event.getQueuedTime();
+//	}
+//
+//	public CallStack<D> getStack() {
+//		return stack;
+//	}
+
+//	@Override
+//	public TornadoExecutionStatus getStatus() {
+//		return event.getStatus();
+//	}
+//
+//	@Override
+//	public double getTotalTime() {
+//		return event.getTotalTime();
+//	}
+//
+//	public abstract void invalidate();
+//
+//	public abstract void loadFromFile(String filename);
+
 	@Override
-	public double getQueuedTime() {
-		return event.getQueuedTime();
-	}
-
-	public CallStack<D> getStack() {
-		return stack;
-	}
-
-	@Override
-	public TornadoExecutionStatus getStatus() {
-		return event.getStatus();
-	}
-
-	@Override
-	public double getTotalTime() {
-		return event.getTotalTime();
-	}
-
-	public abstract void invalidate();
-
-	public abstract void loadFromFile(String filename);
-
-	@Override
-	public ExecutableTask<D> mapTo(final DeviceMapping mapping) {
+	public CompilableTask mapTo(final DeviceMapping mapping) {
 		if (meta.hasProvider(DeviceMapping.class)
 				&& meta.getProvider(DeviceMapping.class) == mapping) {
 			return this;
@@ -258,17 +274,21 @@ public abstract class ExecutableTask<D> implements SchedulableTask {
 
 	}
 
-	@Override
-	public abstract void schedule();
-
-	@Override
-	public abstract void schedule(Event... waitEvents);
-
-	@Override
-	public abstract void schedule(List<Event> waitEvents);
-
-	@Override
-	public void waitOn() {
-		event.waitOn();
+	public Method getMethod(){
+		return method;
 	}
+	
+//	@Override
+//	public abstract void schedule();
+//
+//	@Override
+//	public abstract void schedule(Event... waitEvents);
+//
+//	@Override
+//	public abstract void schedule(List<Event> waitEvents);
+//
+//	@Override
+//	public void waitOn() {
+//		event.waitOn();
+//	}
 }

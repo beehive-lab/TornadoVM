@@ -3,8 +3,8 @@ package tornado.drivers.opencl.runtime;
 import java.util.List;
 
 import tornado.runtime.api.BarrierAction;
-import tornado.api.DeviceMapping;
 import tornado.api.Event;
+import tornado.common.DeviceMapping;
 import tornado.common.enums.Access;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.meta.Meta;

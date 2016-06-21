@@ -340,10 +340,10 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final IntegerLessThanNode condition = (IntegerLessThanNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
-            if (condition.getX().isConstant())
-                result = ((OCLBasicLIRGenerator) gen).emitBinaryExpr(
-                        OCLBinaryOp.RELATIONAL_GTE, Kind.Boolean, y, x);
-            else
+//            if (condition.getX().isConstant())
+//                result = ((OCLBasicLIRGenerator) gen).emitBinaryExpr(
+//                        OCLBinaryOp.RELATIONAL_GTE, Kind.Boolean, y, x);
+//            else
                 result = ((OCLBasicLIRGenerator) gen).emitBinaryExpr(
                         OCLBinaryOp.RELATIONAL_GTE, Kind.Boolean, x, y);
         } else if (node instanceof IsNullNode) {
@@ -465,9 +465,9 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             append(new OCLLIRInstruction.AssignStmt(gen.asAllocatable(result),
                     call));
             // setResult(callTarget,result);
-            System.out.printf("arg0: %s\n", callTarget);
+//            System.out.printf("arg0: %s\n", callTarget);
             // System.out.printf("assign: %s\n",assign);
-            System.out.printf("result: %s\n", result);
+//            System.out.printf("result: %s\n", result);
         } else {
             append(new OCLLIRInstruction.ExprStmt(call));
             // setResult(callTarget,expr);

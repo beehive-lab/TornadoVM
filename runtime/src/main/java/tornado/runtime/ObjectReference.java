@@ -9,9 +9,9 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import tornado.api.DeviceMapping;
 import tornado.api.Event;
 import tornado.api.enums.TornadoExecutionStatus;
+import tornado.common.DeviceMapping;
 import tornado.common.Initialisable;
 import tornado.common.ObjectBuffer;
 import tornado.common.Tornado;
@@ -87,15 +87,15 @@ public abstract class ObjectReference<D,T> extends WeakReference<T> {
 
     public static class ReferenceContext<D,T> {
         private final D device;
-        private final ObjectBuffer<T> buffer;
+        private final ObjectBuffer buffer;
         private Event event;
 
-        public ReferenceContext(D device, ObjectBuffer<T> buffer) {
+        public ReferenceContext(D device, ObjectBuffer buffer) {
             this(device, buffer, null);
         }
 
         public ReferenceContext(D device,
-                ObjectBuffer<T> buffer, Event event) {
+                ObjectBuffer buffer, Event event) {
             this.device = device;
             this.buffer = buffer;
             this.event = event;
@@ -105,7 +105,7 @@ public abstract class ObjectReference<D,T> extends WeakReference<T> {
             return device;
         }
 
-        public ObjectBuffer<T> getBuffer() {
+        public ObjectBuffer getBuffer() {
             return buffer;
         }
 
@@ -173,7 +173,7 @@ public abstract class ObjectReference<D,T> extends WeakReference<T> {
 
         if (historyIndex < history.length) {
             historyIndex = (historyIndex + 1) % history.length;
-            final ObjectBuffer<T> buffer = (ObjectBuffer<T>) createDeviceBuffer(device);
+            final ObjectBuffer buffer = (ObjectBuffer) createDeviceBuffer(device);
             if (Tornado.DEBUG)
                 info("created new buffer for object 0x%x @ 0x%x", get()
                         .hashCode(), buffer.toAbsoluteAddress());
@@ -237,13 +237,13 @@ public abstract class ObjectReference<D,T> extends WeakReference<T> {
 
     public abstract Event insertWriteBarrier(D device, List<Event> events);
     
-    public ObjectBuffer<?> requestAccess(D device, Access access) {
+    public ObjectBuffer requestAccess(D device, Access access) {
         return requestAccess(device, access, true);
     }
 
-    public ObjectBuffer<?> requestAccess(D device,
+    public ObjectBuffer requestAccess(D device,
             Access access, boolean shouldInitialise) {
-        ObjectBuffer<?> result = null;
+        ObjectBuffer result = null;
         if (Tornado.DEBUG)
             debug("request access: object=0x%x, device=%s, access=%s", get()
                     .hashCode(), device,
@@ -400,7 +400,7 @@ public abstract class ObjectReference<D,T> extends WeakReference<T> {
 
         } catch (TornadoOutOfMemoryException e) {
             warn(e.getMessage());
-            TornadoRuntime.inner.gc();
+//            TornadoRuntime.runtime.gc();
         }
         return result;
     }
@@ -426,7 +426,7 @@ public abstract class ObjectReference<D,T> extends WeakReference<T> {
 
     }
 
-    public abstract ObjectBuffer<?> createDeviceBuffer(D device)
+    public abstract ObjectBuffer createDeviceBuffer(D device)
             throws TornadoOutOfMemoryException;
 
     @Override
@@ -482,7 +482,7 @@ public abstract class ObjectReference<D,T> extends WeakReference<T> {
         }
     }
 
-    private final ObjectBuffer<T> getOwnerBuffer() {
+    private final ObjectBuffer getOwnerBuffer() {
         return history[ownerIndex].buffer;
     }
 

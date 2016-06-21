@@ -1,16 +1,16 @@
 package tornado.benchmarks.dotvector;
 
-import tornado.api.DeviceMapping;
 import tornado.api.Event;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
 import tornado.collections.math.TornadoMath;
 import tornado.collections.types.Float3;
 import tornado.collections.types.VectorFloat3;
+import tornado.common.DeviceMapping;
 import tornado.benchmarks.EventList;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.ExecutableTask;
+import tornado.runtime.api.CompilableTask;
 
 public class DotTornado extends BenchmarkDriver {
 
@@ -20,7 +20,7 @@ public class DotTornado extends BenchmarkDriver {
     private VectorFloat3 a, b;
     private float[] c;
 
-    private ExecutableTask<?> dot;
+    private CompilableTask<?> dot;
 
     private Event last;
     private final EventList<Event> events;

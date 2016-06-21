@@ -115,7 +115,11 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
 		if (origin instanceof VectorReadNode || origin instanceof InvokeNode) {
 			gen.setResult(this, gen.operand(origin));
 		} else if (origin instanceof ValuePhiNode) {
-			final Value phiOperand = ((OCLNodeLIRBuilder) gen).operandForPhi((ValuePhiNode) origin);
+			
+			final ValuePhiNode phi = (ValuePhiNode) origin;
+			
+			final Value phiOperand = ((OCLNodeLIRBuilder) gen).operandForPhi(phi);
+			
 			final AllocatableValue result = (gen.hasOperand(this)) ? (Variable) gen.operand(this)
 					: tool.newVariable(LIRKind.value(getVectorKind()));
 			tool.append(new OCLLIRInstruction.AssignStmt(result, phiOperand));
@@ -145,6 +149,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
 		} else if (origin == null) {
 			final AllocatableValue result = (gen.hasOperand(this)) ? (Variable) gen.operand(this)
 					: tool.newVariable(LIRKind.value(getVectorKind()));
+			
 			/*
 			 * two cases:
 			 * 1. when this vector state has elements assigned individually

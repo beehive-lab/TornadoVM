@@ -1,11 +1,27 @@
 package tornado.drivers.opencl.mm;
 
+import java.lang.reflect.Method;
+import java.util.Collections;
+
+import tornado.api.Parallel;
+import tornado.api.Write;
+import tornado.common.DeviceMapping;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import tornado.common.TornadoLogger;
+import tornado.common.enums.Access;
+import tornado.common.exceptions.TornadoInternalError;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.enums.OCLMemFlags;
+import tornado.drivers.opencl.graal.OCLProviders;
+import tornado.drivers.opencl.graal.OpenCLInstalledCode;
+import tornado.drivers.opencl.graal.backend.OCLBackend;
+import tornado.drivers.opencl.graal.compiler.OCLCompiler;
+import tornado.meta.Meta;
+import tornado.meta.domain.DomainTree;
+import tornado.meta.domain.IntDomain;
+import tornado.runtime.TornadoRuntime;
 
 public class OCLMemoryManager extends TornadoLogger {
 
@@ -20,6 +36,13 @@ public class OCLMemoryManager extends TornadoLogger {
     private long heapPosition;
 
     private boolean initialised;
+    
+    private OpenCLInstalledCode initFP64Code;
+    private OpenCLInstalledCode initFP32Code;
+    private OpenCLInstalledCode initU32Code;
+	private OCLCallStack initCallStack;
+	private DomainTree initThreads;
+	private Meta initMeta;
 
     public OCLMemoryManager(final OCLDeviceContext device) {
 
@@ -29,10 +52,54 @@ public class OCLMemoryManager extends TornadoLogger {
 
         reset();
     }
+    
+    private void initFP64(@Write double[] data, int count){
+    	for(@Parallel int i=0;i<count;i++)
+    		data[i] = 0;
+    }
+    
+    private void initFP32(@Write float[] data, int count){
+    	for(@Parallel int i=0;i<count;i++)
+    		data[i] = -1f;
+    }
+    
+    private void initU32(@Write int[] data, int count){
+    	for(@Parallel int i=0;i<count;i++)
+    		data[i] = 0;
+    }
+    
+    private Method getMethod(final String name, Class<?> type1) {
+		Method method = null;
+		try {
+			method = this.getClass().getDeclaredMethod(name, type1, int.class);
+			method.setAccessible(true);
+		} catch (NoSuchMethodException | SecurityException e) {
+			Tornado.fatal("unable to find " + name + " method: " + e.getMessage());
+		}
+		return method;
+	}
 
+    private void createMemoryInitializers(final OCLBackend backend){
+    	initThreads = new DomainTree(1);
+    	initMeta = new Meta();
+    	initMeta.addProvider(DeviceMapping.class, backend.getDeviceContext().asMapping());
+    	
+//    	initFP64Code = OCLCompiler.compileCodeForDevice(
+//				TornadoRuntime.resolveMethod(getMethod("initFP64",double[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
+    	initFP32Code = OCLCompiler.compileCodeForDevice(
+				TornadoRuntime.runtime.resolveMethod(getMethod("initFP32",float[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
+    	initU32Code = OCLCompiler.compileCodeForDevice(
+				TornadoRuntime.runtime.resolveMethod(getMethod("initU32",int[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
+    	initCallStack = createCallStack(4);
+    	
+    }
+    
     public void reset() {
         callStackPosition = 0;
         heapPosition = callStackLimit;
+        Tornado.info("Reset heap @ 0x%x (%s) on %s", deviceBufferAddress,
+                RuntimeUtilities.humanReadableByteCount(heapLimit, true),
+                deviceContext.getDevice().getName());
     }
 
     private static final long align(final long address, final long alignment) {
@@ -40,11 +107,28 @@ public class OCLMemoryManager extends TornadoLogger {
                 + (alignment - address % alignment);
     }
 
-    public long tryAllocate(final long bytes, int alignment)
+    public long tryAllocate(final Class<?> type, final long bytes, final int headerSize, int alignment)
             throws TornadoOutOfMemoryException {
         long offset = heapPosition;
         if (heapPosition + bytes < heapLimit) {
             heapPosition = align(heapPosition + bytes, alignment);
+            
+//            final long byteCount = bytes - headerSize;
+//            if(type != null && type.isArray() && RuntimeUtilities.isPrimitiveArray(type)){
+//            	if(type == double[].class ){
+//            		initialiseMemory(initFP64Code,offset + headerSize, (int) (byteCount / 8));
+//            	} else if(type == float[].class){
+//            		initialiseMemory(initFP32Code,offset + headerSize, (int) (byteCount / 4));
+//            	} else {
+//            		TornadoInternalError.guarantee(byteCount % 4 == 0, "array is not divisible by 4");
+//            		initialiseMemory(initU32Code,offset + headerSize, (int) (byteCount / 4));
+//            	}
+//            } else {
+//            	TornadoInternalError.guarantee(byteCount % 4 == 0, "array is not divisible by 4");
+//            	initialiseMemory(initU32Code,offset + headerSize, (int) (byteCount/4));
+//            }
+            
+            
         } else {
             throw new TornadoOutOfMemoryException("Out of memory on device: "
                     + deviceContext.getDevice().getName());
@@ -53,14 +137,30 @@ public class OCLMemoryManager extends TornadoLogger {
         return offset;
     }
 
-    public OCLCallStack createCallStack(final int maxArgs) {
+    
+	private void initialiseMemory(OpenCLInstalledCode code, long offset, int count) {
+		if(count <= 0) return;
+		
+		initCallStack.reset();
+		
+		initCallStack.putLong(offset);
+		initCallStack.putInt(count);
+		
+		initThreads.set(0, new IntDomain(0,1,count));
+//		System.out.println("init threads: " + initThreads.toString());
+		
+		code.execute(initCallStack, initThreads);
+		
+	}
+
+	public OCLCallStack createCallStack(final int maxArgs) {
 
         OCLCallStack callStack = new OCLCallStack(callStackPosition, maxArgs,
                 deviceContext);
 
         if (callStackPosition + callStack.getSize() < callStackLimit) {
             callStackPosition = align(callStackPosition + callStack.getSize(),
-                    16);
+                    32);
         } else {
             callStack = null;
             Tornado.fatal("Out of call-stack memory");
@@ -98,12 +198,14 @@ public class OCLMemoryManager extends TornadoLogger {
                 OCLMemFlags.CL_MEM_READ_WRITE, numBytes);
     }
 
-    public void setRegionAddress(long address) {
+    public void init(OCLBackend backend, long address) {
         deviceBufferAddress = address;
         initialised = true;
         Tornado.info("Located heap @ 0x%x (%s) on %s", deviceBufferAddress,
                 RuntimeUtilities.humanReadableByteCount(heapLimit, true),
                 deviceContext.getDevice().getName());
+        
+        createMemoryInitializers(backend);
     }
 
     public long toAbsoluteAddress() {

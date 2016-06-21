@@ -11,7 +11,6 @@ import tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 import tornado.graal.nodes.vector.VectorKind;
 
-import com.oracle.graal.api.meta.Kind;
 import com.oracle.graal.api.meta.ResolvedJavaMethod;
 import com.oracle.graal.graphbuilderconf.GraphBuilderContext;
 import com.oracle.graal.graphbuilderconf.InvocationPlugin;

@@ -2,7 +2,7 @@ package tornado.runtime;
 
 import java.lang.reflect.Method;
 
-import tornado.runtime.api.ExecutableTask;
+import tornado.runtime.api.CompilableTask;
 
 public interface RuntimeInstance<D> {
 
@@ -11,9 +11,9 @@ public interface RuntimeInstance<D> {
 	
 	public void dumpEvents();
 	
-	public DataMovementTask read(Object... objects);
-	public DataMovementTask write(Object... objects);
-	public void makeVolatile(Object... objects);
-	public DataMovementTask markHostDirty(Object... objects);
-	public ExecutableTask createTask(Method method, Object code, boolean extractCVs, Object... args);
+//	public DataMovementTask read(Object... objects);
+//	public DataMovementTask write(Object... objects);
+//	public void makeVolatile(Object... objects);
+//	public DataMovementTask markHostDirty(Object... objects);
+////	public ExecutableTask<?> createTask(Method method, Object code, boolean extractCVs, Object... args);
 }

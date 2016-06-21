@@ -65,6 +65,7 @@ public class OpenCLCodeCache implements CodeCacheProvider {
 			cache.add(code);
 			if(Tornado.DUMP_BINARIES)
 				program.dumpBinaries("./opencl-bin/" + entryPoint + "-platform-" + backend.getDeviceContext().getPlatformContext().getPlatformIndex());
+			
 		} else {
 			Tornado.warn("\tunable to compile %s",entryPoint);
 			code.invalidate();

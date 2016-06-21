@@ -4,8 +4,9 @@ package tornado.drivers.opencl.runtime;
 
 import java.lang.ref.ReferenceQueue;
 import java.util.List;
-import tornado.api.DeviceMapping;
+
 import tornado.api.Event;
+import tornado.common.DeviceMapping;
 import tornado.common.ObjectBuffer;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
@@ -94,41 +95,41 @@ public class OCLObjectReference<T> extends ObjectReference<OCLDeviceContext, T> 
 
    
 
-    public ObjectBuffer<?> createDeviceBuffer(OCLDeviceContext device)
-            throws TornadoOutOfMemoryException {
-
-        T arg = get();
-
-        if (arg.getClass().isArray()) {
-            ObjectBuffer<T> result = null;
-            if (arg instanceof int[]) {
-                result = (ObjectBuffer<T>) new OCLIntArrayWrapper(device);
-            } else if (arg instanceof float[]) {
-                result = (ObjectBuffer<T>) new OCLFloatArrayWrapper(device);
-            } else if (arg instanceof double[]) {
-                result = (ObjectBuffer<T>) new OCLDoubleArrayWrapper(device);
-            } else if (arg instanceof long[]) {
-                result = (ObjectBuffer<T>) new OCLLongArrayWrapper(device);
-            }
-
-            if (result != null) {
-                result.allocate(arg);
-            } else {
-                fatal("Unable to create buffer for object: " + arg);
-            }
-
-            return (ObjectBuffer<?>) result;
-
-        } else if (!arg.getClass().isPrimitive() && !arg.getClass().isArray()) {
-            ObjectBuffer<Object> result = null;
-            result = new OCLObjectWrapper(device, arg);
-
-            result.allocate(arg);
-
-            return (ObjectBuffer<?>) result;
-        }
-        return null;
-    }
+//    public ObjectBuffer<?> createDeviceBuffer(OCLDeviceContext device)
+//            throws TornadoOutOfMemoryException {
+//
+//        T arg = get();
+//
+//        if (arg.getClass().isArray()) {
+//            ObjectBuffer<T> result = null;
+//            if (arg instanceof int[]) {
+//                result = (ObjectBuffer<T>) new OCLIntArrayWrapper(device);
+//            } else if (arg instanceof float[]) {
+//                result = (ObjectBuffer<T>) new OCLFloatArrayWrapper(device);
+//            } else if (arg instanceof double[]) {
+//                result = (ObjectBuffer<T>) new OCLDoubleArrayWrapper(device);
+//            } else if (arg instanceof long[]) {
+//                result = (ObjectBuffer<T>) new OCLLongArrayWrapper(device);
+//            }
+//
+//            if (result != null) {
+//                result.allocate(arg);
+//            } else {
+//                fatal("Unable to create buffer for object: " + arg);
+//            }
+//
+//            return (ObjectBuffer<?>) result;
+//
+//        } else if (!arg.getClass().isPrimitive() && !arg.getClass().isArray()) {
+//            ObjectBuffer<Object> result = null;
+//            result = new OCLObjectWrapper(device, arg);
+//
+//            result.allocate(arg);
+//
+//            return (ObjectBuffer<?>) result;
+//        }
+//        return null;
+//    }
 
    
    
@@ -158,4 +159,11 @@ public class OCLObjectReference<T> extends ObjectReference<OCLDeviceContext, T> 
         }
         return null;
     }
+
+	@Override
+	public ObjectBuffer createDeviceBuffer(OCLDeviceContext device)
+			throws TornadoOutOfMemoryException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

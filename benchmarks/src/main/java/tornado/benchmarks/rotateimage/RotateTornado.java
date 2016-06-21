@@ -1,6 +1,5 @@
 package tornado.benchmarks.rotateimage;
 
-import tornado.api.DeviceMapping;
 import tornado.api.Event;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
@@ -8,10 +7,11 @@ import tornado.collections.types.Float3;
 import tornado.collections.types.FloatOps;
 import tornado.collections.types.ImageFloat3;
 import tornado.collections.types.Matrix4x4Float;
+import tornado.common.DeviceMapping;
 import tornado.benchmarks.EventList;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.ExecutableTask;
+import tornado.runtime.api.CompilableTask;
 
 public class RotateTornado extends BenchmarkDriver {
 
@@ -21,7 +21,7 @@ public class RotateTornado extends BenchmarkDriver {
 	private ImageFloat3 input, output;
 	private Matrix4x4Float m;
 
-	private ExecutableTask rotate;
+	private CompilableTask rotate;
 
 	private Event last;
 	private final EventList<Event> events;

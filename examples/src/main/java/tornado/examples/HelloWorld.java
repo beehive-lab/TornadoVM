@@ -31,7 +31,7 @@ public class HelloWorld {
 		final TaskGraph graph = new TaskGraph();
 		graph
 			.add(HelloWorld::add, a,b,c)
-			.collect(c)
+			.streamOut(c)
 			.mapAllTo(OpenCL.defaultDevice())
 			.schedule()
 			.waitOn();
