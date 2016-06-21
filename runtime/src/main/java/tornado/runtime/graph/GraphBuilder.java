@@ -6,6 +6,7 @@ import java.util.List;
 import tornado.common.DeviceMapping;
 import tornado.common.SchedulableTask;
 import tornado.common.enums.Access;
+import tornado.common.exceptions.TornadoInternalError;
 import tornado.runtime.api.LocalObjectState;
 import tornado.runtime.api.TaskGraph;
 import tornado.runtime.graph.nodes.AbstractNode;
@@ -176,13 +177,20 @@ public class GraphBuilder {
 				if(objectNodes[i] instanceof DependentReadNode){
 //				System.out.printf("stream out: on=%s, state=%s, object=%s\n",objectNodes[i],states.get(i),graphContext.getObjects().get(i));
 				final DependentReadNode readNode = (DependentReadNode) objectNodes[i];
-				final CopyOutNode copyOutNode = new CopyOutNode(readNode.getContext());
+				context = readNode.getContext();
+				final CopyOutNode copyOutNode = new CopyOutNode(context);
 				copyOutNode.setValue(readNode);
 				graph.add(copyOutNode);
 				context.addUse(copyOutNode);
 				} else {
 					// object is not modified
 				}
+			} else if (states.get(i).isStreamIn() && objectNodes[i] instanceof ObjectNode){
+				TornadoInternalError.guarantee(graphContext.getDevices().size() == 1, "unsupported StreamIn operation in multiple device mode");
+				final StreamInNode streamInNode = new  StreamInNode(context);
+				streamInNode.setValue((ObjectNode) objectNodes[i]);
+				graph.add(streamInNode);
+				context.addUse(streamInNode);
 			}
 		}
 

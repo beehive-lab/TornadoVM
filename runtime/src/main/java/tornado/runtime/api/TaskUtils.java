@@ -168,7 +168,6 @@ public class TaskUtils {
     public static <T1, T2> CompilableTask createTask(Task2<T1, T2> code,
             T1 arg1, T2 arg2) {
         final Method method = resolveMethodHandle(code);
-        System.out.println("method: " + method.getName());
         return createTask(method, code, true, arg1, arg2);
     }
 
