@@ -104,6 +104,31 @@ public class OCLUnary {
       
     }
     
+    public static class FloatCast extends UnaryConsumer {
+    	public FloatCast(OCLUnaryOp opcode, LIRKind lirKind, Value value) {
+			super(opcode, lirKind, value);
+		}
+		
+		public FloatCast(OCLUnaryOp opcode, Kind kind, Value value) {
+			super(opcode, kind, value);
+		}
+		
+		@Override
+		public void emit(OCLCompilationResultBuilder crb) {
+			final OpenCLAssembler asm = crb.getAssembler();
+			asm.emit("isnan(");
+			asm.value(crb,value);
+			asm.emit(")? 0 : ");
+			opcode.emit(crb, value);
+			asm.delimiter();
+			asm.eol();
+		}
+
+		public String toString(){
+			return String.format("isnan(%s) ? 0 : %s %s",value,opcode.toString(),value);
+		}
+    }
+    
     public static class MemoryAccess extends UnaryConsumer {
     	
     	private PlatformKind accessKind = Kind.Illegal;

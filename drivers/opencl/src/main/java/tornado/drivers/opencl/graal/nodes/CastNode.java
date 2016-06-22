@@ -45,7 +45,11 @@ public class CastNode extends FloatingNode implements LIRLowerable {
 		/*
 		 * using as_T reinterprets the data as type T - consider: float x = (float) 1; and int value = 1, float x = &(value);
 		 */
-		gen.setResult(this,new OCLUnary.Expr(resolveOp(), kind, gen.operand(value)));
+		if(kind == Kind.Float){
+			gen.setResult(this,new OCLUnary.Expr(resolveOp(), kind, gen.operand(value)));
+		} else {
+			gen.setResult(this,  new OCLUnary.FloatCast(OCLUnaryOp.CAST_TO_INT, kind, gen.operand(value)));
+		}
 		
 	}
 
