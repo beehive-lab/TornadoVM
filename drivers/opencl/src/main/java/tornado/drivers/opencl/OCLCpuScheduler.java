@@ -9,7 +9,7 @@ public class OCLCpuScheduler extends OCLKernelScheduler {
 	}
 
 	@Override
-	public void calculateGlobalWork(final OCLKernelInfo kernelInfo) {
+	public void calculateGlobalWork(final OCLKernelConfig kernelInfo) {
 		final int maxWorkGroupSize = (int) ((int) deviceContext.getDevice()
 				.getMaxComputeUnits() * CPU_COMPUTE_UNIT_COEFF);
 		
@@ -31,7 +31,7 @@ public class OCLCpuScheduler extends OCLKernelScheduler {
 	}
 
 	@Override
-	public void calculateLocalWork(OCLKernelInfo kernelInfo) {
+	public void calculateLocalWork(OCLKernelConfig kernelInfo) {
 		final long[] globalWork = kernelInfo.getGlobalWork();
 		final long[] localWork = kernelInfo.getLocalWork();
 		

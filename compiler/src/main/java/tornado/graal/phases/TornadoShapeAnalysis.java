@@ -45,7 +45,7 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
 				domainTree.set(index, new IntDomain(resolveInt(range.offset().value()),resolveInt(range.stride().value()),resolveInt(range.value())));
 			} else {
 				valid = false;
-				Tornado.warn("unsupported multiple parallel loops");
+				Tornado.info("unsupported multiple parallel loops");
 				break;
 			}
 			lastIndex = index;
@@ -56,7 +56,7 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
 
 			Tornado.debug("discovered parallel domain: %s", domainTree);
 
-			context.getMeta().addProvider(DomainTree.class, domainTree);
+			context.getMeta().setDomain(domainTree);
 		}
 		
 	}

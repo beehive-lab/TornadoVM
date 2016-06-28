@@ -69,4 +69,10 @@ public class JVMMapping implements DeviceMapping {
 		return null;
 	}
 
+	@Override
+	public void flush() {
+		
+		
+	}
+
 }

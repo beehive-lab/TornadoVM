@@ -1,26 +1,41 @@
 package tornado.drivers.opencl;
 
-import tornado.drivers.opencl.enums.OCLCommandExecutionStatus;
+import tornado.meta.Meta;
 import tornado.meta.domain.DomainTree;
 
-public class OCLKernelInfo {
-	private final DomainTree domainTree;
+public class OCLKernelConfig {
+	private final DomainTree domain;
 	private final long[] globalOffset;
 	private final long[] globalWork;
 	private final long[] localWork;
-	private OCLEvent event;
 	
-	public OCLKernelInfo(final DomainTree domainTree){
-		this.domainTree = domainTree;
-		final int dims = domainTree.getDepth();
+	protected OCLKernelConfig(final DomainTree domain){
+		this.domain = domain;
+		final int dims = domain.getDepth();
 		this.globalOffset = new long[dims];
 		this.globalWork = new long[dims];
 		this.localWork = new long[dims];
 	}
 	
-	public void setEvent(final OCLEvent value){
-		event = value;
+	public static OCLKernelConfig create(final Meta meta){
+		final OCLKernelConfig config = new OCLKernelConfig(meta.getDomain());
+		meta.addProvider(OCLKernelConfig.class, config);
+		return config;
 	}
+	
+	public static OCLKernelConfig create(final Meta meta, long[] globalOffset, long[] globalWork, long[] localWork){
+		final OCLKernelConfig config = create(meta);
+		
+		for(int i=0;i<config.getDims();i++){
+			config.globalOffset[i] = globalOffset[i];
+			config.globalWork[i] = globalWork[i];
+			config.localWork[i] = localWork[i];
+		}
+		
+		return config;
+	}
+	
+	
 
 	public long[] getGlobalOffset() {
 		return globalOffset;
@@ -32,18 +47,6 @@ public class OCLKernelInfo {
 
 	public long[] getLocalWork() {
 		return localWork;
-	}
-	
-	public double getExecutionTime(){
-		return event.getExecutionTime();
-	}
-
-	public int getDims() {
-		return domainTree.getDepth();
-	}
-	
-	public DomainTree getDomain(){
-		return domainTree;
 	}
 
 	private static final String formatArray(final long[] array) {
@@ -60,19 +63,17 @@ public class OCLKernelInfo {
 	
 	public void printToLog(){
 			System.out.printf("kernel info:\n");
-			System.out.printf("\tdims              : %d\n", domainTree.getDepth());
+			System.out.printf("\tdims              : %d\n", domain.getDepth());
 			System.out.printf("\tglobal work offset: %s\n", formatArray(globalOffset));
 			System.out.printf("\tglobal work size  : %s\n", formatArray(globalWork));
 			System.out.printf("\tlocal  work size  : %s\n", formatArray(localWork));
 	}
-	
-	public boolean isComplete(){
-		return event.getCLStatus() == OCLCommandExecutionStatus.CL_COMPLETE;
+
+	public int getDims() {
+		return domain.getDepth();
 	}
-	
-	public void waitOn(){
-		event.waitOn();
+
+	public DomainTree getDomain() {
+		return domain;
 	}
-	
-	
 }

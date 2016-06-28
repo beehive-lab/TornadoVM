@@ -135,6 +135,10 @@ public abstract class AbstractTaskGraph {
 //						task.getQueuedTime()));
 		vm.dumpTimes();
 	}
+	
+	public void dumpProfiles(){
+		vm.dumpProfiles();
+	}
 
 	public void waitOn() {
 //		for (Event event : events)

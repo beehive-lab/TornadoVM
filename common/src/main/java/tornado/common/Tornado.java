@@ -40,6 +40,8 @@ public final class Tornado {
 
     public static final boolean LOG_EVENTS = Boolean.parseBoolean(settings
             .getProperty("tornado.events.log", "False"));
+    
+    public static final boolean DUMP_PROFILES = Boolean.parseBoolean(settings.getProperty("tornado.profiles.print", "false"));
 
     public static final boolean DUMP_BINARIES = Boolean.parseBoolean(settings
             .getProperty("tornado.opencl.binaries", "False"));

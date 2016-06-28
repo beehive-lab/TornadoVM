@@ -146,10 +146,14 @@ public class OCLMemoryManager extends TornadoLogger {
 		initCallStack.putLong(offset);
 		initCallStack.putInt(count);
 		
+		final Meta meta = new Meta();
+		
+		
 		initThreads.set(0, new IntDomain(0,1,count));
+		meta.setDomain(initThreads);
 //		System.out.println("init threads: " + initThreads.toString());
 		
-		code.execute(initCallStack, initThreads);
+		code.execute(initCallStack, meta);
 		
 	}
 
