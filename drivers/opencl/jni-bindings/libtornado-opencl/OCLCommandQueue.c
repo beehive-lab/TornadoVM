@@ -150,9 +150,9 @@ JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueNDR
     
     jsize numEvents =  (array4 != NULL) ? (*env)->GetArrayLength(env, array4) : 0;
 
-    jlong *global_work_offset = (*env)->GetPrimitiveArrayCritical(env, array1, NULL);
+    jlong *global_work_offset = (array1 != NULL) ? (*env)->GetPrimitiveArrayCritical(env, array1, NULL) : NULL;
     jlong *global_work_size = (*env)->GetPrimitiveArrayCritical(env, array2, NULL);
-    jlong *local_work_size = (*env)->GetPrimitiveArrayCritical(env, array3, NULL);
+    jlong *local_work_size = (array3 != NULL) ? (*env)->GetPrimitiveArrayCritical(env, array3, NULL) : NULL;
     jlong *events = (array4 != NULL) ? (*env)->GetPrimitiveArrayCritical(env, array4, NULL) : NULL;
     
     
@@ -162,10 +162,14 @@ JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueNDR
     
     if(array4 != NULL)
             (*env)->ReleasePrimitiveArrayCritical(env, array4, events, JNI_ABORT);
+    if(array3 != NULL)
+    	(*env)->ReleasePrimitiveArrayCritical(env, array3, local_work_size, JNI_ABORT);
+
+    if(array1 != NULL)
+        	(*env)->ReleasePrimitiveArrayCritical(env, array1, global_work_offset, JNI_ABORT);
     
-    (*env)->ReleasePrimitiveArrayCritical(env, array3, local_work_size, JNI_ABORT);
     (*env)->ReleasePrimitiveArrayCritical(env, array2, global_work_size, JNI_ABORT);
-    (*env)->ReleasePrimitiveArrayCritical(env, array1, global_work_offset, JNI_ABORT);
+
 
     return (jlong) event;
 }

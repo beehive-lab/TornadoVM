@@ -17,6 +17,8 @@ public final class Tornado {
         return settings.getProperty(key, defaultValue);
     }
 
+    public static final boolean USE_OPENCL_SCHEDULING = Boolean.parseBoolean(settings.getProperty("tornado.opencl.schedule","False"));
+    
     public static final boolean ENABLE_EXCEPTIONS = Boolean
             .parseBoolean(settings.getProperty("tornado.exceptions.enable",
                     "False"));

@@ -50,10 +50,16 @@ public abstract class OCLKernelScheduler {
 		if(DEBUG)
 			kernelInfo.printToLog();
 		
+		final OCLEvent task;
+		if(USE_OPENCL_SCHEDULING){
+			task = deviceContext.enqueueNDRangeKernel(kernel, kernelInfo.getDims(), kernelInfo.getGlobalOffset(),
+					kernelInfo.getGlobalWork(), null, waitEvents);
+		} else {
 
-		final OCLEvent task = deviceContext.enqueueNDRangeKernel(kernel, kernelInfo.getDims(), kernelInfo.getGlobalOffset(),
+		task = deviceContext.enqueueNDRangeKernel(kernel, kernelInfo.getDims(), kernelInfo.getGlobalOffset(),
 				kernelInfo.getGlobalWork(), kernelInfo.getLocalWork(), waitEvents);
 		
+		}
 		return task;
 	}
 
