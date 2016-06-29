@@ -290,6 +290,11 @@ public class OCLDeviceMapping implements DeviceMapping {
 		}
 		return false;
 	}
+
+	@Override
+	public void flush() {
+//		getDeviceContext().sync();
+	}
 	
 	
 

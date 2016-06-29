@@ -26,5 +26,7 @@ public interface DeviceMapping {
 
 	
 	public TornadoInstalledCode installCode(SchedulableTask task);
+
+	public void flush();
 	
 }
