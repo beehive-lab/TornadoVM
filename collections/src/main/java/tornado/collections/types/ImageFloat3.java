@@ -16,7 +16,7 @@ public class ImageFloat3  implements PrimitiveStorage<FloatBuffer> {
 	 * number of elements in the storage
 	 */
 	final private int			numElements;
-	final private static int elementSize = 3;
+	final private static int elementSize = 4;
 
 	
     /**
