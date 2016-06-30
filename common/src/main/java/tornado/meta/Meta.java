@@ -17,7 +17,7 @@ public class Meta {
 
 	public Meta() {
 		providers = new HashMap<Class<?>, Object>();
-		profiles = new ArrayList<Event>();
+		profiles = new ArrayList<Event>(512);
 	}
 	
 	public boolean hasDomain(){

@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import static tornado.common.Tornado.USE_OPENCL_SCHEDULING;
 import tornado.api.Event;
 import tornado.api.enums.TornadoSchedulingStrategy;
 import tornado.common.CallStack;
@@ -18,7 +19,6 @@ import tornado.common.DeviceMapping;
 import tornado.common.DeviceObjectState;
 import tornado.common.ObjectBuffer;
 import tornado.common.SchedulableTask;
-import tornado.common.Tornado;
 import tornado.common.TornadoInstalledCode;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
@@ -100,10 +100,10 @@ public class OCLDeviceMapping implements DeviceMapping {
 
 	@Override
 	public TornadoSchedulingStrategy getPreferedSchedule() {
-		if (device.getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_CPU)
-			return TornadoSchedulingStrategy.PER_BLOCK;
-		else if (device.getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_GPU)
+		if (device.getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_GPU)
 			return TornadoSchedulingStrategy.PER_ITERATION;
+		else if (device.getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_CPU)
+			return TornadoSchedulingStrategy.PER_BLOCK;
 		else
 			return TornadoSchedulingStrategy.PER_ITERATION;
 	}
@@ -293,7 +293,7 @@ public class OCLDeviceMapping implements DeviceMapping {
 
 	@Override
 	public void flush() {
-//		getDeviceContext().sync();
+		getDeviceContext().sync();
 	}
 	
 	

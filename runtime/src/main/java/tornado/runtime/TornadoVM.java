@@ -33,6 +33,11 @@ public class TornadoVM extends TornadoLogger {
 	private final List<Event>[] events;
 	private final List<DeviceMapping> contexts;
 	private final TornadoInstalledCode[] installedCode;
+	
+	private final List<Object> constants;
+	private final List<SchedulableTask> tasks;
+	
+	private final Set<Event> unboundEvents;
 
 	private final byte[] code;
 	private final ByteBuffer buffer;
@@ -91,6 +96,11 @@ public class TornadoVM extends TornadoLogger {
 			debug("loaded in %.9f s", (t1 - t0) * 1e-9);
 			op = buffer.get();
 		}
+		
+		constants = graphContext.getConstants();
+		tasks = graphContext.getTasks();
+		
+		unboundEvents = new HashSet<Event>();
 
 		debug("vm ready to go");
 		buffer.mark();
@@ -112,14 +122,10 @@ public class TornadoVM extends TornadoLogger {
 	public void execute() {
 		final long t0 = System.nanoTime();
 
-		final List<Object> constants = graphContext.getConstants();
-		final List<SchedulableTask> tasks = graphContext.getTasks();
-
-		buffer.reset();
-
 		Event lastEvent = null;
-		final Set<Event> unboundEvents = new HashSet<Event>();
-
+		
+		unboundEvents.clear();
+		
 		for (List<Event> waitList : events) {
 			waitList.clear();
 		}
@@ -202,14 +208,23 @@ public class TornadoVM extends TornadoLogger {
 					final long compileEnd = System.nanoTime();
 					debug("vm: compiled in %.9f s",
 							(compileEnd - compileStart) * 1e-9);
+					
+					
 				}
 				final TornadoInstalledCode code = installedCode[taskIndex];
 
 				final Access[] accesses = task.getArgumentsAccess();
+				if(!stack.isOnDevice()){
 				stack.reset();
+				}
 				for (int i = 0; i < numArgs; i++) {
 					final byte argType = buffer.get();
 					final int argIndex = buffer.getInt();
+					
+					if(stack.isOnDevice()){
+						continue;
+					}
+					
 					if (argType == CONSTANT_ARG) {
 						stack.push(constants.get(argIndex));
 					} else if (argType == REFERENCE_ARG) {
@@ -227,6 +242,7 @@ public class TornadoVM extends TornadoLogger {
 						TornadoInternalError.shouldNotReachHere();
 					}
 				}
+				
 
 				lastEvent = code.launch(stack, task.meta(), waitList);
 //				unboundEvents.add(lastEvent);
@@ -239,16 +255,16 @@ public class TornadoVM extends TornadoLogger {
 					debug("vm: ADD_DEP %s to event list %d", lastEvent,
 							eventList);
 					events[eventList].add(lastEvent);
-					if (unboundEvents.contains(lastEvent)) {
-						unboundEvents.remove(lastEvent);
-					}
+//					if (unboundEvents.contains(lastEvent)) {
+//						unboundEvents.remove(lastEvent);
+//					}
 				}
 			} else if (op == BARRIER) {
 				final int eventList = buffer.getInt();
 				debug("vm: BARRIER event list %d", eventList);
-				for (Event event : events[eventList]) {
-						event.waitOn();
-				}
+//				for (Event event : events[eventList]) {
+//						event.waitOn();
+//				}
 				
 
 			} else if (op == END) {
@@ -260,15 +276,18 @@ public class TornadoVM extends TornadoLogger {
 			}
 
 			if (lastEvent != null && !(lastEvent instanceof EmptyEvent)) {
-				unboundEvents.add(lastEvent);
+//				unboundEvents.add(lastEvent);
 				 lastEvent.waitOn();
 				debug("vm: last event=%s", lastEvent);
 			}
 		}
 
-		for (Event event : unboundEvents) {
-				event.waitOn();
+		for(DeviceMapping device : contexts){
+			device.flush();
 		}
+//		for (Event event : unboundEvents) {
+//				event.waitOn();
+//		}
 
 		final long t1 = System.nanoTime();
 		final double elapsed = (t1 - t0) * 1e-9;
@@ -278,7 +297,7 @@ public class TornadoVM extends TornadoLogger {
 		debug("vm: complete elapsed=%.9f s (%d iterations, %.9f s mean)",
 				elapsed, invocations, (totalTime / invocations));
 		
-		
+		buffer.reset();
 	}
 
 	public void dumpTimes() {

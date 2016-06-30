@@ -11,6 +11,7 @@ public interface CallStack {
 	public void push(Object arg);
 	public void push(Object arg, DeviceObjectState state);
 
+	public boolean isOnDevice();
 	public void dump();
 	
 	public void clearProfiling();

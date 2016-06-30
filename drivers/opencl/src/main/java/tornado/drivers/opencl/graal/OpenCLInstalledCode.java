@@ -162,10 +162,9 @@ public class OpenCLInstalledCode extends InstalledCode implements TornadoInstall
 
 
 		setKernelArgs(stack);
-		events.add( stack.enqueueWrite());
-		
-		if(Tornado.FORCE_BLOCKING_API_CALLS)
-			deviceContext.sync();
+		if(!stack.isOnDevice()){
+			events.add( stack.enqueueWrite());
+		}
 
 		TornadoInternalError.guarantee(kernel != null, "kernel is null");
 		
@@ -176,7 +175,7 @@ public class OpenCLInstalledCode extends InstalledCode implements TornadoInstall
 			task = deviceContext.enqueueTask(kernel, events);
 		} 	
 		
-		meta.addProfile(task);
+//		meta.addProfile(task);
 		
 		return (Tornado.ENABLE_EXCEPTIONS) ? stack.enqueueReadAfter(task) : task;
 	}

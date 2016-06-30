@@ -12,7 +12,8 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
     private final static int RESERVED_SLOTS = 4;
 
     private int numArgs;
-    private Event event;
+    
+    private boolean onDevice;
 
     public OCLCallStack(long offset, int numArgs, OCLDeviceContext device) {
         super(device, offset, (numArgs + RESERVED_SLOTS) << 3);
@@ -26,14 +27,28 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
         buffer.putInt(0);
         buffer.putInt(numArgs);
         buffer.mark();
+        
+        onDevice = false;
     }
+    
+    public boolean isOnDevice(){
+    	return onDevice;
+    }
+    
+   
 
     @Override
     public long getBufferOffset() {
         return 0;
     }
 
-    public int getReservedSlots() {
+    @Override
+	public void write() {
+		super.write();
+		onDevice = true;
+	}
+
+	public int getReservedSlots() {
         return RESERVED_SLOTS;
     }
 
@@ -107,6 +122,7 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
             buffer.putLong(i, 0);
 
         buffer.reset();
+        onDevice=false;
     }
 
     public long getDeoptValue() {
