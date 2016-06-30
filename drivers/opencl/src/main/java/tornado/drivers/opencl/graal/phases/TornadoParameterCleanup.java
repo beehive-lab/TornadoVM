@@ -1,10 +1,6 @@
 package tornado.drivers.opencl.graal.phases;
 
-import tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementProxyNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
-import tornado.graal.nodes.vector.VectorKind;
-import tornado.graal.phases.TornadoHighTierContext;
-
+import com.oracle.graal.api.meta.ResolvedJavaType;
 import com.oracle.graal.compiler.common.type.Stamp;
 import com.oracle.graal.nodes.GuardingPiNode;
 import com.oracle.graal.nodes.ParameterNode;
@@ -12,6 +8,10 @@ import com.oracle.graal.nodes.StructuredGraph;
 import com.oracle.graal.nodes.java.MethodCallTargetNode;
 import com.oracle.graal.nodes.util.GraphUtil;
 import com.oracle.graal.phases.BasePhase;
+import tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementProxyNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
+import tornado.graal.nodes.vector.VectorKind;
+import tornado.graal.phases.TornadoHighTierContext;
 
 public class TornadoParameterCleanup extends BasePhase<TornadoHighTierContext> {
 
@@ -25,12 +25,13 @@ public class TornadoParameterCleanup extends BasePhase<TornadoHighTierContext> {
 					
 					final Stamp stamp = param.stamp();
 //					System.out.printf("node: node=%s, stamp=%s, type=%s\n",param, stamp,stamp.javaType(context.getMetaAccess()));
-					final VectorKind vectorKind = VectorKind.fromResolvedJavaType(stamp.javaType(context.getMetaAccess()));
+					final ResolvedJavaType type = stamp.javaType(context.getMetaAccess());
+                                        final VectorKind vectorKind = VectorKind.fromResolvedJavaType(type);
 					if(vectorKind != VectorKind.Illegal){
 						if(param.usages().filter(VectorValueNode.class).isEmpty()){
 //							System.out.printf("inserting vector value...\n");
 							
-							final VectorValueNode vector = graph.addOrUnique(new VectorValueNode(vectorKind, param));
+							final VectorValueNode vector = graph.addOrUnique(new VectorValueNode(type, vectorKind, param));
 							if(context.isKernel())
 								vector.setNeedsLoad();
 									

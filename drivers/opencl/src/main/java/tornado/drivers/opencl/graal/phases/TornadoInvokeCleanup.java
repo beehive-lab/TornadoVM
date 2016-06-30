@@ -44,7 +44,7 @@ public class TornadoInvokeCleanup extends BasePhase<TornadoHighTierContext> {
             	
             	if(type.getAnnotation(Vector.class)!= null ){
             		final VectorKind vectorKind = VectorKind.fromResolvedJavaType(type);
-            		final VectorValueNode vector = graph.addOrUnique(new VectorValueNode(vectorKind,invoke));
+            		final VectorValueNode vector = graph.addOrUnique(new VectorValueNode(type,vectorKind,invoke));
             		
             		invoke.usages().filter(IsNullNode.class).forEach(isNullNode -> {
             			isNullNode.replaceAndDelete(LogicConstantNode.contradiction(graph));

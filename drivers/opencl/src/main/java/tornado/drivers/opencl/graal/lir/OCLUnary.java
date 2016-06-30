@@ -120,8 +120,8 @@ public class OCLUnary {
 			asm.value(crb,value);
 			asm.emit(")? 0 : ");
 			opcode.emit(crb, value);
-			asm.delimiter();
-			asm.eol();
+//			asm.delimiter();
+//			asm.eol();
 		}
 
 		public String toString(){

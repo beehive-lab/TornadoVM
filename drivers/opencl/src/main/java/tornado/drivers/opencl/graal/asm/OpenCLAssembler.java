@@ -221,6 +221,13 @@ public class OpenCLAssembler extends Assembler {
     	public static final OCLUnaryTemplate INDIRECTION   = new OCLUnaryTemplate("deref","*(%s)");
 		public static final OCLUnaryTemplate ADDRESS_OF   = new OCLUnaryTemplate("address of","&(%s)");
 		
+		public static final OCLUnaryTemplate NEW_INT_ARRAY = new OCLUnaryTemplate("int[]","int[%s]");
+		public static final OCLUnaryTemplate NEW_LONG_ARRAY = new OCLUnaryTemplate("int[]","long[%s]");
+		public static final OCLUnaryTemplate NEW_FLOAT_ARRAY = new OCLUnaryTemplate("int[]","float[%s]");
+		public static final OCLUnaryTemplate NEW_DOUBLE_ARRAY = new OCLUnaryTemplate("int[]","double[%s]");
+		public static final OCLUnaryTemplate NEW_BYTE_ARRAY = new OCLUnaryTemplate("int[]","char[%s]");
+		public static final OCLUnaryTemplate NEW_SHORT_ARRAY = new OCLUnaryTemplate("int[]","short[%s]");
+		
     	// @formatter:on
 
 		private final String template;
@@ -369,6 +376,8 @@ public class OpenCLAssembler extends Assembler {
 		public static final OCLBinaryTemplate DECLARE_FLOAT_ARRAY = new OCLBinaryTemplate("DECLARE_ARRAY","float %s[%s]");
 		public static final OCLBinaryTemplate DECLARE_DOUBLE_ARRAY = new OCLBinaryTemplate("DECLARE_ARRAY","double %s[%s]");
 		public static final OCLBinaryTemplate ARRAY_INDEX = new OCLBinaryTemplate("index","%s[%s]");
+		
+		public static final OCLBinaryTemplate NEW_ARRAY = new OCLBinaryTemplate("new array","char %s[%s]");
 		
 		// @formatter:on
 		
@@ -829,9 +838,11 @@ public class OpenCLAssembler extends Assembler {
 	}
 
 	public void eol() {
-		if (emitEOL)
+		if (emitEOL){
 			emitSymbol(OpenCLAssemblerConstants.EOL);
-		else space();
+		} else {
+			space();
+		}
 	}
 
 	public void setDelimiter(String value) {
@@ -926,6 +937,7 @@ public class OpenCLAssembler extends Assembler {
 	}
 
 	public void value(OCLCompilationResultBuilder crb, Value value) {
+//		System.out.printf("value: %s (%s)\n",value,value.getClass().getName());
 		if (value instanceof OCLEmitable && !(value instanceof MemoryAccess))
 			((OCLEmitable) value).emit(crb);
 		else emit(toString(value));

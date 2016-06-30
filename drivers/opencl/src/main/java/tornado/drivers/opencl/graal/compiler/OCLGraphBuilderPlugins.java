@@ -1,5 +1,6 @@
 package tornado.drivers.opencl.graal.compiler;
 
+import tornado.drivers.opencl.graal.compiler.plugins.AtomicPlugins;
 import tornado.drivers.opencl.graal.compiler.plugins.TornadoMathPlugins;
 import tornado.drivers.opencl.graal.compiler.plugins.TornadoNewInstancePlugin;
 import tornado.drivers.opencl.graal.compiler.plugins.VectorPlugins;
@@ -33,7 +34,9 @@ public class OCLGraphBuilderPlugins {
 		registerOpenCLBuiltinPlugins(plugins);
 		
 		TornadoMathPlugins.registerTornadoMathPlugins(plugins);
-		VectorPlugins.registerFloat3Plugins(plugins);
+		VectorPlugins.registerPlugins(plugins);
+		
+		AtomicPlugins.registerPlugins(plugins);
 		
 	}
 	

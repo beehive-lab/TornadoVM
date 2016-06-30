@@ -22,6 +22,7 @@ import tornado.graal.nodes.vector.VectorKind;
 import com.oracle.graal.api.meta.AllocatableValue;
 import com.oracle.graal.api.meta.LIRKind;
 import com.oracle.graal.api.meta.PrimitiveConstant;
+import com.oracle.graal.api.meta.ResolvedJavaType;
 import com.oracle.graal.api.meta.Value;
 import com.oracle.graal.compiler.common.type.StampFactory;
 import com.oracle.graal.graph.NodeClass;
@@ -53,26 +54,28 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
 
 	private final VectorKind						kind;
 	private boolean									needsLoad;
+	private final ResolvedJavaType					type;
 
-	public VectorValueNode(VectorKind kind) {
-		super(TYPE, StampFactory.objectNonNull());
+	public VectorValueNode(ResolvedJavaType resolvedType, VectorKind kind) {
+		super(TYPE, StampFactory.exactNonNull(resolvedType));
+		this.type = resolvedType;
 		this.kind = kind;
 		this.values = new NodeInputList<>(this, kind.getVectorLength());
 		needsLoad = false;
 	}
 
-	public VectorValueNode(VectorKind kind, ValueNode origin) {
-		this(kind);
+	public VectorValueNode(ResolvedJavaType resolvedType, VectorKind kind, ValueNode origin) {
+		this(resolvedType, kind);
 		this.origin = origin;
 	}
 
-	public VectorValueNode(VectorKind kind, ValueNode origin, ValueNode value) {
-		this(kind, origin);
+	public VectorValueNode(ResolvedJavaType resolvedType,VectorKind kind, ValueNode origin, ValueNode value) {
+		this(resolvedType,kind, origin);
 		values.add(value);
 	}
 
-	public VectorValueNode(VectorKind kind, ValueNode origin, ValueNode[] inputs) {
-		this(kind, origin);
+	public VectorValueNode(ResolvedJavaType resolvedType, VectorKind kind, ValueNode origin, ValueNode[] inputs) {
+		this(resolvedType,kind, origin);
 
 		assert (inputs.length == kind.getVectorLength());
 
@@ -286,7 +289,11 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
 	}
 
 	public VectorValueNode duplicate() {
-		return graph().addWithoutUnique(new VectorValueNode(kind));
+		return graph().addWithoutUnique(new VectorValueNode(type,kind));
+	}
+
+	public ResolvedJavaType getResolvedType() {
+		return type;
 	}
 
 }

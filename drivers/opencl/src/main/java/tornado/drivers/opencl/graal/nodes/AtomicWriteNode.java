@@ -23,19 +23,20 @@ public class AtomicWriteNode extends AbstractWriteNode implements LIRLowerable {
 	public static final NodeClass<AtomicWriteNode>	TYPE	= NodeClass
 																	.create(AtomicWriteNode.class);
 
+	OCLBinaryIntrinsic op;
+	
 	public AtomicWriteNode(
+			OCLBinaryIntrinsic op,
 			ValueNode object,
 			ValueNode value,
-			ValueNode location,
-			BarrierType barrierType) {
-		super(TYPE, object, value, location, barrierType);
+			ValueNode location) {
+		super(TYPE, object, value, location, BarrierType.NONE);
+		this.op = op;
 	}
 
 	@Override
 	public void generate(NodeLIRBuilderTool gen) {
 		final LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-
-		final OCLBinaryIntrinsic intrinsic = OCLBinaryIntrinsic.ATOMIC_ADD;
 
 		final LocationNode location = location();
 
@@ -47,9 +48,9 @@ public class AtomicWriteNode extends AbstractWriteNode implements LIRLowerable {
 
 		final Value valueToStore = gen.operand(value());
 
-		tool.append(new OCLLIRInstruction.ExprStmt(new OCLBinary.Intrinsic(intrinsic, Kind.Illegal,
+		tool.append(new OCLLIRInstruction.ExprStmt(new OCLBinary.Intrinsic(op, Kind.Illegal,
 				addressOfObject, valueToStore)));
-		Tornado.trace("emitAtomicAdd: %s(%s, %s)", intrinsic.toString(),
+		Tornado.trace("emitAtomicWrite: %s(%s, %s)", op.toString(),
 				addressOfObject, valueToStore);
 
 	}

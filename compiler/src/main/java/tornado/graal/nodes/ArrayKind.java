@@ -28,6 +28,7 @@ public enum ArrayKind implements PlatformKind {
 	}
 
 	public final static int lookupTypeIndex(Kind kind) {
+		
 		switch (kind) {
 			case Byte:
 				return 5;
