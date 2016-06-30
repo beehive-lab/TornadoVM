@@ -1,14 +1,12 @@
 package tornado.drivers.opencl;
 
-import tornado.api.Event;
-import tornado.common.Initialisable;
-import tornado.common.TornadoLogger;
-
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
 import java.util.Comparator;
 import java.util.List;
-
+import tornado.api.Event;
+import tornado.common.Initialisable;
+import tornado.common.TornadoLogger;
 import tornado.drivers.opencl.mm.OCLMemoryManager;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 
@@ -50,7 +48,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
 	}
 
 	public void sync() {
-		queue.flush();
+//		queue.flush();
 		queue.finish();
 	}
 

@@ -3,16 +3,15 @@ package tornado.runtime.api;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.function.Consumer;
-
 import tornado.common.DeviceMapping;
 import tornado.common.RuntimeUtilities;
 import tornado.common.SchedulableTask;
 import tornado.runtime.TornadoVM;
+import tornado.runtime.graph.ExecutionContext;
 import tornado.runtime.graph.Graph;
 import tornado.runtime.graph.GraphBuilder;
 import tornado.runtime.graph.GraphCompilationResult;
 import tornado.runtime.graph.GraphCompiler;
-import tornado.runtime.graph.ExecutionContext;
 
 public abstract class AbstractTaskGraph {
 
@@ -141,8 +140,7 @@ public abstract class AbstractTaskGraph {
 	}
 
 	public void waitOn() {
-//		for (Event event : events)
-//			event.waitOn();
+//            graphContext.getDevices().forEach((DeviceMapping device) -> device.sync());
 	}
 
 	protected void streamInInner(Object... objects) {

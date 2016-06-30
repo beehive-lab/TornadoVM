@@ -1,7 +1,6 @@
 package tornado.runtime;
 
 import java.util.List;
-
 import tornado.api.Event;
 import tornado.api.enums.TornadoSchedulingStrategy;
 import tornado.common.CallStack;
@@ -74,5 +73,10 @@ public class JVMMapping implements DeviceMapping {
 		
 		
 	}
+
+    @Override
+    public void sync() {
+        
+    }
 
 }

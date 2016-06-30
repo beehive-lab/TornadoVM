@@ -1,11 +1,14 @@
 package tornado.drivers.opencl.mm;
 
+import com.oracle.graal.api.meta.PrimitiveConstant;
+import com.oracle.graal.hotspot.HotSpotGraalRuntimeProvider;
+import com.oracle.graal.hotspot.meta.HotSpotResolvedJavaField;
+import com.oracle.graal.hotspot.meta.HotSpotResolvedJavaType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-
 import tornado.api.Event;
 import tornado.api.Payload;
 import tornado.api.Vector;
@@ -17,11 +20,6 @@ import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.runtime.EmptyEvent;
 import tornado.runtime.TornadoRuntime;
 import tornado.runtime.api.TaskUtils;
-
-import com.oracle.graal.api.meta.PrimitiveConstant;
-import com.oracle.graal.hotspot.HotSpotGraalRuntimeProvider;
-import com.oracle.graal.hotspot.meta.HotSpotResolvedJavaField;
-import com.oracle.graal.hotspot.meta.HotSpotResolvedJavaType;
 
 public class OCLObjectWrapper implements ObjectBuffer {
 
@@ -405,7 +403,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
             final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
             return fieldBuffer.enqueueReadAfterAll(ref, events);
         } else {
-            final List<Event> waitEvents = new ArrayList<Event>();
+            final List<Event> waitEvents = new ArrayList<>();
             for (FieldBuffer fb : wrappedFields) {
                 if (fb != null) {
                     waitEvents.add(fb.enqueueReadAfterAll(ref, events));
@@ -417,6 +415,10 @@ public class OCLObjectWrapper implements ObjectBuffer {
                         bufferOffset, bytes, buffer.array(), events));
                 // TODO this needs to run asynchronously
                 deserialise(ref);
+            }
+            
+            if(waitEvents.isEmpty()){
+                return new EmptyEvent();
             }
 
             return (waitEvents.size() > 1) ? deviceContext
@@ -463,12 +465,16 @@ public class OCLObjectWrapper implements ObjectBuffer {
             }
 
             for (FieldBuffer fb : wrappedFields) {
-                if (fb != null) {
+                if (fb != null ) {
                     // System.out.printf("field: write %s\n",fb.getFieldName());
                     waitEvents.add(fb.enqueueWriteAfterAll(ref, events));
                 }
             }
 
+            if(waitEvents.isEmpty()){
+                return new EmptyEvent();
+            }
+            
             return (waitEvents.size() > 1) ? deviceContext
                     .enqueueMarker(waitEvents) : waitEvents.get(0);
         }

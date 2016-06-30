@@ -1,24 +1,25 @@
 package tornado.drivers.opencl.mm;
 
-import tornado.api.Event;
 import tornado.common.CallStack;
 import tornado.common.DeviceObjectState;
 import tornado.common.RuntimeUtilities;
-import tornado.common.Tornado;
-import tornado.drivers.opencl.OCLDeviceContext;
+import static tornado.common.Tornado.DEBUG;
+import static tornado.common.Tornado.debug;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import tornado.drivers.opencl.OCLDeviceContext;
+
 public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
     private final static int RESERVED_SLOTS = 4;
 
     private int numArgs;
-    
+
     private boolean onDevice;
 
     public OCLCallStack(long offset, int numArgs, OCLDeviceContext device) {
         super(device, offset, (numArgs + RESERVED_SLOTS) << 3);
         this.numArgs = numArgs;
-        
+
         // clear the buffer and set the mark at the beginning of the arguments
         buffer.clear();
         buffer.putLong(0);
@@ -27,15 +28,13 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
         buffer.putInt(0);
         buffer.putInt(numArgs);
         buffer.mark();
-        
+
         onDevice = false;
     }
-    
-    public boolean isOnDevice(){
-    	return onDevice;
+
+    public boolean isOnDevice() {
+        return onDevice;
     }
-    
-   
 
     @Override
     public long getBufferOffset() {
@@ -43,19 +42,18 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
     }
 
     @Override
-	public void write() {
-		super.write();
-		onDevice = true;
-	}
+    public void write() {
+        super.write();
+        onDevice = true;
+    }
 
-	public int getReservedSlots() {
+    public int getReservedSlots() {
         return RESERVED_SLOTS;
     }
 
 //    public int getMaxArgs() {
 //        return (int) ((bytes >> 3) - getReservedSlots());
 //    }
-
     public int getSlotCount() {
         return (int) bytes >> 3;
     }
@@ -116,13 +114,13 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
 //        // t1),RuntimeUtilities.elapsedTimeInSeconds(t1,
 //        // t2),RuntimeUtilities.elapsedTimeInSeconds(t2, t3));
 //    }
-
     public void reset() {
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 2; i++) {
             buffer.putLong(i, 0);
+        }
 
         buffer.reset();
-        onDevice=false;
+        onDevice = false;
     }
 
     public long getDeoptValue() {
@@ -150,78 +148,85 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
         super.dump(8);
     }
 
-	@Override
-	public void push(Object arg) {
-		
-		if (arg == null) {
-			Tornado.debug("arg : (null)");
-          buffer.putLong(0);
-      } else if (RuntimeUtilities.isBoxedPrimitive(arg)
-              || arg.getClass().isPrimitive()) {
-          Tornado.debug("arg : type=%s, value=%s", arg.getClass()
-                  .getName(), arg.toString());
-          PrimitiveSerialiser.put(buffer, arg, 8);
-      } else {
-    	  shouldNotReachHere();
-      }
-		
-	}
+    @Override
+    public void push(Object arg) {
 
-	@Override
-	public void push(Object arg, DeviceObjectState state) {
-		 
-		 
-		if (arg == null) {
-			Tornado.debug("arg : (null)");
-	          buffer.putLong(0);
-	      } else {
-	    	  Tornado.debug("arg : [0x%x] type=%s, value=%s, address=0x%x", arg.hashCode(),arg.getClass()
-	                  .getSimpleName(), arg,state.getAddress());
-	    	  buffer.putLong(state.getAddress());
-	      }
-		
-	}
+        if (arg == null) {
+            if (DEBUG) {
+                debug("arg : (null)");
+            }
+            buffer.putLong(0);
+        } else if (RuntimeUtilities.isBoxedPrimitive(arg)
+                || arg.getClass().isPrimitive()) {
+            if (DEBUG) {
+                debug("arg : type=%s, value=%s", arg.getClass()
+                        .getName(), arg.toString());
+            }
+            PrimitiveSerialiser.put(buffer, arg, 8);
+        } else {
+            shouldNotReachHere();
+        }
 
-	@Override
-	public void clearProfiling() {
-		// TODO Auto-generated method stub
-		
-	}
+    }
 
-	@Override
-	public long getInvokeCount() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public void push(Object arg, DeviceObjectState state) {
 
-	@Override
-	public double getTimeTotal() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+        if (arg == null) {
+            if (DEBUG) {
+                debug("arg : (null)");
+            }
+            buffer.putLong(0);
+        } else {
+            if (DEBUG) {
+                debug("arg : [0x%x] type=%s, value=%s, address=0x%x", arg.hashCode(), arg.getClass()
+                        .getSimpleName(), arg, state.getAddress());
+            }
+            buffer.putLong(state.getAddress());
+        }
 
-	@Override
-	public double getTimeMean() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    }
 
-	@Override
-	public double getTimeMin() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public void clearProfiling() {
+        // TODO Auto-generated method stub
 
-	@Override
-	public double getTimeMax() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    }
 
-	@Override
-	public double getTimeSD() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public long getInvokeCount() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public double getTimeTotal() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public double getTimeMean() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public double getTimeMin() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public double getTimeMax() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public double getTimeSD() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
 }

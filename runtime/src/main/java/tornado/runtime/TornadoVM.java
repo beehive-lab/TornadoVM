@@ -6,14 +6,13 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static tornado.common.Tornado.DUMP_PROFILES;
 import tornado.api.Event;
 import tornado.api.enums.TornadoExecutionStatus;
 import tornado.common.CallStack;
 import tornado.common.DeviceMapping;
 import tornado.common.DeviceObjectState;
 import tornado.common.SchedulableTask;
+import static tornado.common.Tornado.DEBUG;
 import tornado.common.TornadoInstalledCode;
 import tornado.common.TornadoLogger;
 import tornado.common.enums.Access;
@@ -26,295 +25,320 @@ import static tornado.runtime.graph.GraphAssembler.*;
 
 public class TornadoVM extends TornadoLogger {
 
-	private final ExecutionContext graphContext;
-	private final List<Object> objects;
-	private final GlobalObjectState[] globalStates;
-	private final CallStack[] stacks;
-	private final List<Event>[] events;
-	private final List<DeviceMapping> contexts;
-	private final TornadoInstalledCode[] installedCode;
-	
-	private final List<Object> constants;
-	private final List<SchedulableTask> tasks;
-	
-	private final Set<Event> unboundEvents;
+    private final ExecutionContext graphContext;
+    private final List<Object> objects;
+    private final GlobalObjectState[] globalStates;
+    private final CallStack[] stacks;
+    private final List<Event>[] events;
+    private final List<DeviceMapping> contexts;
+    private final TornadoInstalledCode[] installedCodes;
 
-	private final byte[] code;
-	private final ByteBuffer buffer;
+    private final List<Object> constants;
+    private final List<SchedulableTask> tasks;
 
-	private double totalTime;
-	private long invocations;
+    private final Set<Event> unboundEvents;
 
-	@SuppressWarnings("unchecked")
-	public TornadoVM(ExecutionContext graphContext, byte[] code, int limit) {
-		this.graphContext = graphContext;
-		this.code = code;
+    private final byte[] code;
+    private final ByteBuffer buffer;
 
-		totalTime = 0;
-		invocations = 0;
+    private double totalTime;
+    private long invocations;
 
-		buffer = ByteBuffer.wrap(code);
-		buffer.order(ByteOrder.LITTLE_ENDIAN);
-		buffer.limit(limit);
+    @SuppressWarnings("unchecked")
+    public TornadoVM(ExecutionContext graphContext, byte[] code, int limit) {
+        this.graphContext = graphContext;
+        this.code = code;
 
-		debug("loading tornado vm...");
+        totalTime = 0;
+        invocations = 0;
 
-		guarantee(buffer.get() == SETUP, "invalid code");
-		contexts = graphContext.getDevices();
-		buffer.getInt();
-		stacks = new CallStack[buffer.getInt()];
-		events = new List[buffer.getInt()];
+        buffer = ByteBuffer.wrap(code);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        buffer.limit(limit);
 
-		installedCode = new TornadoInstalledCode[stacks.length];
+        debug("loading tornado vm...");
 
-		for (int i = 0; i < events.length; i++) {
-			events[i] = new ArrayList<Event>();
-		}
+        guarantee(buffer.get() == SETUP, "invalid code");
+        contexts = graphContext.getDevices();
+        buffer.getInt();
+        stacks = new CallStack[buffer.getInt()];
+        events = new List[buffer.getInt()];
 
-		debug("found %d contexts", contexts.size());
-		debug("created %d stacks", stacks.length);
-		debug("created %d event lists", events.length);
+        installedCodes = new TornadoInstalledCode[stacks.length];
 
-		objects = graphContext.getObjects();
-		globalStates = new GlobalObjectState[objects.size()];
-		debug("fetching %d object states...", globalStates.length);
-		for (int i = 0; i < objects.size(); i++) {
-			final Object object = objects.get(i);
-			globalStates[i] = TornadoRuntime.runtime.resolveObject(object);
-			debug("\tobject[%d]: [0x%x] %s %s", i, object.hashCode(), object,
-					globalStates[i]);
-		}
+        for (int i = 0; i < events.length; i++) {
+            events[i] = new ArrayList<Event>();
+        }
 
-		byte op = buffer.get();
-		while (op != BEGIN) {
-			guarantee(op == CONTEXT, "invalid code: 0x%x", op);
-			final int deviceIndex = buffer.getInt();
-			debug("loading context %s", contexts.get(deviceIndex));
-			final long t0 = System.nanoTime();
-			contexts.get(deviceIndex).ensureLoaded();
-			final long t1 = System.nanoTime();
-			debug("loaded in %.9f s", (t1 - t0) * 1e-9);
-			op = buffer.get();
-		}
-		
-		constants = graphContext.getConstants();
-		tasks = graphContext.getTasks();
-		
-		unboundEvents = new HashSet<Event>();
+        debug("found %d contexts", contexts.size());
+        debug("created %d stacks", stacks.length);
+        debug("created %d event lists", events.length);
 
-		debug("vm ready to go");
-		buffer.mark();
-	}
+        objects = graphContext.getObjects();
+        globalStates = new GlobalObjectState[objects.size()];
+        debug("fetching %d object states...", globalStates.length);
+        for (int i = 0; i < objects.size(); i++) {
+            final Object object = objects.get(i);
+            globalStates[i] = TornadoRuntime.runtime.resolveObject(object);
+            debug("\tobject[%d]: [0x%x] %s %s", i, object.hashCode(), object,
+                    globalStates[i]);
+        }
 
-	private final DeviceObjectState resolveObjectState(int index, int device) {
-		return globalStates[index].getDeviceState(contexts.get(device));
-	}
+        byte op = buffer.get();
+        while (op != BEGIN) {
+            guarantee(op == CONTEXT, "invalid code: 0x%x", op);
+            final int deviceIndex = buffer.getInt();
+            debug("loading context %s", contexts.get(deviceIndex));
+            final long t0 = System.nanoTime();
+            contexts.get(deviceIndex).ensureLoaded();
+            final long t1 = System.nanoTime();
+            debug("loaded in %.9f s", (t1 - t0) * 1e-9);
+            op = buffer.get();
+        }
 
-	private final static CallStack resolveStack(int index, int numArgs,
-			CallStack[] stacks, DeviceMapping device) {
-		if (stacks[index] == null) {
-			stacks[index] = device.createStack(numArgs);
-		}
+        constants = graphContext.getConstants();
+        tasks = graphContext.getTasks();
 
-		return stacks[index];
-	}
+        unboundEvents = new HashSet<Event>();
 
-	public void execute() {
-		final long t0 = System.nanoTime();
+        debug("vm ready to go");
+        buffer.mark();
+    }
 
-		Event lastEvent = null;
-		
-		unboundEvents.clear();
-		
-		for (List<Event> waitList : events) {
-			waitList.clear();
-		}
+    private final DeviceObjectState resolveObjectState(int index, int device) {
+        return globalStates[index].getDeviceState(contexts.get(device));
+    }
 
-		while (buffer.hasRemaining()) {
-			final byte op = buffer.get();
+    private final static CallStack resolveStack(int index, int numArgs,
+            CallStack[] stacks, DeviceMapping device) {
+        if (stacks[index] == null) {
+            stacks[index] = device.createStack(numArgs);
+        }
 
-			if (op == ALLOCATE) {
-				final int objectIndex = buffer.getInt();
-				final int contextIndex = buffer.getInt();
-				final DeviceMapping device = contexts.get(contextIndex);
-				final Object object = objects.get(objectIndex);
-				debug("vm: ALLOCATE [0x%x] %s on %s", object.hashCode(),
-						object, device);
-				final DeviceObjectState objectState = resolveObjectState(
-						objectIndex, contextIndex);
+        return stacks[index];
+    }
 
-				lastEvent = device.ensureAllocated(object, objectState);
+    public void execute() {
+        final long t0 = System.nanoTime();
 
-			} else if (op == COPY_IN) {
-				final int objectIndex = buffer.getInt();
-				final int contextIndex = buffer.getInt();
-				final int eventList = buffer.getInt();
-				final DeviceMapping device = contexts.get(contextIndex);
-				final Object object = objects.get(objectIndex);
-				debug("vm: COPY_IN [0x%x] %s on %s [event list=%d]",
-						object.hashCode(), object, device, eventList);
-				final DeviceObjectState objectState = resolveObjectState(
-						objectIndex, contextIndex);
-				debug("vm: state=%s", objectState);
+        Event lastEvent = null;
 
-				lastEvent = device.ensurePresent(object, objectState);
+        unboundEvents.clear();
 
-			} else if (op == STREAM_IN) {
-				final int objectIndex = buffer.getInt();
-				final int contextIndex = buffer.getInt();
-				final int eventList = buffer.getInt();
-				final DeviceMapping device = contexts.get(contextIndex);
-				final Object object = objects.get(objectIndex);
-				debug("vm: STREAM_IN [0x%x] %s on %s [event list=%d]",
-						object.hashCode(), object, device, eventList);
-				final DeviceObjectState objectState = resolveObjectState(
-						objectIndex, contextIndex);
-				debug("vm: state=%s", objectState);
+        for (List<Event> waitList : events) {
+            waitList.clear();
+        }
+        
+       
 
-				lastEvent = device.streamIn(object, objectState);
+        while (buffer.hasRemaining()) {
+            final byte op = buffer.get();
 
-			} else if (op == STREAM_OUT) {
-				final int objectIndex = buffer.getInt();
-				final int contextIndex = buffer.getInt();
-				final int eventList = buffer.getInt();
-				final DeviceMapping device = contexts.get(contextIndex);
-				final Object object = objects.get(objectIndex);
-				debug("vm: STREAM_OUT [0x%x] %s on %s [event list=%d]",
-						object.hashCode(), object, device, eventList);
-				final DeviceObjectState objectState = resolveObjectState(
-						objectIndex, contextIndex);
+            if (op == ALLOCATE) {
+                final int objectIndex = buffer.getInt();
+                final int contextIndex = buffer.getInt();
+                final DeviceMapping device = contexts.get(contextIndex);
+                final Object object = objects.get(objectIndex);
 
-				lastEvent = device.streamOut(object, objectState,
-						events[eventList]);
-			} else if (op == LAUNCH) {
-				final int gtid = buffer.getInt();
-				final int contextIndex = buffer.getInt();
-				final int taskIndex = buffer.getInt();
-				final int numArgs = buffer.getInt();
-				final int eventList = buffer.getInt();
-				debug("vm: LAUNCH %s on %s [event list=%d]",
-						tasks.get(taskIndex).getName(),
-						contexts.get(contextIndex), eventList);
-				final DeviceMapping device = contexts.get(contextIndex);
-				final CallStack stack = resolveStack(gtid, numArgs, stacks,
-						device);
-				final List<Event> waitList = events[eventList];
-				final SchedulableTask task = tasks.get(taskIndex);
+                if (DEBUG) {
+                    debug("vm: ALLOCATE [0x%x] %s on %s", object.hashCode(),
+                            object, device);
+                }
+                final DeviceObjectState objectState = resolveObjectState(
+                        objectIndex, contextIndex);
 
-				if (installedCode[taskIndex] == null) {
-					final long compileStart = System.nanoTime();
-					task.mapTo(device);
-					installedCode[taskIndex] = device.installCode(task);
-					final long compileEnd = System.nanoTime();
-					debug("vm: compiled in %.9f s",
-							(compileEnd - compileStart) * 1e-9);
-					
-					
-				}
-				final TornadoInstalledCode code = installedCode[taskIndex];
+                lastEvent = device.ensureAllocated(object, objectState);
 
-				final Access[] accesses = task.getArgumentsAccess();
-				if(!stack.isOnDevice()){
-				stack.reset();
-				}
-				for (int i = 0; i < numArgs; i++) {
-					final byte argType = buffer.get();
-					final int argIndex = buffer.getInt();
-					
-					if(stack.isOnDevice()){
-						continue;
-					}
-					
-					if (argType == CONSTANT_ARG) {
-						stack.push(constants.get(argIndex));
-					} else if (argType == REFERENCE_ARG) {
-						final DeviceObjectState objectState = resolveObjectState(
-								argIndex, contextIndex);
-						TornadoInternalError.guarantee(objectState.isValid(),
-								"object is not valid: %s %s",
-								objects.get(argIndex), objectState);
-						stack.push(objects.get(argIndex), objectState);
-						if (accesses[i] == Access.WRITE
-								|| accesses[i] == Access.READ_WRITE) {
-							objectState.setContents(true);
-						}
-					} else {
-						TornadoInternalError.shouldNotReachHere();
-					}
-				}
-				
+            } else if (op == COPY_IN) {
+                final int objectIndex = buffer.getInt();
+                final int contextIndex = buffer.getInt();
+                final int eventList = buffer.getInt();
+                final DeviceMapping device = contexts.get(contextIndex);
+                final Object object = objects.get(objectIndex);
+                if (DEBUG) {
+                    debug("vm: COPY_IN [0x%x] %s on %s [event list=%d]",
+                            object.hashCode(), object, device, eventList);
+                }
+                final DeviceObjectState objectState = resolveObjectState(
+                        objectIndex, contextIndex);
+                if (DEBUG) {
+                    debug("vm: state=%s", objectState);
+                }
 
-				lastEvent = code.launch(stack, task.meta(), waitList);
+                lastEvent = device.ensurePresent(object, objectState);
+
+            } else if (op == STREAM_IN) {
+                final int objectIndex = buffer.getInt();
+                final int contextIndex = buffer.getInt();
+                final int eventList = buffer.getInt();
+                final DeviceMapping device = contexts.get(contextIndex);
+                final Object object = objects.get(objectIndex);
+                if (DEBUG) {
+                    debug("vm: STREAM_IN [0x%x] %s on %s [event list=%d]",
+                            object.hashCode(), object, device, eventList);
+                }
+                final DeviceObjectState objectState = resolveObjectState(
+                        objectIndex, contextIndex);
+                if (DEBUG) {
+                    debug("vm: state=%s", objectState);
+                }
+
+                lastEvent = device.streamIn(object, objectState);
+
+            } else if (op == STREAM_OUT) {
+                final int objectIndex = buffer.getInt();
+                final int contextIndex = buffer.getInt();
+                final int eventList = buffer.getInt();
+                final DeviceMapping device = contexts.get(contextIndex);
+                final Object object = objects.get(objectIndex);
+                if (DEBUG) {
+                    debug("vm: STREAM_OUT [0x%x] %s on %s [event list=%d]",
+                            object.hashCode(), object, device, eventList);
+                }
+                final DeviceObjectState objectState = resolveObjectState(
+                        objectIndex, contextIndex);
+
+                lastEvent = device.streamOut(object, objectState,
+                        events[eventList]);
+            } else if (op == LAUNCH) {
+                final int gtid = buffer.getInt();
+                final int contextIndex = buffer.getInt();
+                final int taskIndex = buffer.getInt();
+                final int numArgs = buffer.getInt();
+                final int eventList = buffer.getInt();
+                if (DEBUG) {
+                    debug("vm: LAUNCH %s on %s [event list=%d]",
+                            tasks.get(taskIndex).getName(),
+                            contexts.get(contextIndex), eventList);
+                }
+                final DeviceMapping device = contexts.get(contextIndex);
+                final CallStack stack = resolveStack(gtid, numArgs, stacks,
+                        device);
+                final List<Event> waitList = events[eventList];
+                final SchedulableTask task = tasks.get(taskIndex);
+
+                if (installedCodes[taskIndex] == null) {
+                    final long compileStart = System.nanoTime();
+                    task.mapTo(device);
+                    installedCodes[taskIndex] = device.installCode(task);
+                    final long compileEnd = System.nanoTime();
+                    if (DEBUG) {
+                        debug("vm: compiled in %.9f s",
+                                (compileEnd - compileStart) * 1e-9);
+                    }
+
+                }
+                final TornadoInstalledCode installedCode = installedCodes[taskIndex];
+
+                final Access[] accesses = task.getArgumentsAccess();
+                if (!stack.isOnDevice()) {
+                    stack.reset();
+                }
+                for (int i = 0; i < numArgs; i++) {
+                    final byte argType = buffer.get();
+                    final int argIndex = buffer.getInt();
+
+                    if (stack.isOnDevice()) {
+                        continue;
+                    }
+
+                    if (argType == CONSTANT_ARG) {
+                        stack.push(constants.get(argIndex));
+                    } else if (argType == REFERENCE_ARG) {
+                        final DeviceObjectState objectState = resolveObjectState(
+                                argIndex, contextIndex);
+                        TornadoInternalError.guarantee(objectState.isValid(),
+                                "object is not valid: %s %s",
+                                objects.get(argIndex), objectState);
+                        stack.push(objects.get(argIndex), objectState);
+                        if (accesses[i] == Access.WRITE
+                                || accesses[i] == Access.READ_WRITE) {
+                            objectState.setContents(true);
+                        }
+                    } else {
+                        TornadoInternalError.shouldNotReachHere();
+                    }
+                }
+
+                lastEvent = installedCode.launch(stack, task.meta(), waitList);
 //				unboundEvents.add(lastEvent);
-				// lastEvent = new EmptyEvent();
-			} else if (op == ADD_DEP) {
-				final int eventList = buffer.getInt();
-				TornadoInternalError.guarantee(lastEvent != null,
-						"lastEvent is null");
-				if (!(lastEvent instanceof EmptyEvent)) {
-					debug("vm: ADD_DEP %s to event list %d", lastEvent,
-							eventList);
-					events[eventList].add(lastEvent);
+                // lastEvent = new EmptyEvent();
+            } else if (op == ADD_DEP) {
+                final int eventList = buffer.getInt();
+                TornadoInternalError.guarantee(lastEvent != null,
+                        "lastEvent is null");
+                if (!(lastEvent instanceof EmptyEvent)) {
+                    if (DEBUG) {
+                        debug("vm: ADD_DEP %s to event list %d", lastEvent,
+                                eventList);
+                    }
+                    events[eventList].add(lastEvent);
 //					if (unboundEvents.contains(lastEvent)) {
 //						unboundEvents.remove(lastEvent);
 //					}
-				}
-			} else if (op == BARRIER) {
-				final int eventList = buffer.getInt();
-				debug("vm: BARRIER event list %d", eventList);
+                }
+            } else if (op == BARRIER) {
+                final int eventList = buffer.getInt();
+                if (DEBUG) {
+                    debug("vm: BARRIER event list %d", eventList);
+                }
 //				for (Event event : events[eventList]) {
 //						event.waitOn();
 //				}
-				
 
-			} else if (op == END) {
-				debug("vm: END");
-				break;
-			} else {
-				debug("vm: invalid op 0x%x(%d)", op, op);
-				TornadoInternalError.shouldNotReachHere();
-			}
+            } else if (op == END) {
+                if (DEBUG) {
+                    debug("vm: END");
+                }
+                break;
+            } else {
+                if (DEBUG) {
+                    debug("vm: invalid op 0x%x(%d)", op, op);
+                }
+                TornadoInternalError.shouldNotReachHere();
+            }
 
-			if (lastEvent != null && !(lastEvent instanceof EmptyEvent)) {
+            if (lastEvent != null && !(lastEvent instanceof EmptyEvent)) {
 //				unboundEvents.add(lastEvent);
-				 lastEvent.waitOn();
-				debug("vm: last event=%s", lastEvent);
-			}
-		}
+//                lastEvent.waitOn();
+                if (DEBUG) {
+                    debug("vm: last event=%s", lastEvent);
+                }
+            }
+        }
+        
+         for (DeviceMapping device : contexts) {
+            device.sync();
+        }
 
-		for(DeviceMapping device : contexts){
-			device.flush();
-		}
-//		for (Event event : unboundEvents) {
-//				event.waitOn();
-//		}
+        final long t1 = System.nanoTime();
+        final double elapsed = (t1 - t0) * 1e-9;
+        totalTime += elapsed;
+        invocations++;
 
-		final long t1 = System.nanoTime();
-		final double elapsed = (t1 - t0) * 1e-9;
-		totalTime += elapsed;
-		invocations++;
+        if (DEBUG) {
+            debug("vm: complete elapsed=%.9f s (%d iterations, %.9f s mean)",
+                    elapsed, invocations, (totalTime / invocations));
+        }
 
-		debug("vm: complete elapsed=%.9f s (%d iterations, %.9f s mean)",
-				elapsed, invocations, (totalTime / invocations));
-		
-		buffer.reset();
-	}
+        buffer.reset();
+    }
 
-	public void dumpTimes() {
-		System.out.printf("vm: complete %d iterations, %.9f s mean\n",
-				invocations, (totalTime / invocations));
-	}
-	
-	public void dumpProfiles(){
-		final List<SchedulableTask> tasks = graphContext.getTasks();
-			for(final SchedulableTask task : tasks){
-				final Meta meta = task.meta();
-				for(final Event profile : meta.getProfiles()){
-					if(profile.getStatus() == TornadoExecutionStatus.COMPLETE){
-						System.out.printf("task: %s %.9f %9d %9d %9d\n",task.getName().substring(7),profile.getExecutionTime(),profile.getSubmitTime(),profile.getStartTime(),profile.getEndTime());
-					}
-				}
-			}
-	}
+    public void dumpTimes() {
+        System.out.printf("vm: complete %d iterations, %.9f s mean\n",
+                invocations, (totalTime / invocations));
+    }
+
+    public void dumpProfiles() {
+        final List<SchedulableTask> tasks = graphContext.getTasks();
+        for (final SchedulableTask task : tasks) {
+            final Meta meta = task.meta();
+            for (final Event profile : meta.getProfiles()) {
+                if (profile.getStatus() == TornadoExecutionStatus.COMPLETE) {
+                    System.out.printf("task: %s %.9f %9d %9d %9d\n", task.getName().substring(7), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(), profile.getEndTime());
+                }
+            }
+        }
+    }
 
 }

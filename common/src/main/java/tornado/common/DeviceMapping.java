@@ -1,7 +1,6 @@
 package tornado.common;
 
 import java.util.List;
-
 import tornado.api.Event;
 import tornado.api.enums.TornadoSchedulingStrategy;
 
@@ -28,5 +27,6 @@ public interface DeviceMapping {
 	public TornadoInstalledCode installCode(SchedulableTask task);
 
 	public void flush();
+        public void sync();
 	
 }

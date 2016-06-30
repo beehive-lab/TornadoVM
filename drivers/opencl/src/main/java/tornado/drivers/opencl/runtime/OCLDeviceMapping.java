@@ -1,7 +1,6 @@
 package tornado.drivers.opencl.runtime;
 
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
-
+import com.oracle.graal.api.meta.ResolvedJavaMethod;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -10,8 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-
-import static tornado.common.Tornado.USE_OPENCL_SCHEDULING;
 import tornado.api.Event;
 import tornado.api.enums.TornadoSchedulingStrategy;
 import tornado.common.CallStack;
@@ -21,6 +18,7 @@ import tornado.common.ObjectBuffer;
 import tornado.common.SchedulableTask;
 import tornado.common.TornadoInstalledCode;
 import tornado.common.exceptions.TornadoInternalError;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDevice;
 import tornado.drivers.opencl.OCLDeviceContext;
@@ -35,14 +33,12 @@ import tornado.drivers.opencl.mm.OCLDoubleArrayWrapper;
 import tornado.drivers.opencl.mm.OCLFloatArrayWrapper;
 import tornado.drivers.opencl.mm.OCLIntArrayWrapper;
 import tornado.drivers.opencl.mm.OCLLongArrayWrapper;
-import tornado.drivers.opencl.mm.OCLShortArrayWrapper;
 import tornado.drivers.opencl.mm.OCLObjectWrapper;
+import tornado.drivers.opencl.mm.OCLShortArrayWrapper;
 import tornado.runtime.EmptyEvent;
 import tornado.runtime.TornadoRuntime;
 import tornado.runtime.api.CompilableTask;
 import tornado.runtime.api.PrebuiltTask;
-
-import com.oracle.graal.api.meta.ResolvedJavaMethod;
 
 public class OCLDeviceMapping implements DeviceMapping {
 	private final OCLDevice device;
@@ -291,9 +287,13 @@ public class OCLDeviceMapping implements DeviceMapping {
 		return false;
 	}
 
+        @Override
+        public void sync(){
+            getDeviceContext().sync();
+        }
 	@Override
 	public void flush() {
-		getDeviceContext().sync();
+		getDeviceContext().enqueueBarrier();
 	}
 	
 	
