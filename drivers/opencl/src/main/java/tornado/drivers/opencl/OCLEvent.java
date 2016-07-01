@@ -1,15 +1,14 @@
 package tornado.drivers.opencl;
 
+import java.nio.ByteBuffer;
 import tornado.api.Event;
 import tornado.api.enums.TornadoExecutionStatus;
 import tornado.common.RuntimeUtilities;
+import tornado.common.TornadoLogger;
 import tornado.drivers.opencl.enums.OCLCommandExecutionStatus;
 import tornado.drivers.opencl.enums.OCLEventInfo;
 import tornado.drivers.opencl.enums.OCLProfilingInfo;
 import tornado.drivers.opencl.exceptions.OCLException;
-import java.nio.ByteBuffer;
-
-import tornado.common.TornadoLogger;
 
 public class OCLEvent extends TornadoLogger implements Event {
 	private final long			id;
@@ -32,7 +31,12 @@ public class OCLEvent extends TornadoLogger implements Event {
 	native static void clWaitForEvents(long[] events) throws OCLException;
 
 	private long readEventTime(int param) {
-		long time = 0;
+	
+            if(getCLStatus() != OCLCommandExecutionStatus.CL_COMPLETE){
+                return -1;
+            }
+            
+            long time = 0;
 		buffer.clear();
 
 		try {
