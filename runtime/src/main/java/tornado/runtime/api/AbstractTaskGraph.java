@@ -176,5 +176,13 @@ public abstract class AbstractTaskGraph {
 			System.out.println();
 		}
 	}
+        
+        public void warmup(){
+            if(result==null){
+                compile();
+            }
+            
+            vm.warmup();
+        }
 
 }
