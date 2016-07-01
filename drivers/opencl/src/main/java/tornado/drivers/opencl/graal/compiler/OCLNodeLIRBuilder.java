@@ -1,35 +1,5 @@
 package tornado.drivers.opencl.graal.compiler;
 
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-
-import java.util.Collection;
-import java.util.List;
-
-import tornado.api.Vector;
-import tornado.common.exceptions.TornadoInternalError;
-import tornado.drivers.opencl.graal.OpenCLCodeUtil;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryOp;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLNullaryOp;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLNullaryTemplate;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryOp;
-import tornado.drivers.opencl.graal.lir.OCLBinary;
-import tornado.drivers.opencl.graal.lir.OCLControlFlow;
-import tornado.drivers.opencl.graal.lir.OCLDirectCall;
-import tornado.drivers.opencl.graal.lir.OCLEmitable;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
-import tornado.drivers.opencl.graal.lir.OCLNullary;
-import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
-import tornado.drivers.opencl.graal.lir.OCLUnary;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.ExprStmt;
-import tornado.drivers.opencl.graal.nodes.logic.LogicalAndNode;
-import tornado.drivers.opencl.graal.nodes.logic.LogicalEqualsNode;
-import tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
-import tornado.drivers.opencl.graal.nodes.logic.LogicalOrNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
-import tornado.graal.nodes.vector.VectorKind;
-
 import com.oracle.graal.api.code.CallingConvention;
 import com.oracle.graal.api.code.CallingConvention.Type;
 import com.oracle.graal.api.meta.AllocatableValue;
@@ -88,6 +58,33 @@ import com.oracle.graal.nodes.calc.IntegerLessThanNode;
 import com.oracle.graal.nodes.calc.IsNullNode;
 import com.oracle.graal.nodes.cfg.Block;
 import com.oracle.graal.nodes.extended.SwitchNode;
+import java.util.Collection;
+import java.util.List;
+import tornado.api.Vector;
+import tornado.common.exceptions.TornadoInternalError;
+import tornado.drivers.opencl.graal.OpenCLCodeUtil;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryOp;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLNullaryOp;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLNullaryTemplate;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryOp;
+import tornado.drivers.opencl.graal.lir.OCLBinary;
+import tornado.drivers.opencl.graal.lir.OCLControlFlow;
+import tornado.drivers.opencl.graal.lir.OCLDirectCall;
+import tornado.drivers.opencl.graal.lir.OCLEmitable;
+import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
+import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.ExprStmt;
+import tornado.drivers.opencl.graal.lir.OCLNullary;
+import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
+import tornado.drivers.opencl.graal.lir.OCLUnary;
+import tornado.drivers.opencl.graal.nodes.logic.LogicalAndNode;
+import tornado.drivers.opencl.graal.nodes.logic.LogicalEqualsNode;
+import tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
+import tornado.drivers.opencl.graal.nodes.logic.LogicalOrNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import tornado.graal.nodes.vector.VectorKind;
 
 public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
@@ -425,10 +422,10 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 			final IntegerLessThanNode condition = (IntegerLessThanNode) node;
 			final Value x = operand(condition.getX());
 			final Value y = operand(condition.getY());
-			if (condition.getX().isConstant())
-				result = ((OCLBasicLIRGenerator) gen).emitBinaryExpr(
-						OCLBinaryOp.RELATIONAL_LT, Kind.Boolean, y, x);
-			else
+//			if (condition.getX().isConstant())
+//				result = ((OCLBasicLIRGenerator) gen).emitBinaryExpr(
+//						OCLBinaryOp.RELATIONAL_LT, Kind.Boolean, y, x);
+//			else
 				result = ((OCLBasicLIRGenerator) gen).emitBinaryExpr(
 						OCLBinaryOp.RELATIONAL_LT, Kind.Boolean, x, y);
 		} else if (node instanceof IsNullNode) {
