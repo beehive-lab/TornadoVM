@@ -3,12 +3,11 @@ package tornado.drivers.opencl.mm;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.List;
-
 import tornado.api.Event;
 import tornado.common.ObjectBuffer;
+import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
-import tornado.runtime.TornadoRuntime;
 
 public class FieldBuffer {
 
@@ -105,6 +104,10 @@ public class FieldBuffer {
 	// }
 	// }
 
+        public boolean needsWrite(){
+            return !onDevice() || !RuntimeUtilities.isPrimitive(field.getType());
+        }
+        
 	public void write(final Object ref) {
 		if(Tornado.DEBUG)
 			Tornado.trace("fieldBuffer: write - field=%s, parent=0x%x, child=0x%x",field,ref.hashCode(),getFieldValue(ref).hashCode());

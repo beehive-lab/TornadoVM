@@ -465,8 +465,8 @@ public class OCLObjectWrapper implements ObjectBuffer {
             }
 
             for (FieldBuffer fb : wrappedFields) {
-                if (fb != null ) {
-                    // System.out.printf("field: write %s\n",fb.getFieldName());
+                if (fb != null && fb.needsWrite()) {
+//                     System.out.printf("field: write %s onDevice=%s, isFinal=%s\n",fb.getFieldName(), fb.onDevice(), fb.isFinal());
                     waitEvents.add(fb.enqueueWriteAfterAll(ref, events));
                 }
             }
