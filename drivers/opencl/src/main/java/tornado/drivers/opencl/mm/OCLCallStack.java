@@ -1,5 +1,6 @@
 package tornado.drivers.opencl.mm;
 
+import tornado.api.Event;
 import tornado.common.CallStack;
 import tornado.common.DeviceObjectState;
 import tornado.common.RuntimeUtilities;
@@ -45,6 +46,11 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
     public void write() {
         super.write();
         onDevice = true;
+    }
+    
+    public Event enqueueWrite(){
+        onDevice = true;
+        return super.enqueueWrite();
     }
 
     public int getReservedSlots() {
