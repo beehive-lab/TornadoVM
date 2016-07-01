@@ -1,12 +1,16 @@
 package tornado.drivers.opencl.graal;
 
+import com.oracle.graal.api.code.InstalledCode;
+import com.oracle.graal.api.code.InvalidInstalledCodeException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-
 import tornado.api.Event;
 import tornado.common.CallStack;
 import tornado.common.Tornado;
+import static tornado.common.Tornado.DEBUG;
+import static tornado.common.Tornado.DUMP_PROFILES;
+import static tornado.common.Tornado.ENABLE_EXCEPTIONS;
 import tornado.common.TornadoInstalledCode;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.OCLDeviceContext;
@@ -18,10 +22,6 @@ import tornado.drivers.opencl.OCLScheduler;
 import tornado.drivers.opencl.mm.OCLByteBuffer;
 import tornado.drivers.opencl.mm.OCLCallStack;
 import tornado.meta.Meta;
-import tornado.meta.domain.DomainTree;
-import com.oracle.graal.api.code.InstalledCode;
-import com.oracle.graal.api.code.InvalidInstalledCodeException;
-import static tornado.common.Tornado.DEBUG;
 
 public class OpenCLInstalledCode extends InstalledCode implements TornadoInstalledCode {
 
@@ -32,8 +32,6 @@ public class OpenCLInstalledCode extends InstalledCode implements TornadoInstall
 	private final OCLDeviceContext	deviceContext;
 	private final OCLKernel			kernel;
 	private boolean					valid;
-
-	private final List<Event>		waitEvents	= new ArrayList<Event>();
 	
 	private final OCLKernelScheduler scheduler;
 
@@ -72,19 +70,19 @@ public class OpenCLInstalledCode extends InstalledCode implements TornadoInstall
 		Tornado.debug("\tstack    : buffer id=0x%x, address=0x%x relative=0x%x", stack.toBuffer(),
 				stack.toAbsoluteAddress(), stack.toRelativeAddress());
 
-		List<Event> waitEvents = new ArrayList<Event>(1);
+		List<Event> waitEvents = new ArrayList<>(1);
 		waitEvents.add(stack.enqueueWrite());
 
 		setKernelArgs(stack);
 
-		OCLEvent task = null;
+		OCLEvent task;
 		if (meta != null && meta.isParallel()) {
 			task = scheduler.submit(kernel, meta, waitEvents);
 		} else {
 			task = deviceContext.enqueueTask(kernel, waitEvents);
 		} 
 
-		if(meta!=null){
+		if(meta!=null && DUMP_PROFILES){
 			meta.addProfile(task);
 		}
 		
@@ -168,16 +166,18 @@ public class OpenCLInstalledCode extends InstalledCode implements TornadoInstall
 
 		TornadoInternalError.guarantee(kernel != null, "kernel is null");
 		
-		OCLEvent task = null;
+		final OCLEvent task;
 		if (meta.isParallel()) {
 			task = scheduler.submit(kernel, meta, events);
 		} else {
 			task = deviceContext.enqueueTask(kernel, events);
 		} 	
 		
-//		meta.addProfile(task);
+                if(DUMP_PROFILES){
+                    meta.addProfile(task);
+                }
 		
-		return (Tornado.ENABLE_EXCEPTIONS) ? stack.enqueueReadAfter(task) : task;
+		return (ENABLE_EXCEPTIONS) ? stack.enqueueReadAfter(task) : task;
 	}
 
 
