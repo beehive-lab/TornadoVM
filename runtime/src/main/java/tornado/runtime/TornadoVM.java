@@ -364,8 +364,10 @@ public class TornadoVM extends TornadoLogger {
 
         final long t1 = System.nanoTime();
         final double elapsed = (t1 - t0) * 1e-9;
-        totalTime += elapsed;
-        invocations++;
+        if(!isWarmup){
+            totalTime += elapsed;
+            invocations++;
+        }
 
         if (DEBUG) {
             debug("vm: complete elapsed=%.9f s (%d iterations, %.9f s mean)",
