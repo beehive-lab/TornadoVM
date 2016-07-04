@@ -1,16 +1,13 @@
 package tornado.benchmarks.addvector;
 
-import tornado.api.Event;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
 import tornado.collections.types.Float4;
 import tornado.collections.types.FloatOps;
 import tornado.collections.types.VectorFloat4;
 import tornado.common.DeviceMapping;
-import tornado.benchmarks.EventList;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.CompilableTask;
+import tornado.runtime.api.TaskGraph;
 
 public class AddTornado extends BenchmarkDriver {
 
@@ -19,17 +16,12 @@ public class AddTornado extends BenchmarkDriver {
 
 	private VectorFloat4 a, b, c;
 
-	private CompilableTask add;
-
-	private Event last;
-	private final EventList<Event> events;
+	private TaskGraph graph;
 
 	public AddTornado(int iterations, int numElements, DeviceMapping device) {
 		super(iterations);
 		this.numElements = numElements;
 		this.device = device;
-		events = new EventList<Event>(iterations);
-		last = null;
 	}
 
 	@Override
@@ -45,14 +37,19 @@ public class AddTornado extends BenchmarkDriver {
 			b.set(i, valueB);
 		}
 
-		add = TaskUtils.createTask(GraphicsKernels::addVector, a, b, c);
-		add.mapTo(device);
+                graph = new TaskGraph()
+                    .add(GraphicsKernels::addVector, a, b, c)
+                    .streamOut(c)
+                    .mapAllTo(device);
+                
+                graph.warmup();
 	}
 
 	@Override
 	public void tearDown() {
-		add.invalidate();
-
+		graph.dumpTimes();
+                graph.dumpProfiles();
+                
 		a = null;
 		b = null;
 		c = null;
@@ -64,20 +61,10 @@ public class AddTornado extends BenchmarkDriver {
 	@Override
 	public void code() {
 
-		if (last == null) {
-			add.schedule();
-			last = add.getEvent();
-		} else {
-			add.schedule(last);
-			last = add.getEvent();
-		}
-
-		events.add(last);
-	}
-
-	@Override
-	public void barrier() {
-		last.waitOn();
+            
+                graph.schedule().waitOn();
+            
+		
 	}
 
 	@Override
@@ -85,7 +72,7 @@ public class AddTornado extends BenchmarkDriver {
 
 		final VectorFloat4 result = new VectorFloat4(numElements);
 
-		add.execute();
+		graph.schedule().waitOn();
 
 		GraphicsKernels.addVector(a, b, result);
 
@@ -103,16 +90,14 @@ public class AddTornado extends BenchmarkDriver {
 	public void printSummary() {
 		if (isValid())
 			System.out.printf(
-					"id=opencl-device-%d, elapsed=%f, per iteration=%f, %s\n",
+					"id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
 					((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
-					getElapsedPerIteration(), events.summeriseEvents());
+					getElapsedPerIteration());
 		else
 			System.out.printf("id=opencl-device-%d produced invalid result\n",
 					((OCLDeviceMapping) device).getDeviceIndex());
 	}
 
-	public double getOverhead() {
-		return 1.0 - events.getMeanExecutionTime() / getElapsedPerIteration();
-	}
+	
 
 }

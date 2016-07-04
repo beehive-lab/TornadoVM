@@ -1,16 +1,13 @@
 package tornado.benchmarks.convolvearray;
 
+import tornado.benchmarks.BenchmarkDriver;
 import static tornado.benchmarks.BenchmarkUtils.createFilter;
 import static tornado.benchmarks.BenchmarkUtils.createImage;
-import tornado.api.Event;
-import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
 import tornado.collections.types.FloatOps;
 import tornado.common.DeviceMapping;
-import tornado.benchmarks.EventList;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.CompilableTask;
+import tornado.runtime.api.TaskGraph;
 
 public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
@@ -19,10 +16,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
     private float[] input, output, filter;
 
-    private CompilableTask convolve;
-
-    private Event last;
-    private final EventList<Event> events;
+    private TaskGraph graph;
 
     public ConvolveImageArrayTornado(int iterations, int imageSizeX,
             int imageSizeY, int filterSize, DeviceMapping device) {
@@ -31,8 +25,6 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         this.imageSizeY = imageSizeY;
         this.filterSize = filterSize;
         this.device = device;
-        events = new EventList<Event>(iterations);
-        last = null;
     }
 
     @Override
@@ -44,16 +36,21 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         createImage(input, imageSizeX, imageSizeY);
         createFilter(filter, filterSize, filterSize);
 
-        convolve = TaskUtils.createTask(GraphicsKernels::convolveImageArray,
+        graph = new TaskGraph()
+                .add(GraphicsKernels::convolveImageArray,
                 input, filter, output, imageSizeX, imageSizeY, filterSize,
-                filterSize);
-        convolve.mapTo(device);
+                filterSize)
+                .streamOut(output)
+                .mapAllTo(device);
+        
+        graph.warmup();
 
     }
 
     @Override
     public void tearDown() {
-        convolve.invalidate();
+       graph.dumpTimes();
+       graph.dumpProfiles();
 
         input = null;
         output = null;
@@ -66,27 +63,17 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
     @Override
     public void code() {
 
-        if (last == null) {
-            convolve.schedule();
-        } else {
-            convolve.schedule(last);
-        }
-
-        last = convolve.getEvent();
-        events.add(last);
+        graph.schedule().waitOn();
     }
 
-    @Override
-    public void barrier() {
-        last.waitOn();
-    }
+    
 
     @Override
     public boolean validate() {
 
         final float[] result = new float[imageSizeX * imageSizeY];
 
-        convolve.execute();
+        code();
 
         GraphicsKernels.convolveImageArray(input, filter, result, imageSizeX,
                 imageSizeY, filterSize, filterSize);
@@ -105,16 +92,11 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
     public void printSummary() {
         if (isValid())
             System.out.printf(
-                    "id=opencl-device-%d, elapsed=%f, per iteration=%f, %s\n",
+                    "id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
                     ((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
-                    getElapsedPerIteration(), events.summeriseEvents());
+                    getElapsedPerIteration());
         else
             System.out.printf("id=opencl-device-%d produced invalid result\n",
                     ((OCLDeviceMapping) device).getDeviceIndex());
     }
-
-    public double getOverhead() {
-        return 1.0 - events.getMeanExecutionTime() / getElapsedPerIteration();
-    }
-
 }

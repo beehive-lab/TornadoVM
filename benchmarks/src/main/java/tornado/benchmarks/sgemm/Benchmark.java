@@ -1,60 +1,52 @@
 package tornado.benchmarks.sgemm;
 
+import tornado.benchmarks.BenchmarkRunner;
+import tornado.benchmarks.BenchmarkDriver;
+import tornado.common.DeviceMapping;
 
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.drivers.opencl.runtime.OCLDriver;
-import tornado.runtime.TornadoRuntime;
+public class Benchmark extends BenchmarkRunner {
 
-public class Benchmark {
+    private int width;
+    private int height;
 
-	private static final String	BENCHMARK_NAME	= "sgemm";
+    public void parseArgs(String[] args) {
+        if (args.length == 3) {
+            iterations = Integer.parseInt(args[0]);
+            width = Integer.parseInt(args[1]);
+            height = Integer.parseInt(args[2]);
 
-	public static void main(String[] args) {
-		if(args.length == 3){
-			final int iterations = Integer.parseInt(args[0]);
-			final int width = Integer.parseInt(args[1]);
-			final int height = Integer.parseInt(args[2]);
-			run(iterations, width, height);
-		}else {
-			run(20, 512,512);
-		}	
-	}
+        } else {
+            iterations = 20;
+            width = 512;
+            height = 512;
+        }
+    }
 
-	public static void run(int iterations, int m, int n) {
-		System.out.printf("benchmark=%s, iterations=%d, num elements={%d,%d}\n", BENCHMARK_NAME,
-				iterations, m,n);
+    @Override
+    protected String getName() {
+        return "sgemm";
+    }
 
-		final SgemmJava referenceTest = new SgemmJava(iterations, m,n);
-		referenceTest.benchmark();
+    @Override
+    protected String getIdString() {
+     return String.format("%s-%d-%d-%d",getName(),iterations,width,height);
+    }
 
-		System.out.printf("bm=%-15s, id=%-20s, %s\n", String.format("%s-%d-%d-%d",BENCHMARK_NAME,iterations,m,n), "java-reference",
-				referenceTest.getSummary());
+    @Override
+    protected String getConfigString() {
+        return String.format("width=%d, height=%d",width,height);
+    }
 
-		final double refElapsed = referenceTest.getElapsed();
+    @Override
+    protected BenchmarkDriver getJavaDriver() {
+     return new SgemmJava(iterations,width,height); 
+    }
 
-		final SgemmTornadoDummy tornadoOverhead = new SgemmTornadoDummy(iterations, m,n);
-		tornadoOverhead.benchmark();
-		System.out.printf("bm=%-15s, id=%-20s, %s, speedup=%.4f\n", String.format("%s-%d-%d-%d",BENCHMARK_NAME,iterations,m,n),
-				"tornado-dummy", tornadoOverhead.getSummary(),
-				refElapsed / tornadoOverhead.getElapsed());
+    @Override
+    protected BenchmarkDriver getTornadoDriver(DeviceMapping device) {
+       return new SgemmTornado(iterations,width,height,device);
+    }
 
-		final OCLDriver oclRuntime = (OCLDriver) TornadoRuntime.runtime;
-		for (int platformIndex = 0; platformIndex < oclRuntime.getNumPlatforms(); platformIndex++) {
-			for (int deviceIndex = 0; deviceIndex < oclRuntime.getNumDevices(platformIndex); deviceIndex++) {
-				final OCLDeviceMapping device = new OCLDeviceMapping(platformIndex, deviceIndex);
-
-				final SgemmTornado deviceTest = new SgemmTornado(iterations, m,n, device);
-
-				deviceTest.benchmark();
-
-				System.out.printf("bm=%-15s, id=%-20s, %s, speedup=%.4f, overhead=%.4f\n",
-						String.format("%s-%d-%d-%d",BENCHMARK_NAME,iterations,m,n), "opencl-device-" + platformIndex + "-" + deviceIndex,
-						deviceTest.getSummary(), refElapsed / deviceTest.getElapsed(),
-						deviceTest.getOverhead());
-			}
-		}
-		
-		TornadoRuntime.resetDevices();
-	}
+    
 
 }

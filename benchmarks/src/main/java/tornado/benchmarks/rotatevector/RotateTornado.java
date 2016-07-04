@@ -1,6 +1,5 @@
 package tornado.benchmarks.rotatevector;
 
-import tornado.api.Event;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
 import tornado.collections.types.Float3;
@@ -8,10 +7,8 @@ import tornado.collections.types.FloatOps;
 import tornado.collections.types.Matrix4x4Float;
 import tornado.collections.types.VectorFloat3;
 import tornado.common.DeviceMapping;
-import tornado.benchmarks.EventList;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.CompilableTask;
+import tornado.runtime.api.TaskGraph;
 
 public class RotateTornado extends BenchmarkDriver {
 
@@ -21,17 +18,12 @@ public class RotateTornado extends BenchmarkDriver {
 	private VectorFloat3 input, output;
 	private Matrix4x4Float m;
 
-	private CompilableTask rotate;
-
-	private Event last;
-	private final EventList<Event> events;
+	private TaskGraph graph;
 
 	public RotateTornado(int iterations, int numElements, DeviceMapping device) {
 		super(iterations);
 		this.numElements = numElements;
 		this.device = device;
-		events = new EventList<Event>(iterations);
-		last = null;
 	}
 
 	@Override
@@ -47,14 +39,19 @@ public class RotateTornado extends BenchmarkDriver {
 			input.set(i, value);
 		}
 
-		rotate = TaskUtils.createTask(GraphicsKernels::rotateVector, output, m,
-				input);
-		rotate.mapTo(device);
+		graph = new TaskGraph()
+                        .add(GraphicsKernels::rotateVector, output, m,
+				input)
+                        .streamOut(output)
+                        .mapAllTo(device);
+		
+                graph.warmup();
 	}
 
 	@Override
 	public void tearDown() {
-		rotate.invalidate();
+		graph.dumpTimes();
+                graph.dumpProfiles();
 
 		input = null;
 		output = null;
@@ -66,18 +63,7 @@ public class RotateTornado extends BenchmarkDriver {
 
 	@Override
 	public void code() {
-
-		if (last == null)
-			rotate.schedule();
-		else
-			rotate.schedule(last);
-		last = rotate.getEvent();
-		events.add(last);
-	}
-
-	@Override
-	public void barrier() {
-		last.waitOn();
+            graph.schedule().waitOn();
 	}
 
 	@Override
@@ -85,7 +71,7 @@ public class RotateTornado extends BenchmarkDriver {
 
 		final VectorFloat3 result = new VectorFloat3(numElements);
 
-		rotate.execute();
+		code();
 
 		GraphicsKernels.rotateVector(result, m, input);
 
@@ -104,16 +90,11 @@ public class RotateTornado extends BenchmarkDriver {
 	public void printSummary() {
 		if (isValid())
 			System.out.printf(
-					"id=opencl-device-%d, elapsed=%f, per iteration=%f, %s\n",
+					"id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
 					((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
-					getElapsedPerIteration(), events.summeriseEvents());
+					getElapsedPerIteration());
 		else
 			System.out.printf("id=opencl-device-%d produced invalid result\n",
 					((OCLDeviceMapping) device).getDeviceIndex());
 	}
-
-	public double getOverhead() {
-		return 1.0 - events.getMeanExecutionTime() / getElapsedPerIteration();
-	}
-
 }

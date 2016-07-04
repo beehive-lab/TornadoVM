@@ -1,64 +1,54 @@
 package tornado.benchmarks.convolvearray;
 
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.drivers.opencl.runtime.OCLDriver;
-import tornado.runtime.TornadoRuntime;
+import tornado.benchmarks.BenchmarkRunner;
+import tornado.benchmarks.BenchmarkDriver;
+import tornado.common.DeviceMapping;
 
-public class Benchmark {
+public class Benchmark extends BenchmarkRunner {
 
-	private static final String	BENCHMARK_NAME	= "convolve-image-array";
-
-	public static void main(String[] args) {
+    private int width;
+    private int height;
+    private int filtersize;
+    
+	@Override
+	public  void parseArgs(String[] args) {
 		if(args.length == 4){
-			final int iterations = Integer.parseInt(args[0]);
-			final int width = Integer.parseInt(args[1]);
-			final int height = Integer.parseInt(args[2]);
-			final int filtersize = Integer.parseInt(args[3]);
-			run(iterations, height, width, filtersize);
+			iterations = Integer.parseInt(args[0]);
+			width = Integer.parseInt(args[1]);
+			height = Integer.parseInt(args[2]);
+			filtersize = Integer.parseInt(args[3]);
+			
 		}else {
-			run(100, 1080, 1920, 5);
+                    iterations = 100;
+                    width = 1080;
+                    height = 1920;
+                    filtersize = 5;
+			
 		}
 	}
 
-	public static void run(int iterations, int imageSizeX, int imageSizeY, int filterSize) {
-		System.out.printf("benchmark=%s, iterations=%d, num elements={%d,%d}\n", BENCHMARK_NAME,
-				iterations, imageSizeX, imageSizeY, filterSize);
+    @Override
+    protected String getName() {
+     return "convolve-array";   
+    }
+    @Override
+    protected String getIdString() {
+     return String.format("%s-%d-%d-%d-%d",getName(),iterations,width,height,filtersize);   
+    }
 
-		final ConvolveImageArrayJava referenceTest = new ConvolveImageArrayJava(iterations,
-				imageSizeX, imageSizeY, filterSize);
-		referenceTest.benchmark();
+    @Override
+    protected String getConfigString() {
+     return String.format("width=%d, height=%d, filtersize=%d", width,height,filtersize);
+    }
 
-		System.out.printf("bm=%-15s, id=%-20s, %s\n", BENCHMARK_NAME, "java-reference",
-				referenceTest.getSummary());
+    @Override
+    protected BenchmarkDriver getJavaDriver() {
+     return new ConvolveImageArrayJava(iterations,width,height,filtersize);   
+    }
 
-		final double refElapsed = referenceTest.getElapsed();
-
-		final ConvolveImageArrayTornadoDummy tornadoOverhead = new ConvolveImageArrayTornadoDummy(
-				iterations, imageSizeX, imageSizeY, filterSize);
-		tornadoOverhead.benchmark();
-		System.out.printf("bm=%-15s, id=%-20s, %s, speedup=%.4f\n", BENCHMARK_NAME,
-				"tornado-dummy", tornadoOverhead.getSummary(),
-				refElapsed / tornadoOverhead.getElapsed());
-
-		final OCLDriver oclRuntime = (OCLDriver) TornadoRuntime.runtime;
-		for (int platformIndex = 0; platformIndex < oclRuntime.getNumPlatforms(); platformIndex++) {
-			for (int deviceIndex = 0; deviceIndex < oclRuntime.getNumDevices(platformIndex); deviceIndex++) {
-				final OCLDeviceMapping device = new OCLDeviceMapping(platformIndex, deviceIndex);
-
-				final ConvolveImageArrayTornado deviceTest = new ConvolveImageArrayTornado(
-						iterations, imageSizeX, imageSizeY, filterSize, device);
-
-				deviceTest.benchmark();
-
-				System.out.printf("bm=%-15s, id=%-20s, %s, speedup=%.4f, overhead=%.4f\n",
-						BENCHMARK_NAME, "opencl-device-" + platformIndex + "-" + deviceIndex,
-						deviceTest.getSummary(), refElapsed / deviceTest.getElapsed(),
-						deviceTest.getOverhead());
-			}
-		}
-		
-		TornadoRuntime.resetDevices();
-
-	}
+    @Override
+    protected BenchmarkDriver getTornadoDriver(DeviceMapping device) {
+       return new ConvolveImageArrayTornado(iterations,width,height,filtersize,device);
+    }
 
 }
