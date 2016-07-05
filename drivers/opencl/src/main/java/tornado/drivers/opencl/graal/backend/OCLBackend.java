@@ -1,14 +1,5 @@
 package tornado.drivers.opencl.graal.backend;
 
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import com.oracle.graal.api.code.Architecture;
 import com.oracle.graal.api.code.CallingConvention;
 import com.oracle.graal.api.code.CallingConvention.Type;
@@ -42,7 +33,14 @@ import com.oracle.graal.lir.gen.LIRGeneratorTool;
 import com.oracle.graal.nodes.StructuredGraph;
 import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
 import com.oracle.graal.phases.tiers.SuitesProvider;
-
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import tornado.api.Vector;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
@@ -51,6 +49,7 @@ import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.OCLContext;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.graal.OCLProviders;
+import tornado.drivers.opencl.graal.OCLSuitesProvider;
 import tornado.drivers.opencl.graal.OCLUtils;
 import tornado.drivers.opencl.graal.OpenCLCodeCache;
 import tornado.drivers.opencl.graal.OpenCLCodeUtil;
@@ -58,15 +57,14 @@ import tornado.drivers.opencl.graal.OpenCLFrameContext;
 import tornado.drivers.opencl.graal.OpenCLFrameMap;
 import tornado.drivers.opencl.graal.OpenCLFrameMapBuilder;
 import tornado.drivers.opencl.graal.OpenCLInstalledCode;
-import tornado.drivers.opencl.graal.OCLSuitesProvider;
 import tornado.drivers.opencl.graal.asm.OpenCLAssembler;
 import tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
+import tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
 import tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
 import tornado.drivers.opencl.graal.compiler.OpenCLLIRGenerationResult;
-import tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
 import tornado.drivers.opencl.mm.OCLByteBuffer;
 import tornado.graal.backend.TornadoBackend;
@@ -160,7 +158,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
 		 * Allocate the smallest of the requested heap size or the max global memory size.
 		 */
 		final long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice()
-				.getGlobalMemorySize());
+				.getMaxAllocationSize());
 		if (memorySize < DEFAULT_HEAP_ALLOCATION) Tornado.warn(
 				"Unable to allocate %s of heap space - resized to %s",
 				RuntimeUtilities.humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false),
