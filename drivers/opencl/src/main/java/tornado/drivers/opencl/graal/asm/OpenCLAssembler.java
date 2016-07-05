@@ -12,6 +12,7 @@ import com.oracle.graal.lir.Variable;
 import java.util.ArrayList;
 import java.util.List;
 import tornado.common.exceptions.TornadoInternalError;
+import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.HEAP_REF_NAME;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.lir.OCLEmitable;
@@ -52,7 +53,7 @@ public class OpenCLAssembler extends Assembler {
 	public static class OCLNullaryOp extends OCLOp {
 		// @formatter:off
 		public static final OCLNullaryOp RETURN   = new OCLNullaryOp("return");
-		public static final OCLNullaryOp SLOTS_BASE_ADDRESS   = new OCLNullaryOp("(ulong) slots");
+		public static final OCLNullaryOp SLOTS_BASE_ADDRESS   = new OCLNullaryOp("(ulong) " + HEAP_REF_NAME);
 		 // @formatter:on
 
 		protected OCLNullaryOp(String opcode) {
@@ -926,7 +927,7 @@ public class OpenCLAssembler extends Assembler {
                     }
 		} else if (value instanceof OCLReturnSlot) {
 			final String type = OCLBackend.platformKindToOpenCLKind(value.getPlatformKind());
-			result = String.format("*((__global %s *) _heap_base)",type);
+			result = String.format("*((__global %s *) %s)",type,HEAP_REF_NAME);
 		} else if (value instanceof MemoryAccess) {
 			result = ((MemoryAccess) value).toValueString(this);
 		} else if (value instanceof OCLNullary.Expr) {
