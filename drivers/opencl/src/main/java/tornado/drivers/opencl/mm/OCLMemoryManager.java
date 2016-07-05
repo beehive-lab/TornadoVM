@@ -7,6 +7,7 @@ import tornado.common.DeviceMapping;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import tornado.common.TornadoLogger;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.enums.OCLMemFlags;
@@ -219,10 +220,10 @@ public class OCLMemoryManager extends TornadoLogger {
 
     public long toAbsoluteDeviceAddress(final long address) {
         long result = address;
-        if ((Long.compareUnsigned(address, deviceBufferAddress) < 0 || Long
-                .compareUnsigned(address, (deviceBufferAddress + heapLimit)) > 0)) {
-            result += deviceBufferAddress;
-        }
+        
+        guarantee(address + deviceBufferAddress >= 0, "absolute address may have wrapped arround: %d + %d = %d", address,deviceBufferAddress,address+deviceBufferAddress);
+        result += deviceBufferAddress;
+
         return result;
     }
 
