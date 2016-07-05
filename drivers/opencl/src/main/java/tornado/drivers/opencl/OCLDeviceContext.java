@@ -47,8 +47,8 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
 		return memoryManager;
 	}
 
-	public void sync() {
-//		queue.flush();
+	public void sync() {		
+//                queue.flush();
 		queue.finish();
 	}
 
