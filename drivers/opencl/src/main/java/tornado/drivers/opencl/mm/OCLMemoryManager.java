@@ -1,16 +1,12 @@
 package tornado.drivers.opencl.mm;
 
 import java.lang.reflect.Method;
-import java.util.Collections;
-
 import tornado.api.Parallel;
 import tornado.api.Write;
 import tornado.common.DeviceMapping;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import tornado.common.TornadoLogger;
-import tornado.common.enums.Access;
-import tornado.common.exceptions.TornadoInternalError;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.enums.OCLMemFlags;
@@ -102,6 +98,11 @@ public class OCLMemoryManager extends TornadoLogger {
                 deviceContext.getDevice().getName());
     }
 
+    
+    public long getHeapSize(){
+        return heapLimit - callStackLimit;
+    }
+    
     private static final long align(final long address, final long alignment) {
         return (address % alignment == 0) ? address : address
                 + (alignment - address % alignment);
@@ -209,7 +210,7 @@ public class OCLMemoryManager extends TornadoLogger {
                 RuntimeUtilities.humanReadableByteCount(heapLimit, true),
                 deviceContext.getDevice().getName());
         
-        createMemoryInitializers(backend);
+//        createMemoryInitializers(backend);
     }
 
     public long toAbsoluteAddress() {
