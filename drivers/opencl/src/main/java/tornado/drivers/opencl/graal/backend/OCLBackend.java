@@ -147,7 +147,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
 		lookupCode.execute(bb, null);
 
 		// bb.dump();
-		final long address = bb.getLong(8);
+		final long address = bb.getLong(0);
 		Tornado.info("Heap address @ 0x%x on %s", address, deviceContext.getDevice().getName());
 		return address;
 	}

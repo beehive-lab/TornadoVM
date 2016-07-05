@@ -1,19 +1,5 @@
 package tornado.drivers.opencl.graal.asm;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import tornado.common.Tornado;
-import tornado.common.exceptions.TornadoInternalError;
-import tornado.drivers.opencl.OCLDeviceContext;
-import tornado.drivers.opencl.graal.backend.OCLBackend;
-import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
-import tornado.drivers.opencl.graal.lir.OCLEmitable;
-import tornado.drivers.opencl.graal.lir.OCLNullary;
-import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
-import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
-import tornado.graal.nodes.ArrayKind;
-
 import com.oracle.graal.api.code.AbstractAddress;
 import com.oracle.graal.api.code.Register;
 import com.oracle.graal.api.code.TargetDescription;
@@ -23,6 +9,17 @@ import com.oracle.graal.api.meta.Value;
 import com.oracle.graal.asm.Assembler;
 import com.oracle.graal.asm.Label;
 import com.oracle.graal.lir.Variable;
+import java.util.ArrayList;
+import java.util.List;
+import tornado.common.exceptions.TornadoInternalError;
+import tornado.drivers.opencl.graal.backend.OCLBackend;
+import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
+import tornado.drivers.opencl.graal.lir.OCLEmitable;
+import tornado.drivers.opencl.graal.lir.OCLNullary;
+import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
+import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
+import tornado.graal.nodes.ArrayKind;
+import tornado.graal.nodes.vector.VectorKind;
 
 public class OpenCLAssembler extends Assembler {
 
@@ -921,10 +918,15 @@ public class OpenCLAssembler extends Assembler {
 				Kind.Float)) result += String.format("f");
 		} else if (value.getClass().getName().equals(
 			"com.oracle.graal.api.meta.NullConstant")) {
+                    if(value.getPlatformKind() instanceof VectorKind){
+                        final VectorKind kind = (VectorKind) value.getPlatformKind();
+                        result = String.format("(%s)(%s)",kind.getJavaName(),kind.getDefaultValue().toValueString());
+                    } else {
 			result = String.format("0");
+                    }
 		} else if (value instanceof OCLReturnSlot) {
 			final String type = OCLBackend.platformKindToOpenCLKind(value.getPlatformKind());
-			result = String.format("*((__global %s *) &slots[1])",type);
+			result = String.format("*((__global %s *) _heap_base)",type);
 		} else if (value instanceof MemoryAccess) {
 			result = ((MemoryAccess) value).toValueString(this);
 		} else if (value instanceof OCLNullary.Expr) {
