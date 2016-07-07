@@ -340,7 +340,7 @@ public class TornadoVM extends TornadoLogger {
         }
 
         if (!isWarmup) {
-            if (contexts.size() == 1) {
+            if (!ENABLE_OOO_EXECUTION && contexts.size() == 1) {
                 lastEvent.waitOn();
             } else {
                 for (DeviceMapping device : contexts) {
