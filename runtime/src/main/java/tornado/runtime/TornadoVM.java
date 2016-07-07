@@ -3,9 +3,7 @@ package tornado.runtime;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import tornado.api.Event;
 import tornado.api.enums.TornadoExecutionStatus;
 import tornado.common.CallStack;
@@ -13,6 +11,7 @@ import tornado.common.DeviceMapping;
 import tornado.common.DeviceObjectState;
 import tornado.common.SchedulableTask;
 import static tornado.common.Tornado.DEBUG;
+import static tornado.common.Tornado.ENABLE_OOO_EXECUTION;
 import tornado.common.TornadoInstalledCode;
 import tornado.common.TornadoLogger;
 import tornado.common.enums.Access;
@@ -35,8 +34,6 @@ public class TornadoVM extends TornadoLogger {
 
     private final List<Object> constants;
     private final List<SchedulableTask> tasks;
-
-    private final Set<Event> unboundEvents;
 
     private final byte[] code;
     private final ByteBuffer buffer;
@@ -99,8 +96,6 @@ public class TornadoVM extends TornadoLogger {
         constants = graphContext.getConstants();
         tasks = graphContext.getTasks();
 
-        unboundEvents = new HashSet<Event>();
-
         debug("vm ready to go");
         buffer.mark();
     }
@@ -117,8 +112,8 @@ public class TornadoVM extends TornadoLogger {
 
         return stacks[index];
     }
-    
-    public void warmup(){
+
+    public void warmup() {
         execute(true);
     }
 
@@ -130,8 +125,6 @@ public class TornadoVM extends TornadoLogger {
         final long t0 = System.nanoTime();
 
         Event lastEvent = null;
-
-        unboundEvents.clear();
 
         for (List<Event> waitList : events) {
             waitList.clear();
@@ -243,9 +236,6 @@ public class TornadoVM extends TornadoLogger {
                     debug("vm: LAUNCH %s on %s [event list=%d]",
                             tasks.get(taskIndex).getName(),
                             contexts.get(contextIndex), eventList);
-                    for (Event event : waitList) {
-                        System.out.printf("\t%s\n", event);
-                    }
                 }
 
                 if (installedCodes[taskIndex] == null) {
@@ -261,10 +251,10 @@ public class TornadoVM extends TornadoLogger {
                 }
 
                 if (isWarmup) {
-                     for (int i = 0; i < numArgs; i++) {
-                    buffer.get();
-                    buffer.getInt();
-                     }
+                    for (int i = 0; i < numArgs; i++) {
+                        buffer.get();
+                        buffer.getInt();
+                    }
                     continue;
                 }
 
@@ -302,8 +292,6 @@ public class TornadoVM extends TornadoLogger {
 
                 lastEvent = installedCode.launch(stack, task.meta(), waitList);
 
-//				unboundEvents.add(lastEvent);
-                // lastEvent = new EmptyEvent();
             } else if (op == ADD_DEP) {
                 final int eventList = buffer.getInt();
 
@@ -313,15 +301,12 @@ public class TornadoVM extends TornadoLogger {
 
                 TornadoInternalError.guarantee(lastEvent != null,
                         "lastEvent is null");
-                if (!(lastEvent instanceof EmptyEvent)) {
+                if (!(lastEvent instanceof EmptyEvent) && ENABLE_OOO_EXECUTION) {
                     if (DEBUG) {
                         debug("vm: ADD_DEP %s to event list %d", lastEvent,
                                 eventList);
                     }
                     events[eventList].add(lastEvent);
-//					if (unboundEvents.contains(lastEvent)) {
-//						unboundEvents.remove(lastEvent);
-//					}
                 }
             } else if (op == BARRIER) {
                 final int eventList = buffer.getInt();
@@ -347,8 +332,6 @@ public class TornadoVM extends TornadoLogger {
             }
 
             if (lastEvent != null && !(lastEvent instanceof EmptyEvent)) {
-//				unboundEvents.add(lastEvent);
-
 //                lastEvent.waitOn();
                 if (DEBUG) {
                     debug("vm: last event=%s", lastEvent);
@@ -357,14 +340,18 @@ public class TornadoVM extends TornadoLogger {
         }
 
         if (!isWarmup) {
-            for (DeviceMapping device : contexts) {
-                device.sync();
+            if (contexts.size() == 1) {
+                lastEvent.waitOn();
+            } else {
+                for (DeviceMapping device : contexts) {
+                    device.sync();
+                }
             }
         }
 
         final long t1 = System.nanoTime();
         final double elapsed = (t1 - t0) * 1e-9;
-        if(!isWarmup){
+        if (!isWarmup) {
             totalTime += elapsed;
             invocations++;
         }
