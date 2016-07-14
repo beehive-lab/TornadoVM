@@ -21,8 +21,7 @@ public class PrebuiltTask implements SchedulableTask {
 		this.argumentsAccess = access;
 		meta = new Meta();
 		meta.addProvider(DeviceMapping.class,device);
-		meta.addProvider(DomainTree.class,domain);
-		
+                meta.setDomain(domain);
 	}
 	
 	public String toString(){
