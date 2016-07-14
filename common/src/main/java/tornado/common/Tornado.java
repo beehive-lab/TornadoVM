@@ -66,15 +66,15 @@ public final class Tornado {
     }
 
     private static void tryLoadSettings() {
-        final File localSettings = new File("etc/tornado.properties");
+        final String tornadoRoot = System.getenv("TORNADO_ROOT");
+        final File localSettings = new File(tornadoRoot + "/etc/tornado.properties");
         if (localSettings.exists())
             try {
                 settings.load(new FileInputStream(localSettings));
             } catch (IOException e) {
                 warn("Unable to load settings from %s",
                         localSettings.getAbsolutePath());
-            }
-
+            } 
     }
 
     public static final void debug(final String pattern, final Object... args) {
