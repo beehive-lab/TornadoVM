@@ -341,7 +341,8 @@ public class TornadoVM extends TornadoLogger {
 
         if (!isWarmup) {
             if (!ENABLE_OOO_EXECUTION && contexts.size() == 1) {
-                lastEvent.waitOn();
+                //lastEvent.waitOn();
+                contexts.get(0).sync();
             } else {
                 for (DeviceMapping device : contexts) {
                     device.sync();
