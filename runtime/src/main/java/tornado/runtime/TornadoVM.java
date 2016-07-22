@@ -10,8 +10,10 @@ import tornado.common.CallStack;
 import tornado.common.DeviceMapping;
 import tornado.common.DeviceObjectState;
 import tornado.common.SchedulableTask;
+import tornado.common.Tornado;
 import static tornado.common.Tornado.DEBUG;
 import static tornado.common.Tornado.ENABLE_OOO_EXECUTION;
+import static tornado.common.Tornado.VM_WAIT_EVENT;
 import tornado.common.TornadoInstalledCode;
 import tornado.common.TornadoLogger;
 import tornado.common.enums.Access;
@@ -24,6 +26,8 @@ import static tornado.runtime.graph.GraphAssembler.*;
 
 public class TornadoVM extends TornadoLogger {
 
+    private final boolean useDependencies;
+    
     private final ExecutionContext graphContext;
     private final List<Object> objects;
     private final GlobalObjectState[] globalStates;
@@ -31,6 +35,7 @@ public class TornadoVM extends TornadoLogger {
     private final List<Event>[] events;
     private final List<DeviceMapping> contexts;
     private final TornadoInstalledCode[] installedCodes;
+    
 
     private final List<Object> constants;
     private final List<SchedulableTask> tasks;
@@ -46,6 +51,7 @@ public class TornadoVM extends TornadoLogger {
         this.graphContext = graphContext;
         this.code = code;
 
+        useDependencies = ENABLE_OOO_EXECUTION | Boolean.parseBoolean(Tornado.getProperty("tornado.vm.deps", "False"));
         totalTime = 0;
         invocations = 0;
 
@@ -340,9 +346,12 @@ public class TornadoVM extends TornadoLogger {
         }
 
         if (!isWarmup) {
-            if (!ENABLE_OOO_EXECUTION && contexts.size() == 1) {
-                //lastEvent.waitOn();
-                contexts.get(0).sync();
+            if (useDependencies && contexts.size() == 1) {
+                if(VM_WAIT_EVENT && lastEvent != null){
+                    lastEvent.waitOn();
+                } else {
+                    contexts.get(0).sync();
+                }
             } else {
                 for (DeviceMapping device : contexts) {
                     device.sync();
