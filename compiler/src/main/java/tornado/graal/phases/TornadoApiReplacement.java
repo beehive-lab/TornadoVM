@@ -1,17 +1,5 @@
 package tornado.graal.phases;
 
-import java.lang.annotation.Annotation;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import tornado.api.Atomic;
-import tornado.common.Tornado;
-import tornado.graal.nodes.AtomicAccessNode;
-import tornado.graal.nodes.ParallelOffsetNode;
-import tornado.graal.nodes.ParallelRangeNode;
-import tornado.graal.nodes.ParallelStrideNode;
-
 import com.oracle.graal.api.meta.LocalAnnotation;
 import com.oracle.graal.api.meta.ResolvedJavaMethod;
 import com.oracle.graal.graph.Node;
@@ -27,6 +15,18 @@ import com.oracle.graal.nodes.ValuePhiNode;
 import com.oracle.graal.nodes.calc.IntegerLessThanNode;
 import com.oracle.graal.nodes.java.StoreIndexedNode;
 import com.oracle.graal.phases.BasePhase;
+import java.lang.annotation.Annotation;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import tornado.api.Atomic;
+import tornado.common.Tornado;
+import tornado.graal.nodes.AtomicAccessNode;
+import tornado.graal.nodes.ParallelOffsetNode;
+import tornado.graal.nodes.ParallelRangeNode;
+import tornado.graal.nodes.ParallelStrideNode;
 
 public class TornadoApiReplacement extends BasePhase<TornadoHighTierContext> {
 
@@ -60,7 +60,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoHighTierContext> {
 	private void replaceLocalAnnotations(StructuredGraph graph, TornadoHighTierContext context) {
 
 		// build node -> annotation mapping
-		Map<ResolvedJavaMethod, LocalAnnotation[]> methodToAnnotations = new HashMap<ResolvedJavaMethod, LocalAnnotation[]>();
+		final Map<ResolvedJavaMethod, LocalAnnotation[]> methodToAnnotations = new HashMap<ResolvedJavaMethod, LocalAnnotation[]>();
 
 		methodToAnnotations.put(context.getMethod(), context.getMethod().getTypeAnnotations());
 
@@ -92,19 +92,25 @@ public class TornadoApiReplacement extends BasePhase<TornadoHighTierContext> {
 			final LoopsData data = new LoopsData(graph);
 			data.detectedCountedLoops();
 
+                        final Set<IntegerLessThanNode> found = new HashSet<>();
 			int loopIndex = 0;
-			for (LoopEx loop : data.innerFirst()) {
+			for (LoopEx loop : data.outerFirst()) {
 
 				for (InductionVariable iv : loop.getInductionVariables().values()) {
 					if (!parallelNodes.containsKey(iv.valueNode())) continue;
 
 					ValueNode maxIterations = null;
-					List<IntegerLessThanNode> conditions = iv.valueNode().usages()
+					final List<IntegerLessThanNode> conditions = iv.valueNode().usages()
 							.filter(IntegerLessThanNode.class).snapshot();
-					if (conditions.size() == 1) {
-						final IntegerLessThanNode lessThan = conditions.get(0);
-						maxIterations = lessThan.getY();
+                                        conditions.removeAll(found);
+                                        if(!conditions.isEmpty()){
+                                        final IntegerLessThanNode lessThan = conditions.get(0);
+                                        maxIterations = lessThan.getY();
+                                                
+                                        found.addAll(conditions);
+                                      
 					} else {
+                                                
 						Tornado.debug("Unable to parallelise: multiple uses of iv");
 						continue;
 					}
