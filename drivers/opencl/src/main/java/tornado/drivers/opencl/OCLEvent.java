@@ -4,6 +4,8 @@ import java.nio.ByteBuffer;
 import tornado.api.Event;
 import tornado.api.enums.TornadoExecutionStatus;
 import tornado.common.RuntimeUtilities;
+import static tornado.common.Tornado.ENABLE_PROFILING;
+import static tornado.common.Tornado.OPENCL_WAIT_ACTIVE;
 import tornado.common.TornadoLogger;
 import tornado.drivers.opencl.enums.OCLCommandExecutionStatus;
 import tornado.drivers.opencl.enums.OCLEventInfo;
@@ -32,7 +34,7 @@ public class OCLEvent extends TornadoLogger implements Event {
 
 	private long readEventTime(int param) {
 	
-            if(getCLStatus() != OCLCommandExecutionStatus.CL_COMPLETE){
+            if(!ENABLE_PROFILING || getCLStatus() != OCLCommandExecutionStatus.CL_COMPLETE){
                 return -1;
             }
             
@@ -93,15 +95,42 @@ public class OCLEvent extends TornadoLogger implements Event {
 		return OCLCommandExecutionStatus.toEnum(status);
 	}
 	
+        @Override
 	public void waitOn(){
+		if(OPENCL_WAIT_ACTIVE){
+                    waitOnActive();
+                } else {
+                    waitOnPassive();
+                }
 		
-		try {
+
+	}
+        
+        private void waitOnPassive(){
+            try {
 			clWaitForEvents(new long[]{id});
 		} catch (OCLException e) {
 			error(e.getMessage());
 		}
+        }
+        
+        private void waitOnActive(){
+		
 
-	}
+		try {
+                    buffer.clear();
+                    clGetEventInfo(id, OCLEventInfo.CL_EVENT_COMMAND_EXECUTION_STATUS.getValue(), buffer.array());
+                    int status = buffer.getInt();
+                    while(status > 0){
+                        buffer.clear();
+                        clGetEventInfo(id, OCLEventInfo.CL_EVENT_COMMAND_EXECUTION_STATUS.getValue(), buffer.array());
+                        status = buffer.getInt();
+                    }
+		} catch (OCLException e) {
+			error(e.getMessage());
+		}
+
+        }
 
 	@Override
 	public String toString() {

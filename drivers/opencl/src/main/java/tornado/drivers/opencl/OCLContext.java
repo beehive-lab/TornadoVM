@@ -1,18 +1,16 @@
 package tornado.drivers.opencl;
 
-import tornado.drivers.opencl.enums.OCLBufferCreateType;
-import tornado.drivers.opencl.enums.OCLCommandQueueProperties;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import sun.misc.Unsafe;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import tornado.common.TornadoLogger;
 import tornado.common.exceptions.TornadoInternalError;
+import tornado.drivers.opencl.enums.OCLBufferCreateType;
+import tornado.drivers.opencl.enums.OCLCommandQueueProperties;
 import tornado.drivers.opencl.exceptions.OCLException;
 
 @SuppressWarnings("restriction")
@@ -140,8 +138,10 @@ public class OCLContext extends TornadoLogger {
 
 	public void createCommandQueue(int index) {
 		long properties = 0;
-		properties |= OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
-		if (Tornado.ENABLE_OOO_EXECUTION)
+                if(Tornado.ENABLE_PROFILING)
+                    properties |= OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
+		
+                if (Tornado.ENABLE_OOO_EXECUTION)
 			properties |= OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
 		createCommandQueue(index, properties);
 	}
