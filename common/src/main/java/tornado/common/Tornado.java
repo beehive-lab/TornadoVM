@@ -17,6 +17,7 @@ public final class Tornado {
         return settings.getProperty(key, defaultValue);
     }
 
+    public static final boolean OPENCL_WAIT_ACTIVE = Boolean.parseBoolean(settings.getProperty("tornado.opencl.wait.active","False"));
     public static final boolean USE_OPENCL_SCHEDULING = Boolean.parseBoolean(settings.getProperty("tornado.opencl.schedule","False"));
     
     public static final boolean VM_WAIT_EVENT = Boolean.parseBoolean(settings.getProperty("tornado.vm.waitevent","False"));
@@ -24,6 +25,11 @@ public final class Tornado {
     public static final boolean ENABLE_EXCEPTIONS = Boolean
             .parseBoolean(settings.getProperty("tornado.exceptions.enable",
                     "False"));
+    
+    public static final boolean ENABLE_PROFILING = Boolean
+            .parseBoolean(settings.getProperty("tornado.profiling.enable",
+                    "False"));
+    
     public static final boolean ENABLE_OOO_EXECUTION = Boolean
             .parseBoolean(settings.getProperty("tornado.ooo-execution.enable",
                     "False"));
