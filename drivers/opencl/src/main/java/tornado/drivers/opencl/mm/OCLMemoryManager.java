@@ -33,13 +33,13 @@ public class OCLMemoryManager extends TornadoLogger {
     private long heapPosition;
 
     private boolean initialised;
-    
+
     private OpenCLInstalledCode initFP64Code;
     private OpenCLInstalledCode initFP32Code;
     private OpenCLInstalledCode initU32Code;
-	private OCLCallStack initCallStack;
-	private DomainTree initThreads;
-	private Meta initMeta;
+    private OCLCallStack initCallStack;
+    private DomainTree initThreads;
+    private Meta initMeta;
 
     public OCLMemoryManager(final OCLDeviceContext device) {
 
@@ -49,48 +49,51 @@ public class OCLMemoryManager extends TornadoLogger {
 
         reset();
     }
-    
-    private void initFP64(@Write double[] data, int count){
-    	for(@Parallel int i=0;i<count;i++)
-    		data[i] = 0;
-    }
-    
-    private void initFP32(@Write float[] data, int count){
-    	for(@Parallel int i=0;i<count;i++)
-    		data[i] = -1f;
-    }
-    
-    private void initU32(@Write int[] data, int count){
-    	for(@Parallel int i=0;i<count;i++)
-    		data[i] = 0;
-    }
-    
-    private Method getMethod(final String name, Class<?> type1) {
-		Method method = null;
-		try {
-			method = this.getClass().getDeclaredMethod(name, type1, int.class);
-			method.setAccessible(true);
-		} catch (NoSuchMethodException | SecurityException e) {
-			Tornado.fatal("unable to find " + name + " method: " + e.getMessage());
-		}
-		return method;
-	}
 
-    private void createMemoryInitializers(final OCLBackend backend){
-    	initThreads = new DomainTree(1);
-    	initMeta = new Meta();
-    	initMeta.addProvider(DeviceMapping.class, backend.getDeviceContext().asMapping());
-    	
+    private void initFP64(@Write double[] data, int count) {
+        for (@Parallel int i = 0; i < count; i++) {
+            data[i] = 0;
+        }
+    }
+
+    private void initFP32(@Write float[] data, int count) {
+        for (@Parallel int i = 0; i < count; i++) {
+            data[i] = -1f;
+        }
+    }
+
+    private void initU32(@Write int[] data, int count) {
+        for (@Parallel int i = 0; i < count; i++) {
+            data[i] = 0;
+        }
+    }
+
+    private Method getMethod(final String name, Class<?> type1) {
+        Method method = null;
+        try {
+            method = this.getClass().getDeclaredMethod(name, type1, int.class);
+            method.setAccessible(true);
+        } catch (NoSuchMethodException | SecurityException e) {
+            Tornado.fatal("unable to find " + name + " method: " + e.getMessage());
+        }
+        return method;
+    }
+
+    private void createMemoryInitializers(final OCLBackend backend) {
+        initThreads = new DomainTree(1);
+        initMeta = new Meta();
+        initMeta.addProvider(DeviceMapping.class, backend.getDeviceContext().asMapping());
+
 //    	initFP64Code = OCLCompiler.compileCodeForDevice(
 //				TornadoRuntime.resolveMethod(getMethod("initFP64",double[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
-    	initFP32Code = OCLCompiler.compileCodeForDevice(
-				TornadoRuntime.runtime.resolveMethod(getMethod("initFP32",float[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
-    	initU32Code = OCLCompiler.compileCodeForDevice(
-				TornadoRuntime.runtime.resolveMethod(getMethod("initU32",int[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
-    	initCallStack = createCallStack(4);
-    	
+        initFP32Code = OCLCompiler.compileCodeForDevice(
+                TornadoRuntime.runtime.resolveMethod(getMethod("initFP32", float[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
+        initU32Code = OCLCompiler.compileCodeForDevice(
+                TornadoRuntime.runtime.resolveMethod(getMethod("initU32", int[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
+        initCallStack = createCallStack(4);
+
     }
-    
+
     public void reset() {
         callStackPosition = 0;
         heapPosition = callStackLimit;
@@ -99,11 +102,10 @@ public class OCLMemoryManager extends TornadoLogger {
                 deviceContext.getDevice().getName());
     }
 
-    
-    public long getHeapSize(){
+    public long getHeapSize() {
         return heapLimit - callStackLimit;
     }
-    
+
     private static final long align(final long address, final long alignment) {
         return (address % alignment == 0) ? address : address
                 + (alignment - address % alignment);
@@ -114,7 +116,7 @@ public class OCLMemoryManager extends TornadoLogger {
         long offset = heapPosition;
         if (heapPosition + bytes < heapLimit) {
             heapPosition = align(heapPosition + bytes, alignment);
-            
+
 //            final long byteCount = bytes - headerSize;
 //            if(type != null && type.isArray() && RuntimeUtilities.isPrimitiveArray(type)){
 //            	if(type == double[].class ){
@@ -129,8 +131,6 @@ public class OCLMemoryManager extends TornadoLogger {
 //            	TornadoInternalError.guarantee(byteCount % 4 == 0, "array is not divisible by 4");
 //            	initialiseMemory(initU32Code,offset + headerSize, (int) (byteCount/4));
 //            }
-            
-            
         } else {
             throw new TornadoOutOfMemoryException("Out of memory on device: "
                     + deviceContext.getDevice().getName());
@@ -139,27 +139,24 @@ public class OCLMemoryManager extends TornadoLogger {
         return offset;
     }
 
-    
-	private void initialiseMemory(OpenCLInstalledCode code, long offset, int count) {
-		if(count <= 0) return;
-		
-		initCallStack.reset();
-		
-		initCallStack.putLong(offset);
-		initCallStack.putInt(count);
-		
-		final Meta meta = new Meta();
-		
-		
-		initThreads.set(0, new IntDomain(0,1,count));
-		meta.setDomain(initThreads);
-//		System.out.println("init threads: " + initThreads.toString());
-		
-		code.execute(initCallStack, meta);
-		
-	}
+    private void initialiseMemory(OpenCLInstalledCode code, long offset, int count) {
+        if (count <= 0) {
+            return;
+        }
 
-	public OCLCallStack createCallStack(final int maxArgs) {
+        initCallStack.reset();
+
+        initCallStack.putLong(offset);
+        initCallStack.putInt(count);
+
+        final Meta meta = new Meta();
+        initThreads.set(0, new IntDomain(0, 1, count));
+        meta.setDomain(initThreads);
+
+        code.execute(initCallStack, meta);
+    }
+
+    public OCLCallStack createCallStack(final int maxArgs) {
 
         OCLCallStack callStack = new OCLCallStack(callStackPosition, maxArgs,
                 deviceContext);
@@ -180,14 +177,13 @@ public class OCLMemoryManager extends TornadoLogger {
         return heapLimit - heapPosition;
     }
 
-    /***
+    /**
+     * *
      * Returns sub-buffer that can be use to access a region managed by the
      * memory manager.
      *
-     * @param offset
-     *            offset within the memory managers heap
-     * @param length
-     *            size in bytes of the sub-buffer
+     * @param offset offset within the memory managers heap
+     * @param length size in bytes of the sub-buffer
      * @return
      */
     public OCLByteBuffer getSubBuffer(final int offset, final int length) {
@@ -210,7 +206,7 @@ public class OCLMemoryManager extends TornadoLogger {
         Tornado.info("Located heap @ 0x%x (%s) on %s", deviceBufferAddress,
                 RuntimeUtilities.humanReadableByteCount(heapLimit, true),
                 deviceContext.getDevice().getName());
-        
+
 //        createMemoryInitializers(backend);
     }
 
@@ -220,8 +216,8 @@ public class OCLMemoryManager extends TornadoLogger {
 
     public long toAbsoluteDeviceAddress(final long address) {
         long result = address;
-        
-        guarantee(address + deviceBufferAddress >= 0, "absolute address may have wrapped arround: %d + %d = %d", address,deviceBufferAddress,address+deviceBufferAddress);
+
+        guarantee(address + deviceBufferAddress >= 0, "absolute address may have wrapped arround: %d + %d = %d", address, deviceBufferAddress, address + deviceBufferAddress);
         result += deviceBufferAddress;
 
         return result;
@@ -237,6 +233,7 @@ public class OCLMemoryManager extends TornadoLogger {
 
     public long toRelativeDeviceAddress(final long address) {
         long result = address;
+//        guarantee(address - deviceBufferAddress < 0, "relative address may have wrapped arround: %d + %d = %d", address,deviceBufferAddress,address+deviceBufferAddress);
         if (!(Long.compareUnsigned(address, deviceBufferAddress) < 0 || Long
                 .compareUnsigned(address, (deviceBufferAddress + heapLimit)) > 0)) {
             result -= deviceBufferAddress;

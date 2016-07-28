@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import tornado.api.Event;
 import tornado.meta.domain.DomainTree;
 
@@ -16,8 +15,8 @@ public class Meta {
 	private DomainTree domain;
 
 	public Meta() {
-		providers = new HashMap<Class<?>, Object>();
-		profiles = new ArrayList<Event>(512);
+		providers = new HashMap<>();
+		profiles = new ArrayList<>(8192);
 	}
 	
 	public boolean hasDomain(){

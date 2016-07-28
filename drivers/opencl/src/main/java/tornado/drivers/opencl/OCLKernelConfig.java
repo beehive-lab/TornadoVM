@@ -49,7 +49,7 @@ public class OCLKernelConfig {
 		return localWork;
 	}
 
-	private static final String formatArray(final long[] array) {
+	private static String formatArray(final long[] array) {
 		final StringBuilder sb = new StringBuilder();
 
 		sb.append("[");

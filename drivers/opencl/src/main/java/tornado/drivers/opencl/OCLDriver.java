@@ -1,36 +1,21 @@
 package tornado.drivers.opencl;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import com.oracle.graal.hotspot.HotSpotGraalRuntimeProvider;
+import com.oracle.graal.hotspot.meta.HotSpotProviders;
 import java.util.ArrayList;
 import java.util.List;
-
 import tornado.common.DeviceMapping;
 import tornado.common.TornadoLogger;
-import tornado.drivers.opencl.OCLContext;
-import tornado.drivers.opencl.OCLDevice;
-import tornado.drivers.opencl.OCLDeviceContext;
-import tornado.drivers.opencl.OCLPlatform;
-import tornado.drivers.opencl.OpenCL;
-import tornado.graal.TornadoTargetDescription;
-import tornado.runtime.DataMovementTask;
-import tornado.runtime.ObjectReference;
-import tornado.runtime.RuntimeInstance;
-import tornado.runtime.TornadoDriver;
-import tornado.runtime.TornadoRuntime;
-import tornado.runtime.api.CompilableTask;
-import tornado.runtime.api.TaskUtils;
-import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.OCLArchitecture;
+import tornado.drivers.opencl.graal.OCLLoweringProvider;
 import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.OCLSuitesProvider;
 import tornado.drivers.opencl.graal.OpenCLCodeCache;
-import tornado.drivers.opencl.graal.OCLLoweringProvider;
+import tornado.drivers.opencl.graal.backend.OCLBackend;
+import tornado.graal.TornadoTargetDescription;
+import tornado.runtime.TornadoDriver;
 
-import com.oracle.graal.hotspot.HotSpotGraalRuntimeProvider;
-import com.oracle.graal.hotspot.meta.HotSpotProviders;
-
-public class OCLDriver extends TornadoLogger implements TornadoDriver {
+public final class OCLDriver extends TornadoLogger implements TornadoDriver {
 
     private final OCLBackend[][] backends;
     private final List<OCLContext> contexts;
@@ -40,11 +25,12 @@ public class OCLDriver extends TornadoLogger implements TornadoDriver {
         final int numPlatforms = OpenCL.getNumPlatforms();
         backends = new OCLBackend[numPlatforms][];
 
-        contexts = new ArrayList<OCLContext>();
+        contexts = new ArrayList<>();
 
         discoverDevices(vmRuntime, vmProviders);
     }
 
+    @Override
     public DeviceMapping getDefaultDevice(){
     	return getDefaultBackend().getDeviceContext().asMapping();
     }

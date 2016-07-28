@@ -1,25 +1,5 @@
 package tornado.drivers.opencl.graal.compiler;
 
-import static tornado.graal.TornadoLIRGenerator.trace;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import tornado.common.exceptions.TornadoInternalError;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler;
-import tornado.drivers.opencl.graal.lir.OCLBinary;
-import tornado.drivers.opencl.graal.lir.OCLControlFlow;
-import tornado.drivers.opencl.graal.lir.OCLUnary;
-import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopConditionOp;
-import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopInitOp;
-import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopPostOp;
-import tornado.drivers.opencl.graal.lir.OCLControlFlow.SwitchOp;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
-
 import com.oracle.graal.api.code.CodeCacheProvider;
 import com.oracle.graal.api.code.ForeignCallsProvider;
 import com.oracle.graal.api.meta.JavaConstant;
@@ -30,7 +10,6 @@ import com.oracle.graal.compiler.common.GraalInternalError;
 import com.oracle.graal.compiler.common.cfg.AbstractBlockBase;
 import com.oracle.graal.compiler.common.cfg.Loop;
 import com.oracle.graal.debug.Debug;
-import com.oracle.graal.graph.Node;
 import com.oracle.graal.lir.InstructionValueProcedure;
 import com.oracle.graal.lir.LIR;
 import com.oracle.graal.lir.LIRInstruction;
@@ -41,12 +20,28 @@ import com.oracle.graal.lir.asm.CompilationResultBuilder;
 import com.oracle.graal.lir.asm.FrameContext;
 import com.oracle.graal.lir.framemap.FrameMap;
 import com.oracle.graal.nodes.AbstractMergeNode;
-import com.oracle.graal.nodes.FixedNode;
 import com.oracle.graal.nodes.IfNode;
 import com.oracle.graal.nodes.LoopBeginNode;
 import com.oracle.graal.nodes.cfg.Block;
 import com.oracle.graal.nodes.cfg.ControlFlowGraph;
 import com.oracle.graal.nodes.extended.SwitchNode;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import tornado.common.exceptions.TornadoInternalError;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler;
+import tornado.drivers.opencl.graal.lir.OCLBinary;
+import tornado.drivers.opencl.graal.lir.OCLControlFlow;
+import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopConditionOp;
+import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopInitOp;
+import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopPostOp;
+import tornado.drivers.opencl.graal.lir.OCLControlFlow.SwitchOp;
+import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
+import tornado.drivers.opencl.graal.lir.OCLUnary;
+import static tornado.graal.TornadoLIRGenerator.trace;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
@@ -59,7 +54,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             OCLCompilationResult compilationResult, boolean isKernel) {
         super(codeCache, foreignCalls, frameMap, asm, frameContext,
                 compilationResult);
-        nonInlinedMethods = new HashSet<ResolvedJavaMethod>();
+        nonInlinedMethods = new HashSet<>();
         this.isKernel = isKernel;
     }
 

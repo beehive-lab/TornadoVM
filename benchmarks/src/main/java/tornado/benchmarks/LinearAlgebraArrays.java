@@ -42,7 +42,7 @@ public class LinearAlgebraArrays {
 		}
 	}
 	
-	public static void sadd(@Read float[] a, @Read float[] b, @ReadWrite float[] c){
+	public static void sadd(@Read float[] a, @Read float[] b, @Write float[] c){
 		for (@Parallel
 				int i = 0; i < c.length; i++)
 					c[i] = a[i] + b[i];

@@ -58,10 +58,11 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 .getVMProviders().getMetaAccess()
                 .lookupJavaType(object.getClass());
 
-        if (resolvedType.getAnnotation(Vector.class) != null)
+        if (resolvedType.getAnnotation(Vector.class) != null) {
             vectorObject = true;
-        else
+        } else {
             vectorObject = false;
+        }
 
         vectorStorageIndex = -1;
 
@@ -81,13 +82,15 @@ public class OCLObjectWrapper implements ObjectBuffer {
                     .getModifiers());
 
             if (vectorObject) {
-                if (field.getAnnotation(Payload.class) != null)
+                if (field.getAnnotation(Payload.class) != null) {
                     vectorStorageIndex = index;
+                }
             }
 
-            if (Tornado.DEBUG)
+            if (Tornado.DEBUG) {
                 Tornado.trace("field: name=%s, kind=%s, offset=%d",
                         field.getName(), type.getName(), field.offset());
+            }
             bytes = field.offset();
             bytes += (field.getKind().isObject()) ? 8 : field.getKind()
                     .getByteCount();
@@ -133,29 +136,34 @@ public class OCLObjectWrapper implements ObjectBuffer {
             index++;
         }
 
-        if (Tornado.DEBUG)
+        if (Tornado.DEBUG) {
             Tornado.trace("object: type=%s, size=%s", resolvedType.getName(),
                     RuntimeUtilities.humanReadableByteCount(bytes, true));
+        }
 
     }
 
     @Override
     public void allocate(Object ref) throws TornadoOutOfMemoryException {
-        if (Tornado.DEBUG)
+        if (Tornado.DEBUG) {
             Tornado.debug("object: object=0x%x, class=%s, size=%s",
                     ref.hashCode(), ref.getClass().getName(),
                     RuntimeUtilities.humanReadableByteCount(bytes, true));
+        }
         buffer = ByteBuffer.allocate((int) bytes);
         buffer.order(deviceContext.getByteOrder());
-        bufferOffset = deviceContext.getMemoryManager().tryAllocate(ref.getClass(),bytes,
-                32,getAlignment());
+        bufferOffset = deviceContext.getMemoryManager().tryAllocate(ref.getClass(), bytes,
+                32, getAlignment());
 
-        if (Tornado.DEBUG)
+        if (Tornado.DEBUG) {
             Tornado.debug("object: object=0x%x @ 0x%x (0x%x)", ref.hashCode(),
                     toAbsoluteAddress(), toRelativeAddress());
-        for (FieldBuffer buffer : wrappedFields)
-            if (buffer != null)
+        }
+        for (FieldBuffer buffer : wrappedFields) {
+            if (buffer != null) {
                 buffer.allocate(ref);
+            }
+        }
     }
 
     private Field getField(Class<?> type, String name) {
@@ -164,9 +172,9 @@ public class OCLObjectWrapper implements ObjectBuffer {
             result = type.getDeclaredField(name);
             result.setAccessible(true);
         } catch (NoSuchFieldException | SecurityException e) {
-            if (type.getSuperclass() != null)
+            if (type.getSuperclass() != null) {
                 result = getField(type.getSuperclass(), name);
-            else {
+            } else {
                 Tornado.fatal("unable to get field");
                 e.printStackTrace();
             }
@@ -182,13 +190,15 @@ public class OCLObjectWrapper implements ObjectBuffer {
             } catch (IllegalArgumentException | IllegalAccessException e) {
                 Tornado.fatal("unable to write primitive to buffer");
             }
-        } else {
-            if (wrappedFields[index] != null) {
-                buffer.putLong(wrappedFields[index].toAbsoluteAddress());
+        } else if (wrappedFields[index] != null) {
+            if (Tornado.OPENCL_USE_RELATIVE_ADDRESSES) {
+                buffer.putLong(wrappedFields[index].toRelativeAddress());
             } else {
-                Tornado.fatal("unimplemented - field type %s",
-                        fieldType.getName());
+                buffer.putLong(wrappedFields[index].toAbsoluteAddress());
             }
+        } else {
+            Tornado.fatal("unimplemented - field type %s",
+                    fieldType.getName());
         }
     }
 
@@ -212,13 +222,11 @@ public class OCLObjectWrapper implements ObjectBuffer {
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
+        } else if (wrappedFields[index] != null) {
+            buffer.getLong();
         } else {
-            if (wrappedFields[index] != null) {
-                buffer.getLong();
-            } else {
-                Tornado.fatal("unimplemented - field type %s",
-                        fieldType.getName());
-            }
+            Tornado.fatal("unimplemented - field type %s",
+                    fieldType.getName());
         }
     }
 
@@ -239,9 +247,10 @@ public class OCLObjectWrapper implements ObjectBuffer {
         buffer.rewind();
 
         buffer.position(hubOffset);
-        if (Tornado.DEBUG)
+        if (Tornado.DEBUG) {
             Tornado.trace("object: hub offset=%d, value=0x%x", hubOffset,
                     ((PrimitiveConstant) resolvedType.getObjectHub()).asLong());
+        }
         buffer.putLong(((PrimitiveConstant) resolvedType.getObjectHub())
                 .asLong());
 
@@ -251,9 +260,10 @@ public class OCLObjectWrapper implements ObjectBuffer {
             for (int i = 0; i < fields.length; i++) {
                 HotSpotResolvedJavaField field = fields[i];
                 Field f = getField(type, field.getName());
-                if (Tornado.DEBUG)
+                if (Tornado.DEBUG) {
                     Tornado.trace("writing field: name=%s, offset=%d",
                             field.getName(), field.offset());
+                }
 
                 buffer.position(field.offset());
                 writeFieldToBuffer(i, f, object);
@@ -273,9 +283,10 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 HotSpotResolvedJavaField field = fields[i];
                 Field f = getField(type, field.getName());
                 f.setAccessible(true);
-                if (Tornado.DEBUG)
+                if (Tornado.DEBUG) {
                     Tornado.trace("reading field: name=%s, offset=%d",
                             field.getName(), field.offset());
+                }
                 readFieldFromBuffer(i, f, object);
             }
         }
@@ -303,8 +314,9 @@ public class OCLObjectWrapper implements ObjectBuffer {
                         buffer.array(), null);
             }
             for (int i = 0; i < fields.length; i++) {
-                if (wrappedFields[i] != null)
+                if (wrappedFields[i] != null) {
                     wrappedFields[i].write(object);
+                }
             }
         }
         valid = true;
@@ -320,8 +332,9 @@ public class OCLObjectWrapper implements ObjectBuffer {
             deviceContext.readBuffer(toBuffer(), bufferOffset, bytes,
                     buffer.array(), null);
             for (int i = 0; i < fields.length; i++) {
-                if (wrappedFields[i] != null)
+                if (wrappedFields[i] != null) {
                     wrappedFields[i].read(object);
+                }
             }
             deserialise(object);
         }
@@ -351,8 +364,9 @@ public class OCLObjectWrapper implements ObjectBuffer {
 
     public void clear() {
         buffer.rewind();
-        while (buffer.hasRemaining())
+        while (buffer.hasRemaining()) {
             buffer.put((byte) 0);
+        }
         buffer.rewind();
     }
 
@@ -366,16 +380,18 @@ public class OCLObjectWrapper implements ObjectBuffer {
                         RuntimeUtilities.humanReadableByteCount(bytes, true),
                         RuntimeUtilities.humanReadableByteCount(
                                 buffer.position(), true), deviceContext
-                                .getDevice().getName());
+                        .getDevice().getName());
         for (int i = 0; i < buffer.position(); i += width) {
             System.out.printf("[0x%04x]: ", i);
             for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {
-                if (j % 2 == 0)
+                if (j % 2 == 0) {
                     System.out.printf(" ");
-                if (j < buffer.position() - i)
+                }
+                if (j < buffer.position() - i) {
                     System.out.printf("%02x", buffer.get(i + j));
-                else
+                } else {
                     System.out.printf("..");
+                }
             }
             System.out.println();
         }
@@ -416,8 +432,8 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 // TODO this needs to run asynchronously
                 deserialise(ref);
             }
-            
-            if(waitEvents.isEmpty()){
+
+            if (waitEvents.isEmpty()) {
                 return new EmptyEvent();
             }
 
@@ -443,7 +459,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
     public Event enqueueWriteAfterAll(Object ref, List<Event> events) {
         // System.out.println("enqueue write after all...");
         TaskUtils.waitForEvents(events);
-        final List<Event> waitEvents = new ArrayList<Event>();
+        final List<Event> waitEvents = new ArrayList<>();
 
         if (vectorObject) {
             final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
@@ -464,17 +480,17 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 valid = true;
             }
 
-            for (FieldBuffer fb : wrappedFields) {
+            for (final FieldBuffer fb : wrappedFields) {
                 if (fb != null && fb.needsWrite()) {
 //                     System.out.printf("field: write %s onDevice=%s, isFinal=%s\n",fb.getFieldName(), fb.onDevice(), fb.isFinal());
                     waitEvents.add(fb.enqueueWriteAfterAll(ref, events));
                 }
             }
 
-            if(waitEvents.isEmpty()){
+            if (waitEvents.isEmpty()) {
                 return new EmptyEvent();
             }
-            
+
             return (waitEvents.size() > 1) ? deviceContext
                     .enqueueMarker(waitEvents) : waitEvents.get(0);
         }
@@ -507,6 +523,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
 
     }
 
+    @Override
     public String toString() {
         return String.format("object wrapper: type=%s, fields=%d, valid=%s\n",
                 resolvedType.getName(), wrappedFields.length, valid);
@@ -517,10 +534,12 @@ public class OCLObjectWrapper implements ObjectBuffer {
         System.out.printf("0x%x:\ttype=%s, num fields=%d (%d)\n",
                 toAbsoluteAddress(), type.getName(), fields.length,
                 wrappedFields.length);
-        for (FieldBuffer fb : wrappedFields)
-            if (fb != null)
+        for (FieldBuffer fb : wrappedFields) {
+            if (fb != null) {
                 System.out.printf("\t0x%x\tname=%s\n", fb.toAbsoluteAddress(),
                         fb.getFieldName());
+            }
+        }
     }
 
     @Override

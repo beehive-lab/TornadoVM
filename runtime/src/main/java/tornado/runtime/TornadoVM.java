@@ -27,7 +27,7 @@ import static tornado.runtime.graph.GraphAssembler.*;
 public class TornadoVM extends TornadoLogger {
 
     private final boolean useDependencies;
-    
+
     private final ExecutionContext graphContext;
     private final List<Object> objects;
     private final GlobalObjectState[] globalStates;
@@ -35,7 +35,6 @@ public class TornadoVM extends TornadoLogger {
     private final List<Event>[] events;
     private final List<DeviceMapping> contexts;
     private final TornadoInstalledCode[] installedCodes;
-    
 
     private final List<Object> constants;
     private final List<SchedulableTask> tasks;
@@ -70,7 +69,7 @@ public class TornadoVM extends TornadoLogger {
         installedCodes = new TornadoInstalledCode[stacks.length];
 
         for (int i = 0; i < events.length; i++) {
-            events[i] = new ArrayList<Event>();
+            events[i] = new ArrayList<>();
         }
 
         debug("found %d contexts", contexts.size());
@@ -106,11 +105,11 @@ public class TornadoVM extends TornadoLogger {
         buffer.mark();
     }
 
-    private final DeviceObjectState resolveObjectState(int index, int device) {
+    private DeviceObjectState resolveObjectState(int index, int device) {
         return globalStates[index].getDeviceState(contexts.get(device));
     }
 
-    private final static CallStack resolveStack(int index, int numArgs,
+    private static CallStack resolveStack(int index, int numArgs,
             CallStack[] stacks, DeviceMapping device) {
         if (stacks[index] == null) {
             stacks[index] = device.createStack(numArgs);
@@ -307,7 +306,7 @@ public class TornadoVM extends TornadoLogger {
 
                 TornadoInternalError.guarantee(lastEvent != null,
                         "lastEvent is null");
-                if (!(lastEvent instanceof EmptyEvent) && ENABLE_OOO_EXECUTION) {
+                if (useDependencies && !(lastEvent instanceof EmptyEvent)) {
                     if (DEBUG) {
                         debug("vm: ADD_DEP %s to event list %d", lastEvent,
                                 eventList);
@@ -347,7 +346,7 @@ public class TornadoVM extends TornadoLogger {
 
         if (!isWarmup) {
             if (useDependencies && contexts.size() == 1) {
-                if(VM_WAIT_EVENT && lastEvent != null){
+                if (VM_WAIT_EVENT && lastEvent != null) {
                     lastEvent.waitOn();
                 } else {
                     contexts.get(0).sync();

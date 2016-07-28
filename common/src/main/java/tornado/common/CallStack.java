@@ -1,7 +1,5 @@
 package tornado.common;
 
-import tornado.common.DeviceObjectState;
-
 public interface CallStack {
 
 	public void reset();	

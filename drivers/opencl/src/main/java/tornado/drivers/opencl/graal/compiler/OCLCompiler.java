@@ -1,30 +1,11 @@
 package tornado.drivers.opencl.graal.compiler;
 
-import static com.oracle.graal.compiler.MethodFilter.*;
-
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import tornado.common.Tornado;
-import tornado.drivers.opencl.graal.OCLProviders;
-import tornado.drivers.opencl.graal.OpenCLCodeCache;
-import tornado.drivers.opencl.graal.OpenCLCodeUtil;
-import tornado.drivers.opencl.graal.OpenCLInstalledCode;
-import tornado.drivers.opencl.graal.OCLSuitesProvider;
-import tornado.drivers.opencl.graal.backend.OCLBackend;
-import tornado.drivers.opencl.graal.compiler.OCLLIRGenerationPhase.LIRGenerationContext;
-import tornado.graal.TornadoLIRGenerator;
-import tornado.graal.TornadoLIRSuites;
-import tornado.graal.TornadoSuites;
-import tornado.graal.phases.TornadoHighTierContext;
-import tornado.graal.phases.TornadoMidTierContext;
-import tornado.meta.Meta;
-
 import com.oracle.graal.api.code.*;
 import com.oracle.graal.api.code.CompilationResult.ConstantReference;
 import com.oracle.graal.api.code.CompilationResult.DataPatch;
 import com.oracle.graal.api.meta.*;
 import com.oracle.graal.compiler.MethodFilter;
+import static com.oracle.graal.compiler.MethodFilter.*;
 import com.oracle.graal.compiler.common.GraalOptions;
 import com.oracle.graal.compiler.common.alloc.*;
 import com.oracle.graal.compiler.common.cfg.*;
@@ -50,6 +31,22 @@ import com.oracle.graal.phases.schedule.*;
 import com.oracle.graal.phases.schedule.SchedulePhase.SchedulingStrategy;
 import com.oracle.graal.phases.tiers.*;
 import com.oracle.graal.phases.util.*;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import tornado.common.Tornado;
+import tornado.drivers.opencl.graal.OCLProviders;
+import tornado.drivers.opencl.graal.OCLSuitesProvider;
+import tornado.drivers.opencl.graal.OpenCLCodeCache;
+import tornado.drivers.opencl.graal.OpenCLCodeUtil;
+import tornado.drivers.opencl.graal.OpenCLInstalledCode;
+import tornado.drivers.opencl.graal.backend.OCLBackend;
+import tornado.drivers.opencl.graal.compiler.OCLLIRGenerationPhase.LIRGenerationContext;
+import tornado.graal.TornadoLIRGenerator;
+import tornado.graal.TornadoLIRSuites;
+import tornado.graal.TornadoSuites;
+import tornado.graal.phases.TornadoHighTierContext;
+import tornado.graal.phases.TornadoMidTierContext;
+import tornado.meta.Meta;
 
 /**
  * Static methods for orchestrating the compilation of a {@linkplain StructuredGraph graph}.
@@ -542,8 +539,8 @@ public class OCLCompiler {
 
 		kernelCompilationRequest.execute();
 
-		final Set<ResolvedJavaMethod> includedMethods = new HashSet<ResolvedJavaMethod>();
-		final Deque<ResolvedJavaMethod> worklist = new ArrayDeque<ResolvedJavaMethod>();
+		final Set<ResolvedJavaMethod> includedMethods = new HashSet<>();
+		final Deque<ResolvedJavaMethod> worklist = new ArrayDeque<>();
 		worklist.addAll(kernelCompResult.getNonInlinedMethods());
 
 		while (!worklist.isEmpty()) {
@@ -553,7 +550,7 @@ public class OCLCompiler {
 				final OCLCompilationResult compResult = new OCLCompilationResult();
 				final StructuredGraph graph = new StructuredGraph(currentMethod,
 						AllowAssumptions.YES);
-				Request<OCLCompilationResult> methodcompilationRequest = new Request<OCLCompilationResult>(
+				Request<OCLCompilationResult> methodcompilationRequest = new Request<>(
 						graph, cc, currentMethod, null, null, providers, backend,
 						backend.getTarget(), suitesProvider.getDefaultGraphBuilderSuite(),
 						optimisticOpts, profilingInfo, speculationLog,

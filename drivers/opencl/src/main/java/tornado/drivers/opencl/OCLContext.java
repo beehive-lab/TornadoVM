@@ -55,7 +55,7 @@ public class OCLContext extends TornadoLogger {
 		this.id = id;
 		this.devices = devices;
 		this.queues = new OCLCommandQueue[devices.size()];
-		this.programs = new ArrayList<OCLProgram>();
+		this.programs = new ArrayList<>();
 		this.allocatedRegions = new long[64];
 		this.allocatedRegionCount = 0;
 		Arrays.fill(this.allocatedRegions, -1);
@@ -293,4 +293,8 @@ public class OCLContext extends TornadoLogger {
 	public int getPlatformIndex() {
 		return platform.getIndex();
 	}
+        
+        public OCLPlatform getPlatform(){
+            return platform;
+        }
 }

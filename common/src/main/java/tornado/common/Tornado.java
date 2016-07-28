@@ -7,7 +7,7 @@ import java.util.Properties;
 
 public final class Tornado {
 
-    private static Properties settings = System.getProperties();
+    private final static Properties settings = System.getProperties();
 
     static {
         tryLoadSettings();
@@ -17,19 +17,20 @@ public final class Tornado {
         return settings.getProperty(key, defaultValue);
     }
 
-    public static final boolean OPENCL_WAIT_ACTIVE = Boolean.parseBoolean(settings.getProperty("tornado.opencl.wait.active","False"));
-    public static final boolean USE_OPENCL_SCHEDULING = Boolean.parseBoolean(settings.getProperty("tornado.opencl.schedule","False"));
-    
-    public static final boolean VM_WAIT_EVENT = Boolean.parseBoolean(settings.getProperty("tornado.vm.waitevent","False"));
-    
+    public static final boolean OPENCL_USE_RELATIVE_ADDRESSES = Boolean.parseBoolean(settings.getProperty("tornado.opencl.userelative", "False"));
+    public static final boolean OPENCL_WAIT_ACTIVE = Boolean.parseBoolean(settings.getProperty("tornado.opencl.wait.active", "False"));
+    public static final boolean USE_OPENCL_SCHEDULING = Boolean.parseBoolean(settings.getProperty("tornado.opencl.schedule", "False"));
+
+    public static final boolean VM_WAIT_EVENT = Boolean.parseBoolean(settings.getProperty("tornado.vm.waitevent", "False"));
+
     public static final boolean ENABLE_EXCEPTIONS = Boolean
             .parseBoolean(settings.getProperty("tornado.exceptions.enable",
                     "False"));
-    
+
     public static final boolean ENABLE_PROFILING = Boolean
             .parseBoolean(settings.getProperty("tornado.profiling.enable",
                     "False"));
-    
+
     public static final boolean ENABLE_OOO_EXECUTION = Boolean
             .parseBoolean(settings.getProperty("tornado.ooo-execution.enable",
                     "False"));
@@ -50,7 +51,7 @@ public final class Tornado {
 
     public static final boolean LOG_EVENTS = Boolean.parseBoolean(settings
             .getProperty("tornado.events.log", "False"));
-    
+
     public static final boolean DUMP_PROFILES = Boolean.parseBoolean(settings.getProperty("tornado.profiles.print", "false"));
 
     public static final boolean DUMP_BINARIES = Boolean.parseBoolean(settings
@@ -76,13 +77,14 @@ public final class Tornado {
     private static void tryLoadSettings() {
         final String tornadoRoot = System.getenv("TORNADO_ROOT");
         final File localSettings = new File(tornadoRoot + "/etc/tornado.properties");
-        if (localSettings.exists())
+        if (localSettings.exists()) {
             try {
                 settings.load(new FileInputStream(localSettings));
             } catch (IOException e) {
                 warn("Unable to load settings from %s",
                         localSettings.getAbsolutePath());
-            } 
+            }
+        }
     }
 
     public static final void debug(final String pattern, final Object... args) {

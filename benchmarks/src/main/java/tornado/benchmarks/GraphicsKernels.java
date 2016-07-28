@@ -1,12 +1,12 @@
 package tornado.benchmarks;
 
-import static tornado.collections.graphics.GraphicsMath.rotate;
-import static tornado.collections.types.Float3.add;
 import tornado.api.Parallel;
 import tornado.api.Read;
 import tornado.api.ReadWrite;
 import tornado.api.Write;
+import static tornado.collections.graphics.GraphicsMath.rotate;
 import tornado.collections.types.Float3;
+import static tornado.collections.types.Float3.add;
 import tornado.collections.types.Float4;
 import tornado.collections.types.ImageFloat;
 import tornado.collections.types.ImageFloat3;

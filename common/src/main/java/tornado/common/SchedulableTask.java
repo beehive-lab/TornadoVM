@@ -2,7 +2,6 @@ package tornado.common;
 
 import tornado.common.enums.Access;
 import tornado.meta.Meta;
-import tornado.common.DeviceMapping;
 
 public interface SchedulableTask  {
     public Object[] getArguments();

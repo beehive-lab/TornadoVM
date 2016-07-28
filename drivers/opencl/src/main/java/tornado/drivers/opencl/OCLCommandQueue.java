@@ -1,18 +1,16 @@
 package tornado.drivers.opencl;
 
-import tornado.drivers.opencl.enums.OCLCommandQueueInfo;
-import tornado.drivers.opencl.exceptions.OCLException;
-import tornado.runtime.EmptyEvent;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-
 import tornado.api.Event;
 import tornado.common.Tornado;
+import static tornado.common.Tornado.*;
 import tornado.common.TornadoLogger;
 import tornado.common.exceptions.TornadoInternalError;
-import static tornado.common.Tornado.*
+import tornado.drivers.opencl.enums.OCLCommandQueueInfo;
+import tornado.drivers.opencl.exceptions.OCLException;
+import tornado.runtime.EmptyEvent
 ;
 public class OCLCommandQueue extends TornadoLogger {
 	
@@ -27,7 +25,7 @@ public class OCLCommandQueue extends TornadoLogger {
 		this.properties = properties;
 		this.buffer = ByteBuffer.allocate(128);
 		this.buffer.order(OpenCL.BYTE_ORDER);
-		this.events = new ArrayList<OCLEvent>(512);
+		this.events = new ArrayList<>(8192);
 		this.openclVersion = version;
 	}
 
@@ -137,7 +135,7 @@ public class OCLCommandQueue extends TornadoLogger {
 	native static void clFinish(long queueId) throws OCLException;
 
 	
-	private final OCLEvent registerEvent(OCLEvent event){
+	private OCLEvent registerEvent(OCLEvent event){
 		if(Tornado.LOG_EVENTS)
 			events.add(event);
 		return event;

@@ -47,6 +47,7 @@ public class DeviceObjectState {
 		contents = value;
 	}
 	
+        @Override
 	public String toString(){
 		StringBuilder sb = new StringBuilder();
 		
@@ -72,5 +73,9 @@ public class DeviceObjectState {
 
 	public long getAddress() {
 		return buffer.toAbsoluteAddress();
+	}
+        
+        public long getOffset() {
+		return buffer.toRelativeAddress();
 	}
 }

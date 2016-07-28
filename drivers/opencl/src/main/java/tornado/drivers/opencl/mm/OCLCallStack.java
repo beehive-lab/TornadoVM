@@ -4,6 +4,7 @@ import tornado.api.Event;
 import tornado.common.CallStack;
 import tornado.common.DeviceObjectState;
 import tornado.common.RuntimeUtilities;
+import tornado.common.Tornado;
 import static tornado.common.Tornado.DEBUG;
 import static tornado.common.Tornado.debug;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
@@ -11,9 +12,9 @@ import tornado.drivers.opencl.OCLDeviceContext;
 
 public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
-    private final static int RESERVED_SLOTS = 4;
+    private final static int RESERVED_SLOTS = 6;
 
-    private int numArgs;
+    private final int numArgs;
 
     private boolean onDevice;
 
@@ -26,6 +27,8 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
         buffer.putLong(0);
         buffer.putLong(0);
         buffer.putLong(0);
+        buffer.putLong(0);
+        buffer.putLong(toAbsoluteAddress());
         buffer.putInt(0);
         buffer.putInt(numArgs);
         buffer.mark();
@@ -47,8 +50,8 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
         super.write();
         onDevice = true;
     }
-    
-    public Event enqueueWrite(){
+
+    public Event enqueueWrite() {
         onDevice = true;
         return super.enqueueWrite();
     }
@@ -138,7 +141,7 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
     }
 
     public int getArgCount() {
-        return buffer.getInt(8);
+        return buffer.getInt(10);
     }
 
     public String toString() {
@@ -185,10 +188,14 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
             buffer.putLong(0);
         } else {
             if (DEBUG) {
-                debug("arg : [0x%x] type=%s, value=%s, address=0x%x", arg.hashCode(), arg.getClass()
-                        .getSimpleName(), arg, state.getAddress());
+                debug("arg : [0x%x] type=%s, value=%s, address=0x%x (0x%x)", arg.hashCode(), arg.getClass()
+                        .getSimpleName(), arg, state.getAddress(), state.getOffset());
             }
-            buffer.putLong(state.getAddress());
+            if (Tornado.OPENCL_USE_RELATIVE_ADDRESSES) {
+                buffer.putLong(state.getOffset());
+            } else {
+                buffer.putLong(state.getAddress());
+            }
         }
 
     }
