@@ -24,5 +24,8 @@
 		<Logger name="tornado.graal.opencl.compiler.TornadoLIRGenerator" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
     		</Logger>
+		<Logger name="tornado.runtime.TornadoVM" level="debug" additivity="false">
+			<AppenderRef ref="Console"/>
+    		</Logger>
 	</Loggers>
 </Configuration>
