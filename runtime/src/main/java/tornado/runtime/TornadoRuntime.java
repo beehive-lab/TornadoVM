@@ -1,36 +1,28 @@
 package tornado.runtime;
 
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.WeakHashMap;
-
-import tornado.common.DeviceMapping;
-import tornado.common.Tornado;
-import tornado.common.TornadoLogger;
-import tornado.common.exceptions.TornadoRuntimeException;
-import tornado.runtime.api.GlobalObjectState;
-
 import com.oracle.graal.api.meta.MetaAccessProvider;
 import com.oracle.graal.api.meta.ResolvedJavaMethod;
 import com.oracle.graal.api.runtime.Graal;
 import com.oracle.graal.hotspot.HotSpotGraalRuntimeProvider;
 import com.oracle.graal.hotspot.meta.HotSpotProviders;
 import com.oracle.graal.runtime.RuntimeProvider;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import tornado.common.Tornado;
+import tornado.common.TornadoLogger;
+import tornado.common.exceptions.TornadoRuntimeException;
+import tornado.runtime.api.GlobalObjectState;
 
 
 public class TornadoRuntime extends TornadoLogger {
 
+        public static final Executor EXECUTOR = Executors.newCachedThreadPool();
+        
 	public static final TornadoRuntime runtime = new TornadoRuntime();
 
 	public static final JVMMapping JVM = new JVMMapping();

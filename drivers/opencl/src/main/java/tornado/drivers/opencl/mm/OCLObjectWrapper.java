@@ -7,9 +7,7 @@ import com.oracle.graal.hotspot.meta.HotSpotResolvedJavaType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import tornado.api.Event;
+import java.util.Arrays;
 import tornado.api.Payload;
 import tornado.api.Vector;
 import tornado.common.ObjectBuffer;
@@ -17,9 +15,7 @@ import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
-import tornado.runtime.EmptyEvent;
 import tornado.runtime.TornadoRuntime;
-import tornado.runtime.api.TaskUtils;
 
 public class OCLObjectWrapper implements ObjectBuffer {
 
@@ -40,6 +36,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
     private final OCLDeviceContext deviceContext;
     private boolean valid;
     private boolean isFinal;
+    private final int[] internalEvents;
 
     private final HotSpotGraalRuntimeProvider runtime;
 
@@ -71,6 +68,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
         sortFieldsByOffset();
 
         wrappedFields = new FieldBuffer[fields.length];
+        internalEvents = new int[fields.length];
 
         int index = 0;
         // calculate object size
@@ -398,101 +396,87 @@ public class OCLObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public Event enqueueRead(Object ref) {
-        final List<Event> waitEvents = new ArrayList<Event>(0);
-        return enqueueReadAfterAll(ref, waitEvents);
-    }
-
-    @Override
-    public Event enqueueReadAfter(Object ref, Event event) {
-        final List<Event> waitEvents = new ArrayList<Event>(1);
-        waitEvents.add(event);
-        return enqueueReadAfterAll(ref, waitEvents);
-    }
-
-    @Override
-    public Event enqueueReadAfterAll(Object ref, List<Event> events) {
-        // System.out.println("enqueue read after all...");
-        TaskUtils.waitForEvents(events);
-
+    public int enqueueRead(Object ref, int[] events) {
         if (vectorObject) {
             final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
-            return fieldBuffer.enqueueReadAfterAll(ref, events);
+            return fieldBuffer.enqueueRead(ref, events);
         } else {
-            final List<Event> waitEvents = new ArrayList<>();
+            int index = 0;
+            Arrays.fill(internalEvents, -1);
+
             for (FieldBuffer fb : wrappedFields) {
                 if (fb != null) {
-                    waitEvents.add(fb.enqueueReadAfterAll(ref, events));
+                    internalEvents[index] = fb.enqueueRead(ref, events);
+                    index++;
                 }
             }
 
             if (!isFinal) {
-                waitEvents.add(deviceContext.enqueueReadBuffer(toBuffer(),
-                        bufferOffset, bytes, buffer.array(), events));
+                internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer(),
+                        bufferOffset, bytes, buffer.array(), events);
+                index++;
+
                 // TODO this needs to run asynchronously
                 deserialise(ref);
             }
 
-            if (waitEvents.isEmpty()) {
-                return new EmptyEvent();
+            switch (index) {
+                case 0:
+                    return -1;
+                case 1:
+                    return internalEvents[0];
+                default:
+                    return deviceContext
+                            .enqueueMarker(internalEvents);
             }
 
-            return (waitEvents.size() > 1) ? deviceContext
-                    .enqueueMarker(waitEvents) : waitEvents.get(0);
         }
     }
 
     @Override
-    public Event enqueueWrite(Object ref) {
-        final List<Event> waitEvents = new ArrayList<Event>(0);
-        return enqueueWriteAfterAll(ref, waitEvents);
-    }
-
-    @Override
-    public Event enqueueWriteAfter(Object ref, Event event) {
-        final List<Event> waitEvents = new ArrayList<Event>(1);
-        waitEvents.add(event);
-        return enqueueWriteAfterAll(ref, waitEvents);
-    }
-
-    @Override
-    public Event enqueueWriteAfterAll(Object ref, List<Event> events) {
-        // System.out.println("enqueue write after all...");
-        TaskUtils.waitForEvents(events);
-        final List<Event> waitEvents = new ArrayList<>();
+    public int enqueueWrite(Object ref, int[] events) {
 
         if (vectorObject) {
             final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
             if (!valid) {
                 valid = true;
-                return fieldBuffer.enqueueWriteAfterAll(ref, events);
+                return fieldBuffer.enqueueWrite(ref, events);
             } else {
-                return new EmptyEvent();
+                return -1;
             }
 
         } else {
+            Arrays.fill(internalEvents, -1);
+            int index = 0;
+
             // TODO this needs to run asynchronously
             if (!valid || (valid && !isFinal)) {
                 serialise(ref);
 
-                waitEvents.add(deviceContext.enqueueWriteBuffer(toBuffer(),
-                        bufferOffset, bytes, buffer.array(), events));
+                internalEvents[index] = deviceContext.enqueueWriteBuffer(toBuffer(),
+                        bufferOffset, bytes, buffer.array(), events);
+                index++;
+
                 valid = true;
             }
 
             for (final FieldBuffer fb : wrappedFields) {
                 if (fb != null && fb.needsWrite()) {
 //                     System.out.printf("field: write %s onDevice=%s, isFinal=%s\n",fb.getFieldName(), fb.onDevice(), fb.isFinal());
-                    waitEvents.add(fb.enqueueWriteAfterAll(ref, events));
+                    internalEvents[index] = fb.enqueueWrite(ref, events);
+                    index++;
                 }
             }
 
-            if (waitEvents.isEmpty()) {
-                return new EmptyEvent();
+            switch (index) {
+                case 0:
+                    return -1;
+                case 1:
+                    return internalEvents[0];
+                default:
+                    return deviceContext
+                            .enqueueMarker(internalEvents);
             }
-
-            return (waitEvents.size() > 1) ? deviceContext
-                    .enqueueMarker(waitEvents) : waitEvents.get(0);
         }
     }
 

@@ -44,6 +44,7 @@ import java.util.Set;
 import tornado.api.Vector;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
+import static tornado.common.Tornado.DEBUG_KERNEL_ARGS;
 import tornado.common.enums.Access;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.OCLContext;
@@ -144,7 +145,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
 
         lookupCode.execute(bb, null);
 
-        // bb.dump();
+//        bb.dump();
         final long address = bb.getLong(0);
         Tornado.info("Heap address @ 0x%x on %s", address, deviceContext.getDevice().getName());
         return address;
@@ -315,12 +316,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
                     OpenCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
                     OpenCLAssemblerConstants.HEAP_REF_NAME, OpenCLAssemblerConstants.STACK_REF_NAME);
             asm.eol();
-            if (!method.getDeclaringClass().getUnqualifiedName().equalsIgnoreCase(this.getClass().getSimpleName())) {
-//                asm.emitLine("if(get_global_id(0) == 0 && get_global_id(1) ==0){");
-//                asm.emitStmt("int numArgs = slots[5] >> 32");
-//                asm.emitStmt("printf(\"got %%d args...\\n\",numArgs)");
-//                asm.emitStmt("for(int i=0;i<numArgs;i++) {  printf(\"%20s - arg[%%d]: 0x%%lx\\n\", i, slots[6 + i]); }",method.getName());
-//                asm.emitLine("}");
+            if (DEBUG_KERNEL_ARGS && !method.getDeclaringClass().getUnqualifiedName().equalsIgnoreCase(this.getClass().getSimpleName())) {
+                asm.emitLine("if(get_global_id(0) == 0 && get_global_id(1) ==0){");
+                asm.emitStmt("int numArgs = slots[5] >> 32");
+                asm.emitStmt("printf(\"got %%d args...\\n\",numArgs)");
+                asm.emitStmt("for(int i=0;i<numArgs;i++) {  printf(\"%20s - arg[%%d]: 0x%%lx\\n\", i, slots[6 + i]); }",method.getName());
+                asm.emitLine("}");
             }
 
             if (ENABLE_EXCEPTIONS) {

@@ -10,7 +10,6 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import tornado.api.Event;
 import tornado.api.enums.TornadoSchedulingStrategy;
 import tornado.common.CallStack;
@@ -21,6 +20,7 @@ import tornado.common.SchedulableTask;
 import tornado.common.TornadoInstalledCode;
 import tornado.common.exceptions.TornadoInternalError;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDevice;
 import tornado.drivers.opencl.OCLDeviceContext;
@@ -38,7 +38,6 @@ import tornado.drivers.opencl.mm.OCLLongArrayWrapper;
 import tornado.drivers.opencl.mm.OCLMemoryManager;
 import tornado.drivers.opencl.mm.OCLObjectWrapper;
 import tornado.drivers.opencl.mm.OCLShortArrayWrapper;
-import tornado.runtime.EmptyEvent;
 import tornado.runtime.TornadoRuntime;
 import tornado.runtime.api.CompilableTask;
 import tornado.runtime.api.PrebuiltTask;
@@ -49,13 +48,13 @@ public class OCLDeviceMapping implements DeviceMapping {
     private final int deviceIndex;
     private final int platformIndex;
 
-    private final static OCLDriver findDriver() {
+    private static OCLDriver findDriver() {
         for (int i = 0; i < TornadoRuntime.runtime.getNumDrivers(); i++) {
             if (TornadoRuntime.runtime.getDriver(i) instanceof OCLDriver) {
                 return (OCLDriver) TornadoRuntime.runtime.getDriver(i);
             }
         }
-        TornadoInternalError.shouldNotReachHere("unable to find OpenCL driver");
+        shouldNotReachHere("unable to find OpenCL driver");
         return null;
     }
 
@@ -110,7 +109,7 @@ public class OCLDeviceMapping implements DeviceMapping {
                     return TornadoSchedulingStrategy.PER_ITERATION;
             }
         }
-        TornadoInternalError.shouldNotReachHere();
+        shouldNotReachHere();
         return TornadoSchedulingStrategy.PER_ITERATION;
     }
 
@@ -175,7 +174,7 @@ public class OCLDeviceMapping implements DeviceMapping {
             }
         }
 
-        TornadoInternalError.shouldNotReachHere("task of unknown type: " + task.getClass().getSimpleName());
+        shouldNotReachHere("task of unknown type: " + task.getClass().getSimpleName());
         return null;
     }
 
@@ -214,7 +213,7 @@ public class OCLDeviceMapping implements DeviceMapping {
     }
 
     @Override
-    public Event ensureAllocated(Object object, DeviceObjectState state) {
+    public int ensureAllocated(Object object, DeviceObjectState state) {
         if (!state.hasBuffer()) {
             try {
                 final ObjectBuffer buffer = createDeviceBuffer(
@@ -253,39 +252,39 @@ public class OCLDeviceMapping implements DeviceMapping {
                 e.printStackTrace();
             }
         }
-        return new EmptyEvent();
+        return -1;
     }
 
     @Override
-    public Event ensurePresent(Object object, DeviceObjectState state) {
+    public int ensurePresent(Object object, DeviceObjectState state) {
         if (!state.isValid()) {
             ensureAllocated(object, state);
         }
 
         if (!state.hasContents()) {
             state.setContents(true);
-            return state.getBuffer().enqueueWrite(object);
+            return state.getBuffer().enqueueWrite(object, null);
         }
-        return new EmptyEvent();
+        return -1;
     }
 
     @Override
-    public Event streamIn(Object object, DeviceObjectState state) {
+    public int streamIn(Object object, DeviceObjectState state) {
         if (!state.isValid()) {
             ensureAllocated(object, state);
         }
 
         state.setContents(true);
-        return state.getBuffer().enqueueWrite(object);
+        return state.getBuffer().enqueueWrite(object, null);
 
     }
 
     @Override
-    public Event streamOut(Object object, DeviceObjectState state,
-            List<Event> list) {
-        TornadoInternalError.guarantee(state.isValid(), "invalid variable");
+    public int streamOut(Object object, DeviceObjectState state,
+            int[] list) {
+        guarantee(state.isValid(), "invalid variable");
 
-        return state.getBuffer().enqueueReadAfterAll(object, list);
+        return state.getBuffer().enqueueRead(object, list);
     }
 
     @Override
@@ -311,8 +310,8 @@ public class OCLDeviceMapping implements DeviceMapping {
     }
 
     @Override
-    public void flush() {
-        getDeviceContext().enqueueBarrier();
+    public int enqueueBarrier() {
+        return getDeviceContext().enqueueBarrier();
     }
     
     public void dumpMemory(String file){
@@ -326,6 +325,21 @@ public class OCLDeviceMapping implements DeviceMapping {
             e.printStackTrace();
         }
         
+    }
+
+    @Override
+    public Event resolveEvent(int event) {
+        return getDeviceContext().resolveEvent(event);
+    }
+
+    @Override
+    public void flushEvents() {
+        getDeviceContext().flushEvents();
+    }
+
+    @Override
+    public void markEvent() {
+       getDeviceContext().markEvent();
     }
 
 }

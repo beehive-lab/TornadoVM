@@ -1,9 +1,6 @@
 package tornado.drivers.opencl.mm;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import tornado.api.Event;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
@@ -50,59 +47,35 @@ public class OCLByteBuffer {
     }
 
     public void read() {
-        readAfterAll(null);
+        read(null);
     }
 
-    public void readAfter(final Event event) {
-        List<Event> waitEvents = new ArrayList<Event>(1);
-        waitEvents.add(event);
-        readAfterAll(waitEvents);
-    }
-
-    public void readAfterAll(final List<Event> events) {
+    public void read(final int[] events) {
         deviceContext.readBuffer(toBuffer(), offset, bytes, buffer.array(), events);
     }
 
-    public Event enqueueRead() {
-        return enqueueReadAfterAll(null);
+    public int enqueueRead() {
+        return enqueueRead(null);
     }
 
-    public Event enqueueReadAfter(final Event event) {
-        List<Event> waitEvents = new ArrayList<Event>(1);
-        waitEvents.add(event);
-        return enqueueReadAfterAll(waitEvents);
-    }
-
-    public Event enqueueReadAfterAll(final List<Event> events) {
+    public int enqueueRead(final int[] events) {
         return deviceContext.enqueueReadBuffer(toBuffer(), offset, bytes, buffer.array(), events);
     }
 
     public void write() {
-        writeAfterAll(null);
+        write(null);
     }
 
-    public void writeAfter(final Event event) {
-        final List<Event> waitEvents = new ArrayList<Event>(1);
-        waitEvents.add(event);
-        writeAfterAll(waitEvents);
-    }
-
-    public void writeAfterAll(final List<Event> events) {
+   
+    public void write(final int[] events) {
         deviceContext.writeBuffer(toBuffer(), offset, bytes, buffer.array(), events);
     }
 
-    public Event enqueueWrite() {
-        return enqueueWriteAfterAll(null);
+    public int enqueueWrite() {
+        return enqueueWrite(null);
     }
-
-    public Event enqueueWriteAfter(final Event event) {
-        final List<Event> waitEvents = new ArrayList<Event>(1);
-        waitEvents.add(event);
-        return enqueueWriteAfterAll(waitEvents);
-
-    }
-
-    public Event enqueueWriteAfterAll(final List<Event> events) {
+    
+    public int enqueueWrite(final int[] events) {
         return deviceContext.enqueueWriteBuffer(toBuffer(), offset, bytes, buffer.array(), events);
     }
 

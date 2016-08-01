@@ -3,18 +3,12 @@ package tornado.drivers.opencl.graal;
 import com.oracle.graal.api.code.InstalledCode;
 import com.oracle.graal.api.code.InvalidInstalledCodeException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import tornado.api.Event;
 import tornado.common.CallStack;
-import tornado.common.Tornado;
-import static tornado.common.Tornado.DEBUG;
-import static tornado.common.Tornado.DUMP_PROFILES;
-import static tornado.common.Tornado.ENABLE_EXCEPTIONS;
+import static tornado.common.Tornado.*;
 import tornado.common.TornadoInstalledCode;
-import tornado.common.exceptions.TornadoInternalError;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import tornado.drivers.opencl.OCLDeviceContext;
-import tornado.drivers.opencl.OCLEvent;
 import tornado.drivers.opencl.OCLKernel;
 import tornado.drivers.opencl.OCLKernelScheduler;
 import tornado.drivers.opencl.OCLProgram;
@@ -33,6 +27,7 @@ public class OpenCLInstalledCode extends InstalledCode implements TornadoInstall
     private boolean valid;
 
     private final OCLKernelScheduler scheduler;
+    private final int[] internalEvents = new int[1];
 
     public OpenCLInstalledCode(
             final String entryPoint,
@@ -64,40 +59,46 @@ public class OpenCLInstalledCode extends InstalledCode implements TornadoInstall
     }
 
     public void execute(final OCLByteBuffer stack, final Meta meta) {
-        Tornado.debug("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(),
+        debug("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(),
                 kernel.getName(), deviceContext.getDevice().getName());
-        Tornado.debug("\tstack    : buffer id=0x%x, address=0x%x relative=0x%x", stack.toBuffer(),
+        debug("\tstack    : buffer id=0x%x, address=0x%x relative=0x%x", stack.toBuffer(),
                 stack.toAbsoluteAddress(), stack.toRelativeAddress());
 
-        List<Event> waitEvents = new ArrayList<>(1);
-        waitEvents.add(stack.enqueueWrite());
+       
+        internalEvents[0] = stack.enqueueWrite();
 
         setKernelArgs(stack);
 
-        OCLEvent task;
+
         if (meta != null && meta.isParallel()) {
-            task = scheduler.submit(kernel, meta, waitEvents);
+            internalEvents[0] = scheduler.submit(kernel, meta, internalEvents);
         } else {
-            task = deviceContext.enqueueTask(kernel, waitEvents);
+            internalEvents[0] = deviceContext.enqueueTask(kernel, internalEvents);
         }
 
         if (meta != null && DUMP_PROFILES) {
-            meta.addProfile(task);
+//            meta.addProfile(task);
         }
 
-        stack.readAfter(task);
 
-        Tornado.debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getId(),
+        final int task = stack.enqueueRead(internalEvents);
+        final Event event = deviceContext.resolveEvent(task);
+        event.waitOn();
+
+        debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getId(),
                 kernel.getName(), deviceContext.getDevice().getName());
-        Tornado.debug("\tstatus   : %s", task.getStatus());
-        Tornado.debug("\texecuting: %f seconds", task.getExecutionTime());
-        Tornado.debug("\ttotal    : %f seconds", task.getTotalTime());
+        debug("\tstatus   : %s", event.getStatus());
+        
+        if(ENABLE_PROFILING){
+            debug("\texecuting: %f seconds", event.getExecutionTime());
+            debug("\ttotal    : %f seconds", event.getTotalTime());
+        }
     }
 
     public void execute(final OCLCallStack stack) {
         execute(stack, null);
-        Tornado.debug("\tdeopt    : 0x%x", stack.getDeoptValue());
-        Tornado.debug("\treturn   : 0x%x", stack.getReturnValue());
+        debug("\tdeopt    : 0x%x", stack.getDeoptValue());
+        debug("\treturn   : 0x%x", stack.getReturnValue());
     }
 
     @Override
@@ -155,39 +156,48 @@ public class OpenCLInstalledCode extends InstalledCode implements TornadoInstall
         kernel.setArg(index, buffer);
     }
 
-    public Event submit(final OCLCallStack stack, final Meta meta,
-            final List<Event> events) {
-
+    public int submit(final OCLCallStack stack, final Meta meta,
+            final int[] events) {
+        
         if (DEBUG) {
-            Tornado.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(),
+            info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(),
                     kernel.getName(), deviceContext.getDevice().getName());
-            Tornado.info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(),
+            info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(),
                     stack.toAbsoluteAddress(), stack.toRelativeAddress());
         }
 
+        final int[] waitEvents;
         setKernelArgs(stack);
         if (!stack.isOnDevice()) {
-            events.add(stack.enqueueWrite());
+            internalEvents[0] = stack.enqueueWrite(events);
+            waitEvents = internalEvents;
+        } else {
+            waitEvents = events;
         }
 
-        TornadoInternalError.guarantee(kernel != null, "kernel is null");
+        guarantee(kernel != null, "kernel is null");
 
-        final OCLEvent task;
+        int task;
         if (meta.isParallel()) {
-            task = scheduler.submit(kernel, meta, events);
+            task = scheduler.submit(kernel, meta, waitEvents);
         } else {
-            task = deviceContext.enqueueTask(kernel, events);
+            task = deviceContext.enqueueTask(kernel, waitEvents);
         }
 
         if (DUMP_PROFILES) {
-            meta.addProfile(task);
+//            meta.addProfile(task);
         }
 
-        return (ENABLE_EXCEPTIONS) ? stack.enqueueReadAfter(task) : task;
+        if(ENABLE_EXCEPTIONS){
+           internalEvents[0] = task;
+           task  = stack.enqueueRead(internalEvents);
+        }
+     
+        return task;
     }
 
     @Override
-    public Event launch(CallStack stack, Meta meta, List<Event> waitEvents) {
+    public int launch(CallStack stack, Meta meta, int[] waitEvents) {
         return submit((OCLCallStack) stack, meta, waitEvents);
     }
 

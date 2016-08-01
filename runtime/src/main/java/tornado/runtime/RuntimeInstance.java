@@ -1,12 +1,8 @@
 package tornado.runtime;
 
-import java.lang.reflect.Method;
-
-import tornado.runtime.api.CompilableTask;
-
 public interface RuntimeInstance<D> {
 
-	public <T> ObjectReference<D,T> register(final T object);
+//	public <T> ObjectReference<D,T> register(final T object);
 	public void sync();
 	
 	public void dumpEvents();

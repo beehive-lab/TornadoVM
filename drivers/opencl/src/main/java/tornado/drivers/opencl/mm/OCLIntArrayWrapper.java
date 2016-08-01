@@ -1,12 +1,7 @@
 package tornado.drivers.opencl.mm;
 
-import java.util.List;
-
 import com.oracle.graal.api.meta.Kind;
-
-import tornado.api.Event;
 import tornado.drivers.opencl.OCLDeviceContext;
-import tornado.drivers.opencl.OCLEvent;
 
 public class OCLIntArrayWrapper extends OCLArrayWrapper<int[]> {
 
@@ -20,25 +15,25 @@ public class OCLIntArrayWrapper extends OCLArrayWrapper<int[]> {
 
 	@Override
 	protected void readArrayData(long bufferId, long offset, long bytes,
-			int[] value, List<Event> waitEvents) {
+			int[] value, int[] waitEvents) {
 		deviceContext.readBuffer(bufferId, offset, bytes, value, waitEvents);		
 	}
 
 	@Override
 	protected void writeArrayData(long bufferId, long offset, long bytes,
-			int[] value, List<Event> waitEvents) {
+			int[] value, int[] waitEvents) {
 		deviceContext.writeBuffer(bufferId, offset, bytes, value, waitEvents);
 	}
 
 	@Override
-	protected OCLEvent enqueueReadArrayData(long bufferId, long offset,
-			long bytes, int[] value, List<Event> waitEvents) {
+	protected int enqueueReadArrayData(long bufferId, long offset,
+			long bytes, int[] value, int[] waitEvents) {
 		return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, value, waitEvents);
 	}
 
 	@Override
-	protected OCLEvent enqueueWriteArrayData(long bufferId, long offset,
-			long bytes, int[] value, List<Event> waitEvents) {
+	protected int enqueueWriteArrayData(long bufferId, long offset,
+			long bytes, int[] value, int[] waitEvents) {
 		return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, value, waitEvents);
 	}
 

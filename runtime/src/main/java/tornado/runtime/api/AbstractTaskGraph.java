@@ -3,6 +3,7 @@ package tornado.runtime.api;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.function.Consumer;
+import tornado.api.Event;
 import tornado.common.DeviceMapping;
 import tornado.common.RuntimeUtilities;
 import tornado.common.SchedulableTask;
@@ -32,6 +33,7 @@ public abstract class AbstractTaskGraph {
 
 	private GraphCompilationResult result;
 	private TornadoVM vm;
+        private Event event;
 
 	public AbstractTaskGraph() {
 		graphContext = new ExecutionContext();
@@ -40,6 +42,7 @@ public abstract class AbstractTaskGraph {
 		hlBuffer.order(ByteOrder.LITTLE_ENDIAN);
 		hlBuffer.rewind();
 		result = null;
+                event = null;
 	}
 
 	protected void addInner(SchedulableTask task) {
@@ -113,7 +116,7 @@ public abstract class AbstractTaskGraph {
 			compile();
 		}
 		
-		vm.execute();
+		event = vm.execute();
 		
 	}
 
@@ -140,7 +143,9 @@ public abstract class AbstractTaskGraph {
 	}
 
 	public void waitOn() {
-//            graphContext.getDevices().forEach((DeviceMapping device) -> device.sync());
+               if(event != null){
+                   event.waitOn();
+               }
 	}
 
 	protected void streamInInner(Object... objects) {

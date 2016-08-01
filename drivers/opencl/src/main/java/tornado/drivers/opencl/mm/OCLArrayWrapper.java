@@ -3,19 +3,14 @@ package tornado.drivers.opencl.mm;
 import com.oracle.graal.api.meta.Kind;
 import com.oracle.graal.hotspot.HotSpotGraalRuntimeProvider;
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import tornado.api.Event;
 import tornado.common.ObjectBuffer;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
+import static tornado.common.Tornado.ENABLE_OOO_EXECUTION;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
-import tornado.drivers.opencl.OCLEvent;
 import tornado.runtime.TornadoRuntime;
-import tornado.runtime.api.TaskUtils;
 
 public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
@@ -32,6 +27,9 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     private final Kind kind;
     private boolean onDevice;
     private boolean isFinal;
+
+    // TODO remove this
+    private final int[] internalEvents = new int[2];
 
     public OCLArrayWrapper(final OCLDeviceContext device, final Kind kind) {
         this(device, kind, false);
@@ -94,76 +92,43 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public Event enqueueRead(final Object value) {
-        final T array = cast(value);
-        final List<Event> waitEvents = new ArrayList<Event>(0);
-        return enqueueReadAfterAll(array, waitEvents);
-    }
-
-    @Override
-    public Event enqueueReadAfter(final Object value, final Event event) {
-        final T array = cast(value);
-        final List<Event> waitEvents = new ArrayList<Event>(1);
-        waitEvents.add(event);
-        return enqueueReadAfterAll(array, waitEvents);
-    }
-
-    @Override
-    public Event enqueueReadAfterAll(final Object value, final List<Event> events) {
+    public int enqueueRead(final Object value, final int[] events) {
         final T array = cast(value);
         if (isFinal) {
             return enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
                     - arrayHeaderSize, array, events);
         } else {
-            final List<Event> arrayEvents = new ArrayList<>(2);
-            arrayEvents.add(prepareArrayHeader().enqueueReadAfterAll(Collections.emptyList()));
-            arrayEvents.add(enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
-                    - arrayHeaderSize, array, events));
-            return deviceContext.enqueueBarrier(arrayEvents);
+            internalEvents[0] = prepareArrayHeader().enqueueRead(null);
+            internalEvents[1] = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
+                    - arrayHeaderSize, array, events);
+            return ENABLE_OOO_EXECUTION | Boolean.parseBoolean(Tornado.getProperty("tornado.vm.deps", "False")) ? deviceContext.enqueueMarker(internalEvents) : internalEvents[1];
         }
     }
 
-    abstract protected OCLEvent enqueueReadArrayData(long bufferId, long offset, long bytes,
-            T value, List<Event> waitEvents);
+    abstract protected int enqueueReadArrayData(long bufferId, long offset, long bytes,
+            T value, int[] waitEvents);
 
     @Override
-    public Event enqueueWrite(final Object value) {
+    public int enqueueWrite(final Object value, final int[] events) {
         final T array = cast(value);
-        final List<Event> waitEvents = new ArrayList<>(1);
-        return enqueueWriteAfterAll(array, waitEvents);
-    }
-
-    @Override
-    public Event enqueueWriteAfter(final Object value, final Event event) {
-        final T array = cast(value);
-        final List<Event> waitEvents = new ArrayList<>(1);
-        waitEvents.add(event);
-        return enqueueWriteAfterAll(array, waitEvents);
-    }
-
-    @Override
-    public Event enqueueWriteAfterAll(final Object value, final List<Event> events) {
-        final T array = cast(value);
-        TaskUtils.waitForEvents(events);
 
         if (isFinal && onDevice) {
             return enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
                     - arrayHeaderSize, array, events);
         } else {
-            final List<Event> arrayEvents = new ArrayList<>(2);
             if (!onDevice || !isFinal) {
-                arrayEvents.add(buildArrayHeader((T) array).enqueueWriteAfterAll(
-                        events));
+                internalEvents[0] = buildArrayHeader((T) array).enqueueWrite(
+                        events);
             }
-            arrayEvents.add(enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
-                    - arrayHeaderSize, array, events));
+            internalEvents[1] = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
+                    - arrayHeaderSize, array, events);
             onDevice = true;
-            return deviceContext.enqueueBarrier(arrayEvents);
+            return ENABLE_OOO_EXECUTION | Boolean.parseBoolean(Tornado.getProperty("tornado.vm.deps", "False")) ? deviceContext.enqueueMarker(internalEvents) : internalEvents[1];
         }
     }
 
-    abstract protected OCLEvent enqueueWriteArrayData(long bufferId, long offset, long bytes,
-            T value, List<Event> waitEvents);
+    abstract protected int enqueueWriteArrayData(long bufferId, long offset, long bytes,
+            T value, int[] waitEvents);
 
     @Override
     public int getAlignment() {
@@ -214,7 +179,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     abstract protected void readArrayData(long bufferId, long offset, long bytes, T value,
-            List<Event> waitEvents);
+            int[] waitEvents);
 
     private int sizeOf(final T array) {
         return arrayHeaderSize + (Array.getLength(array) * kind.getByteCount());
@@ -276,6 +241,6 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     abstract protected void writeArrayData(long bufferId, long offset, long bytes, T value,
-            List<Event> waitEvents);
+            int[] waitEvents);
 
 }

@@ -1,7 +1,5 @@
 package tornado.drivers.opencl;
 
-import java.util.List;
-import tornado.api.Event;
 import static tornado.common.Tornado.*;
 import tornado.meta.Meta;
 
@@ -32,7 +30,7 @@ public abstract class OCLKernelScheduler {
 
     }
 
-    public OCLEvent submit(final OCLKernel kernel, final Meta meta, final List<Event> waitEvents) {
+    public int submit(final OCLKernel kernel, final Meta meta, final int[] waitEvents) {
         final OCLKernelConfig kernelInfo;
         if (meta.hasProvider(OCLKernelConfig.class)) {
             kernelInfo = meta.getProvider(OCLKernelConfig.class);
@@ -46,7 +44,7 @@ public abstract class OCLKernelScheduler {
             kernelInfo.printToLog();
         }
 
-        final OCLEvent task;
+        final int task;
         if (USE_OPENCL_SCHEDULING) {
             task = deviceContext.enqueueNDRangeKernel(kernel, kernelInfo.getDims(), kernelInfo.getGlobalOffset(),
                     kernelInfo.getGlobalWork(), null, waitEvents);

@@ -31,6 +31,14 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLEvent_clGetEventProfilingI
 JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLEvent_clWaitForEvents
   (JNIEnv *, jclass, jlongArray);
 
+/*
+ * Class:     tornado_drivers_opencl_OCLEvent
+ * Method:    clReleaseEvent
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLEvent_clReleaseEvent
+  (JNIEnv *, jclass, jlong);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,5 +1,6 @@
 package tornado.runtime.api;
 
+import tornado.api.Event;
 import tornado.common.DeviceMapping;
 import tornado.common.SchedulableTask;
 import tornado.runtime.api.TornadoFunctions.Task1;
@@ -14,7 +15,9 @@ import tornado.runtime.api.TornadoFunctions.Task8;
 import tornado.runtime.api.TornadoFunctions.Task9;
 
 public class TaskGraph extends AbstractTaskGraph {
-
+        
+        private Event event;
+    
 	public <T1> TaskGraph add(Task1<T1> code, T1 arg) {
 		addInner(TaskUtils.createTask(code, arg));
 		return this;

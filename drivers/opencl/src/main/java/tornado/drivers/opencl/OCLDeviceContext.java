@@ -1,7 +1,6 @@
 package tornado.drivers.opencl;
 
 import java.nio.ByteOrder;
-import java.nio.LongBuffer;
 import java.util.List;
 import tornado.api.Event;
 import tornado.common.Initialisable;
@@ -81,8 +80,8 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         return device.getId();
     }
 
-    public void enqueueBarrier() {
-        queue.enqueueBarrier();
+    public int enqueueBarrier() {
+        return queue.enqueueBarrier();
     }
 
     public OCLProgram createProgram(byte[] source, long[] lengths) {
@@ -93,26 +92,19 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         queue.printEvents();
     }
 
-    public OCLEvent enqueueTask(OCLKernel kernel, List<Event> events) {
-        return queue.enqueueTask(kernel, serialiseEvents(events));
+    public int enqueueTask(OCLKernel kernel, int[] events) {
+        return queue.enqueueTask(kernel, events);
     }
 
-    public OCLEvent enqueueTask(OCLKernel kernel) {
+    public int enqueueTask(OCLKernel kernel) {
         return queue.enqueueTask(kernel, null);
     }
 
-    public OCLEvent enqueueNDRangeKernel(OCLKernel kernel, int dim,
+    public int enqueueNDRangeKernel(OCLKernel kernel, int dim,
             long[] globalWorkOffset, long[] globalWorkSize,
-            long[] localWorkSize, List<Event> waitEvents) {
+            long[] localWorkSize, int[] waitEvents) {
         return queue.enqueueNDRangeKernel(kernel, dim, globalWorkOffset,
-                globalWorkSize, localWorkSize, serialiseEvents(waitEvents));
-    }
-
-    @Deprecated
-    public OCLEvent enqueueNDRangeKernel(OCLKernel kernel, int dim,
-            long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize) {
-        return queue.enqueueNDRangeKernel(kernel, dim, globalWorkOffset,
-                globalWorkSize, localWorkSize, null);
+                globalWorkSize, localWorkSize, waitEvents);
     }
 
     public ByteOrder getByteOrder() {
@@ -123,81 +115,81 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
     /*
      * Asynchronous writes to device
      */
-    public OCLEvent enqueueWriteBuffer(long bufferId, long offset, long bytes,
-            byte[] array, List<Event> waitEvents) {
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
+            byte[] array, int[] waitEvents) {
         return queue.enqueueWrite(bufferId, false, offset, bytes, array,
-                serialiseEvents(waitEvents));
+                waitEvents);
     }
 
-    public OCLEvent enqueueWriteBuffer(long bufferId, long offset, long bytes,
-            int[] array, List<Event> waitEvents) {
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
+            int[] array, int[] waitEvents) {
         return queue.enqueueWrite(bufferId, false, offset, bytes, array,
-                serialiseEvents(waitEvents));
+                waitEvents);
     }
 
-    public OCLEvent enqueueWriteBuffer(long bufferId, long offset, long bytes,
-            long[] array, List<Event> waitEvents) {
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
+            long[] array, int[] waitEvents) {
         return queue.enqueueWrite(bufferId, false, offset, bytes, array,
-                serialiseEvents(waitEvents));
+                waitEvents);
     }
 
-    public OCLEvent enqueueWriteBuffer(long bufferId, long offset, long bytes,
-            short[] array, List<Event> waitEvents) {
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
+            short[] array, int[] waitEvents) {
         return queue.enqueueWrite(bufferId, false, offset, bytes, array,
-                serialiseEvents(waitEvents));
+                waitEvents);
     }
 
-    public OCLEvent enqueueWriteBuffer(long bufferId, long offset, long bytes,
-            float[] array, List<Event> waitEvents) {
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
+            float[] array, int[] waitEvents) {
         return queue.enqueueWrite(bufferId, false, offset, bytes, array,
-                serialiseEvents(waitEvents));
+                waitEvents);
     }
 
-    public OCLEvent enqueueWriteBuffer(long bufferId, long offset, long bytes,
-            double[] array, List<Event> waitEvents) {
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
+            double[] array, int[] waitEvents) {
         return queue.enqueueWrite(bufferId, false, offset, bytes, array,
-                serialiseEvents(waitEvents));
+                waitEvents);
     }
 
     /*
      * Asynchronouse reads from device
      */
-    public OCLEvent enqueueReadBuffer(long bufferId, long offset, long bytes,
-            byte[] array, List<Event> waitEvents) {
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
+            byte[] array, int[] waitEvents) {
         return queue.enqueueRead(bufferId, false, offset, bytes, array,
-                serialiseEvents(waitEvents));
+                waitEvents);
     }
 
-    public OCLEvent enqueueReadBuffer(long bufferId, long offset, long bytes,
-            int[] array, List<Event> waitEvents) {
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
+            int[] array, int[] waitEvents) {
         return queue.enqueueRead(bufferId, false, offset, bytes, array,
-                serialiseEvents(waitEvents));
+                waitEvents);
     }
 
-    public OCLEvent enqueueReadBuffer(long bufferId, long offset, long bytes,
-            long[] array, List<Event> waitEvents) {
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
+            long[] array, int[] waitEvents) {
         return queue.enqueueRead(bufferId, false, offset, bytes, array,
-                serialiseEvents(waitEvents));
+                waitEvents);
     }
 
-    public OCLEvent enqueueReadBuffer(long bufferId, long offset, long bytes,
-            float[] array, List<Event> waitEvents) {
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
+            float[] array, int[] waitEvents) {
         return queue.enqueueRead(bufferId, false, offset, bytes, array,
-                serialiseEvents(waitEvents));
-
-    }
-
-    public OCLEvent enqueueReadBuffer(long bufferId, long offset, long bytes,
-            double[] array, List<Event> waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array,
-                serialiseEvents(waitEvents));
+                waitEvents);
 
     }
 
-    public OCLEvent enqueueReadBuffer(long bufferId, long offset, long bytes,
-            short[] array, List<Event> waitEvents) {
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
+            double[] array, int[] waitEvents) {
         return queue.enqueueRead(bufferId, false, offset, bytes, array,
-                serialiseEvents(waitEvents));
+                waitEvents);
+
+    }
+
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
+            short[] array, int[] waitEvents) {
+        return queue.enqueueRead(bufferId, false, offset, bytes, array,
+                waitEvents);
 
     }
 
@@ -205,99 +197,79 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
      * Synchronous writes to device
      */
     public void writeBuffer(long bufferId, long offset, long bytes,
-            byte[] array, List<Event> waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, serialiseEvents(waitEvents));
+            byte[] array, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes,
-            int[] array, List<Event> waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, serialiseEvents(waitEvents));
+            int[] array, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes,
-            long[] array, List<Event> waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, serialiseEvents(waitEvents));
+            long[] array, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes,
-            short[] array, List<Event> waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, serialiseEvents(waitEvents));
+            short[] array, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes,
-            float[] array, List<Event> waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, serialiseEvents(waitEvents));
+            float[] array, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes,
-            double[] array, List<Event> waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, serialiseEvents(waitEvents));
+            double[] array, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
     }
 
     /*
 	 * Synchronous reads from device
      */
     public void readBuffer(long bufferId, long offset, long bytes,
-            byte[] array, List<Event> waitEvents) {
-        queue.enqueueRead(bufferId, true, offset, bytes, array, serialiseEvents(waitEvents));
+            byte[] array, int[] waitEvents) {
+        queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
     }
 
     public void readBuffer(long bufferId, long offset, long bytes, int[] array,
-            List<Event> waitEvents) {
-        queue.enqueueRead(bufferId, true, offset, bytes, array, serialiseEvents(waitEvents));
+            int[] waitEvents) {
+        queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
     }
 
     public void readBuffer(long bufferId, long offset, long bytes,
-            long[] array, List<Event> waitEvents) {
-        queue.enqueueRead(bufferId, true, offset, bytes, array, serialiseEvents(waitEvents));
+            long[] array, int[] waitEvents) {
+        queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
     }
 
     public void readBuffer(long bufferId, long offset, long bytes,
-            float[] array, List<Event> waitEvents) {
-        queue.enqueueRead(bufferId, true, offset, bytes, array, serialiseEvents(waitEvents));
-
-    }
-
-    public void readBuffer(long bufferId, long offset, long bytes,
-            double[] array, List<Event> waitEvents) {
-        queue.enqueueRead(bufferId, true, offset, bytes, array, serialiseEvents(waitEvents));
+            float[] array, int[] waitEvents) {
+        queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
 
     }
 
     public void readBuffer(long bufferId, long offset, long bytes,
-            short[] array, List<Event> waitEvents) {
-        queue.enqueueRead(bufferId, true, offset, bytes, array, serialiseEvents(waitEvents));
+            double[] array, int[] waitEvents) {
+        queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
 
     }
 
-    private static long[] serialiseEvents(List<Event> events) {
-        if (events == null || events.isEmpty()) {
-            return null;
-        }
+    public void readBuffer(long bufferId, long offset, long bytes,
+            short[] array, int[] waitEvents) {
+        queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
 
-        int size = 0;
-        for (Event e : events) {
-            if (e != null && e instanceof OCLEvent) {
-                size++;
-            }
-        }
-
-        final LongBuffer buffer = LongBuffer.allocate(size);
-        for (Event e : events) {
-            if (e != null && e instanceof OCLEvent) {
-                buffer.put(((OCLEvent) e).getId());
-            }
-        }
-
-        return (buffer.position() > 0) ? buffer.array() : null;
     }
 
-    public Event enqueueBarrier(List<Event> events) {
-        return queue.enqueueBarrier(serialiseEvents(events));
+    
+
+    public int enqueueBarrier(int[] events) {
+        return queue.enqueueBarrier(events);
     }
 
-    public Event enqueueMarker(List<Event> events) {
-        return queue.enqueueMarker(serialiseEvents(events));
+    public int enqueueMarker(int[] events) {
+        return queue.enqueueMarker(events);
     }
 
     @Override
@@ -344,5 +316,17 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
 
     public long getBumpBuffer() {
         return bumpBuffer;
+    }
+    
+    public Event resolveEvent(int event){
+        return queue.resolveEvent(event);
+    }
+    
+    public void markEvent(){
+        queue.markEvent();
+    }
+
+    public void flushEvents() {
+        queue.flushEvents();
     }
 }

@@ -1,21 +1,20 @@
 package tornado.runtime.api;
 
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-
+import com.oracle.graal.api.meta.ConstantPool;
+import com.oracle.graal.api.meta.ResolvedJavaMethod;
+import com.oracle.graal.bytecode.Bytecodes;
+import com.oracle.graal.hotspot.meta.HotSpotResolvedJavaMethodImpl;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.List;
-
 import tornado.api.Event;
 import tornado.common.DeviceMapping;
 import tornado.common.enums.Access;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import tornado.meta.domain.DomainTree;
 import tornado.meta.domain.IntDomain;
-import tornado.runtime.DataMovementTask;
-import tornado.runtime.ObjectReference;
 import tornado.runtime.TornadoRuntime;
 import tornado.runtime.api.TornadoFunctions.Task1;
 import tornado.runtime.api.TornadoFunctions.Task10;
@@ -27,11 +26,6 @@ import tornado.runtime.api.TornadoFunctions.Task6;
 import tornado.runtime.api.TornadoFunctions.Task7;
 import tornado.runtime.api.TornadoFunctions.Task8;
 import tornado.runtime.api.TornadoFunctions.Task9;
-
-import com.oracle.graal.api.meta.ConstantPool;
-import com.oracle.graal.api.meta.ResolvedJavaMethod;
-import com.oracle.graal.bytecode.Bytecodes;
-import com.oracle.graal.hotspot.meta.HotSpotResolvedJavaMethodImpl;
 
 public class TaskUtils {
 

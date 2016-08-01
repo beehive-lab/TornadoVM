@@ -2,7 +2,6 @@ package tornado.examples;
 
 
 import java.util.Arrays;
-
 import tornado.api.Parallel;
 import tornado.api.Read;
 import tornado.api.Write;
@@ -27,10 +26,9 @@ public class HelloWorld {
 		Arrays.fill(b, 2);
 		Arrays.fill(c, 0);
 		
-		
 		final TaskGraph graph = new TaskGraph();
 		graph
-			.add(HelloWorld::add, a,b,c)
+                        .add(HelloWorld::add, a,b,c)
 			.streamOut(c)
 			.mapAllTo(OpenCL.defaultDevice())
 			.schedule()
@@ -39,7 +37,6 @@ public class HelloWorld {
 		System.out.println("a: " + Arrays.toString(a));
 		System.out.println("b: " + Arrays.toString(b));
 		System.out.println("c: " + Arrays.toString(c));
-				
 	}
 
 }

@@ -1,6 +1,5 @@
 package tornado.common;
 
-import java.util.List;
 import tornado.api.Event;
 import tornado.api.enums.TornadoSchedulingStrategy;
 
@@ -14,19 +13,22 @@ public interface DeviceMapping {
 
 	public CallStack createStack(int numArgs);
 
-	public Event ensureAllocated(Object object, DeviceObjectState state);
+	public int ensureAllocated(Object object, DeviceObjectState state);
 
 	
 
-	public Event ensurePresent(Object object, DeviceObjectState objectState);
-	public Event streamIn(Object object, DeviceObjectState objectState);
-	public Event streamOut(Object object, DeviceObjectState objectState,
-			List<Event> list);
+	public int ensurePresent(Object object, DeviceObjectState objectState);
+	public int streamIn(Object object, DeviceObjectState objectState);
+	public int streamOut(Object object, DeviceObjectState objectState,
+			int[] list);
 
 	
 	public TornadoInstalledCode installCode(SchedulableTask task);
 
-	public void flush();
+        public Event resolveEvent(int event);
+        public void markEvent();
+        public void flushEvents();
+	public int enqueueBarrier();
         public void sync();
 	
 }

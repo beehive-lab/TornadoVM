@@ -17,8 +17,17 @@ public final class Tornado {
         return settings.getProperty(key, defaultValue);
     }
 
+    /*
+     * Forces the executing kernel to output its arguements before execution
+     */
+    public static final boolean DEBUG_KERNEL_ARGS = Boolean.parseBoolean(settings.getProperty("tornado.debug.kernelargs", "False"));
+    
     public static final boolean OPENCL_USE_RELATIVE_ADDRESSES = Boolean.parseBoolean(settings.getProperty("tornado.opencl.userelative", "False"));
     public static final boolean OPENCL_WAIT_ACTIVE = Boolean.parseBoolean(settings.getProperty("tornado.opencl.wait.active", "False"));
+    
+    /*
+     * Allows the OpenCL driver to select the size of local work groups
+     */
     public static final boolean USE_OPENCL_SCHEDULING = Boolean.parseBoolean(settings.getProperty("tornado.opencl.schedule", "False"));
 
     public static final boolean VM_WAIT_EVENT = Boolean.parseBoolean(settings.getProperty("tornado.vm.waitevent", "False"));

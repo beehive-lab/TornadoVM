@@ -531,7 +531,7 @@ public class OCLCompiler {
 		CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
 		final OCLSuitesProvider suitesProvider = providers.getSuitesProvider();
-		Request<OCLCompilationResult> kernelCompilationRequest = new Request<OCLCompilationResult>(
+		Request<OCLCompilationResult> kernelCompilationRequest = new Request<>(
 				kernelGraph, cc, resolvedMethod, args, meta, providers, backend,
 				backend.getTarget(), suitesProvider.getDefaultGraphBuilderSuite(), optimisticOpts,
 				profilingInfo, speculationLog, suitesProvider.createSuites(),
