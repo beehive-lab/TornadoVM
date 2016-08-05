@@ -262,7 +262,7 @@ public class TornadoVM extends TornadoLogger {
                     installedCodes[taskIndex] = device.installCode(task);
                     final long compileEnd = System.nanoTime();
                     if(PRINT_COMPILE_TIMES){
-                        System.out.printf("compile: task %s tornado %.9f",task.getName(),(compileEnd - compileStart) * 1e-9);
+                        System.out.printf("compile: task %s tornado %.9f\n",task.getName(),(compileEnd - compileStart) * 1e-9);
                     }
                     
                     if (DEBUG) {

@@ -71,7 +71,7 @@ public class OpenCLCodeCache implements CodeCacheProvider {
         if (status == OCLBuildStatus.CL_BUILD_SUCCESS) {
             Tornado.debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
             if(Tornado.PRINT_COMPILE_TIMES){
-            System.out.printf("compile: kernel %s opencl %.9f",entryPoint,(t1 - t0) * 1e-9f);
+            System.out.printf("compile: kernel %s opencl %.9f\n",entryPoint,(t1 - t0) * 1e-9f);
             }
             cache.add(code);
             
