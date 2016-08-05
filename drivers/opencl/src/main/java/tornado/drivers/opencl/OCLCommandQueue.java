@@ -268,7 +268,7 @@ public class OCLCommandQueue extends TornadoLogger {
     }
     
     private boolean serialiseEvents(int[] dependencies) {
-        if (dependencies == null || dependencies.length == 0) {
+        if (dependencies == null || dependencies.length == 0 || !ENABLE_OOO_EXECUTION) {
             return false;
         }
 
