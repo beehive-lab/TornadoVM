@@ -13,6 +13,7 @@ import tornado.common.SchedulableTask;
 import tornado.common.Tornado;
 import static tornado.common.Tornado.DEBUG;
 import static tornado.common.Tornado.ENABLE_OOO_EXECUTION;
+import static tornado.common.Tornado.PRINT_COMPILE_TIMES;
 import tornado.common.TornadoInstalledCode;
 import tornado.common.TornadoLogger;
 import tornado.common.enums.Access;
@@ -235,6 +236,7 @@ public class TornadoVM extends TornadoLogger {
 
                 lastEvent = device.streamOut(object, objectState,
                         events[eventList]);
+                eventsIndicies[eventList]=0;
             } else if (op == LAUNCH) {
                 final int gtid = buffer.getInt();
                 final int contextIndex = buffer.getInt();
@@ -259,6 +261,10 @@ public class TornadoVM extends TornadoLogger {
                     task.mapTo(device);
                     installedCodes[taskIndex] = device.installCode(task);
                     final long compileEnd = System.nanoTime();
+                    if(PRINT_COMPILE_TIMES){
+                        System.out.printf("compile: task %s tornado %.9f",task.getName(),(compileEnd - compileStart) * 1e-9);
+                    }
+                    
                     if (DEBUG) {
                         debug("vm: compiled in %.9f s",
                                 (compileEnd - compileStart) * 1e-9);
@@ -307,6 +313,7 @@ public class TornadoVM extends TornadoLogger {
                 }
 
                 lastEvent = installedCode.launch(stack, task.meta(), waitList);
+                eventsIndicies[eventList]=0;
 
             } else if (op == ADD_DEP) {
                 final int eventList = buffer.getInt();
@@ -315,8 +322,6 @@ public class TornadoVM extends TornadoLogger {
                     continue;
                 }
 
-//                guarantee(lastEvent != -1,
-//                        "lastEvent is null");
                 if (useDependencies && lastEvent != -1) {
                     if (DEBUG) {
                         debug("vm: ADD_DEP %s to event list %d", lastEvent,
@@ -350,16 +355,6 @@ public class TornadoVM extends TornadoLogger {
                 }
                 shouldNotReachHere();
             }
-
-//            if (lastEvent != -1) {
-//                final DeviceMapping device = contexts.get(0);
-//                final Event event = device.resolveEvent(lastEvent);
-//                System.out.printf("lastEvent: %s\n", event.toString());
-////                lastEvent.waitOn();
-//                if (DEBUG) {
-//                    debug("vm: last event=%s", lastEvent);
-//                }
-//            }
         }
 
         Event barrier = EMPTY_EVENT;
@@ -369,7 +364,7 @@ public class TornadoVM extends TornadoLogger {
                 final int event = device.enqueueBarrier();
                 barrier = device.resolveEvent(event);
 //                device.flushEvents();
-            } else {
+            } else if(contexts.size() > 1) {
                 unimplemented("multi-context applications");
             }
         }

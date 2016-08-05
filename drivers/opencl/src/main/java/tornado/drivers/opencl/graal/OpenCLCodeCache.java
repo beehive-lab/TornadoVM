@@ -51,7 +51,9 @@ public class OpenCLCodeCache implements CodeCacheProvider {
                 new long[]{source.length});
 
         // TODO add support for passing compiler optimisation flags here
+        final long t0 = System.nanoTime();
         program.build(Tornado.OPENCL_CFLAGS);
+        final long t1 = System.nanoTime();
 
         final OCLBuildStatus status = program.getStatus(deviceContext.getDeviceId());
         Tornado.debug("\tOpenCL compilation status = %s", status.toString());
@@ -68,6 +70,9 @@ public class OpenCLCodeCache implements CodeCacheProvider {
 
         if (status == OCLBuildStatus.CL_BUILD_SUCCESS) {
             Tornado.debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
+            if(Tornado.PRINT_COMPILE_TIMES){
+            System.out.printf("compile: kernel %s opencl %.9f",entryPoint,(t1 - t0) * 1e-9f);
+            }
             cache.add(code);
             
             // BUG Apple does not seem to like implementing the OpenCL spec properly, this causes a sigfault.
