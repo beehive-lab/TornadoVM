@@ -2,7 +2,7 @@ package tornado.drivers.opencl;
 
 public class OCLCpuScheduler extends OCLKernelScheduler {
 	
-	private final double				CPU_COMPUTE_UNIT_COEFF			= .5;
+	private final double				CPU_COMPUTE_UNIT_COEFF			= 1;
 
 	public OCLCpuScheduler(final OCLDeviceContext context) {
 		super(context);
