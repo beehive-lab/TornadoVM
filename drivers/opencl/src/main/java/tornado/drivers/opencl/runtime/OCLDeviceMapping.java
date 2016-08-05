@@ -17,6 +17,7 @@ import tornado.common.DeviceMapping;
 import tornado.common.DeviceObjectState;
 import tornado.common.ObjectBuffer;
 import tornado.common.SchedulableTask;
+import static tornado.common.Tornado.FORCE_ALL_TO_GPU;
 import tornado.common.TornadoInstalledCode;
 import tornado.common.exceptions.TornadoInternalError;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
@@ -100,11 +101,16 @@ public class OCLDeviceMapping implements DeviceMapping {
     @Override
     public TornadoSchedulingStrategy getPreferedSchedule() {
         if (null != device.getDeviceType()) {
+            
+            if(FORCE_ALL_TO_GPU){
+                return TornadoSchedulingStrategy.PER_ITERATION;
+            }
+            
             switch (device.getDeviceType()) {
-//                case CL_DEVICE_TYPE_GPU:
-//                    return TornadoSchedulingStrategy.PER_ITERATION;
-//                case CL_DEVICE_TYPE_CPU:
-//                    return TornadoSchedulingStrategy.PER_BLOCK;
+                case CL_DEVICE_TYPE_GPU:
+                    return TornadoSchedulingStrategy.PER_ITERATION;
+                case CL_DEVICE_TYPE_CPU:
+                    return TornadoSchedulingStrategy.PER_BLOCK;
                 default:
                     return TornadoSchedulingStrategy.PER_ITERATION;
             }
