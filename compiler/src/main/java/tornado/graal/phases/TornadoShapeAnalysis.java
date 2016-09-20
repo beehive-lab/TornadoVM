@@ -1,18 +1,15 @@
 package tornado.graal.phases;
 
-import java.util.Collections;
-import java.util.List;
-
-import tornado.common.Tornado;
-import tornado.common.exceptions.TornadoInternalError;
-import tornado.graal.nodes.ParallelRangeNode;
-import tornado.meta.domain.DomainTree;
-import tornado.meta.domain.IntDomain;
-
 import com.oracle.graal.nodes.ConstantNode;
 import com.oracle.graal.nodes.StructuredGraph;
 import com.oracle.graal.nodes.ValueNode;
 import com.oracle.graal.phases.BasePhase;
+import java.util.Collections;
+import java.util.List;
+import tornado.common.Tornado;
+import tornado.graal.nodes.ParallelRangeNode;
+import tornado.meta.domain.DomainTree;
+import tornado.meta.domain.IntDomain;
 
 public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
 
