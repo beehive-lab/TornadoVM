@@ -7,7 +7,7 @@ import java.util.Properties;
 
 public final class Tornado {
 
-    private static Properties settings = System.getProperties();
+    private final static Properties settings = System.getProperties();
 
     static {
         tryLoadSettings();
@@ -17,29 +17,56 @@ public final class Tornado {
         return settings.getProperty(key, defaultValue);
     }
 
+    /*
+     * Forces the executing kernel to output its arguements before execution
+     */
+    public static final boolean DEBUG_KERNEL_ARGS = Boolean.parseBoolean(settings.getProperty("tornado.debug.kernelargs", "False"));
+   
+    public static final boolean PRINT_COMPILE_TIMES = Boolean.parseBoolean(settings.getProperty("tornado.debug.compiletimes", "False"));
+   
+    public static final boolean FORCE_ALL_TO_GPU = Boolean.parseBoolean(settings.getProperty("tornado.opencl.forcegpu", "False"));
+   
+    
+    public static final boolean OPENCL_USE_RELATIVE_ADDRESSES = Boolean.parseBoolean(settings.getProperty("tornado.opencl.userelative", "False"));
+    public static final boolean OPENCL_WAIT_ACTIVE = Boolean.parseBoolean(settings.getProperty("tornado.opencl.wait.active", "False"));
+    
+    /*
+     * Allows the OpenCL driver to select the size of local work groups
+     */
+    public static final boolean USE_OPENCL_SCHEDULING = Boolean.parseBoolean(settings.getProperty("tornado.opencl.schedule", "False"));
+
+    public static final boolean VM_WAIT_EVENT = Boolean.parseBoolean(settings.getProperty("tornado.vm.waitevent", "False"));
+
     public static final boolean ENABLE_EXCEPTIONS = Boolean
             .parseBoolean(settings.getProperty("tornado.exceptions.enable",
-                    "false"));
+                    "False"));
+
+    public static final boolean ENABLE_PROFILING = Boolean
+            .parseBoolean(settings.getProperty("tornado.profiling.enable",
+                    "False"));
+
     public static final boolean ENABLE_OOO_EXECUTION = Boolean
             .parseBoolean(settings.getProperty("tornado.ooo-execution.enable",
-                    "false"));
+                    "False"));
     public static final boolean FORCE_BLOCKING_API_CALLS = Boolean
             .parseBoolean(settings.getProperty("tornado.opencl.blocking",
-                    "false"));
+                    "False"));
 
     public static final boolean ENABLE_VECTORS = Boolean.parseBoolean(settings
-            .getProperty("tornado.vectors.enable", "true"));
+            .getProperty("tornado.vectors.enable", "True"));
     public static final boolean TORNADO_ENABLE_BIFS = Boolean
-            .parseBoolean(settings.getProperty("tornado.bifs.enable", "false"));
+            .parseBoolean(settings.getProperty("tornado.bifs.enable", "False"));
 
     public static final boolean DEBUG = Boolean.parseBoolean(settings
-            .getProperty("tornado.debug", "false"));
+            .getProperty("tornado.debug", "False"));
 
     public static final boolean ENABLE_MEM_CHECKS = Boolean
-            .parseBoolean(settings.getProperty("tornado.memory.check", "False"));;
+            .parseBoolean(settings.getProperty("tornado.memory.check", "False"));
 
     public static final boolean LOG_EVENTS = Boolean.parseBoolean(settings
             .getProperty("tornado.events.log", "False"));
+
+    public static final boolean DUMP_PROFILES = Boolean.parseBoolean(settings.getProperty("tornado.profiles.print", "false"));
 
     public static final boolean DUMP_BINARIES = Boolean.parseBoolean(settings
             .getProperty("tornado.opencl.binaries", "False"));
@@ -62,15 +89,16 @@ public final class Tornado {
     }
 
     private static void tryLoadSettings() {
-        final File localSettings = new File("etc/tornado.properties");
-        if (localSettings.exists())
+        final String tornadoRoot = System.getenv("TORNADO_ROOT");
+        final File localSettings = new File(tornadoRoot + "/etc/tornado.properties");
+        if (localSettings.exists()) {
             try {
                 settings.load(new FileInputStream(localSettings));
             } catch (IOException e) {
                 warn("Unable to load settings from %s",
                         localSettings.getAbsolutePath());
             }
-
+        }
     }
 
     public static final void debug(final String pattern, final Object... args) {

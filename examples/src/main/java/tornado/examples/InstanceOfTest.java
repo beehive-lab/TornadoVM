@@ -3,7 +3,7 @@ package tornado.examples;
 import tornado.api.Read;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.ExecutableTask;
+import tornado.runtime.api.CompilableTask;
 
 public class InstanceOfTest {
 
@@ -36,7 +36,7 @@ public class InstanceOfTest {
          * This involves finding the methods called and the arguments used
          * in each call.
          */
-        final ExecutableTask<?> instanceOfInvocation = TaskUtils.createTask(
+        final CompilableTask instanceOfInvocation = TaskUtils.createTask(
                 InstanceOfTest::instanceOf, foo);
 
         /*
@@ -47,17 +47,17 @@ public class InstanceOfTest {
         /*
          * schedule execution of a instanceof Foo
          */
-        instanceOfInvocation.execute();
+//        instanceOfInvocation.execute();
 
         /*
          * wait for stack to be updated and retrive return value
          */
-        instanceOfInvocation.getStack().getEvent().waitOn();
-        final long returnValue = instanceOfInvocation.getStack()
-                .getReturnValue();
+//        instanceOfInvocation.getStack().getEvent().waitOn();
+//        final long returnValue = instanceOfInvocation.getStack()
+//                .getReturnValue();
 
-        System.out.printf("object 0x%x %s instanceof Foo\n", foo.hashCode(),
-                (returnValue == 1) ? "is" : "is not");
+//        System.out.printf("object 0x%x %s instanceof Foo\n", foo.hashCode(),
+//                (returnValue == 1) ? "is" : "is not");
 
     }
 }

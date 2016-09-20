@@ -1,17 +1,14 @@
 package tornado.benchmarks.convolveimage;
 
+import tornado.benchmarks.BenchmarkDriver;
 import static tornado.benchmarks.BenchmarkUtils.createFilter;
 import static tornado.benchmarks.BenchmarkUtils.createImage;
-import tornado.api.DeviceMapping;
-import tornado.api.Event;
-import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
 import tornado.collections.types.FloatOps;
 import tornado.collections.types.ImageFloat;
-import tornado.benchmarks.EventList;
+import tornado.common.DeviceMapping;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.ExecutableTask;
+import tornado.runtime.api.TaskGraph;
 
 public class ConvolveImageTornado extends BenchmarkDriver {
 
@@ -20,10 +17,7 @@ public class ConvolveImageTornado extends BenchmarkDriver {
 
     private ImageFloat input, output, filter;
 
-    private ExecutableTask convolve;
-
-    private Event last;
-    private final EventList<Event> events;
+    private TaskGraph graph;
 
     public ConvolveImageTornado(int iterations, int imageSizeX, int imageSizeY,
             int filterSize, DeviceMapping device) {
@@ -32,8 +26,7 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         this.imageSizeY = imageSizeY;
         this.filterSize = filterSize;
         this.device = device;
-        events = new EventList<Event>(iterations);
-        last = null;
+
     }
 
     @Override
@@ -45,14 +38,19 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         createImage(input);
         createFilter(filter);
 
-        convolve = TaskUtils.createTask(GraphicsKernels::convolveImage, input,
-                filter, output);
-        convolve.mapTo(device);
+        graph = new TaskGraph()
+                .add(GraphicsKernels::convolveImage, input,
+                        filter, output)
+                .streamOut(output)
+                .mapAllTo(device);
+
+        graph.warmup();
     }
 
     @Override
     public void tearDown() {
-        convolve.invalidate();
+        graph.dumpTimes();
+        graph.dumpProfiles();
 
         input = null;
         output = null;
@@ -65,18 +63,7 @@ public class ConvolveImageTornado extends BenchmarkDriver {
     @Override
     public void code() {
 
-        if (last == null)
-            convolve.schedule();
-        else
-            convolve.schedule(last);
-        last = convolve.getEvent();
-
-        events.add(last);
-    }
-
-    @Override
-    public void barrier() {
-        last.waitOn();
+        graph.schedule().waitOn();
     }
 
     @Override
@@ -84,7 +71,7 @@ public class ConvolveImageTornado extends BenchmarkDriver {
 
         final ImageFloat result = new ImageFloat(imageSizeX, imageSizeY);
 
-        convolve.execute();
+        code();
 
         GraphicsKernels.convolveImage(input, filter, result);
 
@@ -92,8 +79,8 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         for (int y = 0; y < output.Y(); y++) {
             for (int x = 0; x < output.X(); x++) {
                 final float ulp = FloatOps.findMaxULP(output.get(x, y), result.get(x, y));
-                
-            	if (ulp > maxULP) {
+
+                if (ulp > maxULP) {
                     maxULP = ulp;
                 }
             }
@@ -102,18 +89,15 @@ public class ConvolveImageTornado extends BenchmarkDriver {
     }
 
     public void printSummary() {
-        if (isValid())
+        if (isValid()) {
             System.out.printf(
-                    "id=opencl-device-%d, elapsed=%f, per iteration=%f, %s\n",
+                    "id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
                     ((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
-                    getElapsedPerIteration(), events.summeriseEvents());
-        else
+                    getElapsedPerIteration());
+        } else {
             System.out.printf("id=opencl-device-%d produced invalid result\n",
                     ((OCLDeviceMapping) device).getDeviceIndex());
-    }
-
-    public double getOverhead() {
-        return 1.0 - events.getMeanExecutionTime() / getElapsedPerIteration();
+        }
     }
 
 }

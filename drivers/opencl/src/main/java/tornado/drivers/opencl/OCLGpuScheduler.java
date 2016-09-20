@@ -28,7 +28,7 @@ public class OCLGpuScheduler extends OCLKernelScheduler {
 	}
 
 	@Override
-	public void calculateGlobalWork(final OCLKernelInfo kernelInfo) {
+	public void calculateGlobalWork(final OCLKernelConfig kernelInfo) {
 		final long[] globalWork = kernelInfo.getGlobalWork();
 		if(kernelInfo.getDims() > 1)
 			utilsIndex = 0;
@@ -44,7 +44,7 @@ public class OCLGpuScheduler extends OCLKernelScheduler {
 	}
 
 	@Override
-	public void calculateLocalWork(OCLKernelInfo kernelInfo) {
+	public void calculateLocalWork(OCLKernelConfig kernelInfo) {
 		final int maxWorkGroupSize = (int) ((int) deviceContext.getDevice()
 				.getMaxWorkGroupSize() * GPU_WORK_GROUP_COEFF);
 		

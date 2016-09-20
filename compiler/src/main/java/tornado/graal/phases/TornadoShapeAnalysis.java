@@ -20,8 +20,8 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
 		if(value instanceof ConstantNode){
 			return ((ConstantNode) value).asJavaConstant().asInt();
 		} else {
-			TornadoInternalError.shouldNotReachHere();
-			return -1;
+			//TornadoInternalError.shouldNotReachHere();
+			return Integer.MIN_VALUE;
 		}
 	}
 	
@@ -41,11 +41,11 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
 		for(int i=0;i<ranges.size();i++){
 			final ParallelRangeNode range = ranges.get(i);
 			final int index = range.index();
-			if(index != lastIndex){
+			if(index != lastIndex &&resolveInt(range.offset().value()) != Integer.MIN_VALUE &&resolveInt(range.stride().value()) != Integer.MIN_VALUE && resolveInt(range.value()) != Integer.MIN_VALUE ){
 				domainTree.set(index, new IntDomain(resolveInt(range.offset().value()),resolveInt(range.stride().value()),resolveInt(range.value())));
 			} else {
 				valid = false;
-				Tornado.warn("unsupported multiple parallel loops");
+				Tornado.info("unsupported multiple parallel loops");
 				break;
 			}
 			lastIndex = index;
@@ -56,7 +56,7 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
 
 			Tornado.debug("discovered parallel domain: %s", domainTree);
 
-			context.getMeta().addProvider(DomainTree.class, domainTree);
+			context.getMeta().setDomain(domainTree);
 		}
 		
 	}

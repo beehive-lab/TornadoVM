@@ -11,8 +11,8 @@ import tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 import tornado.graal.nodes.vector.VectorKind;
 
-import com.oracle.graal.api.meta.Kind;
 import com.oracle.graal.api.meta.ResolvedJavaMethod;
+import com.oracle.graal.api.meta.ResolvedJavaType;
 import com.oracle.graal.graphbuilderconf.GraphBuilderContext;
 import com.oracle.graal.graphbuilderconf.InvocationPlugin;
 import com.oracle.graal.graphbuilderconf.InvocationPlugins;
@@ -24,7 +24,7 @@ import com.oracle.graal.nodes.extended.ValueAnchorNode;
 
 public final class VectorPlugins {
 
-	public static final void registerFloat3Plugins(final InvocationPlugins plugins) {
+	public static final void registerPlugins(final InvocationPlugins plugins) {
 		if (Tornado.ENABLE_VECTORS) {
 			registerVectorPlugins(plugins, VectorKind.FLOAT2, float[].class, float.class);
 			registerVectorPlugins(plugins, VectorKind.FLOAT3, float[].class, float.class);
@@ -130,8 +130,9 @@ public final class VectorPlugins {
 			public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
 					Receiver reciever, ValueNode array, ValueNode index) {
 
+				final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
 				final VectorLoadNode load = new VectorLoadNode(vectorKind, array, index);
-				final VectorValueNode vector = new VectorValueNode(vectorKind);
+				final VectorValueNode vector = new VectorValueNode(resolvedType,vectorKind);
 				vector.setOrigin(load);
 				b.add(load);
 				b.push(vector.getKind(), b.recursiveAppend(vector));

@@ -4,7 +4,7 @@ import tornado.api.Read;
 import tornado.api.Write;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.ExecutableTask;
+import tornado.runtime.api.CompilableTask;
 
 public class ObjectTest {
 
@@ -39,7 +39,7 @@ public class ObjectTest {
          * This involves finding the methods called and the arguments used
          * in each call.
          */
-        final ExecutableTask<?> addInvocation = TaskUtils.createTask(
+        final CompilableTask addInvocation = TaskUtils.createTask(
                 ObjectTest::add, a, b, c);
 
         /*
@@ -50,7 +50,7 @@ public class ObjectTest {
         /*
          * Calculate a (3) + b (2) = c (5)
          */
-        addInvocation.execute();
+//        addInvocation.execute();
 
         /*
          * Check to make sure result is correct

@@ -1,16 +1,15 @@
 package tornado.drivers.opencl;
 
 
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
 import tornado.common.RuntimeUtilities;
 import tornado.common.TornadoLogger;
 import tornado.drivers.opencl.enums.OCLDeviceInfo;
 import tornado.drivers.opencl.enums.OCLDeviceType;
 import tornado.drivers.opencl.enums.OCLLocalMemType;
-
-import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Arrays;
 
 public class OCLDevice extends TornadoLogger {
 	private final long			id;
@@ -187,6 +186,15 @@ public class OCLDevice extends TornadoLogger {
 		return buffer.getInt();
 	}
 
+        public long getMaxAllocationSize(){
+            Arrays.fill(buffer.array(), (byte) 0);
+		buffer.clear();
+		clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MAX_MEM_ALLOC_SIZE.getValue(),
+				buffer.array());
+
+		return buffer.getLong();
+        }
+        
 	public long getGlobalMemorySize() {
 		Arrays.fill(buffer.array(), (byte) 0);
 		buffer.clear();

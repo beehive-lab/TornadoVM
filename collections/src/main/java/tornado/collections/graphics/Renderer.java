@@ -192,6 +192,7 @@ public class Renderer {
             @Read float farPlane) {
         final Byte4 BLACK = new Byte4((byte) 255, (byte) 255, (byte) 255,
                 (byte) 0);
+        final Byte4 ZERO = new Byte4();
 
         for (@Parallel
         int y = 0; y < depthMap.Y(); y++)
@@ -205,7 +206,7 @@ public class Renderer {
                     pixel = BLACK; // black
                 } else {
                     if (depth >= farPlane) {
-                        pixel = new Byte4();
+                        pixel = ZERO;
                     } else {
                         final float h = ((depth - nearPlane) / (farPlane - nearPlane)) * 6f;
 
@@ -240,6 +241,8 @@ public class Renderer {
                                 pixel = new Byte4((byte) 191, (byte) 64,
                                         (byte) (255f * mid2), (byte) 0);
                                 break;
+                            default:
+                            	pixel = ZERO;
                         }
                     }
                 }

@@ -1,36 +1,11 @@
 package tornado.drivers.opencl.graal.compiler;
 
-import static com.oracle.graal.api.code.ValueUtil.isConstant;
-import tornado.common.exceptions.TornadoInternalError;
-import tornado.drivers.opencl.graal.OCLProviders;
-import tornado.drivers.opencl.graal.OpenCLCodeCache;
-import tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryOp;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLMemorySpace;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLNullaryOp;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLTernaryTemplate;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryIntrinsic;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryOp;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryTemplate;
-import tornado.drivers.opencl.graal.lir.OCLBinary;
-import tornado.drivers.opencl.graal.lir.OCLControlFlow;
-import tornado.drivers.opencl.graal.lir.OCLNullary;
-import tornado.drivers.opencl.graal.lir.OCLTernary;
-import tornado.drivers.opencl.graal.lir.OCLUnary;
-import tornado.drivers.opencl.graal.lir.OCLAddressOps.OCLVectorElement;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.*;
-import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
-import tornado.drivers.opencl.graal.nodes.logic.LogicalAndNode;
-import tornado.drivers.opencl.graal.nodes.logic.LogicalEqualsNode;
-import tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
-import tornado.drivers.opencl.graal.nodes.logic.LogicalOrNode;
-
 import com.oracle.graal.api.code.CallingConvention;
 import com.oracle.graal.api.code.CodeCacheProvider;
 import com.oracle.graal.api.code.ForeignCallLinkage;
 import com.oracle.graal.api.code.Register;
 import com.oracle.graal.api.code.StackSlotValue;
+import static com.oracle.graal.api.code.ValueUtil.isConstant;
 import com.oracle.graal.api.meta.AllocatableValue;
 import com.oracle.graal.api.meta.Constant;
 import com.oracle.graal.api.meta.DeoptimizationAction;
@@ -59,7 +34,32 @@ import com.oracle.graal.nodes.calc.IntegerBelowNode;
 import com.oracle.graal.nodes.calc.IntegerEqualsNode;
 import com.oracle.graal.nodes.calc.IntegerLessThanNode;
 import com.oracle.graal.nodes.calc.IsNullNode;
-
+import tornado.common.exceptions.TornadoInternalError;
+import tornado.drivers.opencl.graal.OCLProviders;
+import tornado.drivers.opencl.graal.OpenCLCodeCache;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryOp;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLMemorySpace;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLNullaryOp;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLTernaryTemplate;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryIntrinsic;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryOp;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryTemplate;
+import tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants;
+import tornado.drivers.opencl.graal.lir.OCLAddressOps.OCLVectorElement;
+import tornado.drivers.opencl.graal.lir.OCLBinary;
+import tornado.drivers.opencl.graal.lir.OCLControlFlow;
+import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.ExprStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.StoreStmt;
+import tornado.drivers.opencl.graal.lir.OCLNullary;
+import tornado.drivers.opencl.graal.lir.OCLTernary;
+import tornado.drivers.opencl.graal.lir.OCLUnary;
+import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
+import tornado.drivers.opencl.graal.nodes.logic.LogicalAndNode;
+import tornado.drivers.opencl.graal.nodes.logic.LogicalEqualsNode;
+import tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
+import tornado.drivers.opencl.graal.nodes.logic.LogicalOrNode;
 import static tornado.graal.compiler.TornadoCodeGenerator.*;
 
 public class OCLBasicLIRGenerator extends LIRGenerator {
@@ -242,7 +242,12 @@ public class OCLBasicLIRGenerator extends LIRGenerator {
 		final MemoryAccess memAccess = (MemoryAccess) address;
 		memAccess.setKind(result.getKind());
 		
-		emitMove(result,new OCLUnary.Expr(OCLUnaryTemplate.INDIRECTION, result.getKind(), address));
+                if(result.getKind().isObject()){
+//                    final OCLUnaryTemplate op = (Tornado.OPENCL_USE_RELATIVE_ADDRESSES)? OCLUnaryTemplate.LOAD_ADDRESS_REL : OCLUnaryTemplate.LOAD_ADDRESS_ABS;
+                    emitMove(result,new OCLUnary.Expr(OCLUnaryTemplate.LOAD_ADDRESS_ABS, result.getKind(), address));
+                } else {
+                    emitMove(result,new OCLUnary.Expr(OCLUnaryTemplate.INDIRECTION, result.getKind(), address));
+                }
 		return result;
 	}
 
@@ -662,7 +667,8 @@ public class OCLBasicLIRGenerator extends LIRGenerator {
 			case Long:
 				return OCLUnaryTemplate.LOAD_PARAM_LONG;
 			case Object:
-				return OCLUnaryTemplate.LOAD_PARAM_OBJECT;
+//				return (Tornado.OPENCL_USE_RELATIVE_ADDRESSES) ? OCLUnaryTemplate.LOAD_PARAM_OBJECT_REL : OCLUnaryTemplate.LOAD_PARAM_OBJECT_ABS;
+                                return OCLUnaryTemplate.LOAD_PARAM_OBJECT_ABS;
 			default:
 				TornadoInternalError.unimplemented();
 				break;

@@ -2,11 +2,14 @@ package tornado.drivers.opencl.graal.nodes;
 
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryOp;
+import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
 
 import com.oracle.graal.api.meta.Kind;
+import com.oracle.graal.api.meta.LIRKind;
 import com.oracle.graal.compiler.common.type.StampFactory;
 import com.oracle.graal.graph.NodeClass;
+import com.oracle.graal.lir.Variable;
 import com.oracle.graal.nodeinfo.NodeInfo;
 import com.oracle.graal.nodes.ValueNode;
 import com.oracle.graal.nodes.calc.FloatingNode;
@@ -45,7 +48,15 @@ public class CastNode extends FloatingNode implements LIRLowerable {
 		/*
 		 * using as_T reinterprets the data as type T - consider: float x = (float) 1; and int value = 1, float x = &(value);
 		 */
-		gen.setResult(this,new OCLUnary.Expr(resolveOp(), kind, gen.operand(value)));
+		if(kind == Kind.Float){
+			gen.setResult(this,new OCLUnary.Expr(resolveOp(), kind, gen.operand(value)));
+		} else {
+			
+			final Variable result = gen.getLIRGeneratorTool().newVariable(LIRKind.value(Kind.Int));
+			final OCLLIRInstruction.AssignStmt assign = new OCLLIRInstruction.AssignStmt(result, new OCLUnary.FloatCast(OCLUnaryOp.CAST_TO_INT, kind, gen.operand(value)));
+			gen.getLIRGeneratorTool().append(assign);
+			gen.setResult(this, result  );
+		}
 		
 	}
 

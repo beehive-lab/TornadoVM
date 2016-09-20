@@ -5,7 +5,7 @@ import java.util.function.IntUnaryOperator;
 import tornado.api.Parallel;
 import tornado.drivers.opencl.OpenCL;
 import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.ExecutableTask;
+import tornado.runtime.api.CompilableTask;
 
 public class FunctionalDemo {
 
@@ -69,9 +69,9 @@ public class FunctionalDemo {
 		}
 
 	
-		final ExecutableTask<?> times2 = TaskUtils.createTask(Matrix::times2, m);
+		final CompilableTask times2 = TaskUtils.createTask(Matrix::times2, m);
 		times2.mapTo(OpenCL.defaultDevice());
-		times2.execute();
+//		times2.execute();
 		System.out.println(m);
 	}
 }

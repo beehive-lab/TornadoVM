@@ -1,215 +1,204 @@
 package tornado.drivers.opencl.graal;
 
+import com.oracle.graal.api.code.InstalledCode;
+import com.oracle.graal.api.code.InvalidInstalledCodeException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-
 import tornado.api.Event;
-import tornado.api.enums.TornadoExecutionStatus;
-import tornado.common.Tornado;
-import tornado.common.exceptions.TornadoInternalError;
+import tornado.common.CallStack;
+import static tornado.common.Tornado.*;
+import tornado.common.TornadoInstalledCode;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import tornado.drivers.opencl.OCLDeviceContext;
-import tornado.drivers.opencl.OCLEvent;
 import tornado.drivers.opencl.OCLKernel;
 import tornado.drivers.opencl.OCLKernelScheduler;
 import tornado.drivers.opencl.OCLProgram;
 import tornado.drivers.opencl.OCLScheduler;
 import tornado.drivers.opencl.mm.OCLByteBuffer;
 import tornado.drivers.opencl.mm.OCLCallStack;
-import tornado.meta.domain.DomainTree;
-import tornado.runtime.ObjectReference;
-import tornado.runtime.api.TaskUtils;
+import tornado.meta.Meta;
 
-import com.oracle.graal.api.code.InstalledCode;
-import com.oracle.graal.api.code.InvalidInstalledCodeException;
-import com.oracle.graal.api.meta.ResolvedJavaMethod;
+public class OpenCLInstalledCode extends InstalledCode implements TornadoInstalledCode {
 
-public class OpenCLInstalledCode extends InstalledCode {
+    //TODO replace with a system property/Tornado setting
+    private final ByteBuffer buffer = ByteBuffer.allocate(8);
+    private final byte[] code;
+    private final OCLDeviceContext deviceContext;
+    private final OCLKernel kernel;
+    private boolean valid;
 
-	private final static boolean	DEBUG		= false;
+    private final OCLKernelScheduler scheduler;
+    private final int[] internalEvents = new int[1];
 
-	private final ByteBuffer		buffer		= ByteBuffer.allocate(8);
-	private final byte[]			code;
-	private final OCLDeviceContext	deviceContext;
-	private final OCLKernel			kernel;
-	private boolean					valid;
+    public OpenCLInstalledCode(
+            final String entryPoint,
+            final byte[] code,
+            final OCLDeviceContext deviceContext,
+            final OCLProgram program,
+            final OCLKernel kernel) {
+        super(entryPoint);
+        this.code = code;
+        this.deviceContext = deviceContext;
+        this.scheduler = OCLScheduler.create(deviceContext);
+        this.kernel = kernel;
+        valid = kernel != null;
+        buffer.order(deviceContext.getByteOrder());
+    }
 
-	private final List<Event>		waitEvents	= new ArrayList<Event>();
-	
-	private final OCLKernelScheduler scheduler;
+    @Override
+    public void invalidate() {
+        if (valid) {
+            kernel.cleanup();
+            valid = false;
+        }
 
-	public OpenCLInstalledCode(
-			final String entryPoint,
-			final byte[] code,
-			final OCLDeviceContext deviceContext,
-			final OCLProgram program,
-			final OCLKernel kernel) {
-		super(entryPoint);
-		this.code = code;
-		this.deviceContext = deviceContext;
-		this.scheduler = OCLScheduler.create(deviceContext);
-		this.kernel = kernel;
-		valid = kernel != null;
-		buffer.order(deviceContext.getByteOrder());
-	}
+    }
 
-	@Override
-	public void invalidate() {
-		if (valid) {
-			kernel.cleanup();
-			valid = false;
-		}
+    @Override
+    public boolean isValid() {
+        return valid;
+    }
 
-	}
+    public void execute(final OCLByteBuffer stack, final Meta meta) {
+        debug("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(),
+                kernel.getName(), deviceContext.getDevice().getName());
+        debug("\tstack    : buffer id=0x%x, address=0x%x relative=0x%x", stack.toBuffer(),
+                stack.toAbsoluteAddress(), stack.toRelativeAddress());
 
-	@Override
-	public boolean isValid() {
-		return valid;
-	}
+       
+        internalEvents[0] = stack.enqueueWrite();
 
-	public void execute(final OCLByteBuffer stack, final DomainTree domainTree) {
-		Tornado.debug("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(),
-				kernel.getName(), deviceContext.getDevice().getName());
-		Tornado.debug("\tstack    : buffer id=0x%x, address=0x%x relative=0x%x", stack.toBuffer(),
-				stack.toAbsoluteAddress(), stack.toRelativeAddress());
+        setKernelArgs(stack);
 
-		List<Event> waitEvents = new ArrayList<Event>(1);
-		waitEvents.add(stack.enqueueWrite());
 
-		setKernelArgs(stack);
+        if (meta != null && meta.isParallel()) {
+            internalEvents[0] = scheduler.submit(kernel, meta, internalEvents);
+        } else {
+            internalEvents[0] = deviceContext.enqueueTask(kernel, internalEvents);
+        }
 
-		OCLEvent task = null;
-		if (domainTree == null || domainTree.getDepth() == 0) {
-			task = deviceContext.enqueueTask(kernel, waitEvents);
-		} else {	
-			task = scheduler.submit(kernel, domainTree, waitEvents);
-		}
+        if (meta != null && DUMP_PROFILES) {
+//            meta.addProfile(task);
+        }
 
-		stack.readAfter(task);
 
-		Tornado.debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getId(),
-				kernel.getName(), deviceContext.getDevice().getName());
-		Tornado.debug("\tstatus   : %s", task.getStatus());
-		Tornado.debug("\texecuting: %f seconds", task.getExecutionTime());
-		Tornado.debug("\ttotal    : %f seconds", task.getTotalTime());
+        final int task = stack.enqueueRead(internalEvents);
+        final Event event = deviceContext.resolveEvent(task);
+        event.waitOn();
 
-	}
+        debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getId(),
+                kernel.getName(), deviceContext.getDevice().getName());
+        debug("\tstatus   : %s", event.getStatus());
+        
+        if(ENABLE_PROFILING){
+            debug("\texecuting: %f seconds", event.getExecutionTime());
+            debug("\ttotal    : %f seconds", event.getTotalTime());
+        }
+    }
 
-	public void execute(final OCLCallStack stack) {
-		execute(stack, null);
-		Tornado.debug("\tdeopt    : 0x%x", stack.getDeoptValue());
-		Tornado.debug("\treturn   : 0x%x", stack.getReturnValue());
-	}
+    public void execute(final OCLCallStack stack) {
+        execute(stack, null);
+        debug("\tdeopt    : 0x%x", stack.getDeoptValue());
+        debug("\treturn   : 0x%x", stack.getReturnValue());
+    }
 
-	@Override
-	public Object executeVarargs(final Object... args) throws InvalidInstalledCodeException {
+    @Override
+    public Object executeVarargs(final Object... args) throws InvalidInstalledCodeException {
 
-		// final OCLCallStack callStack = memoryManager.createCallStack(args.length);
-		//
-		// callStack.reset();
-		// callStack.pushArgs(args);
-		//
-		// execute(callStack);
+        // final OCLCallStack callStack = memoryManager.createCallStack(args.length);
+        //
+        // callStack.reset();
+        // callStack.pushArgs(args);
+        //
+        // execute(callStack);
+        // return callStack.getReturnValue();
+        return null;
+    }
 
-		// return callStack.getReturnValue();
-		return null;
-	}
+    private String formatArray(final long[] array) {
+        final StringBuilder sb = new StringBuilder();
 
-	private String formatArray(final long[] array) {
-		final StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (final long value : array) {
+            sb.append(" " + value);
+        }
+        sb.append(" ]");
 
-		sb.append("[");
-		for (final long value : array) {
-			sb.append(" " + value);
-		}
-		sb.append(" ]");
+        return sb.toString();
+    }
 
-		return sb.toString();
-	}
+    @Override
+    public byte[] getCode() {
+        return code;
+    }
 
-	@Override
-	public byte[] getCode() {
-		return code;
-	}
+    @Override
+    public long getCodeSize() {
+        return code.length;
+    }
 
-	@Override
-	public long getCodeSize() {
-		return code.length;
-	}
+    private void setKernelArgs(final OCLByteBuffer stack) {
+        int index = 0;
 
-	private final void setKernelArgs(final OCLByteBuffer stack) {
-		buffer.clear();
-		buffer.putLong(stack.toBuffer());
-		kernel.setArg(0, buffer);
+        if (deviceContext.needsBump()) {
+            buffer.clear();
+            buffer.putLong(deviceContext.getBumpBuffer());
+            kernel.setArg(index, buffer);
+            index++;
+        }
 
-		buffer.clear();
-		buffer.putLong(stack.toRelativeAddress());
-		kernel.setArg(1, buffer);
-	}
+        buffer.clear();
+        buffer.putLong(stack.toBuffer());
+        kernel.setArg(index, buffer);
+        index++;
 
-	public Event submit(final OCLCallStack stack, final DomainTree domainTree,
-			final List<Event> events) {
-//		long t0 = System.nanoTime();
+        buffer.clear();
+        buffer.putLong(stack.toRelativeAddress());
+        kernel.setArg(index, buffer);
+    }
 
-		if (DEBUG) {
-			Tornado.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(),
-					kernel.getName(), deviceContext.getDevice().getName());
-			Tornado.info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(),
-					stack.toAbsoluteAddress(), stack.toRelativeAddress());
-		}
+    public int submit(final OCLCallStack stack, final Meta meta,
+            final int[] events) {
+        
+        if (DEBUG) {
+            info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(),
+                    kernel.getName(), deviceContext.getDevice().getName());
+            info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(),
+                    stack.toAbsoluteAddress(), stack.toRelativeAddress());
+        }
 
-//		System.out.println("code submit wait for...");
-		TaskUtils.waitForEvents(events);
-		
-		waitEvents.clear();
-		waitEvents.addAll(events);
-		if(stack.getEvent() != null && stack.getEvent().getStatus() != TornadoExecutionStatus.COMPLETE)
-			waitEvents.add(stack.getEvent());
-//		long t1 = System.nanoTime();
+        final int[] waitEvents;
+        setKernelArgs(stack);
+        if (!stack.isOnDevice()) {
+            internalEvents[0] = stack.enqueueWrite(events);
+            waitEvents = internalEvents;
+        } else {
+            waitEvents = events;
+        }
 
-//		long address = deviceContext.asMapping().getBackend().readHeapBaseAddress();
-//		if(address != deviceContext.getMemoryManager().toAbsoluteAddress()){
-//			Tornado.fatal("heap has moved!");
-//		}
-		
-		setKernelArgs(stack);
-		
-		if(Tornado.FORCE_BLOCKING_API_CALLS)
-			deviceContext.sync();
+        guarantee(kernel != null, "kernel is null");
 
-		TornadoInternalError.guarantee(kernel != null, "kernel is null");
-		
-//		long t2 = System.nanoTime();
-		OCLEvent task = null;
-		if (domainTree == null || domainTree.getDepth() == 0) {
-			task = deviceContext.enqueueTask(kernel, waitEvents);
-		} else {
-			task = scheduler.submit(kernel, domainTree, waitEvents);
-		}
-//		long t3 = System.nanoTime();
-		/*
-		 * this will update the deopt status on the host after task execution
-		 */
-		
-		if(Tornado.FORCE_BLOCKING_API_CALLS)
-			deviceContext.sync();
-		
-//		long t4 = System.nanoTime();
-		/*
-		 * update object refs with write event
-		 */
-		for (ObjectReference<OCLDeviceContext,?> ref : stack.getWriteSet())
-			ref.setLastWrite(deviceContext, task);
-//		long t5 = System.nanoTime();
+        int task;
+        if (meta.isParallel()) {
+            task = scheduler.submit(kernel, meta, waitEvents);
+        } else {
+            task = deviceContext.enqueueTask(kernel, waitEvents);
+        }
 
-//		System.out.printf("code-submit: %f, %f, %f, %f, %f\n",
-//				RuntimeUtilities.elapsedTimeInSeconds(t0, t1),
-//				RuntimeUtilities.elapsedTimeInSeconds(t1, t2),
-//				RuntimeUtilities.elapsedTimeInSeconds(t2, t3),
-//				RuntimeUtilities.elapsedTimeInSeconds(t3, t4),
-//				RuntimeUtilities.elapsedTimeInSeconds(t4, t5));
-		
-		return (Tornado.ENABLE_EXCEPTIONS) ? stack.enqueueReadAfter(task) : task;
-	}
+        if (DUMP_PROFILES) {
+//            meta.addProfile(task);
+        }
+
+        if(ENABLE_EXCEPTIONS){
+           internalEvents[0] = task;
+           task  = stack.enqueueRead(internalEvents);
+        }
+     
+        return task;
+    }
+
+    @Override
+    public int launch(CallStack stack, Meta meta, int[] waitEvents) {
+        return submit((OCLCallStack) stack, meta, waitEvents);
+    }
 
 }

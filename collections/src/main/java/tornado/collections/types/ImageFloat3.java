@@ -16,7 +16,7 @@ public class ImageFloat3  implements PrimitiveStorage<FloatBuffer> {
 	 * number of elements in the storage
 	 */
 	final private int			numElements;
-	final private static int elementSize = 3;
+	final private static int elementSize = 4;
 
 	
     /**
@@ -278,7 +278,7 @@ public class ImageFloat3  implements PrimitiveStorage<FloatBuffer> {
 				
 				if(ulpFactor > 5f){
 					errors++;
-					if(i==318 && j==239)
+//					if(i==317 && j==239)
 					System.out.printf("[%d, %d]: %f -> error %s != %s\n",i,j,ulpFactor,v.toString(FloatOps.fmt3e),r.toString(FloatOps.fmt3e));
 				}
 				

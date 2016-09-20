@@ -49,11 +49,11 @@ public class TornadoCanonicalizer extends CustomCanonicalizer {
 		if(node instanceof VectorElementOpNode){
 			return canonicalizeVectorElementOp((VectorElementOpNode) node);
 		} else if (node instanceof WriteNode){
-			final WriteNode writeNode = (WriteNode) node;
-			if(writeNode.object() instanceof AtomicAccessNode){
-				final AtomicAccessNode atomic = (AtomicAccessNode) writeNode.object();
-				return new AtomicWriteNode(atomic.value(),writeNode.value(),writeNode.location(),writeNode.getBarrierType());
-			}
+//			final WriteNode writeNode = (WriteNode) node;
+//			if(writeNode.object() instanceof AtomicAccessNode){
+//				final AtomicAccessNode atomic = (AtomicAccessNode) writeNode.object();
+//				return new AtomicWriteNode(atomic.value(),writeNode.value(),writeNode.location(),writeNode.getBarrierType());
+//			}
 		}
 		
 		
@@ -123,7 +123,7 @@ public class TornadoCanonicalizer extends CustomCanonicalizer {
 			if(phi.valueAt(0) instanceof VectorValueNode && phi.singleValue().equals(ValuePhiNode.MULTIPLE_VALUES) && phi.usages().count() > 1){
 				//System.out.printf("simplify: phi=%s\n",phi.toString());
 				final VectorValueNode firstValue = (VectorValueNode) phi.valueAt(0);
-				final VectorValueNode newVector = phi.graph().addOrUnique(new VectorValueNode(firstValue.getVectorKind(),phi));
+				final VectorValueNode newVector = phi.graph().addOrUnique(new VectorValueNode(firstValue.getResolvedType(),firstValue.getVectorKind(),phi));
 				phi.replaceAtMatchingUsages(newVector, usage -> !usage.equals(newVector));
 				//System.out.printf("simplify: inserted=%s\n",newVector.toString());
 			}

@@ -1,5 +1,6 @@
 package tornado.drivers.opencl.graal.compiler;
 
+import tornado.drivers.opencl.graal.compiler.plugins.AtomicPlugins;
 import tornado.drivers.opencl.graal.compiler.plugins.TornadoMathPlugins;
 import tornado.drivers.opencl.graal.compiler.plugins.TornadoNewInstancePlugin;
 import tornado.drivers.opencl.graal.compiler.plugins.VectorPlugins;
@@ -7,7 +8,6 @@ import tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
 import tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode;
 import tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
 import tornado.drivers.opencl.graal.nodes.SlotsBaseAddressNode;
-import tornado.graal.compiler.TornadoGraphBuilderPlugins;
 import tornado.lang.CompilerInternals;
 
 import com.oracle.graal.api.meta.*;
@@ -34,7 +34,9 @@ public class OCLGraphBuilderPlugins {
 		registerOpenCLBuiltinPlugins(plugins);
 		
 		TornadoMathPlugins.registerTornadoMathPlugins(plugins);
-		VectorPlugins.registerFloat3Plugins(plugins);
+		VectorPlugins.registerPlugins(plugins);
+		
+		AtomicPlugins.registerPlugins(plugins);
 		
 	}
 	

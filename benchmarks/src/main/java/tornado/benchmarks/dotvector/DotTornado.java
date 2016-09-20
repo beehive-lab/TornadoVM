@@ -1,16 +1,13 @@
 package tornado.benchmarks.dotvector;
 
-import tornado.api.DeviceMapping;
-import tornado.api.Event;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
 import tornado.collections.math.TornadoMath;
 import tornado.collections.types.Float3;
 import tornado.collections.types.VectorFloat3;
-import tornado.benchmarks.EventList;
+import tornado.common.DeviceMapping;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.ExecutableTask;
+import tornado.runtime.api.TaskGraph;
 
 public class DotTornado extends BenchmarkDriver {
 
@@ -20,17 +17,12 @@ public class DotTornado extends BenchmarkDriver {
     private VectorFloat3 a, b;
     private float[] c;
 
-    private ExecutableTask<?> dot;
-
-    private Event last;
-    private final EventList<Event> events;
-
+    private TaskGraph graph;
+    
     public DotTornado(int iterations, int numElements, DeviceMapping device) {
         super(iterations);
         this.numElements = numElements;
         this.device = device;
-        events = new EventList<Event>(iterations);
-        last = null;
     }
 
     @Override
@@ -46,13 +38,18 @@ public class DotTornado extends BenchmarkDriver {
             b.set(i, valueB);
         }
 
-        dot = TaskUtils.createTask(GraphicsKernels::dotVector, a, b, c);
-        dot.mapTo(device);
+        graph = new TaskGraph()
+            .add(GraphicsKernels::dotVector, a, b, c)
+            .streamOut(c)
+            .mapAllTo(device);
+        
+        graph.warmup();
     }
 
     @Override
     public void tearDown() {
-        dot.invalidate();
+        graph.dumpTimes();
+        graph.dumpProfiles();
 
         a = null;
         b = null;
@@ -65,26 +62,17 @@ public class DotTornado extends BenchmarkDriver {
     @Override
     public void code() {
 
-        if (last == null) {
-            dot.schedule();
-        } else {
-            dot.schedule(last);
-        }
-        last = dot.getEvent();
-        events.add(last);
+      graph.schedule().waitOn();
     }
 
-    @Override
-    public void barrier() {
-        dot.waitOn();
-    }
+   
 
     @Override
     public boolean validate() {
 
         final float[] result = new float[numElements];
 
-        dot.execute();
+        code();
 
         GraphicsKernels.dotVector(a, b, result);
 
@@ -95,16 +83,11 @@ public class DotTornado extends BenchmarkDriver {
     public void printSummary() {
         if (isValid())
             System.out.printf(
-                    "id=opencl-device-%d, elapsed=%f, per iteration=%f, %s\n",
+                    "id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
                     ((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
-                    getElapsedPerIteration(), events.summeriseEvents());
+                    getElapsedPerIteration());
         else
             System.out.printf("id=opencl-device-%d produced invalid result\n",
                     ((OCLDeviceMapping) device).getDeviceIndex());
     }
-
-    public double getOverhead() {
-        return 1.0 - events.getMeanExecutionTime() / getElapsedPerIteration();
-    }
-
 }

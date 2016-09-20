@@ -3,10 +3,10 @@ package tornado.runtime;
 import java.util.List;
 
 import tornado.runtime.api.Action;
-import tornado.api.DeviceMapping;
 import tornado.api.Event;
 import tornado.api.ProfiledAction;
 import tornado.api.SynchronisationPoint;
+import tornado.common.DeviceMapping;
 import tornado.common.enums.Access;
 import tornado.meta.Meta;
 

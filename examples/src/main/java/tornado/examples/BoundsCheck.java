@@ -5,7 +5,7 @@ import java.util.Arrays;
 import tornado.common.exceptions.TornadoRuntimeException;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.ExecutableTask;
+import tornado.runtime.api.CompilableTask;
 
 public class BoundsCheck {
 
@@ -35,7 +35,7 @@ public class BoundsCheck {
          * This involves finding the methods called and the arguments used
          * in each call.
          */
-        final ExecutableTask<?> addTask = TaskUtils.createTask(
+        final CompilableTask addTask = TaskUtils.createTask(
                 BoundsCheck::add, a, b, c);
 
         /*
@@ -46,7 +46,7 @@ public class BoundsCheck {
         /*
          * Calculate a (3) + b (2) = c (5)
          */
-        addTask.execute();
+//        addTask.execute();
 
         /*
          * Check to make sure result is correct

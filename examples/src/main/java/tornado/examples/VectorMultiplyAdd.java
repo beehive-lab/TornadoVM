@@ -6,7 +6,7 @@ import tornado.collections.math.SimpleMath;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.runtime.api.TaskGraph;
 import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.ExecutableTask;
+import tornado.runtime.api.CompilableTask;
 
 public class VectorMultiplyAdd {
 
@@ -35,7 +35,7 @@ public class VectorMultiplyAdd {
          * Create a task to perform vector multiplication and assign it to the
          * cpu
          */
-        final ExecutableTask<?> multiply = TaskUtils.createTask(
+        final CompilableTask multiply = TaskUtils.createTask(
                 SimpleMath::vectorMultiply, a, b, c);
         multiply.mapTo(new OCLDeviceMapping(0, 0));
 
@@ -43,20 +43,22 @@ public class VectorMultiplyAdd {
          * Create a task to perform vector addition and assign it to the
          * external gpu
          */
-        final ExecutableTask<?> add = TaskUtils.createTask(
+        final CompilableTask add = TaskUtils.createTask(
                 SimpleMath::vectorAdd, c, b, d);
-        add.mapTo(new OCLDeviceMapping(0, 1));
+        add.mapTo(new OCLDeviceMapping(0, 2));
 
         /*
          * build an execution graph
          */
         final TaskGraph graph = new TaskGraph().add(multiply).add(add)
-                .collect(d);
+                .streamOut(d);
 
         /*
          * schedule the execution of the graph
          */
         graph.schedule().waitOn();
+        
+        graph.dumpTimes();
 
         /*
          * Check to make sure result is correct

@@ -19,22 +19,22 @@ public class DataMovementTest {
 		
 		int[] array = {1,2,3,4};
 		printArray(array);
-		final DataMovementTask writeTask = TaskUtils.write(array);
-		writeTask.mapTo(OpenCL.defaultDevice());
-		writeTask.schedule();
-		writeTask.waitOn();
+//		final DataMovementTask writeTask = TaskUtils.write(array);
+//		writeTask.mapTo(OpenCL.defaultDevice());
+//		writeTask.schedule();
+//		writeTask.waitOn();
 		
 		Arrays.fill(array, -1);
 		printArray(array);
-		final DataMovementTask readTask = TaskUtils.read(array);
-		readTask.mapTo(OpenCL.defaultDevice());
-		readTask.schedule();
-		readTask.waitOn();
+////		final DataMovementTask readTask = TaskUtils.read(array);
+//		readTask.mapTo(OpenCL.defaultDevice());
+//		readTask.schedule();
+//		readTask.waitOn();
 		
 		printArray(array);
 		
-		System.out.printf("write: %.4e s\n",writeTask.getExecutionTime());
-		System.out.printf("read : %.4e s\n",readTask.getExecutionTime());
+//		System.out.printf("write: %.4e s\n",writeTask.getExecutionTime());
+//		System.out.printf("read : %.4e s\n",readTask.getExecutionTime());
 		
 	}
 

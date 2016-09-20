@@ -1,9 +1,12 @@
 package tornado.examples;
 
 import tornado.collections.types.ImageFloat;
+import tornado.common.enums.Access;
+import tornado.drivers.opencl.OpenCL;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.runtime.api.TaskGraph;
 import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.ExecutableTask;
+import tornado.runtime.api.CompilableTask;
 
 public class ImageFill {
 
@@ -22,16 +25,21 @@ public class ImageFill {
          * This involves finding the methods called and the arguments used
          * in each call.
          */
-        final ExecutableTask<?> fillInvocation = TaskUtils.createTask(
-                ImageFloat::fill, image, 1f);
+        final CompilableTask fillInvocation = TaskUtils.createTask(image::fill, 1f
+                );
 
         // workaround issue in class loaded with multiple runtime annotations
-        // fillInvocation.getArgumentsAccess()[0] = Access.WRITE;
+         fillInvocation.getArgumentsAccess()[0] = Access.READ_WRITE;
+        
+        final TaskGraph graph = new TaskGraph()
+        	.add(fillInvocation)
+        	.streamOut(image)
+        	.mapAllTo(OpenCL.defaultDevice());
 
         /*
          * Next we map each invocation onto a specific compute device
          */
-        fillInvocation.mapTo(new OCLDeviceMapping(0, 0));
+//        fillInvocation.mapTo(new OCLDeviceMapping(0, 0));
 
         System.out.println("Before:");
         System.out.println(image.toString());
@@ -39,8 +47,8 @@ public class ImageFill {
         /*
          * Fill the array
          */
-        fillInvocation.execute();
-
+//        fillInvocation.execute();
+        graph.schedule();
         /*
          * Ouput result to console
          */

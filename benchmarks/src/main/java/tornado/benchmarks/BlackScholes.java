@@ -36,7 +36,7 @@ public class BlackScholes {
         for (int i = 0; i < iterations; i++)
             tasks.add(BlackScholes::run, bs.randArray, bs.put, bs.call);
 
-        tasks.collect(bs.put, bs.call).mapAllTo(OpenCL.defaultDevice());
+        tasks.streamOut(bs.put, bs.call).mapAllTo(OpenCL.defaultDevice());
 
         long start = 0, end = 0;
 

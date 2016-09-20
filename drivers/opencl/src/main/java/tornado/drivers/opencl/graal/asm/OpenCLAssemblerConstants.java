@@ -62,6 +62,6 @@ public class OpenCLAssemblerConstants {
 	public static final String MAX = "max";
 	public static final String	ELSE	= "else";
 	
-	public static final int STACK_BASE_OFFSET = 4;
+	public static final int STACK_BASE_OFFSET = 6;
 	
 }

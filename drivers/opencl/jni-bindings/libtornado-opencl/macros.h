@@ -68,3 +68,16 @@
         (*env)->DeleteLocalRef(env,cls); \
         return rc; \
     }
+
+#define JNI_ACQUIRE_ARRAY(TYPE,VAR,ARR) TYPE *VAR = (*env)->GetPrimitiveArrayCritical(env, ARR, NULL)
+#define JNI_ACQUIRE_ARRAY_OR_NULL(TYPE,VAR,ARR) TYPE *VAR = ( ARR != NULL) ? (*env)->GetPrimitiveArrayCritical(env, ARR, NULL) : NULL 
+
+#define JNI_RELEASE_ARRAY(array, variable) if (array != NULL) { (*env)->ReleasePrimitiveArrayCritical(env, array, variable, JNI_ABORT); } 
+
+#define OPENCL_DECODE_WAITLIST(array, events, num_events) \
+    jlong *__ ## array = (array != NULL) ? (*env)->GetPrimitiveArrayCritical(env, array, NULL) : NULL; \
+    jlong *events = (array != NULL) ? &__ ## array[1] : NULL; \
+    jsize num_events = (array != NULL) ? __ ## array[0] : 0; 
+
+
+#define OPENCL_RELEASE_WAITLIST(ARR) JNI_RELEASE_ARRAY(ARR, __ ## ARR)

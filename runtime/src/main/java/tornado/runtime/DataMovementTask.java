@@ -4,6 +4,7 @@ import java.util.List;
 
 import tornado.runtime.api.DataMovementAction;
 import tornado.api.Event;
+import tornado.common.SchedulableTask;
 
 public class DataMovementTask extends AbstractTask<DataMovementAction>
         implements SchedulableTask {

@@ -4,7 +4,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
-
 import sun.misc.Unsafe;
 
 public class RuntimeUtilities {
@@ -278,6 +277,14 @@ public class RuntimeUtilities {
 		}
 		return result;
 	}
+
+    public static boolean isPrimitive(Class<?> type) {
+        if(type.isPrimitive()){
+            return true;
+        } else {
+            return isBoxedPrimitive(type);
+        }
+    }
 	
 	private RuntimeUtilities() {
 

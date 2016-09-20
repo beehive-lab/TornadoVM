@@ -1,16 +1,5 @@
 package tornado.drivers.opencl.graal.phases;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-
-import tornado.common.RuntimeUtilities;
-import tornado.common.Tornado;
-import tornado.graal.phases.TornadoHighTierContext;
-import tornado.graal.phases.TornadoLoopUnroller;
-import tornado.graal.phases.TornadoValueTypeReplacement;
-import tornado.runtime.ObjectReference;
-
 import com.oracle.graal.api.meta.Kind;
 import com.oracle.graal.api.meta.ResolvedJavaField;
 import com.oracle.graal.compiler.common.type.ObjectStamp;
@@ -30,6 +19,14 @@ import com.oracle.graal.nodes.util.GraphUtil;
 import com.oracle.graal.phases.BasePhase;
 import com.oracle.graal.phases.common.CanonicalizerPhase;
 import com.oracle.graal.phases.common.DeadCodeEliminationPhase;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import tornado.common.RuntimeUtilities;
+import tornado.common.Tornado;
+import tornado.graal.phases.TornadoHighTierContext;
+import tornado.graal.phases.TornadoLoopUnroller;
+import tornado.graal.phases.TornadoValueTypeReplacement;
 
 public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext> {
 
@@ -49,7 +46,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 	}
 
 	private Field lookupField(Class<?> type, String field) {
-		Tornado.debug("lookup field: class=%s, field=%s", type.toString(), field);
+//		Tornado.debug("lookup field: class=%s, field=%s", type.toString(), field);
 		Field f = null;
 		try {
 			f = type.getDeclaredField(field);
@@ -142,10 +139,10 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 		return constant;
 	}
 
-	private void evaluate(final StructuredGraph graph, final Node node, final Object param) {
+	private void evaluate(final StructuredGraph graph, final Node node, final Object value) {
 
-		final Object value = (param instanceof ObjectReference) ? ((ObjectReference<?,?>) param)
-				.get() : param;
+//		final Object value = (param instanceof ObjectReference) ? ((ObjectReference<?,?>) param)
+//				.get() : param;
 		//Tornado.debug("evaluate: node=%s, object=%s", node, value);
 
 		if (node instanceof ArrayLengthNode) {
@@ -176,7 +173,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 			}
 		} else if (node instanceof IsNullNode) {
 			final IsNullNode isNullNode = (IsNullNode) node;
-			final boolean isNull = (param == null);
+			final boolean isNull = (value == null);
 			if (isNull) isNullNode.replaceAtUsages(LogicConstantNode.tautology(graph));
 			else isNullNode.replaceAtUsages(LogicConstantNode.contradiction(graph));
 			graph.removeFloating(isNullNode);

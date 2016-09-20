@@ -27,7 +27,7 @@ public class TornadoNewInstancePlugin implements NewInstancePlugin {
 	private boolean createVectorInstance(GraphBuilderContext b, ResolvedJavaType type) {
 		VectorKind vectorKind = resolveVectorKind(type);
 		if(vectorKind != VectorKind.Illegal){
-			b.push(Kind.Object, b.recursiveAppend(new VectorValueNode(vectorKind)));
+			b.push(Kind.Object, b.recursiveAppend(new VectorValueNode(type,vectorKind)));
 			return true;
 		} 
 		

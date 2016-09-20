@@ -5,10 +5,11 @@ import java.util.Collections;
 import java.util.List;
 
 import tornado.runtime.api.Action;
-import tornado.api.DeviceMapping;
 import tornado.api.Event;
 import tornado.api.enums.TornadoExecutionStatus;
+import tornado.common.DeviceMapping;
 import tornado.common.RuntimeUtilities;
+import tornado.common.SchedulableTask;
 import tornado.common.enums.Access;
 import tornado.meta.Meta;
 
@@ -30,17 +31,17 @@ public abstract class AbstractTask<T extends Action> implements SchedulableTask 
     protected void copyToArguments(Object... objects) {
         for (int i = 0; i < objects.length; i++) {
             final Object object = objects[i];
-            if (object != null && !RuntimeUtilities.isBoxedPrimitive(object)
-                    && !object.getClass().isPrimitive()) {
-                final ObjectReference<?,?> ref = TornadoRuntime
-                        .resolveObject(object);
-                arguments[i] = ref;
-                // System.out.printf("task - arg[%d]: 0x%x (device: 0x%x)\n",i,object.hashCode(),ref.getLastWrite().getBuffer().toAbsoluteAddress());
-            } else {
+//            if (object != null && !RuntimeUtilities.isBoxedPrimitive(object)
+//                    && !object.getClass().isPrimitive()) {
+//                final ObjectReference<?,?> ref = TornadoRuntime
+//                        .resolveObject(object);
+//                arguments[i] = ref;
+//                // System.out.printf("task - arg[%d]: 0x%x (device: 0x%x)\n",i,object.hashCode(),ref.getLastWrite().getBuffer().toAbsoluteAddress());
+//            } else {
                 arguments[i] = object;
-                // System.out.printf("task - arg[%d]: 0x%x\n",i,object.hashCode());
-            }
-            // System.out.printf("task - arg[%d]: 0x%x (device: 0x%x)\n",i,object.hashCode());
+//                // System.out.printf("task - arg[%d]: 0x%x\n",i,object.hashCode());
+//            }
+//            // System.out.printf("task - arg[%d]: 0x%x (device: 0x%x)\n",i,object.hashCode());
         }
     }
 

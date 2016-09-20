@@ -75,4 +75,8 @@ public class FloatOps {
 	public static final float sq(float value){
 		return value * value;
 	}
+	
+	public static final void atomicAdd(float[] array, int index, float value){
+		array[index] += value;
+	}
 }

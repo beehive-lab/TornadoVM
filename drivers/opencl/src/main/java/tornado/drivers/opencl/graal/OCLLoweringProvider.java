@@ -1,18 +1,26 @@
 package tornado.drivers.opencl.graal;
 
+import tornado.common.exceptions.TornadoInternalError;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic;
+import tornado.drivers.opencl.graal.nodes.AtomicAddNode;
+import tornado.drivers.opencl.graal.nodes.AtomicWriteNode;
 import tornado.drivers.opencl.graal.nodes.CastNode;
+import tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorReadNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorWriteNode;
+import tornado.graal.nodes.ArrayKind;
 import tornado.graal.nodes.TornadoDirectCallTargetNode;
 
 import com.oracle.graal.api.code.ForeignCallsProvider;
 import com.oracle.graal.api.code.TargetDescription;
+import com.oracle.graal.api.meta.Constant;
 import com.oracle.graal.api.meta.JavaType;
 import com.oracle.graal.api.meta.Kind;
 import com.oracle.graal.api.meta.LocationIdentity;
 import com.oracle.graal.api.meta.MetaAccessProvider;
+import com.oracle.graal.api.meta.PrimitiveConstant;
 import com.oracle.graal.api.meta.ResolvedJavaField;
 import com.oracle.graal.compiler.common.type.ObjectStamp;
 import com.oracle.graal.graph.Node;
@@ -22,6 +30,7 @@ import com.oracle.graal.hotspot.HotSpotVMConfig;
 import com.oracle.graal.hotspot.meta.HotSpotProviders;
 import com.oracle.graal.hotspot.meta.HotSpotResolvedJavaField;
 import com.oracle.graal.nodes.AbstractDeoptimizeNode;
+import com.oracle.graal.nodes.ConstantNode;
 import com.oracle.graal.nodes.FixedNode;
 import com.oracle.graal.nodes.Invoke;
 import com.oracle.graal.nodes.InvokeWithExceptionNode;
@@ -31,10 +40,15 @@ import com.oracle.graal.nodes.UnwindNode;
 import com.oracle.graal.nodes.ValueNode;
 import com.oracle.graal.nodes.calc.FloatConvertNode;
 import com.oracle.graal.nodes.calc.RemNode;
+import com.oracle.graal.nodes.extended.ConstantLocationNode;
 import com.oracle.graal.nodes.extended.GuardingNode;
+import com.oracle.graal.nodes.extended.IndexedLocationNode;
 import com.oracle.graal.nodes.extended.LocationNode;
 import com.oracle.graal.nodes.java.MethodCallTargetNode;
+import com.oracle.graal.nodes.java.NewArrayNode;
 import com.oracle.graal.nodes.memory.HeapAccess.BarrierType;
+import com.oracle.graal.nodes.memory.ReadNode;
+import com.oracle.graal.nodes.memory.WriteNode;
 import com.oracle.graal.nodes.spi.LoweringTool;
 import com.oracle.graal.nodes.type.StampTool;
 import com.oracle.graal.replacements.DefaultJavaLoweringProvider;
@@ -69,10 +83,26 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 	                /* No lowering, we generate LIR directly for these nodes. */
 	            } else if (n instanceof FloatConvertNode ) {
 	            	lowerFloatConvertNode((FloatConvertNode) n, tool);
+	            } else if (n instanceof NewArrayNode){
+	            	lowerNewArrayNode((NewArrayNode) n, tool);
+	            } else if (n instanceof AtomicAddNode){
+	            	lowerAtomicAddNode((AtomicAddNode) n, tool);
 	            } else {
 	        		super.lower(n, tool);
 	        	}
 	 }
+	 
+	private void lowerAtomicAddNode(AtomicAddNode atomicAdd, LoweringTool tool) {
+		
+		IndexedLocationNode location = createArrayLocation(atomicAdd.graph(), atomicAdd.elementKind(), atomicAdd.index(), false);
+		final AtomicWriteNode atomicWrite = new AtomicWriteNode(OCLBinaryIntrinsic.ATOMIC_ADD,atomicAdd.array(),atomicAdd.value(),location);
+		
+		atomicAdd.graph().add(atomicWrite);
+		
+		atomicAdd.graph().replaceFixedWithFixed(atomicAdd, atomicWrite);
+		
+	}
+
 	private void lowerInvoke(Invoke invoke, LoweringTool tool, StructuredGraph graph) {
 		if (invoke.callTarget() instanceof MethodCallTargetNode) {
             MethodCallTargetNode callTarget = (MethodCallTargetNode) invoke.callTarget();
@@ -146,6 +176,35 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         VectorReadNode vectorRead = graph.addOrUnique(new VectorReadNode(vectorLoad.vectorKind(),vectorLoad.array(),location,BarrierType.NONE));
         //vectorLoad.replaceAtUsages(vectorRead);
         graph.replaceFixed(vectorLoad, vectorRead);
+	}
+	
+	private void lowerNewArrayNode(NewArrayNode newArray, LoweringTool tool) {
+		final StructuredGraph graph = newArray.graph();
+		final ValueNode firstInput = newArray.length();
+		if(firstInput instanceof ConstantNode){
+			if(newArray.dimensionCount() == 1){
+				
+				final ConstantNode lengthNode = (ConstantNode) firstInput;
+				if(lengthNode.getValue() instanceof PrimitiveConstant){
+				final int length  = ((PrimitiveConstant) lengthNode.getValue()).asInt();
+				
+				final int offset = arrayBaseOffset(newArray.getKind());
+				final int size = offset + ( newArray.elementType().getKind().getByteCount() * length);
+				
+				final ConstantNode newLengthNode = ConstantNode.forInt(size,graph);
+				
+				final FixedArrayNode fixedArrayNode  = graph.addWithoutUnique(new FixedArrayNode(newArray.elementType(),newLengthNode));
+				newArray.replaceAtUsages(fixedArrayNode);
+				} else {
+					TornadoInternalError.shouldNotReachHere();
+				}
+				
+			} else {
+				TornadoInternalError.unimplemented("multi-dimensional array declarations are not supported");
+			}
+		} else {
+			TornadoInternalError.unimplemented("dynamically sized array declarations are not supported");
+		}
 	}
 
 	@Override

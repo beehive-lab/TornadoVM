@@ -1,60 +1,48 @@
 package tornado.benchmarks.addvector;
 
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.drivers.opencl.runtime.OCLRuntime;
-import tornado.runtime.TornadoRuntime;
+import tornado.benchmarks.BenchmarkRunner;
+import tornado.benchmarks.BenchmarkDriver;
+import tornado.common.DeviceMapping;
 
-public class Benchmark {
+public class Benchmark extends BenchmarkRunner {
 
-	private static final String	BENCHMARK_NAME	= "add-vector";
+    private int size;
 
-	public static void run(int iterations, int numElements) {
-		String id = String.format("%s-%d-%d", BENCHMARK_NAME, iterations, numElements);
+    @Override
+    protected String getName() {
+        return "add-vector";
+    }
 
-		System.out.printf("benchmark=%s, iterations=%d, num elements=%d\n", id, iterations,
-				numElements);
+    @Override
+    protected String getIdString() {
+        return String.format("%s-%d-%d",getName(),iterations,size);
+    }
 
-		final AddJava referenceTest = new AddJava(iterations, numElements);
-		referenceTest.benchmark();
+    @Override
+    protected String getConfigString() {
+     return String.format("size=%d", size);
+    }
 
-		System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-reference",
-				referenceTest.getSummary());
+    @Override
+    protected BenchmarkDriver getJavaDriver() {
+        return new AddJava(iterations, size);
+    }
 
-		final double refElapsed = referenceTest.getElapsed();
+    @Override
+    protected BenchmarkDriver getTornadoDriver(DeviceMapping device) {
+        return new AddTornado(iterations, size, device);
+    }
 
-		final AddTornadoDummy tornadoOverhead = new AddTornadoDummy(iterations, numElements);
-		tornadoOverhead.benchmark();
-		System.out.printf("bm=%-15s, id=%-20s, %s, speedup=%.4f\n", id, "tornado-dummy",
-				tornadoOverhead.getSummary(), refElapsed / tornadoOverhead.getElapsed());
+    @Override
+    public void parseArgs(String[] args) {
+        if (args.length == 2) {
+            iterations = Integer.parseInt(args[0]);
+            size = Integer.parseInt(args[1]);
 
-		final OCLRuntime oclRuntime = (OCLRuntime) TornadoRuntime.runtime;
-		for (int platformIndex = 0; platformIndex < oclRuntime.getNumPlatforms(); platformIndex++) {
-			for (int deviceIndex = 0; deviceIndex < oclRuntime.getNumDevices(platformIndex); deviceIndex++) {
-				final OCLDeviceMapping device = new OCLDeviceMapping(platformIndex, deviceIndex);
-
-				final AddTornado deviceTest = new AddTornado(iterations, numElements, device);
-
-				deviceTest.benchmark();
-
-				System.out.printf("bm=%-15s, id=%-20s, %s, speedup=%.4f, overhead=%.4f\n", id,
-						"opencl-device-" + platformIndex + "-" + deviceIndex,
-						deviceTest.getSummary(), refElapsed / deviceTest.getElapsed(),
-						deviceTest.getOverhead());
-			}
-		}
-		
-		TornadoRuntime.resetDevices();
-	}
-
-	public static void main(String[] args) {
-		if(args.length == 2){
-			final int iterations = Integer.parseInt(args[0]);
-			final int size = Integer.parseInt(args[1]);
-			run(iterations, size);
-		}else {
-			run(100, 76800);
-			// run(100, 4194304);
-		}
-	}
+        } else {
+            iterations = 100;
+            size = 76800; //4194304
+        }
+    }
 
 }

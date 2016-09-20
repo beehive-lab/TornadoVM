@@ -4,13 +4,13 @@ import java.lang.reflect.Method;
 
 import com.oracle.graal.api.meta.ResolvedJavaMethod;
 
-import tornado.api.DeviceMapping;
+import tornado.common.DeviceMapping;
 import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.OpenCLInstalledCode;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.drivers.opencl.runtime.OCLRuntime;
+import tornado.drivers.opencl.OCLDriver;
 import tornado.meta.Meta;
 import tornado.runtime.TornadoRuntime;
 
@@ -37,11 +37,11 @@ public class OCLJIT {
 		
 		Method method = declaringClass.getDeclaredMethod(methodName, parameterTypes);
 		
-		ResolvedJavaMethod resolvedMethod = TornadoRuntime.resolveMethod(method);
+		ResolvedJavaMethod resolvedMethod = TornadoRuntime.runtime.resolveMethod(method);
 		
 		System.out.printf("method: name=%s, signature=%s\n",resolvedMethod.getName(),resolvedMethod.getSignature());
 		
-		final OCLBackend backend = ((OCLRuntime) TornadoRuntime.runtime).getDefaultBackend();
+		final OCLBackend backend = ((OCLDriver) TornadoRuntime.runtime.getDriver(0)).getDefaultBackend();
 
 		
 		Meta meta = new Meta();

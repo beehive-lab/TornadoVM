@@ -37,10 +37,10 @@ public class ImagingOps {
 
                         // co-ords of supporting pixel
                         // co-ords of supporting pixel
-                        int px = TornadoMath.clamp(cx + xx, 0, src.X() - 1);
-                        int py = TornadoMath.clamp(cy + yy, 0, src.Y() - 1);
+                        final int px = TornadoMath.clamp(cx + xx, 0, src.X() - 1);
+                        final int py = TornadoMath.clamp(cy + yy, 0, src.Y() - 1);
 
-                        float current = src.get(px, py);
+                        final float current = src.get(px, py);
 
                         if (Math.abs(current - center) < eDelta) {
                             sum += 1f;
@@ -48,7 +48,8 @@ public class ImagingOps {
                         }
                     }
 
-                dest.set(x, y, t / sum);
+                final float value = (sum > 0f) ? t / sum : 0f;
+                dest.set(x, y, value);
             }
     }
 
