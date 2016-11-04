@@ -115,6 +115,25 @@ public final class StorageFormats {
 		
 		return matrixRM;
 	}
+        
+    /**
+     * Converts a matrix stored in multi-dimensional arrays into Row-Major format
+     * @param matrix
+     * @return
+     */
+	public static int[] toRowMajor(int[][] matrix) {
+	
+		final int m = matrix[0].length;
+		final int n = matrix.length;
+		int[] matrixRM = new int[m * n];
+		
+		for(int i=0;i<m;i++)
+			for(int j=0;j<n;j++){
+				matrixRM[toRowMajor(i, j, m)] = matrix[i][j];
+			}
+		
+		return matrixRM;
+	}
 	
 	 /**
      * Converts a matrix stored in multi-dimensional arrays into Row-Major format
