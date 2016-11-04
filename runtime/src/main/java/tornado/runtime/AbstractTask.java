@@ -3,15 +3,13 @@ package tornado.runtime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import tornado.runtime.api.Action;
 import tornado.api.Event;
 import tornado.api.enums.TornadoExecutionStatus;
 import tornado.common.DeviceMapping;
-import tornado.common.RuntimeUtilities;
 import tornado.common.SchedulableTask;
 import tornado.common.enums.Access;
 import tornado.meta.Meta;
+import tornado.runtime.api.Action;
 
 public abstract class AbstractTask<T extends Action> implements SchedulableTask {
     protected final Object[] arguments;
@@ -45,23 +43,28 @@ public abstract class AbstractTask<T extends Action> implements SchedulableTask 
         }
     }
 
+    @Override
     public Object[] getArguments() {
         return arguments;
     }
 
+    @Override
     public Access[] getArgumentsAccess() {
         return argumentsAccess;
     }
 
+    @Override
     public Meta meta() {
         return meta;
     }
 
+    @Override
     public SchedulableTask mapTo(DeviceMapping mapping) {
         meta.addProvider(DeviceMapping.class, mapping);
         return this;
     }
 
+    @Override
     public DeviceMapping getDeviceMapping() {
         return meta.getProvider(DeviceMapping.class);
     }
@@ -92,7 +95,7 @@ public abstract class AbstractTask<T extends Action> implements SchedulableTask 
     }
 
     public void schedule(Event... events) {
-        final List<Event> waitEvents = new ArrayList<Event>();
+        final List<Event> waitEvents = new ArrayList<>();
         for (int i = 0; i < events.length; i++)
             waitEvents.add(events[i]);
         schedule(waitEvents);
@@ -106,6 +109,7 @@ public abstract class AbstractTask<T extends Action> implements SchedulableTask 
         event = action.apply(arguments, argumentsAccess, meta, events);
     }
 
+    @Override
     public String getName() {
         return event.getName();
     }
