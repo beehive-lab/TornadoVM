@@ -3,10 +3,9 @@ package tornado.examples;
 import tornado.collections.types.ImageFloat;
 import tornado.common.enums.Access;
 import tornado.drivers.opencl.OpenCL;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.runtime.api.CompilableTask;
 import tornado.runtime.api.TaskGraph;
 import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.CompilableTask;
 
 public class ImageFill {
 
@@ -26,20 +25,19 @@ public class ImageFill {
          * in each call.
          */
         final CompilableTask fillInvocation = TaskUtils.createTask(image::fill, 1f
-                );
+        );
 
         // workaround issue in class loaded with multiple runtime annotations
-         fillInvocation.getArgumentsAccess()[0] = Access.READ_WRITE;
-        
+        fillInvocation.getArgumentsAccess()[0] = Access.READ_WRITE;
+
         final TaskGraph graph = new TaskGraph()
-        	.add(fillInvocation)
-        	.streamOut(image)
-        	.mapAllTo(OpenCL.defaultDevice());
+                .add(fillInvocation)
+                .streamOut(image);
 
         /*
          * Next we map each invocation onto a specific compute device
          */
-//        fillInvocation.mapTo(new OCLDeviceMapping(0, 0));
+        graph.mapAllTo(OpenCL.defaultDevice());
 
         System.out.println("Before:");
         System.out.println(image.toString());
@@ -47,8 +45,7 @@ public class ImageFill {
         /*
          * Fill the array
          */
-//        fillInvocation.execute();
-        graph.schedule();
+        graph.schedule().waitOn();
         /*
          * Ouput result to console
          */

@@ -1,7 +1,6 @@
 package tornado.examples;
 
 import java.util.Random;
-
 import tornado.collections.graphics.ImagingOps;
 import tornado.collections.types.ImageFloat;
 import tornado.drivers.opencl.OpenCL;
@@ -27,7 +26,7 @@ public class ResizeImage {
         		image1.set(x,y,rand.nextFloat());
         	}
         }
-
+        
         final TaskGraph graph = new TaskGraph()
         	.add(ImagingOps::resizeImage,image2,image1,2)
         	.streamOut(image2)
@@ -43,6 +42,5 @@ public class ResizeImage {
          */
         System.out.println("Result:");
         System.out.println(image2.toString());
-
     }
 }

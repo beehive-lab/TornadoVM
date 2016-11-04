@@ -5,10 +5,13 @@ import java.util.Arrays;
 import tornado.api.Parallel;
 import tornado.api.Read;
 import tornado.api.Write;
+import tornado.common.enums.Access;
 import tornado.drivers.opencl.OpenCL;
+import tornado.runtime.api.PrebuiltTask;
 import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskUtils;
 
-public class HelloWorld {
+public class HelloWorldPrebuilt {
 	
 	public static void add(@Read int[] a,@Read int[] b,@Write int[] c){
 		for(@Parallel int i=0;i<c.length;i++)
@@ -26,15 +29,21 @@ public class HelloWorld {
 		Arrays.fill(b, 2);
 		Arrays.fill(c, 0);
 		
+                final PrebuiltTask add = TaskUtils.createTask(
+                        "add",
+                        "opencl/add.cl",
+                        new Object[]{a,b,c}, 
+                        new Access[]{Access.READ,Access.READ,Access.WRITE},
+                        OpenCL.defaultDevice(),
+                        new int[]{numElements});
+		
 		final TaskGraph graph = new TaskGraph();
 		graph
-                        .add(HelloWorld::add, a,b,c)
+			.add(add)
 			.streamOut(c)
 			.mapAllTo(OpenCL.defaultDevice())
 			.schedule()
 			.waitOn();
-                
-                OpenCL.defaultDevice().dumpMemory("hw.dump");
 		
 		System.out.println("a: " + Arrays.toString(a));
 		System.out.println("b: " + Arrays.toString(b));

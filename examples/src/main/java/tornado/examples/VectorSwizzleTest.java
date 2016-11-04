@@ -3,21 +3,21 @@ package tornado.examples;
 import tornado.api.Read;
 import tornado.api.Write;
 import tornado.collections.types.Float3;
-import static tornado.collections.types.Float3.add;
 import tornado.collections.types.VectorFloat3;
 import tornado.drivers.opencl.OpenCL;
 import tornado.runtime.api.TaskGraph;
 
-public class VectorTest {
+public class VectorSwizzleTest {
 
-    private static void test(@Read Float3 a, @Read Float3 b,
+    private static void test(@Read Float3 a,
             @Write VectorFloat3 results) {
-        results.set(0, add(a, b));
+        Float3 b = new Float3(a.getZ(),a.getY(),a.getX());
+        results.set(0, b);
     }
 
     public static void main(String[] args) {
 
-        final Float3 value = new Float3(1f, 1f, 1f);
+        final Float3 value = new Float3(1f, 2f, 3f);
         System.out.printf("float3: %s\n", value.toString());
 
         System.out.printf("float3: %s\n", value.toString());
@@ -26,7 +26,7 @@ public class VectorTest {
 
         //@formatter:off
         TaskGraph graph = new TaskGraph()
-                .add(VectorTest::test, value, value, results)
+                .add(VectorSwizzleTest::test, value, results)
                 .streamOut(results)
                 .mapAllTo(OpenCL.defaultDevice())
                 .schedule();
