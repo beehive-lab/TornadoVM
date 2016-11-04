@@ -4,10 +4,12 @@ import com.oracle.graal.api.meta.Kind;
 import com.oracle.graal.hotspot.HotSpotGraalRuntimeProvider;
 import java.lang.reflect.Array;
 import tornado.common.ObjectBuffer;
-import tornado.common.RuntimeUtilities;
+import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import tornado.common.Tornado;
 import static tornado.common.Tornado.ENABLE_OOO_EXECUTION;
-import tornado.common.exceptions.TornadoInternalError;
+import static tornado.common.Tornado.fatal;
+import static tornado.common.Tornado.info;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.runtime.TornadoRuntime;
@@ -45,6 +47,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         arrayLengthOffset = runtime.getConfig().arrayLengthOffset;
         arrayHeaderSize = runtime.getArrayBaseOffset(kind);
         onDevice = false;
+        bufferOffset = -1;
     }
 
     @SuppressWarnings("unchecked")
@@ -52,22 +55,24 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         try {
             return (T) array;
         } catch (Exception | Error e) {
-            TornadoInternalError.shouldNotReachHere("Unable to cast object: " + e.getMessage());
+            shouldNotReachHere("Unable to cast object: " + e.getMessage());
         }
         return null;
     }
 
     @Override
     public void allocate(Object value) throws TornadoOutOfMemoryException {
-        final T ref = cast(value);
-        bytes = sizeOf(ref);
+        if (bufferOffset == -1) {
+            final T ref = cast(value);
+            bytes = sizeOf(ref);
 
-        bufferOffset = deviceContext.getMemoryManager().tryAllocate(ref.getClass(), bytes, arrayHeaderSize, getAlignment());
+            bufferOffset = deviceContext.getMemoryManager().tryAllocate(ref.getClass(), bytes, arrayHeaderSize, getAlignment());
 
-        Tornado.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x",
-                kind.getJavaName(), RuntimeUtilities.humanReadableByteCount(bytes, true),
-                arrayLengthOffset, arrayHeaderSize, bufferOffset);
-        Tornado.info("allocated: %s", toString());
+            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x",
+                    kind.getJavaName(), humanReadableByteCount(bytes, true),
+                    arrayLengthOffset, arrayHeaderSize, bufferOffset);
+            info("allocated: %s", toString());
+        }
     }
 
     @Override
@@ -174,7 +179,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
             readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize,
                     array, null);
         } else {
-            Tornado.fatal("Array header is invalid");
+            shouldNotReachHere("Array header is invalid");
         }
     }
 
@@ -203,7 +208,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     @Override
     public String toString() {
         return String.format("buffer<%s> %s @ 0x%x (0x%x)", kind.getJavaName(),
-                RuntimeUtilities.humanReadableByteCount(bytes, true), toAbsoluteAddress(),
+                humanReadableByteCount(bytes, true), toAbsoluteAddress(),
                 toRelativeAddress());
     }
 
@@ -224,7 +229,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         final int numElements = header.getInt(arrayLengthOffset);
         final boolean valid = numElements == Array.getLength(array);
         if (!valid) {
-            Tornado.fatal("Array: expected=%d, got=%d", Array.getLength(array), numElements);
+            fatal("Array: expected=%d, got=%d", Array.getLength(array), numElements);
             header.dump(8);
         }
         return valid;
