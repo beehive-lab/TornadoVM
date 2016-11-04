@@ -1,10 +1,9 @@
 package tornado.examples;
 
 import java.util.Arrays;
-
 import tornado.collections.math.SimpleMath;
 import tornado.common.RuntimeUtilities;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.drivers.opencl.OpenCL;
 import tornado.runtime.api.TaskGraph;
 
 public class VectorAddFloat {
@@ -21,13 +20,16 @@ public class VectorAddFloat {
         Arrays.fill(b, 2);
         Arrays.fill(c, 0);
 
+        //@formatter:off
         final TaskGraph graph = new TaskGraph()
-                .add(SimpleMath::vectorAdd, a, b, c).streamOut(c)
-                .mapAllTo(new OCLDeviceMapping(0, 0));
+                .add(SimpleMath::vectorAdd, a, b, c)
+                .streamOut(c)
+                .mapAllTo(OpenCL.defaultDevice());
+        //@formatter:on
 
         long start = System.nanoTime();
         for (int i = 0; i < iterations; i++) {
-            graph.schedule();
+            graph.schedule().waitOn();
         }
         long stop = System.nanoTime();
 
@@ -47,6 +49,8 @@ public class VectorAddFloat {
                 // break;
             }
         }
+        
+        OpenCL.defaultDevice().dumpMemory("mem.dump");
 
     }
 }
