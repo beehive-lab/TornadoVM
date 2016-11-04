@@ -1,12 +1,8 @@
 package tornado.runtime.api;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import tornado.common.DeviceMapping;
 import tornado.common.DeviceObjectState;
-import tornado.runtime.JVMMapping;
-import tornado.runtime.TornadoRuntime;
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class LocalObjectState {
 
@@ -17,7 +13,7 @@ public class LocalObjectState {
 	private DeviceObjectState device;
 	
 	public LocalObjectState(Object object){
-		global = TornadoRuntime.runtime.resolveObject(object);
+		global = getTornadoRuntime().resolveObject(object);
 		device = null;
 		streamIn = false;
 		streamOut = false;
