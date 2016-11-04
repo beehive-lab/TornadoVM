@@ -1,13 +1,12 @@
 package tornado.drivers.opencl.graal.lir;
 
-import com.oracle.graal.api.meta.JavaConstant;
-import com.oracle.graal.api.meta.Kind;
-import com.oracle.graal.api.meta.PlatformKind;
-import com.oracle.graal.api.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import tornado.api.Vector;
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+
+import static tornado.common.exceptions.TornadoInternalError.*;
 
 public enum OCLKind implements PlatformKind {
 
@@ -123,8 +122,9 @@ public enum OCLKind implements PlatformKind {
     }
 
     public int getSizeInBytes() {
-        if(vectorLength == 3)
+        if (vectorLength == 3) {
             return size + elementKind.getSizeInBytes();
+        }
         return size;
     }
 
@@ -235,8 +235,8 @@ public enum OCLKind implements PlatformKind {
         if (isUnsigned()) {
             sb.append('u');
         }
-        
-        if(isVector()){
+
+        if (isVector()) {
             sb.append(getElementKind().getTypeChar());
         } else {
             sb.append(getTypeChar());
@@ -244,9 +244,9 @@ public enum OCLKind implements PlatformKind {
 
         return sb.toString();
     }
-    
-    public boolean isUnsigned(){
-        if(!isInteger()){
+
+    public boolean isUnsigned() {
+        if (!isInteger()) {
             return false;
         } else {
             return kind.name().charAt(0) == 'U';
@@ -277,10 +277,9 @@ public enum OCLKind implements PlatformKind {
         return (vectorLength == 1 && kind != OCLKind.ILLEGAL);
     }
 
-    @Override
     public JavaConstant getDefaultValue() {
-        if(!isVector()){
-            return asJavaKind().getDefaultValue();
+        if (!isVector()) {
+            return JavaConstant.defaultForKind(asJavaKind());
         }
         unimplemented();
         return JavaConstant.NULL_POINTER;
@@ -341,33 +340,33 @@ public enum OCLKind implements PlatformKind {
         }
     }
 
-    public Kind asJavaKind() {
+    public JavaKind asJavaKind() {
         if (kind == ILLEGAL || kind.isVector()) {
-            return Kind.Illegal;
+            return JavaKind.Illegal;
         } else {
             switch (kind) {
                 case BOOL:
-                    return Kind.Boolean;
+                    return JavaKind.Boolean;
                 case CHAR:
                 case UCHAR:
-                    return Kind.Byte;
+                    return JavaKind.Byte;
                 case SHORT:
                 case USHORT:
-                    return Kind.Short;
+                    return JavaKind.Short;
                 case INT:
                 case UINT:
-                    return Kind.Int;
+                    return JavaKind.Int;
                 case LONG:
                 case ULONG:
-                    return Kind.Long;
+                    return JavaKind.Long;
                 case FLOAT:
-                    return Kind.Float;
+                    return JavaKind.Float;
                 case DOUBLE:
-                    return Kind.Double;
+                    return JavaKind.Double;
                 default:
                     shouldNotReachHere();
             }
-            return Kind.Illegal;
+            return JavaKind.Illegal;
         }
     }
 }
