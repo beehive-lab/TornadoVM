@@ -7,8 +7,13 @@ import com.oracle.graal.lir.Opcode;
 @Opcode("RETURN")
 public class OCLReturnSlot extends AllocatableValue {
 
-	public OCLReturnSlot(LIRKind lirKind) {
-		super(lirKind);
-	}
+    public OCLReturnSlot(LIRKind lirKind) {
+        super(lirKind);
+    }
+
+    @Override
+    public String toString() {
+        return "RETURN_SLOT";
+    }
 
 }

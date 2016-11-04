@@ -1,22 +1,17 @@
 package tornado.drivers.opencl.graal.phases;
 
-import java.util.List;
-
-import tornado.api.Vector;
-import tornado.graal.phases.TornadoHighTierContext;
-import tornado.graal.nodes.vector.VectorKind;
-import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 import com.oracle.graal.api.meta.ResolvedJavaType;
-import com.oracle.graal.nodes.BeginNode;
 import com.oracle.graal.nodes.AbstractBeginNode;
-import com.oracle.graal.nodes.FixedWithNextNode;
+import com.oracle.graal.nodes.BeginNode;
 import com.oracle.graal.nodes.GuardingPiNode;
 import com.oracle.graal.nodes.InvokeWithExceptionNode;
 import com.oracle.graal.nodes.KillingBeginNode;
-import com.oracle.graal.nodes.LogicConstantNode;
 import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.nodes.calc.IsNullNode;
 import com.oracle.graal.phases.BasePhase;
+import java.util.List;
+import tornado.api.Vector;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import tornado.graal.phases.TornadoHighTierContext;
 
 public class TornadoInvokeCleanup extends BasePhase<TornadoHighTierContext> {
 
@@ -43,16 +38,17 @@ public class TornadoInvokeCleanup extends BasePhase<TornadoHighTierContext> {
            
             	
             	if(type.getAnnotation(Vector.class)!= null ){
-            		final VectorKind vectorKind = VectorKind.fromResolvedJavaType(type);
-            		final VectorValueNode vector = graph.addOrUnique(new VectorValueNode(type,vectorKind,invoke));
-            		
-            		invoke.usages().filter(IsNullNode.class).forEach(isNullNode -> {
-            			isNullNode.replaceAndDelete(LogicConstantNode.contradiction(graph));
-            		});
-            		
-            		for(GuardingPiNode guardingPi : guardingPis){
-            			graph.replaceFixedWithFloating((FixedWithNextNode)guardingPi, vector);
-            		}         		
+                    unimplemented();
+//            		final VectorKind vectorKind = VectorKind.fromResolvedJavaType(type);
+//            		final VectorValueNode vector = graph.addOrUnique(new VectorValueNode(type,vectorKind,invoke));
+//            		
+//            		invoke.usages().filter(IsNullNode.class).forEach(isNullNode -> {
+//            			isNullNode.replaceAndDelete(LogicConstantNode.contradiction(graph));
+//            		});
+//            		
+//            		for(GuardingPiNode guardingPi : guardingPis){
+//            			graph.replaceFixedWithFloating((FixedWithNextNode)guardingPi, vector);
+//            		}         		
             	}
             	
             	

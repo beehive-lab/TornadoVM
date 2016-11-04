@@ -4,6 +4,7 @@ import com.oracle.graal.api.meta.JavaConstant;
 import com.oracle.graal.api.meta.Kind;
 import com.oracle.graal.api.meta.PlatformKind;
 
+@Deprecated
 public enum ArrayKind implements PlatformKind {
 
 	// @formatter:off

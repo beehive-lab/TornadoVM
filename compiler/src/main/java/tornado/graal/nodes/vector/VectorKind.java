@@ -5,6 +5,7 @@ import com.oracle.graal.api.meta.Kind;
 import com.oracle.graal.api.meta.PlatformKind;
 import com.oracle.graal.api.meta.ResolvedJavaType;
 
+@Deprecated
 public enum VectorKind implements PlatformKind {
 
 	// @formatter:off
@@ -16,7 +17,7 @@ public enum VectorKind implements PlatformKind {
 
 	INT2('i', "int2", tornado.collections.types.Int2.TYPE, Kind.Int, 2), INT3('i', "int3",
 			tornado.collections.types.Int3.TYPE, Kind.Int, 3),
-	// INT4('i',"int4",tornado.collections.types.Int4.TYPE,Kind.Int,4),
+	INT4('i',"int4",tornado.collections.types.Int4.TYPE,Kind.Int,4),
 	// INT8('i',"int8",tornado.collections.types.Int8.TYPE,Kind.Int,8),
 	// INT16('i',"int16",tornado.collections.types.Int16.TYPE,Kind.Int,16),
 
@@ -37,7 +38,7 @@ public enum VectorKind implements PlatformKind {
 
 	public static final VectorKind[][]	typeTable	= new VectorKind[][] {
 			{ SHORT2, Illegal, Illegal, Illegal, Illegal },
-			{ INT2, INT3, Illegal, Illegal, Illegal }, { FLOAT2, FLOAT3, FLOAT4, FLOAT8, Illegal },
+			{ INT2, INT3, INT4, Illegal, Illegal }, { FLOAT2, FLOAT3, FLOAT4, FLOAT8, Illegal },
 			{ Illegal, BYTE3, BYTE4, Illegal, Illegal } };
 
 	// @formatter:on

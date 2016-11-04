@@ -1,12 +1,10 @@
 package tornado.drivers.opencl.graal.backend;
 
-import com.oracle.graal.api.code.Architecture;
 import com.oracle.graal.api.code.CallingConvention;
 import com.oracle.graal.api.code.CallingConvention.Type;
 import com.oracle.graal.api.code.CompilationResult;
 import com.oracle.graal.api.code.DisassemblerProvider;
 import com.oracle.graal.api.code.RegisterConfig;
-import com.oracle.graal.api.code.TargetDescription;
 import com.oracle.graal.api.code.stack.StackIntrospection;
 import com.oracle.graal.api.meta.AllocatableValue;
 import com.oracle.graal.api.meta.DeoptimizationAction;
@@ -41,14 +39,19 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import tornado.api.Vector;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import static tornado.common.Tornado.DEBUG_KERNEL_ARGS;
 import tornado.common.enums.Access;
-import tornado.common.exceptions.TornadoInternalError;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import tornado.drivers.opencl.OCLContext;
 import tornado.drivers.opencl.OCLDeviceContext;
+import tornado.drivers.opencl.OCLTargetDescription;
+import tornado.drivers.opencl.graal.OCLArchitecture;
 import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.OCLSuitesProvider;
 import tornado.drivers.opencl.graal.OCLUtils;
@@ -66,9 +69,10 @@ import tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
 import tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
 import tornado.drivers.opencl.graal.compiler.OpenCLLIRGenerationResult;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
+import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.mm.OCLByteBuffer;
 import tornado.graal.backend.TornadoBackend;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import tornado.graal.nodes.vector.VectorKind;
 import tornado.lang.CompilerInternals;
 import tornado.meta.Meta;
@@ -85,29 +89,30 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
             "./opencl");
 
     @Override
-    public TargetDescription getTarget() {
-        return target;
+    public OCLTargetDescription getTarget() {
+        return (OCLTargetDescription) target;
     }
 
-    final TargetDescription target;
-    final Architecture architecture;
+    final OCLTargetDescription target;
+    final OCLArchitecture architecture;
     final OCLContext openclContext;
     final OCLDeviceContext deviceContext;
     final OpenCLCodeCache codeCache;
     OpenCLInstalledCode lookupCode;
+    final AtomicInteger id = new AtomicInteger(0);
 
     public OCLBackend(
             OCLProviders providers,
-            TargetDescription target,
+            OCLTargetDescription target,
             OCLContext context,
             int deviceIndex) {
         super(providers);
         this.openclContext = context;
         deviceContext = context.createDeviceContext(deviceIndex);
-        architecture = target.arch;
+        architecture = (OCLArchitecture) target.arch;
         this.target = target;
 
-        codeCache = new OpenCLCodeCache(getTarget());
+        codeCache = new OpenCLCodeCache(target);
         codeCache.setBackend(this);
     }
 
@@ -205,6 +210,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
 
     }
 
+    @Deprecated
     public static String platformKindToOpenCLKind(PlatformKind kind) {
         switch (kind.name().toLowerCase()) {
             case "object":
@@ -220,6 +226,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
         }
     }
 
+    @Deprecated
     public static String toOpenCLType(Kind kind, PlatformKind platformKind) {
         String type = "";
 
@@ -242,45 +249,56 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
         return type;
     }
 
-    private void addVariableDef(Map<String, Set<Variable>> kindToVariable, Variable value) {
+    private void addVariableDef(Map<OCLKind, Set<Variable>> kindToVariable, Variable value) {
         if (value instanceof Variable) {
             Variable var = (Variable) value;
-            final String type = toOpenCLType(var.getKind(), var.getPlatformKind());
 
-            if (!kindToVariable.containsKey(type)) {
-                kindToVariable.put(type, new HashSet<>());
+            if (!(var.getPlatformKind() instanceof OCLKind)) {
+                shouldNotReachHere();
             }
 
-            final Set<Variable> varList = kindToVariable.get(type);
+            OCLKind oclKind = (OCLKind) var.getPlatformKind();
+            if (oclKind == OCLKind.ILLEGAL) {
+                shouldNotReachHere();
+//                return;
+            }
+//            guarantee(oclKind != OCLKind.ILLEGAL,"invalid type for %s",var.getKind().name());
+//            final String type = oclKind.toString(); //toOpenCLType(var.getKind(), var.getPlatformKind());
+
+            if (!kindToVariable.containsKey(oclKind)) {
+                kindToVariable.put(oclKind, new HashSet<>());
+            }
+
+            final Set<Variable> varList = kindToVariable.get(oclKind);
             varList.add(var);
 
         }
     }
 
     private void emitVariableDefs(OCLCompilationResultBuilder crb, OpenCLAssembler asm, LIR lir) {
-        Map<String, Set<Variable>> kindToVariable = new HashMap<>();
+        Map<OCLKind, Set<Variable>> kindToVariable = new HashMap<>();
         final int expectedVariables = lir.numVariables();
-        int variableCount = 0;
+        final AtomicInteger variableCount = new AtomicInteger();
 
         for (AbstractBlockBase<?> b : lir.linearScanOrder()) {
             for (LIRInstruction insn : lir.getLIRforBlock(b)) {
-                if (insn instanceof AssignStmt) {
-                    final Value value = ((AssignStmt) insn).getResult();
 
+                insn.forEachOutput((instruction, value, mode, flags) -> {
                     if (value instanceof Variable) {
-                        Variable var = (Variable) value;
-                        addVariableDef(kindToVariable, var);
-                        variableCount++;
-
+                        Variable variable = (Variable) value;
+                        if (variable.getName() != null) {
+                            addVariableDef(kindToVariable, (Variable) variable);
+                            variableCount.incrementAndGet();
+                        }
                     }
-                }
-
+                    return value;
+                });
             }
         }
 
-        Tornado.trace("found %d variable, expected (%d)", variableCount, expectedVariables);
+        trace("found %d variable, expected (%d)", variableCount.get(), expectedVariables);
 
-        for (String type : kindToVariable.keySet()) {
+        for (OCLKind type : kindToVariable.keySet()) {
             asm.indent();
             asm.emit("%s ", type);
             for (Variable var : kindToVariable.get(type)) {
@@ -295,6 +313,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
 
     private void emitPrologue(OCLCompilationResultBuilder crb, OpenCLAssembler asm,
             ResolvedJavaMethod method, LIR lir) {
+
+        String methodName = crb.compilationResult.getName();
+
         if (crb.isKernel()) {
             /*
              * BUG There is a bug on some OpenCL devices which requires us to insert an extra OpenCL buffer into the kernel arguments.
@@ -303,11 +324,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
              */
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OpenCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
 
-            asm.emitLine("%s void %s(%s%s char *%s, ulong %s)",
-                    OpenCLAssemblerConstants.KERNEL_MODIFIER, method.getName(),
+            asm.emitLine("%s void %s(%s%s)",
+                    OpenCLAssemblerConstants.KERNEL_MODIFIER, methodName,
                     bumpBuffer,
-                    OpenCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
-                    OpenCLAssemblerConstants.HEAP_REF_NAME, OpenCLAssemblerConstants.STACK_REF_NAME);
+                    architecture.getABI());
             asm.beginScope();
             emitVariableDefs(crb, asm, lir);
             asm.eol();
@@ -316,11 +336,17 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
                     OpenCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
                     OpenCLAssemblerConstants.HEAP_REF_NAME, OpenCLAssemblerConstants.STACK_REF_NAME);
             asm.eol();
-            if (DEBUG_KERNEL_ARGS && !method.getDeclaringClass().getUnqualifiedName().equalsIgnoreCase(this.getClass().getSimpleName())) {
+            if (DEBUG_KERNEL_ARGS && (method != null && !method.getDeclaringClass().getUnqualifiedName().equalsIgnoreCase(this.getClass().getSimpleName()))) {
                 asm.emitLine("if(get_global_id(0) == 0 && get_global_id(1) ==0){");
+                asm.pushIndent();
                 asm.emitStmt("int numArgs = slots[5] >> 32");
                 asm.emitStmt("printf(\"got %%d args...\\n\",numArgs)");
-                asm.emitStmt("for(int i=0;i<numArgs;i++) {  printf(\"%20s - arg[%%d]: 0x%%lx\\n\", i, slots[6 + i]); }",method.getName());
+                asm.emitLine("for(int i=0;i<numArgs;i++) {");
+                asm.pushIndent();
+                asm.emitStmt("printf(\"%20s - arg[%%d]: 0x%%lx\\n\", i, slots[6 + i])", method.getName());
+                asm.popIndent();
+                asm.emitLine("}");
+                asm.popIndent();
                 asm.emitLine("}");
             }
 
@@ -332,16 +358,16 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
 
             final CallingConvention incomingArguments = OpenCLCodeUtil.getCallingConvention(
                     codeCache, Type.JavaCallee, method, false);
-            final String methodName = OCLUtils.makeMethodName(method);
+            methodName = OCLUtils.makeMethodName(method);
             final Kind returnKind = method.getSignature().getReturnKind();
             final ResolvedJavaType returnType = method.getSignature().getReturnType(null)
                     .resolve(method.getDeclaringClass());
             final PlatformKind platformKind = (returnType.getAnnotation(Vector.class) == null) ? LIRKind
                     .value(returnKind).getPlatformKind() : VectorKind
                     .fromResolvedJavaType(returnType);
-            asm.emit("%s %s(%s char *%s, ulong %s", toOpenCLType(returnKind, platformKind),
-                    methodName, OpenCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
-                    OpenCLAssemblerConstants.HEAP_REF_NAME, OpenCLAssemblerConstants.STACK_REF_NAME);
+            getTarget().getLIRKind(returnKind);
+            asm.emit("%s %s(%s", target.getOCLKind(returnKind).toString(),
+                    methodName, architecture.getABI());
 
             final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
             final Value[] params = new Value[incomingArguments.getArgumentCount()];
@@ -357,21 +383,24 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
             for (int i = 0; i < params.length; i++) {
                 final AllocatableValue param = incomingArguments.getArgument(i);
 
+                OCLKind oclKind = OCLKind.ILLEGAL;
                 if (param.getKind().isObject()) {
-                    VectorKind vectorKind = VectorKind.fromResolvedJavaType(locals[i].getType().resolve(method.getDeclaringClass()));
-                    if (vectorKind != VectorKind.Illegal) {
-                        asm.emit("%s %s", vectorKind.getJavaName(),
-                                locals[i].getName());
-                    } else {
-                        asm.emit("%s %s", toOpenCLType(param.getKind(), param.getPlatformKind()),
-                                locals[i].getName());
-                    }
-                } else {
 
-                    asm.emit("%s %s", toOpenCLType(param.getKind(), param.getPlatformKind()),
+                    oclKind = OCLKind.resolveToVectorKind(locals[i].getType().resolve(method.getDeclaringClass()));
+                    if (oclKind == OCLKind.ILLEGAL) {
+                        oclKind = target.getOCLKind(param.getKind());
+                    }
+
+                    asm.emit("%s %s", oclKind.toString(),
                             locals[i].getName());
+                } else {
+                    oclKind = target.getOCLKind(param.getKind());
 
                 }
+
+                guarantee(oclKind != OCLKind.ILLEGAL, "illegal type for %s", param.getKind().name());
+                asm.emit("%s %s", oclKind.toString(),
+                        locals[i].getName());
                 if (i < params.length - 1) {
                     asm.emit(", ");
                 }
@@ -500,7 +529,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
 
     @Override
     public SuitesProvider getSuites() {
-        TornadoInternalError.unimplemented();
+        unimplemented();
         return null;
     }
 

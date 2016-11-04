@@ -1,174 +1,217 @@
 package tornado.drivers.opencl.graal.compiler.plugins;
 
-import tornado.common.Tornado;
-import tornado.drivers.opencl.graal.nodes.OCLIntrinsicNode;
-import tornado.drivers.opencl.graal.nodes.OCLIntrinsicNode.BinaryGeometricOp;
-import tornado.drivers.opencl.graal.nodes.vector.NewVectorNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementProxyNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorStoreElementProxyNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
-import tornado.graal.nodes.vector.VectorKind;
-
+import com.oracle.graal.api.meta.Kind;
+import com.oracle.graal.api.meta.NamedLocationIdentity;
 import com.oracle.graal.api.meta.ResolvedJavaMethod;
 import com.oracle.graal.api.meta.ResolvedJavaType;
+import com.oracle.graal.compiler.common.type.ObjectStamp;
+import com.oracle.graal.compiler.common.type.Stamp;
+import com.oracle.graal.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import com.oracle.graal.graphbuilderconf.GraphBuilderContext;
 import com.oracle.graal.graphbuilderconf.InvocationPlugin;
 import com.oracle.graal.graphbuilderconf.InvocationPlugins;
 import com.oracle.graal.graphbuilderconf.InvocationPlugins.Registration;
 import com.oracle.graal.graphbuilderconf.MethodIdMap.Receiver;
+import com.oracle.graal.nodes.ParameterNode;
 import com.oracle.graal.nodes.PiNode;
 import com.oracle.graal.nodes.ValueNode;
-import com.oracle.graal.nodes.extended.ValueAnchorNode;
+import com.oracle.graal.nodes.extended.IndexedLocationNode;
+import com.oracle.graal.nodes.memory.FloatingReadNode;
+import com.oracle.graal.nodes.memory.HeapAccess.BarrierType;
+import com.oracle.graal.nodes.memory.WriteNode;
+import tornado.api.Vector;
+import tornado.common.Tornado;
+import tornado.common.exceptions.TornadoInternalError;
+import tornado.drivers.opencl.graal.OCLStampFactory;
+import tornado.drivers.opencl.graal.lir.OCLKind;
+import tornado.drivers.opencl.graal.nodes.vector.VectorAddNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorStoreElementProxyNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
+import tornado.runtime.TornadoRuntime;
 
 public final class VectorPlugins {
 
-	public static final void registerPlugins(final InvocationPlugins plugins) {
-		if (Tornado.ENABLE_VECTORS) {
-			registerVectorPlugins(plugins, VectorKind.FLOAT2, float[].class, float.class);
-			registerVectorPlugins(plugins, VectorKind.FLOAT3, float[].class, float.class);
-			registerVectorPlugins(plugins, VectorKind.FLOAT4, float[].class, float.class);
-			registerVectorPlugins(plugins, VectorKind.FLOAT8, float[].class, float.class);
+    public static final void registerPlugins(final InvocationPlugins plugins) {
+        if (Tornado.ENABLE_VECTORS) {
+            registerVectorPlugins(plugins, OCLKind.FLOAT2, float[].class, float.class);
+            registerVectorPlugins(plugins, OCLKind.FLOAT3, float[].class, float.class);
+            registerVectorPlugins(plugins, OCLKind.FLOAT4, float[].class, float.class);
+            registerVectorPlugins(plugins, OCLKind.FLOAT8, float[].class, float.class);
 
-			registerVectorPlugins(plugins, VectorKind.INT2, int[].class, int.class);
-			registerVectorPlugins(plugins, VectorKind.INT3, int[].class, int.class);
+            registerVectorPlugins(plugins, OCLKind.INT2, int[].class, int.class);
+            registerVectorPlugins(plugins, OCLKind.INT3, int[].class, int.class);
 
-			registerVectorPlugins(plugins, VectorKind.SHORT2, short[].class, short.class);
-			
-			registerVectorPlugins(plugins, VectorKind.BYTE3, byte[].class, byte.class);
-			registerVectorPlugins(plugins, VectorKind.BYTE4, byte[].class, byte.class);
+            registerVectorPlugins(plugins, OCLKind.SHORT2, short[].class, short.class);
 
-			/*
+            registerVectorPlugins(plugins, OCLKind.CHAR3, byte[].class, byte.class);
+            registerVectorPlugins(plugins, OCLKind.CHAR4, byte[].class, byte.class);
+
+            /*
 			 * Geometric BIFS for floating point vectors
-			 */
-			if (Tornado.TORNADO_ENABLE_BIFS) {
-				registerGeometricBIFS(plugins, VectorKind.FLOAT3, float[].class, float.class);
-				registerGeometricBIFS(plugins, VectorKind.FLOAT4, float[].class, float.class);
-			}
-		}
+             */
+            if (Tornado.TORNADO_ENABLE_BIFS) {
+                registerGeometricBIFS(plugins, OCLKind.FLOAT3, float[].class, float.class);
+                registerGeometricBIFS(plugins, OCLKind.FLOAT4, float[].class, float.class);
+            }
+        }
 
-	}
+    }
 
-	private static final VectorValueNode resolveReceiver(GraphBuilderContext b,
-			VectorKind vectorKind, Receiver receiver) {
-		ValueNode thisObject = receiver.get();
-		VectorValueNode vector = null;
-		
-		if (thisObject instanceof PiNode) {
-			thisObject = ((PiNode) thisObject).getOriginalNode();
-		}
+    private static VectorValueNode resolveReceiver(GraphBuilderContext b,
+            OCLKind vectorKind, Receiver receiver) {
+        ValueNode thisObject = receiver.get();
+        VectorValueNode vector = null;
 
-		if (thisObject instanceof VectorValueNode) {
-			vector = (VectorValueNode) thisObject;
-		}
-		return vector;
-	}
+        if (thisObject instanceof PiNode) {
+            thisObject = ((PiNode) thisObject).getOriginalNode();
+        }
 
-	private static final void registerVectorPlugins(final InvocationPlugins plugins,
-			final VectorKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
+        if (thisObject instanceof VectorValueNode) {
+            vector = (VectorValueNode) thisObject;
+        }
+        return vector;
+    }
 
-		final Class<?> declaringClass = vectorKind.getJavaClass();
+    private static void registerVectorPlugins(final InvocationPlugins plugins,
+            final OCLKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
 
-		final Registration r = new Registration(plugins, declaringClass);
+        final Class<?> declaringClass = vectorKind.getJavaClass();
+        final Kind javaElementKind = vectorKind.getElementKind().asJavaKind();
 
-		final Class<?>[] argumentTypes = new Class<?>[vectorKind.getVectorLength()];
-		for (int i = 0; i < vectorKind.getVectorLength(); i++)
-			argumentTypes[i] = elementType;
+        final Registration r = new Registration(plugins, declaringClass);
 
-		final InvocationPlugin initialiser = new InvocationPlugin() {
+        final Class<?>[] argumentTypes = new Class<?>[vectorKind.getVectorLength()];
+        for (int i = 0; i < vectorKind.getVectorLength(); i++) {
+            argumentTypes[i] = elementType;
+        }
 
-			@Override
-			public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-					Receiver receiver, ValueNode... args) {
-				final VectorValueNode vector = resolveReceiver(b, vectorKind, receiver);
-				final NewVectorNode newVectorNode = new NewVectorNode(vectorKind);
-				vector.setOrigin(newVectorNode);
-				b.append(newVectorNode);
-	
-				
-				if (args.length > 0) {
-					int offset = (vector == args[0])? 1 : 0;
-					
-					for (int i = offset; i < args.length; i++){
-						vector.setElement(i-offset, args[i]);
-					}
-				} else {
-					vector.initialiseToDefaultValues(vector.graph());
-				}
+        final InvocationPlugin initialiser = new InvocationPlugin() {
 
-				return true;
-			}
-		};
+            @Override
+            public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                    Receiver receiver, ValueNode... args) {
+                final VectorValueNode vector = resolveReceiver(b, vectorKind, receiver);
+//                final NewVectorNode newVectorNode = new NewVectorNode(vectorKind);
+//                vector.setOrigin(newVectorNode);
+//                b.append(newVectorNode);
 
-		plugins.register(initialiser, declaringClass, "<init>");
-		plugins.register(initialiser, declaringClass, "<init>", argumentTypes);
+                if (args.length > 0) {
+                    int offset = (vector == args[0]) ? 1 : 0;
 
-		r.register2("get", Receiver.class, int.class, new InvocationPlugin() {
-			public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-					Receiver receiver, ValueNode laneId) {
-				final VectorLoadElementProxyNode loadElement = new VectorLoadElementProxyNode(
-						vectorKind, receiver.get(), laneId);
-				b.push(vectorKind.getElementKind(), b.recursiveAppend(loadElement));
-				return true;
-			}
-		});
+                    for (int i = offset; i < args.length; i++) {
+                        vector.setElement(i - offset, args[i]);
+                    }
+                } else {
+                    vector.initialiseToDefaultValues(vector.graph());
+                }
 
-		r.register3("set", Receiver.class, int.class, elementType, new InvocationPlugin() {
-			public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-					Receiver receiver, ValueNode laneId, ValueNode value) {
+                return true;
+            }
+        };
 
-				final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(
-						vectorKind, receiver.get(), laneId, value);
-				b.append(b.recursiveAppend(store));
+        plugins.register(initialiser, declaringClass, "<init>");
+        plugins.register(initialiser, declaringClass, "<init>", argumentTypes);
 
-				return true;
-			}
-		});
+        r.register2("get", Receiver.class, int.class, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                    Receiver receiver, ValueNode laneId) {
+                final VectorLoadElementNode loadElement = new VectorLoadElementNode(receiver.get(), laneId);
+                b.push(javaElementKind, b.recursiveAppend(loadElement));
+                return true;
+            }
+        });
 
-		r.register2("loadFromArray", storageType, int.class, new InvocationPlugin() {
-			public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-					Receiver reciever, ValueNode array, ValueNode index) {
+        r.register3("set", Receiver.class, int.class, elementType, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                    Receiver receiver, ValueNode laneId, ValueNode value) {
+                final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(
+                        vectorKind.getElementKind(), receiver.get(), laneId, value);
+                b.append(b.recursiveAppend(store));
 
-				final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
-				final VectorLoadNode load = new VectorLoadNode(vectorKind, array, index);
-				final VectorValueNode vector = new VectorValueNode(resolvedType,vectorKind);
-				vector.setOrigin(load);
-				b.add(load);
-				b.push(vector.getKind(), b.recursiveAppend(vector));
-				return true;
-			}
-		});
+                return true;
+            }
+        });
 
-		r.register3("storeToArray", Receiver.class, storageType, int.class, new InvocationPlugin() {
-			public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-					Receiver reciever, ValueNode array, ValueNode index) {
+        r.register3("add", Receiver.class, declaringClass, declaringClass, new InvocationPlugin() {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                    Receiver reciever, ValueNode input1, ValueNode input2) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
 
-				final VectorStoreNode store = new VectorStoreNode(vectorKind, array, index,
-						reciever.get());
-				b.append(b.recursiveAppend(store));
-				return true;
-			}
-		});
-	}
+                OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
+                VectorAddNode addNode = new VectorAddNode(kind, input1, input2);
+                b.push(Kind.Illegal, b.recursiveAppend(addNode));
+                return true;
+            }
+        });
 
-	private static final void registerGeometricBIFS(final InvocationPlugins plugins,
-			final VectorKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
-		final Class<?> declaringClass = vectorKind.getJavaClass();
+        r.register2("loadFromArray", storageType, int.class, new InvocationPlugin() {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                    Receiver reciever, ValueNode array, ValueNode index) {
 
-		final Registration r = new Registration(plugins, declaringClass);
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
 
-		r.register2("dot", declaringClass, declaringClass, new InvocationPlugin() {
-			public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-					Receiver receiver, ValueNode input1, ValueNode input2) {
-				final BinaryGeometricOp op = new BinaryGeometricOp(vectorKind,
-						OCLIntrinsicNode.GeometricOp.DOT, input1, input2);
-				b.push(vectorKind.getElementKind(), b.recursiveAppend(op));
-				b.append(b.recursiveAppend(new ValueAnchorNode(op)));
+                OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
+                Kind javaKind = kind.getElementKind().asJavaKind();
+                IndexedLocationNode indexedLoc = new IndexedLocationNode(NamedLocationIdentity.getArrayLocation(javaKind), TornadoRuntime.getVMRuntimeProvider().getArrayBaseOffset(javaKind), index, kind.getElementKind().getByteCount());
+                FloatingReadNode readVector = new FloatingReadNode(array, indexedLoc, null, OCLStampFactory.getStampFor(kind));
+                b.push(Kind.Object, b.recursiveAppend(readVector));
+                return true;
+            }
+        });
 
-				return true;
-			}
-		});
-		
-	}
+        r.register3("storeToArray", Receiver.class, storageType, int.class, new InvocationPlugin() {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                    Receiver reciever, ValueNode array, ValueNode index) {
+                final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
+
+                ValueNode value = reciever.get();
+                OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
+                Kind javaKind = kind.getElementKind().asJavaKind();
+                IndexedLocationNode indexedLoc = new IndexedLocationNode(NamedLocationIdentity.getArrayLocation(javaKind), TornadoRuntime.getVMRuntimeProvider().getArrayBaseOffset(javaKind), index, kind.getElementKind().getByteCount());
+                WriteNode writeVector = new WriteNode(array, value, indexedLoc, BarrierType.PRECISE);
+                b.append(b.recursiveAppend(writeVector));
+                return true;
+            }
+        });
+    }
+
+    private static final void registerGeometricBIFS(final InvocationPlugins plugins,
+            final OCLKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
+        final Class<?> declaringClass = vectorKind.getJavaClass();
+
+        final Registration r = new Registration(plugins, declaringClass);
+
+        r.register2("dot", declaringClass, declaringClass, new InvocationPlugin() {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                    Receiver receiver, ValueNode input1, ValueNode input2) {
+                TornadoInternalError.unimplemented();
+//                final BinaryGeometricOp op = new BinaryGeometricOp(vectorKind,
+//                        OCLIntrinsicNode.GeometricOp.DOT, input1, input2);
+//                b.push(vectorKind.getElementKind(), b.recursiveAppend(op));
+//                b.append(b.recursiveAppend(new ValueAnchorNode(op)));
+
+                return true;
+            }
+        });
+
+    }
+
+    static void registerParameterPlugins(Plugins plugins) {
+
+        plugins.setParameterPlugin((GraphBuilderContext b, int index, Stamp stamp) -> {
+//          System.out.printf("param: index=%d, stamp=%s\n",index,stamp);
+            if (stamp instanceof ObjectStamp) {
+                ObjectStamp objStamp = (ObjectStamp) stamp;
+                if (objStamp.type().getAnnotation(Vector.class) != null) {
+                    OCLKind kind = OCLKind.fromResolvedJavaType(objStamp.type());
+                    return new ParameterNode(index, OCLStampFactory.getStampFor(kind));
+
+                }
+            }
+            return null;
+        });
+    }
 }

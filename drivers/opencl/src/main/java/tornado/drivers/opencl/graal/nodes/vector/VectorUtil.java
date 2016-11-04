@@ -1,29 +1,30 @@
 package tornado.drivers.opencl.graal.nodes.vector;
 
+import tornado.common.exceptions.TornadoInternalError;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic;
 import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic.VLOAD16;
 import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic.VLOAD2;
 import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic.VLOAD3;
 import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic.VLOAD4;
 import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic.VLOAD8;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp2;
 import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp2.*;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp3;
 import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp3.*;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp4;
 import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp4.*;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp8;
 import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp8.*;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLTernaryIntrinsic;
 import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLTernaryIntrinsic.VSTORE16;
 import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLTernaryIntrinsic.VSTORE2;
 import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLTernaryIntrinsic.VSTORE3;
 import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLTernaryIntrinsic.VSTORE4;
 import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLTernaryIntrinsic.VSTORE8;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryOp.*;
-import tornado.common.exceptions.TornadoInternalError;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp2;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp3;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp4;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp8;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLTernaryIntrinsic;
 import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryOp;
-import tornado.graal.nodes.vector.VectorKind;
+import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryOp.*;
+import tornado.drivers.opencl.graal.lir.OCLKind;
+
 public final class VectorUtil {
 
 	private static final OCLBinaryIntrinsic[]	loadTable	= new OCLBinaryIntrinsic[] { VLOAD2,
@@ -41,7 +42,7 @@ public final class VectorUtil {
 	private static final OCLOp4[] assignOp4Table = new OCLOp4[] { VMOV_SHORT4, VMOV_INT4, VMOV_FLOAT4, VMOV_BYTE4 };
 	private static final OCLOp8[] assignOp8Table = new OCLOp8[] { VMOV_SHORT8, VMOV_INT8, VMOV_FLOAT8, VMOV_BYTE8 };
 
-	private static final <T> T lookupValueByLength(T[] array, VectorKind vectorKind) {
+	private static final <T> T lookupValueByLength(T[] array, OCLKind vectorKind) {
 		final int index = vectorKind.lookupLengthIndex();
 		if (index != -1) {
 			return array[index];
@@ -51,7 +52,7 @@ public final class VectorUtil {
 		}
 	}
 	
-	private static final <T> T lookupValueByType(T[] array, VectorKind vectorKind) {
+	private static final <T> T lookupValueByType(T[] array, OCLKind vectorKind) {
 		final int index = vectorKind.lookupTypeIndex();
 		if (index != -1) {
 			return array[index];
@@ -61,31 +62,31 @@ public final class VectorUtil {
 		}
 	}
 
-	public static final OCLOp2 resolveAssignOp2(VectorKind vectorKind){
+	public static final OCLOp2 resolveAssignOp2(OCLKind vectorKind){
 		return lookupValueByType(assignOp2Table,vectorKind);
 	}
 	
-	public static final OCLOp3 resolveAssignOp3(VectorKind vectorKind){
+	public static final OCLOp3 resolveAssignOp3(OCLKind vectorKind){
 		return lookupValueByType(assignOp3Table,vectorKind);
 	}
 	
-	public static final OCLOp4 resolveAssignOp4(VectorKind vectorKind){
+	public static final OCLOp4 resolveAssignOp4(OCLKind vectorKind){
 		return lookupValueByType(assignOp4Table,vectorKind);
 	}
 	
-	public static final OCLOp8 resolveAssignOp8(VectorKind vectorKind){
+	public static final OCLOp8 resolveAssignOp8(OCLKind vectorKind){
 		return lookupValueByType(assignOp8Table,vectorKind);
 	}
 	
-	protected static final OCLTernaryIntrinsic resolveStoreIntrinsic(VectorKind vectorKind) {
+	public static final OCLTernaryIntrinsic resolveStoreIntrinsic(OCLKind vectorKind) {
 		return lookupValueByLength(storeTable, vectorKind);
 	}
 
-	protected static final OCLBinaryIntrinsic resolveLoadIntrinsic(VectorKind vectorKind) {
+	public static final OCLBinaryIntrinsic resolveLoadIntrinsic(OCLKind vectorKind) {
 		return lookupValueByLength(loadTable, vectorKind);
 	}
 	
-	protected static final OCLUnaryOp resolvePointerCast(VectorKind vectorKind){
+	public static final OCLUnaryOp resolvePointerCast(OCLKind vectorKind){
 		return lookupValueByType(pointerTable, vectorKind);
 	}
 

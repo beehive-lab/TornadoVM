@@ -5,7 +5,6 @@ import com.oracle.graal.api.meta.LIRKind;
 import com.oracle.graal.api.meta.Value;
 import com.oracle.graal.lir.Variable;
 import com.oracle.graal.lir.gen.LIRGenerationResult;
-
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.OpenCLCodeCache;
@@ -590,7 +589,7 @@ public class OCLLIRGenerator extends OCLBasicLIRGenerator implements
 	@Override
 	public Value emitIntClamp(Value x, Value y, Value z) {
 		trace("emitIntClamp: clamp(%s, %s, %s)",x, y, z);
-		return new OCLTernary.Intrinsic(OCLTernaryIntrinsic.CLAMP,LIRKind.derive(x,y,z),load(x),load(y),load(z));
+		return new OCLTernary.Intrinsic(OCLTernaryIntrinsic.CLAMP,LIRKind.derive(x,y,z),x,y,z);
 	}
 
 

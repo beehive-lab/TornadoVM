@@ -3,8 +3,8 @@ package tornado.drivers.opencl.graal.phases;
 import tornado.api.enums.TornadoSchedulingStrategy;
 import tornado.common.DeviceMapping;
 import tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
-import tornado.drivers.opencl.graal.nodes.ThreadCount;
-import tornado.drivers.opencl.graal.nodes.ThreadId;
+import tornado.drivers.opencl.graal.nodes.GlobalThreadSize;
+import tornado.drivers.opencl.graal.nodes.GlobalThreadId;
 import static tornado.api.enums.TornadoSchedulingStrategy.*;
 import tornado.graal.nodes.ParallelOffsetNode;
 import tornado.graal.nodes.ParallelRangeNode;
@@ -35,7 +35,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
 		final ConstantNode index = graph.addOrUnique(ConstantNode.forInt(offset.index()));
 
-		final ThreadId threadId = graph.addOrUnique(new ThreadId(index));
+		final GlobalThreadId threadId = graph.addOrUnique(new GlobalThreadId(index));
 
 		final AddNode addNode = graph.addOrUnique(new AddNode(threadId, offset.value()));
 
@@ -45,7 +45,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
 	private void replacePerBlock(StructuredGraph graph, ParallelOffsetNode offset) {
 
-		final ThreadId threadId = graph.addOrUnique(new ThreadId(ConstantNode.forInt(
+		final GlobalThreadId threadId = graph.addOrUnique(new GlobalThreadId(ConstantNode.forInt(
 				offset.index(), graph)));
 		final MulNode newOffset = graph.addOrUnique(new MulNode(threadId, blockSize));
 		offset.replaceAtUsages(newOffset);
@@ -62,7 +62,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
 		final ConstantNode index = graph.addOrUnique(ConstantNode.forInt(stride.index()));
 
-		final ThreadCount threadCount = graph.addOrUnique(new ThreadCount(index));
+		final GlobalThreadSize threadCount = graph.addOrUnique(new GlobalThreadSize(index));
 
 		stride.replaceAtUsages(threadCount);
 		stride.safeDelete();
@@ -95,7 +95,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 		final SubNode trueRange = graph.addOrUnique(new SubNode(rangeByStride, range.offset()
 				.value()));
 		final ConstantNode index = ConstantNode.forInt(range.index(), graph);
-		final ThreadCount threadCount = graph.addOrUnique(new ThreadCount(index));
+		final GlobalThreadSize threadCount = graph.addOrUnique(new GlobalThreadSize(index));
 		final SubNode threadCountM1 = graph.addOrUnique(new SubNode(threadCount, ConstantNode
 				.forInt(1, graph)));
 		final AddNode adjustedTrueRange = graph.addOrUnique(new AddNode(trueRange, threadCountM1));
@@ -106,7 +106,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 	private void replacePerBlock(StructuredGraph graph, ParallelRangeNode range) {
 		buildBlockSize(graph, range);
 
-		final ThreadId threadId = graph.addOrUnique(new ThreadId(ConstantNode.forInt(
+		final GlobalThreadId threadId = graph.addOrUnique(new GlobalThreadId(ConstantNode.forInt(
 				range.index(), graph)));
 		final MulNode newOffset = graph.addOrUnique(new MulNode(threadId, blockSize));
 		

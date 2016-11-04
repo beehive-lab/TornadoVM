@@ -1,21 +1,8 @@
 package tornado.drivers.opencl.graal;
 
-import tornado.common.exceptions.TornadoInternalError;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic;
-import tornado.drivers.opencl.graal.nodes.AtomicAddNode;
-import tornado.drivers.opencl.graal.nodes.AtomicWriteNode;
-import tornado.drivers.opencl.graal.nodes.CastNode;
-import tornado.drivers.opencl.graal.nodes.FixedArrayNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorReadNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorWriteNode;
-import tornado.graal.nodes.ArrayKind;
-import tornado.graal.nodes.TornadoDirectCallTargetNode;
-
+import com.oracle.graal.api.code.CallingConvention;
 import com.oracle.graal.api.code.ForeignCallsProvider;
 import com.oracle.graal.api.code.TargetDescription;
-import com.oracle.graal.api.meta.Constant;
 import com.oracle.graal.api.meta.JavaType;
 import com.oracle.graal.api.meta.Kind;
 import com.oracle.graal.api.meta.LocationIdentity;
@@ -33,78 +20,85 @@ import com.oracle.graal.nodes.AbstractDeoptimizeNode;
 import com.oracle.graal.nodes.ConstantNode;
 import com.oracle.graal.nodes.FixedNode;
 import com.oracle.graal.nodes.Invoke;
-import com.oracle.graal.nodes.InvokeWithExceptionNode;
 import com.oracle.graal.nodes.LoweredCallTargetNode;
 import com.oracle.graal.nodes.StructuredGraph;
 import com.oracle.graal.nodes.UnwindNode;
 import com.oracle.graal.nodes.ValueNode;
 import com.oracle.graal.nodes.calc.FloatConvertNode;
 import com.oracle.graal.nodes.calc.RemNode;
-import com.oracle.graal.nodes.extended.ConstantLocationNode;
 import com.oracle.graal.nodes.extended.GuardingNode;
 import com.oracle.graal.nodes.extended.IndexedLocationNode;
 import com.oracle.graal.nodes.extended.LocationNode;
 import com.oracle.graal.nodes.java.MethodCallTargetNode;
 import com.oracle.graal.nodes.java.NewArrayNode;
+import com.oracle.graal.nodes.memory.FloatingReadNode;
 import com.oracle.graal.nodes.memory.HeapAccess.BarrierType;
-import com.oracle.graal.nodes.memory.ReadNode;
 import com.oracle.graal.nodes.memory.WriteNode;
 import com.oracle.graal.nodes.spi.LoweringTool;
 import com.oracle.graal.nodes.type.StampTool;
 import com.oracle.graal.replacements.DefaultJavaLoweringProvider;
-import com.oracle.graal.api.code.CallingConvention;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic;
+import tornado.drivers.opencl.graal.nodes.AtomicAddNode;
+import tornado.drivers.opencl.graal.nodes.AtomicWriteNode;
+import tornado.drivers.opencl.graal.nodes.CastNode;
+import tornado.drivers.opencl.graal.nodes.FixedArrayNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
+import tornado.graal.nodes.TornadoDirectCallTargetNode;
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
-	
-	protected final HotSpotGraalRuntimeProvider runtime;
-	protected final ForeignCallsProvider foreignCalls;
-	
-	public OCLLoweringProvider(HotSpotGraalRuntimeProvider runtime, MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, TargetDescription target){
-		super(metaAccess,target);
-		this.runtime = runtime;
-		this.foreignCalls = foreignCalls;
-	}
-	
-	public void initialize(HotSpotProviders providers, HotSpotVMConfig config){
-		super.initialize(providers, providers.getSnippetReflection());
-	}
 
-	 @Override
-	    public void lower(Node n, LoweringTool tool) {
-	        StructuredGraph graph = (StructuredGraph) n.graph();
-	  
-	        	if(n instanceof Invoke){
-	        		lowerInvoke((Invoke) n, tool, graph);
-	        	} else if(n instanceof VectorLoadNode){
-	        		lowerVectorLoadNode((VectorLoadNode) n, tool);
-	        	} else if(n instanceof VectorStoreNode){
-	        		lowerVectorStoreNode((VectorStoreNode) n, tool);
-	        	} else if (n instanceof AbstractDeoptimizeNode || n instanceof UnwindNode || n instanceof RemNode) {
-	                /* No lowering, we generate LIR directly for these nodes. */
-	            } else if (n instanceof FloatConvertNode ) {
-	            	lowerFloatConvertNode((FloatConvertNode) n, tool);
-	            } else if (n instanceof NewArrayNode){
-	            	lowerNewArrayNode((NewArrayNode) n, tool);
-	            } else if (n instanceof AtomicAddNode){
-	            	lowerAtomicAddNode((AtomicAddNode) n, tool);
-	            } else {
-	        		super.lower(n, tool);
-	        	}
-	 }
-	 
-	private void lowerAtomicAddNode(AtomicAddNode atomicAdd, LoweringTool tool) {
-		
-		IndexedLocationNode location = createArrayLocation(atomicAdd.graph(), atomicAdd.elementKind(), atomicAdd.index(), false);
-		final AtomicWriteNode atomicWrite = new AtomicWriteNode(OCLBinaryIntrinsic.ATOMIC_ADD,atomicAdd.array(),atomicAdd.value(),location);
-		
-		atomicAdd.graph().add(atomicWrite);
-		
-		atomicAdd.graph().replaceFixedWithFixed(atomicAdd, atomicWrite);
-		
-	}
+    protected final HotSpotGraalRuntimeProvider runtime;
+    protected final ForeignCallsProvider foreignCalls;
 
-	private void lowerInvoke(Invoke invoke, LoweringTool tool, StructuredGraph graph) {
-		if (invoke.callTarget() instanceof MethodCallTargetNode) {
+    public OCLLoweringProvider(HotSpotGraalRuntimeProvider runtime, MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, TargetDescription target) {
+        super(metaAccess, target);
+        this.runtime = runtime;
+        this.foreignCalls = foreignCalls;
+    }
+
+    public void initialize(HotSpotProviders providers, HotSpotVMConfig config) {
+        super.initialize(providers, providers.getSnippetReflection());
+    }
+
+    @Override
+    public void lower(Node n, LoweringTool tool) {
+        StructuredGraph graph = (StructuredGraph) n.graph();
+
+        if (n instanceof Invoke) {
+            lowerInvoke((Invoke) n, tool, graph);
+        } else if (n instanceof VectorLoadNode) {
+            lowerVectorLoadNode((VectorLoadNode) n, tool);
+        } else if (n instanceof VectorStoreNode) {
+            lowerVectorStoreNode((VectorStoreNode) n, tool);
+        } else if (n instanceof AbstractDeoptimizeNode || n instanceof UnwindNode || n instanceof RemNode) {
+            /* No lowering, we generate LIR directly for these nodes. */
+        } else if (n instanceof FloatConvertNode) {
+            lowerFloatConvertNode((FloatConvertNode) n, tool);
+        } else if (n instanceof NewArrayNode) {
+            lowerNewArrayNode((NewArrayNode) n, tool);
+        } else if (n instanceof AtomicAddNode) {
+            lowerAtomicAddNode((AtomicAddNode) n, tool);
+        } else {
+            super.lower(n, tool);
+        }
+    }
+
+    private void lowerAtomicAddNode(AtomicAddNode atomicAdd, LoweringTool tool) {
+
+        IndexedLocationNode location = createArrayLocation(atomicAdd.graph(), atomicAdd.elementKind(), atomicAdd.index(), false);
+        final AtomicWriteNode atomicWrite = new AtomicWriteNode(OCLBinaryIntrinsic.ATOMIC_ADD, atomicAdd.array(), atomicAdd.value(), location);
+
+        atomicAdd.graph().add(atomicWrite);
+
+        atomicAdd.graph().replaceFixedWithFixed(atomicAdd, atomicWrite);
+
+    }
+
+    private void lowerInvoke(Invoke invoke, LoweringTool tool, StructuredGraph graph) {
+        if (invoke.callTarget() instanceof MethodCallTargetNode) {
             MethodCallTargetNode callTarget = (MethodCallTargetNode) invoke.callTarget();
             NodeInputList<ValueNode> parameters = callTarget.arguments();
             ValueNode receiver = parameters.size() <= 0 ? null : parameters.get(0);
@@ -141,111 +135,113 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
             if (loweredCallTarget == null) {
                 loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters, invoke.asNode().stamp(), signature, callTarget.targetMethod(), CallingConvention.Type.JavaCall,
-                                callTarget.invokeKind()));
+                        callTarget.invokeKind()));
             }
-            
+
             callTarget.replaceAndDelete(loweredCallTarget);
         }
-		
-	}
 
-	private void lowerFloatConvertNode(FloatConvertNode floatConvert, LoweringTool tool) {
-		final StructuredGraph graph = floatConvert.graph();
-		final CastNode asFloat = graph.addWithoutUnique(new CastNode(floatConvert.getKind(),floatConvert.getValue()));
-		
-		floatConvert.replaceAtUsages(asFloat);
-		
-	}
+    }
 
-	private void lowerVectorStoreNode(VectorStoreNode vectorStore, LoweringTool tool) {
-		StructuredGraph graph = vectorStore.graph();
+    private void lowerFloatConvertNode(FloatConvertNode floatConvert, LoweringTool tool) {
+        final StructuredGraph graph = floatConvert.graph();
+        final CastNode asFloat = graph.addWithoutUnique(new CastNode(floatConvert.getKind(), floatConvert.getValue()));
+
+        floatConvert.replaceAtUsages(asFloat);
+
+    }
+
+    private void lowerVectorStoreNode(VectorStoreNode vectorStore, LoweringTool tool) {
+        StructuredGraph graph = vectorStore.graph();
         Kind elementKind = vectorStore.elementKind();
         LocationNode location = createArrayLocation(graph, elementKind, vectorStore.index(), false);
         
-        VectorWriteNode vectorWrite = graph.addOrUnique(new VectorWriteNode(vectorStore.vectorKind(),vectorStore.array(),vectorStore.value(),location,BarrierType.PRECISE));
-        
-        graph.replaceFixed(vectorStore, vectorWrite);
-		
-	}
+        WriteNode vectorWrite = graph.addWithoutUnique(new WriteNode(vectorStore.array(),vectorStore.value(),location, BarrierType.PRECISE));
+        //VectorWriteNode vectorWrite = graph.addOrUnique(new VectorWriteNode(vectorStore.array(), vectorStore.value(), location, BarrierType.PRECISE));
 
-	private void lowerVectorLoadNode(VectorLoadNode vectorLoad, LoweringTool tool) {
-		StructuredGraph graph = vectorLoad.graph();
+        graph.replaceFixed(vectorStore, vectorWrite);
+
+    }
+
+    private void lowerVectorLoadNode(VectorLoadNode vectorLoad, LoweringTool tool) {
+        StructuredGraph graph = vectorLoad.graph();
         Kind elementKind = vectorLoad.elementKind();
         LocationNode location = createArrayLocation(graph, elementKind, vectorLoad.index(), false);
-        
-        VectorReadNode vectorRead = graph.addOrUnique(new VectorReadNode(vectorLoad.vectorKind(),vectorLoad.array(),location,BarrierType.NONE));
+
+        FloatingReadNode vectorRead = graph.addWithoutUnique(new FloatingReadNode(vectorLoad.array(),location,null,vectorLoad.stamp()));
+//        VectorReadNode vectorRead = graph.addOrUnique(new VectorReadNode(vectorLoad.vectorKind(), vectorLoad.array(), location, BarrierType.NONE));
         //vectorLoad.replaceAtUsages(vectorRead);
         graph.replaceFixed(vectorLoad, vectorRead);
-	}
-	
-	private void lowerNewArrayNode(NewArrayNode newArray, LoweringTool tool) {
-		final StructuredGraph graph = newArray.graph();
-		final ValueNode firstInput = newArray.length();
-		if(firstInput instanceof ConstantNode){
-			if(newArray.dimensionCount() == 1){
-				
-				final ConstantNode lengthNode = (ConstantNode) firstInput;
-				if(lengthNode.getValue() instanceof PrimitiveConstant){
-				final int length  = ((PrimitiveConstant) lengthNode.getValue()).asInt();
-				
-				final int offset = arrayBaseOffset(newArray.getKind());
-				final int size = offset + ( newArray.elementType().getKind().getByteCount() * length);
-				
-				final ConstantNode newLengthNode = ConstantNode.forInt(size,graph);
-				
-				final FixedArrayNode fixedArrayNode  = graph.addWithoutUnique(new FixedArrayNode(newArray.elementType(),newLengthNode));
-				newArray.replaceAtUsages(fixedArrayNode);
-				} else {
-					TornadoInternalError.shouldNotReachHere();
-				}
-				
-			} else {
-				TornadoInternalError.unimplemented("multi-dimensional array declarations are not supported");
-			}
-		} else {
-			TornadoInternalError.unimplemented("dynamically sized array declarations are not supported");
-		}
-	}
+    }
 
-	@Override
-	protected int arrayBaseOffset(Kind kind) {
-		return runtime.getArrayBaseOffset(kind);
-	}
+    private void lowerNewArrayNode(NewArrayNode newArray, LoweringTool tool) {
+        final StructuredGraph graph = newArray.graph();
+        final ValueNode firstInput = newArray.length();
+        if (firstInput instanceof ConstantNode) {
+            if (newArray.dimensionCount() == 1) {
 
-	@Override
-	protected int arrayLengthOffset() {
-		return runtime.getConfig().arrayLengthOffset;
-	}
-	
-	@Override
-	protected int fieldOffset(ResolvedJavaField f) {
-		HotSpotResolvedJavaField field = (HotSpotResolvedJavaField) f;
+                final ConstantNode lengthNode = (ConstantNode) firstInput;
+                if (lengthNode.getValue() instanceof PrimitiveConstant) {
+                    final int length = ((PrimitiveConstant) lengthNode.getValue()).asInt();
+
+                    final int offset = arrayBaseOffset(newArray.getKind());
+                    final int size = offset + (newArray.elementType().getKind().getByteCount() * length);
+
+                    final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
+
+                    final FixedArrayNode fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(newArray.elementType(), newLengthNode));
+                    newArray.replaceAtUsages(fixedArrayNode);
+                } else {
+                    shouldNotReachHere();
+                }
+
+            } else {
+                unimplemented("multi-dimensional array declarations are not supported");
+            }
+        } else {
+            unimplemented("dynamically sized array declarations are not supported");
+        }
+    }
+
+    @Override
+    protected int arrayBaseOffset(Kind kind) {
+        return runtime.getArrayBaseOffset(kind);
+    }
+
+    @Override
+    protected int arrayLengthOffset() {
+        return runtime.getConfig().arrayLengthOffset;
+    }
+
+    @Override
+    protected int fieldOffset(ResolvedJavaField f) {
+        HotSpotResolvedJavaField field = (HotSpotResolvedJavaField) f;
         return field.offset();
-	}
+    }
 
-	@Override
-	protected ValueNode createReadArrayComponentHub(StructuredGraph arg0, ValueNode arg1,
-			FixedNode arg2) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    protected ValueNode createReadArrayComponentHub(StructuredGraph arg0, ValueNode arg1,
+            FixedNode arg2) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	protected ValueNode createReadHub(StructuredGraph arg0, ValueNode arg1, GuardingNode arg2) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    protected ValueNode createReadHub(StructuredGraph arg0, ValueNode arg1, GuardingNode arg2) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	protected LocationIdentity initLocationIdentity() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    protected LocationIdentity initLocationIdentity() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	protected ValueNode staticFieldBase(StructuredGraph arg0, ResolvedJavaField arg1) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    protected ValueNode staticFieldBase(StructuredGraph arg0, ResolvedJavaField arg1) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

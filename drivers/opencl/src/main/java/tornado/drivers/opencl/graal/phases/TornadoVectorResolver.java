@@ -1,5 +1,20 @@
 package tornado.drivers.opencl.graal.phases;
 
+import com.oracle.graal.debug.Debug;
+import com.oracle.graal.graph.Node;
+import com.oracle.graal.graph.NodeWorkList;
+import com.oracle.graal.nodes.AbstractEndNode;
+import com.oracle.graal.nodes.AbstractMergeNode;
+import com.oracle.graal.nodes.FixedNode;
+import com.oracle.graal.nodes.PhiNode;
+import com.oracle.graal.nodes.StructuredGraph;
+import com.oracle.graal.nodes.ValueNode;
+import com.oracle.graal.nodes.ValuePhiNode;
+import com.oracle.graal.nodes.cfg.Block;
+import com.oracle.graal.nodes.cfg.ControlFlowGraph;
+import com.oracle.graal.nodes.extended.ValueAnchorNode;
+import com.oracle.graal.nodes.util.GraphUtil;
+import com.oracle.graal.phases.BasePhase;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -10,7 +25,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.nodes.vector.NewVectorNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
@@ -19,23 +33,6 @@ import tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorStoreElementProxyNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 import tornado.graal.phases.TornadoHighTierContext;
-
-import com.oracle.graal.debug.Debug;
-import com.oracle.graal.graph.Node;
-import com.oracle.graal.graph.NodeWorkList;
-import com.oracle.graal.nodes.AbstractEndNode;
-import com.oracle.graal.nodes.AbstractMergeNode;
-import com.oracle.graal.nodes.FixedNode;
-import com.oracle.graal.nodes.ParameterNode;
-import com.oracle.graal.nodes.PhiNode;
-import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.nodes.ValueNode;
-import com.oracle.graal.nodes.ValuePhiNode;
-import com.oracle.graal.nodes.cfg.Block;
-import com.oracle.graal.nodes.cfg.ControlFlowGraph;
-import com.oracle.graal.nodes.extended.ValueAnchorNode;
-import com.oracle.graal.nodes.util.GraphUtil;
-import com.oracle.graal.phases.BasePhase;
 
 public class TornadoVectorResolver extends BasePhase<TornadoHighTierContext> {
 
@@ -196,7 +193,7 @@ public class TornadoVectorResolver extends BasePhase<TornadoHighTierContext> {
 		/*
 		 * re-order vector operations 
 		 */
-		final int length = toReplace.getVectorKind().getVectorLength();
+		final int length = toReplace.getOCLKind().getVectorLength();
 		final BitSet dirty = new BitSet(length);
 		final Node[] stores = new Node[length];
 		final Deque<Node> ordered = new ArrayDeque<Node>();

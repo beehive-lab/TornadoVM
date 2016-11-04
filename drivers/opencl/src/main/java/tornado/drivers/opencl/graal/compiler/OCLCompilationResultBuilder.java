@@ -98,7 +98,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
         trace("Traversing CFG");
 
-        Set<Block> floating = new HashSet<Block>();
+        Set<Block> floating = new HashSet<>();
 
         cfg.computePostdominators();
         traverseCFG(cfg, (OpenCLAssembler) asm, floating, cfg.getStartBlock());
@@ -154,7 +154,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             if (loop.getExits().size() > 1) {
                 // multiple exists should converge at a merge node
                 exit = loop.getExits().get(0);
-                Set<Block> successors = new HashSet<Block>();
+                Set<Block> successors = new HashSet<>();
                 successors.addAll(dominates);
                 successors.removeAll(loop.getExits());
                 successors.removeAll(loop.getBlocks());

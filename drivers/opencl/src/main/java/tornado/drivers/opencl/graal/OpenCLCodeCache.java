@@ -21,12 +21,13 @@ import static tornado.common.Tornado.*;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.OCLKernel;
 import tornado.drivers.opencl.OCLProgram;
+import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.enums.OCLBuildStatus;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 
 public class OpenCLCodeCache implements CodeCacheProvider {
 
-    private final String OPENCL_BIN_DIR = getProperty("tornado.opencl.bindir","opencl-bin");
+    private final String OPENCL_BIN_DIR = getProperty("tornado.opencl.bindir", "opencl-bin");
     private OCLBackend backend;
 
     private final List<OpenCLInstalledCode> cache;
@@ -37,7 +38,7 @@ public class OpenCLCodeCache implements CodeCacheProvider {
         cache = new ArrayList<>();
     }
 
-    public OpenCLInstalledCode addMethod(ResolvedJavaMethod method, String entryPoint, byte[] source) {
+    public OpenCLInstalledCode installOCLProgram(String entryPoint, byte[] source) {
         if (backend == null) {
             Tornado.fatal("OpenCL code cache not initialised");
         }
@@ -70,23 +71,23 @@ public class OpenCLCodeCache implements CodeCacheProvider {
 
         if (status == OCLBuildStatus.CL_BUILD_SUCCESS) {
             Tornado.debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
-            if(Tornado.PRINT_COMPILE_TIMES){
-            System.out.printf("compile: kernel %s opencl %.9f\n",entryPoint,(t1 - t0) * 1e-9f);
+            if (PRINT_COMPILE_TIMES) {
+                System.out.printf("compile: kernel %s opencl %.9f\n", entryPoint, (t1 - t0) * 1e-9f);
             }
             cache.add(code);
-            
+
             // BUG Apple does not seem to like implementing the OpenCL spec properly, this causes a sigfault.
             if (DUMP_BINARIES && !backend.getDeviceContext().getPlatformContext().getPlatform().getVendor().equalsIgnoreCase("Apple")) {
                 final Path outDir = Paths.get(OPENCL_BIN_DIR);
-                if(!Files.exists(outDir)){
+                if (!Files.exists(outDir)) {
                     try {
                         Files.createDirectories(outDir);
                     } catch (IOException e) {
-                        error("unable to create OPENCL_BIN_DIR: %s",OPENCL_BIN_DIR);
+                        error("unable to create OPENCL_BIN_DIR: %s", OPENCL_BIN_DIR);
                         error(e.getMessage());
                     }
                 }
-                if(Files.isDirectory(outDir)){
+                if (Files.isDirectory(outDir)) {
                     program.dumpBinaries(OPENCL_BIN_DIR + entryPoint + "-platform-" + backend.getDeviceContext().getPlatformContext().getPlatformIndex());
                 }
             }
@@ -97,6 +98,10 @@ public class OpenCLCodeCache implements CodeCacheProvider {
         }
 
         return code;
+    }
+
+    public OpenCLInstalledCode addMethod(ResolvedJavaMethod method, String entryPoint, byte[] source) {
+       return installOCLProgram(entryPoint,source);
     }
 
     public OpenCLInstalledCode addMethod(ResolvedJavaMethod method, byte[] source) {
@@ -146,8 +151,8 @@ public class OpenCLCodeCache implements CodeCacheProvider {
     }
 
     @Override
-    public TargetDescription getTarget() {
-        return target;
+    public OCLTargetDescription getTarget() {
+        return (OCLTargetDescription) target;
     }
 
     @Override

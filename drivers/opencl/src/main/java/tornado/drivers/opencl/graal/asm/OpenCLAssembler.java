@@ -8,18 +8,23 @@ import com.oracle.graal.api.meta.PrimitiveConstant;
 import com.oracle.graal.api.meta.Value;
 import com.oracle.graal.asm.Assembler;
 import com.oracle.graal.asm.Label;
+import com.oracle.graal.hotspot.meta.HotSpotObjectConstant;
 import com.oracle.graal.lir.Variable;
 import java.util.ArrayList;
 import java.util.List;
-import tornado.common.exceptions.TornadoInternalError;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.CONSTANT_REGION_NAME;
+import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.GLOBAL_REGION_NAME;
 import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.HEAP_REF_NAME;
+import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.LOCAL_REGION_NAME;
+import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.PRIVATE_REGION_NAME;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.lir.OCLEmitable;
+import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.lir.OCLNullary;
 import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
-import tornado.graal.nodes.ArrayKind;
 import tornado.graal.nodes.vector.VectorKind;
 
 public class OpenCLAssembler extends Assembler {
@@ -43,6 +48,7 @@ public class OpenCLAssembler extends Assembler {
             return opcode.equals(other.opcode);
         }
 
+        @Override
         public String toString() {
             return opcode;
         }
@@ -52,13 +58,32 @@ public class OpenCLAssembler extends Assembler {
      * Nullary opcodes
      */
     public static class OCLNullaryOp extends OCLOp {
-        // @formatter:off
 
+        // @formatter:off
         public static final OCLNullaryOp RETURN = new OCLNullaryOp("return");
         public static final OCLNullaryOp SLOTS_BASE_ADDRESS = new OCLNullaryOp("(ulong) " + HEAP_REF_NAME);
         // @formatter:on
 
         protected OCLNullaryOp(String opcode) {
+            super(opcode);
+        }
+
+        public void emit(OCLCompilationResultBuilder crb) {
+            final OpenCLAssembler asm = crb.getAssembler();
+            emitOpcode(asm);
+        }
+    }
+
+    public static class OCLMemoryOp extends OCLNullaryOp {
+
+        // @formatter:off
+        public static final OCLMemoryOp GLOBAL_REGION = new OCLMemoryOp(GLOBAL_REGION_NAME);
+        public static final OCLMemoryOp LOCAL_REGION = new OCLMemoryOp(LOCAL_REGION_NAME);
+        public static final OCLMemoryOp PRIVATE_REGION = new OCLMemoryOp(PRIVATE_REGION_NAME);
+        public static final OCLMemoryOp CONSTANT_REGION = new OCLMemoryOp(CONSTANT_REGION_NAME);
+        // @formatter:on
+
+        protected OCLMemoryOp(String opcode) {
             super(opcode);
         }
 
@@ -161,6 +186,12 @@ public class OpenCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic GLOBAL_ID = new OCLUnaryIntrinsic("get_global_id");
         public static final OCLUnaryIntrinsic GLOBAL_SIZE = new OCLUnaryIntrinsic("get_global_size");
 
+        public static final OCLUnaryIntrinsic LOCAL_ID = new OCLUnaryIntrinsic("get_local_id");
+        public static final OCLUnaryIntrinsic LOCAL_SIZE = new OCLUnaryIntrinsic("get_local_size");
+
+        public static final OCLUnaryIntrinsic GROUP_ID = new OCLUnaryIntrinsic("get_group_id");
+        public static final OCLUnaryIntrinsic GROUP_SIZE = new OCLUnaryIntrinsic("get_group_size");
+
         public static final OCLUnaryIntrinsic ATOMIC_INC = new OCLUnaryIntrinsic("atomic_inc");
         public static final OCLUnaryIntrinsic ATOMIC_DEC = new OCLUnaryIntrinsic("atomic_dec");
 
@@ -219,6 +250,7 @@ public class OpenCLAssembler extends Assembler {
 
         public static final OCLUnaryTemplate MEM_CHECK = new OCLUnaryTemplate("mem check", "MEM_CHECK(%s)");
         public static final OCLUnaryTemplate INDIRECTION = new OCLUnaryTemplate("deref", "*(%s)");
+        public static final OCLUnaryTemplate CAST_TO_POINTER = new OCLUnaryTemplate("cast ptr", "(%s *)");
         public static final OCLUnaryTemplate LOAD_ADDRESS_ABS = new OCLUnaryTemplate("load address", "*(%s)");
         public static final OCLUnaryTemplate LOAD_ADDRESS_REL = new OCLUnaryTemplate("load address", "*(%s) + (ulong) " + OpenCLAssemblerConstants.HEAP_REF_NAME + ")");
         public static final OCLUnaryTemplate ADDRESS_OF = new OCLUnaryTemplate("address of", "&(%s)");
@@ -244,23 +276,8 @@ public class OpenCLAssembler extends Assembler {
                     template, asm.toString(value));
         }
 
-    }
-
-    public static class OCLMemorySpace extends OCLUnaryOp {
-        // @formatter:off
-
-        public static final OCLMemorySpace GLOBAL = new OCLMemorySpace(OpenCLAssemblerConstants.GLOBAL_MEM_MODIFIER);
-        public static final OCLMemorySpace SHARED = new OCLMemorySpace(OpenCLAssemblerConstants.SHARED_MEM_MODIFIER);
-        public static final OCLMemorySpace LOCAL = new OCLMemorySpace(OpenCLAssemblerConstants.LOCAL_MEM_MODIFIER);
-        public static final OCLMemorySpace PRIVATE = new OCLMemorySpace(OpenCLAssemblerConstants.PRIVATE_MEM_MODIFIER);
-        // @formatter:on
-
-        protected OCLMemorySpace(String opcode) {
-            super(opcode);
-        }
-
-        public void emit(OCLCompilationResultBuilder crb, Value value) {
-            TornadoInternalError.shouldNotReachHere();
+        public String getTemplate() {
+            return template;
         }
 
     }
@@ -288,6 +305,8 @@ public class OpenCLAssembler extends Assembler {
 
         public static final OCLBinaryOp ASSIGN = new OCLBinaryOp("=");
 
+        public static final OCLBinaryOp VECTOR_SELECT = new OCLBinaryOp(".");
+
         public static final OCLBinaryOp RELATIONAL_EQ = new OCLBinaryOp("==");
         public static final OCLBinaryOp RELATIONAL_NE = new OCLBinaryOp("!=");
         public static final OCLBinaryOp RELATIONAL_GT = new OCLBinaryOp(">");
@@ -302,13 +321,11 @@ public class OpenCLAssembler extends Assembler {
 
         public void emit(OCLCompilationResultBuilder crb, Value x, Value y) {
             final OpenCLAssembler asm = crb.getAssembler();
-            asm.value(
-                    crb, x);
+            asm.value(crb, x);
             asm.space();
             emitOpcode(asm);
             asm.space();
-            asm.value(
-                    crb, y);
+            asm.value(crb, y);
         }
     }
 
@@ -355,6 +372,7 @@ public class OpenCLAssembler extends Assembler {
             super(opcode);
         }
 
+        @Override
         public void emit(OCLCompilationResultBuilder crb, Value x, Value y) {
             final OpenCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);
@@ -908,19 +926,7 @@ public class OpenCLAssembler extends Assembler {
         String result = "";
         if (value instanceof Variable) {
             Variable var = (Variable) value;
-            //System.out.printf("variable: %s, class=%s\n",var,var.getClass().getName());
-            if (var.getPlatformKind() instanceof ArrayKind) {
-                result = String.format(
-                        "a%s%s", var.getPlatformKind().name().toLowerCase().charAt(
-                                0), var.index);
-            } else if (var.getPlatformKind().getVectorLength() == 1) {
-                result = String.format(
-                        "%s%s", var.getKind().getTypeChar(), var.index);
-            } else {
-                result = String.format(
-                        "v%s%s", var.getPlatformKind().name().toLowerCase().charAt(
-                                0), var.index);
-            }
+            return var.getName();
         } else if (value instanceof PrimitiveConstant) {
             PrimitiveConstant c = (PrimitiveConstant) value;
             result = String.format(
@@ -928,6 +934,12 @@ public class OpenCLAssembler extends Assembler {
             if (c.getKind().equals(
                     Kind.Float)) {
                 result += String.format("f");
+            }
+        } else if (value instanceof HotSpotObjectConstant){
+            HotSpotObjectConstant objConst = (HotSpotObjectConstant) value;
+//            System.out.printf("hs const: type=%s\n",objConst.getType().getName());
+            if(objConst.getKind().isObject() && objConst.getType().getName().compareToIgnoreCase("Ljava/lang/String;") == 0){
+                result = objConst.toValueString().replace("\n", "\\n").replace("\t","\\t") ;
             }
         } else if (value.getClass().getName().equals(
                 "com.oracle.graal.api.meta.NullConstant")) {
@@ -938,22 +950,25 @@ public class OpenCLAssembler extends Assembler {
                 result = String.format("0");
             }
         } else if (value instanceof OCLReturnSlot) {
-            final String type = OCLBackend.platformKindToOpenCLKind(value.getPlatformKind());
+            final String type = ((OCLKind) value.getPlatformKind()).name().toLowerCase();
             result = String.format("*((__global %s *) %s)", type, HEAP_REF_NAME);
-        } else if (value instanceof MemoryAccess) {
-            result = ((MemoryAccess) value).toValueString(this);
         } else if (value instanceof OCLNullary.Expr) {
             return ((OCLNullary.Expr) value).toString();
         } else {
-            System.out.printf("value: type=%s, value=%s\n", value.getClass().getName(), value);
-            TornadoInternalError.unimplemented();
+            unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
         }
         return result;
     }
 
     public void value(OCLCompilationResultBuilder crb, Value value) {
-//		System.out.printf("value: %s (%s)\n",value,value.getClass().getName());
-        if (value instanceof OCLEmitable && !(value instanceof MemoryAccess)) {
+//        System.out.printf("value: %s (%s)\n", value, value.getClass().getName());
+
+        if (value instanceof MemoryAccess) {
+            MemoryAccess access = (MemoryAccess) value;
+            access.emit(crb);
+        } else if (value instanceof OCLConstantValue) {
+            emit(((OCLConstantValue) value).getValue());
+        } else if (value instanceof OCLEmitable) {
             ((OCLEmitable) value).emit(crb);
         } else {
             emit(toString(value));
@@ -971,7 +986,8 @@ public class OpenCLAssembler extends Assembler {
         emitSymbol(OpenCLAssemblerConstants.IF_STMT);
         emitSymbol(OpenCLAssemblerConstants.BRACKET_OPEN);
 
-        value(crb, condition);
+        emit(toString(condition));
+        //value(crb, condition);
 
         emitSymbol(OpenCLAssemblerConstants.BRACKET_CLOSE);
         eol();

@@ -1,15 +1,14 @@
 package tornado.drivers.opencl.graal.compiler.plugins;
 
-import tornado.api.Vector;
-import tornado.common.Tornado;
-import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
-import tornado.graal.nodes.vector.VectorKind;
-
 import com.oracle.graal.api.meta.Kind;
 import com.oracle.graal.api.meta.ResolvedJavaType;
 import com.oracle.graal.graphbuilderconf.GraphBuilderContext;
 import com.oracle.graal.graphbuilderconf.NewInstancePlugin;
 import com.oracle.graal.hotspot.meta.HotSpotResolvedObjectTypeImpl;
+import tornado.api.Vector;
+import tornado.common.Tornado;
+import tornado.drivers.opencl.graal.lir.OCLKind;
+import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 
 public class TornadoNewInstancePlugin implements NewInstancePlugin {
 
@@ -25,9 +24,9 @@ public class TornadoNewInstancePlugin implements NewInstancePlugin {
 	}
 
 	private boolean createVectorInstance(GraphBuilderContext b, ResolvedJavaType type) {
-		VectorKind vectorKind = resolveVectorKind(type);
-		if(vectorKind != VectorKind.Illegal){
-			b.push(Kind.Object, b.recursiveAppend(new VectorValueNode(type,vectorKind)));
+		OCLKind vectorKind = resolveOCLKind(type);
+		if(vectorKind != OCLKind.ILLEGAL){
+			b.push(Kind.Object, b.recursiveAppend(new VectorValueNode(vectorKind)));
 			return true;
 		} 
 		
@@ -36,13 +35,13 @@ public class TornadoNewInstancePlugin implements NewInstancePlugin {
 	
 	
 
-	private VectorKind resolveVectorKind(ResolvedJavaType type) {
+	private OCLKind resolveOCLKind(ResolvedJavaType type) {
 		if(type instanceof HotSpotResolvedObjectTypeImpl){
 			final HotSpotResolvedObjectTypeImpl resolvedType = (HotSpotResolvedObjectTypeImpl) type;
-			return VectorKind.fromClass(resolvedType.mirror());
+			return OCLKind.fromClass(resolvedType.mirror());
 		}
 	
-		return VectorKind.Illegal;
+		return OCLKind.ILLEGAL;
 	}
 
 }

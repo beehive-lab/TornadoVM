@@ -1,8 +1,5 @@
 package tornado.drivers.opencl.graal.nodes.vector;
 
-import tornado.common.exceptions.TornadoInternalError;
-import tornado.graal.nodes.vector.VectorKind;
-
 import com.oracle.graal.api.meta.Kind;
 import com.oracle.graal.api.meta.ResolvedJavaType;
 import com.oracle.graal.compiler.common.type.Stamp;
@@ -11,10 +8,14 @@ import com.oracle.graal.graph.*;
 import com.oracle.graal.nodeinfo.*;
 import com.oracle.graal.nodes.*;
 import com.oracle.graal.nodes.type.StampTool;
+import tornado.common.exceptions.TornadoInternalError;
+import tornado.drivers.opencl.graal.OCLStampFactory;
+import tornado.drivers.opencl.graal.lir.OCLKind;
 
 /**
  * The {@code StoreIndexedNode} represents a write to an array element.
  */
+@Deprecated()
 @NodeInfo(nameTemplate = "Load .s{p#lane}")
 public final class VectorLoadElementProxyNode extends FixedWithNextNode {
 
@@ -26,15 +27,15 @@ public final class VectorLoadElementProxyNode extends FixedWithNextNode {
 	@OptionalInput(InputType.Association)
 	ValueNode												laneOrigin;
 
-	protected final VectorKind								kind;
+	protected final OCLKind								kind;
 
 	
 	protected VectorLoadElementProxyNode(
 			NodeClass<? extends VectorLoadElementProxyNode> c,
-			VectorKind kind,
+			OCLKind kind,
 			ValueNode origin,
 			ValueNode lane) {
-		super(c, createStamp(origin, kind.getElementKind()));
+		super(c, OCLStampFactory.getStampFor(kind));
 		this.kind = kind;
 		this.origin = origin;
 		this.laneOrigin = lane;
@@ -65,11 +66,11 @@ public final class VectorLoadElementProxyNode extends FixedWithNextNode {
 	}
 
 	public VectorLoadElementProxyNode(VectorValueNode vector, ValueNode lane, ValueNode value) {
-		this(TYPE, vector.getVectorKind(), vector, lane);
+		this(TYPE, vector.getOCLKind(), vector, lane);
 	}
 
 	public VectorLoadElementProxyNode(
-			VectorKind vectorKind,
+			OCLKind vectorKind,
 			ValueNode origin,
 			ValueNode lane) {
 		this(TYPE, vectorKind, origin, lane);
@@ -86,10 +87,11 @@ public final class VectorLoadElementProxyNode extends FixedWithNextNode {
 
 	@Override
 	public boolean inferStamp() {
-		return updateStamp(createStamp(origin, kind.getElementKind()));
+            return true;
+//return updateStamp(createStamp(origin, kind.getElementKind()));
 	}
 
-	public VectorKind getVectorKind() {
+	public OCLKind getOCLKind() {
 		return kind;
 	}
 
