@@ -25,10 +25,10 @@ public abstract class TornadoBackend<P extends Providers> extends Backend {
 
     public abstract String decodeDeopt(long value);
 
-    @SuppressWarnings("unchecked")
+ 
     @Override
     public Providers getProviders() {
-        return (P) super.getProviders();
+        return super.getProviders();
     }
 
 }
