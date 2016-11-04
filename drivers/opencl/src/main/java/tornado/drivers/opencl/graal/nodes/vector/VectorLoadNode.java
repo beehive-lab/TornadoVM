@@ -1,11 +1,12 @@
 package tornado.drivers.opencl.graal.nodes.vector;
 
-import com.oracle.graal.api.meta.*;
-import com.oracle.graal.graph.*;
-import com.oracle.graal.graph.spi.*;
-import com.oracle.graal.nodeinfo.*;
-import com.oracle.graal.nodes.*;
+import com.oracle.graal.graph.Node;
+import com.oracle.graal.graph.NodeClass;
+import com.oracle.graal.graph.spi.CanonicalizerTool;
+import com.oracle.graal.nodeinfo.NodeInfo;
+import com.oracle.graal.nodes.ValueNode;
 import com.oracle.graal.nodes.java.AccessIndexedNode;
+import jdk.vm.ci.meta.JavaKind;
 import tornado.drivers.opencl.graal.OCLStamp;
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLKind;
@@ -25,12 +26,12 @@ public class VectorLoadNode extends AccessIndexedNode {
     /**
      * Creates a new LoadIndexedNode.
      *
-     * @param kind the element type
+     * @param kind  the element type
      * @param array the instruction producing the array
      * @param index the instruction producing the index
      */
     public VectorLoadNode(OCLKind kind, ValueNode array, ValueNode index) {
-        super(TYPE, OCLStampFactory.getStampFor(kind), array, index, Kind.Illegal);
+        super(TYPE, OCLStampFactory.getStampFor(kind), array, index, JavaKind.Illegal);
         this.kind = kind;
     }
 
@@ -51,7 +52,7 @@ public class VectorLoadNode extends AccessIndexedNode {
     }
 
     @Override
-    public Kind elementKind() {
+    public JavaKind elementKind() {
         return ((OCLStamp) stamp()).getOCLKind().getElementKind().asJavaKind();
     }
 }
