@@ -13,7 +13,7 @@ import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 public class OCLDeviceContext extends TornadoLogger implements Initialisable {
 
     private static final long BUMP_BUFFER_SIZE = Long.decode(getProperty("tornado.opencl.bump.size", "0x100000"));
-    private static final String[] BUMP_DEVICES = parseDevices(getProperty("tornado.opencl.bump.devices","Iris Pro"));
+    private static final String[] BUMP_DEVICES = parseDevices(getProperty("tornado.opencl.bump.devices", "Iris Pro"));
 
     private final OCLDevice device;
     private final OCLCommandQueue queue;
@@ -47,9 +47,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         }
     }
 
-    private static String[] parseDevices(String str){
+    private static String[] parseDevices(String str) {
         return str.split(";");
     }
+
     public List<OCLEvent> events() {
         return queue.getEvents();
     }
@@ -227,7 +228,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
     }
 
     /*
-	 * Synchronous reads from device
+     * Synchronous reads from device
      */
     public void readBuffer(long bufferId, long offset, long bytes,
             byte[] array, int[] waitEvents) {
@@ -261,8 +262,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
 
     }
-
-    
 
     public int enqueueBarrier(int[] events) {
         return queue.enqueueBarrier(events);
@@ -317,12 +316,12 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
     public long getBumpBuffer() {
         return bumpBuffer;
     }
-    
-    public Event resolveEvent(int event){
+
+    public Event resolveEvent(int event) {
         return queue.resolveEvent(event);
     }
-    
-    public void markEvent(){
+
+    public void markEvent() {
         queue.markEvent();
     }
 
