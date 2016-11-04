@@ -1,14 +1,13 @@
 package tornado.drivers.opencl;
 
-import com.oracle.graal.api.code.Architecture;
-import com.oracle.graal.api.code.ReferenceMap;
-import com.oracle.graal.api.code.TargetDescription;
-import com.oracle.graal.api.meta.Kind;
-import com.oracle.graal.api.meta.LIRKind;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import com.oracle.graal.compiler.common.LIRKind;
+import jdk.vm.ci.code.Architecture;
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.JavaKind;
 import tornado.drivers.opencl.graal.OCLArchitecture;
 import tornado.drivers.opencl.graal.lir.OCLKind;
+
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLTargetDescription extends TargetDescription {
 
@@ -26,26 +25,16 @@ public class OCLTargetDescription extends TargetDescription {
     //@formatter:off
     private static final OCLKind[][] VECTOR_LOOKUP_TABLE = new OCLKind[][]{
         {OCLKind.UCHAR2, OCLKind.UCHAR3, OCLKind.UCHAR4, OCLKind.UCHAR8, OCLKind.UCHAR16},
-        {OCLKind.CHAR2, OCLKind.CHAR3, OCLKind.CHAR4, OCLKind.CHAR8, OCLKind.CHAR16
-        },
-        {OCLKind.USHORT2, OCLKind.USHORT3, OCLKind.USHORT4, OCLKind.USHORT8, OCLKind.USHORT16
-        },
-        {OCLKind.SHORT2, OCLKind.SHORT3, OCLKind.SHORT4, OCLKind.SHORT8, OCLKind.SHORT16
-        },
-        {OCLKind.USHORT2, OCLKind.USHORT3, OCLKind.USHORT4, OCLKind.USHORT8, OCLKind.USHORT16
-        },
-        {OCLKind.INT2, OCLKind.INT3, OCLKind.INT4, OCLKind.INT8, OCLKind.INT16
-        },
-        {OCLKind.UINT2, OCLKind.UINT3, OCLKind.UINT4, OCLKind.UINT8, OCLKind.UINT16
-        },
-        {OCLKind.LONG2, OCLKind.LONG3, OCLKind.LONG4, OCLKind.LONG8, OCLKind.LONG16
-        },
-        {OCLKind.ULONG2, OCLKind.ULONG3, OCLKind.ULONG4, OCLKind.ULONG8, OCLKind.ULONG16
-        },
-        {OCLKind.FLOAT2, OCLKind.FLOAT3, OCLKind.FLOAT4, OCLKind.FLOAT8, OCLKind.FLOAT16
-        },
-        {OCLKind.DOUBLE2, OCLKind.DOUBLE3, OCLKind.DOUBLE4, OCLKind.DOUBLE8, OCLKind.DOUBLE16
-        }
+        {OCLKind.CHAR2, OCLKind.CHAR3, OCLKind.CHAR4, OCLKind.CHAR8, OCLKind.CHAR16},
+        {OCLKind.USHORT2, OCLKind.USHORT3, OCLKind.USHORT4, OCLKind.USHORT8, OCLKind.USHORT16},
+        {OCLKind.SHORT2, OCLKind.SHORT3, OCLKind.SHORT4, OCLKind.SHORT8, OCLKind.SHORT16},
+        {OCLKind.USHORT2, OCLKind.USHORT3, OCLKind.USHORT4, OCLKind.USHORT8, OCLKind.USHORT16},
+        {OCLKind.INT2, OCLKind.INT3, OCLKind.INT4, OCLKind.INT8, OCLKind.INT16},
+        {OCLKind.UINT2, OCLKind.UINT3, OCLKind.UINT4, OCLKind.UINT8, OCLKind.UINT16},
+        {OCLKind.LONG2, OCLKind.LONG3, OCLKind.LONG4, OCLKind.LONG8, OCLKind.LONG16},
+        {OCLKind.ULONG2, OCLKind.ULONG3, OCLKind.ULONG4, OCLKind.ULONG8, OCLKind.ULONG16},
+        {OCLKind.FLOAT2, OCLKind.FLOAT3, OCLKind.FLOAT4, OCLKind.FLOAT8, OCLKind.FLOAT16},
+        {OCLKind.DOUBLE2, OCLKind.DOUBLE3, OCLKind.DOUBLE4, OCLKind.DOUBLE8, OCLKind.DOUBLE16}
     };
 //@formatter:on
 
@@ -101,17 +90,18 @@ public class OCLTargetDescription extends TargetDescription {
     }
 
     public OCLKind getVectorByLength(OCLKind oclKind, int vectorLength) {
-        if(lookupTypeIndex(oclKind)==-1)
+        if (lookupTypeIndex(oclKind) == -1) {
             return OCLKind.ILLEGAL;
-        
-        if(vectorLength == 1){
+        }
+
+        if (vectorLength == 1) {
             return oclKind;
         }
-        
+
         return VECTOR_LOOKUP_TABLE[lookupTypeIndex(oclKind)][lookupLengthIndex(vectorLength)];
     }
 
-    public OCLKind getOCLKind(Kind javaKind, int vectorLength) {
+    public OCLKind getOCLKind(JavaKind javaKind, int vectorLength) {
         int index = -1;
         switch (javaKind) {
             case Byte:
@@ -144,62 +134,25 @@ public class OCLTargetDescription extends TargetDescription {
         return VECTOR_LOOKUP_TABLE[index][lookupLengthIndex(vectorLength)];
     }
 
-    public LIRKind getLIRKind(Kind javaKind, int vectorLength) {
+    public LIRKind getLIRKind(JavaKind javaKind, int vectorLength) {
         return LIRKind.value(getOCLKind(javaKind, vectorLength));
     }
 
-    public OCLKind getOCLKind(Kind javaKind) {
-        OCLKind oclKind = OCLKind.ILLEGAL;
-        switch (javaKind) {
-            case Boolean:
-                oclKind = OCLKind.BOOL;
-                break;
-            case Byte:
-                oclKind = OCLKind.CHAR;
-                break;
-            case Short:
-                oclKind = (javaKind.isUnsigned()) ? OCLKind.USHORT : OCLKind.SHORT;
-                break;
-            case Char:
-                oclKind = OCLKind.USHORT;
-                break;
-            case Int:
-                oclKind = (javaKind.isUnsigned()) ? OCLKind.UINT : OCLKind.INT;
-                break;
-            case Long:
-                oclKind = (javaKind.isUnsigned()) ? OCLKind.ULONG : OCLKind.LONG;
-                break;
-            case Float:
-                oclKind = OCLKind.FLOAT;
-                break;
-            case Double:
-                oclKind = OCLKind.DOUBLE;
-                break;
-            case Object:
-                oclKind = getArch().getWordKind();
-                break;
-            case Illegal:
-                oclKind = OCLKind.ILLEGAL;
-                break;
-            default:
-                shouldNotReachHere("illegal java type for %s", javaKind.name());
-        }
-
-        return oclKind;
+    public OCLKind getOCLKind(JavaKind javaKind) {
+        return (OCLKind) arch.getPlatformKind(javaKind);
     }
 
-    @Override
-    public LIRKind getLIRKind(Kind javaKind) {
-        if (javaKind == Kind.Void) {
-            return LIRKind.value(Kind.Void);
-        }
-        return LIRKind.value(getOCLKind(javaKind));
-    }
-
-    @Override
-    public ReferenceMap createReferenceMap(boolean hasRegisters, int stackSlotCount) {
-        unimplemented();
-        return null;
-    }
-
+//    @Override
+//    public LIRKind getLIRKind(JavaKind javaKind) {
+//        if (javaKind == JavaKind.Void) {
+//            return LIRKind.fromJavaKind(arch, javaKind);
+//        }
+//        return LIRKind.value(getOCLKind(javaKind));
+//    }
+//
+//    @Override
+//    public ReferenceMap createReferenceMap(boolean hasRegisters, int stackSlotCount) {
+//        unimplemented();
+//        return null;
+//    }
 }
