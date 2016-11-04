@@ -14,4 +14,10 @@ Makefile.in
 *.log
 *.csv
 autom4te.cache
-
+/results/*
+/opencl/*
+/drivers/opencl/jni-bindings/config.status
+/drivers/opencl/jni-bindings/configure
+/drivers/opencl/jni-bindings/libtool
+*.dylib
+*.a
