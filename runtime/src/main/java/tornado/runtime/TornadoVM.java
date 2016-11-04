@@ -396,7 +396,7 @@ public class TornadoVM extends TornadoLogger {
             final Meta meta = task.meta();
             for (final Event profile : meta.getProfiles()) {
                 if (profile.getStatus() == TornadoExecutionStatus.COMPLETE) {
-                    System.out.printf("task: %s %.9f %9d %9d %9d\n", task.getName().substring(7), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(), profile.getEndTime());
+                    System.out.printf("task: %s %s %.9f %9d %9d %9d\n", task.getDeviceMapping().getDeviceName(),task.getName().substring(7), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(), profile.getEndTime());
                 }
             }
         }
