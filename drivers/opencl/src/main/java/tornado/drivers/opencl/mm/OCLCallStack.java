@@ -3,8 +3,8 @@ package tornado.drivers.opencl.mm;
 import tornado.common.CallStack;
 import tornado.common.DeviceObjectState;
 import tornado.common.RuntimeUtilities;
-import tornado.common.Tornado;
 import static tornado.common.Tornado.DEBUG;
+import static tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
 import static tornado.common.Tornado.debug;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import tornado.drivers.opencl.OCLDeviceContext;
@@ -144,7 +144,7 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
                 debug("arg : [0x%x] type=%s, value=%s, address=0x%x (0x%x)", arg.hashCode(), arg.getClass()
                         .getSimpleName(), arg, state.getAddress(), state.getOffset());
             }
-            if (Tornado.OPENCL_USE_RELATIVE_ADDRESSES) {
+            if (OPENCL_USE_RELATIVE_ADDRESSES) {
                 buffer.putLong(state.getOffset());
             } else {
                 buffer.putLong(state.getAddress());
