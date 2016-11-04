@@ -67,7 +67,7 @@ public class OCLArchitecture extends Architecture {
 
     public OCLArchitecture(final OCLKind wordKind, final ByteOrder byteOrder) {
         super("Tornado OpenCL", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, 0, 0);
-        sp = new OCLRegister(1, STACK_REF_NAME, getWordKind());
+        sp = new OCLRegister(1, STACK_REF_NAME, wordKind);
         abiRegisters = new OCLRegister[]{hp, sp, cp, lp, pp};
     }
 
@@ -100,7 +100,7 @@ public class OCLArchitecture extends Architecture {
                 oclKind = OCLKind.DOUBLE;
                 break;
             case Object:
-                oclKind = getWordKind();
+                oclKind = (OCLKind) getWordKind();
                 break;
             case Illegal:
                 oclKind = OCLKind.ILLEGAL;
@@ -138,17 +138,4 @@ public class OCLArchitecture extends Architecture {
         }
         return sb.toString();
     }
-
-    @Override
-    public final OCLKind getWordKind() {
-        if (getWordSize() == 4) {
-            return OCLKind.UINT;
-        } else if (getWordSize() == 8) {
-            return OCLKind.ULONG;
-        } else {
-            shouldNotReachHere();
-        }
-        return OCLKind.ILLEGAL;
-    }
-
 }
