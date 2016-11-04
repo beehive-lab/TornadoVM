@@ -3,8 +3,6 @@ package tornado.collections.types;
 import java.nio.FloatBuffer;
 import java.util.Arrays;
 
-import tornado.collections.types.FloatOps;
-import tornado.collections.types.VectorFloat;
 
 
 public class MatrixFloat  implements PrimitiveStorage<FloatBuffer> {

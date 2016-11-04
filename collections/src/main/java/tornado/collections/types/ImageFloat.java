@@ -1,7 +1,6 @@
 package tornado.collections.types;
 
 import java.nio.FloatBuffer;
-
 import tornado.collections.math.TornadoMath;
 import tornado.common.exceptions.TornadoInternalError;
 
