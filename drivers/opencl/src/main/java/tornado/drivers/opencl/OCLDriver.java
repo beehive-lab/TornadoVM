@@ -12,7 +12,6 @@ import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.OCLSuitesProvider;
 import tornado.drivers.opencl.graal.OpenCLCodeCache;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
-import tornado.graal.TornadoTargetDescription;
 import tornado.runtime.TornadoDriver;
 
 public final class OCLDriver extends TornadoLogger implements TornadoDriver {
@@ -54,7 +53,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
 //        final TornadoTargetDescription target = new TornadoTargetDescription(
 //                new OCLArchitecture(device.getWordSize(), device.getByteOrder()));
         final OpenCLCodeCache codeCache = null;
-        final TornadoTargetDescription target = new TornadoTargetDescription(
+        final OCLTargetDescription target = new OCLTargetDescription(
                 new OCLArchitecture(device.getWordSize(), device.getByteOrder()));
         final OCLLoweringProvider lowerer = new OCLLoweringProvider(
                 vmRuntime, vmProviders.getMetaAccess(),
