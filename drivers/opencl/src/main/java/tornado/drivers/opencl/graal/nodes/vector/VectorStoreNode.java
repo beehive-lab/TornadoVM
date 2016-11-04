@@ -1,10 +1,10 @@
 package tornado.drivers.opencl.graal.nodes.vector;
 
-import com.oracle.graal.api.meta.*;
-import com.oracle.graal.graph.*;
-import com.oracle.graal.nodeinfo.*;
-import com.oracle.graal.nodes.*;
+import com.oracle.graal.graph.NodeClass;
+import com.oracle.graal.nodeinfo.NodeInfo;
+import com.oracle.graal.nodes.ValueNode;
 import com.oracle.graal.nodes.java.AccessIndexedNode;
+import jdk.vm.ci.meta.JavaKind;
 import tornado.drivers.opencl.graal.OCLStamp;
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLKind;
@@ -30,12 +30,12 @@ public final class VectorStoreNode extends AccessIndexedNode {
     }
 
     public VectorStoreNode(OCLKind vectorKind, ValueNode array, ValueNode index, ValueNode value) {
-        super(TYPE, OCLStampFactory.getStampFor(vectorKind), array, index, Kind.Illegal);
+        super(TYPE, OCLStampFactory.getStampFor(vectorKind), array, index, JavaKind.Illegal);
         this.value = value;
     }
-    
+
     @Override
-    public Kind elementKind(){
+    public JavaKind elementKind() {
         return ((OCLStamp) stamp()).getOCLKind().getElementKind().asJavaKind();
     }
 
