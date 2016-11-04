@@ -1,7 +1,7 @@
 package tornado.drivers.opencl.enums;
 
 public enum OCLDeviceType {
-
+        Unknown (-1),
 	CL_DEVICE_TYPE_DEFAULT(1 << 0),
 	CL_DEVICE_TYPE_CPU(1 << 1),
 	CL_DEVICE_TYPE_GPU(1 << 2),
