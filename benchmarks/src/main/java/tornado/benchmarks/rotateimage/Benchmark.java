@@ -1,7 +1,7 @@
 package tornado.benchmarks.rotateimage;
 
-import tornado.benchmarks.BenchmarkRunner;
 import tornado.benchmarks.BenchmarkDriver;
+import tornado.benchmarks.BenchmarkRunner;
 import tornado.common.DeviceMapping;
 
 public class Benchmark extends BenchmarkRunner{
@@ -31,7 +31,7 @@ public class Benchmark extends BenchmarkRunner{
 
     @Override
     protected String getIdString() {
-        return String.format("%s-%d-%d",iterations,width,height);
+        return String.format("%s-%d-%d-%d",getName(),iterations,width,height);
     }
 
     @Override
