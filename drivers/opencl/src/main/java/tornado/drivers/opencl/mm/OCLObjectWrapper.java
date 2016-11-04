@@ -12,7 +12,14 @@ import tornado.api.Payload;
 import tornado.api.Vector;
 import tornado.common.ObjectBuffer;
 import tornado.common.RuntimeUtilities;
-import tornado.common.Tornado;
+import static tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static tornado.common.Tornado.DEBUG;
+import static tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
+import static tornado.common.Tornado.debug;
+import static tornado.common.Tornado.trace;
+import static tornado.common.Tornado.warn;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.runtime.TornadoRuntime;
@@ -50,6 +57,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
         runtime = TornadoRuntime.getVMRuntimeProvider();
         hubOffset = runtime.getConfig().hubOffset;
         fieldsOffset = runtime.getConfig().instanceKlassFieldsOffset;
+        bufferOffset = -1;
 
         resolvedType = (HotSpotResolvedJavaType) TornadoRuntime
                 .getVMProviders().getMetaAccess()
@@ -85,8 +93,8 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 }
             }
 
-            if (Tornado.DEBUG) {
-                Tornado.trace("field: name=%s, kind=%s, offset=%d",
+            if (DEBUG) {
+                trace("field: name=%s, kind=%s, offset=%d",
                         field.getName(), type.getName(), field.offset());
             }
             bytes = field.offset();
@@ -99,29 +107,24 @@ public class OCLObjectWrapper implements ObjectBuffer {
                     wrappedField = new OCLIntArrayWrapper(device, isFinal);
                 } else if (type == float[].class) {
                     wrappedField = new OCLFloatArrayWrapper(device, isFinal);
-
                 } else if (type == double[].class) {
                     wrappedField = new OCLDoubleArrayWrapper(device, isFinal);
 
                 } else if (type == long[].class) {
                     wrappedField = new OCLLongArrayWrapper(device, isFinal);
-
                 } else if (type == short[].class) {
                     wrappedField = new OCLShortArrayWrapper(device, isFinal);
                 } else if (type == byte[].class) {
                     wrappedField = new OCLByteArrayWrapper(device, isFinal);
                 } else {
-                    Tornado.warn("cannot wrap field: array type=%s",
-                            type.getName());
-
+                    warn("cannot wrap field: array type=%s", type.getName());
                 }
             } else if (field.getKind().isObject()) {
                 try {
                     wrappedField = new OCLObjectWrapper(device,
                             reflectedField.get(object));
                 } catch (IllegalArgumentException | IllegalAccessException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    shouldNotReachHere();
                 }
             } else {
                 this.isFinal &= isFinal;
@@ -134,27 +137,33 @@ public class OCLObjectWrapper implements ObjectBuffer {
             index++;
         }
 
-        if (Tornado.DEBUG) {
-            Tornado.trace("object: type=%s, size=%s", resolvedType.getName(),
-                    RuntimeUtilities.humanReadableByteCount(bytes, true));
+        if (DEBUG) {
+            trace("object: type=%s, size=%s", resolvedType.getName(),
+                    humanReadableByteCount(bytes, true));
         }
 
     }
 
     @Override
     public void allocate(Object ref) throws TornadoOutOfMemoryException {
-        if (Tornado.DEBUG) {
-            Tornado.debug("object: object=0x%x, class=%s, size=%s",
+        if (DEBUG) {
+            debug("object: object=0x%x, class=%s, size=%s",
                     ref.hashCode(), ref.getClass().getName(),
-                    RuntimeUtilities.humanReadableByteCount(bytes, true));
+                    humanReadableByteCount(bytes, true));
         }
-        buffer = ByteBuffer.allocate((int) bytes);
-        buffer.order(deviceContext.getByteOrder());
-        bufferOffset = deviceContext.getMemoryManager().tryAllocate(ref.getClass(), bytes,
-                32, getAlignment());
 
-        if (Tornado.DEBUG) {
-            Tornado.debug("object: object=0x%x @ 0x%x (0x%x)", ref.hashCode(),
+        if (buffer == null) {
+            buffer = ByteBuffer.allocate((int) bytes);
+            buffer.order(deviceContext.getByteOrder());
+        }
+
+        if (bufferOffset == -1) {
+            bufferOffset = deviceContext.getMemoryManager().tryAllocate(ref.getClass(), bytes,
+                    32, getAlignment());
+        }
+
+        if (DEBUG) {
+            debug("object: object=0x%x @ 0x%x (0x%x)", ref.hashCode(),
                     toAbsoluteAddress(), toRelativeAddress());
         }
         for (FieldBuffer buffer : wrappedFields) {
@@ -173,8 +182,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
             if (type.getSuperclass() != null) {
                 result = getField(type.getSuperclass(), name);
             } else {
-                Tornado.fatal("unable to get field");
-                e.printStackTrace();
+                shouldNotReachHere("unable to get field: class=%s, field=%s", type.getName(), name);
             }
         }
         return result;
@@ -186,17 +194,16 @@ public class OCLObjectWrapper implements ObjectBuffer {
             try {
                 PrimitiveSerialiser.put(buffer, field.get(obj));
             } catch (IllegalArgumentException | IllegalAccessException e) {
-                Tornado.fatal("unable to write primitive to buffer");
+                shouldNotReachHere("unable to write primitive to buffer: ", e.getMessage());
             }
         } else if (wrappedFields[index] != null) {
-            if (Tornado.OPENCL_USE_RELATIVE_ADDRESSES) {
+            if (OPENCL_USE_RELATIVE_ADDRESSES) {
                 buffer.putLong(wrappedFields[index].toRelativeAddress());
             } else {
                 buffer.putLong(wrappedFields[index].toAbsoluteAddress());
             }
         } else {
-            Tornado.fatal("unimplemented - field type %s",
-                    fieldType.getName());
+            unimplemented("field type %s", fieldType.getName());
         }
     }
 
@@ -218,13 +225,12 @@ public class OCLObjectWrapper implements ObjectBuffer {
                     field.setDouble(obj, buffer.getDouble());
                 }
             } catch (IllegalAccessException e) {
-                e.printStackTrace();
+                shouldNotReachHere("unable to read field: ", e.getMessage());
             }
         } else if (wrappedFields[index] != null) {
             buffer.getLong();
         } else {
-            Tornado.fatal("unimplemented - field type %s",
-                    fieldType.getName());
+            unimplemented("field type %s", fieldType.getName());
         }
     }
 
@@ -245,8 +251,8 @@ public class OCLObjectWrapper implements ObjectBuffer {
         buffer.rewind();
 
         buffer.position(hubOffset);
-        if (Tornado.DEBUG) {
-            Tornado.trace("object: hub offset=%d, value=0x%x", hubOffset,
+        if (DEBUG) {
+            trace("object: hub offset=%d, value=0x%x", hubOffset,
                     ((PrimitiveConstant) resolvedType.getObjectHub()).asLong());
         }
         buffer.putLong(((PrimitiveConstant) resolvedType.getObjectHub())
@@ -258,8 +264,8 @@ public class OCLObjectWrapper implements ObjectBuffer {
             for (int i = 0; i < fields.length; i++) {
                 HotSpotResolvedJavaField field = fields[i];
                 Field f = getField(type, field.getName());
-                if (Tornado.DEBUG) {
-                    Tornado.trace("writing field: name=%s, offset=%d",
+                if (DEBUG) {
+                    trace("writing field: name=%s, offset=%d",
                             field.getName(), field.offset());
                 }
 
@@ -268,7 +274,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
             }
 
         }
-//         dump();
+//        dump();
     }
 
     private void deserialise(Object object) {
@@ -281,8 +287,8 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 HotSpotResolvedJavaField field = fields[i];
                 Field f = getField(type, field.getName());
                 f.setAccessible(true);
-                if (Tornado.DEBUG) {
-                    Tornado.trace("reading field: name=%s, offset=%d",
+                if (DEBUG) {
+                    trace("reading field: name=%s, offset=%d",
                             field.getName(), field.offset());
                 }
                 readFieldFromBuffer(i, f, object);
@@ -462,7 +468,6 @@ public class OCLObjectWrapper implements ObjectBuffer {
 
             for (final FieldBuffer fb : wrappedFields) {
                 if (fb != null && fb.needsWrite()) {
-//                     System.out.printf("field: write %s onDevice=%s, isFinal=%s\n",fb.getFieldName(), fb.onDevice(), fb.isFinal());
                     internalEvents[index] = fb.enqueueWrite(ref, events);
                     index++;
                 }
