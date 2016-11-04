@@ -30,5 +30,7 @@ public interface DeviceMapping {
         public void flushEvents();
 	public int enqueueBarrier();
         public void sync();
+        
+        public String getDeviceName();
 	
 }

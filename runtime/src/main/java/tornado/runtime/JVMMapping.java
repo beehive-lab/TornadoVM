@@ -89,5 +89,10 @@ public class JVMMapping implements DeviceMapping {
     public void flushEvents(){
         
     }
+    
+    @Override
+    public String getDeviceName(){
+        return "jvm";
+    }
 
 }

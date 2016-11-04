@@ -101,11 +101,11 @@ public class OCLDeviceMapping implements DeviceMapping {
     @Override
     public TornadoSchedulingStrategy getPreferedSchedule() {
         if (null != device.getDeviceType()) {
-            
-            if(FORCE_ALL_TO_GPU){
+
+            if (FORCE_ALL_TO_GPU) {
                 return TornadoSchedulingStrategy.PER_ITERATION;
             }
-            
+
             switch (device.getDeviceType()) {
                 case CL_DEVICE_TYPE_GPU:
                     return TornadoSchedulingStrategy.PER_ITERATION;
@@ -228,11 +228,7 @@ public class OCLDeviceMapping implements DeviceMapping {
                 state.setBuffer(buffer);
 
                 final Class<?> type = object.getClass();
-                if (type == float[].class) {
-
-                } else if (type == double.class) {
-
-                } else if (!type.isArray()) {
+                if (!type.isArray()) {
                     buffer.write(object);
                 }
 
@@ -246,11 +242,7 @@ public class OCLDeviceMapping implements DeviceMapping {
             try {
                 state.getBuffer().allocate(object);
                 final Class<?> type = object.getClass();
-                if (type == float[].class) {
-
-                } else if (type == double.class) {
-
-                } else if (!type.isArray()) {
+                if (!type.isArray()) {
                     state.getBuffer().write(object);
                 }
                 state.setValid(true);
@@ -319,18 +311,18 @@ public class OCLDeviceMapping implements DeviceMapping {
     public int enqueueBarrier() {
         return getDeviceContext().enqueueBarrier();
     }
-    
-    public void dumpMemory(String file){
+
+    public void dumpMemory(String file) {
         final OCLMemoryManager mm = getDeviceContext().getMemoryManager();
         final OCLByteBuffer buffer = mm.getSubBuffer(0, (int) mm.getHeapSize());
         buffer.read();
-        
-        try(FileOutputStream fos = new FileOutputStream(file); FileChannel channel = fos.getChannel()){
+
+        try (FileOutputStream fos = new FileOutputStream(file); FileChannel channel = fos.getChannel()) {
             channel.write(buffer.buffer());
-        } catch(IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
-        
+
     }
 
     @Override
@@ -345,7 +337,12 @@ public class OCLDeviceMapping implements DeviceMapping {
 
     @Override
     public void markEvent() {
-       getDeviceContext().markEvent();
+        getDeviceContext().markEvent();
+    }
+    
+    @Override
+    public String getDeviceName(){
+        return String.format("opencl-%d-%d",platformIndex,deviceIndex);
     }
 
 }
