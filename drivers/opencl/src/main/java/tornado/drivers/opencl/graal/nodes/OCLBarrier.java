@@ -12,7 +12,7 @@ import com.oracle.graal.nodes.FixedWithNextNode;
 import com.oracle.graal.nodes.memory.MemoryNode;
 import com.oracle.graal.nodes.spi.LIRLowerable;
 import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryIntrinsic;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic;
 import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
 

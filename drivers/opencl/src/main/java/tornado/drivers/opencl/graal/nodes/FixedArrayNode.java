@@ -1,6 +1,6 @@
 package tornado.drivers.opencl.graal.nodes;
 
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryTemplate;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryTemplate;
 import tornado.drivers.opencl.graal.lir.OCLBinary;
 import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
 import tornado.graal.nodes.ArrayKind;

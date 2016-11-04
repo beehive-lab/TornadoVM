@@ -6,9 +6,9 @@ import com.oracle.graal.api.meta.PlatformKind;
 import com.oracle.graal.api.meta.Value;
 import com.oracle.graal.lir.LIRInstruction.Use;
 import com.oracle.graal.lir.Opcode;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryOp;
+import tornado.drivers.opencl.graal.asm.OCLAssembler;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 
 public class OCLBinary {
@@ -123,7 +123,7 @@ public class OCLBinary {
 
          @Override
         public void emit(OCLCompilationResultBuilder crb) {
-           OpenCLAssembler asm = crb.getAssembler();
+           OCLAssembler asm = crb.getAssembler();
            asm.value(crb, x);
            asm.emit(opcode.toString());
            asm.value(crb, y);

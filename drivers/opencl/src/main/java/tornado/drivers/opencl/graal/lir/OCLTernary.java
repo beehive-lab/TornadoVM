@@ -6,7 +6,7 @@ import com.oracle.graal.api.meta.PlatformKind;
 import com.oracle.graal.api.meta.Value;
 import com.oracle.graal.lir.LIRInstruction.Use;
 import com.oracle.graal.lir.Opcode;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLTernaryOp;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryOp;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 
 public class OCLTernary {

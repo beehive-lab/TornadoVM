@@ -1,7 +1,7 @@
 package tornado.drivers.opencl.graal.nodes;
 
 import tornado.common.exceptions.TornadoInternalError;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryOp;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
 import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
 

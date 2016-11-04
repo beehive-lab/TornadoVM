@@ -61,8 +61,8 @@ import tornado.drivers.opencl.graal.OpenCLFrameContext;
 import tornado.drivers.opencl.graal.OpenCLFrameMap;
 import tornado.drivers.opencl.graal.OpenCLFrameMapBuilder;
 import tornado.drivers.opencl.graal.OpenCLInstalledCode;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler;
-import tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants;
+import tornado.drivers.opencl.graal.asm.OCLAssembler;
+import tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.compiler.OCLCompiler;
@@ -77,6 +77,15 @@ import tornado.graal.nodes.vector.VectorKind;
 import tornado.lang.CompilerInternals;
 import tornado.meta.Meta;
 import tornado.runtime.TornadoRuntime;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> {
 
@@ -188,7 +197,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
 
     @Override
     protected Assembler createAssembler(FrameMap frameMap) {
-        return new OpenCLAssembler(target);
+        return new OCLAssembler(target);
     }
 
     @Override
@@ -198,14 +207,14 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
 
     public void emitCode(OCLCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
 
-        final OpenCLAssembler asm = (OpenCLAssembler) crb.asm;
+        final OCLAssembler asm = (OCLAssembler) crb.asm;
         emitPrologue(crb, asm, method, lir);
         crb.emit(lir);
         emitEpilogue(asm);
 
     }
 
-    private void emitEpilogue(OpenCLAssembler asm) {
+    private void emitEpilogue(OCLAssembler asm) {
         asm.endScope();
 
     }
@@ -275,7 +284,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
         }
     }
 
-    private void emitVariableDefs(OCLCompilationResultBuilder crb, OpenCLAssembler asm, LIR lir) {
+    private void emitVariableDefs(OCLCompilationResultBuilder crb, OCLAssembler asm, LIR lir) {
         Map<OCLKind, Set<Variable>> kindToVariable = new HashMap<>();
         final int expectedVariables = lir.numVariables();
         final AtomicInteger variableCount = new AtomicInteger();
@@ -311,7 +320,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
 
     }
 
-    private void emitPrologue(OCLCompilationResultBuilder crb, OpenCLAssembler asm,
+    private void emitPrologue(OCLCompilationResultBuilder crb, OCLAssembler asm,
             ResolvedJavaMethod method, LIR lir) {
 
         String methodName = crb.compilationResult.getName();
@@ -322,19 +331,19 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
              * This has the effect of shifting the devices address mappings, which allows us to avoid the heap starting at address 0x0.
              * (I assume that this is a interesting case that leads to a few issues.) Iris Pro is the only culprit at the moment.
              */
-            final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OpenCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
+            final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
 
             asm.emitLine("%s void %s(%s%s)",
-                    OpenCLAssemblerConstants.KERNEL_MODIFIER, methodName,
+                    OCLAssemblerConstants.KERNEL_MODIFIER, methodName,
                     bumpBuffer,
                     architecture.getABI());
             asm.beginScope();
             emitVariableDefs(crb, asm, lir);
             asm.eol();
             asm.emitStmt("%s ulong *slots = (%s ulong *) &%s[%s]",
-                    OpenCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
-                    OpenCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
-                    OpenCLAssemblerConstants.HEAP_REF_NAME, OpenCLAssemblerConstants.STACK_REF_NAME);
+                    OCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
+                    OCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
+                    OCLAssemblerConstants.HEAP_REF_NAME, OCLAssemblerConstants.STACK_REF_NAME);
             asm.eol();
             if (DEBUG_KERNEL_ARGS && (method != null && !method.getDeclaringClass().getUnqualifiedName().equalsIgnoreCase(this.getClass().getSimpleName()))) {
                 asm.emitLine("if(get_global_id(0) == 0 && get_global_id(1) ==0){");

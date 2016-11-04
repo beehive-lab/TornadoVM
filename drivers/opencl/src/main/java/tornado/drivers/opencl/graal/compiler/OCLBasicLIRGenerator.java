@@ -44,15 +44,15 @@ import tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import tornado.drivers.opencl.graal.OCLLIRKindTool;
 import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.OpenCLCodeCache;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryOp;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLNullaryOp;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLTernaryIntrinsic;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLTernaryTemplate;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryIntrinsic;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryOp;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryTemplate;
-import tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryOp;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryTemplate;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryTemplate;
+import tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import tornado.drivers.opencl.graal.lir.OCLAddressOps.OCLVectorElement;
 import tornado.drivers.opencl.graal.lir.OCLBinary;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow;
@@ -75,6 +75,12 @@ import tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
 import tornado.drivers.opencl.graal.nodes.logic.LogicalOrNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorUtil;
 import static tornado.graal.compiler.TornadoCodeGenerator.*;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLBasicLIRGenerator extends LIRGenerator {
 
@@ -762,7 +768,7 @@ public class OCLBasicLIRGenerator extends LIRGenerator {
 
     private void emitParameterLoad(AllocatableValue dst, int index) {
         final OCLUnaryOp op = getParameterLoadOp((OCLKind) dst.getPlatformKind());
-        append(new AssignStmt(dst, new OCLUnary.Expr(op, dst.getLIRKind(), new RawConstant(index + OpenCLAssemblerConstants.STACK_BASE_OFFSET))));
+        append(new AssignStmt(dst, new OCLUnary.Expr(op, dst.getLIRKind(), new RawConstant(index + OCLAssemblerConstants.STACK_BASE_OFFSET))));
     }
 
     public Value emitSlotsAddress(Value index) {

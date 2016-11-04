@@ -8,13 +8,14 @@ import com.oracle.graal.api.meta.Kind;
 import com.oracle.graal.api.meta.PlatformKind;
 import java.nio.ByteOrder;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.CONSTANT_REGION_NAME;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.HEAP_REF_NAME;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.LOCAL_REGION_NAME;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.PRIVATE_REGION_NAME;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.STACK_REF_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CONSTANT_REGION_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.LOCAL_REGION_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.PRIVATE_REGION_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.STACK_REF_NAME;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.meta.OCLMemorySpace;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLArchitecture extends Architecture {
 

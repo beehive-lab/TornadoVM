@@ -61,11 +61,11 @@ import java.util.Collection;
 import java.util.List;
 import tornado.api.Vector;
 import tornado.common.exceptions.TornadoInternalError;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryOp;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLNullaryOp;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLNullaryTemplate;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryOp;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryOp;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryTemplate;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
 import tornado.drivers.opencl.graal.lir.OCLBinary;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow;
 import tornado.drivers.opencl.graal.lir.OCLDirectCall;
@@ -84,6 +84,7 @@ import tornado.drivers.opencl.graal.nodes.logic.LogicalOrNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import tornado.graal.nodes.vector.VectorKind;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 

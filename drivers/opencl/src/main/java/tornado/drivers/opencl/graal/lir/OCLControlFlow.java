@@ -5,8 +5,8 @@ import com.oracle.graal.lir.*;
 import static com.oracle.graal.lir.LIRInstruction.OperandFlag.CONST;
 import com.oracle.graal.lir.LIRInstruction.Use;
 import com.oracle.graal.lir.StandardOp.BlockEndOp;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler;
-import tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants;
+import tornado.drivers.opencl.graal.asm.OCLAssembler;
+import tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AbstractInstruction;
 
@@ -75,14 +75,14 @@ public class OCLControlFlow {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.indent();
-            asm.emitSymbol(OpenCLAssemblerConstants.FOR_LOOP);
-            asm.emitSymbol(OpenCLAssemblerConstants.BRACKET_OPEN);
+            asm.emitSymbol(OCLAssemblerConstants.FOR_LOOP);
+            asm.emitSymbol(OCLAssemblerConstants.BRACKET_OPEN);
 
             asm.indentOff();
             asm.eolOff();
-            asm.setDelimiter(OpenCLAssemblerConstants.EXPR_DELIMITER);
+            asm.setDelimiter(OCLAssemblerConstants.EXPR_DELIMITER);
         }
     }
 
@@ -97,14 +97,14 @@ public class OCLControlFlow {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             if (asm.getByte(asm.position() - 2) == ',') {
                 asm.emitString(" ", asm.position() - 2);
             }
 
-            asm.emitSymbol(OpenCLAssemblerConstants.BRACKET_CLOSE);
+            asm.emitSymbol(OCLAssemblerConstants.BRACKET_CLOSE);
 
-            asm.setDelimiter(OpenCLAssemblerConstants.STMT_DELIMITER);
+            asm.setDelimiter(OCLAssemblerConstants.STMT_DELIMITER);
             asm.indentOn();
             asm.eolOn();
         }
@@ -124,18 +124,18 @@ public class OCLControlFlow {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             if (asm.getByte(asm.position() - 1) == ',') {
                 asm.emitString(" ", asm.position() - 1);
             }
 
-            asm.setDelimiter(OpenCLAssemblerConstants.STMT_DELIMITER);
+            asm.setDelimiter(OCLAssemblerConstants.STMT_DELIMITER);
             asm.delimiter();
 
             asm.value(crb, condition);
 
             asm.delimiter();
-            asm.setDelimiter(OpenCLAssemblerConstants.EXPR_DELIMITER);
+            asm.setDelimiter(OCLAssemblerConstants.EXPR_DELIMITER);
         }
     }
 
@@ -188,7 +188,7 @@ public class OCLControlFlow {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.indent();
             asm.elseStmt();
             asm.beginScope();
@@ -221,12 +221,12 @@ public class OCLControlFlow {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.indent();
-            asm.emitSymbol(OpenCLAssemblerConstants.SWITCH);
-            asm.emitSymbol(OpenCLAssemblerConstants.BRACKET_OPEN);
+            asm.emitSymbol(OCLAssemblerConstants.SWITCH);
+            asm.emitSymbol(OCLAssemblerConstants.BRACKET_OPEN);
             asm.value(crb, value);
-            asm.emitSymbol(OpenCLAssemblerConstants.BRACKET_CLOSE);
+            asm.emitSymbol(OCLAssemblerConstants.BRACKET_CLOSE);
         }
 
         public JavaConstant[] getKeyConstants() {
@@ -257,12 +257,12 @@ public class OCLControlFlow {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.indent();
-            asm.emitSymbol(OpenCLAssemblerConstants.CASE);
+            asm.emitSymbol(OCLAssemblerConstants.CASE);
             asm.space();
             asm.value(crb, value);
-            asm.emitSymbol(OpenCLAssemblerConstants.COLON);
+            asm.emitSymbol(OCLAssemblerConstants.COLON);
             asm.eol();
             asm.pushIndent();
         }
@@ -279,10 +279,10 @@ public class OCLControlFlow {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.indent();
-            asm.emitSymbol(OpenCLAssemblerConstants.DEFAULT_CASE);
-            asm.emitSymbol(OpenCLAssemblerConstants.COLON);
+            asm.emitSymbol(OCLAssemblerConstants.DEFAULT_CASE);
+            asm.emitSymbol(OCLAssemblerConstants.COLON);
             asm.eol();
             asm.pushIndent();
         }
@@ -299,9 +299,9 @@ public class OCLControlFlow {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.indent();
-            asm.emitSymbol(OpenCLAssemblerConstants.BREAK);
+            asm.emitSymbol(OCLAssemblerConstants.BREAK);
             asm.delimiter();
             asm.eol();
             asm.popIndent();
@@ -319,7 +319,7 @@ public class OCLControlFlow {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.indent();
             asm.loopBreak();
             asm.delimiter();
@@ -342,7 +342,7 @@ public class OCLControlFlow {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.indent();
             asm.emit("slots[0] = (ulong) ");
             asm.value(crb, actionAndReason);

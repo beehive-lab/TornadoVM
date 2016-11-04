@@ -10,9 +10,9 @@ import com.oracle.graal.lir.LIRInstructionClass;
 import com.oracle.graal.lir.Opcode;
 import com.oracle.graal.lir.Variable;
 import com.oracle.graal.lir.asm.CompilationResultBuilder;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLTernaryIntrinsic;
+import tornado.drivers.opencl.graal.asm.OCLAssembler;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
@@ -70,7 +70,7 @@ public class OCLLIRInstruction {
         
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.indent();
             asm.value(crb, lhs);
             asm.space();
@@ -111,7 +111,7 @@ public class OCLLIRInstruction {
         
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.indent();
             asm.value(crb, lhs);
             asm.space();
@@ -167,7 +167,7 @@ public class OCLLIRInstruction {
         
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.indent();
             asm.value(crb, lhs);
             asm.space();
@@ -223,7 +223,7 @@ public class OCLLIRInstruction {
         
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.indent();
 
             //asm.space();
@@ -280,7 +280,7 @@ public class OCLLIRInstruction {
         
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.indent();
 
             //asm.space();
@@ -338,7 +338,7 @@ public class OCLLIRInstruction {
         
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.indent();
             asm.value(crb, expr);
             asm.delimiter();

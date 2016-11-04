@@ -7,8 +7,8 @@ import com.oracle.graal.api.meta.Value;
 import static com.oracle.graal.lir.LIRInstruction.OperandFlag.REG;
 import com.oracle.graal.lir.LIRInstructionClass;
 import com.oracle.graal.lir.Opcode;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler;
-import tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants;
+import tornado.drivers.opencl.graal.asm.OCLAssembler;
+import tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AbstractInstruction;
@@ -51,7 +51,7 @@ public class OCLAddressOps {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            OpenCLAssembler asm = crb.getAssembler();
+            OCLAssembler asm = crb.getAssembler();
             asm.value(crb, vector);
             asm.emitSymbol(".");
             asm.value(crb, selection);
@@ -94,7 +94,7 @@ public class OCLAddressOps {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.value(crb, vector);
             asm.emit(".s");
             asm.emit(Integer.toHexString(laneId).toLowerCase());
@@ -121,7 +121,7 @@ public class OCLAddressOps {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.emit("*(");
             address.toAddress().emit(crb);
             asm.emit(")");
@@ -169,13 +169,13 @@ public class OCLAddressOps {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.emit(toValueString(asm));
         }
 
-        public String toValueString(OpenCLAssembler asm) {
+        public String toValueString(OCLAssembler asm) {
             StringBuilder sb = new StringBuilder();
-            sb.append(String.format("(%s %s *) (", OpenCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
+            sb.append(String.format("(%s %s *) (", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
                     OCLBackend.platformKindToOpenCLKind(kind)));
             sb.append(asm.toString(base));
             if (displacement > 0) {

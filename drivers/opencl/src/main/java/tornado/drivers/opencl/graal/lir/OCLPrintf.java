@@ -10,7 +10,7 @@ import com.oracle.graal.api.meta.LIRKind;
 import com.oracle.graal.api.meta.PlatformKind;
 import com.oracle.graal.api.meta.Value;
 import com.oracle.graal.lir.Opcode;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler;
+import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 
 @Opcode("PRINTF")
@@ -24,7 +24,7 @@ public class OCLPrintf implements OCLEmitable {
     
     @Override
     public void emit(OCLCompilationResultBuilder crb) {
-        OpenCLAssembler asm = crb.getAssembler();
+        OCLAssembler asm = crb.getAssembler();
         
         asm.emit("printf( \"tornado[%3d,%3d,%3d]> ");
         asm.value(crb, inputs[0]);

@@ -32,7 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import tornado.common.exceptions.TornadoInternalError;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler;
+import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.lir.OCLBinary;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopConditionOp;
@@ -41,6 +41,7 @@ import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopPostOp;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow.SwitchOp;
 import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
+import static tornado.graal.TornadoLIRGenerator.trace;
 import static tornado.graal.TornadoLIRGenerator.trace;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
@@ -62,8 +63,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         return isKernel;
     }
 
-    public OpenCLAssembler getAssembler() {
-        return (OpenCLAssembler) asm;
+    public OCLAssembler getAssembler() {
+        return (OCLAssembler) asm;
     }
 
     public void addNonInlinedMethod(ResolvedJavaMethod method) {
@@ -101,7 +102,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         Set<Block> floating = new HashSet<>();
 
         cfg.computePostdominators();
-        traverseCFG(cfg, (OpenCLAssembler) asm, floating, cfg.getStartBlock());
+        traverseCFG(cfg, (OCLAssembler) asm, floating, cfg.getStartBlock());
 
         trace("Finished traversing CFG");
         this.lir = null;
@@ -123,7 +124,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         return sb.toString();
     }
 
-    private void traverseCFG(ControlFlowGraph cfg, OpenCLAssembler asm,
+    private void traverseCFG(ControlFlowGraph cfg, OCLAssembler asm,
             Set<Block> merges, Block b) {
         final List<Block> dominates = b.getDominated();
 
@@ -460,7 +461,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     public void emitBlock(AbstractBlockBase<?> block) {
-        ((OpenCLAssembler) asm).emitLine("// BLOCK %d", block.getId());
+        ((OCLAssembler) asm).emitLine("// BLOCK %d", block.getId());
 
         if (Debug.isDumpEnabled() || PrintLIRWithAssembly.getValue()) {
             blockComment(String.format("block B%d %s", block.getId(),

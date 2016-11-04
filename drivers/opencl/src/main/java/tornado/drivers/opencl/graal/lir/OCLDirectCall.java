@@ -1,9 +1,9 @@
 package tornado.drivers.opencl.graal.lir;
 
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.HEAP_REF_NAME;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.STACK_REF_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.STACK_REF_NAME;
 import tornado.drivers.opencl.graal.OCLUtils;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler;
+import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 
 import com.oracle.graal.api.meta.Kind;
@@ -36,7 +36,7 @@ public class OCLDirectCall implements OCLEmitable {
 
     @Override
     public void emit(OCLCompilationResultBuilder crb) {
-        final OpenCLAssembler asm = crb.getAssembler();
+        final OCLAssembler asm = crb.getAssembler();
 
         final String methodName = OCLUtils
                 .makeMethodName(target.targetMethod());

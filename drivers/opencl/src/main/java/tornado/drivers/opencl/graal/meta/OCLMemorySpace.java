@@ -4,16 +4,17 @@ import com.oracle.graal.api.meta.AbstractValue;
 import com.oracle.graal.api.meta.LIRKind;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import tornado.drivers.opencl.graal.OCLArchitecture;
-import tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants;
+import tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLMemorySpace extends AbstractValue {
     // @formatter:off
 
-    public static final OCLMemorySpace GLOBAL = new OCLMemorySpace(OpenCLAssemblerConstants.GLOBAL_MEM_MODIFIER);
-//        public static final OCLMemorySpace SHARED = new OCLMemorySpace(OpenCLAssemblerConstants.SHARED_MEM_MODIFIER);
-    public static final OCLMemorySpace LOCAL = new OCLMemorySpace(OpenCLAssemblerConstants.LOCAL_MEM_MODIFIER);
-    public static final OCLMemorySpace PRIVATE = new OCLMemorySpace(OpenCLAssemblerConstants.PRIVATE_MEM_MODIFIER);
-    public static final OCLMemorySpace CONSTANT = new OCLMemorySpace(OpenCLAssemblerConstants.CONSTANT_MEM_MODIFIER);
+    public static final OCLMemorySpace GLOBAL = new OCLMemorySpace(OCLAssemblerConstants.GLOBAL_MEM_MODIFIER);
+//        public static final OCLMemorySpace SHARED = new OCLMemorySpace(OCLAssemblerConstants.SHARED_MEM_MODIFIER);
+    public static final OCLMemorySpace LOCAL = new OCLMemorySpace(OCLAssemblerConstants.LOCAL_MEM_MODIFIER);
+    public static final OCLMemorySpace PRIVATE = new OCLMemorySpace(OCLAssemblerConstants.PRIVATE_MEM_MODIFIER);
+    public static final OCLMemorySpace CONSTANT = new OCLMemorySpace(OCLAssemblerConstants.CONSTANT_MEM_MODIFIER);
     public static final OCLMemorySpace HEAP = new OCLMemorySpace("heap");
     // @formatter:on
 

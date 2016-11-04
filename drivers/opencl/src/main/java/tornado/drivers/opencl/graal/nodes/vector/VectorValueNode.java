@@ -23,11 +23,11 @@ import java.util.List;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import tornado.drivers.opencl.graal.OCLArchitecture;
 import tornado.drivers.opencl.graal.OCLStampFactory;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp2;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp3;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp4;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp8;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp4;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp8;
 import tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
 import tornado.drivers.opencl.graal.lir.OCLEmitable;
 import tornado.drivers.opencl.graal.lir.OCLKind;
@@ -35,6 +35,8 @@ import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
 import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.VectorLoadStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 import tornado.drivers.opencl.graal.lir.OCLVectorAssign;
+import static tornado.graal.TornadoLIRGenerator.trace;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.graal.TornadoLIRGenerator.trace;
 
 @NodeInfo(nameTemplate = "{p#kind/s}")

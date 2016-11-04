@@ -8,12 +8,12 @@ import com.oracle.graal.lir.LIRInstruction.Use;
 import com.oracle.graal.lir.Opcode;
 import static tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
 import tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryOp;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryTemplate;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.ADDRESS_OF;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.SQUARE_BRACKETS_CLOSE;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.SQUARE_BRACKETS_OPEN;
+import tornado.drivers.opencl.graal.asm.OCLAssembler;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryTemplate;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.ADDRESS_OF;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SQUARE_BRACKETS_CLOSE;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SQUARE_BRACKETS_OPEN;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.meta.OCLMemorySpace;
 import tornado.drivers.opencl.graal.nodes.OCLBarrier.OCLMemFenceFlags;
@@ -124,7 +124,7 @@ public class OCLUnary {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.emit(toString());
         }
 
@@ -147,7 +147,7 @@ public class OCLUnary {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+            final OCLAssembler asm = crb.getAssembler();
             asm.emit("isnan(");
             asm.value(crb, value);
             asm.emit(")? 0 : ");
@@ -173,7 +173,7 @@ public class OCLUnary {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            OpenCLAssembler asm = crb.getAssembler();
+            OCLAssembler asm = crb.getAssembler();
 
             if (needsBase || OPENCL_USE_RELATIVE_ADDRESSES) {
                 asm.emitSymbol(ADDRESS_OF);
@@ -207,7 +207,7 @@ public class OCLUnary {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb) {
-            OpenCLAssembler asm = crb.getAssembler();
+            OCLAssembler asm = crb.getAssembler();
 
             OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
             asm.emit(((OCLUnaryTemplate)opcode).getTemplate(), base.memorySpace.name()+ " " + oclKind.toString());

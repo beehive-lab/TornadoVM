@@ -7,12 +7,13 @@ import com.oracle.graal.api.meta.Value;
 import com.oracle.graal.lir.LIRInstruction.Use;
 import com.oracle.graal.lir.Opcode;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp2;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp3;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp4;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp8;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp4;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp8;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLVectorAssign {
 

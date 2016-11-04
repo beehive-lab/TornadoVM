@@ -1,6 +1,6 @@
 package tornado.drivers.opencl.graal.asm;
 
-public class OpenCLAssemblerConstants {
+public class OCLAssemblerConstants {
 
     public static final String KERNEL_MODIFIER = "__kernel";
     public static final String EOL = "\n";

@@ -1,6 +1,6 @@
 package tornado.drivers.opencl.graal.nodes;
 
-import static tornado.drivers.opencl.graal.asm.OpenCLAssembler.*;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.*;
 import tornado.drivers.opencl.graal.lir.OCLNullary;
 
 import com.oracle.graal.api.meta.Kind;
