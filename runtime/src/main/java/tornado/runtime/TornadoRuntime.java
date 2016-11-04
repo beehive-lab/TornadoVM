@@ -18,98 +18,101 @@ import tornado.common.TornadoLogger;
 import tornado.common.exceptions.TornadoRuntimeException;
 import tornado.runtime.api.GlobalObjectState;
 
-
 public class TornadoRuntime extends TornadoLogger {
 
-        public static final Executor EXECUTOR = Executors.newCachedThreadPool();
-        
-	public static final TornadoRuntime runtime = new TornadoRuntime();
+    public static final Executor EXECUTOR = Executors.newCachedThreadPool();
 
-	public static final JVMMapping JVM = new JVMMapping();
+    public static final TornadoRuntime runtime = new TornadoRuntime();
 
-	private final Map<Object, GlobalObjectState> objectMappings;
-	private TornadoDriver[] drivers;
-	
-	public TornadoRuntime(){
-	 objectMappings = new WeakHashMap<Object, GlobalObjectState>();
-		vmRuntime = (HotSpotGraalRuntimeProvider) Graal
-				.getRequiredCapability(RuntimeProvider.class);
-		vmProviders = vmRuntime.getHostBackend().getProviders();
-		try {
-			drivers = loadDrivers(vmRuntime, vmProviders);
-		} catch (TornadoRuntimeException e) {
-			drivers = null;
-			System.exit(-1);
-		}
-	}
-	
-	public void clearObjectState() {
-		objectMappings.clear();
-	}
-	
-	public static HotSpotProviders getVMProviders() {
-		return runtime.vmProviders;
-	}
+    public static final JVMMapping JVM = new JVMMapping();
+    public static HotSpotProviders getVMProviders() {
+        return runtime.vmProviders;
+    }
+    public static HotSpotGraalRuntimeProvider getVMRuntimeProvider() {
+        return runtime.vmRuntime;
+    }
 
-	public static HotSpotGraalRuntimeProvider getVMRuntimeProvider() {
-		return runtime.vmRuntime;
-	}
+    private final Map<Object, GlobalObjectState> objectMappings;
+    private TornadoDriver[] drivers;
+    private final HotSpotProviders vmProviders;
+    private final HotSpotGraalRuntimeProvider vmRuntime;
 
-	private final TornadoDriver[] loadDrivers(
-			HotSpotGraalRuntimeProvider vmRuntime, HotSpotProviders vmProviders) throws TornadoRuntimeException {
-		final String driversString = Tornado.getProperty("tornado.runtime.drivers",
-				"tornado.drivers.opencl.OCLDriver");
-		
-		final String[] classNames = driversString.split(",");
-		final TornadoDriver[] drivers = new TornadoDriver[classNames.length];
+    
+    public HotSpotProviders getProviders(){
+        return vmProviders;
+    }
+    
+    public HotSpotGraalRuntimeProvider getRuntimeProvider(){
+        return vmRuntime;
+    }
+    
+    public TornadoRuntime() {
+        objectMappings = new WeakHashMap<>();
+        vmRuntime = (HotSpotGraalRuntimeProvider) Graal
+                .getRequiredCapability(RuntimeProvider.class);
+        vmProviders = vmRuntime.getHostBackend().getProviders();
+        try {
+            drivers = loadDrivers(vmRuntime, vmProviders);
+        } catch (TornadoRuntimeException e) {
+            drivers = null;
+            System.exit(-1);
+        }
+    }
 
-		debug("loading %d drivers:",drivers.length);
-		for(int i=0;i<classNames.length;i++){
-		try {
-			debug("\t[%d] %s",i,classNames[i]);
-			final Class<?> klazz = Class.forName(classNames[i]);
-			final Constructor<?> constructor = klazz.getConstructor(
-					HotSpotGraalRuntimeProvider.class, HotSpotProviders.class);
-			drivers[i] = (TornadoDriver) constructor.newInstance(vmRuntime,
-					vmProviders);
-		} catch (ClassNotFoundException | NoSuchMethodException
-				| SecurityException | InstantiationException
-				| IllegalAccessException | IllegalArgumentException
-				| InvocationTargetException e) {
-			throw new TornadoRuntimeException("Unable to load driver: " + e.getMessage());
-		}
-		
-		}
-		
-		return drivers;
-	}
+    public void clearObjectState() {
+        objectMappings.clear();
+    }
 
-	public GlobalObjectState resolveObject(Object object) {
-		if(!objectMappings.containsKey(object)){
-			final GlobalObjectState state = new GlobalObjectState();
-			objectMappings.put(object, state);
-		}
-		return objectMappings.get(object);
-	}
 
-	private final HotSpotProviders vmProviders;
+    private final TornadoDriver[] loadDrivers(
+            HotSpotGraalRuntimeProvider vmRuntime, HotSpotProviders vmProviders) throws TornadoRuntimeException {
+        final String driversString = Tornado.getProperty("tornado.runtime.drivers",
+                "tornado.drivers.opencl.OCLDriver");
 
-	private final HotSpotGraalRuntimeProvider vmRuntime;
+        final String[] classNames = driversString.split(",");
+        final TornadoDriver[] drivers = new TornadoDriver[classNames.length];
 
-	public MetaAccessProvider getMetaAccess() {
-		return vmProviders.getMetaAccess();
-	}
+        debug("loading %d drivers:", drivers.length);
+        for (int i = 0; i < classNames.length; i++) {
+            try {
+                debug("\t[%d] %s", i, classNames[i]);
+                final Class<?> klazz = Class.forName(classNames[i]);
+                final Constructor<?> constructor = klazz.getConstructor(
+                        HotSpotGraalRuntimeProvider.class, HotSpotProviders.class);
+                drivers[i] = (TornadoDriver) constructor.newInstance(vmRuntime,
+                        vmProviders);
+            } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                throw new TornadoRuntimeException("Unable to load driver: " + e.getMessage());
+            }
 
-	public ResolvedJavaMethod resolveMethod(final Method method) {
-		return getMetaAccess().lookupJavaMethod(method);
-	}
-	
-	public TornadoDriver getDriver(int index){
-		return drivers[index];
-	}
-	
-	public int getNumDrivers(){
-		return drivers.length;
-	}
+        }
+
+        return drivers;
+    }
+
+    public GlobalObjectState resolveObject(Object object) {
+        if (!objectMappings.containsKey(object)) {
+            final GlobalObjectState state = new GlobalObjectState();
+            objectMappings.put(object, state);
+        }
+        return objectMappings.get(object);
+    }
+
+
+    public MetaAccessProvider getMetaAccess() {
+        return vmProviders.getMetaAccess();
+    }
+
+    public ResolvedJavaMethod resolveMethod(final Method method) {
+        return getMetaAccess().lookupJavaMethod(method);
+    }
+
+    public TornadoDriver getDriver(int index) {
+        return drivers[index];
+    }
+
+    public int getNumDrivers() {
+        return drivers.length;
+    }
 
 }
