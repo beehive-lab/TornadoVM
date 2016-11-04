@@ -1,41 +1,51 @@
 package tornado.examples;
 
-
 import java.util.Arrays;
-
+import tornado.common.DeviceObjectState;
 import tornado.drivers.opencl.OpenCL;
-import tornado.runtime.DataMovementTask;
-import tornado.runtime.api.TaskUtils;
-public class DataMovementTest {
-	
-	private static void printArray(int[] array){
-		System.out.printf("array = [");
-		for(int value : array)
-			System.out.printf("%d ",value);
-		System.out.println("]");
-	}
+import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.runtime.TornadoRuntime;
+import tornado.runtime.api.GlobalObjectState;
 
-	public static void main(String[] args) {
-		
-		int[] array = {1,2,3,4};
-		printArray(array);
-//		final DataMovementTask writeTask = TaskUtils.write(array);
-//		writeTask.mapTo(OpenCL.defaultDevice());
-//		writeTask.schedule();
-//		writeTask.waitOn();
-		
-		Arrays.fill(array, -1);
-		printArray(array);
-////		final DataMovementTask readTask = TaskUtils.read(array);
-//		readTask.mapTo(OpenCL.defaultDevice());
-//		readTask.schedule();
-//		readTask.waitOn();
-		
-		printArray(array);
-		
+public class DataMovementTest {
+
+    private static void printArray(int[] array) {
+        System.out.printf("array = [");
+        for (int value : array) {
+            System.out.printf("%d ", value);
+        }
+        System.out.println("]");
+    }
+
+    public static void main(String[] args) {
+
+        int size = args.length == 1 ? Integer.parseInt(args[0]) : 16;
+        int[] array = new int[size];
+        Arrays.setAll(array, (index) -> index);
+        printArray(array);
+
+        OCLDeviceMapping device = OpenCL.defaultDevice();
+
+        GlobalObjectState state = TornadoRuntime.runtime.resolveObject(array);
+        DeviceObjectState deviceState = state.getDeviceState(device);
+
+        int writeEvent = device.ensurePresent(array, deviceState);
+        if(writeEvent != -1){
+            device.resolveEvent(writeEvent).waitOn();
+        }
+        
+        Arrays.fill(array, -1);
+        printArray(array);
+
+        int readEvent = device.streamOut(array, deviceState, null);
+        device.resolveEvent(readEvent).waitOn();
+        
+        
+
+        printArray(array);
+
 //		System.out.printf("write: %.4e s\n",writeTask.getExecutionTime());
 //		System.out.printf("read : %.4e s\n",readTask.getExecutionTime());
-		
-	}
+    }
 
 }
