@@ -1,29 +1,25 @@
 package tornado.drivers.opencl.graal;
 
-import com.oracle.graal.api.code.CodeCacheProvider;
-import com.oracle.graal.api.code.CompilationResult;
-import com.oracle.graal.api.code.DataSection.Data;
-import com.oracle.graal.api.code.InstalledCode;
-import com.oracle.graal.api.code.RegisterConfig;
-import com.oracle.graal.api.code.SpeculationLog;
-import com.oracle.graal.api.code.TargetDescription;
-import com.oracle.graal.api.meta.Constant;
-import com.oracle.graal.api.meta.JavaConstant;
-import com.oracle.graal.api.meta.ResolvedJavaMethod;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import jdk.vm.ci.code.*;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.SpeculationLog;
 import tornado.common.Tornado;
-import static tornado.common.Tornado.*;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.OCLKernel;
 import tornado.drivers.opencl.OCLProgram;
 import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.enums.OCLBuildStatus;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
+
+import static tornado.common.Tornado.*;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
 
 public class OpenCLCodeCache implements CodeCacheProvider {
 
@@ -38,14 +34,62 @@ public class OpenCLCodeCache implements CodeCacheProvider {
         cache = new ArrayList<>();
     }
 
+    public OpenCLInstalledCode addMethod(ResolvedJavaMethod method, String entryPoint, byte[] source) {
+        return installOCLProgram(entryPoint, source);
+    }
+
+    public OpenCLInstalledCode addMethod(ResolvedJavaMethod method, byte[] source) {
+        return addMethod(method, method.getName(), source);
+    }
+
+    @Override
+    public SpeculationLog createSpeculationLog() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public void setBackend(OCLBackend value) {
+        backend = value;
+
+    }
+
+    @Override
+    public long getMaxCallTargetOffset(long l) {
+        unimplemented();
+        return -1;
+    }
+
+    @Override
+    public int getMinimumOutgoingSize() {
+        return 0;
+    }
+
+    @Override
+    public RegisterConfig getRegisterConfig() {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public OCLTargetDescription getTarget() {
+        return (OCLTargetDescription) target;
+    }
+
+    @Override
+    public InstalledCode installCode(ResolvedJavaMethod rjm, CompiledCode cc, InstalledCode ic, SpeculationLog sl, boolean bln) {
+        unimplemented("waiting for CompiledCode to be implemented first");
+//  return addMethod(method, method.getName(), result.);
+        return null;
+    }
+
     public OpenCLInstalledCode installOCLProgram(String entryPoint, byte[] source) {
         if (backend == null) {
-            Tornado.fatal("OpenCL code cache not initialised");
+            fatal("OpenCL code cache not initialised");
         }
 
         OpenCLInstalledCode code = null;
 
-        Tornado.info("Installing code for %s into code cache", entryPoint);
+        info("Installing code for %s into code cache", entryPoint);
         final OCLDeviceContext deviceContext = backend.getDeviceContext();
 
         final OCLProgram program = deviceContext.createProgram(source,
@@ -57,11 +101,11 @@ public class OpenCLCodeCache implements CodeCacheProvider {
         final long t1 = System.nanoTime();
 
         final OCLBuildStatus status = program.getStatus(deviceContext.getDeviceId());
-        Tornado.debug("\tOpenCL compilation status = %s", status.toString());
+        debug("\tOpenCL compilation status = %s", status.toString());
 
         final String log = program.getBuildLog(deviceContext.getDeviceId()).trim();
         if (!log.isEmpty()) {
-            Tornado.debug(log);
+            debug(log);
         }
 
         final OCLKernel kernel = (status == OCLBuildStatus.CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
@@ -69,8 +113,8 @@ public class OpenCLCodeCache implements CodeCacheProvider {
         code = new OpenCLInstalledCode(entryPoint, source, deviceContext, program,
                 kernel);
 
-        if (status == OCLBuildStatus.CL_BUILD_SUCCESS) {
-            Tornado.debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
+        if (status == CL_BUILD_SUCCESS) {
+            debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
             if (PRINT_COMPILE_TIMES) {
                 System.out.printf("compile: kernel %s opencl %.9f\n", entryPoint, (t1 - t0) * 1e-9f);
             }
@@ -88,30 +132,21 @@ public class OpenCLCodeCache implements CodeCacheProvider {
                     }
                 }
                 if (Files.isDirectory(outDir)) {
-                    program.dumpBinaries(OPENCL_BIN_DIR + entryPoint + "-platform-" + backend.getDeviceContext().getPlatformContext().getPlatformIndex());
+                    program.dumpBinaries(OPENCL_BIN_DIR + "/" + entryPoint + "-platform-" + backend.getDeviceContext().getPlatformContext().getPlatformIndex());
                 }
             }
 
         } else {
-            Tornado.warn("\tunable to compile %s", entryPoint);
+            warn("\tunable to compile %s", entryPoint);
             code.invalidate();
         }
 
         return code;
     }
 
-    public OpenCLInstalledCode addMethod(ResolvedJavaMethod method, String entryPoint, byte[] source) {
-       return installOCLProgram(entryPoint,source);
-    }
-
-    public OpenCLInstalledCode addMethod(ResolvedJavaMethod method, byte[] source) {
-        return addMethod(method, method.getName(), source);
-    }
-
     @Override
-    public OpenCLInstalledCode addMethod(ResolvedJavaMethod method, CompilationResult result,
-            SpeculationLog speculationLog, InstalledCode ic) {
-        return addMethod(method, method.getName(), result.getTargetCode());
+    public void invalidateInstalledCode(InstalledCode ic) {
+        unimplemented();
     }
 
     public void reset() {
@@ -123,52 +158,9 @@ public class OpenCLCodeCache implements CodeCacheProvider {
     }
 
     @Override
-    public Data createDataItem(Constant arg0) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public SpeculationLog createSpeculationLog() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String disassemble(CompilationResult arg0, InstalledCode arg1) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public int getMinimumOutgoingSize() {
-        return 0;
-    }
-
-    @Override
-    public RegisterConfig getRegisterConfig() {
-        return null;
-    }
-
-    @Override
-    public OCLTargetDescription getTarget() {
-        return (OCLTargetDescription) target;
-    }
-
-    @Override
-    public boolean needsDataPatch(JavaConstant arg0) {
+    public boolean shouldDebugNonSafepoints() {
+        unimplemented();
         return false;
-    }
-
-    @Override
-    public OpenCLInstalledCode setDefaultMethod(ResolvedJavaMethod arg0, CompilationResult arg1) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public void setBackend(OCLBackend value) {
-        backend = value;
-
     }
 
 }
