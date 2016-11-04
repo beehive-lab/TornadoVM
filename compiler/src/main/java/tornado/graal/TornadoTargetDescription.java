@@ -1,6 +1,5 @@
 package tornado.graal;
 
-import tornado.common.Tornado;
 
 import com.oracle.graal.api.code.Architecture;
 import com.oracle.graal.api.code.ReferenceMap;
