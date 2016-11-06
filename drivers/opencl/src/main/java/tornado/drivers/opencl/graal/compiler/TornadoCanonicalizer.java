@@ -1,7 +1,5 @@
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.api.meta.MetaAccessProvider;
-import com.oracle.graal.api.meta.ResolvedJavaMethod;
 import com.oracle.graal.compiler.common.type.ObjectStamp;
 import com.oracle.graal.graph.Node;
 import com.oracle.graal.graph.spi.SimplifierTool;
@@ -17,20 +15,17 @@ import com.oracle.graal.nodes.util.GraphUtil;
 import com.oracle.graal.phases.common.CanonicalizerPhase.CustomCanonicalizer;
 import java.util.BitSet;
 import java.util.List;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.api.Vector;
 import tornado.common.exceptions.TornadoInternalError;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import tornado.drivers.opencl.graal.OCLStamp;
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-import tornado.drivers.opencl.graal.nodes.vector.VectorAddNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorDivNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorElementOpNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorMulNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorSubNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
+import tornado.drivers.opencl.graal.nodes.vector.*;
 import tornado.meta.Meta;
+
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class TornadoCanonicalizer extends CustomCanonicalizer {
 
@@ -48,8 +43,8 @@ public class TornadoCanonicalizer extends CustomCanonicalizer {
 
     @Override
     public Node canonicalize(Node node) {
-        
-       if (node instanceof VectorElementOpNode) {
+
+        if (node instanceof VectorElementOpNode) {
             return canonicalizeVectorElementOp((VectorElementOpNode) node);
         } else if (node instanceof WriteNode) {
 //			final WriteNode writeNode = (WriteNode) node;
@@ -59,28 +54,22 @@ public class TornadoCanonicalizer extends CustomCanonicalizer {
 //			}
         }
 
-        /*else if (node instanceof IsNullNode) {
-			final IsNullNode nullCheck = (IsNullNode) node;
-			if(nullCheck.getValue() instanceof ParameterNode){
-				final ParameterNode param = (ParameterNode) nullCheck.getValue();
-				if(param.graph().method() == method){
-				System.out.printf("canonicalize: isnull=%s, param=%s\n",nullCheck,param);
-				if(args[param.index()] == null)
-					nullCheck.replaceAndDelete(LogicConstantNode.tautology(param.graph()));
-				else
-					nullCheck.replaceAndDelete(LogicConstantNode.contradiction(param.graph()));
-				}
-			}
-		} else if (node instanceof PiNode) {
-			final PiNode pi = (PiNode) node;
-			if (pi.stamp() instanceof ObjectStamp
-					&& pi.object().stamp() instanceof ObjectStamp) {
-				pi.replaceAtUsages(pi.object());
-
-				pi.clearInputs();
-				pi.graph().removeFloating(pi);
-			}
-		}*/
+        /*
+         * else if (node instanceof IsNullNode) { final IsNullNode nullCheck =
+         * (IsNullNode) node; if(nullCheck.getValue() instanceof ParameterNode){
+         * final ParameterNode param = (ParameterNode) nullCheck.getValue();
+         * if(param.graph().method() == method){
+         * System.out.printf("canonicalize: isnull=%s,
+         * param=%s\n",nullCheck,param); if(args[param.index()] == null)
+         * nullCheck.replaceAndDelete(LogicConstantNode.tautology(param.graph()));
+         * else
+         * nullCheck.replaceAndDelete(LogicConstantNode.contradiction(param.graph()));
+         * } } } else if (node instanceof PiNode) { final PiNode pi = (PiNode)
+         * node; if (pi.stamp() instanceof ObjectStamp && pi.object().stamp()
+         * instanceof ObjectStamp) { pi.replaceAtUsages(pi.object());
+         *
+         * pi.clearInputs(); pi.graph().removeFloating(pi); } }
+         */
         return node;
     }
 
@@ -91,22 +80,22 @@ public class TornadoCanonicalizer extends CustomCanonicalizer {
 //			if(origin instanceof PiNode){
 //				origin = ((PiNode)origin).getOriginalNode();
 //			}
-//			
+//
 //			if(!(origin instanceof VectorValueNode)){
 //			final VectorValueNode vector = node.graph().addOrUnique(new VectorValueNode(node.getVectorKind(),origin));
 //			//System.out.printf("canonicalize: node=%s, origin=%s\n",node,node.getOrigin());
 //			origin.replaceAtMatchingUsages(vector, n -> !n.equals(vector));
 //			//System.out.printf("canonicalize: vector origin=%s\n",vector.getOrigin());
 //			node.setVector(vector);
-//			
+//
 //			} else {
 //				node.setVector((VectorValueNode) origin);
 //				GraphUtil.tryKillUnused(origin);
 //			}
-//			
-//			
-//			
-//			
+//
+//
+//
+//
 //		}
         return node;
     }
@@ -204,7 +193,7 @@ public class TornadoCanonicalizer extends CustomCanonicalizer {
     }
 
     private List<VectorLoadElementNode> getVector(Node op) {
-        return op.inputs().filter(VectorLoadElementNode.class).distinct().snapshot();
+        return op.inputs().filter(VectorLoadElementNode.class).snapshot();
     }
 
     private VectorOp getVectorOp(VectorValueNode vector, List<Node> ops) {
@@ -293,13 +282,12 @@ public class TornadoCanonicalizer extends CustomCanonicalizer {
     }
 
     private void checkVectorStamps(ParameterNode param) {
-        if(param.stamp() instanceof ObjectStamp){
+        if (param.stamp() instanceof ObjectStamp) {
             ObjectStamp objStamp = (ObjectStamp) param.stamp();
-            if(objStamp.type().getAnnotation(Vector.class)!=null){
+            if (objStamp.type().getAnnotation(Vector.class) != null) {
                 OCLKind kind = OCLKind.fromResolvedJavaType(objStamp.type());
                 param.setStamp(OCLStampFactory.getStampFor(kind));
-                
-                
+
             }
         }
     }
