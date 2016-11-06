@@ -1,11 +1,9 @@
 package tornado.drivers.opencl.graal.lir;
 
-import com.oracle.graal.api.meta.Kind;
-import com.oracle.graal.api.meta.LIRKind;
-import com.oracle.graal.api.meta.PlatformKind;
-import com.oracle.graal.api.meta.Value;
+import com.oracle.graal.compiler.common.LIRKind;
 import com.oracle.graal.lir.LIRInstruction.Use;
 import com.oracle.graal.lir.Opcode;
+import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
@@ -16,10 +14,7 @@ public class OCLBinary {
     /**
      * Abstract operation which consumes two inputs
      */
-    protected static class BinaryConsumer implements OCLEmitable {
-
-        protected final Kind kind;
-        protected final LIRKind lirKind;
+    protected static class BinaryConsumer extends OCLEmitable {
 
         @Opcode
         protected final OCLBinaryOp opcode;
@@ -29,40 +24,15 @@ public class OCLBinary {
         @Use
         protected Value y;
 
-        protected BinaryConsumer(OCLBinaryOp opcode, Kind kind, LIRKind lirKind, Value x, Value y) {
+        protected BinaryConsumer(OCLBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
+            super(lirKind);
             this.opcode = opcode;
-            this.kind = kind;
-            this.lirKind = lirKind;
             this.x = x;
             this.y = y;
         }
 
-        public BinaryConsumer(OCLBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
-            this(opcode, Kind.Illegal, lirKind, x, y);
-        }
-
-        @Deprecated
-        public BinaryConsumer(OCLBinaryOp opcode, Kind kind, Value x, Value y) {
-            this(opcode, kind, LIRKind.value(kind), x, y);
-        }
-
         @Override
-        public Kind getKind() {
-            return kind;
-        }
-
-        @Override
-        public LIRKind getLIRKind() {
-            return lirKind;
-        }
-
-        @Override
-        public PlatformKind getPlatformKind() {
-            return lirKind.getPlatformKind();
-        }
-
-        @Override
-        public void emit(OCLCompilationResultBuilder crb) {
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             opcode.emit(crb, x, y);
         }
 
@@ -86,12 +56,6 @@ public class OCLBinary {
         public Expr(OCLBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
             super(opcode, lirKind, x, y);
         }
-
-        @Deprecated
-        public Expr(OCLBinaryOp opcode, Kind kind, Value x, Value y) {
-            super(opcode, kind, x, y);
-        }
-
     }
 
     /**
@@ -103,32 +67,25 @@ public class OCLBinary {
             super(opcode, lirKind, x, y);
         }
 
-        @Deprecated
-        public Intrinsic(OCLBinaryIntrinsic opcode, Kind kind, Value x, Value y) {
-            super(opcode, kind, x, y);
-        }
-
         @Override
         public String toString() {
             return String.format("%s(%s, %s)", opcode.toString(), x, y);
         }
-
     }
-    
+
     public static class Selector extends Expr {
 
         public Selector(OCLBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
             super(opcode, lirKind, x, y);
         }
 
-         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-           OCLAssembler asm = crb.getAssembler();
-           asm.value(crb, x);
-           asm.emit(opcode.toString());
-           asm.value(crb, y);
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.value(crb, x);
+            asm.emit(opcode.toString());
+            asm.value(crb, y);
         }
-        
+
         @Override
         public String toString() {
             return String.format("%s.%s", opcode.toString(), x, y);
