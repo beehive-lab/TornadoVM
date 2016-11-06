@@ -29,7 +29,7 @@ public class OCLAddressOps {
 
     }
 
-    @Opcode("VMOV")
+    @Deprecated
     public static class OCLVectorElement extends OCLEmitable {
 
         private final Value vector;
