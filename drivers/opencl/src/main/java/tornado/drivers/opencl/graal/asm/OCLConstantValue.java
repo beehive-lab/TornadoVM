@@ -5,39 +5,25 @@
  */
 package tornado.drivers.opencl.graal.asm;
 
-import com.oracle.graal.api.meta.Kind;
-import com.oracle.graal.api.meta.LIRKind;
-import com.oracle.graal.api.meta.PlatformKind;
-import com.oracle.graal.api.meta.Value;
-import tornado.drivers.opencl.graal.lir.OCLKind;
+import com.oracle.graal.compiler.common.LIRKind;
+import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
+import tornado.drivers.opencl.graal.lir.OCLEmitable;
 
-public class OCLConstantValue implements Value {
+public class OCLConstantValue extends OCLEmitable {
 
-    
-    
     private final String value;
-    
-    public OCLConstantValue(String value){
+
+    public OCLConstantValue(String value) {
+        super(LIRKind.Illegal);
         this.value = value;
     }
-    
-    public String getValue(){
+
+    @Override
+    public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+        asm.emit(value);
+    }
+
+    public String getValue() {
         return value;
     }
-
-    @Override
-    public LIRKind getLIRKind() {
-        return LIRKind.Illegal;
-    }
-
-    @Override
-    public PlatformKind getPlatformKind() {
-        return OCLKind.ILLEGAL;
-    }
-
-    @Override
-    public Kind getKind() {
-        return Kind.Illegal;
-    }
-    
 }
