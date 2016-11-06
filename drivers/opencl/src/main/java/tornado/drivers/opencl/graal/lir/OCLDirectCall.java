@@ -1,23 +1,20 @@
 package tornado.drivers.opencl.graal.lir;
 
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.STACK_REF_NAME;
-import tornado.drivers.opencl.graal.OCLUtils;
-import tornado.drivers.opencl.graal.asm.OCLAssembler;
-import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
-
-import com.oracle.graal.api.meta.Kind;
-import com.oracle.graal.api.meta.LIRKind;
-import com.oracle.graal.api.meta.PlatformKind;
-import com.oracle.graal.api.meta.Value;
+import com.oracle.graal.compiler.common.LIRKind;
 import com.oracle.graal.lir.LIRFrameState;
 import com.oracle.graal.lir.LIRInstruction.Def;
 import com.oracle.graal.lir.LIRInstruction.Use;
 import com.oracle.graal.nodes.DirectCallTargetNode;
+import jdk.vm.ci.meta.Value;
+import tornado.drivers.opencl.graal.OCLUtils;
+import tornado.drivers.opencl.graal.asm.OCLAssembler;
+import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 
-public class OCLDirectCall implements OCLEmitable {
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.STACK_REF_NAME;
 
-    protected Kind kind;
+public class OCLDirectCall extends OCLEmitable {
+
     protected DirectCallTargetNode target;
     protected LIRFrameState frameState;
     @Def
@@ -25,9 +22,9 @@ public class OCLDirectCall implements OCLEmitable {
     @Use
     protected Value[] parameters;
 
-    public OCLDirectCall(Kind kind, DirectCallTargetNode target, Value result,
+    public OCLDirectCall(DirectCallTargetNode target, Value result,
             Value[] parameters, LIRFrameState frameState) {
-        this.kind = kind;
+        super(LIRKind.value(result.getPlatformKind()));
         this.result = result;
         this.parameters = parameters;
         this.target = target;
@@ -35,8 +32,7 @@ public class OCLDirectCall implements OCLEmitable {
     }
 
     @Override
-    public void emit(OCLCompilationResultBuilder crb) {
-        final OCLAssembler asm = crb.getAssembler();
+    public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
 
         final String methodName = OCLUtils
                 .makeMethodName(target.targetMethod());
@@ -49,32 +45,16 @@ public class OCLDirectCall implements OCLEmitable {
         for (Value param : parameters) {
             // System.out.printf("param: %s\n",param);
             asm.emit(asm.toString(param));
-            if (i < parameters.length - 1)
+            if (i < parameters.length - 1) {
                 asm.emit(", ");
+            }
 
             i++;
         }
         asm.emit(")");
 
         // System.out.printf("direct call: method=%s, frameState=%s\n",target.targetMethod(),frameState);
-
         crb.addNonInlinedMethod(target.targetMethod());
 
     }
-
-    @Override
-    public LIRKind getLIRKind() {
-        return LIRKind.value(kind);
-    }
-
-    @Override
-    public PlatformKind getPlatformKind() {
-        return kind;
-    }
-
-    @Override
-    public Kind getKind() {
-        return kind;
-    }
-
 }
