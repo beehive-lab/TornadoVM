@@ -1,7 +1,9 @@
 package tornado.drivers.opencl.graal.lir;
-import com.oracle.graal.api.meta.Value;
+
+import jdk.vm.ci.meta.Value;
 
 @Deprecated
 public interface OCLStmt {
-	public Value getResult();
+
+    public Value getResult();
 }
