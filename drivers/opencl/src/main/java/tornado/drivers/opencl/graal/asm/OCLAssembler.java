@@ -1,34 +1,25 @@
 package tornado.drivers.opencl.graal.asm;
 
-import com.oracle.graal.api.code.AbstractAddress;
-import com.oracle.graal.api.code.Register;
-import com.oracle.graal.api.code.TargetDescription;
-import com.oracle.graal.api.meta.Kind;
-import com.oracle.graal.api.meta.PrimitiveConstant;
-import com.oracle.graal.api.meta.Value;
+import com.oracle.graal.asm.AbstractAddress;
 import com.oracle.graal.asm.Assembler;
 import com.oracle.graal.asm.Label;
-import com.oracle.graal.hotspot.meta.HotSpotObjectConstant;
+import com.oracle.graal.lir.ConstantValue;
 import com.oracle.graal.lir.Variable;
 import java.util.ArrayList;
 import java.util.List;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CONSTANT_REGION_NAME;
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.GLOBAL_REGION_NAME;
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.LOCAL_REGION_NAME;
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.PRIVATE_REGION_NAME;
-import tornado.drivers.opencl.graal.backend.OCLBackend;
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.hotspot.HotSpotObjectConstant;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
-import tornado.drivers.opencl.graal.lir.OCLEmitable;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-import tornado.drivers.opencl.graal.lir.OCLNullary;
-import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
-import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
-import tornado.graal.nodes.vector.VectorKind;
+
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
+import static tornado.drivers.opencl.graal.lir.OCLKind.*;
 
 public class OCLAssembler extends Assembler {
 
@@ -90,6 +81,7 @@ public class OCLAssembler extends Assembler {
             super(opcode);
         }
 
+        @Override
         public void emit(OCLCompilationResultBuilder crb) {
             final OCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);
@@ -118,6 +110,7 @@ public class OCLAssembler extends Assembler {
             super(opcode);
         }
 
+        @Override
         public void emit(OCLCompilationResultBuilder crb) {
             final OCLAssembler asm = crb.getAssembler();
             asm.emit(opcode);
@@ -230,6 +223,7 @@ public class OCLAssembler extends Assembler {
             super(opcode, true);
         }
 
+        @Override
         public void emit(OCLCompilationResultBuilder crb, Value x) {
             final OCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);
@@ -273,6 +267,7 @@ public class OCLAssembler extends Assembler {
             this.template = template;
         }
 
+        @Override
         public void emit(OCLCompilationResultBuilder crb, Value value) {
             final OCLAssembler asm = crb.getAssembler();
             asm.emit(
@@ -411,6 +406,7 @@ public class OCLAssembler extends Assembler {
             this.template = template;
         }
 
+        @Override
         public void emit(OCLCompilationResultBuilder crb, Value x, Value y) {
             final OCLAssembler asm = crb.getAssembler();
             asm.beginStackPush();
@@ -490,6 +486,7 @@ public class OCLAssembler extends Assembler {
             this.template = template;
         }
 
+        @Override
         public void emit(OCLCompilationResultBuilder crb, Value x, Value y, Value z) {
             final OCLAssembler asm = crb.getAssembler();
             asm.beginStackPush();
@@ -716,7 +713,7 @@ public class OCLAssembler extends Assembler {
         indent = 0;
         delimiter = OCLAssemblerConstants.STMT_DELIMITER;
         emitEOL = true;
-        operandStack = new ArrayList<String>(10);
+        operandStack = new ArrayList<>(10);
         pushToStack = false;
 
     }
@@ -738,8 +735,8 @@ public class OCLAssembler extends Assembler {
     }
 
     @Override
-    public AbstractAddress getPlaceholder() {
-        // TODO Auto-generated method stub
+    public AbstractAddress getPlaceholder(int i) {
+        unimplemented();
         return null;
     }
 
@@ -751,14 +748,13 @@ public class OCLAssembler extends Assembler {
 
     @Override
     public AbstractAddress makeAddress(Register arg0, int arg1) {
-        // TODO Auto-generated method stub
+        unimplemented();
         return null;
     }
 
     @Override
     protected void patchJumpTarget(int arg0, int arg1) {
-        // TODO Auto-generated method stub
-
+        unimplemented();
     }
 
     /**
@@ -771,9 +767,7 @@ public class OCLAssembler extends Assembler {
      */
     public void emitStmt(String fmt, Object... args) {
         indent();
-        emit(
-                "%s", String.format(
-                        fmt, args));
+        emit("%s", String.format(fmt, args));
         delimiter();
         eol();
     }
@@ -788,8 +782,7 @@ public class OCLAssembler extends Assembler {
      */
     public void emitString(String fmt, Object... args) {
         indent();
-        emitString(String.format(
-                fmt, args));
+        emitString(String.format(fmt, args));
     }
 
     public void emitSubString(String str) {
@@ -905,8 +898,7 @@ public class OCLAssembler extends Assembler {
 
     public void dump() {
         for (int i = 0; i < position(); i++) {
-            System.out.printf(
-                    "%c", getByte(i));
+            System.out.printf("%c", (char) getByte(i));
         }
     }
 
@@ -925,38 +917,71 @@ public class OCLAssembler extends Assembler {
         pushIndent();
     }
 
+    private String encodeString(String str) {
+        return str.replace("\n", "\\n").replace("\t", "\\t");
+    }
+
+    private String addLiteralSuffix(OCLKind oclKind, String value) {
+        String result = value;
+        if (oclKind == FLOAT) {
+            result += "F";
+        } else if (oclKind.isInteger()) {
+            if (oclKind.isUnsigned()) {
+                result += "U";
+            }
+
+            if (oclKind == LONG || oclKind == ULONG) {
+                result += "L";
+            }
+        }
+        return result;
+    }
+
     public String toString(Value value) {
         String result = "";
         if (value instanceof Variable) {
             Variable var = (Variable) value;
             return var.getName();
-        } else if (value instanceof PrimitiveConstant) {
-            PrimitiveConstant c = (PrimitiveConstant) value;
-            result = String.format(
-                    "%s", c.toValueString());
-            if (c.getKind().equals(
-                    Kind.Float)) {
-                result += String.format("f");
+        } else if (value instanceof ConstantValue) {
+            if (((ConstantValue) value).isJavaConstant()) {
+                shouldNotReachHere("constant value: ", value);
             }
-        } else if (value instanceof HotSpotObjectConstant){
-            HotSpotObjectConstant objConst = (HotSpotObjectConstant) value;
-//            System.out.printf("hs const: type=%s\n",objConst.getType().getName());
-            if(objConst.getKind().isObject() && objConst.getType().getName().compareToIgnoreCase("Ljava/lang/String;") == 0){
-                result = objConst.toValueString().replace("\n", "\\n").replace("\t","\\t") ;
-            }
-        } else if (value.getClass().getName().equals(
-                "com.oracle.graal.api.meta.NullConstant")) {
-            if (value.getPlatformKind() instanceof VectorKind) {
-                final VectorKind kind = (VectorKind) value.getPlatformKind();
-                result = String.format("(%s)(%s)", kind.getJavaName(), kind.getDefaultValue().toValueString());
+
+            ConstantValue cv = (ConstantValue) value;
+            JavaConstant javaConstant = cv.getJavaConstant();
+            Constant constant = cv.getConstant();
+            OCLKind oclKind = (OCLKind) cv.getPlatformKind();
+            if (javaConstant.isNull()) {
+                result = addLiteralSuffix(oclKind, "0");
+                if (oclKind.isVector()) {
+                    result = String.format("(%s)(%s)", oclKind.name(), result);
+                }
+            } else if (constant instanceof HotSpotObjectConstant) {
+                HotSpotObjectConstant objConst = (HotSpotObjectConstant) value;
+                // TODO should this be replaced with isInternedString()?
+                if (objConst.getJavaKind().isObject() && objConst.getType().getName().compareToIgnoreCase("Ljava/lang/String;") == 0) {
+                    result = encodeString(objConst.toValueString());
+                }
             } else {
-                result = String.format("0");
+                result = constant.toValueString();
+                // emit literal suffixes
+                result = addLiteralSuffix(oclKind, result);
             }
-        } else if (value instanceof OCLReturnSlot) {
-            final String type = ((OCLKind) value.getPlatformKind()).name().toLowerCase();
-            result = String.format("*((__global %s *) %s)", type, HEAP_REF_NAME);
-        } else if (value instanceof OCLNullary.Expr) {
-            return ((OCLNullary.Expr) value).toString();
+
+//        } else if (value.getClass().getName().equals(
+//                "com.oracle.graal.api.meta.NullConstant")) {
+//            if (value.getPlatformKind() instanceof VectorKind) {
+//                final VectorKind kind = (VectorKind) value.getPlatformKind();
+//                result = String.format("(%s)(%s)", kind.getJavaName(), kind.getDefaultValue().toValueString());
+//            } else {
+//                result = String.format("0");
+//            }
+//        }
+//        else if (value instanceof OCLReturnSlot) {
+//            final String type = ((OCLKind) value.getPlatformKind()).name().toLowerCase();
+//            result = String.format("*((__global %s *) %s)", type, HEAP_REF_NAME);
+//        } else if (value instanceof OCLNullary.Expr) {
+//            return ((OCLNullary.Expr) value).toString();
         } else {
             unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
         }
@@ -966,16 +991,19 @@ public class OCLAssembler extends Assembler {
     public void value(OCLCompilationResultBuilder crb, Value value) {
 //        System.out.printf("value: %s (%s)\n", value, value.getClass().getName());
 
-        if (value instanceof MemoryAccess) {
-            MemoryAccess access = (MemoryAccess) value;
-            access.emit(crb);
-        } else if (value instanceof OCLConstantValue) {
-            emit(((OCLConstantValue) value).getValue());
-        } else if (value instanceof OCLEmitable) {
-            ((OCLEmitable) value).emit(crb);
-        } else {
-            emit(toString(value));
-        }
+//        if (value instanceof MemoryAccess) {
+//            MemoryAccess access = (MemoryAccess) value;
+//            access.emit(crb);
+//        } else if (value instanceof OCLConstantValue) {
+//            emit(((OCLConstantValue) value).getValue());
+//        } else if (value instanceof OCLEmitable) {
+//            ((OCLEmitable) value).emit(crb);
+//    }
+//
+//
+//        else {
+        emit(toString(value));
+//    }
     }
 
     public void assign() {
@@ -997,16 +1025,18 @@ public class OCLAssembler extends Assembler {
 
     }
 
-    public void loadParam64(Variable result, int paramIndex) {
-        emit(
-                "(%s) slots[%d]",
-                OCLBackend.platformKindToOpenCLKind(result.getPlatformKind()), paramIndex + 6);
+    public void loadParam(Variable result, int index) {
+        emit("(%s) slots[%d]", result.getPlatformKind().name(), index + 6);
     }
 
+    @Deprecated
+    public void loadParam64(Variable result, int paramIndex) {
+        loadParam(result, paramIndex);
+    }
+
+    @Deprecated
     public void loadParam32(Variable result, int paramIndex) {
-        emit(
-                "(%s) slots[%d]",
-                OCLBackend.platformKindToOpenCLKind(result.getPlatformKind()), paramIndex + 6);
+        loadParam(result, paramIndex);
     }
 
     public void space() {
