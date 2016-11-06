@@ -1,8 +1,12 @@
 package tornado.common.exceptions;
 
+import java.util.ArrayList;
+
 public class TornadoInternalError extends Error {
 
     private static final long serialVersionUID = 6639694094043791236L;
+
+    private final ArrayList<String> context = new ArrayList<>();
 
     public static RuntimeException unimplemented() {
         throw new TornadoInternalError("unimplemented");
@@ -44,6 +48,15 @@ public class TornadoInternalError extends Error {
 
     public TornadoInternalError(Throwable cause) {
         super(cause);
+    }
+
+    public TornadoInternalError addContext(String newContext) {
+        context.add(newContext);
+        return this;
+    }
+
+    public TornadoInternalError addContext(String name, Object obj) {
+        return addContext(String.format("%s: %s", name, obj));
     }
 
 }
