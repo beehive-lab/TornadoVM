@@ -1,28 +1,23 @@
 package tornado.drivers.opencl.graal.lir;
 
-import com.oracle.graal.api.meta.Kind;
-import com.oracle.graal.api.meta.LIRKind;
-import com.oracle.graal.api.meta.PlatformKind;
-import com.oracle.graal.api.meta.Value;
+import com.oracle.graal.compiler.common.LIRKind;
 import com.oracle.graal.lir.LIRInstruction.Use;
 import com.oracle.graal.lir.Opcode;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import jdk.vm.ci.meta.Value;
+import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp4;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp8;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLVectorAssign {
 
     /**
      * OpenCL vector assignment expression
      */
-    public static class Assign2Expr implements OCLEmitable {
-
-        protected OCLKind kind;
+    public static class Assign2Expr extends OCLEmitable {
 
         @Opcode
         protected final OCLOp opcode;
@@ -32,33 +27,17 @@ public class OCLVectorAssign {
         @Use
         protected Value s1;
 
-        public Assign2Expr(OCLOp opcode, OCLKind kind, Value s0, Value s1) {
+        public Assign2Expr(OCLOp opcode, OCLKind oclKind, Value s0, Value s1) {
+            super(LIRKind.value(oclKind));
             this.opcode = opcode;
             this.s0 = s0;
             this.s1 = s1;
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             ((OCLOp2) opcode).emit(crb, s0, s1);
         }
-
-        @Override
-        public LIRKind getLIRKind() {
-            return LIRKind.value(kind);
-        }
-
-        @Override
-        public PlatformKind getPlatformKind() {
-            return kind;
-        }
-
-        @Override
-        public Kind getKind() {
-            shouldNotReachHere();
-            return Kind.Illegal;
-        }
-
     }
 
     /**
@@ -75,7 +54,7 @@ public class OCLVectorAssign {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             ((OCLOp3) opcode).emit(crb, s0, s1, s2);
         }
 
@@ -95,7 +74,7 @@ public class OCLVectorAssign {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             ((OCLOp4) opcode).emit(crb, s0, s1, s2, s3);
         }
 
@@ -124,7 +103,7 @@ public class OCLVectorAssign {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             ((OCLOp8) opcode).emit(crb, s0, s1, s2, s3, s4, s5, s6, s7);
         }
 
