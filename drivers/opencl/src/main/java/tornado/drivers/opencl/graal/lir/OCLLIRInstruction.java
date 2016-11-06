@@ -1,15 +1,13 @@
 package tornado.drivers.opencl.graal.lir;
 
-import com.oracle.graal.api.meta.AllocatableValue;
-import com.oracle.graal.api.meta.Kind;
-import com.oracle.graal.api.meta.LIRKind;
-import com.oracle.graal.api.meta.PlatformKind;
-import com.oracle.graal.api.meta.Value;
 import com.oracle.graal.lir.LIRInstruction;
+import com.oracle.graal.lir.LIRInstruction.Def;
+import com.oracle.graal.lir.LIRInstruction.Use;
 import com.oracle.graal.lir.LIRInstructionClass;
 import com.oracle.graal.lir.Opcode;
-import com.oracle.graal.lir.Variable;
 import com.oracle.graal.lir.asm.CompilationResultBuilder;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic;
@@ -18,59 +16,77 @@ import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 
 public class OCLLIRInstruction {
-    
-    protected static abstract class AbstractInstruction extends LIRInstruction implements
-            OCLEmitable {
-        
+
+    protected static abstract class AbstractInstruction extends LIRInstruction {
+
         protected AbstractInstruction(LIRInstructionClass<? extends AbstractInstruction> c) {
             super(c);
         }
-        
+
         @Override
-        public void emitCode(CompilationResultBuilder crb) {
-            emitCode((OCLCompilationResultBuilder) crb);
+        public final void emitCode(CompilationResultBuilder crb) {
+            emitCode((OCLCompilationResultBuilder) crb, (OCLAssembler) crb.asm);
         }
-        
-        public void emitCode(OCLCompilationResultBuilder crb) {
-            emit(crb);
-        }
-        
-        @Override
-        public LIRKind getLIRKind() {
-            return LIRKind.Illegal;
-        }
-        
-        @Override
-        public PlatformKind getPlatformKind() {
-            return Kind.Illegal;
-        }
-        
-        @Override
-        public Kind getKind() {
-            return Kind.Illegal;
-        }
-        
+
+        public abstract void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm);
+
     }
-    
-    @Opcode("ASSIGN")
+
+    @Opcode("ASSIGN EXPR")
     public static class AssignStmt extends AbstractInstruction {
-        
+
         public static final LIRInstructionClass<AssignStmt> TYPE = LIRInstructionClass.create(AssignStmt.class);
-        
+
+        @Def
+        protected AllocatableValue lhs;
+        @Use
+        protected OCLEmitable rhs;
+
+        public AssignStmt(AllocatableValue lhs, OCLEmitable rhs) {
+            super(TYPE);
+            this.lhs = lhs;
+            this.rhs = rhs;
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            asm.value(crb, lhs);
+            asm.space();
+            asm.assign();
+            asm.space();
+            rhs.emit(crb, asm);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        public AllocatableValue getResult() {
+            return lhs;
+        }
+
+        public OCLEmitable getExpr() {
+            return rhs;
+        }
+    }
+
+    @Opcode("MOVE")
+    public static class MoveStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<MoveStmt> TYPE = LIRInstructionClass.create(MoveStmt.class);
+
         @Def
         protected AllocatableValue lhs;
         @Use
         protected Value rhs;
-        
-        public AssignStmt(AllocatableValue lhs, Value rhs) {
+
+        public MoveStmt(AllocatableValue lhs, Value rhs) {
             super(TYPE);
             this.lhs = lhs;
             this.rhs = rhs;
         }
-        
+
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OCLAssembler asm = crb.getAssembler();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
             asm.value(crb, lhs);
             asm.space();
@@ -80,83 +96,82 @@ public class OCLLIRInstruction {
             asm.delimiter();
             asm.eol();
         }
-        
+
         public AllocatableValue getResult() {
             return lhs;
         }
-        
+
         public Value getExpr() {
             return rhs;
         }
     }
-    
+
     @Opcode("LOAD")
     public static class LoadStmt extends AbstractInstruction {
-        
+
         public static final LIRInstructionClass<LoadStmt> TYPE = LIRInstructionClass.create(LoadStmt.class);
-        
+
         @Def
-        protected Value lhs;
+        protected AllocatableValue lhs;
         @Use
-        protected Value cast;
+        protected OCLAddressCast cast;
         @Use
-        protected Value address;
-        
-        public LoadStmt(Value lhs, Value cast, Value address) {
+        protected MemoryAccess address;
+
+        public LoadStmt(AllocatableValue lhs, OCLAddressCast cast, MemoryAccess address) {
             super(TYPE);
             this.lhs = lhs;
             this.cast = cast;
             this.address = address;
         }
-        
+
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OCLAssembler asm = crb.getAssembler();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
             asm.value(crb, lhs);
             asm.space();
             asm.assign();
             asm.space();
             asm.emit("*(");
-            ((OCLAddressCast) cast).emit(crb);
+            cast.emit(crb, asm);
             asm.space();
-            asm.value(crb, address);
+            address.emit(crb, asm);
             asm.emit(")");
             asm.delimiter();
             asm.eol();
         }
-        
-        public Value getResult() {
+
+        public AllocatableValue getResult() {
             return lhs;
         }
-        
-        public Value getCast() {
+
+        public OCLAddressCast getCast() {
             return cast;
         }
-        
-        public Value getAddress() {
+
+        public MemoryAccess getAddress() {
             return address;
         }
     }
-    
+
     @Opcode("VLOAD")
     public static class VectorLoadStmt extends AbstractInstruction {
-        
+
         public static final LIRInstructionClass<VectorLoadStmt> TYPE = LIRInstructionClass.create(VectorLoadStmt.class);
-        
+
         @Def
-        protected Value lhs;
+        protected AllocatableValue lhs;
         @Use
-        protected Value cast;
+        protected OCLAddressCast cast;
         @Use
-        protected Value address;
-        
+        protected MemoryAccess address;
+
         @Use
         protected Value index;
-        
+
         protected OCLBinaryIntrinsic op;
-        
-        public VectorLoadStmt(Value lhs, OCLBinaryIntrinsic op, Value index, Value cast, Value address) {
+
+        public VectorLoadStmt(AllocatableValue lhs, OCLBinaryIntrinsic op, Value index, OCLAddressCast cast, MemoryAccess address) {
             super(TYPE);
             this.lhs = lhs;
             this.cast = cast;
@@ -164,10 +179,9 @@ public class OCLLIRInstruction {
             this.op = op;
             this.index = index;
         }
-        
+
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OCLAssembler asm = crb.getAssembler();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
             asm.value(crb, lhs);
             asm.space();
@@ -177,60 +191,59 @@ public class OCLLIRInstruction {
             asm.emit("(");
             asm.value(crb, index);
             asm.emit(", ");
-            ((OCLAddressCast) cast).emit(crb);
+            cast.emit(crb, asm);
             asm.space();
-            asm.value(crb, address);
+            address.emit(crb, asm);
             asm.emit(")");
             asm.delimiter();
             asm.eol();
         }
-        
+
         public Value getResult() {
             return lhs;
         }
-        
-        public Value getCast() {
+
+        public OCLAddressCast getCast() {
             return cast;
         }
-        
-        public Value getAddress() {
+
+        public MemoryAccess getAddress() {
             return address;
         }
-        
+
         public OCLBinaryIntrinsic getOp() {
             return op;
         }
     }
-    
+
     @Opcode("STORE")
     public static class StoreStmt extends AbstractInstruction {
-        
+
         public static final LIRInstructionClass<StoreStmt> TYPE = LIRInstructionClass.create(StoreStmt.class);
-        
+
         @Use
         protected Value rhs;
         @Use
-        protected Value cast;
+        protected OCLAddressCast cast;
         @Use
-        protected Value address;
-        
-        public StoreStmt(Value cast, Value address, Value rhs) {
+        protected MemoryAccess address;
+
+        public StoreStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
             super(TYPE);
             this.rhs = rhs;
             this.cast = cast;
             this.address = address;
         }
-        
+
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OCLAssembler asm = crb.getAssembler();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
 
             //asm.space();
             asm.emit("*(");
-            ((OCLAddressCast) cast).emit(crb);
+            cast.emit(crb, asm);
             asm.space();
-            asm.value(crb, address);
+            address.emit(crb, asm);
             asm.emit(")");
             asm.space();
             asm.assign();
@@ -239,37 +252,37 @@ public class OCLLIRInstruction {
             asm.delimiter();
             asm.eol();
         }
-        
+
         public Value getRhs() {
             return rhs;
         }
-        
-        public Value getCast() {
+
+        public OCLAddressCast getCast() {
             return cast;
         }
-        
-        public Value getAddress() {
+
+        public MemoryAccess getAddress() {
             return address;
         }
     }
-    
+
     @Opcode("VSTORE")
     public static class VectorStoreStmt extends AbstractInstruction {
-        
+
         public static final LIRInstructionClass<VectorStoreStmt> TYPE = LIRInstructionClass.create(VectorStoreStmt.class);
-        
+
         @Use
         protected Value rhs;
         @Use
-        protected Value cast;
+        protected OCLAddressCast cast;
         @Use
-        protected Value address;
+        protected MemoryAccess address;
         @Use
         protected Value index;
-        
+
         protected OCLTernaryIntrinsic op;
-        
-        public VectorStoreStmt(OCLTernaryIntrinsic op, Value index, Value cast, Value address, Value rhs) {
+
+        public VectorStoreStmt(OCLTernaryIntrinsic op, Value index, OCLAddressCast cast, MemoryAccess address, Value rhs) {
             super(TYPE);
             this.rhs = rhs;
             this.cast = cast;
@@ -277,10 +290,9 @@ public class OCLLIRInstruction {
             this.op = op;
             this.index = index;
         }
-        
+
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OCLAssembler asm = crb.getAssembler();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
 
             //asm.space();
@@ -290,64 +302,64 @@ public class OCLLIRInstruction {
             asm.emit(", ");
             asm.value(crb, index);
             asm.emit(", ");
-            ((OCLAddressCast) cast).emit(crb);
+            cast.emit(crb, asm);
             asm.space();
-            if (address instanceof MemoryAccess) {
-                ((MemoryAccess) address).emit(crb);
-            } else if (address instanceof Variable) {
-                asm.value(crb, address);
-            }
+            address.emit(crb, asm);
+//            if (address instanceof MemoryAccess) {
+//                ((MemoryAccess) address).emit(crb);
+//            } else if (address instanceof Variable) {
+//                asm.value(crb, address);
+//            }
             asm.emit(")");
             asm.delimiter();
             asm.eol();
         }
-        
+
         public Value getRhs() {
             return rhs;
         }
-        
-        public Value getCast() {
+
+        public OCLAddressCast getCast() {
             return cast;
         }
-        
-        public Value getAddress() {
+
+        public MemoryAccess getAddress() {
             return address;
         }
-        
+
         public Value getIndex() {
             return index;
         }
-        
+
         public OCLTernaryIntrinsic getOp() {
             return op;
         }
     }
-    
+
     @Opcode("EXPR")
     public static class ExprStmt extends AbstractInstruction {
-        
+
         public static final LIRInstructionClass<ExprStmt> TYPE = LIRInstructionClass.create(ExprStmt.class);
-        
+
         @Use
-        protected Value expr;
-        
-        public ExprStmt(Value expr) {
+        protected OCLEmitable expr;
+
+        public ExprStmt(OCLEmitable expr) {
             super(TYPE);
             this.expr = expr;
         }
-        
+
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OCLAssembler asm = crb.getAssembler();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            asm.value(crb, expr);
+            expr.emit(crb, asm);
             asm.delimiter();
             asm.eol();
         }
-        
-        public Value getExpr() {
+
+        public OCLEmitable getExpr() {
             return expr;
         }
     }
-    
+
 }
