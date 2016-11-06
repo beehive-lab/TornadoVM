@@ -937,6 +937,29 @@ public class OCLAssembler extends Assembler {
         return result;
     }
 
+    public void emitConstant(ConstantValue cv) {
+        String result = "";
+        JavaConstant javaConstant = cv.getJavaConstant();
+        Constant constant = cv.getConstant();
+        OCLKind oclKind = (OCLKind) cv.getPlatformKind();
+        if (javaConstant.isNull()) {
+            result = addLiteralSuffix(oclKind, "0");
+            if (oclKind.isVector()) {
+                result = String.format("(%s)(%s)", oclKind.name(), result);
+            }
+        } else if (constant instanceof HotSpotObjectConstant) {
+            HotSpotObjectConstant objConst = (HotSpotObjectConstant) cv;
+            // TODO should this be replaced with isInternedString()?
+            if (objConst.getJavaKind().isObject() && objConst.getType().getName().compareToIgnoreCase("Ljava/lang/String;") == 0) {
+                result = encodeString(objConst.toValueString());
+            }
+        } else {
+            result = constant.toValueString();
+            result = addLiteralSuffix(oclKind, result);
+        }
+        emit(result);
+    }
+
     public String toString(Value value) {
         String result = "";
         if (value instanceof Variable) {
@@ -948,35 +971,7 @@ public class OCLAssembler extends Assembler {
             }
 
             ConstantValue cv = (ConstantValue) value;
-            JavaConstant javaConstant = cv.getJavaConstant();
-            Constant constant = cv.getConstant();
-            OCLKind oclKind = (OCLKind) cv.getPlatformKind();
-            if (javaConstant.isNull()) {
-                result = addLiteralSuffix(oclKind, "0");
-                if (oclKind.isVector()) {
-                    result = String.format("(%s)(%s)", oclKind.name(), result);
-                }
-            } else if (constant instanceof HotSpotObjectConstant) {
-                HotSpotObjectConstant objConst = (HotSpotObjectConstant) value;
-                // TODO should this be replaced with isInternedString()?
-                if (objConst.getJavaKind().isObject() && objConst.getType().getName().compareToIgnoreCase("Ljava/lang/String;") == 0) {
-                    result = encodeString(objConst.toValueString());
-                }
-            } else {
-                result = constant.toValueString();
-                // emit literal suffixes
-                result = addLiteralSuffix(oclKind, result);
-            }
-
-//        } else if (value.getClass().getName().equals(
-//                "com.oracle.graal.api.meta.NullConstant")) {
-//            if (value.getPlatformKind() instanceof VectorKind) {
-//                final VectorKind kind = (VectorKind) value.getPlatformKind();
-//                result = String.format("(%s)(%s)", kind.getJavaName(), kind.getDefaultValue().toValueString());
-//            } else {
-//                result = String.format("0");
-//            }
-//        }
+            emitConstant(cv);
 //        else if (value instanceof OCLReturnSlot) {
 //            final String type = ((OCLKind) value.getPlatformKind()).name().toLowerCase();
 //            result = String.format("*((__global %s *) %s)", type, HEAP_REF_NAME);
