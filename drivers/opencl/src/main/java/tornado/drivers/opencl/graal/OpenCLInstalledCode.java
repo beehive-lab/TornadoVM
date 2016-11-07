@@ -1,23 +1,20 @@
 package tornado.drivers.opencl.graal;
 
-import com.oracle.graal.api.code.InstalledCode;
-import com.oracle.graal.api.code.InvalidInstalledCodeException;
 import java.nio.ByteBuffer;
+import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.code.InvalidInstalledCodeException;
 import tornado.api.Event;
 import tornado.common.CallStack;
-import static tornado.common.RuntimeUtilities.humanReadableByteCount;
-import static tornado.common.Tornado.*;
 import tornado.common.TornadoInstalledCode;
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import tornado.drivers.opencl.OCLDeviceContext;
-import tornado.drivers.opencl.OCLKernel;
-import tornado.drivers.opencl.OCLKernelScheduler;
-import tornado.drivers.opencl.OCLProgram;
-import tornado.drivers.opencl.OCLScheduler;
+import tornado.drivers.opencl.*;
 import tornado.drivers.opencl.mm.OCLByteBuffer;
 import tornado.drivers.opencl.mm.OCLCallStack;
 import tornado.drivers.opencl.runtime.OCLMemoryRegions;
 import tornado.meta.Meta;
+
+import static tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static tornado.common.Tornado.*;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
 
 public class OpenCLInstalledCode extends InstalledCode implements TornadoInstalledCode {
 
@@ -131,11 +128,6 @@ public class OpenCLInstalledCode extends InstalledCode implements TornadoInstall
         return code;
     }
 
-    @Override
-    public long getCodeSize() {
-        return code.length;
-    }
-
     private void setKernelArgs(final OCLByteBuffer stack, OCLMemoryRegions regions) {
         int index = 0;
 
@@ -202,7 +194,7 @@ public class OpenCLInstalledCode extends InstalledCode implements TornadoInstall
         guarantee(kernel != null, "kernel is null");
 
         int task;
-        if (meta!=null && meta.isParallel()) {
+        if (meta != null && meta.isParallel()) {
             task = scheduler.submit(kernel, meta, waitEvents);
         } else {
             task = deviceContext.enqueueTask(kernel, waitEvents);
