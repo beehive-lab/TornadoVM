@@ -5,12 +5,12 @@ import com.oracle.graal.lir.Variable;
 import com.oracle.graal.lir.gen.LIRGeneratorTool;
 import com.oracle.graal.nodeinfo.NodeInfo;
 import com.oracle.graal.nodes.LogicNode;
-import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
-import tornado.drivers.opencl.OCLKind;
-import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp.LOGICAL_NOT;
-import tornado.drivers.opencl.graal.lir.OCLStmt;
+import jdk.vm.ci.meta.Value;
+import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
 import tornado.graal.nodes.logic.UnaryLogicalNode;
+
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp.LOGICAL_NOT;
 
 @NodeInfo(shortName = "!")
 public class LogicalNotNode extends UnaryLogicalNode {
@@ -23,12 +23,11 @@ public class LogicalNotNode extends UnaryLogicalNode {
     }
 
     @Override
-    public void generate(NodeLIRBuilderTool gen) {
-        final LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-        Variable result = tool.newVariable(com.oracle.graal.compiler.common.LIRKind.value(OCLKind.BOOL));
-        OCLStmt.AssignStmt assign = new OCLStmt.AssignStmt(result, new OCLUnary.Expr(LOGICAL_NOT, gen.operand(getValue())));
+    public Value generate(LIRGeneratorTool tool, Value x) {
+        Variable result = tool.newVariable(tool.getLIRKind(stamp));
+        AssignStmt assign = new AssignStmt(result, new OCLUnary.Expr(LOGICAL_NOT, tool.getLIRKind(stamp), x));
         tool.append(assign);
-        gen.setResult(this, result);
+        return result;
     }
 
 }

@@ -5,12 +5,12 @@ import com.oracle.graal.lir.Variable;
 import com.oracle.graal.lir.gen.LIRGeneratorTool;
 import com.oracle.graal.nodeinfo.NodeInfo;
 import com.oracle.graal.nodes.LogicNode;
-import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
-import tornado.drivers.opencl.OCLKind;
-import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp.RELATIONAL_EQ;
+import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.lir.OCLBinary;
-import tornado.drivers.opencl.graal.lir.OCLStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
 import tornado.graal.nodes.logic.BinaryLogicalNode;
+
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp.RELATIONAL_EQ;
 
 @NodeInfo(shortName = "==")
 public class LogicalEqualsNode extends BinaryLogicalNode {
@@ -22,11 +22,10 @@ public class LogicalEqualsNode extends BinaryLogicalNode {
     }
 
     @Override
-    public void generate(NodeLIRBuilderTool gen) {
-        final LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-        Variable result = tool.newVariable(com.oracle.graal.compiler.common.LIRKind.value(OCLKind.BOOL));
-        OCLStmt.AssignStmt assign = new OCLStmt.AssignStmt(result, new OCLBinary.Expr(RELATIONAL_EQ, gen.operand(getX()), gen.operand(getY())));
+    public Value generate(LIRGeneratorTool tool, Value x, Value y) {
+        Variable result = tool.newVariable(tool.getLIRKind(stamp));
+        AssignStmt assign = new AssignStmt(result, new OCLBinary.Expr(RELATIONAL_EQ, tool.getLIRKind(stamp), x, y));
         tool.append(assign);
-        gen.setResult(this, result);
+        return result;
     }
 }
