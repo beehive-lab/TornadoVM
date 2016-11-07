@@ -22,16 +22,17 @@
  */
 package tornado.drivers.opencl.graal;
 
-import com.oracle.graal.api.code.*;
-import com.oracle.graal.lir.framemap.*;
+import com.oracle.graal.lir.framemap.FrameMap;
+import com.oracle.graal.lir.framemap.FrameMapBuilderImpl;
+import jdk.vm.ci.code.CodeCacheProvider;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.code.StackSlot;
 
 public class OpenCLFrameMapBuilder extends FrameMapBuilderImpl {
 
     public OpenCLFrameMapBuilder(FrameMap frameMap, CodeCacheProvider codeCache, RegisterConfig registerConfig) {
         super(frameMap, codeCache, registerConfig);
     }
-
- 
 
     public StackSlot allocateDeoptimizationRescueSlot() {
         return ((OpenCLFrameMap) getFrameMap()).allocateDeoptimizationRescueSlot();
