@@ -32,7 +32,7 @@ public class OCLLIRInstruction {
 
     }
 
-    @Opcode("ASSIGN EXPR")
+    @Opcode("ASSIGN")
     public static class AssignStmt extends AbstractInstruction {
 
         public static final LIRInstructionClass<AssignStmt> TYPE = LIRInstructionClass.create(AssignStmt.class);
@@ -40,9 +40,9 @@ public class OCLLIRInstruction {
         @Def
         protected AllocatableValue lhs;
         @Use
-        protected OCLEmitable rhs;
+        protected Value rhs;
 
-        public AssignStmt(AllocatableValue lhs, OCLEmitable rhs) {
+        public AssignStmt(AllocatableValue lhs, Value rhs) {
             super(TYPE);
             this.lhs = lhs;
             this.rhs = rhs;
@@ -55,7 +55,11 @@ public class OCLLIRInstruction {
             asm.space();
             asm.assign();
             asm.space();
-            rhs.emit(crb, asm);
+            if (rhs instanceof OCLEmitable) {
+                ((OCLEmitable) rhs).emit(crb, asm);
+            } else {
+                asm.value(crb, rhs);
+            }
             asm.delimiter();
             asm.eol();
         }
@@ -64,7 +68,7 @@ public class OCLLIRInstruction {
             return lhs;
         }
 
-        public OCLEmitable getExpr() {
+        public Value getExpr() {
             return rhs;
         }
     }
@@ -342,7 +346,7 @@ public class OCLLIRInstruction {
         public static final LIRInstructionClass<ExprStmt> TYPE = LIRInstructionClass.create(ExprStmt.class);
 
         @Use
-        protected OCLEmitable expr;
+        protected Value expr;
 
         public ExprStmt(OCLEmitable expr) {
             super(TYPE);
@@ -352,12 +356,16 @@ public class OCLLIRInstruction {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            expr.emit(crb, asm);
+            if (expr instanceof OCLEmitable) {
+                ((OCLEmitable) expr).emit(crb, asm);
+            } else {
+                asm.value(crb, expr);
+            }
             asm.delimiter();
             asm.eol();
         }
 
-        public OCLEmitable getExpr() {
+        public Value getExpr() {
             return expr;
         }
     }
