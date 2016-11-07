@@ -1,6 +1,5 @@
 package tornado.drivers.opencl.graal.nodes;
 
-import tornado.drivers.opencl.graal.lir.OCLFPBuiltinFunctionLIRGenerator;
 
 import com.oracle.graal.api.meta.Kind;
 import com.oracle.graal.api.meta.Value;
@@ -18,6 +17,7 @@ import com.oracle.graal.nodes.ValueNode;
 import com.oracle.graal.nodes.calc.UnaryNode;
 import com.oracle.graal.nodes.spi.ArithmeticLIRLowerable;
 import com.oracle.graal.nodes.spi.NodeMappableLIRBuilder;
+import tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 
 @NodeInfo(nameTemplate = "{p#operation}")
 public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable {
@@ -138,7 +138,7 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
 
 	@Override
 	public void generate(NodeMappableLIRBuilder builder, ArithmeticLIRGenerator lirGen) {
-		OCLFPBuiltinFunctionLIRGenerator gen = (OCLFPBuiltinFunctionLIRGenerator) lirGen;
+		OCLBuiltinTool gen = (OCLBuiltinTool) lirGen;
         Value input = builder.operand(getValue());
         Value result;
         switch (operation()) {

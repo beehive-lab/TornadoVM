@@ -1,7 +1,6 @@
 package tornado.drivers.opencl.graal.nodes;
 
 import tornado.common.exceptions.TornadoInternalError;
-import tornado.drivers.opencl.graal.lir.OCLFPBuiltinFunctionLIRGenerator;
 
 import com.oracle.graal.api.meta.Kind;
 import com.oracle.graal.api.meta.Value;
@@ -17,6 +16,7 @@ import com.oracle.graal.nodes.ValueNode;
 import com.oracle.graal.nodes.calc.TernaryNode;
 import com.oracle.graal.nodes.spi.ArithmeticLIRLowerable;
 import com.oracle.graal.nodes.spi.NodeMappableLIRBuilder;
+import tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 
 @NodeInfo(nameTemplate = "{p#operation}")
 public class OCLFPTernaryIntrinsicNode extends TernaryNode implements ArithmeticLIRLowerable {
@@ -63,7 +63,7 @@ public class OCLFPTernaryIntrinsicNode extends TernaryNode implements Arithmetic
 
 	@Override
 	public void generate(NodeMappableLIRBuilder builder, ArithmeticLIRGenerator lirGen) {
-		OCLFPBuiltinFunctionLIRGenerator gen = (OCLFPBuiltinFunctionLIRGenerator) lirGen;
+		OCLBuiltinTool gen = (OCLBuiltinTool) lirGen;
 		Value x = builder.operand(getX());
 		Value y = builder.operand(getY());
 		Value z = builder.operand(getZ());

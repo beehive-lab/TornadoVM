@@ -6,7 +6,11 @@ import com.oracle.graal.lir.Opcode;
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryOp;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryTemplate;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
+
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BRACKET_CLOSE;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BRACKET_OPEN;
 
 public class OCLTernary {
 
@@ -49,6 +53,27 @@ public class OCLTernary {
 
         public Expr(OCLTernaryOp opcode, LIRKind lirKind, Value x, Value y, Value z) {
             super(opcode, lirKind, x, y, z);
+        }
+    }
+
+    public static class Select extends TernaryConsumer {
+
+        protected OCLEmitable condition;
+
+        public Select(LIRKind lirKind, OCLEmitable condition, Value y, Value z) {
+            super(OCLTernaryTemplate.SELECT, lirKind, null, y, z);
+            this.condition = condition;
+        }
+
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit(BRACKET_OPEN);
+            condition.emit(crb, asm);
+            asm.emit(BRACKET_CLOSE);
+            asm.emit(" ? ");
+            asm.value(crb, y);
+            asm.emit(" : ");
+            asm.value(crb, z);
         }
     }
 

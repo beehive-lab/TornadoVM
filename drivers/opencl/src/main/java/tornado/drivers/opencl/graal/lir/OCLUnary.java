@@ -162,7 +162,7 @@ public class OCLUnary {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
+            OCLKind oclKind = (OCLKind) getPlatformKind();
             asm.emit(((OCLUnaryTemplate) opcode).getTemplate(), base.memorySpace.name() + " " + oclKind.toString());
         }
 
