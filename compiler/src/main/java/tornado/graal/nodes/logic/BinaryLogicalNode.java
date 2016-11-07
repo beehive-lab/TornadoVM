@@ -9,6 +9,7 @@ import com.oracle.graal.lir.gen.LIRGeneratorTool;
 import com.oracle.graal.nodeinfo.InputType;
 import com.oracle.graal.nodeinfo.NodeInfo;
 import com.oracle.graal.nodes.LogicNode;
+import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.Value;
 
 @NodeInfo
@@ -25,6 +26,14 @@ public abstract class BinaryLogicalNode extends LogicNode implements IterableNod
         super(type);
         this.x = x;
         this.y = y;
+    }
+
+    @Override
+    public final void generate(NodeLIRBuilderTool builder) {
+        Value x = builder.operand(getX());
+        Value y = builder.operand(getY());
+        Value result = generate(builder.getLIRGeneratorTool(), x, y);
+        builder.setResult(this, result);
     }
 
     abstract public Value generate(LIRGeneratorTool gen, Value x, Value y);
