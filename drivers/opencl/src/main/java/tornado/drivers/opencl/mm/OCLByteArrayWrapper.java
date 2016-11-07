@@ -1,7 +1,6 @@
 package tornado.drivers.opencl.mm;
 
-
-import com.oracle.graal.api.meta.Kind;
+import jdk.vm.ci.meta.JavaKind;
 import tornado.drivers.opencl.OCLDeviceContext;
 
 public class OCLByteArrayWrapper extends OCLArrayWrapper<byte[]> {
@@ -9,15 +8,15 @@ public class OCLByteArrayWrapper extends OCLArrayWrapper<byte[]> {
 	public OCLByteArrayWrapper(OCLDeviceContext device) {
 		this(device, false);
 	}
-	
+
 	public OCLByteArrayWrapper(OCLDeviceContext device,boolean isFinal) {
-		super(device, Kind.Byte, isFinal);
+		super(device, JavaKind.Byte, isFinal);
 	}
 
 	@Override
 	protected void readArrayData(long bufferId, long offset, long bytes,
 			byte[] value, int[] waitEvents) {
-		deviceContext.readBuffer(bufferId, offset, bytes, value, waitEvents);		
+		deviceContext.readBuffer(bufferId, offset, bytes, value, waitEvents);
 	}
 
 	@Override

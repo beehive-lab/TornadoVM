@@ -1,26 +1,22 @@
 package tornado.drivers.opencl.graal.compiler.plugins;
 
-import com.oracle.graal.api.meta.Kind;
-import com.oracle.graal.api.meta.NamedLocationIdentity;
-import com.oracle.graal.api.meta.ResolvedJavaMethod;
-import com.oracle.graal.api.meta.ResolvedJavaType;
 import com.oracle.graal.compiler.common.type.ObjectStamp;
-import com.oracle.graal.compiler.common.type.Stamp;
-import com.oracle.graal.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import com.oracle.graal.graphbuilderconf.GraphBuilderContext;
-import com.oracle.graal.graphbuilderconf.InvocationPlugin;
-import com.oracle.graal.graphbuilderconf.InvocationPlugins;
-import com.oracle.graal.graphbuilderconf.InvocationPlugins.Registration;
-import com.oracle.graal.graphbuilderconf.MethodIdMap.Receiver;
+import com.oracle.graal.compiler.common.type.StampPair;
+import com.oracle.graal.nodes.NamedLocationIdentity;
 import com.oracle.graal.nodes.ParameterNode;
 import com.oracle.graal.nodes.PiNode;
 import com.oracle.graal.nodes.ValueNode;
-import com.oracle.graal.nodes.extended.IndexedLocationNode;
+import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import com.oracle.graal.nodes.graphbuilderconf.*;
 import com.oracle.graal.nodes.memory.FloatingReadNode;
 import com.oracle.graal.nodes.memory.HeapAccess.BarrierType;
 import com.oracle.graal.nodes.memory.WriteNode;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import tornado.api.Vector;
-import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLKind;
@@ -30,10 +26,13 @@ import tornado.drivers.opencl.graal.nodes.vector.VectorStoreElementProxyNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 import tornado.runtime.TornadoRuntime;
 
+import static tornado.common.Tornado.ENABLE_VECTORS;
+import static tornado.common.Tornado.TORNADO_ENABLE_BIFS;
+
 public final class VectorPlugins {
 
     public static final void registerPlugins(final InvocationPlugins plugins) {
-        if (Tornado.ENABLE_VECTORS) {
+        if (ENABLE_VECTORS) {
             registerVectorPlugins(plugins, OCLKind.FLOAT2, float[].class, float.class);
             registerVectorPlugins(plugins, OCLKind.FLOAT3, float[].class, float.class);
             registerVectorPlugins(plugins, OCLKind.FLOAT4, float[].class, float.class);
@@ -48,9 +47,9 @@ public final class VectorPlugins {
             registerVectorPlugins(plugins, OCLKind.CHAR4, byte[].class, byte.class);
 
             /*
-			 * Geometric BIFS for floating point vectors
+             * Geometric BIFS for floating point vectors
              */
-            if (Tornado.TORNADO_ENABLE_BIFS) {
+            if (TORNADO_ENABLE_BIFS) {
                 registerGeometricBIFS(plugins, OCLKind.FLOAT3, float[].class, float.class);
                 registerGeometricBIFS(plugins, OCLKind.FLOAT4, float[].class, float.class);
             }
@@ -77,7 +76,7 @@ public final class VectorPlugins {
             final OCLKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
 
         final Class<?> declaringClass = vectorKind.getJavaClass();
-        final Kind javaElementKind = vectorKind.getElementKind().asJavaKind();
+        final JavaKind javaElementKind = vectorKind.getElementKind().asJavaKind();
 
         final Registration r = new Registration(plugins, declaringClass);
 
@@ -142,7 +141,7 @@ public final class VectorPlugins {
 
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
                 VectorAddNode addNode = new VectorAddNode(kind, input1, input2);
-                b.push(Kind.Illegal, b.recursiveAppend(addNode));
+                b.push(JavaKind.Illegal, b.recursiveAppend(addNode));
                 return true;
             }
         });
@@ -154,10 +153,10 @@ public final class VectorPlugins {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
 
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
-                Kind javaKind = kind.getElementKind().asJavaKind();
+                JavaKind javaKind = kind.getElementKind().asJavaKind();
                 IndexedLocationNode indexedLoc = new IndexedLocationNode(NamedLocationIdentity.getArrayLocation(javaKind), TornadoRuntime.getVMRuntimeProvider().getArrayBaseOffset(javaKind), index, kind.getElementKind().getByteCount());
                 FloatingReadNode readVector = new FloatingReadNode(array, indexedLoc, null, OCLStampFactory.getStampFor(kind));
-                b.push(Kind.Object, b.recursiveAppend(readVector));
+                b.push(JavaKind.Object, b.recursiveAppend(readVector));
                 return true;
             }
         });
@@ -169,7 +168,7 @@ public final class VectorPlugins {
 
                 ValueNode value = reciever.get();
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
-                Kind javaKind = kind.getElementKind().asJavaKind();
+                JavaKind javaKind = kind.getElementKind().asJavaKind();
                 IndexedLocationNode indexedLoc = new IndexedLocationNode(NamedLocationIdentity.getArrayLocation(javaKind), TornadoRuntime.getVMRuntimeProvider().getArrayBaseOffset(javaKind), index, kind.getElementKind().getByteCount());
                 WriteNode writeVector = new WriteNode(array, value, indexedLoc, BarrierType.PRECISE);
                 b.append(b.recursiveAppend(writeVector));
@@ -200,14 +199,13 @@ public final class VectorPlugins {
     }
 
     static void registerParameterPlugins(Plugins plugins) {
-
-        plugins.setParameterPlugin((GraphBuilderContext b, int index, Stamp stamp) -> {
-//          System.out.printf("param: index=%d, stamp=%s\n",index,stamp);
-            if (stamp instanceof ObjectStamp) {
-                ObjectStamp objStamp = (ObjectStamp) stamp;
+        plugins.appendParameterPlugin((GraphBuilderTool tool, int index, StampPair stampPair) -> {
+            //          System.out.printf("param: index=%d, stamp=%s\n",index,stamp);
+            if (stampPair.getTrustedStamp() instanceof ObjectStamp) {
+                ObjectStamp objStamp = (ObjectStamp) stampPair.getTrustedStamp();
                 if (objStamp.type().getAnnotation(Vector.class) != null) {
                     OCLKind kind = OCLKind.fromResolvedJavaType(objStamp.type());
-                    return new ParameterNode(index, OCLStampFactory.getStampFor(kind));
+                    return new ParameterNode(index, StampPair.createSingle(OCLStampFactory.getStampFor(kind)));
 
                 }
             }

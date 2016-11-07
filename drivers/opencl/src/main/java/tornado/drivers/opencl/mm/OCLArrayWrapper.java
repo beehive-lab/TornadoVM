@@ -1,18 +1,17 @@
 package tornado.drivers.opencl.mm;
 
-import com.oracle.graal.api.meta.Kind;
 import com.oracle.graal.hotspot.HotSpotGraalRuntimeProvider;
 import java.lang.reflect.Array;
+import jdk.vm.ci.meta.JavaKind;
 import tornado.common.ObjectBuffer;
-import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import tornado.common.Tornado;
-import static tornado.common.Tornado.ENABLE_OOO_EXECUTION;
-import static tornado.common.Tornado.fatal;
-import static tornado.common.Tornado.info;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.runtime.TornadoRuntime;
+
+import static tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static tornado.common.Tornado.*;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
@@ -26,18 +25,18 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     protected final OCLDeviceContext deviceContext;
 
-    private final Kind kind;
+    private final JavaKind kind;
     private boolean onDevice;
     private boolean isFinal;
 
     // TODO remove this
     private final int[] internalEvents = new int[2];
 
-    public OCLArrayWrapper(final OCLDeviceContext device, final Kind kind) {
+    public OCLArrayWrapper(final OCLDeviceContext device, final JavaKind kind) {
         this(device, kind, false);
     }
 
-    public OCLArrayWrapper(final OCLDeviceContext device, final Kind kind, final boolean isFinal) {
+    public OCLArrayWrapper(final OCLDeviceContext device, final JavaKind kind, final boolean isFinal) {
         this.deviceContext = device;
         this.kind = kind;
         this.isFinal = isFinal;
@@ -81,8 +80,8 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     /*
-     * Retrieves a buffer that will contain the contents
-     * of the array header. The header is also populated using the header from the given array.
+     * Retrieves a buffer that will contain the contents of the array header.
+     * The header is also populated using the header from the given array.
      */
     private OCLByteBuffer buildArrayHeader(final T array) {
         final OCLByteBuffer header = getArrayHeader();
@@ -163,8 +162,8 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     /*
-     * Retrieves a buffer that will contain the contents
-     * of the array header. This also re-sizes the buffer.
+     * Retrieves a buffer that will contain the contents of the array header.
+     * This also re-sizes the buffer.
      */
     private OCLByteBuffer prepareArrayHeader() {
         final OCLByteBuffer header = getArrayHeader();
@@ -219,8 +218,8 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     /*
-     * Retrieves a buffer that will contain the contents
-     * of the array header. This also re-sizes the buffer.
+     * Retrieves a buffer that will contain the contents of the array header.
+     * This also re-sizes the buffer.
      */
     private boolean validateArrayHeader(final T array) {
         final OCLByteBuffer header = prepareArrayHeader();

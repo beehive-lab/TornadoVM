@@ -1,7 +1,7 @@
 package tornado.drivers.opencl.mm;
 
 
-import com.oracle.graal.api.meta.Kind;
+import jdk.vm.ci.meta.JavaKind;
 import tornado.drivers.opencl.OCLDeviceContext;
 
 public class OCLDoubleArrayWrapper extends OCLArrayWrapper<double[]> {
@@ -11,7 +11,7 @@ public class OCLDoubleArrayWrapper extends OCLArrayWrapper<double[]> {
 	}
 	
 	public OCLDoubleArrayWrapper(OCLDeviceContext deviceContext, boolean isFinal) {
-		super(deviceContext, Kind.Double, isFinal);
+		super(deviceContext, JavaKind.Double, isFinal);
 	}
 
 	@Override

@@ -18,7 +18,7 @@ import tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import tornado.meta.Meta;
 import tornado.meta.domain.DomainTree;
 import tornado.meta.domain.IntDomain;
-import tornado.runtime.TornadoRuntime;
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class OCLMemoryManager extends TornadoLogger {
 
@@ -87,9 +87,9 @@ public class OCLMemoryManager extends TornadoLogger {
 //    	initFP64Code = OCLCompiler.compileCodeForDevice(
 //				TornadoRuntime.resolveMethod(getMethod("initFP64",double[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
         initFP32Code = OCLCompiler.compileCodeForDevice(
-                TornadoRuntime.runtime.resolveMethod(getMethod("initFP32", float[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
+                getTornadoRuntime().resolveMethod(getMethod("initFP32", float[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
         initU32Code = OCLCompiler.compileCodeForDevice(
-                TornadoRuntime.runtime.resolveMethod(getMethod("initU32", int[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
+                getTornadoRuntime().resolveMethod(getMethod("initU32", int[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
         initCallStack = createCallStack(4);
 
     }

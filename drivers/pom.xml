@@ -13,12 +13,28 @@
   </modules>
   
   <dependencies>
-  <dependency>
-			<groupId>graal</groupId>
-			<artifactId>graal</artifactId>
-			<scope>system</scope>
-			<systemPath>${JAVA_HOME}/jre/lib/graal/graal.jar</systemPath>
-			<version>0.0.1</version>
-		</dependency>
+<dependency>
+            <groupId>graal</groupId>
+            <artifactId>graal</artifactId>
+            <scope>system</scope>
+            <systemPath>/Users/jamesclarkson/git/graal/graal/graal-core/mxbuild/dists/graal.jar</systemPath>
+            <version>0.0.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>jvmci</groupId>
+            <artifactId>api</artifactId>
+            <scope>system</scope>
+            <systemPath>/Users/jamesclarkson/hg/graal-jvmci-8/jdk1.8.0_73/product/jre/lib/jvmci/jvmci-api.jar</systemPath>
+            <version>0.0.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>jvmci</groupId>
+            <artifactId>hotspot</artifactId>
+            <scope>system</scope>
+            <systemPath>/Users/jamesclarkson/hg/graal-jvmci-8/jdk1.8.0_73/product/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
+            <version>0.0.1</version>
+        </dependency>
   </dependencies>
 </project>
