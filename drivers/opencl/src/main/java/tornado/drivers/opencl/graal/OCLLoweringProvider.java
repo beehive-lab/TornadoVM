@@ -1,11 +1,9 @@
 package tornado.drivers.opencl.graal;
 
 import com.oracle.graal.compiler.common.LocationIdentity;
-import com.oracle.graal.compiler.common.spi.ForeignCallsProvider;
 import com.oracle.graal.compiler.common.type.ObjectStamp;
 import com.oracle.graal.graph.Node;
 import com.oracle.graal.graph.NodeInputList;
-import com.oracle.graal.hotspot.HotSpotGraalRuntimeProvider;
 import com.oracle.graal.hotspot.meta.HotSpotProviders;
 import com.oracle.graal.nodes.*;
 import com.oracle.graal.nodes.calc.FloatConvertNode;
@@ -20,16 +18,17 @@ import com.oracle.graal.nodes.memory.address.AddressNode;
 import com.oracle.graal.nodes.spi.LoweringTool;
 import com.oracle.graal.nodes.type.StampTool;
 import com.oracle.graal.replacements.DefaultJavaLoweringProvider;
-import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.meta.*;
+import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.nodes.AtomicAddNode;
 import tornado.drivers.opencl.graal.nodes.CastNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
 import tornado.graal.nodes.TornadoDirectCallTargetNode;
+import tornado.runtime.TornadoVMConfig;
 
 import static com.oracle.graal.hotspot.replacements.NewObjectSnippets.INIT_LOCATION;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
@@ -38,14 +37,13 @@ import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
-    protected final HotSpotGraalRuntimeProvider runtime;
+    private final HotSpotProviders providers;
+    private final TornadoVMConfig vmConfig;
 
-    public OCLLoweringProvider(HotSpotGraalRuntimeProvider runtime, MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, TargetDescription target) {
-        super(metaAccess, foreignCalls, target);
-        this.runtime = runtime;
-    }
-
-    public void initialize(HotSpotProviders providers) {
+    public OCLLoweringProvider(HotSpotProviders providers, TornadoVMConfig vmConfig, OCLTargetDescription target) {
+        super(providers.getMetaAccess(), providers.getForeignCalls(), target);
+        this.providers = providers;
+        this.vmConfig = vmConfig;
         super.initialize(providers, providers.getSnippetReflection());
     }
 
@@ -205,7 +203,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     public int arrayLengthOffset() {
-        return runtime.getVMConfig().arrayOopDescLengthOffset();
+        return vmConfig.arrayOopDescLengthOffset();
     }
 
     @Override
@@ -235,7 +233,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     @Override
     public ValueNode staticFieldBase(StructuredGraph graph, ResolvedJavaField f) {
         HotSpotResolvedJavaField field = (HotSpotResolvedJavaField) f;
-        ConstantReflectionProvider constantReflection = runtime.getHostProviders().getConstantReflection();
+        ConstantReflectionProvider constantReflection = providers.getConstantReflection();
         JavaConstant base = constantReflection.asJavaClass(field.getDeclaringClass());
         return ConstantNode.forConstant(base, metaAccess, graph);
     }
