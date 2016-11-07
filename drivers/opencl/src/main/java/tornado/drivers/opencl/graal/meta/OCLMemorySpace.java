@@ -1,13 +1,13 @@
 package tornado.drivers.opencl.graal.meta;
 
-import com.oracle.graal.api.meta.AbstractValue;
-import com.oracle.graal.api.meta.LIRKind;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import com.oracle.graal.compiler.common.LIRKind;
+import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.OCLArchitecture;
 import tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
+
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
-public class OCLMemorySpace extends AbstractValue {
+public class OCLMemorySpace extends Value {
     // @formatter:off
 
     public static final OCLMemorySpace GLOBAL = new OCLMemorySpace(OCLAssemblerConstants.GLOBAL_MEM_MODIFIER);
@@ -35,7 +35,7 @@ public class OCLMemorySpace extends AbstractValue {
             return OCLArchitecture.cp;
         } else if (this == PRIVATE) {
             return OCLArchitecture.pp;
-        } 
+        }
 
         shouldNotReachHere();
         return null;
