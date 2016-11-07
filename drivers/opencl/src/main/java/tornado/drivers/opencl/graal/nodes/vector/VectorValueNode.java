@@ -1,26 +1,21 @@
 package tornado.drivers.opencl.graal.nodes.vector;
 
-import com.oracle.graal.api.meta.AllocatableValue;
-import com.oracle.graal.api.meta.LIRKind;
-import com.oracle.graal.api.meta.PrimitiveConstant;
-import com.oracle.graal.api.meta.Value;
+import com.oracle.graal.compiler.common.LIRKind;
 import com.oracle.graal.graph.NodeClass;
 import com.oracle.graal.graph.NodeInputList;
+import com.oracle.graal.lir.ConstantValue;
 import com.oracle.graal.lir.Variable;
 import com.oracle.graal.lir.gen.LIRGeneratorTool;
 import com.oracle.graal.nodeinfo.InputType;
 import com.oracle.graal.nodeinfo.NodeInfo;
-import com.oracle.graal.nodes.ConstantNode;
-import com.oracle.graal.nodes.InvokeNode;
-import com.oracle.graal.nodes.ParameterNode;
-import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.nodes.ValueNode;
-import com.oracle.graal.nodes.ValuePhiNode;
+import com.oracle.graal.nodes.*;
 import com.oracle.graal.nodes.calc.FloatingNode;
 import com.oracle.graal.nodes.spi.LIRLowerable;
 import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
 import java.util.List;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.OCLArchitecture;
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
@@ -33,9 +28,10 @@ import tornado.drivers.opencl.graal.lir.OCLEmitable;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
 import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.VectorLoadStmt;
+import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 import tornado.drivers.opencl.graal.lir.OCLVectorAssign;
-import static tornado.graal.TornadoLIRGenerator.trace;
+
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.graal.TornadoLIRGenerator.trace;
 
@@ -84,7 +80,6 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
 //    public VectorValueNode(ResolvedJavaType resolvedType, OCLKind vectorKind) {
 //        unimplemented();
 //    }
-
     public void initialiseToDefaultValues(StructuredGraph graph) {
         final ConstantNode defaultValue = ConstantNode.forPrimitive(kind.getElementKind().getDefaultValue(), graph);
         for (int i = 0; i < kind.getVectorLength(); i++) {
@@ -120,7 +115,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
     public void generate(NodeLIRBuilderTool gen) {
         final LIRGeneratorTool tool = gen.getLIRGeneratorTool();
 
-        if (origin instanceof VectorReadNode || origin instanceof InvokeNode) {
+        if (origin instanceof InvokeNode) {
             gen.setResult(this, gen.operand(origin));
         } else if (origin instanceof ValuePhiNode) {
 
@@ -136,14 +131,14 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
         } else if (origin instanceof ParameterNode) {
             if (needsLoad && !gen.hasOperand(this)) {
                 //unimplemented();
-                final Value addressOfObject = gen.operand(origin);
+                final MemoryAccess addressOfObject = (MemoryAccess) gen.operand(origin);
                 final Variable result = tool.newVariable(LIRKind.value(getOCLKind()));
-            
+
                 final OCLBinaryIntrinsic loadOp = VectorUtil
                         .resolveLoadIntrinsic(getOCLKind());
-                OCLAddressCast cast = new OCLAddressCast(OCLArchitecture.hp,LIRKind.value(kind));
-                VectorLoadStmt loadVector = new VectorLoadStmt(result,loadOp,PrimitiveConstant.INT_0, cast ,addressOfObject);
-              
+                OCLAddressCast cast = new OCLAddressCast(OCLArchitecture.hp, LIRKind.value(kind));
+                VectorLoadStmt loadVector = new VectorLoadStmt(result, loadOp, new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0), cast, addressOfObject);
+
                 tool.append(loadVector);
                 trace("emitVectorLoad: %s = %s(%d, %s, %s)", result, loadOp.toString(),
                         0, cast, addressOfObject);
@@ -156,12 +151,12 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
                     : tool.newVariable(LIRKind.value(getOCLKind()));
 
             /*
-			 * two cases:
-			 * 1. when this vector state has elements assigned individually
-			 * 2. when this vector is assigned by a vector operation
+             * two cases: 1. when this vector state has elements assigned
+             * individually 2. when this vector is assigned by a vector
+             * operation
              */
-            final int numValues = values.nonNull().count();
-            final ValueNode firstValue = values.nonNull().first();
+            final int numValues = values.count();
+            final ValueNode firstValue = values.first();
 
             if (firstValue instanceof VectorValueNode || firstValue instanceof VectorOp) {
                 tool.append(new OCLLIRInstruction.AssignStmt(result, gen.operand(values.first())));
@@ -177,7 +172,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
     private Value getParam(NodeLIRBuilderTool gen, LIRGeneratorTool tool, int index) {
         final ValueNode valueNode = values.get(index);
 
-        return (valueNode == null) ? kind.getDefaultValue() : tool.loadNonConst(gen
+        return (valueNode == null) ? new ConstantValue(LIRKind.value(kind), kind.getDefaultValue()) : tool.loadNonConst(gen
                 .operand(valueNode));
     }
 
@@ -238,7 +233,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
     }
 
     public boolean allLanesUsed() {
-        return (usages().filter(VectorLoadElementNode.class).distinct().count() == kind
+        return (usages().filter(VectorLoadElementNode.class).count() == kind
                 .getVectorLength());
     }
 
@@ -248,7 +243,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
 
     public boolean allLanesSet() {
         return (values.count() == 1 && values.first() instanceof VectorValueNode)
-                || (values.filter(VectorLoadElementNode.class).distinct().count() == kind
+                || (values.filter(VectorLoadElementNode.class).count() == kind
                 .getVectorLength());
     }
 
