@@ -38,16 +38,19 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     protected LIR lir;
     protected int currentBlockIndex;
     protected final Set<ResolvedJavaMethod> nonInlinedMethods;
-    protected final boolean isKernel;
+    protected boolean isKernel;
 
     public OCLCompilationResultBuilder(CodeCacheProvider codeCache,
             ForeignCallsProvider foreignCalls, FrameMap frameMap,
             Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
-            OCLCompilationResult compilationResult, boolean isKernel) {
+            OCLCompilationResult compilationResult) {
         super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext,
                 compilationResult, new IdentityHashMap<>());
         nonInlinedMethods = new HashSet<>();
-        this.isKernel = isKernel;
+    }
+
+    public void setKernel(boolean value) {
+        isKernel = value;
     }
 
     public boolean isKernel() {
