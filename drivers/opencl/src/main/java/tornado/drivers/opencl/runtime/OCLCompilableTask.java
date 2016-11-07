@@ -1,24 +1,21 @@
 package tornado.drivers.opencl.runtime;
 
-import com.oracle.graal.api.meta.ResolvedJavaMethod;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.api.Event;
 import tornado.common.DeviceMapping;
 import tornado.common.Tornado;
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import tornado.drivers.opencl.graal.OpenCLInstalledCode;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.runtime.api.CompilableTask;
+
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLCompilableTask extends CompilableTask {
 

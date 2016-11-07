@@ -1,13 +1,13 @@
 package tornado.drivers.opencl.mm;
 
-import com.oracle.graal.hotspot.HotSpotGraalRuntimeProvider;
 import java.lang.reflect.Array;
 import jdk.vm.ci.meta.JavaKind;
 import tornado.common.ObjectBuffer;
 import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
-import tornado.runtime.TornadoRuntime;
+
+import static tornado.runtime.TornadoRuntime.*;
 
 import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.common.Tornado.*;
@@ -41,10 +41,8 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         this.kind = kind;
         this.isFinal = isFinal;
 
-        final HotSpotGraalRuntimeProvider runtime = TornadoRuntime.getVMRuntimeProvider();
-
-        arrayLengthOffset = runtime.getConfig().arrayLengthOffset;
-        arrayHeaderSize = runtime.getArrayBaseOffset(kind);
+        arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
+        arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
         onDevice = false;
         bufferOffset = -1;
     }
