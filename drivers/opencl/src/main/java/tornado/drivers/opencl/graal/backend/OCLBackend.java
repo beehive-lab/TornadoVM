@@ -1,31 +1,17 @@
 package tornado.drivers.opencl.graal.backend;
 
-import com.oracle.graal.api.code.CallingConvention;
-import com.oracle.graal.api.code.CallingConvention.Type;
-import com.oracle.graal.api.code.CompilationResult;
-import com.oracle.graal.api.code.DisassemblerProvider;
-import com.oracle.graal.api.code.RegisterConfig;
-import com.oracle.graal.api.code.stack.StackIntrospection;
-import com.oracle.graal.api.meta.AllocatableValue;
-import com.oracle.graal.api.meta.DeoptimizationAction;
-import com.oracle.graal.api.meta.DeoptimizationReason;
-import com.oracle.graal.api.meta.JavaConstant;
-import com.oracle.graal.api.meta.Kind;
-import com.oracle.graal.api.meta.LIRKind;
-import com.oracle.graal.api.meta.Local;
-import com.oracle.graal.api.meta.PlatformKind;
-import com.oracle.graal.api.meta.ResolvedJavaMethod;
-import com.oracle.graal.api.meta.ResolvedJavaType;
-import com.oracle.graal.api.meta.Value;
-import com.oracle.graal.asm.Assembler;
+import com.oracle.graal.code.CompilationResult;
+import com.oracle.graal.compiler.common.alloc.RegisterAllocationConfig;
 import com.oracle.graal.compiler.common.cfg.AbstractBlockBase;
 import com.oracle.graal.lir.LIR;
 import com.oracle.graal.lir.LIRInstruction;
 import com.oracle.graal.lir.Variable;
 import com.oracle.graal.lir.asm.CompilationResultBuilder;
 import com.oracle.graal.lir.asm.CompilationResultBuilderFactory;
+import com.oracle.graal.lir.asm.DataBuilder;
 import com.oracle.graal.lir.framemap.FrameMap;
 import com.oracle.graal.lir.framemap.FrameMapBuilder;
+import com.oracle.graal.lir.framemap.ReferenceMapBuilder;
 import com.oracle.graal.lir.gen.LIRGenerationResult;
 import com.oracle.graal.lir.gen.LIRGeneratorTool;
 import com.oracle.graal.nodes.StructuredGraph;
@@ -35,59 +21,37 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.CompiledCode;
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
+import jdk.vm.ci.meta.*;
 import tornado.api.Vector;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
-import static tornado.common.Tornado.DEBUG_KERNEL_ARGS;
 import tornado.common.enums.Access;
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import tornado.drivers.opencl.OCLContext;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.OCLTargetDescription;
-import tornado.drivers.opencl.graal.OCLArchitecture;
-import tornado.drivers.opencl.graal.OCLProviders;
-import tornado.drivers.opencl.graal.OCLSuitesProvider;
-import tornado.drivers.opencl.graal.OCLUtils;
-import tornado.drivers.opencl.graal.OpenCLCodeCache;
-import tornado.drivers.opencl.graal.OpenCLCodeUtil;
-import tornado.drivers.opencl.graal.OpenCLFrameContext;
-import tornado.drivers.opencl.graal.OpenCLFrameMap;
-import tornado.drivers.opencl.graal.OpenCLFrameMapBuilder;
-import tornado.drivers.opencl.graal.OpenCLInstalledCode;
+import tornado.drivers.opencl.graal.*;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
-import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
-import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
-import tornado.drivers.opencl.graal.compiler.OCLCompiler;
-import tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
-import tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
-import tornado.drivers.opencl.graal.compiler.OpenCLLIRGenerationResult;
+import tornado.drivers.opencl.graal.compiler.*;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.mm.OCLByteBuffer;
 import tornado.graal.backend.TornadoBackend;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import tornado.graal.nodes.vector.VectorKind;
 import tornado.lang.CompilerInternals;
 import tornado.meta.Meta;
-import tornado.runtime.TornadoRuntime;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
-public class OCLBackend extends TornadoBackend<OCLProviders> {
+import static tornado.common.Tornado.DEBUG_KERNEL_ARGS;
+import static tornado.common.exceptions.TornadoInternalError.*;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+
+public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
     public final static boolean SHOW_OPENCL = Boolean.parseBoolean(System
             .getProperty(
@@ -142,6 +106,24 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
         return CompilerInternals.getSlotsAddress();
     }
 
+    @Override
+    public ReferenceMapBuilder newReferenceMapBuilder(int totalFrameSize) {
+        unimplemented();
+        return new OCLReferenceMapBuilder();
+    }
+
+    @Override
+    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig rc) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Set<Register> translateToCallerRegisters(Set<Register> set) {
+        unimplemented();
+        return Collections.EMPTY_SET;
+    }
+
     private Method getLookupMethod() {
         Method method = null;
         try {
@@ -168,7 +150,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
     public void init() {
 
         /*
-         * Allocate the smallest of the requested heap size or the max global memory size.
+         * Allocate the smallest of the requested heap size or the max global
+         * memory size.
          */
         final long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice()
                 .getMaxAllocationSize());
@@ -186,7 +169,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
          * Retrive the address of the heap on the device
          */
         lookupCode = OCLCompiler.compileCodeForDevice(
-                TornadoRuntime.runtime.resolveMethod(getLookupMethod()), null, null, (OCLProviders) getProviders(), this);
+                getTornadoRuntime().resolveMethod(getLookupMethod()), null, null, (OCLProviders) getProviders(), this);
 
         deviceContext.getMemoryManager().init(this, readHeapBaseAddress());
     }
@@ -196,7 +179,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
     }
 
     @Override
-    protected Assembler createAssembler(FrameMap frameMap) {
+    protected OCLAssembler createAssembler(FrameMap frameMap) {
         return new OCLAssembler(target);
     }
 
@@ -217,45 +200,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
     private void emitEpilogue(OCLAssembler asm) {
         asm.endScope();
 
-    }
-
-    @Deprecated
-    public static String platformKindToOpenCLKind(PlatformKind kind) {
-        switch (kind.name().toLowerCase()) {
-            case "object":
-                return "ulong";
-            case "byte":
-                return "char";
-            case "byte3":
-                return "char3";
-            case "byte4":
-                return "char4";
-            default:
-                return kind.name().toLowerCase();
-        }
-    }
-
-    @Deprecated
-    public static String toOpenCLType(Kind kind, PlatformKind platformKind) {
-        String type = "";
-
-        if (kind.isObject()) {
-            final VectorKind vectorKind = VectorKind.fromClass(kind.toJavaClass());
-            if (vectorKind != VectorKind.Illegal) {
-                return vectorKind.getJavaName();
-            }
-        }
-
-        if (kind == Kind.Boolean) {
-            return "bool";
-        }
-
-        if (kind.isUnsigned()) {
-            type += "u";
-        }
-        type += platformKindToOpenCLKind(platformKind);
-
-        return type;
     }
 
     private void addVariableDef(Map<OCLKind, Set<Variable>> kindToVariable, Variable value) {
@@ -327,9 +271,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
 
         if (crb.isKernel()) {
             /*
-             * BUG There is a bug on some OpenCL devices which requires us to insert an extra OpenCL buffer into the kernel arguments.
-             * This has the effect of shifting the devices address mappings, which allows us to avoid the heap starting at address 0x0.
-             * (I assume that this is a interesting case that leads to a few issues.) Iris Pro is the only culprit at the moment.
+             * BUG There is a bug on some OpenCL devices which requires us to
+             * insert an extra OpenCL buffer into the kernel arguments. This has
+             * the effect of shifting the devices address mappings, which allows
+             * us to avoid the heap starting at address 0x0. (I assume that this
+             * is a interesting case that leads to a few issues.) Iris Pro is
+             * the only culprit at the moment.
              */
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
 
@@ -366,16 +313,16 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
         } else {
 
             final CallingConvention incomingArguments = OpenCLCodeUtil.getCallingConvention(
-                    codeCache, Type.JavaCallee, method, false);
+                    codeCache, HotSpotCallingConventionType.JavaCallee, method, false);
             methodName = OCLUtils.makeMethodName(method);
-            final Kind returnKind = method.getSignature().getReturnKind();
+            final JavaKind returnKind = method.getSignature().getReturnKind();
             final ResolvedJavaType returnType = method.getSignature().getReturnType(null)
                     .resolve(method.getDeclaringClass());
-            final PlatformKind platformKind = (returnType.getAnnotation(Vector.class) == null) ? LIRKind
-                    .value(returnKind).getPlatformKind() : VectorKind
-                    .fromResolvedJavaType(returnType);
-            getTarget().getLIRKind(returnKind);
-            asm.emit("%s %s(%s", target.getOCLKind(returnKind).toString(),
+            OCLKind returnOclKind = (returnType.getAnnotation(Vector.class) == null)
+                    ? getTarget().getOCLKind(returnKind)
+                    : OCLKind.fromResolvedJavaType(returnType);
+            //getTarget().getLIRKind(returnKind);
+            asm.emit("%s %s(%s", returnOclKind.name(),
                     methodName, architecture.getABI());
 
             final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
@@ -392,22 +339,22 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
             for (int i = 0; i < params.length; i++) {
                 final AllocatableValue param = incomingArguments.getArgument(i);
 
-                OCLKind oclKind = OCLKind.ILLEGAL;
-                if (param.getKind().isObject()) {
-
-                    oclKind = OCLKind.resolveToVectorKind(locals[i].getType().resolve(method.getDeclaringClass()));
-                    if (oclKind == OCLKind.ILLEGAL) {
-                        oclKind = target.getOCLKind(param.getKind());
-                    }
-
-                    asm.emit("%s %s", oclKind.toString(),
-                            locals[i].getName());
-                } else {
-                    oclKind = target.getOCLKind(param.getKind());
-
-                }
-
-                guarantee(oclKind != OCLKind.ILLEGAL, "illegal type for %s", param.getKind().name());
+//                OCLKind oclKind = OCLKind.ILLEGAL;
+//                if (param.getPlatformKind().isObject()) {
+//
+//                    oclKind = OCLKind.resolveToVectorKind(locals[i].getType().resolve(method.getDeclaringClass()));
+//                    if (oclKind == OCLKind.ILLEGAL) {
+//                        oclKind = target.getOCLKind(param.getKind());
+//                    }
+//
+//                    asm.emit("%s %s", oclKind.toString(),
+//                            locals[i].getName());
+//                } else {
+//                    oclKind = target.getOCLKind(param.getKind());
+//
+//                }
+                OCLKind oclKind = (OCLKind) param.getPlatformKind();
+                guarantee(oclKind != OCLKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
                 asm.emit("%s %s", oclKind.toString(),
                         locals[i].getName());
                 if (i < params.length - 1) {
@@ -420,18 +367,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
             emitVariableDefs(crb, asm, lir);
             asm.eol();
         }
-    }
-
-    @Override
-    public DisassemblerProvider getDisassembler() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public StackIntrospection getStackIntrospection() {
-        // System.out.println("getStackIntrospection -> unimplemented");
-        return null;
     }
 
     public OCLSuitesProvider getTornadoSuites() {
@@ -452,18 +387,18 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
         // final OpenCLLIRGenerationResult gen = (OpenCLLIRGenerationResult) lirGenRes;
         // LIR lir = gen.getLIR();
 
-        Assembler asm = createAssembler(frameMap);
+        OCLAssembler asm = createAssembler(frameMap);
         OpenCLFrameContext frameContext = new OpenCLFrameContext();
-
-        OCLCompilationResultBuilder crb = new OCLCompilationResultBuilder(codeCache,
-                getForeignCalls(), frameMap, asm, frameContext, compilationResult, isKernel);
+        DataBuilder dataBuilder = new OCLDataBuilder();
+        OCLCompilationResultBuilder crb = new OCLCompilationResultBuilder(codeCache, getForeignCalls(), frameMap, asm, dataBuilder, frameContext, compilationResult);
+        crb.setKernel(isKernel);
 
         return crb;
     }
 
     @Override
     public FrameMap newFrameMap(RegisterConfig registerConfig) {
-        return new OpenCLFrameMap(getCodeCache(), registerConfig);
+        return new OpenCLFrameMap(getCodeCache(), registerConfig, this);
     }
 
     @Override
@@ -476,18 +411,18 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
 
     @Override
     public LIRGenerationResult newLIRGenerationResult(String compilationUnitName, LIR lir,
-            FrameMapBuilder frameMapBuilder, ResolvedJavaMethod method, Object stub) {
-        return new OpenCLLIRGenerationResult(compilationUnitName, lir, frameMapBuilder);
+            FrameMapBuilder frameMapBuilder, StructuredGraph graph, Object stub) {
+        return new OpenCLLIRGenerationResult(compilationUnitName, lir, frameMapBuilder, new CallingConvention(0, null, (AllocatableValue[]) null));
     }
 
     @Override
-    public LIRGeneratorTool newLIRGenerator(CallingConvention cc, LIRGenerationResult lirGenResult) {
-        return new OCLLIRGenerator((OCLProviders) getProviders(), codeCache, cc, lirGenResult);
+    public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenResult) {
+        return new OCLLIRGenerator(getProviders(), lirGenResult);
     }
 
     @Override
     public NodeLIRBuilderTool newNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool lirGen) {
-        return new OCLNodeLIRBuilder(graph, lirGen);
+        return new OCLNodeLIRBuilder(graph, lirGen, new OCLNodeMatchRules(lirGen));
     }
 
     public OpenCLInstalledCode compile(final Method method, final Object[] parameters,
@@ -545,6 +480,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> {
     public void reset() {
         getDeviceContext().reset();
         codeCache.reset();
+    }
+
+    @Override
+    protected CompiledCode createCompiledCode(ResolvedJavaMethod rjm, CompilationResult cr) {
+        unimplemented();
+        return null;
     }
 
 }
