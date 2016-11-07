@@ -6,7 +6,6 @@ import com.oracle.graal.phases.tiers.TargetProvider;
 import com.oracle.graal.phases.util.Providers;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.SpeculationLog;
 import tornado.meta.Meta;
 
 public class TornadoMidTierContext extends MidTierContext {
@@ -20,7 +19,6 @@ public class TornadoMidTierContext extends MidTierContext {
             TargetProvider target,
             OptimisticOptimizations optimisticOpts,
             ProfilingInfo profilingInfo,
-            SpeculationLog log,
             ResolvedJavaMethod method, Object[] args, Meta meta) {
         super(copyFrom, target, optimisticOpts, profilingInfo);
         this.method = method;
