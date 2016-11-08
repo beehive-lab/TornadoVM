@@ -2,17 +2,18 @@ package tornado.drivers.opencl.graal.compiler.plugins;
 
 import com.oracle.graal.compiler.common.type.ObjectStamp;
 import com.oracle.graal.compiler.common.type.StampPair;
-import com.oracle.graal.nodes.NamedLocationIdentity;
 import com.oracle.graal.nodes.ParameterNode;
 import com.oracle.graal.nodes.PiNode;
 import com.oracle.graal.nodes.ValueNode;
 import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderContext;
+import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderTool;
+import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugin;
 import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins;
 import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import com.oracle.graal.nodes.graphbuilderconf.*;
-import com.oracle.graal.nodes.memory.FloatingReadNode;
-import com.oracle.graal.nodes.memory.HeapAccess.BarrierType;
-import com.oracle.graal.nodes.memory.WriteNode;
+import com.oracle.graal.nodes.java.LoadIndexedNode;
+import com.oracle.graal.nodes.java.StoreIndexedNode;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -24,7 +25,6 @@ import tornado.drivers.opencl.graal.nodes.vector.VectorAddNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorStoreElementProxyNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
-import tornado.runtime.TornadoRuntime;
 
 import static tornado.common.Tornado.ENABLE_VECTORS;
 import static tornado.common.Tornado.TORNADO_ENABLE_BIFS;
@@ -153,10 +153,10 @@ public final class VectorPlugins {
                 final ResolvedJavaType resolvedType = b.getMetaAccess().lookupJavaType(declaringClass);
 
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
-                JavaKind javaKind = kind.getElementKind().asJavaKind();
-                IndexedLocationNode indexedLoc = new IndexedLocationNode(NamedLocationIdentity.getArrayLocation(javaKind), TornadoRuntime.getVMRuntimeProvider().getArrayBaseOffset(javaKind), index, kind.getElementKind().getByteCount());
-                FloatingReadNode readVector = new FloatingReadNode(array, indexedLoc, null, OCLStampFactory.getStampFor(kind));
-                b.push(JavaKind.Object, b.recursiveAppend(readVector));
+                JavaKind elementKind = kind.getElementKind().asJavaKind();
+                LoadIndexedNode indexedLoad = new LoadIndexedNode(null, array, index, elementKind);
+                indexedLoad.setStamp(OCLStampFactory.getStampFor(kind));
+                b.push(JavaKind.Object, b.recursiveAppend(indexedLoad));
                 return true;
             }
         });
@@ -168,10 +168,12 @@ public final class VectorPlugins {
 
                 ValueNode value = reciever.get();
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
-                JavaKind javaKind = kind.getElementKind().asJavaKind();
-                IndexedLocationNode indexedLoc = new IndexedLocationNode(NamedLocationIdentity.getArrayLocation(javaKind), TornadoRuntime.getVMRuntimeProvider().getArrayBaseOffset(javaKind), index, kind.getElementKind().getByteCount());
-                WriteNode writeVector = new WriteNode(array, value, indexedLoc, BarrierType.PRECISE);
-                b.append(b.recursiveAppend(writeVector));
+                JavaKind elementKind = kind.getElementKind().asJavaKind();
+                StoreIndexedNode indexedStore = new StoreIndexedNode(array, index, elementKind, value);
+                indexedStore.setStamp(OCLStampFactory.getStampFor(kind));
+//                IndexedLocationNode indexedLoc = new IndexedLocationNode(NamedLocationIdentity.getArrayLocation(javaKind), TornadoRuntime.getVMRuntimeProvider().getArrayBaseOffset(javaKind), index, kind.getElementKind().getByteCount());
+//                WriteNode writeVector = new WriteNode(array, value, indexedLoc, BarrierType.PRECISE);
+                b.append(b.recursiveAppend(indexedStore));
                 return true;
             }
         });
