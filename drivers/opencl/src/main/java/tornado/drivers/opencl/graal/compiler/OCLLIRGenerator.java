@@ -24,7 +24,6 @@ import tornado.drivers.opencl.graal.lir.*;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.runtime.TornadoRuntime.getVMConfig;
 
 public class OCLLIRGenerator extends LIRGenerator {
 
@@ -32,7 +31,7 @@ public class OCLLIRGenerator extends LIRGenerator {
     protected OCLGenTool oclGenTool;
 
     public OCLLIRGenerator(CodeGenProviders providers, LIRGenerationResult res) {
-        super(new OCLLIRKindTool(), new OCLArithmeticTool(), new OCLMoveFactory(), providers, getVMConfig(), res);
+        super(new OCLLIRKindTool(), new OCLArithmeticTool(), new OCLMoveFactory(), providers, res);
         this.oclBuiltinTool = new OCLBuiltinTool();
         this.oclGenTool = new OCLGenTool(this);
     }

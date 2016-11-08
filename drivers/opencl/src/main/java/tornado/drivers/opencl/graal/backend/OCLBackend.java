@@ -77,16 +77,16 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public OCLBackend(
             OCLProviders providers,
             OCLTargetDescription target,
-            OCLContext context,
-            int deviceIndex) {
+            OpenCLCodeCache codeCache,
+            OCLContext openclContext,
+            OCLDeviceContext deviceContext) {
         super(providers);
-        this.openclContext = context;
-        deviceContext = context.createDeviceContext(deviceIndex);
-        architecture = (OCLArchitecture) target.arch;
         this.target = target;
+        this.codeCache = codeCache;
+        this.openclContext = openclContext;
+        this.deviceContext = deviceContext;
+        architecture = (OCLArchitecture) target.arch;
 
-        codeCache = new OpenCLCodeCache(target);
-        codeCache.setBackend(this);
     }
 
     @Override

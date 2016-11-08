@@ -1,10 +1,10 @@
 package tornado.drivers.opencl.graal;
 
 import com.oracle.graal.compiler.common.LocationIdentity;
+import com.oracle.graal.compiler.common.spi.ForeignCallsProvider;
 import com.oracle.graal.compiler.common.type.ObjectStamp;
 import com.oracle.graal.graph.Node;
 import com.oracle.graal.graph.NodeInputList;
-import com.oracle.graal.hotspot.meta.HotSpotProviders;
 import com.oracle.graal.nodes.*;
 import com.oracle.graal.nodes.calc.FloatConvertNode;
 import com.oracle.graal.nodes.calc.RemNode;
@@ -37,14 +37,14 @@ import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
-    private final HotSpotProviders providers;
+    private final ConstantReflectionProvider constantReflection;
     private final TornadoVMConfig vmConfig;
 
-    public OCLLoweringProvider(HotSpotProviders providers, TornadoVMConfig vmConfig, OCLTargetDescription target) {
-        super(providers.getMetaAccess(), providers.getForeignCalls(), target);
-        this.providers = providers;
+    public OCLLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, ConstantReflectionProvider constantReflection, TornadoVMConfig vmConfig, OCLTargetDescription target) {
+        super(metaAccess, foreignCalls, target);
         this.vmConfig = vmConfig;
-        super.initialize(providers, providers.getSnippetReflection());
+        this.constantReflection = constantReflection;
+//        super.initialize(providers, providers.getSnippetReflection());
     }
 
     @Override
@@ -233,7 +233,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     @Override
     public ValueNode staticFieldBase(StructuredGraph graph, ResolvedJavaField f) {
         HotSpotResolvedJavaField field = (HotSpotResolvedJavaField) f;
-        ConstantReflectionProvider constantReflection = providers.getConstantReflection();
         JavaConstant base = constantReflection.asJavaClass(field.getDeclaringClass());
         return ConstantNode.forConstant(base, metaAccess, graph);
     }
