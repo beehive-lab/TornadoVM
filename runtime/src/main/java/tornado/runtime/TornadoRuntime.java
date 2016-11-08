@@ -13,8 +13,9 @@ import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import tornado.common.DeviceMapping;
 import tornado.common.TornadoLogger;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import tornado.runtime.api.GlobalObjectState;
+
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class TornadoRuntime extends TornadoLogger {
 
@@ -24,14 +25,14 @@ public class TornadoRuntime extends TornadoLogger {
 
     private static final JVMMapping JVM = new JVMMapping();
 
-    public static TornadoRuntime getTornadoRuntime(){
+    public static TornadoRuntime getTornadoRuntime() {
         return runtime;
     }
-    
-    public static Executor getTornadoExecutor(){
+
+    public static Executor getTornadoExecutor() {
         return EXECUTOR;
     }
-    
+
     public static JVMCIBackend getVMBackend() {
         return runtime.vmBackend;
     }
@@ -91,11 +92,10 @@ public class TornadoRuntime extends TornadoLogger {
 //
 //        }
 
-        
-        ServiceLoader<TornadoDriverProvider> loader  = ServiceLoader.load(TornadoDriverProvider.class);
-        TornadoDriver[] drivers = new TornadoDriver[0];
-        for(TornadoDriverProvider provider: loader){
-            System.out.printf("found: %s\n",provider.getName());
+        ServiceLoader<TornadoDriverProvider> loader = ServiceLoader.load(TornadoDriverProvider.class);
+        drivers = new TornadoDriver[0];
+        for (TornadoDriverProvider provider : loader) {
+            drivers[0] = provider.createDriver(vmRuntime, vmConfig);
         }
 
         return drivers;
@@ -120,10 +120,10 @@ public class TornadoRuntime extends TornadoLogger {
     public TornadoDriver getDriver(int index) {
         return drivers[index];
     }
-    
-    public <D extends TornadoDriver> D getDriver(Class<D> type){
-        for(TornadoDriver driver : drivers){
-            if(driver.getClass() == type ){
+
+    public <D extends TornadoDriver> D getDriver(Class<D> type) {
+        for (TornadoDriver driver : drivers) {
+            if (driver.getClass() == type) {
                 return (D) driver;
             }
         }
@@ -133,8 +133,8 @@ public class TornadoRuntime extends TornadoLogger {
     public int getNumDrivers() {
         return drivers.length;
     }
-    
-    public DeviceMapping getDefaultDevice(){
+
+    public DeviceMapping getDefaultDevice() {
         return (drivers == null || drivers[defaultDriver] == null) ? JVM : drivers[defaultDriver].getDefaultDevice();
     }
 }
