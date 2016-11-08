@@ -245,8 +245,7 @@ public class OCLGraphBuilderPlugins {
     }
 
     public static void registerNewInstancePlugins(Plugins plugins) {
-        plugins.plugins.setNewInstancePlugin(new TornadoNewInstancePlugin());
-
+        plugins.appendTypePlugin(new OCLVectorTypePlugin());
     }
 
     public static void registerParameterPlugins(Plugins plugins) {
