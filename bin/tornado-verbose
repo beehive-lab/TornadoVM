@@ -2,7 +2,7 @@
 
 . ${TORNADO_ROOT}/etc/tornado.conf
 
-JAVA_FLAGS="${JAVA_FLAGS} -G:Dump= -G:Log= -G:LogFile="tornado-last" -G:+LogVerbose -G:TraceLIRGeneratorLevel=3 -G:+DumpOnError -G:+PrintCFG"
+JAVA_FLAGS="${JAVA_FLAGS} -Dgraal.Dump -Dgraal.PrintIdealGraph=true -Dgraal.PrintCFG=true"
 
 DEPS=""
 for f in $(ls ${TORNADO_ROOT}/target/*.jar); do
