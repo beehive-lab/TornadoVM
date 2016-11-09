@@ -93,7 +93,7 @@ public class TornadoRuntime extends TornadoLogger {
 //        }
 
         ServiceLoader<TornadoDriverProvider> loader = ServiceLoader.load(TornadoDriverProvider.class);
-        drivers = new TornadoDriver[0];
+        drivers = new TornadoDriver[1];
         for (TornadoDriverProvider provider : loader) {
             drivers[0] = provider.createDriver(vmRuntime, vmConfig);
         }
