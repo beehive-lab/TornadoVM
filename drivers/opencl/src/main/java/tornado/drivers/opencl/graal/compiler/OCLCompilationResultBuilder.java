@@ -106,7 +106,10 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     @Override
     public void finish() {
-        compilationResult.setTargetCode(asm.close(true), asm.position());
+        int position = asm.position();
+        compilationResult.setTargetCode(asm.close(true), position);
+
+        closeCompilationResult();
     }
 
     private String toString(Collection<Block> blocks) {
@@ -414,7 +417,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
         instructions.remove(index);
 
-        final Set<Value> dependencies = new HashSet<Value>();
+        final Set<Value> dependencies = new HashSet<>();
         DepFinder df = new DepFinder(dependencies);
         condition.forEachInput(df);
 
@@ -422,7 +425,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         // System.out.printf("dep: %s\n",insn);
         // }
         index--;
-        final List<LIRInstruction> moved = new ArrayList<LIRInstruction>();
+        final List<LIRInstruction> moved = new ArrayList<>();
         LIRInstruction insn = instructions.get(index);
         while (!(insn instanceof LoopPostOp)) {
             if (insn instanceof AssignStmt) {
@@ -450,6 +453,10 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     public void emitBlock(AbstractBlockBase<?> block) {
+        if (block == null) {
+            return;
+        }
+
         ((OCLAssembler) asm).emitLine("// BLOCK %d", block.getId());
 
         if (PrintLIRWithAssembly.getValue()) {
@@ -466,7 +473,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                 continue;
             }
 
-            // System.out.printf("\top: %s\n", op);
             if (PrintLIRWithAssembly.getValue()) {
                 blockComment(String.format("%d %s", op.id(), op));
             }

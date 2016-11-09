@@ -79,7 +79,7 @@ public class OCLIntrinsicNode {
         }
 
         @Override
-        public Node canonical(CanonicalizerTool tool) {
+        public ValueNode canonical(CanonicalizerTool tool) {
             return this;
         }
 

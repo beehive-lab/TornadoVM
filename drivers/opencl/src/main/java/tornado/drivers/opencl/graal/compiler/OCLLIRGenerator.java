@@ -4,16 +4,15 @@ import com.oracle.graal.compiler.common.LIRKind;
 import com.oracle.graal.compiler.common.calc.Condition;
 import com.oracle.graal.compiler.common.spi.CodeGenProviders;
 import com.oracle.graal.compiler.common.spi.ForeignCallLinkage;
-import com.oracle.graal.lir.LIRFrameState;
-import com.oracle.graal.lir.LabelRef;
 import com.oracle.graal.lir.StandardOp.SaveRegistersOp;
-import com.oracle.graal.lir.SwitchStrategy;
-import com.oracle.graal.lir.Variable;
+import com.oracle.graal.lir.*;
 import com.oracle.graal.lir.gen.LIRGenerationResult;
 import com.oracle.graal.lir.gen.LIRGenerator;
 import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.meta.*;
 import tornado.drivers.opencl.OCLTargetDescription;
+import tornado.drivers.opencl.graal.OCLLIRKindTool;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
@@ -31,9 +30,15 @@ public class OCLLIRGenerator extends LIRGenerator {
     protected OCLGenTool oclGenTool;
 
     public OCLLIRGenerator(CodeGenProviders providers, LIRGenerationResult res) {
-        super(new OCLLIRKindTool(), new OCLArithmeticTool(), new OCLMoveFactory(), providers, res);
+        super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool(), new OCLMoveFactory(), providers, res);
         this.oclBuiltinTool = new OCLBuiltinTool();
         this.oclGenTool = new OCLGenTool(this);
+    }
+
+    @Override
+    public LIRInstruction createZapArgumentSpace(StackSlot[] sss, JavaConstant[] jcs) {
+        unimplemented();
+        return null;
     }
 
     public OCLGenTool getOCLGenTool() {
@@ -125,9 +130,10 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitDeoptimize(Value actionAndReason, Value speculation, LIRFrameState state) {
-        DeoptimizationReason reason = getMetaAccess().decodeDeoptReason((JavaConstant) actionAndReason);
-        DeoptimizationAction action = getMetaAccess().decodeDeoptAction((JavaConstant) actionAndReason);
-        int debugId = getMetaAccess().decodeDebugId((JavaConstant) actionAndReason);
+        JavaConstant constant = ((ConstantValue) actionAndReason).getJavaConstant();
+        DeoptimizationReason reason = getMetaAccess().decodeDeoptReason(constant);
+        DeoptimizationAction action = getMetaAccess().decodeDeoptAction(constant);
+        int debugId = getMetaAccess().decodeDebugId(constant);
         trace("emitDeoptimize: id=%d, reason=%s, action=%s", debugId, reason, action);
         append(new OCLControlFlow.DeoptOp(actionAndReason));
     }
@@ -209,9 +215,8 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public <K extends ValueKind<K>> K toRegisterKind(K k) {
-        unimplemented();
-        return null;
+    public <K extends ValueKind<K>> K toRegisterKind(K kind) {
+        return kind;
     }
 
     @Override

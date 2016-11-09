@@ -13,8 +13,7 @@ public class OCLMoveFactory implements MoveFactory {
 
     @Override
     public boolean canInlineConstant(JavaConstant jc) {
-        unimplemented();
-        return false;
+        return true;
     }
 
     @Override

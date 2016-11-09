@@ -108,13 +108,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     @Override
     public ReferenceMapBuilder newReferenceMapBuilder(int totalFrameSize) {
-        unimplemented();
         return new OCLReferenceMapBuilder();
     }
 
     @Override
     public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig rc) {
-        unimplemented();
         return null;
     }
 
@@ -378,7 +376,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             FrameMap frameMap, CompilationResult compilationResult,
             CompilationResultBuilderFactory factory) {
         return newCompilationResultBuilder(lirGenRes, frameMap,
-                (OCLCompilationResult) compilationResult, factory);
+                (OCLCompilationResult) compilationResult, factory, false);
     }
 
     public OCLCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes,

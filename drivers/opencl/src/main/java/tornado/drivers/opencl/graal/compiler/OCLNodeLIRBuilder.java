@@ -238,7 +238,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 LIRKind lirKind = LIRKind.value(returnExpr.getPlatformKind());
                 final AllocatableValue slotAddress = new OCLReturnSlot(lirKind);
                 // double check this works properly
-                insns.set(index, new AssignStmt(slotAddress, returnExpr));
+                insns.set(index, new AssignStmt(slotAddress, returnExpr.getValue()));
             }
         }
 

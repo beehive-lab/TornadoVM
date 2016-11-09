@@ -102,6 +102,7 @@ public class OCLArchitecture extends Architecture {
             case Object:
                 oclKind = (OCLKind) getWordKind();
                 break;
+            case Void:
             case Illegal:
                 oclKind = OCLKind.ILLEGAL;
                 break;

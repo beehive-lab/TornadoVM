@@ -10,10 +10,11 @@ import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLRegisterConfig implements RegisterConfig {
 
+    private final static RegisterArray EMPTY = new RegisterArray(new Register[0]);
+
     @Override
     public RegisterArray getCalleeSaveRegisters() {
-        unimplemented();
-        return null;
+        return EMPTY;
     }
 
     @Override
@@ -36,14 +37,12 @@ public class OCLRegisterConfig implements RegisterConfig {
 
     @Override
     public RegisterArray getCallingConventionRegisters(Type type, JavaKind kind) {
-        unimplemented();
-        return null;
+        return EMPTY;
     }
 
     @Override
     public RegisterArray getAllocatableRegisters() {
-        unimplemented();
-        return null;
+        return EMPTY;
     }
 
     @Override
@@ -54,8 +53,7 @@ public class OCLRegisterConfig implements RegisterConfig {
 
     @Override
     public RegisterArray getCallerSaveRegisters() {
-        unimplemented();
-        return null;
+        return EMPTY;
     }
 
     @Override

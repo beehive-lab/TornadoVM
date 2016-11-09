@@ -1,10 +1,13 @@
 package tornado.drivers.opencl.graal;
 
+import com.oracle.graal.bytecode.BytecodeProvider;
 import com.oracle.graal.hotspot.meta.HotSpotStampProvider;
 import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins;
+import com.oracle.graal.nodes.spi.Replacements;
 import com.oracle.graal.phases.util.Providers;
 import com.oracle.graal.replacements.StandardGraphBuilderPlugins;
+import com.oracle.graal.replacements.classfile.ClassfileBytecodeProvider;
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
@@ -17,10 +20,7 @@ import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
 import tornado.drivers.opencl.graal.compiler.plugins.OCLGraphBuilderPlugins;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-import tornado.graal.compiler.TornadoConstantFieldProvider;
-import tornado.graal.compiler.TornadoForeignCallsProvider;
-import tornado.graal.compiler.TornadoNodeCostProvider;
-import tornado.graal.compiler.TornadoSnippetReflectionProvider;
+import tornado.graal.compiler.*;
 import tornado.runtime.TornadoVMConfig;
 
 import static jdk.vm.ci.common.InitTimer.timer;
@@ -35,7 +35,7 @@ public class OCLHotSpotBackendFactory {
     private static final TornadoConstantFieldProvider constantFieldProvider = new TornadoConstantFieldProvider();
     private static final OCLCompilerConfiguration compilerConfiguration = new OCLCompilerConfiguration();
 
-    public OCLBackend createBackend(JVMCIBackend jvmci, TornadoVMConfig config, OCLContext openclContext, OCLDevice device) {
+    public static OCLBackend createBackend(JVMCIBackend jvmci, TornadoVMConfig config, OCLContext openclContext, OCLDevice device) {
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmci.getMetaAccess();
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();
 
@@ -69,22 +69,25 @@ public class OCLHotSpotBackendFactory {
             lowerer = new OCLLoweringProvider(metaAccess, foreignCalls, constantReflection, config, target);
 
             Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, nodeCostProvider);
-
-            plugins = createGraphBuilderPlugins(metaAccess);
+            ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
+            Replacements replacements = new TornadoReplacements(p, snippetReflection, bytecodeProvider, target);
+            plugins = createGraphBuilderPlugins(metaAccess, bytecodeProvider);
 
             suites = new OCLSuitesProvider(plugins, metaAccess);
 
-            providers = new OCLProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, nodeCostProvider, plugins, suites);
+            providers = new OCLProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, nodeCostProvider, plugins, suites);
 
             lowerer.initialize(providers, snippetReflection);
         }
         try (InitTimer rt = timer("instantiate backend")) {
-            return new OCLBackend(providers, target, codeCache, openclContext, deviceContext);
+            OCLBackend backend = new OCLBackend(providers, target, codeCache, openclContext, deviceContext);
+            codeCache.setBackend(backend);
+            return backend;
         }
     }
 
-    protected Plugins createGraphBuilderPlugins(
-            HotSpotMetaAccessProvider metaAccess) {
+    protected static Plugins createGraphBuilderPlugins(
+            HotSpotMetaAccessProvider metaAccess, BytecodeProvider bytecodeProvider) {
 
         InvocationPlugins invocationPlugins = new InvocationPlugins(metaAccess);
         Plugins plugins = new Plugins(invocationPlugins);
@@ -95,7 +98,7 @@ public class OCLHotSpotBackendFactory {
         invocationPlugins.defer(new Runnable() {
             @Override
             public void run() {
-                StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, true);
+                StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, bytecodeProvider, true);
                 OCLGraphBuilderPlugins.registerInvocationPlugins(invocationPlugins);
             }
         });

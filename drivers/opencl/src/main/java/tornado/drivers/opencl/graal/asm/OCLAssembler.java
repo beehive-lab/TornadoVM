@@ -15,6 +15,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.lir.OCLKind;
+import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
@@ -972,9 +973,9 @@ public class OCLAssembler extends Assembler {
 
             ConstantValue cv = (ConstantValue) value;
             emitConstant(cv);
-//        else if (value instanceof OCLReturnSlot) {
-//            final String type = ((OCLKind) value.getPlatformKind()).name().toLowerCase();
-//            result = String.format("*((__global %s *) %s)", type, HEAP_REF_NAME);
+        } else if (value instanceof OCLReturnSlot) {
+            final String type = ((OCLKind) value.getPlatformKind()).name().toLowerCase();
+            result = String.format("*((__global %s *) %s)", type, HEAP_REF_NAME);
 //        } else if (value instanceof OCLNullary.Expr) {
 //            return ((OCLNullary.Expr) value).toString();
         } else {

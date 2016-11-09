@@ -54,7 +54,7 @@ public class VectorAddNode extends BinaryNode implements LIRLowerable, VectorOp 
     }
 
     @Override
-    public Node canonical(CanonicalizerTool ct) {
+    public ValueNode canonical(CanonicalizerTool ct) {
         return this;
     }
 

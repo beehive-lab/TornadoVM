@@ -1,19 +1,15 @@
 package tornado.drivers.opencl;
 
-import com.oracle.graal.hotspot.HotSpotGraalRuntimeProvider;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import tornado.common.DeviceMapping;
 import tornado.common.TornadoLogger;
-import tornado.drivers.opencl.graal.*;
+import tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
+import tornado.drivers.opencl.graal.OCLSuitesProvider;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
-import tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
-import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.runtime.TornadoDriver;
 import tornado.runtime.TornadoVMConfig;
-
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public final class OCLDriver extends TornadoLogger implements TornadoDriver {
 
@@ -49,33 +45,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
             final int deviceIndex) {
         final OCLDevice device = context.devices().get(deviceIndex);
         info("Creating backend for %s", device.getName());
-
-        OCLKind wordKind = OCLKind.ILLEGAL;
-        switch (device.getWordSize()) {
-            case 32:
-                wordKind = OCLKind.UINT;
-                break;
-            case 64:
-                wordKind = OCLKind.ULONG;
-                break;
-            default:
-                shouldNotReachHere("unknown word size for device: ", device.getName());
-                break;
-        }
-
-        OCLCompilerConfiguration compilerConfig = new OCLCompilerConfiguration();
-
-        final OCLTargetDescription target = new OCLTargetDescription(
-                new OCLArchitecture(wordKind, device.getByteOrder()));
-        final OpenCLCodeCache codeCache = new OpenCLCodeCache(target);
-
-        final OCLLoweringProvider lowerer = new OCLLoweringProvider(((HotSpotGraalRuntimeProvider) jvmciRuntime.getHostJVMCIBackend()).getHostProviders(), vmConfig, target);
-
-//        Plugins plugins = OCLGraphBuilderPlugins.create(jvmciRuntime.getHostJVMCIBackend().getMetaAccess());
-        final OCLProviders providers = new OCLProviders(compilerConfig, jvmciRuntime.getHostJVMCIBackend(),
-                ((HotSpotGraalRuntimeProvider) jvmciRuntime.getHostJVMCIBackend()).getHostProviders().getGraphBuilderPlugins(), lowerer, codeCache);
-
-        return new OCLBackend(providers, target, context, deviceIndex);
+        return OCLHotSpotBackendFactory.createBackend(jvmciRuntime.getHostJVMCIBackend(), vmConfig, context, device);
     }
 
     protected void discoverDevices(final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {

@@ -1,21 +1,22 @@
 package tornado.drivers.opencl.graal.compiler;
 
-import static com.oracle.graal.compiler.common.GraalOptions.*;
+import com.oracle.graal.loop.phases.LoopSafepointEliminationPhase;
+import com.oracle.graal.loop.phases.ReassociateInvariantPhase;
+import com.oracle.graal.nodes.spi.LoweringTool;
+import com.oracle.graal.phases.common.*;
+import com.oracle.graal.virtual.phases.ea.EarlyReadEliminationPhase;
 import tornado.graal.compiler.TornadoMidTier;
 import tornado.graal.phases.ExceptionCheckingElimination;
 import tornado.graal.phases.TornadoMemoryPhiElimination;
-import com.oracle.graal.loop.phases.*;
-import com.oracle.graal.nodes.spi.*;
-import com.oracle.graal.phases.common.*;
-import com.oracle.graal.virtual.phases.ea.*;
+
+import static com.oracle.graal.compiler.common.GraalOptions.*;
 
 public class OCLMidTier extends TornadoMidTier {
 
-	
     public OCLMidTier() {
-    	
-    	appendPhase(new ExceptionCheckingElimination());
-    	
+
+        appendPhase(new ExceptionCheckingElimination());
+
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
         if (ImmutableCode.getValue()) {
             canonicalizer.disableReadCanonicalization();
@@ -24,15 +25,15 @@ public class OCLMidTier extends TornadoMidTier {
         if (OptPushThroughPi.getValue()) {
             appendPhase(new PushThroughPiPhase());
         }
-        if (OptCanonicalizer.getValue()) {
-            appendPhase(canonicalizer);
-        }
+//        if (OptCanonicalizer.getValue()) {
+        appendPhase(canonicalizer);
+//        }
 
-      //if(!OpenCLTornadoBackend.ENABLE_EXCEPTIONS)
-    	  appendPhase(new ExceptionCheckingElimination());
-      
+        //if(!OpenCLTornadoBackend.ENABLE_EXCEPTIONS)
+        appendPhase(new ExceptionCheckingElimination());
+
         appendPhase(new ValueAnchorCleanupPhase());
-       // appendPhase(new LockEliminationPhase());
+        // appendPhase(new LockEliminationPhase());
 
         if (OptReadElimination.getValue()) {
             appendPhase(new EarlyReadEliminationPhase(canonicalizer));
@@ -44,15 +45,15 @@ public class OCLMidTier extends TornadoMidTier {
         appendPhase(new TornadoMemoryPhiElimination());
         appendPhase(new RemoveValueProxyPhase());
 
-        if (OptCanonicalizer.getValue()) {
-            appendPhase(canonicalizer);
-        }
+//        if (OptCanonicalizer.getValue()) {
+        appendPhase(canonicalizer);
+//        }
 
         if (OptEliminatePartiallyRedundantGuards.getValue()) {
             appendPhase(new OptimizeGuardAnchorsPhase());
         }
 
-        if (ConditionalElimination.getValue() && OptCanonicalizer.getValue()) {
+        if (ConditionalElimination.getValue()) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, true));
         }
 
@@ -60,20 +61,18 @@ public class OCLMidTier extends TornadoMidTier {
             appendPhase(new OptimizeGuardAnchorsPhase());
         }
 
-        if (OptCanonicalizer.getValue()) {
-            appendPhase(canonicalizer);
-        }
+//        if (OptCanonicalizer.getValue()) {
+        appendPhase(canonicalizer);
+//        }
 
         appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new LoopSafepointEliminationPhase()));
 
         //appendPhase(new LoopSafepointInsertionPhase());
-
         appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new GuardLoweringPhase()));
 
         //if (VerifyHeapAtReturn.getValue()) {
         //    appendPhase(new VerifyHeapAtReturnPhase());
         //}
-
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.MID_TIER));
 
         appendPhase(new FrameStateAssignmentPhase());
@@ -81,16 +80,14 @@ public class OCLMidTier extends TornadoMidTier {
         if (ReassociateInvariants.getValue()) {
             appendPhase(new ReassociateInvariantPhase());
         }
-        
+
         //appendPhase(new TornadoIfCanonicalization());
         //appendPhase(canonicalizer);
-
         //if (OptDeoptimizationGrouping.getValue()) {
         //    appendPhase(new DeoptimizationGroupingPhase());
         //}
-
-        if (OptCanonicalizer.getValue()) {
-            appendPhase(canonicalizer);
-        }
+//        if (OptCanonicalizer.getValue()) {
+        appendPhase(canonicalizer);
+//        }
     }
 }

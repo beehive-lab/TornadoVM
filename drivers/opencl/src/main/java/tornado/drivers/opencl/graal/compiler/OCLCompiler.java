@@ -5,11 +5,10 @@ import com.oracle.graal.compiler.common.GraalOptions;
 import com.oracle.graal.compiler.common.alloc.ComputeBlockOrder;
 import com.oracle.graal.compiler.common.alloc.RegisterAllocationConfig;
 import com.oracle.graal.compiler.common.cfg.AbstractBlockBase;
-import com.oracle.graal.debug.Debug;
 import com.oracle.graal.debug.Debug.Scope;
-import com.oracle.graal.debug.DebugCloseable;
-import com.oracle.graal.debug.DebugDumpScope;
-import com.oracle.graal.debug.DebugTimer;
+import com.oracle.graal.debug.*;
+import com.oracle.graal.debug.internal.DebugScope;
+import com.oracle.graal.debug.internal.method.MethodMetricsRootScopeInfo;
 import com.oracle.graal.lir.LIR;
 import com.oracle.graal.lir.asm.CompilationResultBuilderFactory;
 import com.oracle.graal.lir.constopt.ConstantLoadOptimization;
@@ -18,7 +17,6 @@ import com.oracle.graal.lir.framemap.FrameMapBuilder;
 import com.oracle.graal.lir.gen.LIRGenerationResult;
 import com.oracle.graal.lir.gen.LIRGeneratorTool;
 import com.oracle.graal.lir.phases.AllocationPhase.AllocationContext;
-import com.oracle.graal.lir.phases.PostAllocationOptimizationPhase.PostAllocationOptimizationContext;
 import com.oracle.graal.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
 import com.oracle.graal.nodes.StructuredGraph;
 import com.oracle.graal.nodes.StructuredGraph.AllowAssumptions;
@@ -40,6 +38,7 @@ import jdk.vm.ci.meta.*;
 import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.OCLTargetDescription;
+import tornado.drivers.opencl.graal.DebugEnvironment;
 import tornado.drivers.opencl.graal.*;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLLIRGenerationPhase.LIRGenerationContext;
@@ -61,6 +60,7 @@ public class OCLCompiler {
 
     private static final AtomicInteger compilationId = new AtomicInteger();
 
+    private static final DebugTimer CompilerTimer = Debug.timer("GraalCompiler");
     private static final DebugTimer FrontEnd = Debug.timer("FrontEnd");
     private static final DebugTimer BackEnd = Debug.timer("BackEnd");
     private static final DebugTimer EmitLIR = Debug.timer("EmitLIR");
@@ -148,6 +148,7 @@ public class OCLCompiler {
          * @return the result of the compilation
          */
         public T execute() {
+
             return OCLCompiler.compile(this);
         }
     }
@@ -170,9 +171,12 @@ public class OCLCompiler {
             OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo,
             TornadoSuites suites, TornadoLIRSuites lirSuites, T compilationResult,
             CompilationResultBuilderFactory factory, boolean isKernel) {
+        // Ensure a debug configuration for this thread is initialized
+
         return compile(new Request<>(graph, installedCodeOwner, args, meta, providers, backend,
                 graphBuilderSuite, optimisticOpts, profilingInfo, suites,
                 lirSuites, compilationResult, factory, isKernel));
+
     }
 
     /**
@@ -181,15 +185,45 @@ public class OCLCompiler {
      * @return the result of the compilation
      */
     public static <T extends OCLCompilationResult> T compile(Request<T> r) {
-        assert !r.graph.isFrozen();
-        try (Scope s0 = Debug.scope("TornadoCompiler", new DebugDumpScope(r.graph.method()
-                .getName() + ":" + String.valueOf(compilationId.incrementAndGet())))) {
-            emitFrontEnd(r.providers, r.backend, r.installedCodeOwner, r.args, r.meta, r.graph, r.graphBuilderSuite, r.optimisticOpts, r.profilingInfo, r.suites, r.isKernel);
-            emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites, r.isKernel);
-        } catch (Throwable e) {
-            throw Debug.handle(e);
+//        assert !r.graph.isFrozen();
+//        try (Scope s0 = Debug.scope("TornadoCompiler", new DebugDumpScope(r.graph.method()
+//                .getName() + ":" + String.valueOf(compilationId.incrementAndGet())))) {
+//
+//            System.out.printf("dump: enabled=%s, dump enabled=%s, dump method=%s\n", Debug.isEnabled(), Debug.isDumpEnabled(0), Debug.isDumpEnabledForMethod());
+//
+//            emitFrontEnd(r.providers, r.backend, r.installedCodeOwner, r.args, r.meta, r.graph, r.graphBuilderSuite, r.optimisticOpts, r.profilingInfo, r.suites, r.isKernel);
+//            emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites, r.isKernel);
+//        } catch (Throwable e) {
+//            throw Debug.handle(e);
+//        }
+//        return r.compilationResult;
+        if (Debug.isEnabled() && DebugScope.getConfig() == null) {
+            GraalDebugConfig config = DebugEnvironment.initialize(System.out);
+            System.out.printf("dump: config=%s\n", config.toString());
+            config.dumpHandlers().stream().forEach(dh -> System.out.printf("dh: class=%s, %s\n", dh.getClass().getName(), dh));
         }
-        return r.compilationResult;
+        try (Scope s = MethodMetricsRootScopeInfo.createRootScopeIfAbsent(r.installedCodeOwner)) {
+            assert !r.graph.isFrozen();
+
+            try (Scope s0 = Debug.scope("GraalCompiler", r.graph, r.providers.getCodeCache()); DebugCloseable a = CompilerTimer.start()) {
+                DebugScope instance = DebugScope.getInstance();
+                System.out.printf("dump: scope=%s, class=%s\n", instance.toString(), instance.getClass().getName());
+//            DebugConfig config = DebugScope.getConfig();
+//            System.out.printf("dump: config=%s, class=%s\n", config.toString(), config.getClass().getName());
+//            instance.setConfig(config);
+//            for (DebugConfigCustomizer customizer : GraalServices.load(DebugConfigCustomizer.class)) {
+//                customizer.customize(DebugScope.getConfig());
+//            }
+//            DebugScope.getConfig().dumpHandlers().stream().forEach(dh -> System.out.printf("dh: class=%d, %s\n", dh.getClass().getName(), dh));
+                System.out.printf("dump: enabled=%s, dump enabled=%s, dump method=%s\n", Debug.isEnabled(), Debug.isDumpEnabled(0), Debug.isDumpEnabledForMethod());
+
+                emitFrontEnd(r.providers, r.backend, r.installedCodeOwner, r.args, r.meta, r.graph, r.graphBuilderSuite, r.optimisticOpts, r.profilingInfo, r.suites, r.isKernel);
+                emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites, r.isKernel);
+            } catch (Throwable e) {
+                throw Debug.handle(e);
+            }
+            return r.compilationResult;
+        }
     }
 
     public static ProfilingInfo getProfilingInfo(StructuredGraph graph) {
@@ -230,6 +264,8 @@ public class OCLCompiler {
                 Debug.dump(Debug.INFO_LOG_LEVEL, graph, "initial state");
             }
 
+            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "start");
+
             suites.getHighTier().apply(graph,
                     highTierContext);
             graph.maybeCompress();
@@ -265,7 +301,7 @@ public class OCLCompiler {
                 int bytecodeSize = graph.method() == null ? 0 : graph.getBytecodeSize();
                 compilationResult.setHasUnsafeAccess(graph.hasUnsafeAccess());
                 emitCode(backend, graph.getAssumptions(), graph.method(),
-                        graph.getInlinedMethods(), bytecodeSize, lirGen, compilationResult, installedCodeOwner,
+                        graph.getMethods(), bytecodeSize, lirGen, compilationResult, installedCodeOwner,
                         factory, isKernel);
             } catch (Throwable e) {
                 throw Debug.handle(e);
@@ -352,10 +388,9 @@ public class OCLCompiler {
         AllocationContext allocContext = new AllocationContext(lirGen.getSpillMoveFactory(), registerAllocationConfig);
         lirSuites.getAllocationStage().apply(target, lirGenRes, allocContext);
 
-        PostAllocationOptimizationContext postAllocOptContext = new PostAllocationOptimizationContext(
-                lirGen);
-        lirSuites.getPostAllocationStage().apply(target, lirGenRes, postAllocOptContext);
-
+//        PostAllocationOptimizationContext postAllocOptContext = new PostAllocationOptimizationContext(
+//                lirGen);
+//        lirSuites.getPostAllocationStage().apply(target, lirGenRes, postAllocOptContext);
         return lirGenRes;
     }
 
@@ -370,7 +405,7 @@ public class OCLCompiler {
             final OCLCompilationResultBuilder crb = backend.newCompilationResultBuilder(lirGenRes,
                     frameMap, compilationResult, factory, isKernel);
             backend.emitCode(crb, lirGenRes.getLIR(), installedCodeOwner);
-            crb.finish();
+
             if (assumptions != null && !assumptions.isEmpty()) {
                 compilationResult.setAssumptions(assumptions.toArray());
             }
@@ -379,6 +414,7 @@ public class OCLCompiler {
             }
 
             compilationResult.setNonInlinedMethods(crb.getNonInlinedMethods());
+            crb.finish();
 
             if (Debug.isCountEnabled()) {
                 Debug.counter("CompilationResults").increment();

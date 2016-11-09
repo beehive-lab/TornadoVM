@@ -34,7 +34,7 @@ public class OCLSuitesProvider {
         OCLGraphBuilderPlugins.registerNewInstancePlugins(plugins);
         OCLGraphBuilderPlugins.registerParameterPlugins(plugins);
 
-        GraphBuilderConfiguration config = GraphBuilderConfiguration.getDefault(plugins);
+        GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
         config.withEagerResolving(true);
 //        config.setUseProfiling(false);
 

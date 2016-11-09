@@ -66,8 +66,7 @@ public class OpenCLCodeCache implements CodeCacheProvider {
 
     @Override
     public RegisterConfig getRegisterConfig() {
-        unimplemented();
-        return null;
+        return new OCLRegisterConfig();
     }
 
     @Override

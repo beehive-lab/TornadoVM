@@ -34,13 +34,16 @@ public class OCLDeviceMapping implements DeviceMapping {
     private final int platformIndex;
 
     private static OCLDriver findDriver() {
-        for (int i = 0; i < getTornadoRuntime().getNumDrivers(); i++) {
-            if (getTornadoRuntime().getDriver(i) instanceof OCLDriver) {
-                return (OCLDriver) getTornadoRuntime().getDriver(i);
-            }
-        }
-        shouldNotReachHere("unable to find OpenCL driver");
-        return null;
+        OCLDriver driver = getTornadoRuntime().getDriver(OCLDriver.class);
+        guarantee(driver != null, "unable to find OpenCL driver");
+        return driver;
+//        for (int i = 0; i < getTornadoRuntime().getNumDrivers(); i++) {
+//            if (getTornadoRuntime().getDriver(i) instanceof OCLDriver) {
+//                return (OCLDriver) getTornadoRuntime().getDriver(i);
+//            }
+//        }
+//        shouldNotReachHere("unable to find OpenCL driver");
+//        return null;
     }
 
     public OCLDeviceMapping(final int platformIndex, final int deviceIndex) {

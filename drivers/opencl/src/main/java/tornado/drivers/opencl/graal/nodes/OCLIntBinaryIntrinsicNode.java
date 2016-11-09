@@ -2,7 +2,6 @@ package tornado.drivers.opencl.graal.nodes;
 
 import com.oracle.graal.compiler.common.type.Stamp;
 import com.oracle.graal.compiler.common.type.StampFactory;
-import com.oracle.graal.graph.Node;
 import com.oracle.graal.graph.NodeClass;
 import com.oracle.graal.graph.spi.CanonicalizerTool;
 import com.oracle.graal.lir.Variable;
@@ -49,7 +48,7 @@ public class OCLIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticL
     }
 
     @Override
-    public Node canonical(CanonicalizerTool tool) {
+    public ValueNode canonical(CanonicalizerTool tool) {
         return canonical(tool, getX(), getY());
     }
 
@@ -135,7 +134,7 @@ public class OCLIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticL
     }
 
     @Override
-    public Node canonical(CanonicalizerTool tool, ValueNode x, ValueNode y) {
+    public ValueNode canonical(CanonicalizerTool tool, ValueNode x, ValueNode y) {
         ValueNode c = tryConstantFold(x, y, operation(), getStackKind());
         if (c != null) {
             return c;

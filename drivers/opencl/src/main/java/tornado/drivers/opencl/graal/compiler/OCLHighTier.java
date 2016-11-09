@@ -25,9 +25,9 @@ public class OCLHighTier extends TornadoHighTier {
             canonicalizer.disableReadCanonicalization();
         }
 
-        if (OptCanonicalizer.getValue()) {
-            appendPhase(canonicalizer);
-        }
+//        if (OptCanonicalizer.getValue()) {
+        appendPhase(canonicalizer);
+//        }
 
         if (Inline.getValue()) {
             appendPhase(new InliningPhase(new TornadoInliningPolicy(), canonicalizer));
@@ -35,7 +35,7 @@ public class OCLHighTier extends TornadoHighTier {
 
             appendPhase(new DeadCodeEliminationPhase(Optional));
 
-            if (ConditionalElimination.getValue() && OptCanonicalizer.getValue()) {
+            if (ConditionalElimination.getValue()) {
                 appendPhase(canonicalizer);
                 appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
             }

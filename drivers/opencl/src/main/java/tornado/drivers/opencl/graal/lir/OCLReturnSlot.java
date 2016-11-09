@@ -23,7 +23,7 @@ public class OCLReturnSlot extends AllocatableValue {
 
     @Override
     public String toString() {
-        return op.toString();
+        return "RETURN_SLOT";
     }
 
 }
