@@ -39,7 +39,7 @@ public abstract class BinaryLogicalNode extends LogicNode implements IterableNod
     abstract public Value generate(LIRGeneratorTool gen, Value x, Value y);
 
     @Override
-    public Node canonical(CanonicalizerTool tool) {
+    public LogicNode canonical(CanonicalizerTool tool) {
         return this;
     }
 

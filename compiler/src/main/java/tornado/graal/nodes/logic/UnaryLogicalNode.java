@@ -45,7 +45,7 @@ public abstract class UnaryLogicalNode extends LogicNode implements IterableNode
     }
 
     @Override
-    public Node canonical(CanonicalizerTool tool) {
+    public LogicNode canonical(CanonicalizerTool tool) {
         return this;
     }
 

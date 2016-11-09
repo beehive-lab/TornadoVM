@@ -53,7 +53,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoHighTierContext> {
 
         methodToAnnotations.put(context.getMethod(), context.getMethod().getLocalAnnotations());
 
-        for (ResolvedJavaMethod inlinee : graph.getInlinedMethods()) {
+        for (ResolvedJavaMethod inlinee : graph.getMethods()) {
 
             if (inlinee.getLocalAnnotations().length > 0) {
                 methodToAnnotations.put(inlinee,
@@ -65,8 +65,8 @@ public class TornadoApiReplacement extends BasePhase<TornadoHighTierContext> {
 
         graph.getNodes().filter(FrameState.class).forEach((fs) -> {
             // Tornado.trace("framestate: method=%s,",fs.method().getName());
-            if (methodToAnnotations.containsKey(fs.method())) {
-                for (LocalAnnotation an : methodToAnnotations.get(fs.method())) {
+            if (methodToAnnotations.containsKey(fs.getMethod())) {
+                for (LocalAnnotation an : methodToAnnotations.get(fs.getMethod())) {
                     if (fs.bci >= an.getStart() && fs.bci < an.getStart() + an.getLength()) {
                         Node localNode = fs.localAt(an.getIndex());
 
