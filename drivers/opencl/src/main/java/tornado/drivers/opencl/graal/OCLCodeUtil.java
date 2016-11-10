@@ -11,7 +11,7 @@ import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
 
-public class OpenCLCodeUtil {
+public class OCLCodeUtil {
 
     /**
      * Create a calling convention from a {@link ResolvedJavaMethod}.

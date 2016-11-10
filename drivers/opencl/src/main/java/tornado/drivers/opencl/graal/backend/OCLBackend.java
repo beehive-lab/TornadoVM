@@ -53,6 +53,10 @@ import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -313,7 +317,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             asm.eol();
         } else {
 
-            final CallingConvention incomingArguments = OpenCLCodeUtil.getCallingConvention(
+            final CallingConvention incomingArguments = OCLCodeUtil.getCallingConvention(
                     codeCache, HotSpotCallingConventionType.JavaCallee, method, false);
             methodName = OCLUtils.makeMethodName(method);
             final JavaKind returnKind = method.getSignature().getReturnKind();

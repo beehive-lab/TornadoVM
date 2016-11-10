@@ -58,6 +58,14 @@ import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 /**
  * Static methods for orchestrating the compilation of a
@@ -472,7 +480,7 @@ public class OCLCompiler {
 //        FrameMapBuilder frameMapBuilder = backend.newFrameMapBuilder(null);
 //        final LIRGenerationResult lirGenRes = backend.newLIRGenerationResult("<unknown>",
 //                lir, frameMapBuilder, graph.method(), null);
-//        CallingConvention cc = OpenCLCodeUtil.getCallingConvention(codeCache,
+//        CallingConvention cc = OCLCodeUtil.getCallingConvention(codeCache,
 //                CallingConvention.Type.JavaCallee, graph.method(), false);
 //        final LIRGeneratorTool lirGen = backend.newLIRGenerator(cc, lirGenRes);
 //        final NodeLIRBuilderTool nodeLirGen = backend.newNodeLIRBuilder(graph, lirGen);
@@ -504,7 +512,7 @@ public class OCLCompiler {
             meta.addProvider(OCLMemoryRegions.class, new OCLMemoryRegions());
         }
 
-        CallingConvention cc = OpenCLCodeUtil.getCallingConvention(codeCache,
+        CallingConvention cc = OCLCodeUtil.getCallingConvention(codeCache,
                 HotSpotCallingConventionType.JavaCallee, resolvedMethod, false);
 
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
