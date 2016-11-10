@@ -19,7 +19,6 @@ import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 @NodeInfo(shortName = "+")
 public class VectorAddNode extends BinaryNode implements LIRLowerable, VectorOp {
@@ -32,7 +31,7 @@ public class VectorAddNode extends BinaryNode implements LIRLowerable, VectorOp 
 
     @Override
     public Stamp foldStamp(Stamp stampX, Stamp stampY) {
-        return stampX.join(stampY);
+        return (stampX instanceof OCLStamp) ? stampX.join(stampY) : stampY.join(stampX);
     }
 
     @Override
@@ -45,7 +44,7 @@ public class VectorAddNode extends BinaryNode implements LIRLowerable, VectorOp 
 
         trace("emitVectorAdd: %s + %s", input1, input2);
         OCLStamp stamp = (OCLStamp) stamp();
-        gen.getLIRGeneratorTool().append(new AssignStmt(result, new OCLBinary.Expr(OCLBinaryOp.ADD, stamp.getLIRKind(null), input1, input2)));
+        gen.getLIRGeneratorTool().append(new AssignStmt(result, new OCLBinary.Expr(OCLBinaryOp.ADD, gen.getLIRGeneratorTool().getLIRKind(stamp), input1, input2)));
         gen.setResult(this, result);
     }
 
