@@ -35,6 +35,6 @@ public class OpenCLFrameMapBuilder extends FrameMapBuilderImpl {
     }
 
     public StackSlot allocateDeoptimizationRescueSlot() {
-        return ((OpenCLFrameMap) getFrameMap()).allocateDeoptimizationRescueSlot();
+        return ((OCLFrameMap) getFrameMap()).allocateDeoptimizationRescueSlot();
     }
 }

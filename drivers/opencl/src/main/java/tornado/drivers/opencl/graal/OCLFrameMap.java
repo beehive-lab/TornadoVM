@@ -73,9 +73,9 @@ import tornado.drivers.opencl.graal.lir.OCLKind;
  * call-free methods also have this space reserved. Then the VM can use the
  * memory at offset 0 relative to the stack pointer.
  */
-public class OpenCLFrameMap extends FrameMap {
+public class OCLFrameMap extends FrameMap {
 
-    public OpenCLFrameMap(CodeCacheProvider codeCache, RegisterConfig registerConfig, ReferenceMapBuilderFactory referenceMapFactory) {
+    public OCLFrameMap(CodeCacheProvider codeCache, RegisterConfig registerConfig, ReferenceMapBuilderFactory referenceMapFactory) {
         super(codeCache, registerConfig, referenceMapFactory);
 
         // (negative) offset relative to sp + total frame size

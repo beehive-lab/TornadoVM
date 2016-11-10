@@ -65,6 +65,22 @@ import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -411,7 +427,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     @Override
     public FrameMap newFrameMap(RegisterConfig registerConfig) {
-        return new OpenCLFrameMap(getCodeCache(), registerConfig, this);
+        return new OCLFrameMap(getCodeCache(), registerConfig, this);
     }
 
     @Override
