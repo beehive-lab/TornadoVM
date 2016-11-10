@@ -21,7 +21,7 @@ public class OCLVectorElementSelect extends OCLLIROp {
     @Override
     public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
         asm.value(crb, vector);
-        asm.emitSymbol(".");
+        asm.emitSymbol(".s");
         asm.value(crb, selection);
     }
 
