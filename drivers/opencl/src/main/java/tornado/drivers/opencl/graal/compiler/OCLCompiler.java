@@ -66,6 +66,22 @@ import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 /**
  * Static methods for orchestrating the compilation of a
@@ -500,7 +516,7 @@ public class OCLCompiler {
 //        return compilationResult.getTargetCode();
     }
 
-    public static OpenCLInstalledCode compileCodeForDevice(ResolvedJavaMethod resolvedMethod,
+    public static OCLInstalledCode compileCodeForDevice(ResolvedJavaMethod resolvedMethod,
             Object[] args, Meta meta, OCLProviders providers, OCLBackend backend) {
         Tornado.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext()
                 .getDevice().getName());

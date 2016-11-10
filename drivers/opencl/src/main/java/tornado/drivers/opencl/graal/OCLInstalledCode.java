@@ -16,7 +16,7 @@ import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.common.Tornado.*;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 
-public class OpenCLInstalledCode extends InstalledCode implements TornadoInstalledCode {
+public class OCLInstalledCode extends InstalledCode implements TornadoInstalledCode {
 
     //TODO replace with a system property/Tornado setting
     private final ByteBuffer buffer = ByteBuffer.allocate(8);
@@ -28,7 +28,7 @@ public class OpenCLInstalledCode extends InstalledCode implements TornadoInstall
     private final OCLKernelScheduler scheduler;
     private final int[] internalEvents = new int[1];
 
-    public OpenCLInstalledCode(
+    public OCLInstalledCode(
             final String entryPoint,
             final byte[] code,
             final OCLDeviceContext deviceContext,

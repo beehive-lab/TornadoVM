@@ -7,17 +7,20 @@ import tornado.common.DeviceMapping;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import tornado.common.TornadoLogger;
+
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
+
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.enums.OCLMemFlags;
 import tornado.drivers.opencl.graal.OCLProviders;
-import tornado.drivers.opencl.graal.OpenCLInstalledCode;
+import tornado.drivers.opencl.graal.OCLInstalledCode;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import tornado.meta.Meta;
 import tornado.meta.domain.DomainTree;
 import tornado.meta.domain.IntDomain;
+
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class OCLMemoryManager extends TornadoLogger {
@@ -34,9 +37,9 @@ public class OCLMemoryManager extends TornadoLogger {
 
     private boolean initialised;
 
-    private OpenCLInstalledCode initFP64Code;
-    private OpenCLInstalledCode initFP32Code;
-    private OpenCLInstalledCode initU32Code;
+    private OCLInstalledCode initFP64Code;
+    private OCLInstalledCode initFP32Code;
+    private OCLInstalledCode initU32Code;
     private OCLCallStack initCallStack;
     private DomainTree initThreads;
     private Meta initMeta;
@@ -139,7 +142,7 @@ public class OCLMemoryManager extends TornadoLogger {
         return offset;
     }
 
-    private void initialiseMemory(OpenCLInstalledCode code, long offset, int count) {
+    private void initialiseMemory(OCLInstalledCode code, long offset, int count) {
         if (count <= 0) {
             return;
         }

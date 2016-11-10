@@ -21,13 +21,15 @@ import static tornado.common.Tornado.*;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLCodeCache implements CodeCacheProvider {
 
     private final String OPENCL_BIN_DIR = getProperty("tornado.opencl.bindir", "opencl-bin");
     private OCLBackend backend;
 
-    private final List<OpenCLInstalledCode> cache;
+    private final List<OCLInstalledCode> cache;
     private final TargetDescription target;
 
     public OCLCodeCache(TargetDescription target) {
@@ -35,11 +37,11 @@ public class OCLCodeCache implements CodeCacheProvider {
         cache = new ArrayList<>();
     }
 
-    public OpenCLInstalledCode addMethod(ResolvedJavaMethod method, String entryPoint, byte[] source) {
+    public OCLInstalledCode addMethod(ResolvedJavaMethod method, String entryPoint, byte[] source) {
         return installOCLProgram(entryPoint, source);
     }
 
-    public OpenCLInstalledCode addMethod(ResolvedJavaMethod method, byte[] source) {
+    public OCLInstalledCode addMethod(ResolvedJavaMethod method, byte[] source) {
         return addMethod(method, method.getName(), source);
     }
 
@@ -82,12 +84,12 @@ public class OCLCodeCache implements CodeCacheProvider {
         return null;
     }
 
-    public OpenCLInstalledCode installOCLProgram(String entryPoint, byte[] source) {
+    public OCLInstalledCode installOCLProgram(String entryPoint, byte[] source) {
         if (backend == null) {
             fatal("OpenCL code cache not initialised");
         }
 
-        OpenCLInstalledCode code = null;
+        OCLInstalledCode code = null;
 
         info("Installing code for %s into code cache", entryPoint);
         final OCLDeviceContext deviceContext = backend.getDeviceContext();
@@ -110,7 +112,7 @@ public class OCLCodeCache implements CodeCacheProvider {
 
         final OCLKernel kernel = (status == OCLBuildStatus.CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
 
-        code = new OpenCLInstalledCode(entryPoint, source, deviceContext, program,
+        code = new OCLInstalledCode(entryPoint, source, deviceContext, program,
                 kernel);
 
         if (status == CL_BUILD_SUCCESS) {
@@ -150,7 +152,7 @@ public class OCLCodeCache implements CodeCacheProvider {
     }
 
     public void reset() {
-        for (OpenCLInstalledCode code : cache) {
+        for (OCLInstalledCode code : cache) {
             code.invalidate();
         }
 

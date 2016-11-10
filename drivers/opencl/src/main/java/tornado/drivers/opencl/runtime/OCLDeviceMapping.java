@@ -15,7 +15,7 @@ import tornado.drivers.opencl.OCLDevice;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.OCLDriver;
 import tornado.drivers.opencl.graal.OCLProviders;
-import tornado.drivers.opencl.graal.OpenCLInstalledCode;
+import tornado.drivers.opencl.graal.OCLInstalledCode;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import tornado.drivers.opencl.mm.*;
@@ -26,6 +26,8 @@ import static tornado.common.Tornado.FORCE_ALL_TO_GPU;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLDeviceMapping implements DeviceMapping {
@@ -133,7 +135,7 @@ public class OCLDeviceMapping implements DeviceMapping {
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime()
                     .resolveMethod(executable.getMethod());
 //			final long t1 = System.nanoTime();
-            final OpenCLInstalledCode code = OCLCompiler.compileCodeForDevice(
+            final OCLInstalledCode code = OCLCompiler.compileCodeForDevice(
                     resolvedMethod, task.getArguments(), task.meta(),
                     (OCLProviders) getBackend().getProviders(), getBackend());
 //			final long t2 = System.nanoTime();
