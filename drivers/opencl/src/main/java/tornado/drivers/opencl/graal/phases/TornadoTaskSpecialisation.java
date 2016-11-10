@@ -4,11 +4,7 @@ import com.oracle.graal.compiler.common.type.ObjectStamp;
 import com.oracle.graal.debug.Debug;
 import com.oracle.graal.graph.Graph.Mark;
 import com.oracle.graal.graph.Node;
-import com.oracle.graal.nodes.ConstantNode;
-import com.oracle.graal.nodes.LogicConstantNode;
-import com.oracle.graal.nodes.ParameterNode;
-import com.oracle.graal.nodes.PiNode;
-import com.oracle.graal.nodes.StructuredGraph;
+import com.oracle.graal.nodes.*;
 import com.oracle.graal.nodes.calc.IsNullNode;
 import com.oracle.graal.nodes.java.ArrayLengthNode;
 import com.oracle.graal.nodes.java.LoadFieldNode;
@@ -120,7 +116,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                     break;
                 case Object:
                     /*
-					 * propagate all constants from connected final fields...cool!
+                     * propagate all constants from connected final
+                     * fields...cool!
                      */
                     if (Modifier.isFinal(f.getModifiers())) {
                         final Object value = lookup(obj, f::get);
@@ -184,6 +181,10 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 isNullNode.replaceAtUsages(LogicConstantNode.contradiction(graph));
             }
             isNullNode.safeDelete();
+        } else if (node instanceof PiNode) {
+            PiNode piNode = (PiNode) node;
+            piNode.replaceAtUsages(piNode.getOriginalNode());
+            piNode.safeDelete();
         }
     }
 
@@ -262,9 +263,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             Debug.dump(Debug.INFO_LOG_LEVEL, graph, "After TaskSpecialisation iteration=" + iterations);
 
 //            boolean hasGuardingPiNodes = graph.getNodes().filter(GuardingPiNode.class).isNotEmpty();
-
             hasWork = (lastNodeCount != graph.getNodeCount()
-                    || graph.getNewNodes(mark).isNotEmpty() ) //|| hasGuardingPiNodes)
+                    || graph.getNewNodes(mark).isNotEmpty()) //|| hasGuardingPiNodes)
                     && (iterations < MAX_ITERATIONS);
             lastNodeCount = graph.getNodeCount();
             iterations++;
