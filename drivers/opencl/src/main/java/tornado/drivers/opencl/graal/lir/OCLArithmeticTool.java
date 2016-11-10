@@ -8,6 +8,7 @@ import com.oracle.graal.lir.Variable;
 import com.oracle.graal.lir.gen.ArithmeticLIRGenerator;
 import jdk.vm.ci.meta.*;
 import tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
+import tornado.drivers.opencl.graal.OCLLIRKindTool;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic;
@@ -217,8 +218,22 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitZeroExtend(Value value, int fromBits, int toBits) {
-        unimplemented();
-        return null;
+        trace("emitZeroExtend: %s (from %d to %d)", value, fromBits, toBits);
+        OCLLIRKindTool kindTool = getGen().getLIRKindTool();
+        OCLKind kind = (OCLKind) value.getPlatformKind();
+        LIRKind toKind;
+        if (kind.isInteger()) {
+            toKind = kindTool.getIntegerKind(toBits);
+        } else if (kind.isFloating()) {
+            toKind = kindTool.getFloatingKind(toBits);
+        } else {
+            throw shouldNotReachHere();
+        }
+
+        Variable result = getGen().newVariable(toKind);
+
+        getGen().emitMove(result, value);
+        return result;
     }
 
     @Override
@@ -242,6 +257,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         trace("emitLoad: %s <- %s\nstate:%s", lirKind, address, state);
         final Variable result = getGen().newVariable(lirKind);
 
+        System.out.printf("address: class=%s\n", address.getClass().getName());
         // final MemoryAccess memAccess = (MemoryAccess) address;
         guarantee(lirKind.getPlatformKind() instanceof OCLKind, "invalid LIRKind: %s", lirKind);
         OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
