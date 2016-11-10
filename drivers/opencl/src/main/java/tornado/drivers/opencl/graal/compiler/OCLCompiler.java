@@ -51,6 +51,7 @@ import tornado.meta.Meta;
 
 import static com.oracle.graal.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 /**
  * Static methods for orchestrating the compilation of a
@@ -252,7 +253,7 @@ public class OCLCompiler {
             /*
              * Register metadata with all tornado phases
              */
-            ((TornadoCanonicalizer) suites.getHighTier().getCustomCanonicalizer()).setContext(providers.getMetaAccess(), method,
+            ((OCLCanonicalizer) suites.getHighTier().getCustomCanonicalizer()).setContext(providers.getMetaAccess(), method,
                     args, meta);
 
             final TornadoHighTierContext highTierContext = new TornadoHighTierContext(providers,

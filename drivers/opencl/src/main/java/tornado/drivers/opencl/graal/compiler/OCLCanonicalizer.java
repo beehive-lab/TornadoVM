@@ -26,8 +26,9 @@ import tornado.drivers.opencl.graal.nodes.vector.*;
 import tornado.meta.Meta;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
-public class TornadoCanonicalizer extends CustomCanonicalizer {
+public class OCLCanonicalizer extends CustomCanonicalizer {
 
     protected MetaAccessProvider metaAccess;
     protected ResolvedJavaMethod method;

@@ -20,7 +20,7 @@ public class OCLCompilerConfiguration implements TornadoCompilerConfiguration {
 
     @Override
     public TornadoHighTier createHighTier() {
-        return new OCLHighTier(new TornadoCanonicalizer());
+        return new OCLHighTier(new OCLCanonicalizer());
     }
 
     @Override
