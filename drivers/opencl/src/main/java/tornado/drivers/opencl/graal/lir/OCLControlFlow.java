@@ -178,7 +178,11 @@ public class OCLControlFlow {
             asm.setDelimiter(STMT_DELIMITER);
             asm.delimiter();
 
-            asm.value(crb, condition);
+            if (condition instanceof OCLEmitable) {
+                ((OCLEmitable) condition).emit(crb, asm);
+            } else {
+                asm.value(crb, condition);
+            }
 
             asm.delimiter();
             asm.setDelimiter(EXPR_DELIMITER);
