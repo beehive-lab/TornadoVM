@@ -4,6 +4,7 @@ import com.oracle.graal.compiler.common.LIRKind;
 import com.oracle.graal.compiler.common.calc.Condition;
 import com.oracle.graal.compiler.common.spi.CodeGenProviders;
 import com.oracle.graal.compiler.common.spi.ForeignCallLinkage;
+import com.oracle.graal.compiler.common.type.Stamp;
 import com.oracle.graal.lir.StandardOp.SaveRegistersOp;
 import com.oracle.graal.lir.*;
 import com.oracle.graal.lir.gen.LIRGenerationResult;
@@ -13,6 +14,7 @@ import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.meta.*;
 import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.graal.OCLLIRKindTool;
+import tornado.drivers.opencl.graal.OCLStamp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
@@ -33,6 +35,47 @@ public class OCLLIRGenerator extends LIRGenerator {
         super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool(), new OCLMoveFactory(), providers, res);
         this.oclBuiltinTool = new OCLBuiltinTool();
         this.oclGenTool = new OCLGenTool(this);
+    }
+
+    @Override
+    public LIRKind getLIRKind(Stamp stamp) {
+        if (stamp instanceof OCLStamp) {
+            return LIRKind.value(((OCLStamp) stamp).getOCLKind());
+        } else {
+            return super.getLIRKind(stamp);
+        }
+    }
+
+    @Override
+    public Variable newVariable(ValueKind<?> lirKind) {
+        PlatformKind pk = lirKind.getPlatformKind();
+        ValueKind<?> actualLIRKind = lirKind;
+        OCLKind oclKind = OCLKind.ILLEGAL;
+        if (pk instanceof OCLKind) {
+//        if (pk instanceof Kind) {
+//            OCLTargetDescription target = (OCLTargetDescription) getCodeCache().getTarget();
+//            oclKind = target.getOCLKind((Kind) pk);
+//            actualLIRKind = LIRKind.value(oclKind);
+//        } else if (pk instanceof OCLKind) {
+            oclKind = (OCLKind) pk;
+        } else {
+            shouldNotReachHere();
+        }
+
+        final Variable var = super.newVariable(actualLIRKind);
+        trace("newVariable: %s <- %s (%s)", var.toString(),
+                actualLIRKind.toString(), actualLIRKind.getClass().getName());
+
+        var.setName(oclKind.getTypePrefix() + "_" + var.index);
+        OpenCLLIRGenerationResult res = (OpenCLLIRGenerationResult) getResult();
+        res.insertVariable(var);
+
+        return var;
+    }
+
+    @Override
+    public OCLLIRKindTool getLIRKindTool() {
+        return (OCLLIRKindTool) super.getLIRKindTool();
     }
 
     @Override
@@ -205,8 +248,14 @@ public class OCLLIRGenerator extends LIRGenerator {
         return oclBuiltinTool;
     }
 
+    @Override
     public OCLTargetDescription target() {
         return (OCLTargetDescription) super.target();
+    }
+
+    @Override
+    public LIRKind getValueKind(JavaKind javaKind) {
+        return super.getValueKind(javaKind); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
