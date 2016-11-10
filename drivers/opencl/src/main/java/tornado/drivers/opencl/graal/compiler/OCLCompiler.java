@@ -54,6 +54,10 @@ import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 /**
  * Static methods for orchestrating the compilation of a
@@ -431,7 +435,7 @@ public class OCLCompiler {
 
     public static byte[] compileGraphForDevice(StructuredGraph graph, Meta meta, String entryPoint, OCLProviders providers, OCLBackend backend) {
         throw unimplemented();
-//        final OpenCLCodeCache codeCache = backend.getCodeCache();
+//        final OCLCodeCache codeCache = backend.getCodeCache();
 //
 //        if (!meta.hasProvider(OCLMemoryRegions.class)) {
 //            meta.addProvider(OCLMemoryRegions.class, new OCLMemoryRegions());
@@ -494,7 +498,7 @@ public class OCLCompiler {
                 .getDevice().getName());
         final StructuredGraph kernelGraph = new StructuredGraph(resolvedMethod,
                 AllowAssumptions.YES);
-        final OpenCLCodeCache codeCache = backend.getCodeCache();
+        final OCLCodeCache codeCache = backend.getCodeCache();
 
         if (meta != null && !meta.hasProvider(OCLMemoryRegions.class)) {
             meta.addProvider(OCLMemoryRegions.class, new OCLMemoryRegions());

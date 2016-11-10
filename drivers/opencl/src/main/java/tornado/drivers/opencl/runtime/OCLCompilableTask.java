@@ -16,6 +16,7 @@ import tornado.runtime.api.CompilableTask;
 
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLCompilableTask extends CompilableTask {
 

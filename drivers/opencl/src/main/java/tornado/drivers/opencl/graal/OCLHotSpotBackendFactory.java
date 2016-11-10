@@ -26,6 +26,8 @@ import tornado.runtime.TornadoVMConfig;
 
 import static jdk.vm.ci.common.InitTimer.timer;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static jdk.vm.ci.common.InitTimer.timer;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLHotSpotBackendFactory {
 
@@ -56,7 +58,7 @@ public class OCLHotSpotBackendFactory {
 
         OCLArchitecture arch = new OCLArchitecture(wordKind, device.getByteOrder());
         OCLTargetDescription target = new OCLTargetDescription(arch);
-        OpenCLCodeCache codeCache = new OpenCLCodeCache(target);
+        OCLCodeCache codeCache = new OCLCodeCache(target);
         OCLDeviceContext deviceContext = openclContext.createDeviceContext(device.getIndex());
 
         OCLProviders providers;

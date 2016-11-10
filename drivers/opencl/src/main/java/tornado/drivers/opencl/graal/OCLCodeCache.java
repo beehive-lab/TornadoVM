@@ -20,8 +20,9 @@ import tornado.drivers.opencl.graal.backend.OCLBackend;
 import static tornado.common.Tornado.*;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
-public class OpenCLCodeCache implements CodeCacheProvider {
+public class OCLCodeCache implements CodeCacheProvider {
 
     private final String OPENCL_BIN_DIR = getProperty("tornado.opencl.bindir", "opencl-bin");
     private OCLBackend backend;
@@ -29,7 +30,7 @@ public class OpenCLCodeCache implements CodeCacheProvider {
     private final List<OpenCLInstalledCode> cache;
     private final TargetDescription target;
 
-    public OpenCLCodeCache(TargetDescription target) {
+    public OCLCodeCache(TargetDescription target) {
         this.target = target;
         cache = new ArrayList<>();
     }

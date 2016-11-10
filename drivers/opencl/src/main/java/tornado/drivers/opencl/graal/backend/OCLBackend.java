@@ -51,6 +51,8 @@ import static tornado.common.exceptions.TornadoInternalError.*;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -71,14 +73,14 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     final OCLArchitecture architecture;
     final OCLContext openclContext;
     final OCLDeviceContext deviceContext;
-    final OpenCLCodeCache codeCache;
+    final OCLCodeCache codeCache;
     OpenCLInstalledCode lookupCode;
     final AtomicInteger id = new AtomicInteger(0);
 
     public OCLBackend(
             OCLProviders providers,
             OCLTargetDescription target,
-            OpenCLCodeCache codeCache,
+            OCLCodeCache codeCache,
             OCLContext openclContext,
             OCLDeviceContext deviceContext) {
         super(providers);
@@ -466,7 +468,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     @Override
-    public OpenCLCodeCache getCodeCache() {
+    public OCLCodeCache getCodeCache() {
         return codeCache;
     }
 

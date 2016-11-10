@@ -26,6 +26,7 @@ import static tornado.common.Tornado.FORCE_ALL_TO_GPU;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLDeviceMapping implements DeviceMapping {
 
