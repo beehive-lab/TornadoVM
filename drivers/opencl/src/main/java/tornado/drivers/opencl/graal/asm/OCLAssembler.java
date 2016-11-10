@@ -17,6 +17,7 @@ import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 
+import static com.oracle.graal.compiler.common.util.Util.guarantee;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
@@ -787,6 +788,7 @@ public class OCLAssembler extends Assembler {
     }
 
     public void emitSubString(String str) {
+        guarantee(str != null, "emitting null string");
         if (pushToStack) {
             operandStack.add(str);
         } else {
@@ -939,6 +941,10 @@ public class OCLAssembler extends Assembler {
     }
 
     public void emitConstant(ConstantValue cv) {
+        emit(formatConstant(cv));
+    }
+
+    public String formatConstant(ConstantValue cv) {
         String result = "";
         JavaConstant javaConstant = cv.getJavaConstant();
         Constant constant = cv.getConstant();
@@ -958,7 +964,7 @@ public class OCLAssembler extends Assembler {
             result = constant.toValueString();
             result = addLiteralSuffix(oclKind, result);
         }
-        emit(result);
+        return result;
     }
 
     public String toString(Value value) {
@@ -967,15 +973,15 @@ public class OCLAssembler extends Assembler {
             Variable var = (Variable) value;
             return var.getName();
         } else if (value instanceof ConstantValue) {
-            if (((ConstantValue) value).isJavaConstant()) {
+            if (!((ConstantValue) value).isJavaConstant()) {
                 shouldNotReachHere("constant value: ", value);
             }
 
             ConstantValue cv = (ConstantValue) value;
-            emitConstant(cv);
+            return formatConstant(cv);
         } else if (value instanceof OCLReturnSlot) {
             final String type = ((OCLKind) value.getPlatformKind()).name().toLowerCase();
-            result = String.format("*((__global %s *) %s)", type, HEAP_REF_NAME);
+            return String.format("*((__global %s *) %s)", type, HEAP_REF_NAME);
 //        } else if (value instanceof OCLNullary.Expr) {
 //            return ((OCLNullary.Expr) value).toString();
         } else {
@@ -985,7 +991,7 @@ public class OCLAssembler extends Assembler {
     }
 
     public void value(OCLCompilationResultBuilder crb, Value value) {
-//        System.out.printf("value: %s (%s)\n", value, value.getClass().getName());
+        System.out.printf("value: %s (%s)\n", value, value.getClass().getName());
 
 //        if (value instanceof MemoryAccess) {
 //            MemoryAccess access = (MemoryAccess) value;
@@ -998,6 +1004,8 @@ public class OCLAssembler extends Assembler {
 //
 //
 //        else {
+        String str = toString(value);
+        System.out.printf("str: %s\n", str);
         emit(toString(value));
 //    }
     }
