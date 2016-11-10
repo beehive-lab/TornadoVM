@@ -12,8 +12,8 @@ import com.oracle.graal.nodes.spi.LIRLowerable;
 import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
-import tornado.drivers.opencl.graal.lir.OCLAddressOps.OCLVectorElementSelect;
 import tornado.drivers.opencl.graal.lir.OCLKind;
+import tornado.drivers.opencl.graal.lir.OCLVectorElementSelect;
 
 import static com.oracle.graal.compiler.common.util.Util.guarantee;
 
