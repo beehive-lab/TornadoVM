@@ -7,6 +7,8 @@ import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryOp;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
+
 @Opcode("RETURN VALUE")
 public class OCLReturnSlot extends AllocatableValue {
 
@@ -18,7 +20,8 @@ public class OCLReturnSlot extends AllocatableValue {
     }
 
     public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-        op.emit(crb);
+        OCLKind type = ((OCLKind) getPlatformKind());
+        asm.emit("*((__global %s *) %s)", type, HEAP_REF_NAME);
     }
 
     @Override

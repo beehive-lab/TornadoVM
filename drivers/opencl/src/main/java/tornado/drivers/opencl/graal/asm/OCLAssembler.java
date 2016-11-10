@@ -19,10 +19,10 @@ import tornado.drivers.opencl.graal.lir.OCLLIROp;
 import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 
 import static com.oracle.graal.compiler.common.util.Util.guarantee;
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
-import static tornado.drivers.opencl.graal.lir.OCLKind.*;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
+import static tornado.drivers.opencl.graal.lir.OCLKind.*;
 
 public class OCLAssembler extends Assembler {
 
@@ -975,9 +975,9 @@ public class OCLAssembler extends Assembler {
 
             ConstantValue cv = (ConstantValue) value;
             return formatConstant(cv);
-        } else if (value instanceof OCLReturnSlot) {
-            final String type = ((OCLKind) value.getPlatformKind()).name().toLowerCase();
-            return String.format("*((__global %s *) %s)", type, HEAP_REF_NAME);
+//        } else if (value instanceof OCLReturnSlot) {
+//            final String type = ((OCLKind) value.getPlatformKind()).name().toLowerCase();
+//            return String.format("*((__global %s *) %s)", type, HEAP_REF_NAME);
 //        } else if (emitValue instanceof OCLNullary.Expr) {
 //            return ((OCLNullary.Expr) emitValue).toString();
         } else {
@@ -988,7 +988,11 @@ public class OCLAssembler extends Assembler {
 
     public void emitValue(OCLCompilationResultBuilder crb, Value value) {
 //        System.out.printf("emitValue: %s (%s)\n", emitValue, emitValue.getClass().getName());
-        emit(toString(value));
+        if (value instanceof OCLReturnSlot) {
+            ((OCLReturnSlot) value).emit(crb, this);
+        } else {
+            emit(toString(value));
+        }
     }
 
     public void assign() {
