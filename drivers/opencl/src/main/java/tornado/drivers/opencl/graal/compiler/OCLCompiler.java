@@ -38,7 +38,6 @@ import jdk.vm.ci.meta.*;
 import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.OCLTargetDescription;
-import tornado.drivers.opencl.graal.OCLDebugEnvironment;
 import tornado.drivers.opencl.graal.*;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLLIRGenerationPhase.LIRGenerationContext;
@@ -50,37 +49,6 @@ import tornado.graal.phases.TornadoMidTierContext;
 import tornado.meta.Meta;
 
 import static com.oracle.graal.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 /**
@@ -216,38 +184,13 @@ public class OCLCompiler {
      * @return the result of the compilation
      */
     public static <T extends OCLCompilationResult> T compile(Request<T> r) {
-//        assert !r.graph.isFrozen();
-//        try (Scope s0 = Debug.scope("TornadoCompiler", new DebugDumpScope(r.graph.method()
-//                .getName() + ":" + String.valueOf(compilationId.incrementAndGet())))) {
-//
-//            System.out.printf("dump: enabled=%s, dump enabled=%s, dump method=%s\n", Debug.isEnabled(), Debug.isDumpEnabled(0), Debug.isDumpEnabledForMethod());
-//
-//            emitFrontEnd(r.providers, r.backend, r.installedCodeOwner, r.args, r.meta, r.graph, r.graphBuilderSuite, r.optimisticOpts, r.profilingInfo, r.suites, r.isKernel);
-//            emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites, r.isKernel);
-//        } catch (Throwable e) {
-//            throw Debug.handle(e);
-//        }
-//        return r.compilationResult;
         if (Debug.isEnabled() && DebugScope.getConfig() == null) {
-            GraalDebugConfig config = OCLDebugEnvironment.initialize(System.out);
-            System.out.printf("dump: config=%s\n", config.toString());
-            config.dumpHandlers().stream().forEach(dh -> System.out.printf("dh: class=%s, %s\n", dh.getClass().getName(), dh));
+            OCLDebugEnvironment.initialize(TTY.out);
         }
         try (Scope s = MethodMetricsRootScopeInfo.createRootScopeIfAbsent(r.installedCodeOwner)) {
             assert !r.graph.isFrozen();
 
             try (Scope s0 = Debug.scope("GraalCompiler", r.graph, r.providers.getCodeCache()); DebugCloseable a = CompilerTimer.start()) {
-                DebugScope instance = DebugScope.getInstance();
-                System.out.printf("dump: scope=%s, class=%s\n", instance.toString(), instance.getClass().getName());
-//            DebugConfig config = DebugScope.getConfig();
-//            System.out.printf("dump: config=%s, class=%s\n", config.toString(), config.getClass().getName());
-//            instance.setConfig(config);
-//            for (DebugConfigCustomizer customizer : GraalServices.load(DebugConfigCustomizer.class)) {
-//                customizer.customize(DebugScope.getConfig());
-//            }
-//            DebugScope.getConfig().dumpHandlers().stream().forEach(dh -> System.out.printf("dh: class=%d, %s\n", dh.getClass().getName(), dh));
-                System.out.printf("dump: enabled=%s, dump enabled=%s, dump method=%s\n", Debug.isEnabled(), Debug.isDumpEnabled(0), Debug.isDumpEnabledForMethod());
-
                 emitFrontEnd(r.providers, r.backend, r.installedCodeOwner, r.args, r.meta, r.graph, r.graphBuilderSuite, r.optimisticOpts, r.profilingInfo, r.suites, r.isKernel);
                 emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites, r.isKernel);
             } catch (Throwable e) {
@@ -295,10 +238,7 @@ public class OCLCompiler {
                 Debug.dump(Debug.INFO_LOG_LEVEL, graph, "initial state");
             }
 
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "start");
-
-            suites.getHighTier().apply(graph,
-                    highTierContext);
+            suites.getHighTier().apply(graph, highTierContext);
             graph.maybeCompress();
 
             final TornadoMidTierContext midTierContext = new TornadoMidTierContext(providers,
@@ -309,11 +249,7 @@ public class OCLCompiler {
 
             final LowTierContext lowTierContext = new LowTierContext(providers, backend);
             suites.getLowTier().apply(graph, lowTierContext);
-//            graph.maybeCompress();
 
-            // System.out.printf("Scheduling strategy = %s\n",OptScheduleOutOfLoops.getValue());
-//            final SchedulePhase schedule = new SchedulePhase(SchedulingStrategy.LATEST_OUT_OF_LOOPS);
-//            schedule.apply(graph);
             Debug.dump(Debug.BASIC_LOG_LEVEL, graph.getLastSchedule(), "Final HIR schedule");
         } catch (Throwable e) {
             throw Debug.handle(e);

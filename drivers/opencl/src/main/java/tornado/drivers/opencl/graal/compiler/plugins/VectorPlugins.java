@@ -22,6 +22,7 @@ import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.nodes.vector.*;
 
+import static com.oracle.graal.compiler.common.util.Util.guarantee;
 import static tornado.common.Tornado.ENABLE_VECTORS;
 import static tornado.common.Tornado.TORNADO_ENABLE_BIFS;
 
@@ -58,7 +59,6 @@ public final class VectorPlugins {
         ValueNode thisObject = receiver.get();
         VectorValueNode vector = null;
 
-        System.out.printf("this object=%s\n", thisObject);
         if (thisObject instanceof PiNode) {
             thisObject = ((PiNode) thisObject).getOriginalNode();
         }
@@ -66,6 +66,8 @@ public final class VectorPlugins {
         if (thisObject instanceof VectorValueNode) {
             vector = (VectorValueNode) thisObject;
         }
+
+        guarantee(vector != null, "unable to resolve vector");
         return vector;
     }
 
@@ -88,10 +90,6 @@ public final class VectorPlugins {
             public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode... args) {
                 final VectorValueNode vector = resolveReceiver(b, vectorKind, receiver);
-//                final NewVectorNode newVectorNode = new NewVectorNode(vectorKind);
-//                vector.setOrigin(newVectorNode);
-//                b.append(newVectorNode);
-                System.out.printf("vector: %s\n", vector);
                 if (args.length > 0) {
                     int offset = (vector == args[0]) ? 1 : 0;
 
