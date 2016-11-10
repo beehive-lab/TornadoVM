@@ -12,7 +12,6 @@ import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugin;
 import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins;
 import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import com.oracle.graal.nodes.java.LoadIndexedNode;
 import com.oracle.graal.nodes.java.StoreIndexedNode;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -21,10 +20,7 @@ import tornado.api.Vector;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-import tornado.drivers.opencl.graal.nodes.vector.VectorAddNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorStoreElementProxyNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
+import tornado.drivers.opencl.graal.nodes.vector.*;
 
 import static tornado.common.Tornado.ENABLE_VECTORS;
 import static tornado.common.Tornado.TORNADO_ENABLE_BIFS;
@@ -154,8 +150,8 @@ public final class VectorPlugins {
 
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
-                LoadIndexedNode indexedLoad = new LoadIndexedNode(null, array, index, elementKind);
-                indexedLoad.setStamp(OCLStampFactory.getStampFor(kind));
+                // node needed to enforce the value of the nodes stamp
+                LoadIndexedVectorNode indexedLoad = new LoadIndexedVectorNode(kind, array, index, elementKind);
                 b.push(JavaKind.Object, b.recursiveAppend(indexedLoad));
                 return true;
             }
@@ -169,10 +165,8 @@ public final class VectorPlugins {
                 ValueNode value = reciever.get();
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
+                // No need to set stamp as it is inferred from the stamp of the incoming value
                 StoreIndexedNode indexedStore = new StoreIndexedNode(array, index, elementKind, value);
-                indexedStore.setStamp(OCLStampFactory.getStampFor(kind));
-//                IndexedLocationNode indexedLoc = new IndexedLocationNode(NamedLocationIdentity.getArrayLocation(javaKind), TornadoRuntime.getVMRuntimeProvider().getArrayBaseOffset(javaKind), index, kind.getElementKind().getByteCount());
-//                WriteNode writeVector = new WriteNode(array, value, indexedLoc, BarrierType.PRECISE);
                 b.append(b.recursiveAppend(indexedStore));
                 return true;
             }
