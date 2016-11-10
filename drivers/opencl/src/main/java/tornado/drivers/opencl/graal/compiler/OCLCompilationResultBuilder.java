@@ -12,6 +12,7 @@ import com.oracle.graal.lir.asm.DataBuilder;
 import com.oracle.graal.lir.asm.FrameContext;
 import com.oracle.graal.lir.framemap.FrameMap;
 import com.oracle.graal.nodes.AbstractMergeNode;
+import com.oracle.graal.nodes.FixedNode;
 import com.oracle.graal.nodes.IfNode;
 import com.oracle.graal.nodes.LoopBeginNode;
 import com.oracle.graal.nodes.cfg.Block;
@@ -30,12 +31,7 @@ import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopPostOp;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow.SwitchOp;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.graal.TornadoLIRGenerator.trace;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.graal.TornadoLIRGenerator.trace;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.graal.TornadoLIRGenerator.trace;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.graal.TornadoLIRGenerator.trace;
 
@@ -128,6 +124,24 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         return sb.toString();
     }
 
+    private String toString(Block[] blocks) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[ ");
+        for (Block b : blocks) {
+            sb.append(b.getId() + " ");
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    private void printBlock(Block b) {
+        System.out.printf("Block %d:\n", b.getId());
+        for (FixedNode node : b.getNodes()) {
+            System.out.printf("  node: %s\n", node);
+        }
+        System.out.println();
+    }
+
     private void traverseCFG(ControlFlowGraph cfg, OCLAssembler asm,
             Set<Block> merges, Block b) {
         final List<Block> dominates = b.getDominated();
@@ -170,8 +184,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                 if (successors.size() == 1) {
                     exit = successors.iterator().next();
                 }
-                TornadoInternalError.guarantee(
-                        exit.getBeginNode() instanceof AbstractMergeNode,
+                guarantee(exit.getBeginNode() instanceof AbstractMergeNode,
                         "loop exists do not converge: block=%d", b.getId());
             } else {
                 exit = loop.getExits().get(0);
@@ -180,7 +193,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             final boolean inverted = (dominates.get(0).equals(exit));
             final Block body = (inverted) ? dominates.get(1) : dominates.get(0);
 
-            TornadoInternalError.guarantee(loop.numBackedges() == 1,
+            guarantee(loop.numBackedges() == 1,
                     "loop at %s has %d backedges", b, loop.numBackedges());
             final Block backedge = cfg.blockFor(((LoopBeginNode) b
                     .getBeginNode()).loopEnds().first());
