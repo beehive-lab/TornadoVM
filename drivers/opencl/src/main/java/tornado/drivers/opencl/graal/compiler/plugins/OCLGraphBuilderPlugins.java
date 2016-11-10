@@ -245,7 +245,7 @@ public class OCLGraphBuilderPlugins {
     }
 
     public static void registerNewInstancePlugins(Plugins plugins) {
-        plugins.appendTypePlugin(new OCLVectorTypePlugin());
+        plugins.appendNodePlugin(new OCLVectorNodePlugin());
     }
 
     public static void registerParameterPlugins(Plugins plugins) {

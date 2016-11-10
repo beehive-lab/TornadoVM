@@ -58,6 +58,7 @@ public final class VectorPlugins {
         ValueNode thisObject = receiver.get();
         VectorValueNode vector = null;
 
+        System.out.printf("this object=%s\n", thisObject);
         if (thisObject instanceof PiNode) {
             thisObject = ((PiNode) thisObject).getOriginalNode();
         }
@@ -90,7 +91,7 @@ public final class VectorPlugins {
 //                final NewVectorNode newVectorNode = new NewVectorNode(vectorKind);
 //                vector.setOrigin(newVectorNode);
 //                b.append(newVectorNode);
-
+                System.out.printf("vector: %s\n", vector);
                 if (args.length > 0) {
                     int offset = (vector == args[0]) ? 1 : 0;
 
