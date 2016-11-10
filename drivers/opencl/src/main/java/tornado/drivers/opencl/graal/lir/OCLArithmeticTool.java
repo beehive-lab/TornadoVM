@@ -27,6 +27,8 @@ import tornado.drivers.opencl.graal.nodes.vector.VectorUtil;
 import static tornado.common.exceptions.TornadoInternalError.*;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
@@ -34,11 +36,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         return (OCLLIRGenerator) getLIRGen();
     }
 
-    public OCLEmitable genBinaryExpr(OCLBinaryOp op, LIRKind lirKind, Value x, Value y) {
+    public OCLLIROp genBinaryExpr(OCLBinaryOp op, LIRKind lirKind, Value x, Value y) {
         return new OCLBinary.Expr(op, lirKind, x, y);
     }
 
-    public OCLEmitable genBinaryIntrinsic(OCLBinaryIntrinsic op, LIRKind lirKind, Value x, Value y) {
+    public OCLLIROp genBinaryIntrinsic(OCLBinaryIntrinsic op, LIRKind lirKind, Value x, Value y) {
         return new OCLBinary.Intrinsic(op, lirKind, x, y);
     }
 
@@ -54,11 +56,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         return result;
     }
 
-    public OCLEmitable genUnaryExpr(OCLUnaryOp op, LIRKind lirKind, Value value) {
+    public OCLLIROp genUnaryExpr(OCLUnaryOp op, LIRKind lirKind, Value value) {
         return new OCLUnary.Expr(op, lirKind, value);
     }
 
-    public OCLEmitable genUnaryExpr(OCLUnaryIntrinsic op, LIRKind lirKind, Value value) {
+    public OCLLIROp genUnaryExpr(OCLUnaryIntrinsic op, LIRKind lirKind, Value value) {
         return new OCLUnary.Intrinsic(op, lirKind, value);
     }
 

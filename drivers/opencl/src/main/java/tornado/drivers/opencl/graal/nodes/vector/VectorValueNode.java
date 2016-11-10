@@ -24,7 +24,7 @@ import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp4;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp8;
 import tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
-import tornado.drivers.opencl.graal.lir.OCLEmitable;
+import tornado.drivers.opencl.graal.lir.OCLLIROp;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorLoadStmt;
@@ -32,6 +32,10 @@ import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 import tornado.drivers.opencl.graal.lir.OCLVectorAssign;
 
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.graal.TornadoLIRGenerator.trace;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.graal.TornadoLIRGenerator.trace;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.graal.TornadoLIRGenerator.trace;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
@@ -181,7 +185,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
     private void generateVectorAssign(NodeLIRBuilderTool gen, LIRGeneratorTool tool,
             AllocatableValue result) {
 
-        OCLEmitable assignExpr = null;
+        OCLLIROp assignExpr = null;
 
         Value s0, s1, s2, s3, s4, s5, s6, s7;
         switch (kind.getVectorLength()) {

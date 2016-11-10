@@ -20,7 +20,7 @@ public class OCLUnary {
     /**
      * Abstract operation which consumes one inputs
      */
-    protected static class UnaryConsumer extends OCLEmitable {
+    protected static class UnaryConsumer extends OCLLIROp {
 
         @Opcode
         protected final OCLUnaryOp opcode;

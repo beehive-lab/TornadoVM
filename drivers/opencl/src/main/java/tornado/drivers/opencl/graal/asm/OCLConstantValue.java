@@ -7,9 +7,9 @@ package tornado.drivers.opencl.graal.asm;
 
 import com.oracle.graal.compiler.common.LIRKind;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
-import tornado.drivers.opencl.graal.lir.OCLEmitable;
+import tornado.drivers.opencl.graal.lir.OCLLIROp;
 
-public class OCLConstantValue extends OCLEmitable {
+public class OCLConstantValue extends OCLLIROp {
 
     private final String value;
 

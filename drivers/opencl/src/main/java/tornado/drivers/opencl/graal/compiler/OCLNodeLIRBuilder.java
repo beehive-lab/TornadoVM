@@ -47,6 +47,12 @@ import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
@@ -305,10 +311,10 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
         setResult(node, result);
 
-        return (OCLEmitable) result;
+        return (OCLLIROp) result;
     }
 
-    private OCLEmitable emitLogicNode(final LogicNode node) {
+    private OCLLIROp emitLogicNode(final LogicNode node) {
         Value result = null;
         trace("emitLogicNode: %s", node);
         LIRKind lirKind = LIRKind.value(OCLKind.BOOL);
@@ -384,7 +390,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
         setResult(node, result);
 
-        return (OCLEmitable) result;
+        return (OCLLIROp) result;
     }
 
     private Value operandOrConjunction(ValueNode value) {

@@ -13,7 +13,7 @@ import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.STACK_REF_NAME;
 
-public class OCLDirectCall extends OCLEmitable {
+public class OCLDirectCall extends OCLLIROp {
 
     protected DirectCallTargetNode target;
     protected LIRFrameState frameState;

@@ -13,6 +13,8 @@ import static com.oracle.graal.lir.LIRInstruction.OperandFlag.CONST;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLControlFlow {
 
@@ -179,8 +181,8 @@ public class OCLControlFlow {
             asm.setDelimiter(STMT_DELIMITER);
             asm.delimiter();
 
-            if (condition instanceof OCLEmitable) {
-                ((OCLEmitable) condition).emit(crb, asm);
+            if (condition instanceof OCLLIROp) {
+                ((OCLLIROp) condition).emit(crb, asm);
             } else {
                 asm.value(crb, condition);
             }

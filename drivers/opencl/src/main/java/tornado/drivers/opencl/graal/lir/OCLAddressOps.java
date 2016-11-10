@@ -9,7 +9,7 @@ import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 public class OCLAddressOps {
 
     @Opcode("VSEL")
-    public static class OCLVectorElementSelect extends OCLEmitable {
+    public static class OCLVectorElementSelect extends OCLLIROp {
 
         final Value vector;
         private final Value selection;
@@ -30,7 +30,7 @@ public class OCLAddressOps {
     }
 
     @Deprecated
-    public static class OCLVectorElement extends OCLEmitable {
+    public static class OCLVectorElement extends OCLLIROp {
 
         private final Value vector;
         private final int laneId;

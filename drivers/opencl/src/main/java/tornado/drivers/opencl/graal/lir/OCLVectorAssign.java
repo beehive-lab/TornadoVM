@@ -17,7 +17,7 @@ public class OCLVectorAssign {
     /**
      * OpenCL vector assignment expression
      */
-    public static class Assign2Expr extends OCLEmitable {
+    public static class Assign2Expr extends OCLLIROp {
 
         @Opcode
         protected final OCLOp opcode;

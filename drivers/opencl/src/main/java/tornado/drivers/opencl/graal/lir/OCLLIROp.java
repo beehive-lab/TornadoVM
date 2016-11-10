@@ -6,9 +6,9 @@ import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 
-public abstract class OCLEmitable extends Value {
+public abstract class OCLLIROp extends Value {
 
-    public OCLEmitable(LIRKind lirKind) {
+    public OCLLIROp(LIRKind lirKind) {
         super(lirKind);
     }
 

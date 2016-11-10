@@ -55,8 +55,8 @@ public class OCLLIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            if (rhs instanceof OCLEmitable) {
-                ((OCLEmitable) rhs).emit(crb, asm);
+            if (rhs instanceof OCLLIROp) {
+                ((OCLLIROp) rhs).emit(crb, asm);
             } else {
                 asm.value(crb, rhs);
             }
@@ -348,7 +348,7 @@ public class OCLLIRStmt {
         @Use
         protected Value expr;
 
-        public ExprStmt(OCLEmitable expr) {
+        public ExprStmt(OCLLIROp expr) {
             super(TYPE);
             this.expr = expr;
         }
@@ -356,8 +356,8 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            if (expr instanceof OCLEmitable) {
-                ((OCLEmitable) expr).emit(crb, asm);
+            if (expr instanceof OCLLIROp) {
+                ((OCLLIROp) expr).emit(crb, asm);
             } else {
                 asm.value(crb, expr);
             }

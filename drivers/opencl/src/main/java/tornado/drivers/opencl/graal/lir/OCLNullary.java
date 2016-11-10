@@ -12,7 +12,7 @@ public class OCLNullary {
     /**
      * Abstract operation which consumes no inputs
      */
-    protected static class NullaryConsumer extends OCLEmitable {
+    protected static class NullaryConsumer extends OCLLIROp {
 
         @Opcode
         protected final OCLNullaryOp opcode;

@@ -14,7 +14,7 @@ public class OCLBinary {
     /**
      * Abstract operation which consumes two inputs
      */
-    protected static class BinaryConsumer extends OCLEmitable {
+    protected static class BinaryConsumer extends OCLLIROp {
 
         @Opcode
         protected final OCLBinaryOp opcode;

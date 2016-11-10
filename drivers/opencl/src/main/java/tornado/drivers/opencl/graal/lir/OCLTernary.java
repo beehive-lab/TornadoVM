@@ -17,7 +17,7 @@ public class OCLTernary {
     /**
      * Abstract operation which consumes two inputs
      */
-    protected static class TernaryConsumer extends OCLEmitable {
+    protected static class TernaryConsumer extends OCLLIROp {
 
         @Opcode
         protected final OCLTernaryOp opcode;
@@ -58,9 +58,9 @@ public class OCLTernary {
 
     public static class Select extends TernaryConsumer {
 
-        protected OCLEmitable condition;
+        protected OCLLIROp condition;
 
-        public Select(LIRKind lirKind, OCLEmitable condition, Value y, Value z) {
+        public Select(LIRKind lirKind, OCLLIROp condition, Value y, Value z) {
             super(OCLTernaryTemplate.SELECT, lirKind, null, y, z);
             this.condition = condition;
         }

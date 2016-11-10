@@ -7,7 +7,7 @@ import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 
 @Opcode("TPRINTF")
-public class OCLTPrintf extends OCLEmitable {
+public class OCLTPrintf extends OCLLIROp {
 
     private Value[] inputs;
 
