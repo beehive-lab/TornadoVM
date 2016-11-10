@@ -28,7 +28,6 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
     private void replaceOffsetNode(TornadoSchedulingStrategy schedule, StructuredGraph graph,
             ParallelOffsetNode offset) {
-        System.out.printf("offset: %s\n", offset);
         if (schedule == PER_BLOCK) {
             replacePerBlock(graph, offset);
         } else if (schedule == PER_ITERATION) {
@@ -51,7 +50,6 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
     private void replacePerBlock(StructuredGraph graph, ParallelOffsetNode offset) {
         final GlobalThreadId threadId = graph.addOrUnique(new GlobalThreadId(ConstantNode.forInt(
                 offset.index(), graph)));
-        graph.addOrUnique(threadId);
         final MulNode newOffset = graph.addOrUnique(new MulNode(threadId, blockSize));
         offset.replaceAtUsages(newOffset);
         offset.safeDelete();
