@@ -51,14 +51,14 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            asm.value(crb, lhs);
+            asm.emitValue(crb, lhs);
             asm.space();
             asm.assign();
             asm.space();
             if (rhs instanceof OCLLIROp) {
                 ((OCLLIROp) rhs).emit(crb, asm);
             } else {
-                asm.value(crb, rhs);
+                asm.emitValue(crb, rhs);
             }
             asm.delimiter();
             asm.eol();
@@ -92,11 +92,11 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            asm.value(crb, lhs);
+            asm.emitValue(crb, lhs);
             asm.space();
             asm.assign();
             asm.space();
-            asm.value(crb, rhs);
+            asm.emitValue(crb, rhs);
             asm.delimiter();
             asm.eol();
         }
@@ -132,7 +132,7 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            asm.value(crb, lhs);
+            asm.emitValue(crb, lhs);
             asm.space();
             asm.assign();
             asm.space();
@@ -187,13 +187,13 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            asm.value(crb, lhs);
+            asm.emitValue(crb, lhs);
             asm.space();
             asm.assign();
             asm.space();
             asm.emit(op.toString());
             asm.emit("(");
-            asm.value(crb, index);
+            asm.emitValue(crb, index);
             asm.emit(", ");
             cast.emit(crb, asm);
             asm.space();
@@ -252,7 +252,7 @@ public class OCLLIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.value(crb, rhs);
+            asm.emitValue(crb, rhs);
             asm.delimiter();
             asm.eol();
         }
@@ -302,9 +302,9 @@ public class OCLLIRStmt {
             //asm.space();
             asm.emit(op.toString());
             asm.emit("(");
-            asm.value(crb, rhs);
+            asm.emitValue(crb, rhs);
             asm.emit(", ");
-            asm.value(crb, index);
+            asm.emitValue(crb, index);
             asm.emit(", ");
             cast.emit(crb, asm);
             asm.space();
@@ -312,7 +312,7 @@ public class OCLLIRStmt {
 //            if (address instanceof MemoryAccess) {
 //                ((MemoryAccess) address).emit(crb);
 //            } else if (address instanceof Variable) {
-//                asm.value(crb, address);
+//                asm.emitValue(crb, address);
 //            }
             asm.emit(")");
             asm.delimiter();
@@ -359,7 +359,7 @@ public class OCLLIRStmt {
             if (expr instanceof OCLLIROp) {
                 ((OCLLIROp) expr).emit(crb, asm);
             } else {
-                asm.value(crb, expr);
+                asm.emitValue(crb, expr);
             }
             asm.delimiter();
             asm.eol();

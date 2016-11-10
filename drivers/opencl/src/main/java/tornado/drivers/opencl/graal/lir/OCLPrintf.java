@@ -19,16 +19,16 @@ public class OCLPrintf extends OCLLIROp {
     @Override
     public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
         asm.emit("printf( \"tornado[%3d,%3d,%3d]> ");
-        asm.value(crb, inputs[0]);
+        asm.emitValue(crb, inputs[0]);
         asm.emit("\", ");
         for (int i = 0; i < 3; i++) {
             asm.emit("get_global_id(%d), ", i);
         }
         for (int i = 1; i < inputs.length - 1; i++) {
-            asm.value(crb, inputs[i]);
+            asm.emitValue(crb, inputs[i]);
             asm.emit(", ");
         }
-        asm.value(crb, inputs[inputs.length - 1]);
+        asm.emitValue(crb, inputs[inputs.length - 1]);
         asm.emit(")");
     }
 

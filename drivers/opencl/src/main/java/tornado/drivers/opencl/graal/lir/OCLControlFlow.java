@@ -15,6 +15,10 @@ import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLControlFlow {
 
@@ -184,7 +188,7 @@ public class OCLControlFlow {
             if (condition instanceof OCLLIROp) {
                 ((OCLLIROp) condition).emit(crb, asm);
             } else {
-                asm.value(crb, condition);
+                asm.emitValue(crb, condition);
             }
 
             asm.delimiter();
@@ -276,7 +280,7 @@ public class OCLControlFlow {
             asm.indent();
             asm.emitSymbol(SWITCH);
             asm.emitSymbol(BRACKET_OPEN);
-            asm.value(crb, value);
+            asm.emitValue(crb, value);
             asm.emitSymbol(BRACKET_CLOSE);
         }
 
@@ -391,7 +395,7 @@ public class OCLControlFlow {
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
             asm.emit("slots[0] = (ulong) ");
-            asm.value(crb, actionAndReason);
+            asm.emitValue(crb, actionAndReason);
             asm.delimiter();
 
             asm.eol();

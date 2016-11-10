@@ -13,14 +13,6 @@ import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 
 public class OCLVectorAssign {
 
-    public static void emitValueOrOp(OCLCompilationResultBuilder crb, OCLAssembler asm, Value value) {
-        if (value instanceof OCLLIROp) {
-            ((OCLLIROp) value).emit(crb, asm);
-        } else {
-            asm.value(crb, value);
-        }
-    }
-
     /**
      * OpenCL vector assignment expression
      */
@@ -45,9 +37,9 @@ public class OCLVectorAssign {
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.emit(opcode.toString());
             asm.emit("(");
-            emitValueOrOp(crb, asm, s0);
+            asm.emitValueOrOp(crb, s0);
             asm.emit(", ");
-            emitValueOrOp(crb, asm, s1);
+            asm.emitValueOrOp(crb, s1);
             asm.emit(")");
         }
     }
@@ -69,11 +61,11 @@ public class OCLVectorAssign {
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.emit(opcode.toString());
             asm.emit("(");
-            emitValueOrOp(crb, asm, s0);
+            asm.emitValueOrOp(crb, s0);
             asm.emit(", ");
-            emitValueOrOp(crb, asm, s1);
+            asm.emitValueOrOp(crb, s1);
             asm.emit(", ");
-            emitValueOrOp(crb, asm, s2);
+            asm.emitValueOrOp(crb, s2);
             asm.emit(")");
         }
 
@@ -96,13 +88,13 @@ public class OCLVectorAssign {
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.emit(opcode.toString());
             asm.emit("(");
-            emitValueOrOp(crb, asm, s0);
+            asm.emitValueOrOp(crb, s0);
             asm.emit(", ");
-            emitValueOrOp(crb, asm, s1);
+            asm.emitValueOrOp(crb, s1);
             asm.emit(", ");
-            emitValueOrOp(crb, asm, s2);
+            asm.emitValueOrOp(crb, s2);
             asm.emit(", ");
-            emitValueOrOp(crb, asm, s3);
+            asm.emitValueOrOp(crb, s3);
             asm.emit(")");
         }
 
@@ -134,21 +126,21 @@ public class OCLVectorAssign {
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.emit(opcode.toString());
             asm.emit("(");
-            emitValueOrOp(crb, asm, s0);
+            asm.emitValueOrOp(crb, s0);
             asm.emit(", ");
-            emitValueOrOp(crb, asm, s1);
+            asm.emitValueOrOp(crb, s1);
             asm.emit(", ");
-            emitValueOrOp(crb, asm, s2);
+            asm.emitValueOrOp(crb, s2);
             asm.emit(", ");
-            emitValueOrOp(crb, asm, s3);
+            asm.emitValueOrOp(crb, s3);
             asm.emit(", ");
-            emitValueOrOp(crb, asm, s4);
+            asm.emitValueOrOp(crb, s4);
             asm.emit(", ");
-            emitValueOrOp(crb, asm, s5);
+            asm.emitValueOrOp(crb, s5);
             asm.emit(", ");
-            emitValueOrOp(crb, asm, s6);
+            asm.emitValueOrOp(crb, s6);
             asm.emit(", ");
-            emitValueOrOp(crb, asm, s7);
+            asm.emitValueOrOp(crb, s7);
             asm.emit(")");
         }
 

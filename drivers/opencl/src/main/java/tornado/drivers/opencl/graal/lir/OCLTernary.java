@@ -71,9 +71,9 @@ public class OCLTernary {
             condition.emit(crb, asm);
             asm.emit(BRACKET_CLOSE);
             asm.emit(" ? ");
-            asm.value(crb, y);
+            asm.emitValue(crb, y);
             asm.emit(" : ");
-            asm.value(crb, z);
+            asm.emitValue(crb, z);
         }
     }
 

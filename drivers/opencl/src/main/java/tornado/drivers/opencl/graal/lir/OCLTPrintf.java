@@ -20,29 +20,29 @@ public class OCLTPrintf extends OCLLIROp {
     public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
         asm.emit("if( ");
         asm.emit("get_global_id(0) == ");
-        asm.value(crb, inputs[0]);
+        asm.emitValue(crb, inputs[0]);
 
         asm.emit(" && get_global_id(1) == ");
-        asm.value(crb, inputs[1]);
+        asm.emitValue(crb, inputs[1]);
 
         asm.emit(" && get_global_id(2) == ");
-        asm.value(crb, inputs[2]);
+        asm.emitValue(crb, inputs[2]);
         asm.emit(" )");
         asm.beginScope();
 
         asm.indent();
         asm.emit("printf( \"tornado[%3d,%3d,%3d]> ");
-        asm.value(crb, inputs[3]);
+        asm.emitValue(crb, inputs[3]);
         asm.emit("\", ");
         for (int i = 0; i < 3; i++) {
-            asm.value(crb, inputs[i]);
+            asm.emitValue(crb, inputs[i]);
             asm.emit(", ");
         }
         for (int i = 4; i < inputs.length - 1; i++) {
-            asm.value(crb, inputs[i]);
+            asm.emitValue(crb, inputs[i]);
             asm.emit(", ");
         }
-        asm.value(crb, inputs[inputs.length - 1]);
+        asm.emitValue(crb, inputs[inputs.length - 1]);
         asm.emit(")");
         asm.delimiter();
         asm.eol();

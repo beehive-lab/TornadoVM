@@ -34,6 +34,10 @@ import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.graal.TornadoLIRGenerator.trace;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.graal.TornadoLIRGenerator.trace;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.graal.TornadoLIRGenerator.trace;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.graal.TornadoLIRGenerator.trace;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
@@ -394,7 +398,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         @Override
         public Value doValue(LIRInstruction instruction, Value value,
                 OperandMode mode, EnumSet<OperandFlag> flags) {
-            // System.out.printf("dep: insn=%s, value=%s\n",instruction,value);
+            // System.out.printf("dep: insn=%s, emitValue=%s\n",instruction,emitValue);
             if (value instanceof Variable) {
                 dependencies.add(value);
             }

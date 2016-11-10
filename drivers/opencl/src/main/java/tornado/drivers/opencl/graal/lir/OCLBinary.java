@@ -81,9 +81,9 @@ public class OCLBinary {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            asm.value(crb, x);
+            asm.emitValue(crb, x);
             asm.emit(opcode.toString());
-            asm.value(crb, y);
+            asm.emitValue(crb, y);
         }
 
         @Override

@@ -15,13 +15,14 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.lir.OCLKind;
+import tornado.drivers.opencl.graal.lir.OCLLIROp;
 import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 
 import static com.oracle.graal.compiler.common.util.Util.guarantee;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
 import static tornado.drivers.opencl.graal.lir.OCLKind.*;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLAssembler extends Assembler {
 
@@ -165,10 +166,10 @@ public class OCLAssembler extends Assembler {
             final OCLAssembler asm = crb.getAssembler();
             if (prefix) {
                 emitOpcode(asm);
-                asm.value(
+                asm.emitValue(
                         crb, x);
             } else {
-                asm.value(
+                asm.emitValue(
                         crb, x);
                 emitOpcode(asm);
             }
@@ -230,7 +231,7 @@ public class OCLAssembler extends Assembler {
             final OCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             asm.emit("(");
-            asm.value(
+            asm.emitValue(
                     crb, x);
             asm.emit(")");
         }
@@ -321,11 +322,11 @@ public class OCLAssembler extends Assembler {
 
         public void emit(OCLCompilationResultBuilder crb, Value x, Value y) {
             final OCLAssembler asm = crb.getAssembler();
-            asm.value(crb, x);
+            asm.emitValueOrOp(crb, x);
             asm.space();
             emitOpcode(asm);
             asm.space();
-            asm.value(crb, y);
+            asm.emitValueOrOp(crb, y);
         }
     }
 
@@ -377,11 +378,9 @@ public class OCLAssembler extends Assembler {
             final OCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             asm.emit("(");
-            asm.value(
-                    crb, x);
+            asm.emitValueOrOp(crb, x);
             asm.emit(", ");
-            asm.value(
-                    crb, y);
+            asm.emitValueOrOp(crb, y);
             asm.emit(")");
         }
     }
@@ -412,9 +411,9 @@ public class OCLAssembler extends Assembler {
         public void emit(OCLCompilationResultBuilder crb, Value x, Value y) {
             final OCLAssembler asm = crb.getAssembler();
             asm.beginStackPush();
-            asm.value(crb, x);
+            asm.emitValueOrOp(crb, x);
             final String input1 = asm.getLastOp();
-            asm.value(crb, y);
+            asm.emitValueOrOp(crb, y);
             final String input2 = asm.getLastOp();
             asm.endStackPush();
 
@@ -463,14 +462,11 @@ public class OCLAssembler extends Assembler {
             final OCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             asm.emit("(");
-            asm.value(
-                    crb, x);
+            asm.emitValueOrOp(crb, x);
             asm.emit(", ");
-            asm.value(
-                    crb, y);
+            asm.emitValueOrOp(crb, y);
             asm.emit(", ");
-            asm.value(
-                    crb, z);
+            asm.emitValueOrOp(crb, z);
             asm.emit(")");
         }
     }
@@ -492,11 +488,11 @@ public class OCLAssembler extends Assembler {
         public void emit(OCLCompilationResultBuilder crb, Value x, Value y, Value z) {
             final OCLAssembler asm = crb.getAssembler();
             asm.beginStackPush();
-            asm.value(crb, x);
+            asm.emitValueOrOp(crb, x);
             final String input1 = asm.getLastOp();
-            asm.value(crb, y);
+            asm.emitValueOrOp(crb, y);
             final String input2 = asm.getLastOp();
-            asm.value(crb, z);
+            asm.emitValueOrOp(crb, z);
             final String input3 = asm.getLastOp();
             asm.endStackPush();
 
@@ -522,10 +518,10 @@ public class OCLAssembler extends Assembler {
             final OCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             asm.emit("(");
-            asm.value(
+            asm.emitValue(
                     crb, s0);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s1);
             asm.emit(")");
         }
@@ -548,13 +544,13 @@ public class OCLAssembler extends Assembler {
             final OCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             asm.emit("(");
-            asm.value(
+            asm.emitValue(
                     crb, s0);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s1);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s2);
             asm.emit(")");
         }
@@ -577,16 +573,16 @@ public class OCLAssembler extends Assembler {
             final OCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             asm.emit("(");
-            asm.value(
+            asm.emitValue(
                     crb, s0);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s1);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s2);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s3);
             asm.emit(")");
         }
@@ -610,28 +606,28 @@ public class OCLAssembler extends Assembler {
             final OCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             asm.emit("(");
-            asm.value(
+            asm.emitValue(
                     crb, s0);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s1);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s2);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s3);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s4);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s5);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s6);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s7);
             asm.emit(")");
         }
@@ -651,52 +647,52 @@ public class OCLAssembler extends Assembler {
             final OCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             asm.emit("(");
-            asm.value(
+            asm.emitValue(
                     crb, s0);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s1);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s2);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s3);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s4);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s5);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s6);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s7);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s8);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s9);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s10);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s11);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s12);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s13);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s14);
             asm.emit(", ");
-            asm.value(
+            asm.emitValue(
                     crb, s15);
             asm.emit(")");
         }
@@ -982,30 +978,17 @@ public class OCLAssembler extends Assembler {
         } else if (value instanceof OCLReturnSlot) {
             final String type = ((OCLKind) value.getPlatformKind()).name().toLowerCase();
             return String.format("*((__global %s *) %s)", type, HEAP_REF_NAME);
-//        } else if (value instanceof OCLNullary.Expr) {
-//            return ((OCLNullary.Expr) value).toString();
+//        } else if (emitValue instanceof OCLNullary.Expr) {
+//            return ((OCLNullary.Expr) emitValue).toString();
         } else {
             unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
         }
         return result;
     }
 
-    public void value(OCLCompilationResultBuilder crb, Value value) {
-//        System.out.printf("value: %s (%s)\n", value, value.getClass().getName());
-
-//        if (value instanceof MemoryAccess) {
-//            MemoryAccess access = (MemoryAccess) value;
-//            access.emit(crb);
-//        } else if (value instanceof OCLConstantValue) {
-//            emit(((OCLConstantValue) value).getValue());
-//        } else if (value instanceof OCLEmitable) {
-//            ((OCLEmitable) value).emit(crb);
-//    }
-//
-//
-//        else {
+    public void emitValue(OCLCompilationResultBuilder crb, Value value) {
+//        System.out.printf("emitValue: %s (%s)\n", emitValue, emitValue.getClass().getName());
         emit(toString(value));
-//    }
     }
 
     public void assign() {
@@ -1054,7 +1037,7 @@ public class OCLAssembler extends Assembler {
         emitSymbol(OCLAssemblerConstants.IF_STMT);
         emitSymbol(OCLAssemblerConstants.BRACKET_OPEN);
 
-        value(crb, condition);
+        emitValue(crb, condition);
 
         emitSymbol(OCLAssemblerConstants.BRACKET_CLOSE);
         eol();
@@ -1063,5 +1046,13 @@ public class OCLAssembler extends Assembler {
 
     public void elseStmt() {
         emitSymbol(OCLAssemblerConstants.ELSE);
+    }
+
+    public void emitValueOrOp(OCLCompilationResultBuilder crb, Value value) {
+        if (value instanceof OCLLIROp) {
+            ((OCLLIROp) value).emit(crb, this);
+        } else {
+            emitValue(crb, value);
+        }
     }
 }

@@ -105,7 +105,7 @@ public class OCLUnary {
         @Override
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.emit("isnan(");
-            asm.value(crb, value);
+            asm.emitValue(crb, value);
             asm.emit(")? 0 : ");
             opcode.emit(crb, value);
         }
@@ -134,10 +134,10 @@ public class OCLUnary {
                 asm.emitSymbol(ADDRESS_OF);
                 asm.emit(base.name);
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
-                asm.value(crb, value);
+                asm.emitValue(crb, value);
                 asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
             } else {
-                asm.value(crb, value);
+                asm.emitValue(crb, value);
             }
         }
 
