@@ -221,6 +221,7 @@ public class OCLCompiler {
 
             GraalOptions.OmitHotExceptionStacktrace.setValue(false);
             GraalOptions.MatchExpressions.setValue(true);
+            GraalOptions.RemoveNeverExecutedCode.setValue(false);
 //            GraalOptions.SSA_LIR.setValue(true);
 
             /*
