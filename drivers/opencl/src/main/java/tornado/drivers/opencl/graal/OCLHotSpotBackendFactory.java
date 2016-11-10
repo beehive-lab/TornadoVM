@@ -4,7 +4,6 @@ import com.oracle.graal.bytecode.BytecodeProvider;
 import com.oracle.graal.hotspot.meta.HotSpotStampProvider;
 import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins;
-import com.oracle.graal.nodes.spi.Replacements;
 import com.oracle.graal.phases.util.Providers;
 import com.oracle.graal.replacements.StandardGraphBuilderPlugins;
 import com.oracle.graal.replacements.classfile.ClassfileBytecodeProvider;
@@ -24,8 +23,6 @@ import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.graal.compiler.*;
 import tornado.runtime.TornadoVMConfig;
 
-import static jdk.vm.ci.common.InitTimer.timer;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static jdk.vm.ci.common.InitTimer.timer;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
@@ -74,8 +71,10 @@ public class OCLHotSpotBackendFactory {
 
             Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, nodeCostProvider);
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
-            Replacements replacements = new TornadoReplacements(p, snippetReflection, bytecodeProvider, target);
             plugins = createGraphBuilderPlugins(metaAccess, bytecodeProvider);
+            TornadoReplacements replacements = new TornadoReplacements(p, snippetReflection, bytecodeProvider, target);
+
+            replacements.setGraphBuilderPlugins(plugins);
 
             suites = new OCLSuitesProvider(plugins, metaAccess, compilerConfiguration, addressLowering);
 
@@ -99,13 +98,13 @@ public class OCLHotSpotBackendFactory {
         OCLGraphBuilderPlugins.registerParameterPlugins(plugins);
         OCLGraphBuilderPlugins.registerNewInstancePlugins(plugins);
 
-        invocationPlugins.defer(new Runnable() {
-            @Override
-            public void run() {
-                StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, bytecodeProvider, true);
-                OCLGraphBuilderPlugins.registerInvocationPlugins(invocationPlugins);
-            }
-        });
+//        invocationPlugins.defer(new Runnable() {
+//            @Override
+//            public void run() {
+        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, bytecodeProvider, true);
+        OCLGraphBuilderPlugins.registerInvocationPlugins(invocationPlugins);
+//            }
+//        });
 
         return plugins;
     }

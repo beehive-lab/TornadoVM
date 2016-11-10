@@ -2,6 +2,7 @@ package tornado.drivers.opencl.graal.lir;
 
 import com.oracle.graal.nodes.ParameterNode;
 import com.oracle.graal.nodes.ValueNode;
+import com.oracle.graal.nodes.memory.FloatingReadNode;
 import com.oracle.graal.nodes.memory.address.AddressNode;
 import com.oracle.graal.phases.common.AddressLoweringPhase.AddressLowering;
 import tornado.drivers.opencl.graal.OCLArchitecture;
@@ -20,7 +21,7 @@ public class OCLAddressLowering extends AddressLowering {
     public AddressNode lower(ValueNode base, ValueNode offset) {
 
         OCLMemoryBase memoryRegister = OCLArchitecture.hp;
-        if (!(base instanceof ParameterNode)) {
+        if (!((base instanceof ParameterNode) || (base instanceof FloatingReadNode))) {
             unimplemented("address origin unimplemented: %s", base.getClass().getName());
         }
 
