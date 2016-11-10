@@ -57,6 +57,14 @@ import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -393,7 +401,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         // LIR lir = gen.getLIR();
 
         OCLAssembler asm = createAssembler(frameMap);
-        OpenCLFrameContext frameContext = new OpenCLFrameContext();
+        OCLFrameContext frameContext = new OCLFrameContext();
         DataBuilder dataBuilder = new OCLDataBuilder();
         OCLCompilationResultBuilder crb = new OCLCompilationResultBuilder(codeCache, getForeignCalls(), frameMap, asm, dataBuilder, frameContext, compilationResult);
         crb.setKernel(isKernel);

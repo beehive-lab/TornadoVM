@@ -5,7 +5,7 @@ import tornado.common.TornadoLogger;
 import com.oracle.graal.lir.asm.CompilationResultBuilder;
 import com.oracle.graal.lir.asm.FrameContext;
 
-public class OpenCLFrameContext extends TornadoLogger implements FrameContext {
+public class OCLFrameContext extends TornadoLogger implements FrameContext {
 
 	@Override
 	public void enter(CompilationResultBuilder crb) {
