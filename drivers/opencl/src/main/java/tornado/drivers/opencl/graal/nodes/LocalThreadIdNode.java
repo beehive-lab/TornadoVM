@@ -1,6 +1,12 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package tornado.drivers.opencl.graal.nodes;
 
 import com.oracle.graal.compiler.common.type.StampFactory;
+import com.oracle.graal.graph.Node;
 import com.oracle.graal.graph.NodeClass;
 import com.oracle.graal.lir.Variable;
 import com.oracle.graal.lir.gen.LIRGeneratorTool;
@@ -15,14 +21,15 @@ import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
 
 @NodeInfo
-public class GlobalThreadSize extends FloatingNode implements LIRLowerable {
+public class LocalThreadIdNode extends FloatingNode implements LIRLowerable {
 
-    public static final NodeClass<GlobalThreadSize> TYPE = NodeClass.create(GlobalThreadSize.class);
+    public static final NodeClass<LocalThreadIdNode> TYPE = NodeClass
+            .create(LocalThreadIdNode.class);
 
-    @Input
+    @Node.Input
     protected ConstantNode index;
 
-    public GlobalThreadSize(ConstantNode value) {
+    public LocalThreadIdNode(ConstantNode value) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
         assert stamp != null;
         index = value;
@@ -32,9 +39,7 @@ public class GlobalThreadSize extends FloatingNode implements LIRLowerable {
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
-        gen.operand(index);
-        tool.append(new OCLLIRInstruction.AssignStmt(result, new OCLUnary.Intrinsic(OCLUnaryIntrinsic.GLOBAL_SIZE, tool.getLIRKind(stamp), gen.operand(index))));
+        tool.append(new OCLLIRInstruction.AssignStmt(result, new OCLUnary.Intrinsic(OCLUnaryIntrinsic.LOCAL_ID, tool.getLIRKind(stamp), gen.operand(index))));
         gen.setResult(this, result);
     }
-
 }

@@ -21,14 +21,14 @@ import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
 
 @NodeInfo
-public class LocalThreadSize extends FloatingNode implements LIRLowerable {
+public class LocalThreadSizeNode extends FloatingNode implements LIRLowerable {
 
-    public static final NodeClass<LocalThreadSize> TYPE = NodeClass.create(LocalThreadSize.class);
+    public static final NodeClass<LocalThreadSizeNode> TYPE = NodeClass.create(LocalThreadSizeNode.class);
 
     @Node.Input
     protected ConstantNode index;
 
-    public LocalThreadSize(ConstantNode value) {
+    public LocalThreadSizeNode(ConstantNode value) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
         assert stamp != null;
         index = value;

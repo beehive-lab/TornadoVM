@@ -15,15 +15,15 @@ import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
 
 @NodeInfo
-public class GlobalThreadId extends FloatingNode implements LIRLowerable {
+public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable {
 
-    public static final NodeClass<GlobalThreadId> TYPE = NodeClass
-            .create(GlobalThreadId.class);
+    public static final NodeClass<GlobalThreadIdNode> TYPE = NodeClass
+            .create(GlobalThreadIdNode.class);
 
     @Input
     protected ConstantNode index;
 
-    public GlobalThreadId(ConstantNode value) {
+    public GlobalThreadIdNode(ConstantNode value) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
         assert stamp != null;
         index = value;

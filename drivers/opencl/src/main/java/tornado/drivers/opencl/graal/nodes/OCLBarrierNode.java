@@ -16,7 +16,7 @@ import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic;
 import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
 
-public class OCLBarrier {
+public class OCLBarrierNode {
 
     public static enum OCLMemFenceFlags {
         GLOBAL, LOCAL;

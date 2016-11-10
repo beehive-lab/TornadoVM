@@ -10,7 +10,7 @@ import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryTemplate;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.meta.OCLMemorySpace;
-import tornado.drivers.opencl.graal.nodes.OCLBarrier.OCLMemFenceFlags;
+import tornado.drivers.opencl.graal.nodes.OCLBarrierNode.OCLMemFenceFlags;
 
 import static tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
