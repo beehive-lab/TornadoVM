@@ -24,20 +24,14 @@ import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp4;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp8;
 import tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
-import tornado.drivers.opencl.graal.lir.OCLLIROp;
 import tornado.drivers.opencl.graal.lir.OCLKind;
+import tornado.drivers.opencl.graal.lir.OCLLIROp;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorLoadStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 import tornado.drivers.opencl.graal.lir.OCLVectorAssign;
 
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.graal.TornadoLIRGenerator.trace;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.graal.TornadoLIRGenerator.trace;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.graal.TornadoLIRGenerator.trace;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.graal.TornadoLIRGenerator.trace;
 
