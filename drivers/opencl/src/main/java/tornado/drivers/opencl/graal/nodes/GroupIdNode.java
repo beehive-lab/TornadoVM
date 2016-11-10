@@ -1,5 +1,6 @@
 package tornado.drivers.opencl.graal.nodes;
 
+import com.oracle.graal.compiler.common.type.StampFactory;
 import com.oracle.graal.graph.NodeClass;
 import com.oracle.graal.lir.Variable;
 import com.oracle.graal.lir.gen.LIRGeneratorTool;
@@ -8,10 +9,8 @@ import com.oracle.graal.nodes.ConstantNode;
 import com.oracle.graal.nodes.calc.FloatingNode;
 import com.oracle.graal.nodes.spi.LIRLowerable;
 import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
-import jdk.vm.ci.meta.Value;
-import tornado.drivers.opencl.graal.OCLStampFactory;
+import jdk.vm.ci.meta.JavaKind;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic;
-import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
 
@@ -25,7 +24,7 @@ public class GroupIdNode extends FloatingNode implements LIRLowerable {
     protected ConstantNode index;
 
     public GroupIdNode(ConstantNode value) {
-        super(TYPE, OCLStampFactory.getStampFor(OCLKind.INT));
+        super(TYPE, StampFactory.forKind(JavaKind.Int));
         assert stamp != null;
         index = value;
     }
@@ -34,7 +33,7 @@ public class GroupIdNode extends FloatingNode implements LIRLowerable {
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
-        tool.append(new OCLLIRInstruction.AssignStmt(result, new OCLUnary.Intrinsic(OCLUnaryIntrinsic.GROUP_ID, tool.getLIRKind(stamp), (Value) index.asConstant())));
+        tool.append(new OCLLIRInstruction.AssignStmt(result, new OCLUnary.Intrinsic(OCLUnaryIntrinsic.GROUP_ID, tool.getLIRKind(stamp), gen.operand(index))));
         gen.setResult(this, result);
     }
 
