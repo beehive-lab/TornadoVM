@@ -6,6 +6,7 @@ import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
+import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
@@ -24,8 +25,8 @@ public class OCLMoveFactory implements MoveFactory {
 
     @Override
     public LIRInstruction createMove(AllocatableValue av, Value value) {
-        unimplemented();
-        return null;
+        AssignStmt assign = new AssignStmt(av, value);
+        return assign;
     }
 
     @Override
