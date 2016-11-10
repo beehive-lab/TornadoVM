@@ -28,9 +28,9 @@ import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.StackSlot;
 
-public class OpenCLFrameMapBuilder extends FrameMapBuilderImpl {
+public class OCLFrameMapBuilder extends FrameMapBuilderImpl {
 
-    public OpenCLFrameMapBuilder(FrameMap frameMap, CodeCacheProvider codeCache, RegisterConfig registerConfig) {
+    public OCLFrameMapBuilder(FrameMap frameMap, CodeCacheProvider codeCache, RegisterConfig registerConfig) {
         super(frameMap, codeCache, registerConfig);
     }
 

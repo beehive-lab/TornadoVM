@@ -81,6 +81,38 @@ import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -434,7 +466,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig) {
         RegisterConfig registerConfigNonNull = registerConfig == null ? getCodeCache()
                 .getRegisterConfig() : registerConfig;
-        return new OpenCLFrameMapBuilder(newFrameMap(registerConfigNonNull), getCodeCache(),
+        return new OCLFrameMapBuilder(newFrameMap(registerConfigNonNull), getCodeCache(),
                 registerConfig);
     }
 
