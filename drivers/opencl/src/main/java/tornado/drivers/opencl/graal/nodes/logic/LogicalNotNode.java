@@ -6,7 +6,7 @@ import com.oracle.graal.lir.gen.LIRGeneratorTool;
 import com.oracle.graal.nodeinfo.NodeInfo;
 import com.oracle.graal.nodes.LogicNode;
 import jdk.vm.ci.meta.Value;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
 import tornado.graal.nodes.logic.UnaryLogicalNode;
 

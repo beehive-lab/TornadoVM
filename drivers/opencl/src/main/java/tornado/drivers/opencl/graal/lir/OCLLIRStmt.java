@@ -15,7 +15,7 @@ import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 
-public class OCLLIRInstruction {
+public class OCLLIRStmt {
 
     protected static abstract class AbstractInstruction extends LIRInstruction {
 

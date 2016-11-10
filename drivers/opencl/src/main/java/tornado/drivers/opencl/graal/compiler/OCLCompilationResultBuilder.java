@@ -28,8 +28,10 @@ import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopConditionOp;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopInitOp;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopPostOp;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow.SwitchOp;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.graal.TornadoLIRGenerator.trace;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.graal.TornadoLIRGenerator.trace;
 
@@ -344,9 +346,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         // final LIRInstruction insn = header.get(i);
         // if (insn instanceof LoopInitOp) {
         // break;
-        // } else if (insn instanceof OCLLIRInstruction.AssignStmt) {
-        // final OCLLIRInstruction.AssignStmt assign =
-        // (OCLLIRInstruction.AssignStmt) insn;
+        // } else if (insn instanceof OCLLIRStmt.AssignStmt) {
+        // final OCLLIRStmt.AssignStmt assign =
+        // (OCLLIRStmt.AssignStmt) insn;
         // ivs.add(assign.getResult());
         // }
         // }
@@ -369,9 +371,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         // move all insns which do not update ivs into the loop body
         // current = header.get(index);
         // while(!(current instanceof LoopConditionOp)){
-        // if(current instanceof OCLLIRInstruction.AssignStmt){
-        // final OCLLIRInstruction.AssignStmt assign =
-        // (OCLLIRInstruction.AssignStmt) current;
+        // if(current instanceof OCLLIRStmt.AssignStmt){
+        // final OCLLIRStmt.AssignStmt assign =
+        // (OCLLIRStmt.AssignStmt) current;
         // if(!ivs.contains(assign.getResult())){
         // body.add(insertAt, header.remove(index));
         // }

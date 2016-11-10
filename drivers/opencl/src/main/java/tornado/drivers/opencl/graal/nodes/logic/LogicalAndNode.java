@@ -9,7 +9,7 @@ import com.oracle.graal.nodes.LogicNode;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.lir.OCLBinary;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import tornado.graal.nodes.logic.BinaryLogicalNode;
 
 import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp.LOGICAL_AND;

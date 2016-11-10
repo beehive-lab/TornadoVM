@@ -18,10 +18,16 @@ import tornado.drivers.opencl.graal.OCLStamp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.ExprStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.ExprStmt;
 import tornado.drivers.opencl.graal.lir.*;
 
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;

@@ -11,7 +11,7 @@ import com.oracle.graal.nodes.spi.LIRLowerable;
 import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.JavaKind;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
 
 @NodeInfo

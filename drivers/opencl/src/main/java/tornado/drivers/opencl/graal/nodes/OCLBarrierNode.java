@@ -13,7 +13,7 @@ import com.oracle.graal.nodes.memory.MemoryNode;
 import com.oracle.graal.nodes.spi.LIRLowerable;
 import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
 
 public class OCLBarrierNode {
@@ -39,7 +39,7 @@ public class OCLBarrierNode {
 
         @Override
         public void generate(NodeLIRBuilderTool gen) {
-           gen.getLIRGeneratorTool().append(new OCLLIRInstruction.ExprStmt(new OCLUnary.Barrier(OCLUnaryIntrinsic.MEM_FENCE, flags)));
+           gen.getLIRGeneratorTool().append(new OCLLIRStmt.ExprStmt(new OCLUnary.Barrier(OCLUnaryIntrinsic.MEM_FENCE, flags)));
         }
 
     }

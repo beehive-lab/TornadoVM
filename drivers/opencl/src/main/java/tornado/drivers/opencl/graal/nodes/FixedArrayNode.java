@@ -15,7 +15,7 @@ import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryTemplate;
 import tornado.drivers.opencl.graal.lir.OCLBinary;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 
 @NodeInfo
 public class FixedArrayNode extends FloatingNode implements LIRLowerable {
@@ -63,7 +63,7 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
         final Variable variable = gen.getLIRGeneratorTool().newVariable(lirKind);
         final OCLBinary.Expr declaration = new OCLBinary.Expr(OCLBinaryTemplate.NEW_ARRAY, lirKind, variable, lengthValue);
 
-        final OCLLIRInstruction.ExprStmt expr = new OCLLIRInstruction.ExprStmt(declaration);
+        final OCLLIRStmt.ExprStmt expr = new OCLLIRStmt.ExprStmt(declaration);
 
         System.out.printf("expr: %s\n", expr);
 

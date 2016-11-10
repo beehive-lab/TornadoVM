@@ -12,14 +12,16 @@ import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryTemplate;
 import tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.VectorLoadStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorLoadStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 import tornado.drivers.opencl.graal.nodes.vector.VectorUtil;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.STACK_BASE_OFFSET;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLGenTool {

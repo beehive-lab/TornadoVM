@@ -10,7 +10,7 @@ import jdk.vm.ci.meta.Value;
 import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp.LOGICAL_OR;
 
 import tornado.drivers.opencl.graal.lir.OCLBinary;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import tornado.graal.nodes.logic.BinaryLogicalNode;
 
 @NodeInfo(shortName = "||")

@@ -9,7 +9,7 @@ import com.oracle.graal.nodes.ValueNode;
 import com.oracle.graal.nodes.spi.LIRLowerable;
 import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.Value;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.ExprStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.ExprStmt;
 import tornado.drivers.opencl.graal.lir.OCLTPrintf;
 
 @NodeInfo(shortName = "tprintf")

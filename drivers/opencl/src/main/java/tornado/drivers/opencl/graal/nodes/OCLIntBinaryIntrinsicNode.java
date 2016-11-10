@@ -17,8 +17,9 @@ import jdk.vm.ci.meta.Value;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 @NodeInfo(nameTemplate = "{p#operation}")

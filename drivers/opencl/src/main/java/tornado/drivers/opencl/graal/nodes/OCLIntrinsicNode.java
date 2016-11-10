@@ -18,9 +18,10 @@ import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import tornado.graal.nodes.Floatable;
 
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLIntrinsicNode {

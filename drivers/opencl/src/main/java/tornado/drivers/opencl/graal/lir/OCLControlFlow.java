@@ -7,11 +7,12 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AbstractInstruction;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AbstractInstruction;
 
 import static com.oracle.graal.lir.LIRInstruction.OperandFlag.CONST;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLControlFlow {
 

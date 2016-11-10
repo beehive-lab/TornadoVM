@@ -17,7 +17,7 @@ import com.oracle.graal.nodes.spi.LIRLowerable;
 import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.JavaKind;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
 
 @NodeInfo
@@ -39,7 +39,7 @@ public class LocalThreadIdNode extends FloatingNode implements LIRLowerable {
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
-        tool.append(new OCLLIRInstruction.AssignStmt(result, new OCLUnary.Intrinsic(OCLUnaryIntrinsic.LOCAL_ID, tool.getLIRKind(stamp), gen.operand(index))));
+        tool.append(new OCLLIRStmt.AssignStmt(result, new OCLUnary.Intrinsic(OCLUnaryIntrinsic.LOCAL_ID, tool.getLIRKind(stamp), gen.operand(index))));
         gen.setResult(this, result);
     }
 }

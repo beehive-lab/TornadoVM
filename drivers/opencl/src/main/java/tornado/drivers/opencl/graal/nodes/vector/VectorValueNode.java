@@ -26,12 +26,14 @@ import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp8;
 import tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
 import tornado.drivers.opencl.graal.lir.OCLEmitable;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.VectorLoadStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorLoadStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 import tornado.drivers.opencl.graal.lir.OCLVectorAssign;
 
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.graal.TornadoLIRGenerator.trace;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.graal.TornadoLIRGenerator.trace;
 
@@ -125,7 +127,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
 
             final AllocatableValue result = (gen.hasOperand(this)) ? (Variable) gen.operand(this)
                     : tool.newVariable(LIRKind.value(getOCLKind()));
-            tool.append(new OCLLIRInstruction.AssignStmt(result, phiOperand));
+            tool.append(new OCLLIRStmt.AssignStmt(result, phiOperand));
             gen.setResult(this, result);
 
         } else if (origin instanceof ParameterNode) {
@@ -159,7 +161,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
             final ValueNode firstValue = values.first();
 
             if (firstValue instanceof VectorValueNode || firstValue instanceof VectorOp) {
-                tool.append(new OCLLIRInstruction.AssignStmt(result, gen.operand(values.first())));
+                tool.append(new OCLLIRStmt.AssignStmt(result, gen.operand(values.first())));
                 gen.setResult(this, result);
             } else if (numValues > 0 && gen.hasOperand(firstValue)) {
                 generateVectorAssign(gen, tool, result);
@@ -222,7 +224,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
                 unimplemented("new vector length = " + kind.getVectorLength());
         }
 
-        tool.append(new OCLLIRInstruction.AssignStmt(result, assignExpr));
+        tool.append(new OCLLIRStmt.AssignStmt(result, assignExpr));
 
         gen.setResult(this, result);
     }

@@ -32,8 +32,8 @@ import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryTemplate;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.ExprStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.ExprStmt;
 import tornado.drivers.opencl.graal.lir.*;
 import tornado.drivers.opencl.graal.nodes.logic.LogicalAndNode;
 import tornado.drivers.opencl.graal.nodes.logic.LogicalEqualsNode;
@@ -41,6 +41,9 @@ import tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
 import tornado.drivers.opencl.graal.nodes.logic.LogicalOrNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
@@ -403,14 +406,14 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         final OCLDirectCall call = new OCLDirectCall(
                 callTarget, result, parameters, callState);
         if (isLegal(result)) {
-            append(new OCLLIRInstruction.AssignStmt(gen.asAllocatable(result),
+            append(new OCLLIRStmt.AssignStmt(gen.asAllocatable(result),
                     call));
             // setResult(callTarget,result);
             // System.out.printf("arg0: %s\n", callTarget);
             // System.out.printf("assign: %s\n",assign);
             // System.out.printf("result: %s\n", result);
         } else {
-            append(new OCLLIRInstruction.ExprStmt(call));
+            append(new OCLLIRStmt.ExprStmt(call));
             // setResult(callTarget,expr);
         }
     }
@@ -491,7 +494,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 setResult(phi, value);
             } else {
                 final AllocatableValue result = (AllocatableValue) operandForPhi(phi);
-                append(new OCLLIRInstruction.AssignStmt(result, value));
+                append(new OCLLIRStmt.AssignStmt(result, value));
                 // System.out.printf("phi-else: phi=%s, value=%s\n", phi,
                 // value);
                 // setResult(phi,value);
@@ -512,7 +515,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         // Value src = operand(phi.valueAt(1));
         // // System.out.printf("here: phi=%s, value=%s\n", phi,
         // phi.valueAt(1));
-        // append(new OCLLIRInstruction.AssignStmt(result, src));
+        // append(new OCLLIRStmt.AssignStmt(result, src));
         // } else {
         // System.out.printf("unhandled phi: %s\n",phi);
         // }
@@ -528,7 +531,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         // src = operand(value);
         // }
         //
-        // append(new OCLLIRInstruction.AssignStmt(result, src));
+        // append(new OCLLIRStmt.AssignStmt(result, src));
         // }
         // }
         // System.out.printf("here: loop post op\n");
@@ -555,7 +558,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             Value src = operand(phi.valueAt(loopEnd));
 
             if (!dest.equals(src)) {
-                append(new OCLLIRInstruction.AssignStmt(dest, src));
+                append(new OCLLIRStmt.AssignStmt(dest, src));
             }
             // }
         }
@@ -582,13 +585,13 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 Value src = operand(value);
 
                 if (!dest.equals(src)) {
-                    append(new OCLLIRInstruction.AssignStmt(dest, src));
+                    append(new OCLLIRStmt.AssignStmt(dest, src));
                 }
             } else if (loopExitMerge) {
                 AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
                 Value src = operand(phi.valueAt(1));
 
-                append(new OCLLIRInstruction.AssignStmt(dest, src));
+                append(new OCLLIRStmt.AssignStmt(dest, src));
             }
         }
     }
@@ -754,7 +757,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                     .isLoopPhi())) {
                 final AllocatableValue result = gen
                         .asAllocatable(operandForPhi(phi));
-                append(new OCLLIRInstruction.AssignStmt(result, operand(value)));
+                append(new OCLLIRStmt.AssignStmt(result, operand(value)));
             }
         }
     }

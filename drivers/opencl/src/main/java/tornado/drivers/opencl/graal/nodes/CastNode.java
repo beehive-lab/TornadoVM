@@ -12,9 +12,10 @@ import tornado.drivers.opencl.graal.OCLStamp;
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
 
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 @NodeInfo
@@ -57,7 +58,7 @@ public class CastNode extends FloatingNode implements LIRLowerable {
             gen.setResult(this, new OCLUnary.Expr(resolveOp(), lirKind, gen.operand(value)));
         } else {
             final Variable result = gen.getLIRGeneratorTool().newVariable(lirKind);
-            final OCLLIRInstruction.AssignStmt assign = new OCLLIRInstruction.AssignStmt(result, new OCLUnary.FloatCast(OCLUnaryOp.CAST_TO_INT, lirKind, gen.operand(value)));
+            final OCLLIRStmt.AssignStmt assign = new OCLLIRStmt.AssignStmt(result, new OCLUnary.FloatCast(OCLUnaryOp.CAST_TO_INT, lirKind, gen.operand(value)));
             gen.getLIRGeneratorTool().append(assign);
             gen.setResult(this, result);
         }
