@@ -9,7 +9,7 @@ import jdk.vm.ci.runtime.JVMCI;
 
 import static com.oracle.graal.debug.GraalDebugConfig.Options.*;
 
-public class DebugEnvironment {
+public class OCLDebugEnvironment {
 
     public static GraalDebugConfig initialize(PrintStream log, Object... extraArgs) {
         // Initialize JVMCI before loading class Debug

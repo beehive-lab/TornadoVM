@@ -38,7 +38,7 @@ import jdk.vm.ci.meta.*;
 import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.OCLTargetDescription;
-import tornado.drivers.opencl.graal.DebugEnvironment;
+import tornado.drivers.opencl.graal.OCLDebugEnvironment;
 import tornado.drivers.opencl.graal.*;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLLIRGenerationPhase.LIRGenerationContext;
@@ -50,6 +50,8 @@ import tornado.graal.phases.TornadoMidTierContext;
 import tornado.meta.Meta;
 
 import static com.oracle.graal.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
@@ -199,7 +201,7 @@ public class OCLCompiler {
 //        }
 //        return r.compilationResult;
         if (Debug.isEnabled() && DebugScope.getConfig() == null) {
-            GraalDebugConfig config = DebugEnvironment.initialize(System.out);
+            GraalDebugConfig config = OCLDebugEnvironment.initialize(System.out);
             System.out.printf("dump: config=%s\n", config.toString());
             config.dumpHandlers().stream().forEach(dh -> System.out.printf("dh: class=%s, %s\n", dh.getClass().getName(), dh));
         }
