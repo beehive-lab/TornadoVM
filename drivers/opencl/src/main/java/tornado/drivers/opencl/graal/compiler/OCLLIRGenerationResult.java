@@ -13,11 +13,11 @@ import tornado.drivers.opencl.graal.lir.OCLKind;
 
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 
-public class OpenCLLIRGenerationResult extends LIRGenerationResult {
+public class OCLLIRGenerationResult extends LIRGenerationResult {
 
     private final Map<OCLKind, Set<Variable>> variableTable;
 
-    public OpenCLLIRGenerationResult(
+    public OCLLIRGenerationResult(
             String compilationUnitName,
             LIR lir,
             FrameMapBuilder frameMapBuilder,

@@ -25,6 +25,9 @@ import tornado.drivers.opencl.graal.lir.*;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLLIRGenerator extends LIRGenerator {
 
@@ -67,7 +70,7 @@ public class OCLLIRGenerator extends LIRGenerator {
                 actualLIRKind.toString(), actualLIRKind.getClass().getName());
 
         var.setName(oclKind.getTypePrefix() + "_" + var.index);
-        OpenCLLIRGenerationResult res = (OpenCLLIRGenerationResult) getResult();
+        OCLLIRGenerationResult res = (OCLLIRGenerationResult) getResult();
         res.insertVariable(var);
 
         return var;

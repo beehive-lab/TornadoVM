@@ -50,6 +50,7 @@ import static tornado.common.Tornado.DEBUG_KERNEL_ARGS;
 import static tornado.common.exceptions.TornadoInternalError.*;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -382,7 +383,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public OCLCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes,
             FrameMap frameMap, OCLCompilationResult compilationResult,
             CompilationResultBuilderFactory factory, boolean isKernel) {
-        // final OpenCLLIRGenerationResult gen = (OpenCLLIRGenerationResult) lirGenRes;
+        // final OCLLIRGenerationResult gen = (OCLLIRGenerationResult) lirGenRes;
         // LIR lir = gen.getLIR();
 
         OCLAssembler asm = createAssembler(frameMap);
@@ -410,7 +411,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     @Override
     public LIRGenerationResult newLIRGenerationResult(String compilationUnitName, LIR lir,
             FrameMapBuilder frameMapBuilder, StructuredGraph graph, Object stub) {
-        return new OpenCLLIRGenerationResult(compilationUnitName, lir, frameMapBuilder, new CallingConvention(0, null, (AllocatableValue[]) null));
+        return new OCLLIRGenerationResult(compilationUnitName, lir, frameMapBuilder, new CallingConvention(0, null, (AllocatableValue[]) null));
     }
 
     @Override
