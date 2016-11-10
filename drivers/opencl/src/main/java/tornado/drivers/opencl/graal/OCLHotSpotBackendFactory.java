@@ -19,6 +19,7 @@ import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
 import tornado.drivers.opencl.graal.compiler.plugins.OCLGraphBuilderPlugins;
+import tornado.drivers.opencl.graal.lir.OCLAddressLowering;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.graal.compiler.*;
 import tornado.runtime.TornadoVMConfig;
@@ -34,6 +35,7 @@ public class OCLHotSpotBackendFactory {
     private static final TornadoForeignCallsProvider foreignCalls = new TornadoForeignCallsProvider();
     private static final TornadoConstantFieldProvider constantFieldProvider = new TornadoConstantFieldProvider();
     private static final OCLCompilerConfiguration compilerConfiguration = new OCLCompilerConfiguration();
+    private static final OCLAddressLowering addressLowering = new OCLAddressLowering();
 
     public static OCLBackend createBackend(JVMCIBackend jvmci, TornadoVMConfig config, OCLContext openclContext, OCLDevice device) {
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmci.getMetaAccess();
@@ -73,7 +75,7 @@ public class OCLHotSpotBackendFactory {
             Replacements replacements = new TornadoReplacements(p, snippetReflection, bytecodeProvider, target);
             plugins = createGraphBuilderPlugins(metaAccess, bytecodeProvider);
 
-            suites = new OCLSuitesProvider(plugins, metaAccess);
+            suites = new OCLSuitesProvider(plugins, metaAccess, compilerConfiguration, addressLowering);
 
             providers = new OCLProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, nodeCostProvider, plugins, suites);
 

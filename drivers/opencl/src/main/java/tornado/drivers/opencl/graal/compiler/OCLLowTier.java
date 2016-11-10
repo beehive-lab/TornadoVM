@@ -2,6 +2,7 @@ package tornado.drivers.opencl.graal.compiler;
 
 import com.oracle.graal.nodes.spi.LoweringTool;
 import com.oracle.graal.phases.common.*;
+import com.oracle.graal.phases.schedule.SchedulePhase;
 import tornado.graal.compiler.TornadoLowTier;
 import tornado.graal.phases.TornadoLoopCanonicalization;
 
@@ -21,7 +22,7 @@ public class OCLLowTier extends TornadoLowTier {
 
         appendPhase(new RemoveValueProxyPhase());
 
-        // appendPhase(new ExpandLogicPhase());
+        appendPhase(new ExpandLogicPhase());
 
         /*
          * Cleanup IsNull checks resulting from MID_TIER/LOW_TIER lowering and
@@ -33,7 +34,7 @@ public class OCLLowTier extends TornadoLowTier {
              * Canonicalizer may create some new ShortCircuitOrNodes so clean
              * them up.
              */
-            //appendPhase(new ExpandLogicPhase());
+            appendPhase(new ExpandLogicPhase());
         }
 
         appendPhase(new UseTrappingNullChecksPhase());
@@ -41,6 +42,7 @@ public class OCLLowTier extends TornadoLowTier {
         appendPhase(new DeadCodeEliminationPhase(Required));
 
         appendPhase(new TornadoLoopCanonicalization());
+        appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.FINAL_SCHEDULE));
 
     }
 }

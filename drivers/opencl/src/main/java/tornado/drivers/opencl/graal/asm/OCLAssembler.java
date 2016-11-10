@@ -991,7 +991,7 @@ public class OCLAssembler extends Assembler {
     }
 
     public void value(OCLCompilationResultBuilder crb, Value value) {
-        System.out.printf("value: %s (%s)\n", value, value.getClass().getName());
+//        System.out.printf("value: %s (%s)\n", value, value.getClass().getName());
 
 //        if (value instanceof MemoryAccess) {
 //            MemoryAccess access = (MemoryAccess) value;
@@ -1004,8 +1004,6 @@ public class OCLAssembler extends Assembler {
 //
 //
 //        else {
-        String str = toString(value);
-        System.out.printf("str: %s\n", str);
         emit(toString(value));
 //    }
     }

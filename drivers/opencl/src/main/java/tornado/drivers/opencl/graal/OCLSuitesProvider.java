@@ -6,6 +6,9 @@ import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins;
 import com.oracle.graal.phases.PhaseSuite;
+import com.oracle.graal.phases.common.AddressLoweringPhase;
+import com.oracle.graal.phases.common.AddressLoweringPhase.AddressLowering;
+import com.oracle.graal.phases.common.ExpandLogicPhase;
 import com.oracle.graal.phases.tiers.HighTierContext;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
@@ -20,9 +23,10 @@ public class OCLSuitesProvider {
     private TornadoSuites suites;
     private TornadoLIRSuites lirSuites;
 
-    public OCLSuitesProvider(Plugins plugins, MetaAccessProvider metaAccessProvider) {
+    public OCLSuitesProvider(Plugins plugins, MetaAccessProvider metaAccessProvider, OCLCompilerConfiguration compilerConfig, AddressLowering addressLowering) {
         graphBuilderSuite = createGraphBuilderSuite(plugins);
-        suites = new TornadoSuites(new OCLCompilerConfiguration(), new TornadoCanonicalizer());
+        suites = new TornadoSuites(compilerConfig, new TornadoCanonicalizer());
+        suites.getLowTier().findPhase(ExpandLogicPhase.class).add(new AddressLoweringPhase(addressLowering));
         lirSuites = createLIRSuites();
     }
 
