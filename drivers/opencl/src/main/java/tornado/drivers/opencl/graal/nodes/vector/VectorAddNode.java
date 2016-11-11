@@ -1,5 +1,6 @@
 package tornado.drivers.opencl.graal.nodes.vector;
 
+import com.oracle.graal.compiler.common.LIRKind;
 import com.oracle.graal.compiler.common.type.Stamp;
 import com.oracle.graal.graph.Node;
 import com.oracle.graal.graph.NodeClass;
@@ -36,14 +37,13 @@ public class VectorAddNode extends BinaryNode implements LIRLowerable, VectorOp 
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-
-        final Variable result = gen.getLIRGeneratorTool().newVariable(stamp.getLIRKind(null));
+        LIRKind lirKind = gen.getLIRGeneratorTool().getLIRKind(stamp);
+        final Variable result = gen.getLIRGeneratorTool().newVariable(lirKind);
 
         final Value input1 = gen.operand(x);
         final Value input2 = gen.operand(y);
 
         trace("emitVectorAdd: %s + %s", input1, input2);
-        OCLStamp stamp = (OCLStamp) stamp();
         gen.getLIRGeneratorTool().append(new AssignStmt(result, new OCLBinary.Expr(OCLBinaryOp.ADD, gen.getLIRGeneratorTool().getLIRKind(stamp), input1, input2)));
         gen.setResult(this, result);
     }
