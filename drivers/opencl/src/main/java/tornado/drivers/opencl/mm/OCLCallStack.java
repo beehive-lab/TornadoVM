@@ -3,11 +3,11 @@ package tornado.drivers.opencl.mm;
 import tornado.common.CallStack;
 import tornado.common.DeviceObjectState;
 import tornado.common.RuntimeUtilities;
-import static tornado.common.Tornado.DEBUG;
-import static tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
-import static tornado.common.Tornado.debug;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import tornado.drivers.opencl.OCLDeviceContext;
+
+import static tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static tornado.common.Tornado.*;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
@@ -56,7 +56,6 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
         return enqueueWrite(null);
     }
 
-    
     @Override
     public int enqueueWrite(int[] events) {
         onDevice = true;
@@ -101,7 +100,7 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
         return String
                 .format("Call Stack: num args = %d, device = %s, size = %s @ 0x%x (0x%x)",
                         numArgs, deviceContext.getDevice().getName(),
-                        RuntimeUtilities.humanReadableByteCount(bytes, true),
+                        humanReadableByteCount(bytes, true),
                         toAbsoluteAddress(), toRelativeAddress());
     }
 
