@@ -6,10 +6,13 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import tornado.common.RuntimeUtilities;
 import tornado.common.TornadoLogger;
-import static tornado.drivers.opencl.OpenCL.CL_TRUE;
 import tornado.drivers.opencl.enums.OCLDeviceInfo;
 import tornado.drivers.opencl.enums.OCLDeviceType;
 import tornado.drivers.opencl.enums.OCLLocalMemType;
+
+import static tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static tornado.common.RuntimeUtilities.humanReadableFreq;
+import static tornado.drivers.opencl.OpenCL.CL_TRUE;
 
 public class OCLDevice extends TornadoLogger {
 
@@ -62,7 +65,7 @@ public class OCLDevice extends TornadoLogger {
     }
 
     public OCLDeviceType getDeviceType() {
-        if(deviceType != OCLDeviceType.Unknown){
+        if (deviceType != OCLDeviceType.Unknown) {
             return deviceType;
         }
         Arrays.fill(buffer.array(), (byte) 0);
@@ -72,7 +75,7 @@ public class OCLDevice extends TornadoLogger {
 
         long type = buffer.getLong();
         deviceType = OCLDeviceType.toDeviceType(type);
-        
+
         return deviceType;
     }
 
@@ -402,11 +405,11 @@ public class OCLDevice extends TornadoLogger {
         sb.append(String.format("id=0x%x, name=%s, type=%s, available=%s\n",
                 id, getName(), getDeviceType().toString(), isAvailable()));
         sb.append(String.format("freq=%s, max compute units=%d\n",
-                RuntimeUtilities.humanReadableFreq(getMaxClockFrequency()),
+                humanReadableFreq(getMaxClockFrequency()),
                 getMaxComputeUnits()));
         sb.append(String.format("global mem. size=%s, local mem. size=%s\n",
                 RuntimeUtilities.humanReadableByteCount(getGlobalMemorySize(),
-                        false), RuntimeUtilities.humanReadableByteCount(
+                        false), humanReadableByteCount(
                         getLocalMemorySize(), false)));
         sb.append(String.format("extensions:\n"));
         for (String extension : getExtensions().split(" ")) {
@@ -418,14 +421,15 @@ public class OCLDevice extends TornadoLogger {
         sb.append(String.format("driver version   : %s\n", getDriverVersion()));
         sb.append(String.format("OpenCL C version : %s\n", getOpenCLCVersion()));
         sb.append(String.format("Endianess        : %s\n", isLittleEndian() ? "little" : "big"));
+        sb.append(String.format("address size     : %d\n", getDeviceAddressBits()));
         return sb.toString();
     }
 
     public String getVersion() {
-        if(version != null){
+        if (version != null) {
             return version;
         }
-        
+
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
 
