@@ -14,8 +14,8 @@ import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDevice;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.OCLDriver;
-import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
+import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import tornado.drivers.opencl.mm.*;
@@ -26,19 +26,19 @@ import static tornado.common.Tornado.FORCE_ALL_TO_GPU;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLDeviceMapping implements DeviceMapping {
 
     private final OCLDevice device;
     private final int deviceIndex;
     private final int platformIndex;
+    private static OCLDriver driver = null;
 
     private static OCLDriver findDriver() {
-        OCLDriver driver = getTornadoRuntime().getDriver(OCLDriver.class);
-        guarantee(driver != null, "unable to find OpenCL driver");
+        if (driver == null) {
+            driver = getTornadoRuntime().getDriver(OCLDriver.class);
+            guarantee(driver != null, "unable to find OpenCL driver");
+        }
         return driver;
 //        for (int i = 0; i < getTornadoRuntime().getNumDrivers(); i++) {
 //            if (getTornadoRuntime().getDriver(i) instanceof OCLDriver) {
@@ -53,8 +53,7 @@ public class OCLDeviceMapping implements DeviceMapping {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
 
-        final OCLDriver driver = findDriver();
-        device = driver.getPlatformContext(platformIndex).devices()
+        device = findDriver().getPlatformContext(platformIndex).devices()
                 .get(deviceIndex);
 
     }
@@ -174,8 +173,8 @@ public class OCLDeviceMapping implements DeviceMapping {
         return null;
     }
 
-    private static String getFile(String name) {
-        return String.format("%s/%s.cl", OCLBackend.OPENCL_PATH.trim(), name.trim());
+    private String getFile(String name) {
+        return String.format("%s/%s-%s.cl", OCLBackend.OPENCL_PATH.trim(), name.trim(), getDeviceName());
     }
 
     private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg,
