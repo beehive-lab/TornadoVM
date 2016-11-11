@@ -21,8 +21,6 @@ import tornado.drivers.opencl.graal.nodes.vector.VectorUtil;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.STACK_BASE_OFFSET;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLGenTool {
 
@@ -69,7 +67,7 @@ public class OCLGenTool {
     private OCLUnaryOp getParameterLoadOp(OCLKind type) {
 
         if (type.isVector()) {
-            return OCLUnaryTemplate.LOAD_PARAM_OBJECT_ABS;
+            return OCLUnaryTemplate.LOAD_PARAM_ULONG;
         }
 
         switch (type) {
@@ -80,13 +78,14 @@ public class OCLGenTool {
                 return OCLUnaryTemplate.LOAD_PARAM_FLOAT;
             case INT:
                 return OCLUnaryTemplate.LOAD_PARAM_INT;
+            case UINT:
+                return OCLUnaryTemplate.LOAD_PARAM_UINT;
             case LONG:
                 return OCLUnaryTemplate.LOAD_PARAM_LONG;
             case ULONG:
-//				return (Tornado.OPENCL_USE_RELATIVE_ADDRESSES) ? OCLUnaryTemplate.LOAD_PARAM_OBJECT_REL : OCLUnaryTemplate.LOAD_PARAM_OBJECT_ABS;
-                return OCLUnaryTemplate.LOAD_PARAM_OBJECT_ABS;
+                return OCLUnaryTemplate.LOAD_PARAM_ULONG;
             default:
-                unimplemented();
+                unimplemented("parameter load: type=%s", type);
                 break;
         }
         return null;

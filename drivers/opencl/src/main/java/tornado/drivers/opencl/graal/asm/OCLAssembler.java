@@ -19,10 +19,10 @@ import tornado.drivers.opencl.graal.lir.OCLLIROp;
 import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 
 import static com.oracle.graal.compiler.common.util.Util.guarantee;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
 import static tornado.drivers.opencl.graal.lir.OCLKind.*;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLAssembler extends Assembler {
 
@@ -244,7 +244,8 @@ public class OCLAssembler extends Assembler {
         public static final OCLUnaryTemplate LOAD_PARAM_LONG = new OCLUnaryTemplate("param", "(long) slots[%s]");
         public static final OCLUnaryTemplate LOAD_PARAM_FLOAT = new OCLUnaryTemplate("param", "(float) slots[%s]");
         public static final OCLUnaryTemplate LOAD_PARAM_DOUBLE = new OCLUnaryTemplate("param", "(double) slots[%s]");
-        public static final OCLUnaryTemplate LOAD_PARAM_OBJECT_ABS = new OCLUnaryTemplate("param", "(ulong) slots[%s]");
+        public static final OCLUnaryTemplate LOAD_PARAM_ULONG = new OCLUnaryTemplate("param", "(ulong) slots[%s]");
+        public static final OCLUnaryTemplate LOAD_PARAM_UINT = new OCLUnaryTemplate("param", "(uint) slots[%s]");
 //        public static final OCLUnaryTemplate LOAD_PARAM_OBJECT_REL = new OCLUnaryTemplate("param", "(ulong) &"+OCLAssemblerConstants.HEAP_REF_NAME +" [slots[%s]]");
         public static final OCLUnaryTemplate SLOT_ADDRESS = new OCLUnaryTemplate("param", "(ulong) &slots[%s]");
 
