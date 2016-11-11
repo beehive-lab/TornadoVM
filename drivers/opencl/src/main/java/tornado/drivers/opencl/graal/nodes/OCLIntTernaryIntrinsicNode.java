@@ -22,7 +22,6 @@ import tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 @NodeInfo(nameTemplate = "{p#operation}")
 public class OCLIntTernaryIntrinsicNode extends TernaryNode implements ArithmeticLIRLowerable {

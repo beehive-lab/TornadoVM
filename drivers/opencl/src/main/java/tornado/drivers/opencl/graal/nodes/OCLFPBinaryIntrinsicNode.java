@@ -20,7 +20,6 @@ import tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 @NodeInfo(nameTemplate = "{p#operation}")
 public class OCLFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLIRLowerable {
@@ -45,7 +44,7 @@ public class OCLFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
 
     @Override
     public Stamp foldStamp(Stamp stampX, Stamp stampY) {
-        return stampX.join(stampY);
+        return stamp();
     }
 
     @Override

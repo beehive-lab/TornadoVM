@@ -22,7 +22,6 @@ import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import tornado.graal.nodes.Floatable;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLIntrinsicNode {
 
@@ -85,8 +84,8 @@ public class OCLIntrinsicNode {
         }
 
         @Override
-        public Stamp foldStamp(Stamp stamp, Stamp stamp1) {
-            return stamp;
+        public Stamp foldStamp(Stamp stampX, Stamp stampY) {
+            return stamp();
         }
 
         @Override
