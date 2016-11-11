@@ -20,9 +20,8 @@ import tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
-@NodeInfo(nameTemplate = "{p#operation}")
+@NodeInfo(nameTemplate = "{p#operation/s}")
 public class OCLIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRLowerable {
 
     protected OCLIntUnaryIntrinsicNode(ValueNode x, Operation op, JavaKind kind) {

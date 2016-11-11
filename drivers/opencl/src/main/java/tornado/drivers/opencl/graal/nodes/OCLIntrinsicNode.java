@@ -37,7 +37,7 @@ public class OCLIntrinsicNode {
         CROSS, DISTANCE, DOT, LENGTH, NORMALISE, FAST_DISTANCE, FAST_LENGTH, FAST_NORMALISE
     }
 
-    @NodeInfo(nameTemplate = "{p#operation}")
+    @NodeInfo(nameTemplate = "{p#operation/s}")
     public static final class FixedBinaryGeometricOp extends FixedNode implements Floatable {
 
         public static final NodeClass<FixedBinaryGeometricOp> TYPE = NodeClass
@@ -61,7 +61,7 @@ public class OCLIntrinsicNode {
         }
     }
 
-    @NodeInfo(nameTemplate = "{p#operation}")
+    @NodeInfo(nameTemplate = "{p#operation/s}")
     public static class BinaryGeometricOp extends BinaryNode implements ArithmeticLIRLowerable {
 
         public static final NodeClass<BinaryGeometricOp> TYPE = NodeClass
