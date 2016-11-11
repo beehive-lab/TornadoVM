@@ -1,61 +1,61 @@
 <?xml version="1.0"?>
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>tornado</groupId>
-    <artifactId>tornado</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-  </parent>
-  <artifactId>tornado-runtime</artifactId>
-  <name>tornado-runtime</name>
-  <url>http://maven.apache.org</url>
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
-  	<build>
-		<plugins>
-		</plugins>	
-	</build>
-  <dependencies>
-    <dependency>
-    	<groupId>tornado</groupId>
-    	<artifactId>tornado-common</artifactId>
-    	<version>0.0.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-    	<groupId>tornado</groupId>
-    	<artifactId>tornado-api</artifactId>
-    	<version>0.0.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-    	<groupId>tornado</groupId>
-    	<artifactId>tornado-compiler</artifactId>
-    	<version>0.0.1-SNAPSHOT</version>
-    </dependency>
-    
-   <dependency>
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>tornado</groupId>
+        <artifactId>tornado</artifactId>
+        <version>0.0.2-SNAPSHOT</version>
+    </parent>
+    <artifactId>tornado-runtime</artifactId>
+    <name>tornado-runtime</name>
+    <url>http://maven.apache.org</url>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    <build>
+        <plugins>
+        </plugins>
+    </build>
+    <dependencies>
+        <dependency>
+            <groupId>tornado</groupId>
+            <artifactId>tornado-common</artifactId>
+            <version>0.0.2-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>tornado</groupId>
+            <artifactId>tornado-api</artifactId>
+            <version>0.0.2-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>tornado</groupId>
+            <artifactId>tornado-compiler</artifactId>
+            <version>0.0.2-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
             <groupId>graal</groupId>
             <artifactId>graal</artifactId>
             <scope>system</scope>
-            <systemPath>/Users/jamesclarkson/git/graal/graal/graal-core/mxbuild/dists/graal.jar</systemPath>
-            <version>0.0.1</version>
+            <systemPath>${GRAAL_ROOT}/graal.jar</systemPath>
+            <version>0.17</version>
         </dependency>
 
         <dependency>
             <groupId>jvmci</groupId>
             <artifactId>api</artifactId>
             <scope>system</scope>
-            <systemPath>/Users/jamesclarkson/hg/graal-jvmci-8/jdk1.8.0_73/product/jre/lib/jvmci/jvmci-api.jar</systemPath>
-            <version>0.0.1</version>
+            <systemPath>${JAVA_HOME}/jre/lib/jvmci/jvmci-api.jar</systemPath>
+            <version>1.8.0_73</version>
         </dependency>
 
         <dependency>
             <groupId>jvmci</groupId>
             <artifactId>hotspot</artifactId>
             <scope>system</scope>
-            <systemPath>/Users/jamesclarkson/hg/graal-jvmci-8/jdk1.8.0_73/product/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
-            <version>0.0.1</version>
+            <systemPath>${JAVA_HOME}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
+            <version>1.8.0_73</version>
         </dependency>
-  </dependencies>
+    </dependencies>
 </project>

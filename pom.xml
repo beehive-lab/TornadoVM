@@ -4,7 +4,7 @@
 
     <groupId>tornado</groupId>
     <artifactId>tornado</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>tornado</name>
@@ -45,6 +45,10 @@
                                 <requireEnvironmentVariable>
                                     <variableName>JAVA_HOME</variableName>
                                     <message>JAVA_HOME needs to be set!</message>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
+                                    <variableName>GRAAL_ROOT</variableName>
+                                    <message>GRAAL_ROOT needs to be set!</message>
                                 </requireEnvironmentVariable>
                             </rules>
                             <fail>true</fail>
