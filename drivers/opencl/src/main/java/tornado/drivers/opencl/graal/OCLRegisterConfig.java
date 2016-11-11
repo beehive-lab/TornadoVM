@@ -1,87 +1,71 @@
 package tornado.drivers.opencl.graal;
 
-import tornado.common.exceptions.TornadoInternalError;
+import jdk.vm.ci.code.CallingConvention.Type;
+import jdk.vm.ci.code.*;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.PlatformKind;
 
-import com.oracle.graal.api.code.CalleeSaveLayout;
-import com.oracle.graal.api.code.CallingConvention;
-import com.oracle.graal.api.code.CallingConvention.Type;
-import com.oracle.graal.api.code.Register;
-import com.oracle.graal.api.code.RegisterAttributes;
-import com.oracle.graal.api.code.RegisterConfig;
-import com.oracle.graal.api.code.TargetDescription;
-import com.oracle.graal.api.meta.JavaType;
-import com.oracle.graal.api.meta.Kind;
-import com.oracle.graal.api.meta.PlatformKind;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLRegisterConfig implements RegisterConfig {
 
-	@Override
-	public Register getReturnRegister(Kind kind) {
-		TornadoInternalError.unimplemented();
-		return null;
-	}
+    private final static RegisterArray EMPTY = new RegisterArray(new Register[0]);
 
-	@Override
-	public Register getFrameRegister() {
-		TornadoInternalError.unimplemented();
-		return null;
-	}
+    @Override
+    public RegisterArray getCalleeSaveRegisters() {
+        return EMPTY;
+    }
 
-	@Override
-	public CallingConvention getCallingConvention(Type type, JavaType returnType,
-			JavaType[] parameterTypes, TargetDescription target, boolean stackOnly) {
-		TornadoInternalError.unimplemented();
-		return null;
-	}
+    @Override
+    public CallingConvention getCallingConvention(Type type, JavaType jt, JavaType[] jts, ValueKindFactory<?> vkf) {
+        unimplemented();
+        return null;
+    }
 
-	@Override
-	public Register[] getCallingConventionRegisters(Type type, Kind kind) {
-		TornadoInternalError.unimplemented();
-		return null;
-	}
+    @Override
+    public Register getReturnRegister(JavaKind kind) {
+        unimplemented();
+        return null;
+    }
 
-	@Override
-	public Register[] getAllocatableRegisters() {
-		TornadoInternalError.unimplemented();
-		return null;
-	}
+    @Override
+    public Register getFrameRegister() {
+        unimplemented();
+        return null;
+    }
 
-	@Override
-	public Register[] filterAllocatableRegisters(PlatformKind kind, Register[] registers) {
-		TornadoInternalError.unimplemented();
-		return null;
-	}
+    @Override
+    public RegisterArray getCallingConventionRegisters(Type type, JavaKind kind) {
+        return EMPTY;
+    }
 
-	@Override
-	public Register[] getCallerSaveRegisters() {
-		TornadoInternalError.unimplemented();
-		return null;
-	}
+    @Override
+    public RegisterArray getAllocatableRegisters() {
+        return EMPTY;
+    }
 
-	@Override
-	public CalleeSaveLayout getCalleeSaveLayout() {
-		TornadoInternalError.unimplemented();
-		return null;
-	}
+    @Override
+    public RegisterArray filterAllocatableRegisters(PlatformKind kind, RegisterArray registers) {
+        unimplemented();
+        return null;
+    }
 
-	@Override
-	public RegisterAttributes[] getAttributesMap() {
-		TornadoInternalError.unimplemented();
-		return null;
-	}
+    @Override
+    public RegisterArray getCallerSaveRegisters() {
+        return EMPTY;
+    }
 
-	@Override
-	public Register getRegisterForRole(int id) {
-		TornadoInternalError.unimplemented();
-		return null;
-	}
+    @Override
+    public RegisterAttributes[] getAttributesMap() {
+        unimplemented();
+        return null;
+    }
 
-	@Override
-	public boolean areAllAllocatableRegistersCallerSaved() {
-		TornadoInternalError.unimplemented();
-		return false;
-	}
-
-	
+    @Override
+    public boolean areAllAllocatableRegistersCallerSaved() {
+        unimplemented();
+        return false;
+    }
 
 }

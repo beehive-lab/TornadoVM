@@ -1,20 +1,18 @@
 package tornado.drivers.opencl.graal;
 
-import com.oracle.graal.api.code.Architecture;
-import static com.oracle.graal.api.code.MemoryBarriers.*;
-import com.oracle.graal.api.code.Register;
-import com.oracle.graal.api.code.Register.RegisterCategory;
-import com.oracle.graal.api.meta.Kind;
-import com.oracle.graal.api.meta.PlatformKind;
 import java.nio.ByteOrder;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.CONSTANT_REGION_NAME;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.HEAP_REF_NAME;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.LOCAL_REGION_NAME;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.PRIVATE_REGION_NAME;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.STACK_REF_NAME;
+import jdk.vm.ci.code.Architecture;
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.Register.RegisterCategory;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.PlatformKind;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.meta.OCLMemorySpace;
+
+import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
+import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
 
 public class OCLArchitecture extends Architecture {
 
@@ -36,11 +34,11 @@ public class OCLArchitecture extends Architecture {
         public Register asRegister() {
             return new Register(number, 0, name, OCL_ABI);
         }
-        
-        public String getDeclaration(){
-            return String.format("%s %s",lirKind.toString(),name);
+
+        public String getDeclaration() {
+            return String.format("%s %s", lirKind.toString(), name);
         }
-        
+
     }
 
     public static class OCLMemoryBase extends OCLRegister {
@@ -51,12 +49,12 @@ public class OCLArchitecture extends Architecture {
             super(number, name, OCLKind.UCHAR);
             this.memorySpace = memorySpace;
         }
-        
+
         @Override
-         public String getDeclaration(){
-            return String.format("%s %s *%s",memorySpace.name(),lirKind.toString(),name);
+        public String getDeclaration() {
+            return String.format("%s %s *%s", memorySpace.name(), lirKind.toString(), name);
         }
-         
+
     }
 
     public static final OCLMemoryBase hp = new OCLMemoryBase(0, HEAP_REF_NAME, OCLMemorySpace.GLOBAL);
@@ -67,10 +65,52 @@ public class OCLArchitecture extends Architecture {
 
     public static OCLRegister[] abiRegisters;
 
-    public OCLArchitecture(final int wordSize, final ByteOrder byteOrder) {
-        super("Tornado OpenCL", wordSize, byteOrder, false, null, LOAD_STORE | STORE_STORE, 1, 0, wordSize);
-        sp = new OCLRegister(1, STACK_REF_NAME, getWordKind());
-        abiRegisters = new OCLRegister[] {hp, sp, cp, lp, pp};
+    public OCLArchitecture(final OCLKind wordKind, final ByteOrder byteOrder) {
+        super("Tornado OpenCL", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, 0, 0);
+        sp = new OCLRegister(1, STACK_REF_NAME, wordKind);
+        abiRegisters = new OCLRegister[]{hp, sp, cp, lp, pp};
+    }
+
+    @Override
+    public PlatformKind getPlatformKind(JavaKind javaKind) {
+        OCLKind oclKind = OCLKind.ILLEGAL;
+        switch (javaKind) {
+            case Boolean:
+                oclKind = OCLKind.BOOL;
+                break;
+            case Byte:
+                oclKind = OCLKind.CHAR;
+                break;
+            case Short:
+                oclKind = (javaKind.isUnsigned()) ? OCLKind.USHORT : OCLKind.SHORT;
+                break;
+            case Char:
+                oclKind = OCLKind.USHORT;
+                break;
+            case Int:
+                oclKind = (javaKind.isUnsigned()) ? OCLKind.UINT : OCLKind.INT;
+                break;
+            case Long:
+                oclKind = (javaKind.isUnsigned()) ? OCLKind.ULONG : OCLKind.LONG;
+                break;
+            case Float:
+                oclKind = OCLKind.FLOAT;
+                break;
+            case Double:
+                oclKind = OCLKind.DOUBLE;
+                break;
+            case Object:
+                oclKind = (OCLKind) getWordKind();
+                break;
+            case Void:
+            case Illegal:
+                oclKind = OCLKind.ILLEGAL;
+                break;
+            default:
+                shouldNotReachHere("illegal java type for %s", javaKind.name());
+        }
+
+        return oclKind;
     }
 
     @Override
@@ -86,29 +126,17 @@ public class OCLArchitecture extends Architecture {
 
     @Override
     public PlatformKind getLargestStorableKind(RegisterCategory category) {
-        return Kind.Long;
+        return OCLKind.LONG;
     }
-    
-    public String getABI(){
+
+    public String getABI() {
         StringBuilder sb = new StringBuilder();
-        for(int i=0;i<abiRegisters.length;i++){
+        for (int i = 0; i < abiRegisters.length; i++) {
             sb.append(abiRegisters[i].getDeclaration());
-            if(i < abiRegisters.length - 1){
+            if (i < abiRegisters.length - 1) {
                 sb.append(", ");
             }
         }
         return sb.toString();
     }
-    
-    public final OCLKind getWordKind(){
-        if(getWordSize() == 4){
-            return OCLKind.UINT;
-        } else if(getWordSize() == 8){
-            return OCLKind.ULONG;
-        } else {
-            shouldNotReachHere();
-        }
-        return OCLKind.ILLEGAL;
-    }
-
 }

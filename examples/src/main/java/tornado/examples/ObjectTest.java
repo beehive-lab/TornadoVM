@@ -2,13 +2,15 @@ package tornado.examples;
 
 import tornado.api.Read;
 import tornado.api.Write;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskUtils;
+import tornado.drivers.opencl.OpenCL;
 import tornado.runtime.api.CompilableTask;
+import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskUtils;
 
 public class ObjectTest {
 
     public static class Foo {
+
         int value;
 
         public Foo(int v) {
@@ -35,29 +37,39 @@ public class ObjectTest {
         Foo c = new Foo(0);
 
         /*
-         * First step is to create a reference to the method invocation
-         * This involves finding the methods called and the arguments used
-         * in each call.
+         * First step is to create a reference to the method invocation This
+         * involves finding the methods called and the arguments used in each
+         * call.
          */
         final CompilableTask addInvocation = TaskUtils.createTask(
                 ObjectTest::add, a, b, c);
 
         /*
+         * Next we insert the task into a task graph and specify that we want
+         * the value of c updated on completion.
+         */
+        final TaskGraph graph = new TaskGraph()
+                .add(addInvocation)
+                .streamOut(c);
+
+        /*
          * Next we map each invocation onto a specific compute device
          */
-        addInvocation.mapTo(new OCLDeviceMapping(0, 0));
+        graph.mapAllTo(OpenCL.defaultDevice());
 
         /*
          * Calculate a (3) + b (2) = c (5)
          */
-//        addInvocation.execute();
+        graph.schedule().waitOn();
+
 
         /*
          * Check to make sure result is correct
          */
-        if (c.getValue() != 3)
+        if (c.getValue() != 3) {
             System.out.printf("Invalid result: c = %d (expected 3)\n",
                     c.getValue());
+        }
 
     }
 }

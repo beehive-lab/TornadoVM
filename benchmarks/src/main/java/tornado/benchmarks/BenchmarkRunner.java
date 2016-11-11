@@ -6,7 +6,8 @@ import java.util.Set;
 import tornado.common.DeviceMapping;
 import tornado.drivers.opencl.OCLDriver;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.TornadoRuntime;
+
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public abstract class BenchmarkRunner {
 
@@ -42,7 +43,7 @@ public abstract class BenchmarkRunner {
         findBlacklisted(blacklistedPlatforms, "tornado.blacklist.platform");
         findBlacklisted(blacklistedDevices, "tornado.blacklist.device");
 
-        final OCLDriver oclRuntime = (OCLDriver) TornadoRuntime.runtime.getDriver(0);
+        final OCLDriver oclRuntime = getTornadoRuntime().getDriver(OCLDriver.class);
         for (int platformIndex = 0; platformIndex < oclRuntime.getNumPlatforms(); platformIndex++) {
 
             if (blacklistedPlatforms.contains(platformIndex)) {

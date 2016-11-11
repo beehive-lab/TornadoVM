@@ -4,7 +4,7 @@
 
     <groupId>tornado</groupId>
     <artifactId>tornado</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>tornado</name>
@@ -23,6 +23,7 @@
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
+                    <showDeprecation>true</showDeprecation>
                 </configuration>
             </plugin>
             <plugin>
@@ -44,6 +45,10 @@
                                 <requireEnvironmentVariable>
                                     <variableName>JAVA_HOME</variableName>
                                     <message>JAVA_HOME needs to be set!</message>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
+                                    <variableName>GRAAL_ROOT</variableName>
+                                    <message>GRAAL_ROOT needs to be set!</message>
                                 </requireEnvironmentVariable>
                             </rules>
                             <fail>true</fail>
@@ -121,4 +126,15 @@
         <module>examples</module>
         <module>benchmarks</module>
     </modules>
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <configuration>
+                    <configLocation>config/sun_checks.xml</configLocation>
+                </configuration>
+            </plugin>
+        </plugins>
+    </reporting>
 </project>

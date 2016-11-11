@@ -4,8 +4,9 @@ import java.util.Arrays;
 import tornado.common.DeviceObjectState;
 import tornado.drivers.opencl.OpenCL;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.TornadoRuntime;
 import tornado.runtime.api.GlobalObjectState;
+
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class DataMovementTest {
 
@@ -26,21 +27,19 @@ public class DataMovementTest {
 
         OCLDeviceMapping device = OpenCL.defaultDevice();
 
-        GlobalObjectState state = TornadoRuntime.runtime.resolveObject(array);
+        GlobalObjectState state = getTornadoRuntime().resolveObject(array);
         DeviceObjectState deviceState = state.getDeviceState(device);
 
         int writeEvent = device.ensurePresent(array, deviceState);
-        if(writeEvent != -1){
+        if (writeEvent != -1) {
             device.resolveEvent(writeEvent).waitOn();
         }
-        
+
         Arrays.fill(array, -1);
         printArray(array);
 
         int readEvent = device.streamOut(array, deviceState, null);
         device.resolveEvent(readEvent).waitOn();
-        
-        
 
         printArray(array);
 

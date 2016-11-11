@@ -5,16 +5,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import tornado.common.enums.Access;
+
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import tornado.drivers.opencl.graal.OpenCLInstalledCode;
+
+import tornado.drivers.opencl.graal.OCLInstalledCode;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.meta.domain.DomainTree;
 import tornado.runtime.api.PrebuiltTask;
 
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+
 public class OCLPrebuiltTask extends PrebuiltTask {
 
-    private OpenCLInstalledCode code;
+    private OCLInstalledCode code;
     private final OCLBackend backend;
 
     protected OCLPrebuiltTask(String entryPoint, String filename, Object[] args,
@@ -44,7 +50,7 @@ public class OCLPrebuiltTask extends PrebuiltTask {
 
     }
 
-    public OpenCLInstalledCode getCode() {
+    public OCLInstalledCode getCode() {
         return code;
     }
 

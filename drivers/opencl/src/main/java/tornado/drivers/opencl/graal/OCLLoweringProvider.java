@@ -1,66 +1,50 @@
 package tornado.drivers.opencl.graal;
 
-import com.oracle.graal.api.code.CallingConvention;
-import com.oracle.graal.api.code.ForeignCallsProvider;
-import com.oracle.graal.api.code.TargetDescription;
-import com.oracle.graal.api.meta.JavaType;
-import com.oracle.graal.api.meta.Kind;
-import com.oracle.graal.api.meta.LocationIdentity;
-import com.oracle.graal.api.meta.MetaAccessProvider;
-import com.oracle.graal.api.meta.PrimitiveConstant;
-import com.oracle.graal.api.meta.ResolvedJavaField;
+import com.oracle.graal.compiler.common.LocationIdentity;
+import com.oracle.graal.compiler.common.spi.ForeignCallsProvider;
 import com.oracle.graal.compiler.common.type.ObjectStamp;
 import com.oracle.graal.graph.Node;
 import com.oracle.graal.graph.NodeInputList;
-import com.oracle.graal.hotspot.HotSpotGraalRuntimeProvider;
-import com.oracle.graal.hotspot.HotSpotVMConfig;
-import com.oracle.graal.hotspot.meta.HotSpotProviders;
-import com.oracle.graal.hotspot.meta.HotSpotResolvedJavaField;
-import com.oracle.graal.nodes.AbstractDeoptimizeNode;
-import com.oracle.graal.nodes.ConstantNode;
-import com.oracle.graal.nodes.FixedNode;
-import com.oracle.graal.nodes.Invoke;
-import com.oracle.graal.nodes.LoweredCallTargetNode;
-import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.nodes.UnwindNode;
-import com.oracle.graal.nodes.ValueNode;
+import com.oracle.graal.nodes.*;
 import com.oracle.graal.nodes.calc.FloatConvertNode;
 import com.oracle.graal.nodes.calc.RemNode;
 import com.oracle.graal.nodes.extended.GuardingNode;
-import com.oracle.graal.nodes.extended.IndexedLocationNode;
-import com.oracle.graal.nodes.extended.LocationNode;
 import com.oracle.graal.nodes.java.MethodCallTargetNode;
 import com.oracle.graal.nodes.java.NewArrayNode;
-import com.oracle.graal.nodes.memory.FloatingReadNode;
 import com.oracle.graal.nodes.memory.HeapAccess.BarrierType;
+import com.oracle.graal.nodes.memory.ReadNode;
 import com.oracle.graal.nodes.memory.WriteNode;
+import com.oracle.graal.nodes.memory.address.AddressNode;
 import com.oracle.graal.nodes.spi.LoweringTool;
 import com.oracle.graal.nodes.type.StampTool;
 import com.oracle.graal.replacements.DefaultJavaLoweringProvider;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLBinaryIntrinsic;
+import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
+import jdk.vm.ci.meta.*;
+import tornado.drivers.opencl.OCLTargetDescription;
+import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.nodes.AtomicAddNode;
-import tornado.drivers.opencl.graal.nodes.AtomicWriteNode;
 import tornado.drivers.opencl.graal.nodes.CastNode;
-import tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
 import tornado.graal.nodes.TornadoDirectCallTargetNode;
+import tornado.runtime.TornadoVMConfig;
+
+import static com.oracle.graal.hotspot.replacements.NewObjectSnippets.INIT_LOCATION;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
-    protected final HotSpotGraalRuntimeProvider runtime;
-    protected final ForeignCallsProvider foreignCalls;
+    private final ConstantReflectionProvider constantReflection;
+    private final TornadoVMConfig vmConfig;
 
-    public OCLLoweringProvider(HotSpotGraalRuntimeProvider runtime, MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, TargetDescription target) {
-        super(metaAccess, target);
-        this.runtime = runtime;
-        this.foreignCalls = foreignCalls;
-    }
-
-    public void initialize(HotSpotProviders providers, HotSpotVMConfig config) {
-        super.initialize(providers, providers.getSnippetReflection());
+    public OCLLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, ConstantReflectionProvider constantReflection, TornadoVMConfig vmConfig, OCLTargetDescription target) {
+        super(metaAccess, foreignCalls, target);
+        this.vmConfig = vmConfig;
+        this.constantReflection = constantReflection;
+//        super.initialize(providers, providers.getSnippetReflection());
     }
 
     @Override
@@ -74,7 +58,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else if (n instanceof VectorStoreNode) {
             lowerVectorStoreNode((VectorStoreNode) n, tool);
         } else if (n instanceof AbstractDeoptimizeNode || n instanceof UnwindNode || n instanceof RemNode) {
-            /* No lowering, we generate LIR directly for these nodes. */
+            /*
+             * No lowering, we generate LIR directly for these nodes.
+             */
         } else if (n instanceof FloatConvertNode) {
             lowerFloatConvertNode((FloatConvertNode) n, tool);
         } else if (n instanceof NewArrayNode) {
@@ -87,13 +73,13 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private void lowerAtomicAddNode(AtomicAddNode atomicAdd, LoweringTool tool) {
-
-        IndexedLocationNode location = createArrayLocation(atomicAdd.graph(), atomicAdd.elementKind(), atomicAdd.index(), false);
-        final AtomicWriteNode atomicWrite = new AtomicWriteNode(OCLBinaryIntrinsic.ATOMIC_ADD, atomicAdd.array(), atomicAdd.value(), location);
-
-        atomicAdd.graph().add(atomicWrite);
-
-        atomicAdd.graph().replaceFixedWithFixed(atomicAdd, atomicWrite);
+        shouldNotReachHere("need to use builtin nodes");
+//        IndexedLocationNode location = createArrayLocation(atomicAdd.graph(), atomicAdd.elementKind(), atomicAdd.index(), false);
+//        final AtomicWriteNode atomicWrite = new AtomicWriteNode(OCLBinaryIntrinsic.ATOMIC_ADD, atomicAdd.array(), atomicAdd.value(), location);
+//
+//        atomicAdd.graph().add(atomicWrite);
+//
+//        atomicAdd.graph().replaceFixedWithFixed(atomicAdd, atomicWrite);
 
     }
 
@@ -134,7 +120,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 //            }
 
             if (loweredCallTarget == null) {
-                loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters, invoke.asNode().stamp(), signature, callTarget.targetMethod(), CallingConvention.Type.JavaCall,
+                loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters.toArray(new ValueNode[parameters.size()]), callTarget.returnStamp(), signature, callTarget.targetMethod(), HotSpotCallingConventionType.JavaCall,
                         callTarget.invokeKind()));
             }
 
@@ -145,7 +131,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     private void lowerFloatConvertNode(FloatConvertNode floatConvert, LoweringTool tool) {
         final StructuredGraph graph = floatConvert.graph();
-        final CastNode asFloat = graph.addWithoutUnique(new CastNode(floatConvert.getKind(), floatConvert.getValue()));
+
+        // TODO should probably create a specific floatconvert node?
+        final CastNode asFloat = graph.addWithoutUnique(new CastNode((OCLKind) target.arch.getPlatformKind(floatConvert.stamp().getStackKind()), floatConvert.getValue()));
 
         floatConvert.replaceAtUsages(asFloat);
 
@@ -153,10 +141,11 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     private void lowerVectorStoreNode(VectorStoreNode vectorStore, LoweringTool tool) {
         StructuredGraph graph = vectorStore.graph();
-        Kind elementKind = vectorStore.elementKind();
-        LocationNode location = createArrayLocation(graph, elementKind, vectorStore.index(), false);
-        
-        WriteNode vectorWrite = graph.addWithoutUnique(new WriteNode(vectorStore.array(),vectorStore.value(),location, BarrierType.PRECISE));
+        JavaKind elementKind = vectorStore.elementKind();
+//        LocationNode location = createArrayLocation(graph, elementKind, vectorStore.index(), false);
+        AddressNode address = createArrayAddress(graph, vectorStore.array(), elementKind, vectorStore.index());
+
+        WriteNode vectorWrite = graph.addWithoutUnique(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), vectorStore.value(), BarrierType.PRECISE));
         //VectorWriteNode vectorWrite = graph.addOrUnique(new VectorWriteNode(vectorStore.array(), vectorStore.value(), location, BarrierType.PRECISE));
 
         graph.replaceFixed(vectorStore, vectorWrite);
@@ -165,10 +154,11 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     private void lowerVectorLoadNode(VectorLoadNode vectorLoad, LoweringTool tool) {
         StructuredGraph graph = vectorLoad.graph();
-        Kind elementKind = vectorLoad.elementKind();
-        LocationNode location = createArrayLocation(graph, elementKind, vectorLoad.index(), false);
+        JavaKind elementKind = vectorLoad.elementKind();
+        AddressNode address = createArrayAddress(graph, vectorLoad.array(), elementKind, vectorLoad.index());
 
-        FloatingReadNode vectorRead = graph.addWithoutUnique(new FloatingReadNode(vectorLoad.array(),location,null,vectorLoad.stamp()));
+//        LocationNode location = createArrayLocation(graph, elementKind, vectorLoad.index(), false);
+        ReadNode vectorRead = graph.addWithoutUnique(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), vectorLoad.stamp(), BarrierType.NONE));
 //        VectorReadNode vectorRead = graph.addOrUnique(new VectorReadNode(vectorLoad.vectorKind(), vectorLoad.array(), location, BarrierType.NONE));
         //vectorLoad.replaceAtUsages(vectorRead);
         graph.replaceFixed(vectorLoad, vectorRead);
@@ -184,13 +174,16 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                 if (lengthNode.getValue() instanceof PrimitiveConstant) {
                     final int length = ((PrimitiveConstant) lengthNode.getValue()).asInt();
 
-                    final int offset = arrayBaseOffset(newArray.getKind());
-                    final int size = offset + (newArray.elementType().getKind().getByteCount() * length);
+                    ResolvedJavaType elementType = newArray.elementType();
+                    JavaKind elementKind = elementType.getJavaKind();
+                    final int offset = arrayBaseOffset(elementKind);
+                    final int size = offset + (elementKind.getByteCount() * length);
 
                     final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
 
-                    final FixedArrayNode fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(newArray.elementType(), newLengthNode));
-                    newArray.replaceAtUsages(fixedArrayNode);
+                    unimplemented("fixed array node is missing");
+                    //final FixedArrayNode fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(newArray.elementType(), newLengthNode));
+                    //newArray.replaceAtUsages(fixedArrayNode);
                 } else {
                     shouldNotReachHere();
                 }
@@ -204,17 +197,17 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    protected int arrayBaseOffset(Kind kind) {
-        return runtime.getArrayBaseOffset(kind);
+    public int arrayBaseOffset(JavaKind kind) {
+        return getArrayBaseOffset(kind);
     }
 
     @Override
-    protected int arrayLengthOffset() {
-        return runtime.getConfig().arrayLengthOffset;
+    public int arrayLengthOffset() {
+        return vmConfig.arrayOopDescLengthOffset();
     }
 
     @Override
-    protected int fieldOffset(ResolvedJavaField f) {
+    public int fieldOffset(ResolvedJavaField f) {
         HotSpotResolvedJavaField field = (HotSpotResolvedJavaField) f;
         return field.offset();
     }
@@ -227,21 +220,21 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    protected ValueNode createReadHub(StructuredGraph arg0, ValueNode arg1, GuardingNode arg2) {
-        // TODO Auto-generated method stub
+    protected ValueNode createReadHub(StructuredGraph graph, ValueNode object, LoweringTool tool) {
+        unimplemented();
         return null;
     }
 
     @Override
-    protected LocationIdentity initLocationIdentity() {
-        // TODO Auto-generated method stub
-        return null;
+    public LocationIdentity initLocationIdentity() {
+        return INIT_LOCATION;
     }
 
     @Override
-    protected ValueNode staticFieldBase(StructuredGraph arg0, ResolvedJavaField arg1) {
-        // TODO Auto-generated method stub
-        return null;
+    public ValueNode staticFieldBase(StructuredGraph graph, ResolvedJavaField f) {
+        HotSpotResolvedJavaField field = (HotSpotResolvedJavaField) f;
+        JavaConstant base = constantReflection.asJavaClass(field.getDeclaringClass());
+        return ConstantNode.forConstant(base, metaAccess, graph);
     }
 
 }

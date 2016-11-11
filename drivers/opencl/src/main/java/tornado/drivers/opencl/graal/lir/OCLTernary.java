@@ -1,23 +1,23 @@
 package tornado.drivers.opencl.graal.lir;
 
-import com.oracle.graal.api.meta.Kind;
-import com.oracle.graal.api.meta.LIRKind;
-import com.oracle.graal.api.meta.PlatformKind;
-import com.oracle.graal.api.meta.Value;
+import com.oracle.graal.compiler.common.LIRKind;
 import com.oracle.graal.lir.LIRInstruction.Use;
 import com.oracle.graal.lir.Opcode;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLTernaryOp;
+import jdk.vm.ci.meta.Value;
+import tornado.drivers.opencl.graal.asm.OCLAssembler;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryOp;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryTemplate;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
+
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BRACKET_CLOSE;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BRACKET_OPEN;
 
 public class OCLTernary {
 
     /**
      * Abstract operation which consumes two inputs
      */
-    protected static class TernaryConsumer implements OCLEmitable {
-
-        protected final Kind kind;
-        protected final LIRKind lirKind;
+    protected static class TernaryConsumer extends OCLLIROp {
 
         @Opcode
         protected final OCLTernaryOp opcode;
@@ -29,43 +29,20 @@ public class OCLTernary {
         @Use
         protected Value z;
 
-        protected TernaryConsumer(OCLTernaryOp opcode, Kind kind, LIRKind lirKind, Value x, Value y, Value z) {
+        protected TernaryConsumer(OCLTernaryOp opcode, LIRKind lirKind, Value x, Value y, Value z) {
+            super(lirKind);
             this.opcode = opcode;
-            this.kind = kind;
-            this.lirKind = lirKind;
             this.x = x;
             this.y = y;
             this.z = z;
         }
 
-        public TernaryConsumer(OCLTernaryOp opcode, LIRKind lirKind, Value x, Value y, Value z) {
-            this(opcode, Kind.Illegal, lirKind, x, y, z);
-        }
-
-        public TernaryConsumer(OCLTernaryOp opcode, Kind kind, Value x, Value y, Value z) {
-            this(opcode, kind, LIRKind.value(kind), x, y, z);
-        }
-
         @Override
-        public Kind getKind() {
-            return kind;
-        }
-
-        @Override
-        public LIRKind getLIRKind() {
-            return lirKind;
-        }
-
-        @Override
-        public PlatformKind getPlatformKind() {
-            return lirKind.getPlatformKind();
-        }
-
-        @Override
-        public void emit(OCLCompilationResultBuilder crb) {
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             opcode.emit(crb, x, y, z);
         }
 
+        @Override
         public String toString() {
             return String.format("%s %s %s %s", opcode.toString(), x, y, z);
         }
@@ -77,9 +54,26 @@ public class OCLTernary {
         public Expr(OCLTernaryOp opcode, LIRKind lirKind, Value x, Value y, Value z) {
             super(opcode, lirKind, x, y, z);
         }
+    }
 
-        public Expr(OCLTernaryOp opcode, Kind kind, Value x, Value y, Value z) {
-            super(opcode, kind, x, y, z);
+    public static class Select extends TernaryConsumer {
+
+        protected OCLLIROp condition;
+
+        public Select(LIRKind lirKind, OCLLIROp condition, Value y, Value z) {
+            super(OCLTernaryTemplate.SELECT, lirKind, null, y, z);
+            this.condition = condition;
+        }
+
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit(BRACKET_OPEN);
+            condition.emit(crb, asm);
+            asm.emit(BRACKET_CLOSE);
+            asm.emit(" ? ");
+            asm.emitValue(crb, y);
+            asm.emit(" : ");
+            asm.emitValue(crb, z);
         }
     }
 
@@ -92,17 +86,10 @@ public class OCLTernary {
             super(opcode, lirKind, x, y, z);
         }
 
-        public Intrinsic(OCLTernaryOp opcode, Kind kind, Value x, Value y, Value z) {
-            super(opcode, kind, x, y, z);
-        }
-
         @Override
         public String toString() {
             return String.format("%s(%s, %s, %s)", opcode.toString(), x, y, z);
         }
-
     }
-    
-    
 
 }

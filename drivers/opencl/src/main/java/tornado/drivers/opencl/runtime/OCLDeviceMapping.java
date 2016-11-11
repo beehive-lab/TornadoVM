@@ -1,70 +1,59 @@
 package tornado.drivers.opencl.runtime;
 
-import com.oracle.graal.api.meta.ResolvedJavaMethod;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.api.Event;
 import tornado.api.enums.TornadoSchedulingStrategy;
-import tornado.common.CallStack;
-import tornado.common.DeviceMapping;
-import tornado.common.DeviceObjectState;
-import tornado.common.ObjectBuffer;
-import tornado.common.SchedulableTask;
-import static tornado.common.Tornado.FORCE_ALL_TO_GPU;
-import tornado.common.TornadoInstalledCode;
+import tornado.common.*;
 import tornado.common.exceptions.TornadoInternalError;
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDevice;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.OCLDriver;
+import tornado.drivers.opencl.graal.OCLInstalledCode;
 import tornado.drivers.opencl.graal.OCLProviders;
-import tornado.drivers.opencl.graal.OpenCLInstalledCode;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompiler;
-import tornado.drivers.opencl.mm.OCLByteArrayWrapper;
-import tornado.drivers.opencl.mm.OCLByteBuffer;
-import tornado.drivers.opencl.mm.OCLDoubleArrayWrapper;
-import tornado.drivers.opencl.mm.OCLFloatArrayWrapper;
-import tornado.drivers.opencl.mm.OCLIntArrayWrapper;
-import tornado.drivers.opencl.mm.OCLLongArrayWrapper;
-import tornado.drivers.opencl.mm.OCLMemoryManager;
-import tornado.drivers.opencl.mm.OCLObjectWrapper;
-import tornado.drivers.opencl.mm.OCLShortArrayWrapper;
-import tornado.runtime.TornadoRuntime;
+import tornado.drivers.opencl.mm.*;
 import tornado.runtime.api.CompilableTask;
 import tornado.runtime.api.PrebuiltTask;
+
+import static tornado.common.Tornado.FORCE_ALL_TO_GPU;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class OCLDeviceMapping implements DeviceMapping {
 
     private final OCLDevice device;
     private final int deviceIndex;
     private final int platformIndex;
+    private static OCLDriver driver = null;
 
     private static OCLDriver findDriver() {
-        for (int i = 0; i < TornadoRuntime.runtime.getNumDrivers(); i++) {
-            if (TornadoRuntime.runtime.getDriver(i) instanceof OCLDriver) {
-                return (OCLDriver) TornadoRuntime.runtime.getDriver(i);
-            }
+        if (driver == null) {
+            driver = getTornadoRuntime().getDriver(OCLDriver.class);
+            guarantee(driver != null, "unable to find OpenCL driver");
         }
-        shouldNotReachHere("unable to find OpenCL driver");
-        return null;
+        return driver;
+//        for (int i = 0; i < getTornadoRuntime().getNumDrivers(); i++) {
+//            if (getTornadoRuntime().getDriver(i) instanceof OCLDriver) {
+//                return (OCLDriver) getTornadoRuntime().getDriver(i);
+//            }
+//        }
+//        shouldNotReachHere("unable to find OpenCL driver");
+//        return null;
     }
 
     public OCLDeviceMapping(final int platformIndex, final int deviceIndex) {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
 
-        final OCLDriver driver = findDriver();
-        device = driver.getPlatformContext(platformIndex).devices()
+        device = findDriver().getPlatformContext(platformIndex).devices()
                 .get(deviceIndex);
 
     }
@@ -142,10 +131,10 @@ public class OCLDeviceMapping implements DeviceMapping {
         if (task instanceof CompilableTask) {
             final CompilableTask executable = (CompilableTask) task;
 //			final long t0 = System.nanoTime();
-            final ResolvedJavaMethod resolvedMethod = TornadoRuntime.runtime
+            final ResolvedJavaMethod resolvedMethod = getTornadoRuntime()
                     .resolveMethod(executable.getMethod());
 //			final long t1 = System.nanoTime();
-            final OpenCLInstalledCode code = OCLCompiler.compileCodeForDevice(
+            final OCLInstalledCode code = OCLCompiler.compileCodeForDevice(
                     resolvedMethod, task.getArguments(), task.meta(),
                     (OCLProviders) getBackend().getProviders(), getBackend());
 //			final long t2 = System.nanoTime();
@@ -184,8 +173,8 @@ public class OCLDeviceMapping implements DeviceMapping {
         return null;
     }
 
-    private static String getFile(String name) {
-        return String.format("%s/%s.cl", OCLBackend.OPENCL_PATH.trim(), name.trim());
+    private String getFile(String name) {
+        return String.format("%s/%s-%s.cl", OCLBackend.OPENCL_PATH.trim(), name.trim(), getDeviceName());
     }
 
     private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg,
@@ -339,10 +328,10 @@ public class OCLDeviceMapping implements DeviceMapping {
     public void markEvent() {
         getDeviceContext().markEvent();
     }
-    
+
     @Override
-    public String getDeviceName(){
-        return String.format("opencl-%d-%d",platformIndex,deviceIndex);
+    public String getDeviceName() {
+        return String.format("opencl-%d-%d", platformIndex, deviceIndex);
     }
 
 }

@@ -1,10 +1,11 @@
 package tornado.drivers.opencl.graal;
 
-import com.oracle.graal.api.meta.LIRKind;
+import com.oracle.graal.compiler.common.LIRKind;
 import com.oracle.graal.compiler.common.spi.LIRKindTool;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.graal.lir.OCLKind;
+
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLLIRKindTool implements LIRKindTool {
 

@@ -1,17 +1,14 @@
 package tornado.drivers.opencl.graal.lir;
 
-import com.oracle.graal.api.meta.Kind;
-import com.oracle.graal.api.meta.LIRKind;
-import com.oracle.graal.api.meta.PlatformKind;
-import com.oracle.graal.api.meta.Value;
+import com.oracle.graal.compiler.common.LIRKind;
 import com.oracle.graal.lir.LIRInstruction.Use;
 import com.oracle.graal.lir.Opcode;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp2;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp3;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp4;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLOp8;
+import jdk.vm.ci.meta.Value;
+import tornado.drivers.opencl.graal.asm.OCLAssembler;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp4;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp8;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 
 public class OCLVectorAssign {
@@ -19,9 +16,7 @@ public class OCLVectorAssign {
     /**
      * OpenCL vector assignment expression
      */
-    public static class Assign2Expr implements OCLEmitable {
-
-        protected OCLKind kind;
+    public static class Assign2Expr extends OCLLIROp {
 
         @Opcode
         protected final OCLOp opcode;
@@ -31,33 +26,22 @@ public class OCLVectorAssign {
         @Use
         protected Value s1;
 
-        public Assign2Expr(OCLOp opcode, OCLKind kind, Value s0, Value s1) {
+        public Assign2Expr(OCLOp opcode, OCLKind oclKind, Value s0, Value s1) {
+            super(LIRKind.value(oclKind));
             this.opcode = opcode;
             this.s0 = s0;
             this.s1 = s1;
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            ((OCLOp2) opcode).emit(crb, s0, s1);
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit(opcode.toString());
+            asm.emit("(");
+            asm.emitValueOrOp(crb, s0);
+            asm.emit(", ");
+            asm.emitValueOrOp(crb, s1);
+            asm.emit(")");
         }
-
-        @Override
-        public LIRKind getLIRKind() {
-            return LIRKind.value(kind);
-        }
-
-        @Override
-        public PlatformKind getPlatformKind() {
-            return kind;
-        }
-
-        @Override
-        public Kind getKind() {
-            shouldNotReachHere();
-            return Kind.Illegal;
-        }
-
     }
 
     /**
@@ -74,8 +58,15 @@ public class OCLVectorAssign {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            ((OCLOp3) opcode).emit(crb, s0, s1, s2);
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit(opcode.toString());
+            asm.emit("(");
+            asm.emitValueOrOp(crb, s0);
+            asm.emit(", ");
+            asm.emitValueOrOp(crb, s1);
+            asm.emit(", ");
+            asm.emitValueOrOp(crb, s2);
+            asm.emit(")");
         }
 
     }
@@ -94,8 +85,17 @@ public class OCLVectorAssign {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            ((OCLOp4) opcode).emit(crb, s0, s1, s2, s3);
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit(opcode.toString());
+            asm.emit("(");
+            asm.emitValueOrOp(crb, s0);
+            asm.emit(", ");
+            asm.emitValueOrOp(crb, s1);
+            asm.emit(", ");
+            asm.emitValueOrOp(crb, s2);
+            asm.emit(", ");
+            asm.emitValueOrOp(crb, s3);
+            asm.emit(")");
         }
 
     }
@@ -123,8 +123,25 @@ public class OCLVectorAssign {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            ((OCLOp8) opcode).emit(crb, s0, s1, s2, s3, s4, s5, s6, s7);
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit(opcode.toString());
+            asm.emit("(");
+            asm.emitValueOrOp(crb, s0);
+            asm.emit(", ");
+            asm.emitValueOrOp(crb, s1);
+            asm.emit(", ");
+            asm.emitValueOrOp(crb, s2);
+            asm.emit(", ");
+            asm.emitValueOrOp(crb, s3);
+            asm.emit(", ");
+            asm.emitValueOrOp(crb, s4);
+            asm.emit(", ");
+            asm.emitValueOrOp(crb, s5);
+            asm.emit(", ");
+            asm.emitValueOrOp(crb, s6);
+            asm.emit(", ");
+            asm.emitValueOrOp(crb, s7);
+            asm.emit(")");
         }
 
     }

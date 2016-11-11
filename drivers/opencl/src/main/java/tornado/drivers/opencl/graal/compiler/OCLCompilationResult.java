@@ -1,10 +1,10 @@
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.api.code.CompilationResult;
-import com.oracle.graal.api.meta.ResolvedJavaMethod;
+import com.oracle.graal.code.CompilationResult;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Set;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class OCLCompilationResult extends CompilationResult {
 

@@ -20,12 +20,11 @@ public class ImageFill {
         image.fill(-1f);
 
         /*
-         * First step is to create a reference to the method invocation
-         * This involves finding the methods called and the arguments used
-         * in each call.
+         * First step is to create a reference to the method invocation This
+         * involves finding the methods called and the arguments used in each
+         * call.
          */
-        final CompilableTask fillInvocation = TaskUtils.createTask(image::fill, 1f
-        );
+        final CompilableTask fillInvocation = TaskUtils.createTask(image::fill, 1f);
 
         // workaround issue in class loaded with multiple runtime annotations
         fillInvocation.getArgumentsAccess()[0] = Access.READ_WRITE;

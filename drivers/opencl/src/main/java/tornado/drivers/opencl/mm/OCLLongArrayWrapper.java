@@ -1,6 +1,6 @@
 package tornado.drivers.opencl.mm;
 
-import com.oracle.graal.api.meta.Kind;
+import jdk.vm.ci.meta.JavaKind;
 import tornado.drivers.opencl.OCLDeviceContext;
 
 public class OCLLongArrayWrapper extends OCLArrayWrapper<long[]> {
@@ -10,7 +10,7 @@ public class OCLLongArrayWrapper extends OCLArrayWrapper<long[]> {
 	}
 	
 	public OCLLongArrayWrapper(OCLDeviceContext deviceContext, boolean isFinal) {
-		super(deviceContext, Kind.Long, isFinal);
+		super(deviceContext, JavaKind.Long, isFinal);
 	}
 
 	@Override

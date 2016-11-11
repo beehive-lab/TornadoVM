@@ -1,32 +1,26 @@
 package tornado.drivers.opencl.graal.lir;
 
-import com.oracle.graal.api.meta.Kind;
-import com.oracle.graal.api.meta.LIRKind;
-import com.oracle.graal.api.meta.PlatformKind;
-import com.oracle.graal.api.meta.Value;
+import com.oracle.graal.compiler.common.LIRKind;
 import com.oracle.graal.lir.LIRInstruction.Use;
 import com.oracle.graal.lir.Opcode;
-import static tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
+import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryOp;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler.OCLUnaryTemplate;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.ADDRESS_OF;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.SQUARE_BRACKETS_CLOSE;
-import static tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants.SQUARE_BRACKETS_OPEN;
+import tornado.drivers.opencl.graal.asm.OCLAssembler;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryTemplate;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.meta.OCLMemorySpace;
-import tornado.drivers.opencl.graal.nodes.OCLBarrier.OCLMemFenceFlags;
+import tornado.drivers.opencl.graal.nodes.OCLBarrierNode.OCLMemFenceFlags;
+
+import static tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
 
 public class OCLUnary {
 
     /**
      * Abstract operation which consumes one inputs
      */
-    protected static class UnaryConsumer implements OCLEmitable {
-
-        protected final Kind kind;
-        protected final LIRKind lirKind;
+    protected static class UnaryConsumer extends OCLLIROp {
 
         @Opcode
         protected final OCLUnaryOp opcode;
@@ -34,19 +28,10 @@ public class OCLUnary {
         @Use
         protected Value value;
 
-        protected UnaryConsumer(OCLUnaryOp opcode, Kind kind, LIRKind lirKind, Value value) {
+        protected UnaryConsumer(OCLUnaryOp opcode, LIRKind lirKind, Value value) {
+            super(lirKind);
             this.opcode = opcode;
-            this.kind = kind;
-            this.lirKind = lirKind;
             this.value = value;
-        }
-
-        public UnaryConsumer(OCLUnaryOp opcode, LIRKind lirKind, Value value) {
-            this(opcode, Kind.Illegal, lirKind, value);
-        }
-
-        public UnaryConsumer(OCLUnaryOp opcode, Kind kind, Value value) {
-            this(opcode, kind, LIRKind.value(kind), value);
         }
 
         public Value getValue() {
@@ -58,22 +43,7 @@ public class OCLUnary {
         }
 
         @Override
-        public Kind getKind() {
-            return kind;
-        }
-
-        @Override
-        public LIRKind getLIRKind() {
-            return lirKind;
-        }
-
-        @Override
-        public PlatformKind getPlatformKind() {
-            return lirKind.getPlatformKind();
-        }
-
-        @Override
-        public void emit(OCLCompilationResultBuilder crb) {
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             opcode.emit(crb, value);
         }
 
@@ -90,20 +60,12 @@ public class OCLUnary {
             super(opcode, lirKind, value);
         }
 
-        public Expr(OCLUnaryOp opcode, Kind kind, Value value) {
-            super(opcode, kind, value);
-        }
-
     }
 
     public static class Intrinsic extends UnaryConsumer {
 
         public Intrinsic(OCLUnaryOp opcode, LIRKind lirKind, Value value) {
             super(opcode, lirKind, value);
-        }
-
-        public Intrinsic(OCLUnaryOp opcode, Kind kind, Value value) {
-            super(opcode, kind, value);
         }
 
         @Override
@@ -123,8 +85,7 @@ public class OCLUnary {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.emit(toString());
         }
 
@@ -141,15 +102,10 @@ public class OCLUnary {
             super(opcode, lirKind, value);
         }
 
-        public FloatCast(OCLUnaryOp opcode, Kind kind, Value value) {
-            super(opcode, kind, value);
-        }
-
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.emit("isnan(");
-            asm.value(crb, value);
+            asm.emitValue(crb, value);
             asm.emit(")? 0 : ");
             opcode.emit(crb, value);
         }
@@ -172,24 +128,23 @@ public class OCLUnary {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            OpenCLAssembler asm = crb.getAssembler();
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
 
             if (needsBase || OPENCL_USE_RELATIVE_ADDRESSES) {
                 asm.emitSymbol(ADDRESS_OF);
                 asm.emit(base.name);
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
-                asm.value(crb, value);
+                asm.emitValue(crb, value);
                 asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
             } else {
-                asm.value(crb, value);
+                asm.emitValue(crb, value);
             }
         }
 
-        public OCLMemoryBase getBase(){
+        public OCLMemoryBase getBase() {
             return base;
         }
-        
+
         @Override
         public String toString() {
             return String.format("%s", value);
@@ -206,11 +161,9 @@ public class OCLUnary {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            OpenCLAssembler asm = crb.getAssembler();
-
-            OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
-            asm.emit(((OCLUnaryTemplate)opcode).getTemplate(), base.memorySpace.name()+ " " + oclKind.toString());
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            OCLKind oclKind = (OCLKind) getPlatformKind();
+            asm.emit(((OCLUnaryTemplate) opcode).getTemplate(), base.memorySpace.name() + " " + oclKind.toString());
         }
 
         public OCLMemorySpace getMemorySpace() {
@@ -218,5 +171,5 @@ public class OCLUnary {
         }
 
     }
-    
+
 }

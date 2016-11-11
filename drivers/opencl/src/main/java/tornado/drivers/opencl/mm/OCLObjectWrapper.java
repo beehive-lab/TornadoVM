@@ -1,28 +1,24 @@
 package tornado.drivers.opencl.mm;
 
-import com.oracle.graal.api.meta.PrimitiveConstant;
-import com.oracle.graal.hotspot.HotSpotGraalRuntimeProvider;
-import com.oracle.graal.hotspot.meta.HotSpotResolvedJavaField;
-import com.oracle.graal.hotspot.meta.HotSpotResolvedJavaType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import tornado.api.Payload;
 import tornado.api.Vector;
 import tornado.common.ObjectBuffer;
 import tornado.common.RuntimeUtilities;
-import static tornado.common.RuntimeUtilities.humanReadableByteCount;
-import static tornado.common.Tornado.DEBUG;
-import static tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
-import static tornado.common.Tornado.debug;
-import static tornado.common.Tornado.trace;
-import static tornado.common.Tornado.warn;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
-import tornado.runtime.TornadoRuntime;
+
+import static tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static tornado.common.Tornado.*;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.runtime.TornadoRuntime.getVMConfig;
+import static tornado.runtime.TornadoRuntime.getVMRuntime;
 
 public class OCLObjectWrapper implements ObjectBuffer {
 
@@ -45,8 +41,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
     private boolean isFinal;
     private final int[] internalEvents;
 
-    private final HotSpotGraalRuntimeProvider runtime;
-
+//    private final HotSpotGraalRuntimeProvider runtime;
     public OCLObjectWrapper(final OCLDeviceContext device, Object object) {
         this.type = object.getClass();
         this.deviceContext = device;
@@ -54,13 +49,12 @@ public class OCLObjectWrapper implements ObjectBuffer {
         valid = false;
         isFinal = true;
 
-        runtime = TornadoRuntime.getVMRuntimeProvider();
-        hubOffset = runtime.getConfig().hubOffset;
-        fieldsOffset = runtime.getConfig().instanceKlassFieldsOffset;
+//        runtime = getVMRuntime();
+        hubOffset = getVMConfig().hubOffset;
+        fieldsOffset = getVMConfig().instanceKlassFieldsOffset;
         bufferOffset = -1;
 
-        resolvedType = (HotSpotResolvedJavaType) TornadoRuntime
-                .getVMProviders().getMetaAccess()
+        resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess()
                 .lookupJavaType(object.getClass());
 
         if (resolvedType.getAnnotation(Vector.class) != null) {
@@ -98,7 +92,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
                         field.getName(), type.getName(), field.offset());
             }
             bytes = field.offset();
-            bytes += (field.getKind().isObject()) ? 8 : field.getKind()
+            bytes += (field.getJavaKind().isObject()) ? 8 : field.getJavaKind()
                     .getByteCount();
 
             ObjectBuffer wrappedField = null;
@@ -119,7 +113,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 } else {
                     warn("cannot wrap field: array type=%s", type.getName());
                 }
-            } else if (field.getKind().isObject()) {
+            } else if (field.getJavaKind().isObject()) {
                 try {
                     wrappedField = new OCLObjectWrapper(device,
                             reflectedField.get(object));
@@ -251,12 +245,14 @@ public class OCLObjectWrapper implements ObjectBuffer {
         buffer.rewind();
 
         buffer.position(hubOffset);
-        if (DEBUG) {
-            trace("object: hub offset=%d, value=0x%x", hubOffset,
-                    ((PrimitiveConstant) resolvedType.getObjectHub()).asLong());
-        }
-        buffer.putLong(((PrimitiveConstant) resolvedType.getObjectHub())
-                .asLong());
+//        if (DEBUG) {
+//            trace("object: hub offset=%d, value=0x%x", hubOffset,
+//                    ((PrimitiveConstant) resolvedType.getObjectHub()).asLong());
+//        }
+//        buffer.putLong(((PrimitiveConstant) resolvedType.getObjectHub())
+//                .asLong());
+        // need to implement object hub
+        buffer.putLong(0);
 
         if (fields.length > 0) {
             buffer.position(fields[0].offset());
@@ -356,8 +352,8 @@ public class OCLObjectWrapper implements ObjectBuffer {
         final long address = (relative) ? fieldBuffer.toRelativeAddress()
                 : fieldBuffer.toAbsoluteAddress();
 
-        final long arrayBaseOffset = runtime.getArrayBaseOffset(resolvedField
-                .getKind());
+        final long arrayBaseOffset = getVMConfig().getArrayBaseOffset(resolvedField
+                .getJavaKind());
         return address + arrayBaseOffset;
     }
 

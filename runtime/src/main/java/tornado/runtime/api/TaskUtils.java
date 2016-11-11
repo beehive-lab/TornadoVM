@@ -1,13 +1,13 @@
 package tornado.runtime.api;
 
-import com.oracle.graal.api.meta.ConstantPool;
-import com.oracle.graal.api.meta.ResolvedJavaMethod;
 import com.oracle.graal.bytecode.Bytecodes;
-import com.oracle.graal.hotspot.meta.HotSpotResolvedJavaMethodImpl;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
+import jdk.vm.ci.meta.ConstantPool;
+import jdk.vm.ci.meta.JavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.api.Event;
 import tornado.common.DeviceMapping;
 import tornado.common.enums.Access;
@@ -88,20 +88,18 @@ public class TaskUtils {
         guarantee(entryPoint != null, "unable to find entry point");
 
         /*
-         * Fortunately we can do a bit of GRAAL magic to resolve the function
+         * Fortunately we can do a bit of JVMCI magic to resolve the function
          * to a Method.
          */
-        final ResolvedJavaMethod resolvedMethod = TornadoRuntime
-                .getVMProviders().getMetaAccess().lookupJavaMethod(entryPoint);
+        final ResolvedJavaMethod resolvedMethod = TornadoRuntime.getVMBackend()
+                .getMetaAccess().lookupJavaMethod(entryPoint);
         final ConstantPool cp = resolvedMethod.getConstantPool();
-        final byte[] bc = resolvedMethod.getCode();
-        
-       
+        final byte[] bc = resolvedMethod.getCode(); 
         
         for (int i = 0; i < bc.length; i++) {
             if (bc[i] == (byte) Bytecodes.INVOKESTATIC) {
                 cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKESTATIC);
-                HotSpotResolvedJavaMethodImpl jm = (HotSpotResolvedJavaMethodImpl) cp
+                JavaMethod jm =  cp
                         .lookupMethod(bc[i + 2], Bytecodes.INVOKESTATIC);
                 
                 try {
@@ -121,7 +119,7 @@ public class TaskUtils {
                 break;
             } else if (bc[i] == (byte) Bytecodes.INVOKEVIRTUAL){
             	cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
-                HotSpotResolvedJavaMethodImpl jm = (HotSpotResolvedJavaMethodImpl) cp
+                JavaMethod jm =  cp
                         .lookupMethod(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
 //                System.out.println(jm.getName());
                 

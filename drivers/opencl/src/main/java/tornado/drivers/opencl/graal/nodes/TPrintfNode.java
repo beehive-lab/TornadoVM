@@ -1,6 +1,5 @@
 package tornado.drivers.opencl.graal.nodes;
 
-import com.oracle.graal.api.meta.Value;
 import com.oracle.graal.compiler.common.type.StampFactory;
 import com.oracle.graal.graph.NodeClass;
 import com.oracle.graal.graph.NodeInputList;
@@ -9,7 +8,8 @@ import com.oracle.graal.nodes.FixedWithNextNode;
 import com.oracle.graal.nodes.ValueNode;
 import com.oracle.graal.nodes.spi.LIRLowerable;
 import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.ExprStmt;
+import jdk.vm.ci.meta.Value;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.ExprStmt;
 import tornado.drivers.opencl.graal.lir.OCLTPrintf;
 
 @NodeInfo(shortName = "tprintf")

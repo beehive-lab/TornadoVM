@@ -1,18 +1,74 @@
 package tornado.drivers.opencl.graal.lir;
 
-import com.oracle.graal.api.meta.*;
-import com.oracle.graal.lir.*;
-import static com.oracle.graal.lir.LIRInstruction.OperandFlag.CONST;
 import com.oracle.graal.lir.LIRInstruction.Use;
 import com.oracle.graal.lir.StandardOp.BlockEndOp;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler;
-import tornado.drivers.opencl.graal.asm.OpenCLAssemblerConstants;
+import com.oracle.graal.lir.*;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.Value;
+import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AbstractInstruction;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AbstractInstruction;
+
+import static com.oracle.graal.lir.LIRInstruction.OperandFlag.CONST;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLControlFlow {
 
-    public static final class ReturnOp extends AbstractInstruction implements BlockEndOp {
+    protected static abstract class AbstractBlockEndOp extends AbstractInstruction implements BlockEndOp {
+
+        public AbstractBlockEndOp(LIRInstructionClass<? extends AbstractInstruction> type) {
+            super(type);
+        }
+
+        @Override
+        public int addOutgoingValues(Value[] values) {
+            unimplemented();
+            return 0;
+        }
+
+        @Override
+        public void clearOutgoingValues() {
+            unimplemented();
+        }
+
+        @Override
+        public void forEachOutgoingValue(InstructionValueProcedure ivp) {
+            unimplemented();
+        }
+
+        @Override
+        public int getOutgoingSize() {
+            unimplemented();
+            return 0;
+        }
+
+        @Override
+        public Value getOutgoingValue(int i) {
+            unimplemented();
+            return null;
+        }
+
+        @Override
+        public void setOutgoingValues(Value[] values) {
+            unimplemented();
+        }
+
+        @Override
+        public int getPhiSize() {
+            unimplemented();
+            return 0;
+        }
+    }
+
+    public static final class ReturnOp extends AbstractBlockEndOp {
 
         public static final LIRInstructionClass<ReturnOp> TYPE = LIRInstructionClass
                 .create(ReturnOp.class);
@@ -25,13 +81,13 @@ public class OCLControlFlow {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             crb.frameContext.leave(crb);
-            crb.getAssembler().ret();
+            asm.ret();
         }
     }
 
-    public static final class EndScopeOp extends AbstractInstruction implements BlockEndOp {
+    public static final class EndScopeOp extends AbstractBlockEndOp {
 
         public static final LIRInstructionClass<EndScopeOp> TYPE = LIRInstructionClass
                 .create(EndScopeOp.class);
@@ -41,8 +97,8 @@ public class OCLControlFlow {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            crb.getAssembler().endScope();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.endScope();
         }
     }
 
@@ -59,8 +115,8 @@ public class OCLControlFlow {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            crb.getAssembler().beginScope();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.beginScope();
         }
     }
 
@@ -74,15 +130,14 @@ public class OCLControlFlow {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            asm.emitSymbol(OpenCLAssemblerConstants.FOR_LOOP);
-            asm.emitSymbol(OpenCLAssemblerConstants.BRACKET_OPEN);
+            asm.emitSymbol(FOR_LOOP);
+            asm.emitSymbol(BRACKET_OPEN);
 
             asm.indentOff();
             asm.eolOff();
-            asm.setDelimiter(OpenCLAssemblerConstants.EXPR_DELIMITER);
+            asm.setDelimiter(EXPR_DELIMITER);
         }
     }
 
@@ -96,15 +151,14 @@ public class OCLControlFlow {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             if (asm.getByte(asm.position() - 2) == ',') {
                 asm.emitString(" ", asm.position() - 2);
             }
 
-            asm.emitSymbol(OpenCLAssemblerConstants.BRACKET_CLOSE);
+            asm.emitSymbol(BRACKET_CLOSE);
 
-            asm.setDelimiter(OpenCLAssemblerConstants.STMT_DELIMITER);
+            asm.setDelimiter(STMT_DELIMITER);
             asm.indentOn();
             asm.eolOn();
         }
@@ -123,19 +177,22 @@ public class OCLControlFlow {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             if (asm.getByte(asm.position() - 1) == ',') {
                 asm.emitString(" ", asm.position() - 1);
             }
 
-            asm.setDelimiter(OpenCLAssemblerConstants.STMT_DELIMITER);
+            asm.setDelimiter(STMT_DELIMITER);
             asm.delimiter();
 
-            asm.value(crb, condition);
+            if (condition instanceof OCLLIROp) {
+                ((OCLLIROp) condition).emit(crb, asm);
+            } else {
+                asm.emitValue(crb, condition);
+            }
 
             asm.delimiter();
-            asm.setDelimiter(OpenCLAssemblerConstants.EXPR_DELIMITER);
+            asm.setDelimiter(EXPR_DELIMITER);
         }
     }
 
@@ -152,8 +209,8 @@ public class OCLControlFlow {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            crb.getAssembler().ifStmt(crb, condition);
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.ifStmt(crb, condition);
         }
 
     }
@@ -171,8 +228,8 @@ public class OCLControlFlow {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            crb.getAssembler().elseIfStmt(crb, condition);
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.elseIfStmt(crb, condition);
         }
 
     }
@@ -187,8 +244,7 @@ public class OCLControlFlow {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
             asm.elseStmt();
             asm.beginScope();
@@ -220,13 +276,12 @@ public class OCLControlFlow {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            asm.emitSymbol(OpenCLAssemblerConstants.SWITCH);
-            asm.emitSymbol(OpenCLAssemblerConstants.BRACKET_OPEN);
-            asm.value(crb, value);
-            asm.emitSymbol(OpenCLAssemblerConstants.BRACKET_CLOSE);
+            asm.emitSymbol(SWITCH);
+            asm.emitSymbol(BRACKET_OPEN);
+            asm.emitValue(crb, value);
+            asm.emitSymbol(BRACKET_CLOSE);
         }
 
         public JavaConstant[] getKeyConstants() {
@@ -248,21 +303,20 @@ public class OCLControlFlow {
                 .create(CaseOp.class);
 
         @Use
-        private final JavaConstant value;
+        private final ConstantValue value;
 
-        public CaseOp(JavaConstant keyConstants) {
+        public CaseOp(ConstantValue value) {
             super(TYPE);
-            this.value = keyConstants;
+            this.value = value;
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            asm.emitSymbol(OpenCLAssemblerConstants.CASE);
+            asm.emitSymbol(CASE);
             asm.space();
-            asm.value(crb, value);
-            asm.emitSymbol(OpenCLAssemblerConstants.COLON);
+            asm.emitConstant(value);
+            asm.emitSymbol(COLON);
             asm.eol();
             asm.pushIndent();
         }
@@ -278,11 +332,10 @@ public class OCLControlFlow {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            asm.emitSymbol(OpenCLAssemblerConstants.DEFAULT_CASE);
-            asm.emitSymbol(OpenCLAssemblerConstants.COLON);
+            asm.emitSymbol(DEFAULT_CASE);
+            asm.emitSymbol(COLON);
             asm.eol();
             asm.pushIndent();
         }
@@ -298,10 +351,9 @@ public class OCLControlFlow {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            asm.emitSymbol(OpenCLAssemblerConstants.BREAK);
+            asm.emitSymbol(BREAK);
             asm.delimiter();
             asm.eol();
             asm.popIndent();
@@ -318,8 +370,7 @@ public class OCLControlFlow {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
             asm.loopBreak();
             asm.delimiter();
@@ -341,11 +392,10 @@ public class OCLControlFlow {
         }
 
         @Override
-        public void emit(OCLCompilationResultBuilder crb) {
-            final OpenCLAssembler asm = crb.getAssembler();
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
             asm.emit("slots[0] = (ulong) ");
-            asm.value(crb, actionAndReason);
+            asm.emitValue(crb, actionAndReason);
             asm.delimiter();
 
             asm.eol();

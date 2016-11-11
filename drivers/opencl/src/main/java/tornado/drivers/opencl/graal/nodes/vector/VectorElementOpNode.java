@@ -1,17 +1,21 @@
 package tornado.drivers.opencl.graal.nodes.vector;
 
-import com.oracle.graal.api.meta.*;
+import com.oracle.graal.compiler.common.LIRKind;
 import com.oracle.graal.compiler.common.type.StampFactory;
-import static com.oracle.graal.compiler.common.util.Util.guarantee;
-import com.oracle.graal.graph.*;
+import com.oracle.graal.graph.NodeClass;
+import com.oracle.graal.lir.ConstantValue;
 import com.oracle.graal.nodeinfo.InputType;
 import com.oracle.graal.nodeinfo.NodeInfo;
-import com.oracle.graal.nodes.*;
+import com.oracle.graal.nodes.ValueNode;
 import com.oracle.graal.nodes.calc.FloatingNode;
 import com.oracle.graal.nodes.spi.LIRLowerable;
 import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
-import tornado.drivers.opencl.graal.lir.OCLAddressOps.OCLVectorElement;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.lir.OCLKind;
+import tornado.drivers.opencl.graal.lir.OCLVectorElementSelect;
+
+import static com.oracle.graal.compiler.common.util.Util.guarantee;
 
 /**
  * The {@code LoadIndexedNode} represents a read from an element of an array.
@@ -68,7 +72,7 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
 //        }
 
         guarantee(targetVector != null, "vector is null 2");
-        final OCLVectorElement element = new OCLVectorElement(getOCLKind(), targetVector, lane);
+        final OCLVectorElementSelect element = new OCLVectorElementSelect(gen.getLIRGeneratorTool().getLIRKind(stamp), targetVector, new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(lane)));
         gen.setResult(this, element);
 
     }

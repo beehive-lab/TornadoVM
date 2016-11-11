@@ -1,74 +1,72 @@
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.api.code.CodeCacheProvider;
-import com.oracle.graal.api.code.ForeignCallsProvider;
-import com.oracle.graal.api.meta.JavaConstant;
-import com.oracle.graal.api.meta.ResolvedJavaMethod;
-import com.oracle.graal.api.meta.Value;
 import com.oracle.graal.asm.Assembler;
-import com.oracle.graal.compiler.common.GraalInternalError;
 import com.oracle.graal.compiler.common.cfg.AbstractBlockBase;
 import com.oracle.graal.compiler.common.cfg.Loop;
-import com.oracle.graal.debug.Debug;
-import com.oracle.graal.lir.InstructionValueProcedure;
-import com.oracle.graal.lir.LIR;
-import com.oracle.graal.lir.LIRInstruction;
+import com.oracle.graal.compiler.common.spi.ForeignCallsProvider;
 import com.oracle.graal.lir.LIRInstruction.OperandFlag;
 import com.oracle.graal.lir.LIRInstruction.OperandMode;
-import com.oracle.graal.lir.Variable;
+import com.oracle.graal.lir.*;
 import com.oracle.graal.lir.asm.CompilationResultBuilder;
+import com.oracle.graal.lir.asm.DataBuilder;
 import com.oracle.graal.lir.asm.FrameContext;
 import com.oracle.graal.lir.framemap.FrameMap;
 import com.oracle.graal.nodes.AbstractMergeNode;
+import com.oracle.graal.nodes.FixedNode;
 import com.oracle.graal.nodes.IfNode;
 import com.oracle.graal.nodes.LoopBeginNode;
 import com.oracle.graal.nodes.cfg.Block;
 import com.oracle.graal.nodes.cfg.ControlFlowGraph;
 import com.oracle.graal.nodes.extended.SwitchNode;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import jdk.vm.ci.code.CodeCacheProvider;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.Value;
 import tornado.common.exceptions.TornadoInternalError;
-import tornado.drivers.opencl.graal.asm.OpenCLAssembler;
-import tornado.drivers.opencl.graal.lir.OCLBinary;
+import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopConditionOp;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopInitOp;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopPostOp;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow.SwitchOp;
-import tornado.drivers.opencl.graal.lir.OCLLIRInstruction.AssignStmt;
-import tornado.drivers.opencl.graal.lir.OCLUnary;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
+
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.graal.TornadoLIRGenerator.trace;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
+    protected LIR lir;
+    protected int currentBlockIndex;
     protected final Set<ResolvedJavaMethod> nonInlinedMethods;
-    protected final boolean isKernel;
+    protected boolean isKernel;
 
     public OCLCompilationResultBuilder(CodeCacheProvider codeCache,
             ForeignCallsProvider foreignCalls, FrameMap frameMap,
-            Assembler asm, FrameContext frameContext,
-            OCLCompilationResult compilationResult, boolean isKernel) {
-        super(codeCache, foreignCalls, frameMap, asm, frameContext,
-                compilationResult);
+            Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
+            OCLCompilationResult compilationResult) {
+        super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext,
+                compilationResult, new IdentityHashMap<>());
         nonInlinedMethods = new HashSet<>();
-        this.isKernel = isKernel;
+    }
+
+    public void setKernel(boolean value) {
+        isKernel = value;
     }
 
     public boolean isKernel() {
         return isKernel;
     }
 
-    public OpenCLAssembler getAssembler() {
-        return (OpenCLAssembler) asm;
+    public OCLAssembler getAssembler() {
+        return (OCLAssembler) asm;
     }
 
     public void addNonInlinedMethod(ResolvedJavaMethod method) {
-        if (!nonInlinedMethods.contains(method))
+        if (!nonInlinedMethods.contains(method)) {
             nonInlinedMethods.add(method);
+        }
     }
 
     public Set<ResolvedJavaMethod> getNonInlinedMethods() {
@@ -95,13 +93,12 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         // Set<AbstractBlockBase<?>> pending = new
         // HashSet<AbstractBlockBase<?>>();
         // blocks.addAll(cfg.getBlocks());
-
         trace("Traversing CFG");
 
         Set<Block> floating = new HashSet<>();
 
         cfg.computePostdominators();
-        traverseCFG(cfg, (OpenCLAssembler) asm, floating, cfg.getStartBlock());
+        traverseCFG(cfg, (OCLAssembler) asm, floating, cfg.getStartBlock());
 
         trace("Finished traversing CFG");
         this.lir = null;
@@ -111,31 +108,54 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     @Override
     public void finish() {
-        compilationResult.setTargetCode(asm.close(true), asm.position());
+        int position = asm.position();
+        compilationResult.setTargetCode(asm.close(true), position);
+
+        closeCompilationResult();
     }
 
     private String toString(Collection<Block> blocks) {
         StringBuilder sb = new StringBuilder();
         sb.append("[ ");
-        for (Block b : blocks)
+        for (Block b : blocks) {
             sb.append(b.getId() + " ");
+        }
         sb.append("]");
         return sb.toString();
     }
 
-    private void traverseCFG(ControlFlowGraph cfg, OpenCLAssembler asm,
+    private String toString(Block[] blocks) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[ ");
+        for (Block b : blocks) {
+            sb.append(b.getId() + " ");
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    private void printBlock(Block b) {
+        System.out.printf("Block %d:\n", b.getId());
+        for (FixedNode node : b.getNodes()) {
+            System.out.printf("  node: %s\n", node);
+        }
+        System.out.println();
+    }
+
+    private void traverseCFG(ControlFlowGraph cfg, OCLAssembler asm,
             Set<Block> merges, Block b) {
         final List<Block> dominates = b.getDominated();
 
         final int numDominated = dominates.size();
 
         // System.out.printf("schedule: block=%s, succs=%s, dominates=%s, floating=%s, pdom=%s\n",b.getId(),toString(b.getSuccessors()),toString(dominates),toString(merges),b.getPostdominator());
-
-        if (b.isLoopEnd())
+        if (b.isLoopEnd()) {
             patchLoopEnd(b);
+        }
 
-        if (!b.isLoopHeader())
+        if (!b.isLoopHeader()) {
             emitBlock(b);
+        }
 
         if (numDominated == 1) {
             traverseCFG(cfg, asm, merges, dominates.get(0));
@@ -161,10 +181,10 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                 // System.out.printf("exit: block=%s, succ=%d, pred=%d\n",exit,exit.getSuccessorCount(),exit.getPredecessorCount());
                 // System.out.printf("exit: dominates %s\n",toString(dominates));
                 // System.out.printf("exit: loop blocks %s\n",toString(loop.getBlocks()));
-                if (successors.size() == 1)
+                if (successors.size() == 1) {
                     exit = successors.iterator().next();
-                TornadoInternalError.guarantee(
-                        exit.getBeginNode() instanceof AbstractMergeNode,
+                }
+                guarantee(exit.getBeginNode() instanceof AbstractMergeNode,
                         "loop exists do not converge: block=%d", b.getId());
             } else {
                 exit = loop.getExits().get(0);
@@ -173,7 +193,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             final boolean inverted = (dominates.get(0).equals(exit));
             final Block body = (inverted) ? dominates.get(1) : dominates.get(0);
 
-            TornadoInternalError.guarantee(loop.numBackedges() == 1,
+            guarantee(loop.numBackedges() == 1,
                     "loop at %s has %d backedges", b, loop.numBackedges());
             final Block backedge = cfg.blockFor(((LoopBeginNode) b
                     .getBeginNode()).loopEnds().first());
@@ -219,10 +239,11 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                 traverseCFG(cfg, asm, merges, mergeBlock);
             }
         } else if (b.getSuccessorCount() == 1
-                && !merges.contains(b.getSuccessors().get(0))) {
-            final Block successor = b.getSuccessors().get(0);
-            if (isMergeBlock(successor) && successor.isLoopEnd())
+                && !merges.contains(b.getSuccessors()[0])) {
+            final Block successor = b.getSuccessors()[0];
+            if (isMergeBlock(successor) && successor.isLoopEnd()) {
                 emitBlock(successor);
+            }
             // System.out.println("fallthrough");
             // TornadoInternalError.shouldNotReachHere();
         } else if (isSwitchBlock(b)) {
@@ -236,7 +257,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
             for (int i = 0; i < switchOp.getKeyTargets().length; i++) {
                 Block targetBlock = cfg.blockFor(sw.blockSuccessor(i));
-                patchCaseBlock(lir, switchOp.getKeyConstants()[i], targetBlock);
+                shouldNotReachHere();
+                //patchCaseBlock(lir, switchOp.getKeyConstants()[i], targetBlock);
                 emitBlock(targetBlock);
                 // System.out.printf("target: %s\n",targetBlock);
             }
@@ -252,13 +274,16 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
             asm.endScope();
 
-            Set<Block> successors = new HashSet<Block>();
-            successors.addAll(b.getSuccessors());
+            Set<Block> successors = new HashSet<>();
+            for (Block successor : b.getSuccessors()) {
+                successors.add(successor);
+            }
+//            successors.addAll(b.getSuccessors());
 
             Block exit = null;
-            if (successors.size() == 1)
+            if (successors.size() == 1) {
                 exit = successors.iterator().next();
-            else {
+            } else {
                 successors.removeAll(dominates);
                 exit = successors.iterator().next();
             }
@@ -294,7 +319,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         insns.add(1, new OCLControlFlow.DefaultCaseOp());
     }
 
-    private void patchCaseBlock(LIR lir, JavaConstant key, Block block) {
+    private void patchCaseBlock(LIR lir, ConstantValue key, Block block) {
         final List<LIRInstruction> insns = lir.getLIRforBlock(block);
         insns.add(1, new OCLControlFlow.CaseOp(key));
         insns.add(new OCLControlFlow.CaseBreakOp());
@@ -338,13 +363,12 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         // final LIRInstruction insn = header.get(i);
         // if (insn instanceof LoopInitOp) {
         // break;
-        // } else if (insn instanceof OCLLIRInstruction.AssignStmt) {
-        // final OCLLIRInstruction.AssignStmt assign =
-        // (OCLLIRInstruction.AssignStmt) insn;
+        // } else if (insn instanceof OCLLIRStmt.AssignStmt) {
+        // final OCLLIRStmt.AssignStmt assign =
+        // (OCLLIRStmt.AssignStmt) insn;
         // ivs.add(assign.getResult());
         // }
         // }
-
         // move all insns past the loop expression into the loop body
         int index = header.size() - 1;
         int insertAt = body.size() - 1;
@@ -364,9 +388,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         // move all insns which do not update ivs into the loop body
         // current = header.get(index);
         // while(!(current instanceof LoopConditionOp)){
-        // if(current instanceof OCLLIRInstruction.AssignStmt){
-        // final OCLLIRInstruction.AssignStmt assign =
-        // (OCLLIRInstruction.AssignStmt) current;
+        // if(current instanceof OCLLIRStmt.AssignStmt){
+        // final OCLLIRStmt.AssignStmt assign =
+        // (OCLLIRStmt.AssignStmt) current;
         // if(!ivs.contains(assign.getResult())){
         // body.add(insertAt, header.remove(index));
         // }
@@ -374,10 +398,10 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         // index--;
         // current = header.get(index);
         // }
-
     }
 
     private static class DepFinder implements InstructionValueProcedure {
+
         private final Set<Value> dependencies;
 
         public DepFinder(final Set<Value> dependencies) {
@@ -387,20 +411,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         @Override
         public Value doValue(LIRInstruction instruction, Value value,
                 OperandMode mode, EnumSet<OperandFlag> flags) {
-            // System.out.printf("dep: insn=%s, value=%s\n",instruction,value);
-            if (value instanceof Variable)
+            // System.out.printf("dep: insn=%s, emitValue=%s\n",instruction,emitValue);
+            if (value instanceof Variable) {
                 dependencies.add(value);
-            else if (value instanceof OCLBinary.Expr) {
-
-                OCLBinary.Expr expr = (OCLBinary.Expr) value;
-                if (expr.getX() instanceof Variable)
-                    dependencies.add(expr.getX());
-
-                if (expr.getY() instanceof Variable)
-                    dependencies.add(expr.getY());
-
-            } else if (value instanceof OCLUnary.Expr) {
-                TornadoInternalError.unimplemented();
             }
 
             return value;
@@ -423,16 +436,15 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
         instructions.remove(index);
 
-        final Set<Value> dependencies = new HashSet<Value>();
+        final Set<Value> dependencies = new HashSet<>();
         DepFinder df = new DepFinder(dependencies);
         condition.forEachInput(df);
 
         // for(Value insn : dependencies){
         // System.out.printf("dep: %s\n",insn);
         // }
-
         index--;
-        final List<LIRInstruction> moved = new ArrayList<LIRInstruction>();
+        final List<LIRInstruction> moved = new ArrayList<>();
         LIRInstruction insn = instructions.get(index);
         while (!(insn instanceof LoopPostOp)) {
             if (insn instanceof AssignStmt) {
@@ -460,32 +472,35 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     public void emitBlock(AbstractBlockBase<?> block) {
-        ((OpenCLAssembler) asm).emitLine("// BLOCK %d", block.getId());
+        if (block == null) {
+            return;
+        }
 
-        if (Debug.isDumpEnabled() || PrintLIRWithAssembly.getValue()) {
+        ((OCLAssembler) asm).emitLine("// BLOCK %d", block.getId());
+
+        if (PrintLIRWithAssembly.getValue()) {
             blockComment(String.format("block B%d %s", block.getId(),
                     block.getLoop()));
         }
 
         LIRInstruction breakInst = null;
         for (LIRInstruction op : lir.getLIRforBlock(block)) {
-            if (op == null)
+            if (op == null) {
                 continue;
-            else if (op instanceof OCLControlFlow.LoopBreakOp) {
+            } else if (op instanceof OCLControlFlow.LoopBreakOp) {
                 breakInst = op;
                 continue;
             }
 
-            // System.out.printf("\top: %s\n", op);
-            if (Debug.isDumpEnabled() || PrintLIRWithAssembly.getValue()) {
+            if (PrintLIRWithAssembly.getValue()) {
                 blockComment(String.format("%d %s", op.id(), op));
             }
 
             try {
                 emitOp(this, op);
-            } catch (GraalInternalError e) {
+            } catch (TornadoInternalError e) {
                 throw e.addContext("lir instruction", block + "@" + op.id()
-                        + " " + op + "\n" + lir.codeEmittingOrder());
+                        + " " + op + "\n");
             }
         }
 
@@ -497,10 +512,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         if (breakInst != null) {
             try {
                 emitOp(this, breakInst);
-            } catch (GraalInternalError e) {
+            } catch (TornadoInternalError e) {
                 throw e.addContext("lir instruction",
-                        block + "@" + breakInst.id() + " " + breakInst + "\n"
-                                + lir.codeEmittingOrder());
+                        block + "@" + breakInst.id() + " " + breakInst + "\n");
             }
         }
 
@@ -510,10 +524,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         try {
             trace("op: " + op);
             op.emitCode(crb);
-        } catch (AssertionError t) {
-            throw new GraalInternalError(t);
-        } catch (RuntimeException t) {
-            throw new GraalInternalError(t);
+        } catch (AssertionError | RuntimeException t) {
+            throw new TornadoInternalError(t);
         }
     }
 
