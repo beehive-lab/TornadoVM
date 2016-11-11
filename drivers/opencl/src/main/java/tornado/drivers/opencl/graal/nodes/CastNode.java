@@ -16,7 +16,6 @@ import tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 @NodeInfo
 public class CastNode extends FloatingNode implements LIRLowerable {
