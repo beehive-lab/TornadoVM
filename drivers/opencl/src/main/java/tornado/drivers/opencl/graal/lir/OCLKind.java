@@ -121,6 +121,7 @@ public enum OCLKind implements PlatformKind {
         return key;
     }
 
+    @Override
     public int getSizeInBytes() {
         if (vectorLength == 3) {
             return size + elementKind.getSizeInBytes();
@@ -287,11 +288,14 @@ public enum OCLKind implements PlatformKind {
 
     public static final OCLKind resolveToVectorKind(ResolvedJavaType type) {
         if (!type.isPrimitive() && type.getAnnotation(Vector.class) != null) {
-            String typeName = type.getName().toLowerCase();
-            if (typeName.startsWith("byte")) {
-                typeName = typeName.replace("byte", "char");
+
+            String typeName = type.getName();
+            int index = typeName.lastIndexOf("/");
+            String simpleName = typeName.substring(index + 1, typeName.length() - 1).toUpperCase();
+            if (simpleName.startsWith("BYTE")) {
+                simpleName = simpleName.replace("BYTE", "CHAR");
             }
-            return OCLKind.valueOf(typeName);
+            return OCLKind.valueOf(simpleName);
         }
         return OCLKind.ILLEGAL;
     }
