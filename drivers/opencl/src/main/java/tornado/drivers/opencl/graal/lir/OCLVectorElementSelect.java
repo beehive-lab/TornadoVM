@@ -20,9 +20,14 @@ public class OCLVectorElementSelect extends OCLLIROp {
 
     @Override
     public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-        asm.emitValue(crb, vector);
+        asm.emitValueOrOp(crb, vector);
         asm.emitSymbol(".s");
         asm.emitValue(crb, selection);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("vselect(%s, %s)", vector, selection);
     }
 
 }
