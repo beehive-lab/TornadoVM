@@ -5,6 +5,7 @@ import com.oracle.graal.lir.Opcode;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryIntrinsic;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryOp;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryTemplate;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 
 public class OCLNullary {
@@ -37,6 +38,19 @@ public class OCLNullary {
 
         public Expr(OCLNullaryOp opcode, LIRKind lirKind) {
             super(opcode, lirKind);
+        }
+
+    }
+
+    public static class Parameter extends NullaryConsumer {
+
+        public Parameter(String name, LIRKind lirKind) {
+            super(new OCLNullaryTemplate(name), lirKind);
+        }
+
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit(opcode.toString());
         }
     }
 
