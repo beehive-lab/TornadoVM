@@ -14,11 +14,8 @@ import com.oracle.graal.nodes.spi.LIRLowerable;
 import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
 import java.util.List;
 import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.Value;
-import tornado.drivers.opencl.graal.OCLArchitecture;
 import tornado.drivers.opencl.graal.OCLStampFactory;
-import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp4;
@@ -27,13 +24,9 @@ import tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.lir.OCLLIROp;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt;
-import tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorLoadStmt;
-import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
-import tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 import tornado.drivers.opencl.graal.lir.OCLVectorAssign;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.graal.TornadoLIRGenerator.trace;
 
 @NodeInfo(nameTemplate = "{p#kind/s}")
 public class VectorValueNode extends FloatingNode implements LIRLowerable {
@@ -83,7 +76,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
     public void initialiseToDefaultValues(StructuredGraph graph) {
         final ConstantNode defaultValue = ConstantNode.forPrimitive(kind.getElementKind().getDefaultValue(), graph);
         for (int i = 0; i < kind.getVectorLength(); i++) {
-            values.add(defaultValue);
+            setElement(i, defaultValue);
         }
     }
 
@@ -129,26 +122,25 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
             gen.setResult(this, result);
 
         } else if (origin instanceof ParameterNode) {
-            if (needsLoad && !gen.hasOperand(this)) {
-                //unimplemented();
-                final MemoryAccess addressOfObject = (MemoryAccess) gen.operand(origin);
-                final Variable result = tool.newVariable(LIRKind.value(getOCLKind()));
-
-                final OCLBinaryIntrinsic loadOp = VectorUtil
-                        .resolveLoadIntrinsic(getOCLKind());
-                OCLAddressCast cast = new OCLAddressCast(OCLArchitecture.hp, LIRKind.value(kind));
-                VectorLoadStmt loadVector = new VectorLoadStmt(result, loadOp, new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0), cast, addressOfObject);
-
-                tool.append(loadVector);
-                trace("emitVectorLoad: %s = %s(%d, %s, %s)", result, loadOp.toString(),
-                        0, cast, addressOfObject);
-                gen.setResult(this, result);
-            } else if (!needsLoad) {
-                gen.setResult(this, gen.operand(origin));
-            }
+//            if (needsLoad && !gen.hasOperand(this)) {
+//                //unimplemented();
+//                final MemoryAccess addressOfObject = new MemoryAccess(OCLArchitecture.hp, gen.operand(origin), false);
+//                final Variable result = tool.newVariable(LIRKind.value(getOCLKind()));
+//
+//                final OCLBinaryIntrinsic loadOp = VectorUtil
+//                        .resolveLoadIntrinsic(getOCLKind());
+//                OCLAddressCast cast = new OCLAddressCast(OCLArchitecture.hp, LIRKind.value(kind));
+//                VectorLoadStmt loadVector = new VectorLoadStmt(result, loadOp, new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0), cast, addressOfObject);
+//
+//                tool.append(loadVector);
+//                trace("emitVectorLoad: %s = %s(%d, %s, %s)", result, loadOp.toString(),
+//                        0, cast, addressOfObject);
+//                gen.setResult(this, result);
+//            } else if (!needsLoad) {
+            gen.setResult(this, gen.operand(origin));
+//            }
         } else if (origin == null) {
-            final AllocatableValue result = (gen.hasOperand(this)) ? (Variable) gen.operand(this)
-                    : tool.newVariable(LIRKind.value(getOCLKind()));
+            final AllocatableValue result = tool.newVariable(LIRKind.value(getOCLKind()));
 
             /*
              * two cases: 1. when this vector state has elements assigned
