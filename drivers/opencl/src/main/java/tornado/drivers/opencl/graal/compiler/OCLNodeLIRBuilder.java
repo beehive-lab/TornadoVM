@@ -3,6 +3,7 @@ package tornado.drivers.opencl.graal.compiler;
 import com.oracle.graal.compiler.common.LIRKind;
 import com.oracle.graal.compiler.common.calc.Condition;
 import com.oracle.graal.compiler.common.cfg.BlockMap;
+import com.oracle.graal.compiler.common.type.ObjectStamp;
 import com.oracle.graal.compiler.common.type.Stamp;
 import com.oracle.graal.compiler.gen.NodeLIRBuilder;
 import com.oracle.graal.compiler.gen.NodeMatchRules;
@@ -22,15 +23,11 @@ import com.oracle.graal.nodes.extended.SwitchNode;
 import java.util.Collection;
 import java.util.List;
 import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.Local;
-import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.*;
 import tornado.common.exceptions.TornadoInternalError;
-import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsicCmp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryOp;
-import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryTemplate;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.ExprStmt;
@@ -44,17 +41,28 @@ import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLNodeLIRBuilder extends NodeLIRBuilder {
+
+    private LIRKind resolveStamp(Stamp stamp) {
+        LIRKind lirKind = LIRKind.Illegal;
+        if (!stamp.isEmpty()) {
+            if (stamp instanceof ObjectStamp) {
+                ObjectStamp os = (ObjectStamp) stamp;
+                ResolvedJavaType type = os.javaType(gen.getMetaAccess());
+                OCLKind oclKind = OCLKind.fromResolvedJavaType(type);
+                if (oclKind != OCLKind.ILLEGAL) {
+                    lirKind = LIRKind.value(oclKind);
+                } else {
+                    lirKind = gen.getLIRKind(stamp);
+                }
+            } else {
+                lirKind = gen.getLIRKind(stamp);
+            }
+        }
+
+        return lirKind;
+    }
 
     @Override
     public void emitInvoke(Invoke x) {
@@ -62,19 +70,11 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 .callTarget();
 
         final Stamp stamp = x.asNode().stamp();
-        LIRKind lirKind;
-        AllocatableValue result;
-        if (!stamp.isEmpty()) {
-            lirKind = gen.getLIRKind(x.asNode().stamp());
-//            if (x.asNode().stamp().javaType(gen.getMetaAccess())
-//                    .getAnnotation(Vector.class) != null) {
-//                lirKind = LIRKind.value(VectorKind.fromResolvedJavaType(x
-//                        .asNode().stamp().javaType(gen.getMetaAccess())));
-//            }
+        LIRKind lirKind = resolveStamp(stamp);
+        AllocatableValue result = Value.ILLEGAL;
+
+        if (lirKind != LIRKind.Illegal) {
             result = gen.newVariable(lirKind);
-        } else {
-            lirKind = LIRKind.Illegal;
-            result = Value.ILLEGAL;
         }
 
         CallingConvention invokeCc = new CallingConvention(0, result);
@@ -268,13 +268,13 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
             result = getGen().getArithmetic().genBinaryExpr(
-                    OCLBinaryIntrinsic.FLOAT_IS_NOT_EQUAL, lirKind, x, y);
+                    OCLBinaryIntrinsicCmp.FLOAT_IS_NOT_EQUAL, lirKind, x, y);
         } else if (node instanceof FloatLessThanNode) {
             final FloatLessThanNode condition = (FloatLessThanNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
             result = getGen().getArithmetic().genBinaryExpr(
-                    OCLBinaryIntrinsic.FLOAT_IS_GREATER_EQUAL, lirKind, x,
+                    OCLBinaryIntrinsicCmp.FLOAT_IS_GREATER_EQUAL, lirKind, x,
                     y);
         } else if (node instanceof IntegerBelowNode) {
             final IntegerBelowNode condition = (IntegerBelowNode) node;
@@ -346,13 +346,13 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
             result = getGen().getArithmetic().genBinaryExpr(
-                    OCLBinaryIntrinsic.FLOAT_IS_EQUAL, lirKind, x, y);
+                    OCLBinaryIntrinsicCmp.FLOAT_IS_EQUAL, lirKind, x, y);
         } else if (node instanceof FloatLessThanNode) {
             final FloatLessThanNode condition = (FloatLessThanNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
             result = getGen().getArithmetic().genBinaryExpr(
-                    OCLBinaryIntrinsic.FLOAT_IS_LESS, lirKind, x, y);
+                    OCLBinaryIntrinsicCmp.FLOAT_IS_LESS, lirKind, x, y);
         } else if (node instanceof IntegerBelowNode) {
             final IntegerBelowNode condition = (IntegerBelowNode) node;
             final Value x = operand(condition.getX());
@@ -434,7 +434,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void emitIf(final IfNode x) {
-        trace("emitIf: %s", x);
+        trace("emitIf: %s, condition=%s\n", x, x.condition().getClass().getName());
 
         /**
          * test to see if this is an exception check need to implement this
@@ -672,20 +672,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     protected void emitPrologue(final StructuredGraph graph, boolean isKernel) {
 
         if (isKernel) {
-//            final CallingConvention incomingArguments = OpenCLCodeUtil
-//                    .getCallingConvention(gen.getCodeCache(), Type.JavaCallee,
-//                            graph.method(), false);
 
-//            final Value[] params = new Value[incomingArguments
-//                    .getArgumentCount()];
-//            for (int i = 0; i < params.length; i++) {
-//                params[i] = LIRGenerator.toStackKind(incomingArguments
-//                        .getArgument(i));
-//            }
-//            gen.emitIncomingValues(params);
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-//                final Value paramValue = params[param.index()];
-                // verify/validate param
                 setResult(param, getGen().getOCLGenTool().emitParameterLoad(param, param.index()));
             }
         } else {
@@ -693,8 +681,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                     .getLocalsAt(0);
             int index = 0;
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                setResult(param, new OCLNullary.Expr(new OCLNullaryTemplate(
-                        locals[index].getName()), getGen().getLIRKind(param.stamp())));
+                LIRKind lirKind = getGen().getLIRKind(param.stamp());
+                setResult(param, new OCLNullary.Parameter(locals[index].getName(), lirKind));
                 index++;
             }
         }
