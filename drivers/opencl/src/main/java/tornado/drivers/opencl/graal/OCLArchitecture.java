@@ -39,6 +39,10 @@ public class OCLArchitecture extends Architecture {
             return String.format("%s %s", lirKind.toString(), name);
         }
 
+        public String getName() {
+            return name;
+        }
+
     }
 
     public static class OCLMemoryBase extends OCLRegister {
@@ -133,6 +137,17 @@ public class OCLArchitecture extends Architecture {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < abiRegisters.length; i++) {
             sb.append(abiRegisters[i].getDeclaration());
+            if (i < abiRegisters.length - 1) {
+                sb.append(", ");
+            }
+        }
+        return sb.toString();
+    }
+
+    public String getCallingConvention() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < abiRegisters.length; i++) {
+            sb.append(abiRegisters[i].getName());
             if (i < abiRegisters.length - 1) {
                 sb.append(", ");
             }
