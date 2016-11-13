@@ -274,6 +274,17 @@ public class OCLDeviceMapping implements DeviceMapping {
         return state.getBuffer().enqueueRead(object, list);
     }
 
+    public void sync(Object... objects) {
+        for (Object obj : objects) {
+            sync(obj);
+        }
+    }
+
+    public void sync(Object object) {
+        DeviceObjectState state = getTornadoRuntime().resolveObject(object).getDeviceState(this);
+        resolveEvent(streamOut(object, state, null)).waitOn();
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof OCLDeviceMapping) {
