@@ -3,14 +3,16 @@ package tornado.drivers.opencl.graal;
 import com.oracle.graal.compiler.common.LocationIdentity;
 import com.oracle.graal.compiler.common.spi.ForeignCallsProvider;
 import com.oracle.graal.compiler.common.type.ObjectStamp;
+import com.oracle.graal.compiler.common.type.Stamp;
+import com.oracle.graal.compiler.common.type.StampFactory;
+import com.oracle.graal.compiler.common.type.StampPair;
 import com.oracle.graal.graph.Node;
 import com.oracle.graal.graph.NodeInputList;
 import com.oracle.graal.nodes.*;
 import com.oracle.graal.nodes.calc.FloatConvertNode;
 import com.oracle.graal.nodes.calc.RemNode;
 import com.oracle.graal.nodes.extended.GuardingNode;
-import com.oracle.graal.nodes.java.MethodCallTargetNode;
-import com.oracle.graal.nodes.java.NewArrayNode;
+import com.oracle.graal.nodes.java.*;
 import com.oracle.graal.nodes.memory.HeapAccess.BarrierType;
 import com.oracle.graal.nodes.memory.ReadNode;
 import com.oracle.graal.nodes.memory.WriteNode;
@@ -25,12 +27,14 @@ import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.nodes.AtomicAddNode;
 import tornado.drivers.opencl.graal.nodes.CastNode;
+import tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
 import tornado.graal.nodes.TornadoDirectCallTargetNode;
 import tornado.runtime.TornadoVMConfig;
 
 import static com.oracle.graal.hotspot.replacements.NewObjectSnippets.INIT_LOCATION;
+import static com.oracle.graal.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
@@ -67,9 +71,154 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerNewArrayNode((NewArrayNode) n, tool);
         } else if (n instanceof AtomicAddNode) {
             lowerAtomicAddNode((AtomicAddNode) n, tool);
+        } else if (n instanceof LoadIndexedNode || n instanceof LoadIndexedVectorNode) {
+            lowerLoadIndexedNode((LoadIndexedNode) n, tool);
+        } else if (n instanceof StoreIndexedNode) {
+            lowerStoreIndexedNode((StoreIndexedNode) n, tool);
+        } else if (n instanceof LoadFieldNode) {
+            lowerLoadFieldNode((LoadFieldNode) n, tool);
+        } else if (n instanceof StoreFieldNode) {
+            lowerStoreFieldNode((StoreFieldNode) n, tool);
+        } else if (n instanceof ArrayLengthNode) {
+            lowerArrayLengthNode((ArrayLengthNode) n, tool);
         } else {
             super.lower(n, tool);
         }
+    }
+
+    @Override
+    protected void lowerArrayLengthNode(ArrayLengthNode arrayLengthNode, LoweringTool tool) {
+        StructuredGraph graph = arrayLengthNode.graph();
+        ValueNode array = arrayLengthNode.array();
+
+        AddressNode address = createOffsetAddress(graph, array, arrayLengthOffset());
+        ReadNode arrayLengthRead = graph.add(new ReadNode(address, ARRAY_LENGTH_LOCATION, StampFactory.positiveInt(), BarrierType.NONE));
+//        arrayLengthRead.setGuard(createNullCheck(array, arrayLengthNode, tool));
+        graph.replaceFixedWithFixed(arrayLengthNode, arrayLengthRead);
+    }
+
+    @Override
+    protected void lowerLoadIndexedNode(LoadIndexedNode loadIndexed, LoweringTool tool) {
+        StructuredGraph graph = loadIndexed.graph();
+        JavaKind elementKind = loadIndexed.elementKind();
+
+        Stamp loadStamp = loadIndexed.stamp();
+        if (!(loadIndexed.stamp() instanceof OCLStamp)) {
+            loadStamp = loadStamp(loadIndexed.stamp(), elementKind);
+        }
+
+        AddressNode address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
+        ReadNode memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE));
+//        ValueNode readValue = implicitLoadConvert(graph, elementKind, memoryRead);
+
+        loadIndexed.replaceAtUsages(memoryRead);
+        graph.replaceFixed(loadIndexed, memoryRead);
+    }
+
+    @Override
+    protected void lowerStoreIndexedNode(StoreIndexedNode storeIndexed, LoweringTool tool) {
+        StructuredGraph graph = storeIndexed.graph();
+
+//        GuardingNode[] nullCheckReturn = new GuardingNode[1];
+//        PiNode pi = getBoundsCheckedIndex(storeIndexed, tool, nullCheckReturn);
+//        ValueNode checkedIndex;
+//        GuardingNode boundsCheck;
+//        if (pi == null) {
+//            checkedIndex = storeIndexed.index();
+//            boundsCheck = null;
+//        } else {
+//            checkedIndex = pi;
+//            boundsCheck = pi.getGuard();
+//        }
+        JavaKind elementKind = storeIndexed.elementKind();
+
+        ValueNode value = storeIndexed.value();
+        ValueNode array = storeIndexed.array();
+//        LogicNode condition = null;
+//        if (elementKind == JavaKind.Object && !StampTool.isPointerAlwaysNull(value)) {
+//            /*
+//             * Array store check.
+//             */
+//            TypeReference arrayType = StampTool.typeReferenceOrNull(array);
+//            if (arrayType != null && arrayType.isExact()) {
+//                ResolvedJavaType elementType = arrayType.getType().getComponentType();
+//                if (!elementType.isJavaLangObject()) {
+//                    TypeReference typeReference = TypeReference.createTrusted(storeIndexed.graph().getAssumptions(), elementType);
+//                    LogicNode typeTest = graph.addOrUniqueWithInputs(InstanceOfNode.create(typeReference, value));
+//                    condition = LogicNode.or(graph.unique(IsNullNode.create(value)), typeTest, GraalDirectives.UNLIKELY_PROBABILITY);
+//                }
+//            } else {
+//                /*
+//                 * The guard on the read hub should be the null check of the
+//                 * array that was introduced earlier.
+//                 */
+//                GuardingNode nullCheck = nullCheckReturn[0];
+//                assert nullCheckReturn[0] != null || createNullCheck(array, storeIndexed, tool) == null;
+//                ValueNode arrayClass = createReadHub(graph, graph.unique(new PiNode(array, (ValueNode) nullCheck)), tool);
+//                ValueNode componentHub = createReadArrayComponentHub(graph, arrayClass, storeIndexed);
+//                LogicNode typeTest = graph.unique(InstanceOfDynamicNode.create(graph.getAssumptions(), tool.getConstantReflection(), componentHub, value, false));
+//                condition = LogicNode.or(graph.unique(IsNullNode.create(value)), typeTest, GraalDirectives.UNLIKELY_PROBABILITY);
+//            }
+//        }
+
+        AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
+        WriteNode memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value,
+                arrayStoreBarrierType(storeIndexed.elementKind())));
+//        memoryWrite.setGuard(boundsCheck);
+//        if (condition != null) {
+//            GuardingNode storeCheckGuard = tool.createGuard(storeIndexed, condition, DeoptimizationReason.ArrayStoreException, DeoptimizationAction.InvalidateReprofile);
+//            memoryWrite.setStoreCheckGuard(storeCheckGuard);
+//        }
+        memoryWrite.setStateAfter(storeIndexed.stateAfter());
+        graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
+    }
+
+    @Override
+    protected void lowerLoadFieldNode(LoadFieldNode loadField, LoweringTool tool) {
+        assert loadField.getStackKind() != JavaKind.Illegal;
+        StructuredGraph graph = loadField.graph();
+        ResolvedJavaField field = loadField.field();
+        ValueNode object = loadField.isStatic() ? staticFieldBase(graph, field) : loadField.object();
+        Stamp loadStamp = loadStamp(loadField.stamp(), field.getJavaKind());
+
+        AddressNode address = createFieldAddress(graph, object, field);
+        assert address != null : "Field that is loaded must not be eliminated: " + field.getDeclaringClass().toJavaName(true) + "." + field.getName();
+
+        ReadNode memoryRead = graph.add(new ReadNode(address, fieldLocationIdentity(field), loadStamp, fieldLoadBarrierType(field)));
+//        ValueNode readValue = implicitLoadConvert(graph, field.getJavaKind(), memoryRead);
+        loadField.replaceAtUsages(memoryRead);
+        graph.replaceFixed(loadField, memoryRead);
+
+//        memoryRead.setGuard(createNullCheck(object, memoryRead, tool));
+//
+//        if (loadField.isVolatile()) {
+//            MembarNode preMembar = graph.add(new MembarNode(JMM_PRE_VOLATILE_READ));
+//            graph.addBeforeFixed(memoryRead, preMembar);
+//            MembarNode postMembar = graph.add(new MembarNode(JMM_POST_VOLATILE_READ));
+//            graph.addAfterFixed(memoryRead, postMembar);
+//        }
+    }
+
+    @Override
+    protected void lowerStoreFieldNode(StoreFieldNode storeField, LoweringTool tool) {
+        StructuredGraph graph = storeField.graph();
+        ResolvedJavaField field = storeField.field();
+        ValueNode object = storeField.isStatic() ? staticFieldBase(graph, field) : storeField.object();
+//        ValueNode value = implicitStoreConvert(graph, storeField.field().getJavaKind(), storeField.value());
+        AddressNode address = createFieldAddress(graph, object, field);
+        assert address != null;
+
+        WriteNode memoryWrite = graph.add(new WriteNode(address, fieldLocationIdentity(field), storeField.value(), fieldStoreBarrierType(storeField.field())));
+        memoryWrite.setStateAfter(storeField.stateAfter());
+        graph.replaceFixedWithFixed(storeField, memoryWrite);
+//        memoryWrite.setGuard(createNullCheck(object, memoryWrite, tool));
+
+//        if (storeField.isVolatile()) {
+//            MembarNode preMembar = graph.add(new MembarNode(JMM_PRE_VOLATILE_WRITE));
+//            graph.addBeforeFixed(memoryWrite, preMembar);
+//            MembarNode postMembar = graph.add(new MembarNode(JMM_POST_VOLATILE_WRITE));
+//            graph.addAfterFixed(memoryWrite, postMembar);
+//        }
     }
 
     private void lowerAtomicAddNode(AtomicAddNode atomicAdd, LoweringTool tool) {
@@ -96,31 +245,20 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             JavaType[] signature = callTarget.targetMethod().getSignature().toParameterTypes(callTarget.isStatic() ? null : callTarget.targetMethod().getDeclaringClass());
 
             LoweredCallTargetNode loweredCallTarget = null;
-//            if (InlineVTableStubs.getValue() && callTarget.invokeKind().isIndirect() && (AlwaysInlineVTableStubs.getValue() || invoke.isPolymorphic())) {
-//                HotSpotResolvedJavaMethod hsMethod = (HotSpotResolvedJavaMethod) callTarget.targetMethod();
-//                ResolvedJavaType receiverType = invoke.getReceiverType();
-//                if (hsMethod.isInVirtualMethodTable(receiverType)) {
-//                    Kind wordKind = runtime.getTarget().wordKind;
-//                    ValueNode hub = createReadHub(graph, receiver, receiverNullCheck);
-//
-//                    ReadNode metaspaceMethod = createReadVirtualMethod(graph, hub, hsMethod, receiverType);
-//                    // We use LocationNode.ANY_LOCATION for the reads that access the
-//                    // compiled code entry as HotSpot does not guarantee they are final
-//                    // values.
-//                    int methodCompiledEntryOffset = runtime.getConfig().methodCompiledEntryOffset;
-//                    ReadNode compiledEntry = graph.add(new ReadNode(metaspaceMethod, graph.unique(new ConstantLocationNode(any(), methodCompiledEntryOffset)), StampFactory.forKind(wordKind),
-//                                    BarrierType.NONE));
-//
-//                    loweredCallTarget = graph.add(new HotSpotIndirectCallTargetNode(metaspaceMethod, compiledEntry, parameters, invoke.asNode().stamp(), signature, callTarget.targetMethod(),
-//                                    CallingConvention.Type.JavaCall, callTarget.invokeKind()));
-//
-//                    graph.addBeforeFixed(invoke.asNode(), metaspaceMethod);
-//                    graph.addAfterFixed(metaspaceMethod, compiledEntry);
-//                }
-//            }
 
             if (loweredCallTarget == null) {
-                loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters.toArray(new ValueNode[parameters.size()]), callTarget.returnStamp(), signature, callTarget.targetMethod(), HotSpotCallingConventionType.JavaCall,
+                StampPair returnStampPair = callTarget.returnStamp();
+                Stamp returnStamp = returnStampPair.getTrustedStamp();
+                if (returnStamp instanceof ObjectStamp) {
+                    ObjectStamp os = (ObjectStamp) returnStamp;
+                    ResolvedJavaType type = os.javaType(tool.getMetaAccess());
+                    OCLKind oclKind = OCLKind.fromResolvedJavaType(type);
+                    if (oclKind != OCLKind.ILLEGAL) {
+                        returnStampPair = StampPair.createSingle(OCLStampFactory.getStampFor(oclKind));
+                    }
+                }
+
+                loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters.toArray(new ValueNode[parameters.size()]), returnStampPair, signature, callTarget.targetMethod(), HotSpotCallingConventionType.JavaCall,
                         callTarget.invokeKind()));
             }
 
@@ -131,11 +269,12 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     private void lowerFloatConvertNode(FloatConvertNode floatConvert, LoweringTool tool) {
         final StructuredGraph graph = floatConvert.graph();
-
         // TODO should probably create a specific floatconvert node?
-        final CastNode asFloat = graph.addWithoutUnique(new CastNode((OCLKind) target.arch.getPlatformKind(floatConvert.stamp().getStackKind()), floatConvert.getValue()));
+
+        final CastNode asFloat = graph.addWithoutUnique(new CastNode(floatConvert.stamp(), floatConvert.getFloatConvert(), floatConvert.getValue()));
 
         floatConvert.replaceAtUsages(asFloat);
+        floatConvert.safeDelete();
 
     }
 
