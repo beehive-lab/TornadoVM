@@ -8,7 +8,6 @@ import tornado.api.Event;
 import tornado.api.enums.TornadoExecutionStatus;
 import tornado.common.*;
 import tornado.common.enums.Access;
-import tornado.common.exceptions.TornadoInternalError;
 import tornado.meta.Meta;
 import tornado.runtime.api.GlobalObjectState;
 import tornado.runtime.graph.ExecutionContext;
@@ -292,7 +291,7 @@ public class TornadoVM extends TornadoLogger {
                     } else if (argType == REFERENCE_ARG) {
                         final DeviceObjectState objectState = resolveObjectState(
                                 argIndex, contextIndex);
-                        TornadoInternalError.guarantee(objectState.isValid(),
+                        guarantee(objectState.isValid(),
                                 "object is not valid: %s %s",
                                 objects.get(argIndex), objectState);
                         stack.push(objects.get(argIndex), objectState);
