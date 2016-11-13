@@ -19,10 +19,10 @@ import tornado.drivers.opencl.graal.lir.OCLLIROp;
 import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 
 import static com.oracle.graal.compiler.common.util.Util.guarantee;
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
-import static tornado.drivers.opencl.graal.lir.OCLKind.*;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
+import static tornado.drivers.opencl.graal.lir.OCLKind.*;
 
 public class OCLAssembler extends Assembler {
 
@@ -99,6 +99,7 @@ public class OCLAssembler extends Assembler {
             super(opcode);
         }
 
+        @Override
         public void emit(OCLCompilationResultBuilder crb) {
             final OCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);
@@ -166,10 +167,10 @@ public class OCLAssembler extends Assembler {
             final OCLAssembler asm = crb.getAssembler();
             if (prefix) {
                 emitOpcode(asm);
-                asm.emitValue(
+                asm.emitValueOrOp(
                         crb, x);
             } else {
-                asm.emitValue(
+                asm.emitValueOrOp(
                         crb, x);
                 emitOpcode(asm);
             }
@@ -231,7 +232,7 @@ public class OCLAssembler extends Assembler {
             final OCLAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             asm.emit("(");
-            asm.emitValue(
+            asm.emitValueOrOp(
                     crb, x);
             asm.emit(")");
         }
@@ -352,14 +353,6 @@ public class OCLAssembler extends Assembler {
         public static final OCLBinaryIntrinsic ATOMIC_OR = new OCLBinaryIntrinsic("atomic_or");
         public static final OCLBinaryIntrinsic ATOMIC_XOR = new OCLBinaryIntrinsic("atomic_xor");
 
-        public static final OCLBinaryIntrinsic FLOAT_IS_EQUAL = new OCLBinaryIntrinsic("isequal");
-        public static final OCLBinaryIntrinsic FLOAT_IS_NOT_EQUAL = new OCLBinaryIntrinsic("isnotequal");
-        public static final OCLBinaryIntrinsic FLOAT_IS_GREATER = new OCLBinaryIntrinsic("isgreater");
-        public static final OCLBinaryIntrinsic FLOAT_IS_GREATER_EQUAL = new OCLBinaryIntrinsic("isgreaterequal");
-        public static final OCLBinaryIntrinsic FLOAT_IS_LESS = new OCLBinaryIntrinsic("isless");
-        public static final OCLBinaryIntrinsic FLOAT_IS_LESSEQUAL = new OCLBinaryIntrinsic("islessequal");
-        public static final OCLBinaryIntrinsic FLOAT_IS_LESSGREATER = new OCLBinaryIntrinsic("islessgreater");
-
         public static final OCLBinaryIntrinsic VLOAD2 = new OCLBinaryIntrinsic("vload2");
         public static final OCLBinaryIntrinsic VLOAD3 = new OCLBinaryIntrinsic("vload3");
         public static final OCLBinaryIntrinsic VLOAD4 = new OCLBinaryIntrinsic("vload4");
@@ -371,6 +364,34 @@ public class OCLAssembler extends Assembler {
         // @formatter:on
 
         protected OCLBinaryIntrinsic(String opcode) {
+            super(opcode);
+        }
+
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, Value x, Value y) {
+            final OCLAssembler asm = crb.getAssembler();
+            emitOpcode(asm);
+            asm.emit("(");
+            asm.emitValueOrOp(crb, x);
+            asm.emit(", ");
+            asm.emitValueOrOp(crb, y);
+            asm.emit(")");
+        }
+    }
+
+    public static class OCLBinaryIntrinsicCmp extends OCLBinaryOp {
+
+        // @formatter:off
+        public static final OCLBinaryIntrinsic FLOAT_IS_EQUAL = new OCLBinaryIntrinsic("isequal");
+        public static final OCLBinaryIntrinsic FLOAT_IS_NOT_EQUAL = new OCLBinaryIntrinsic("isnotequal");
+        public static final OCLBinaryIntrinsic FLOAT_IS_GREATER = new OCLBinaryIntrinsic("isgreater");
+        public static final OCLBinaryIntrinsic FLOAT_IS_GREATER_EQUAL = new OCLBinaryIntrinsic("isgreaterequal");
+        public static final OCLBinaryIntrinsic FLOAT_IS_LESS = new OCLBinaryIntrinsic("isless");
+        public static final OCLBinaryIntrinsic FLOAT_IS_LESSEQUAL = new OCLBinaryIntrinsic("islessequal");
+        public static final OCLBinaryIntrinsic FLOAT_IS_LESSGREATER = new OCLBinaryIntrinsic("islessgreater");
+        // @formatter:on
+
+        protected OCLBinaryIntrinsicCmp(String opcode) {
             super(opcode);
         }
 
@@ -918,7 +939,7 @@ public class OCLAssembler extends Assembler {
     }
 
     private String encodeString(String str) {
-        return str.replace("\n", "\\n").replace("\t", "\\t");
+        return str.replace("\n", "\\n").replace("\t", "\\t").replace("\"", "");
     }
 
     private String addLiteralSuffix(OCLKind oclKind, String value) {
@@ -952,7 +973,7 @@ public class OCLAssembler extends Assembler {
                 result = String.format("(%s)(%s)", oclKind.name(), result);
             }
         } else if (constant instanceof HotSpotObjectConstant) {
-            HotSpotObjectConstant objConst = (HotSpotObjectConstant) cv;
+            HotSpotObjectConstant objConst = (HotSpotObjectConstant) constant;
             // TODO should this be replaced with isInternedString()?
             if (objConst.getJavaKind().isObject() && objConst.getType().getName().compareToIgnoreCase("Ljava/lang/String;") == 0) {
                 result = encodeString(objConst.toValueString());
