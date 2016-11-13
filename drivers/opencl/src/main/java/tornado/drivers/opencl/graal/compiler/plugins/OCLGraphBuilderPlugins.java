@@ -95,8 +95,9 @@ public class OCLGraphBuilderPlugins {
                         ValueNode value = storeNode.value();
                         if (value instanceof BoxNode) {
                             BoxNode box = (BoxNode) value;
-                            box.safeDelete();
                             value = box.getValue();
+                            GraphUtil.unlinkFixedNode(box);
+                            box.safeDelete();
                         }
                         actualArgs[4 + argIndex] = value;
                         argIndex++;
@@ -105,7 +106,7 @@ public class OCLGraphBuilderPlugins {
                 }
 
                 TPrintfNode printfNode = new TPrintfNode(actualArgs);
-                b.append(b.recursiveAppend(printfNode));
+                b.add(b.recursiveAppend(printfNode));
                 while (newArrayNode.hasUsages()) {
                     Node n = newArrayNode.getUsageAt(0);
                     // need to remove all nodes from the graph that operate on the
@@ -139,6 +140,7 @@ public class OCLGraphBuilderPlugins {
             public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode... args) {
 
+//                com.oracle.graal.debug.Debug.dump(com.oracle.graal.debug.Debug.BASIC_LOG_LEVEL, args[0].graph(), "plugins");
                 NewArrayNode newArrayNode = (NewArrayNode) args[1];
                 ConstantNode lengthNode = (ConstantNode) newArrayNode.dimension(0);
                 int length = ((JavaConstant) lengthNode.getValue()).asInt();
@@ -154,8 +156,9 @@ public class OCLGraphBuilderPlugins {
                         ValueNode value = storeNode.value();
                         if (value instanceof BoxNode) {
                             BoxNode box = (BoxNode) value;
-                            box.safeDelete();
                             value = box.getValue();
+                            GraphUtil.unlinkFixedNode(box);
+                            box.safeDelete();
                         }
                         actualArgs[argIndex + 1] = value;
                         argIndex++;
@@ -164,7 +167,7 @@ public class OCLGraphBuilderPlugins {
                 }
 
                 PrintfNode printfNode = new PrintfNode(actualArgs);
-                b.append(b.recursiveAppend(printfNode));
+                b.add(b.recursiveAppend(printfNode));
 
                 while (newArrayNode.hasUsages()) {
                     Node n = newArrayNode.getUsageAt(0);
@@ -183,7 +186,6 @@ public class OCLGraphBuilderPlugins {
                 GraphUtil.unlinkFixedNode(newArrayNode);
                 newArrayNode.clearInputs();
                 newArrayNode.safeDelete();
-
                 return true;
             }
         };
