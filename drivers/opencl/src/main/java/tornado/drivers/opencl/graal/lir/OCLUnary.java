@@ -105,7 +105,7 @@ public class OCLUnary {
         @Override
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.emit("isnan(");
-            asm.emitValue(crb, value);
+            asm.emitValueOrOp(crb, value);
             asm.emit(")? 0 : ");
             opcode.emit(crb, value);
         }
