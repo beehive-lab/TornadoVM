@@ -26,9 +26,6 @@ import tornado.drivers.opencl.graal.nodes.vector.VectorUtil;
 
 import static tornado.common.exceptions.TornadoInternalError.*;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
@@ -174,13 +171,15 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     @Override
     public Value emitNarrow(Value x, int toBits) {
         trace("emitNarrow: %s, %d", x, toBits);
-        return emitUnaryAssign(getSignExtendOp(toBits), LIRKind.value(x.getPlatformKind()), x);
+        LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(toBits);
+        return emitUnaryAssign(getSignExtendOp(toBits), lirKind, x);
     }
 
     @Override
     public Value emitSignExtend(Value x, int fromBits, int toBits) {
         trace("emitSignExtend: %s, %d, %d", x, fromBits, toBits);
-        return emitUnaryAssign(getSignExtendOp(toBits), LIRKind.value(x.getPlatformKind()), x);
+        LIRKind lirKind = getGen().getLIRKindTool().getIntegerKind(toBits);
+        return emitUnaryAssign(getSignExtendOp(toBits), lirKind, x);
     }
 
     @Override
