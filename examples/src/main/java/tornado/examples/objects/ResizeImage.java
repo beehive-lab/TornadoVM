@@ -1,4 +1,4 @@
-package tornado.examples;
+package tornado.examples.objects;
 
 import java.util.Random;
 import tornado.collections.graphics.ImagingOps;

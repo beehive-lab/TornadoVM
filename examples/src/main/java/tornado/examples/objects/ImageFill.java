@@ -1,4 +1,4 @@
-package tornado.examples;
+package tornado.examples.objects;
 
 import tornado.collections.types.ImageFloat;
 import tornado.common.enums.Access;

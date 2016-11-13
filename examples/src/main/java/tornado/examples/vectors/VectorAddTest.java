@@ -1,4 +1,4 @@
-package tornado.examples;
+package tornado.examples.vectors;
 
 import tornado.api.Parallel;
 import tornado.api.Read;

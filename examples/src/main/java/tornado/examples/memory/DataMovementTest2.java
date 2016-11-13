@@ -1,4 +1,4 @@
-package tornado.examples;
+package tornado.examples.memory;
 
 import java.util.Random;
 import tornado.collections.types.ImageFloat;

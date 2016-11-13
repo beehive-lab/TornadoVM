@@ -1,4 +1,4 @@
-package tornado.examples;
+package tornado.examples.arrays;
 
 import java.util.Arrays;
 import tornado.collections.math.SimpleMath;
@@ -6,7 +6,7 @@ import tornado.common.RuntimeUtilities;
 import tornado.drivers.opencl.OpenCL;
 import tornado.runtime.api.TaskGraph;
 
-public class VectorAddFloat {
+public class ArrayAddFloat {
 
     public static void main(final String[] args) {
         final int numElements = (args.length == 1) ? Integer.parseInt(args[0])

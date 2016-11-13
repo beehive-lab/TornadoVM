@@ -1,4 +1,4 @@
-package tornado.examples;
+package tornado.examples.objects;
 
 import tornado.api.Read;
 import tornado.api.Write;

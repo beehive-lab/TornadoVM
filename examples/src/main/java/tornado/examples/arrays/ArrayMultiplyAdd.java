@@ -1,4 +1,4 @@
-package tornado.examples;
+package tornado.examples.arrays;
 
 import java.util.Arrays;
 
@@ -8,7 +8,7 @@ import tornado.runtime.api.TaskGraph;
 import tornado.runtime.api.TaskUtils;
 import tornado.runtime.api.CompilableTask;
 
-public class VectorMultiplyAdd {
+public class ArrayMultiplyAdd {
 
     public static void main(final String[] args) {
 

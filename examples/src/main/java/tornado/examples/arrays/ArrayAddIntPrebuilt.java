@@ -1,4 +1,4 @@
-package tornado.examples;
+package tornado.examples.arrays;
 
 
 import java.util.Arrays;
@@ -11,7 +11,7 @@ import tornado.runtime.api.PrebuiltTask;
 import tornado.runtime.api.TaskGraph;
 import tornado.runtime.api.TaskUtils;
 
-public class HelloWorldPrebuilt {
+public class ArrayAddIntPrebuilt {
 	
 	public static void add(@Read int[] a,@Read int[] b,@Write int[] c){
 		for(@Parallel int i=0;i<c.length;i++)

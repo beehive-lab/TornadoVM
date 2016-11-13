@@ -1,4 +1,4 @@
-package tornado.examples;
+package tornado.examples.memory;
 
 import tornado.api.Parallel;
 import tornado.api.ReadWrite;

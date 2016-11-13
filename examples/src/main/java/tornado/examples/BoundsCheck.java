@@ -3,9 +3,8 @@ package tornado.examples;
 import java.util.Arrays;
 
 import tornado.common.exceptions.TornadoRuntimeException;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.CompilableTask;
+import tornado.drivers.opencl.OpenCL;
+import tornado.runtime.api.TaskGraph;
 
 public class BoundsCheck {
 
@@ -31,22 +30,22 @@ public class BoundsCheck {
         Arrays.fill(c, 0);
 
         /*
-         * First step is to create a reference to the method invocation
-         * This involves finding the methods called and the arguments used
-         * in each call.
+         * First step is to create a reference to the method invocation This
+         * involves finding the methods called and the arguments used in each
+         * call.
          */
-        final CompilableTask addTask = TaskUtils.createTask(
-                BoundsCheck::add, a, b, c);
+        TaskGraph graph = new TaskGraph()
+                .add(BoundsCheck::add, a, b, c);
 
         /*
          * Next we map each invocation onto a specific compute device
          */
-        addTask.mapTo(new OCLDeviceMapping(0, 0));
+        graph.mapAllTo(OpenCL.defaultDevice());
 
         /*
          * Calculate a (3) + b (2) = c (5)
          */
-//        addTask.execute();
+        graph.schedule().waitOn();
 
         /*
          * Check to make sure result is correct

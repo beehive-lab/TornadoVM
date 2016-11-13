@@ -1,4 +1,4 @@
-package tornado.examples;
+package tornado.examples.vectors;
 
 import tornado.api.Read;
 import tornado.api.Write;
