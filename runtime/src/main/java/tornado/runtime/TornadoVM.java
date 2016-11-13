@@ -239,7 +239,7 @@ public class TornadoVM extends TornadoLogger {
                 final DeviceMapping device = contexts.get(contextIndex);
                 final CallStack stack = resolveStack(gtid, numArgs, stacks,
                         device);
-                final int[] waitList = events[eventList];
+                final int[] waitList = (eventList == -1) ? null : events[eventList];
                 final SchedulableTask task = tasks.get(taskIndex);
 
                 if (DEBUG) {
@@ -305,7 +305,9 @@ public class TornadoVM extends TornadoLogger {
                 }
 
                 lastEvent = installedCode.launch(stack, task.meta(), waitList);
-                eventsIndicies[eventList] = 0;
+                if (eventList != -1) {
+                    eventsIndicies[eventList] = 0;
+                }
 
             } else if (op == ADD_DEP) {
                 final int eventList = buffer.getInt();
