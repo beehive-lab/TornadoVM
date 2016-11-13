@@ -6,12 +6,10 @@ import com.oracle.graal.lir.LIRInstruction.Def;
 import com.oracle.graal.lir.LIRInstruction.Use;
 import com.oracle.graal.nodes.DirectCallTargetNode;
 import jdk.vm.ci.meta.Value;
+import tornado.drivers.opencl.graal.OCLArchitecture;
 import tornado.drivers.opencl.graal.OCLUtils;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
-
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.STACK_REF_NAME;
 
 public class OCLDirectCall extends OCLLIROp {
 
@@ -40,8 +38,8 @@ public class OCLDirectCall extends OCLLIROp {
         asm.emit(methodName);
         asm.emit("(");
         int i = 0;
-        asm.emit(String.format("%s, ", HEAP_REF_NAME));
-        asm.emit(String.format("%s, ", STACK_REF_NAME));
+        asm.emit(((OCLArchitecture) crb.target.arch).getCallingConvention());
+        asm.emit(", ");
         for (Value param : parameters) {
             // System.out.printf("param: %s\n",param);
             asm.emit(asm.toString(param));
