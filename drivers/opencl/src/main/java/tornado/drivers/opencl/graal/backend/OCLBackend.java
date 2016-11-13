@@ -48,8 +48,8 @@ import tornado.meta.Meta;
 
 import static tornado.common.Tornado.DEBUG_KERNEL_ARGS;
 import static tornado.common.exceptions.TornadoInternalError.*;
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -320,7 +320,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
                     ? getTarget().getOCLKind(returnKind)
                     : OCLKind.fromResolvedJavaType(returnType);
             //getTarget().getLIRKind(returnKind);
-            asm.emit("%s %s(%s", returnOclKind.name(),
+            asm.emit("%s %s(%s", returnOclKind.toString(),
                     methodName, architecture.getABI());
 
             final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
@@ -352,6 +352,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 //
 //                }
                 OCLKind oclKind = (OCLKind) param.getPlatformKind();
+                if (locals[i].getType().getJavaKind().isObject()) {
+                    OCLKind tmpKind = OCLKind.resolveToVectorKind(locals[i].getType().resolve(method.getDeclaringClass()));
+                    if (tmpKind != OCLKind.ILLEGAL) {
+                        oclKind = tmpKind;
+                    }
+                }
                 guarantee(oclKind != OCLKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
                 asm.emit("%s %s", oclKind.toString(),
                         locals[i].getName());
