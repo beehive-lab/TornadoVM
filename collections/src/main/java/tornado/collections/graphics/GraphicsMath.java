@@ -1,7 +1,5 @@
 package tornado.collections.graphics;
 
-import static tornado.collections.math.TornadoMath.max;
-import static tornado.collections.math.TornadoMath.min;
 import static tornado.collections.types.Float3.add;
 import static tornado.collections.types.Float3.cross;
 import static tornado.collections.types.Float3.div;
@@ -11,28 +9,24 @@ import static tornado.collections.types.Float3.min;
 import static tornado.collections.types.Float3.mult;
 import static tornado.collections.types.Float3.normalise;
 import static tornado.collections.types.Float3.sub;
+
 import tornado.api.Parallel;
 import tornado.api.Read;
 import tornado.api.Write;
-import tornado.collections.types.Float3;
-import tornado.collections.types.Float4;
-import tornado.collections.types.ImageFloat;
-import tornado.collections.types.ImageFloat3;
-import tornado.collections.types.Matrix4x4Float;
-import tornado.collections.types.VolumeOps;
-import tornado.collections.types.VolumeShort2;
+import tornado.collections.types.*;
+
+import static tornado.collections.math.TornadoMath.max;
+import static tornado.collections.math.TornadoMath.min;
 
 public class GraphicsMath {
 
     private static final float INVALID = -2;
 
     public static void vertex2normal(@Write ImageFloat3 normals,
-             @Read ImageFloat3 verticies) {
+            @Read ImageFloat3 verticies) {
 
-        for (@Parallel
-        int y = 0; y < normals.Y(); y++)
-            for (@Parallel
-            int x = 0; x < normals.X(); x++) {
+        for (@Parallel int y = 0; y < normals.Y(); y++) {
+            for (@Parallel int x = 0; x < normals.X(); x++) {
 
                 final Float3 left = verticies.get(Math.max(x - 1, 0), y);
                 final Float3 right = verticies.get(
@@ -55,24 +49,25 @@ public class GraphicsMath {
 
                 normals.set(x, y, normal);
             }
+        }
     }
 
-    public static void depth2vertex( @Write ImageFloat3 verticies,
-             @Read ImageFloat depths, @Read Matrix4x4Float invK) {
+    public static void depth2vertex(@Write ImageFloat3 verticies,
+            @Read ImageFloat depths, @Read Matrix4x4Float invK) {
 
-        for (@Parallel
-        int y = 0; y < depths.Y(); y++)
-            for (@Parallel
-            int x = 0; x < depths.X(); x++) {
+        for (@Parallel int y = 0; y < depths.Y(); y++) {
+            for (@Parallel int x = 0; x < depths.X(); x++) {
 
                 final float depth = depths.get(x, y);
                 final Float3 pix = new Float3(x, y, 1f);
 
-                final Float3 vertex = (depth > 0) ? mult(rotate(invK, pix),
-                        depth) : new Float3();
+                final Float3 vertex = (depth > 0)
+                        ? mult(rotate(invK, pix), depth)
+                        : new Float3();
 
                 verticies.set(x, y, vertex);
             }
+        }
     }
 
     @Deprecated
@@ -107,16 +102,13 @@ public class GraphicsMath {
         m.set(3, 3, 1);
     }
 
-    /***
+    /**
+     * *
      * Creates a 4x4 matrix representing the intrinsic camera matrix
-     * 
-     * @param k
-     *            - camera parameters {f_x,f_y,x_0,y_0} where {f_x,f_y}
-     *            specifies
-     *            the focal length of the camera and {x_0,y_0} the principle
-     *            point
-     * @param m
-     *            - returned matrix
+     *
+     * @param k - camera parameters {f_x,f_y,x_0,y_0} where {f_x,f_y} specifies
+     *          the focal length of the camera and {x_0,y_0} the principle point
+     * @param m - returned matrix
      */
     public static final void getCameraMatrix(Float4 k, Matrix4x4Float m) {
         m.fill(0f);
@@ -138,14 +130,9 @@ public class GraphicsMath {
 
     /*
      * Performs a rigid transformation which maps one co-ordinate system to
-     * another
-     * [ R11 R12 R13 t1 ] R => 3x3 rotation matrix
-     * T = [ R21 R22 R23 t2 ] t => 3x1 translation (column vector)
-     * [ R31 R32 R33 t3 ]
-     * [ 0 0 0 1 ]
-     * P = [ x ] column vector representing the point to be transformed
-     * [ y ]
-     * [ z ]
+     * another [ R11 R12 R13 t1 ] R => 3x3 rotation matrix T = [ R21 R22 R23 t2
+     * ] t => 3x1 translation (column vector) [ R31 R32 R33 t3 ] [ 0 0 0 1 ] P =
+     * [ x ] column vector representing the point to be transformed [ y ] [ z ]
      * [ 1 ]
      */
     public static final void rigidTransform(Matrix4x4Float T, Float3 point,
@@ -207,8 +194,9 @@ public class GraphicsMath {
 
                     f_tt = VolumeOps.interp(volume, dim, pos);
 
-                    if (f_tt < 0f)
+                    if (f_tt < 0f) {
                         break;
+                    }
 
                     if (f_tt < 0.8f) {
                         stepsize = smallStep;
