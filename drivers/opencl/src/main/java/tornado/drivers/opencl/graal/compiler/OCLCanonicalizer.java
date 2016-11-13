@@ -26,7 +26,6 @@ import tornado.drivers.opencl.graal.nodes.vector.*;
 import tornado.meta.Meta;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLCanonicalizer extends CustomCanonicalizer {
 
@@ -112,9 +111,9 @@ public class OCLCanonicalizer extends CustomCanonicalizer {
             if (phi.valueAt(0) instanceof VectorValueNode && phi.singleValue().equals(ValuePhiNode.MULTIPLE_VALUES) && phi.usages().count() > 1) {
                 //System.out.printf("simplify: phi=%s\n",phi.toString());
                 final VectorValueNode firstValue = (VectorValueNode) phi.valueAt(0);
-                unimplemented();
-//                final VectorValueNode newVector = phi.graph().addOrUnique(new VectorValueNode(firstValue.getResolvedType(), firstValue.getVectorKind(), phi));
-//                phi.replaceAtMatchingUsages(newVector, usage -> !usage.equals(newVector));
+//                unimplemented();
+                final VectorValueNode newVector = phi.graph().addOrUnique(new VectorValueNode(firstValue.getOCLKind(), phi));
+                phi.replaceAtMatchingUsages(newVector, usage -> !usage.equals(newVector));
                 //System.out.printf("simplify: inserted=%s\n",newVector.toString());
             }
         }
