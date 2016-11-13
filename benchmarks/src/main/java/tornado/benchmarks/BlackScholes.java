@@ -9,7 +9,8 @@ import tornado.runtime.api.TaskGraph;
 
 public class BlackScholes {
 
-    private static final boolean USE_JAVA = false;
+    private static final boolean USE_JAVA = Boolean.parseBoolean(System.getProperty("bs.java", "False"));
+    private static final boolean DEBUG = Boolean.parseBoolean(System.getProperty("bs.debug", "False"));
 
     /*
      * For a description of the algorithm and the terms used, please see the
@@ -18,53 +19,53 @@ public class BlackScholes {
      * price, option strike price, time to expiration date, risk free interest
      * and volatility factor.
      */
-
     public static void main(final String[] args) {
 
-        final int size = Integer.getInteger("size", 16777216);
-        final int iterations = Integer.getInteger("iterations", 300);
+        final int size = Integer.getInteger("bs.size", 16777216);
+        final int iterations = Integer.getInteger("bs.iterations", 300);
         // System.out.println("size =" + size);
         // System.out.println("iterations =" + iterations);
 
         final BlackScholes bs = new BlackScholes(size);
 
-        // final TornadoCode bsCode =
-        // TaskUtils.createCodeAction(BlackScholes.class, "run");
-
-        final TaskGraph tasks = new TaskGraph();
-
-        for (int i = 0; i < iterations; i++)
-            tasks.add(BlackScholes::run, bs.randArray, bs.put, bs.call);
-
-        tasks.streamOut(bs.put, bs.call).mapAllTo(OpenCL.defaultDevice());
+        final TaskGraph tasks = new TaskGraph()
+                .add(BlackScholes::run, bs.randArray, bs.put, bs.call)
+                .mapAllTo(OpenCL.defaultDevice());
 
         long start = 0, end = 0;
 
         start = System.nanoTime();
-        if (USE_JAVA)
-            for (int i = 0; i < iterations; i++)
+        if (USE_JAVA) {
+            for (int i = 0; i < iterations; i++) {
+                if (DEBUG) {
+                    System.out.printf("iteration %d\n", i);
+                }
                 run(bs.randArray, bs.put, bs.call);
-        else
-            tasks.schedule().waitOn();
+            }
+        } else {
+            for (int i = 0; i < iterations; i++) {
+                tasks.schedule().waitOn();
+            }
+            OpenCL.defaultDevice().sync(bs.put, bs.call);
+        }
         end = System.nanoTime();
 
         final double elapsed = (end - start) * 1e-9;
         // final double exec = elapsed - compile;
         System.out.printf("time = %.8f s\n", elapsed);
 
-        tasks.dumpTimes();
+        if (!USE_JAVA) {
+            tasks.dumpTimes();
+        }
         bs.showResults(10);
 
-        // System.out.println(tasks.toSummaryString());
     }
 
     /**
      * @brief Abromowitz Stegun approxmimation for PHI (Cumulative Normal
-     *        Distribution Function)
-     * @param X
-     *            input value
-     * @param phi
-     *            pointer to store calculated CND of X
+     * Distribution Function)
+     * @param X   input value
+     * @param phi pointer to store calculated CND of X
      */
     final static float phi(final float X) {
         final float c1 = 0.319381530f;
@@ -129,19 +130,16 @@ public class BlackScholes {
 
     /*
      * @brief Calculates the call and put prices by using Black Scholes model
-     * @param s Array of random values of current option price
-     * @param sigma Array of random values sigma
-     * @param k Array of random values strike price
-     * @param t Array of random values of expiration time
-     * @param r Array of random values of risk free interest rate
-     * @param width Width of call price or put price array
-     * @param call Array of calculated call price values
+     * @param s Array of random values of current option price @param sigma
+     * Array of random values sigma @param k Array of random values strike price
+     * @param t Array of random values of expiration time @param r Array of
+     * random values of risk free interest rate @param width Width of call price
+     * or put price array @param call Array of calculated call price values
      * @param put Array of calculated put price values
      */
     public static void run(@Read final float[] randArray,
             @Write final float[] put, @Write final float[] call) {
-        for (@Parallel
-        int gid = 0; gid < call.length; gid++) {
+        for (@Parallel int gid = 0; gid < call.length; gid++) {
             final float two = 2.0f;
             final float inRand = randArray[gid];
             final float S = (S_LOWER_LIMIT * inRand)
@@ -181,8 +179,9 @@ public class BlackScholes {
         String line;
         line = name + ": ";
         for (int i = 0; i < count; i++) {
-            if (i > 0)
+            if (i > 0) {
                 line += ", ";
+            }
             line += ary[i];
         }
         System.out.println(line);
