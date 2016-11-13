@@ -1,5 +1,6 @@
 package tornado.drivers.opencl.graal.nodes.vector;
 
+import com.oracle.graal.compiler.common.type.StampFactory;
 import com.oracle.graal.graph.NodeClass;
 import com.oracle.graal.nodeinfo.InputType;
 import com.oracle.graal.nodeinfo.NodeInfo;
@@ -8,8 +9,6 @@ import com.oracle.graal.nodes.calc.FloatingNode;
 import com.oracle.graal.nodes.spi.LIRLowerable;
 import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.Value;
-import tornado.drivers.opencl.graal.OCLStamp;
-import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
 import tornado.drivers.opencl.graal.lir.OCLBinary;
 import tornado.drivers.opencl.graal.lir.OCLKind;
@@ -32,7 +31,7 @@ public class VectorElementSelectNode extends FloatingNode implements LIRLowerabl
     ValueNode selection;
 
     public VectorElementSelectNode(OCLKind kind, ValueNode vector, ValueNode selection) {
-        super(TYPE, OCLStampFactory.getStampFor(kind));
+        super(TYPE, StampFactory.forKind(kind.asJavaKind()));
         this.vector = vector;
         this.selection = selection;
     }
@@ -49,10 +48,6 @@ public class VectorElementSelectNode extends FloatingNode implements LIRLowerabl
 
     public ValueNode getVector() {
         return vector;
-    }
-
-    public OCLKind getOCLKind() {
-        return ((OCLStamp) stamp).getOCLKind();
     }
 
     @Override
