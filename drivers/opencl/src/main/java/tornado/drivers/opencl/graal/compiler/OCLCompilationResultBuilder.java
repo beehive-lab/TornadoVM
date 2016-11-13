@@ -93,7 +93,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         // Set<AbstractBlockBase<?>> pending = new
         // HashSet<AbstractBlockBase<?>>();
         // blocks.addAll(cfg.getBlocks());
-        trace("Traversing CFG");
+        trace("Traversing CFG: ", cfg.graph.name);
 
         Set<Block> floating = new HashSet<>();
 
@@ -111,7 +111,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         int position = asm.position();
         compilationResult.setTargetCode(asm.close(true), position);
 
-        closeCompilationResult();
+//        closeCompilationResult();
     }
 
     private String toString(Collection<Block> blocks) {
@@ -476,6 +476,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             return;
         }
 
+        trace("block: %d", block.getId());
         ((OCLAssembler) asm).emitLine("// BLOCK %d", block.getId());
 
         if (PrintLIRWithAssembly.getValue()) {
