@@ -2,21 +2,21 @@ package tornado.drivers.opencl.graal;
 
 import com.oracle.graal.compiler.common.LIRKind;
 import com.oracle.graal.compiler.common.spi.LIRKindTool;
-import com.oracle.graal.compiler.common.type.AbstractPointerStamp;
+import com.oracle.graal.compiler.common.type.AbstractObjectStamp;
 import com.oracle.graal.compiler.common.type.Stamp;
 import jdk.vm.ci.meta.*;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 
-import static tornado.common.Tornado.warn;
+import static tornado.common.Tornado.debug;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
-public class OCLStamp extends AbstractPointerStamp {
+public class OCLStamp extends AbstractObjectStamp {
 
     private OCLKind oclKind;
 
     public OCLStamp(OCLKind lirKind) {
-        super(true, false);
+        super(null, true, true, false);
         this.oclKind = lirKind;
     }
 
@@ -28,7 +28,6 @@ public class OCLStamp extends AbstractPointerStamp {
 
     @Override
     public Stamp empty() {
-        shouldNotReachHere();
         return this;
     }
 
@@ -67,7 +66,7 @@ public class OCLStamp extends AbstractPointerStamp {
                     return JavaKind.Illegal;
             }
         } else if (oclKind.isVector()) {
-            return JavaKind.Illegal;
+            return JavaKind.Object;
         }
         return JavaKind.Illegal;
     }
@@ -93,7 +92,11 @@ public class OCLStamp extends AbstractPointerStamp {
 
     @Override
     public boolean isCompatible(Stamp stamp) {
-        shouldNotReachHere();
+        if (stamp instanceof OCLStamp && ((OCLStamp) stamp).oclKind == oclKind) {
+            return true;
+        }
+
+        unimplemented("stamp iscompat: %s + %s", this, stamp);
         return false;
     }
 
@@ -113,13 +116,12 @@ public class OCLStamp extends AbstractPointerStamp {
             return this;
         }
 
-        warn("stamp join: %s + %s", this, stamp);
+        debug("stamp join: %s + %s", this, stamp);
         return this;
     }
 
     @Override
     public Stamp meet(Stamp stamp) {
-        shouldNotReachHere();
         return this;
     }
 
@@ -136,13 +138,11 @@ public class OCLStamp extends AbstractPointerStamp {
 
     @Override
     public Stamp unrestricted() {
-        shouldNotReachHere();
         return this;
     }
 
     @Override
-    protected AbstractPointerStamp copyWith(boolean bln, boolean bln1) {
-        unimplemented();
-        return null;
+    protected AbstractObjectStamp copyWith(ResolvedJavaType rjt, boolean bln, boolean bln1, boolean bln2) {
+        return this;
     }
 }
