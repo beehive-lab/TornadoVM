@@ -140,7 +140,6 @@ public class OCLGraphBuilderPlugins {
             public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode... args) {
 
-//                com.oracle.graal.debug.Debug.dump(com.oracle.graal.debug.Debug.BASIC_LOG_LEVEL, args[0].graph(), "plugins");
                 NewArrayNode newArrayNode = (NewArrayNode) args[1];
                 ConstantNode lengthNode = (ConstantNode) newArrayNode.dimension(0);
                 int length = ((JavaConstant) lengthNode.getValue()).asInt();
