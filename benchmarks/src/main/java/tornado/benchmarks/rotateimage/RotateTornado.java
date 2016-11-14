@@ -70,8 +70,6 @@ public class RotateTornado extends BenchmarkDriver {
         graph.schedule().waitOn();
     }
 
-  
-
     @Override
     public boolean validate() {
 
