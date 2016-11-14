@@ -52,12 +52,15 @@ public class BlackScholes {
 
         final double elapsed = (end - start) * 1e-9;
         // final double exec = elapsed - compile;
-        System.out.printf("time = %.8f s\n", elapsed);
+        System.out.printf("bm: blackscholes, %d, %d, %.8f \n", iterations, size, elapsed);
 
         if (!USE_JAVA) {
-            tasks.dumpTimes();
+            tasks.dumpProfiles();
         }
-        bs.showResults(10);
+
+        if (DEBUG) {
+            bs.showResults(10);
+        }
 
     }
 
