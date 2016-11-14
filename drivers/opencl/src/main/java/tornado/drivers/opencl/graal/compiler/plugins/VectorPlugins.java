@@ -123,7 +123,7 @@ public final class VectorPlugins {
                     Receiver receiver, ValueNode laneId, ValueNode value) {
                 final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(
                         vectorKind.getElementKind(), receiver.get(), laneId, value);
-                b.append(b.recursiveAppend(store));
+                b.add(b.recursiveAppend(store));
 
                 return true;
             }
