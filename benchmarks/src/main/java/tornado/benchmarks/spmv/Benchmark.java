@@ -28,8 +28,9 @@ public class Benchmark extends BenchmarkRunner {
             path = fullpath.substring(fullpath.lastIndexOf("/") + 1);
             matrix = SparseMatrixUtils.loadMatrixF(fullpath);
         } else {
-            System.out.println("invalid args: <iterations> <file>");
-            System.exit(-1);
+            path = System.getProperty("spmv.matrix", "/bcsstk32.mtx");
+            matrix = SparseMatrixUtils.loadMatrixF(Benchmark.class.getResourceAsStream(path));
+            iterations = Integer.parseInt(System.getProperty("spmv.iterations", "1400"));
         }
     }
 
