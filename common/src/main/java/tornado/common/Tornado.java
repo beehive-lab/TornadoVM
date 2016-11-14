@@ -3,7 +3,9 @@ package tornado.common;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 public final class Tornado {
 
@@ -90,13 +92,26 @@ public final class Tornado {
     private static void tryLoadSettings() {
         final String tornadoRoot = System.getenv("TORNADO_ROOT");
         final File localSettings = new File(tornadoRoot + "/etc/tornado.properties");
+        Properties loadProperties = new Properties();
         if (localSettings.exists()) {
             try {
-                settings.load(new FileInputStream(localSettings));
+                loadProperties.load(new FileInputStream(localSettings));
             } catch (IOException e) {
                 warn("Unable to load settings from %s",
                         localSettings.getAbsolutePath());
             }
+        }
+
+        // merge local and system properties
+        // note that command line args override saved properties
+        Set<String> localKeys = loadProperties.stringPropertyNames();
+        Set<String> systemKeys = settings.stringPropertyNames();
+        Set<String> diff = new HashSet<>();
+        diff.addAll(localKeys);
+        diff.removeAll(systemKeys);
+
+        for (String key : diff) {
+            settings.setProperty(key, loadProperties.getProperty(key));
         }
     }
 
