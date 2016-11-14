@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PACKAGE="tornado.benchmarks"
-BENCHMARKS="sadd saxpy sgemm addvector dotvector rotatevector rotateimage convolvearray convolveimage"
+BENCHMARKS="sadd saxpy sgemm spmv addvector dotvector rotatevector rotateimage convolvearray convolveimage"
 MAIN_CLASS="Benchmark"
 
 TORNADO_CMD="tornado"
@@ -29,4 +29,18 @@ for bm in ${BENCHMARKS}; do
 		echo "running ${i} ${bm} ..."
 		${TORNADO_CMD} ${TORNADO_FLAGS} tornado.benchmarks.BenchmarkRunner ${PACKAGE}.${bm}.${MAIN_CLASS} >> "${LOGFILE}-${bm}-${i}.log"
 	done
+done
+
+DEVICES=$(${TORNADO_CMD} tornado.drivers.opencl.OpenCL | grep "\[.:.\]" | awk '{print $1}' | perl -pe 's/\[(.):(.)\]/$1-$2/g' | tr '\n' ' ')
+for device in ${DEVICES}; do
+    device_flags=$(echo "${device}" | perl -pe 's/(.)-(.)/-Dtornado.platform=$1 -Dtornado.device=$2/g')
+    for (( i=0; i<${ITERATIONS}; i++ )); do
+	echo "running ${i} black scholes on ${device} ..."
+        ${TORNADO_CMD} ${device_flags} ${TORNADO_FLAGS} ${PACKAGE}.BlackScholes >> "${LOGFILE}-blackscholes-${device}-${i}.log"
+    done
+done
+
+for (( i=0; i<${ITERATIONS}; i++ )); do
+    echo "running ${i} black scholes java ..."
+    ${TORNADO_CMD} -Dbs.java=True ${TORNADO_FLAGS} ${PACKAGE}.BlackScholes >> "${LOGFILE}-blackscholes-java-${i}.log"
 done
