@@ -22,6 +22,8 @@ if [ ! -z "${TORNADO_FLAGS}" ];then
   echo ${TORNADO_FLAGS} > "${BM_ROOT}/tornado.flags"
 fi
 
+echo $(git rev-parse HEAD) > "${BM_ROOT}/git.sha"
+
 for bm in ${BENCHMARKS}; do
 	for (( i=0; i<${ITERATIONS}; i++ )); do
 		echo "running ${i} ${bm} ..."
