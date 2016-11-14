@@ -1,15 +1,5 @@
 package tornado.collections.graphics;
 
-import static tornado.collections.types.Float3.add;
-import static tornado.collections.types.Float3.cross;
-import static tornado.collections.types.Float3.div;
-import static tornado.collections.types.Float3.dot;
-import static tornado.collections.types.Float3.max;
-import static tornado.collections.types.Float3.min;
-import static tornado.collections.types.Float3.mult;
-import static tornado.collections.types.Float3.normalise;
-import static tornado.collections.types.Float3.sub;
-
 import tornado.api.Parallel;
 import tornado.api.Read;
 import tornado.api.Write;
@@ -17,6 +7,8 @@ import tornado.collections.types.*;
 
 import static tornado.collections.math.TornadoMath.max;
 import static tornado.collections.math.TornadoMath.min;
+import static tornado.collections.types.Float3.*;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class GraphicsMath {
 
@@ -67,13 +59,6 @@ public class GraphicsMath {
 
                 verticies.set(x, y, vertex);
             }
-        }
-    }
-
-    @Deprecated
-    public static final void rotate(Float3 y, Matrix4x4Float m, Float3 x) {
-        for (int i = 0; i < 3; i++) {
-            y.set(i, dot(m.row(i).asFloat3(), x));
         }
     }
 
@@ -135,13 +120,15 @@ public class GraphicsMath {
      * [ x ] column vector representing the point to be transformed [ y ] [ z ]
      * [ 1 ]
      */
+    @Deprecated
     public static final void rigidTransform(Matrix4x4Float T, Float3 point,
             Float3 result) {
-        final Float3 col = T.column(3).asFloat3();
-        result.setX(dot(T.row(0).asFloat3(), point));
-        result.setY(dot(T.row(1).asFloat3(), point));
-        result.setZ(dot(T.row(2).asFloat3(), point));
-        add(result, col, result);
+        unimplemented();
+//        final Float3 col = T.column(3).asFloat3();
+//        result.setX(dot(T.row(0).asFloat3(), point));
+//        result.setY(dot(T.row(1).asFloat3(), point));
+//        result.setZ(dot(T.row(2).asFloat3(), point));
+//        add(result, col, result);
 
     }
 
@@ -169,11 +156,11 @@ public class GraphicsMath {
         final Float3 tbot = mult(mult(invR, origin), -1f);
         final Float3 ttop = mult(invR, sub(dim, origin));
 
-        final Float3 tmin = min(ttop, tbot);
-        final Float3 tmax = max(ttop, tbot);
+        final Float3 tmin = Float3.min(ttop, tbot);
+        final Float3 tmax = Float3.max(ttop, tbot);
 
-        final float largestTmin = max(tmin);
-        final float smallestTmax = min(tmax);
+        final float largestTmin = Float3.max(tmin);
+        final float smallestTmax = Float3.min(tmax);
 
         final float tnear = max(largestTmin, nearPlane);
         final float tfar = min(smallestTmax, farPlane);

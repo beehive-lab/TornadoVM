@@ -115,6 +115,7 @@ public class Int4 implements PrimitiveStorage<IntBuffer> {
         return String.format(fmt, getX(), getY(), getZ(), getW());
     }
 
+    @Override
     public String toString() {
         return toString(numberFormat);
     }
@@ -145,12 +146,13 @@ public class Int4 implements PrimitiveStorage<IntBuffer> {
         return IntBuffer.wrap(storage);
     }
 
+    @Override
     public int size() {
         return numElements;
     }
 
     /*
-	 * vector = op( vector, vector )
+     * vector = op( vector, vector )
      */
     public static Int4 add(Int4 a, Int4 b) {
         return new Int4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW() + b.getW());
@@ -177,7 +179,7 @@ public class Int4 implements PrimitiveStorage<IntBuffer> {
     }
 
     /*
-	 * vector = op (vector, scalar)
+     * vector = op (vector, scalar)
      */
     public static Int4 add(Int4 a, int b) {
         return new Int4(a.getX() + b, a.getY() + b, a.getZ() + b, a.getW() + b);
@@ -195,94 +197,38 @@ public class Int4 implements PrimitiveStorage<IntBuffer> {
         return new Int4(a.getX() / b, a.getY() / b, a.getZ() / b, a.getW() / b);
     }
 
+    public static Int4 inc(Int4 a, int value) {
+        return add(a, value);
+    }
+
+    public static Int4 dec(Int4 a, int value) {
+        return sub(a, value);
+    }
+
+    public static Int4 scale(Int4 a, int value) {
+        return mult(a, value);
+    }
+
     /*
-	 * vector = op (vector, vector)
+     * misc inplace vector ops
      */
-    public static void add(Int4 a, Int4 b, Int4 c) {
-        c.setX(a.getX() + b.getX());
-        c.setY(a.getY() + b.getY());
-        c.setZ(a.getZ() + b.getZ());
-        c.setW(a.getW() + b.getW());
-    }
-
-    public static void sub(Int4 a, Int4 b, Int4 c) {
-        c.setX(a.getX() - b.getX());
-        c.setY(a.getY() - b.getY());
-        c.setZ(a.getZ() - b.getZ());
-        c.setW(a.getW() - b.getW());
-    }
-
-    public static void mult(Int4 a, Int4 b, Int4 c) {
-        c.setX(a.getX() * b.getX());
-        c.setY(a.getY() * b.getY());
-        c.setZ(a.getZ() * b.getZ());
-        c.setW(a.getW() * b.getW());
-    }
-
-    public static void div(Int4 a, Int4 b, Int4 c) {
-        c.setX(a.getX() / b.getX());
-        c.setY(a.getY() / b.getY());
-        c.setZ(a.getZ() / b.getZ());
-        c.setW(a.getW() / b.getW());
-    }
-
-    public static void min(Int4 a, Int4 b, Int4 c) {
-        c.setX(Math.min(a.getX(), b.getX()));
-        c.setY(Math.min(a.getY(), b.getY()));
-        c.setZ(Math.min(a.getZ(), b.getZ()));
-        c.setW(Math.min(a.getW(), b.getW()));
-    }
-
-    public static void max(Int4 a, Int4 b, Int4 c) {
-        c.setX(Math.max(a.getX(), b.getX()));
-        c.setY(Math.max(a.getY(), b.getY()));
-        c.setZ(Math.max(a.getZ(), b.getZ()));
-        c.setW(Math.max(a.getW(), b.getW()));
+    public static Int4 clamp(Int4 x, int min, int max) {
+        return new Int4(
+                TornadoMath.clamp(x.getX(), min, max),
+                TornadoMath.clamp(x.getY(), min, max),
+                TornadoMath.clamp(x.getZ(), min, max),
+                TornadoMath.clamp(x.getW(), min, max));
     }
 
     /*
-	 *  inplace src = op (src, scalar)
-     */
-    public static void inc(Int4 a, int value) {
-        a.setX(a.getX() + value);
-        a.setY(a.getY() + value);
-        a.setZ(a.getZ() + value);
-        a.setW(a.getW() + value);
-    }
-
-    public static void dec(Int4 a, int value) {
-        a.setX(a.getX() - value);
-        a.setY(a.getY() - value);
-        a.setZ(a.getZ() - value);
-        a.setW(a.getW() - value);
-    }
-
-    public static void scale(Int4 a, int value) {
-        a.setX(a.getX() * value);
-        a.setY(a.getY() * value);
-        a.setZ(a.getZ() * value);
-        a.setW(a.getW() * value);
-    }
-
-    /*
-	 * misc inplace vector ops
-     */
-    public static void clamp(Int4 x, int min, int max) {
-        x.setX(TornadoMath.clamp(x.getX(), min, max));
-        x.setY(TornadoMath.clamp(x.getY(), min, max));
-        x.setZ(TornadoMath.clamp(x.getZ(), min, max));
-        x.setW(TornadoMath.clamp(x.getW(), min, max));
-    }
-
-    /*
-	 * vector wide operations
+     * vector wide operations
      */
     public static int min(Int4 value) {
-        return Math.min(value.getX(), Math.min(value.getY(), Math.min(value.getZ(),value.getW())));
+        return Math.min(value.getX(), Math.min(value.getY(), Math.min(value.getZ(), value.getW())));
     }
 
     public static int max(Int4 value) {
-        return Math.max(value.getX(), Math.max(value.getY(), Math.max(value.getZ(),value.getW())));
+        return Math.max(value.getX(), Math.max(value.getY(), Math.max(value.getZ(), value.getW())));
     }
 
     public static boolean isEqual(Int4 a, Int4 b) {

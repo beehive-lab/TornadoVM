@@ -2,7 +2,7 @@ package tornado.collections.types;
 
 import java.nio.FloatBuffer;
 
-public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>,Container<Float8> {
+public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>, Container<Float8> {
 
     /**
      * backing array
@@ -29,8 +29,8 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>,Container<Floa
      * Storage format for matrix
      *
      * @param height number of columns
-     * @param width number of rows
-     * @param data array reference which contains data
+     * @param width  number of rows
+     * @param data   array reference which contains data
      */
     public ImageFloat8(int width, int height, float[] array) {
         storage = array;
@@ -43,7 +43,7 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>,Container<Floa
      * Storage format for matrix
      *
      * @param height number of columns
-     * @param width number of rows
+     * @param width  number of rows
      */
     public ImageFloat8(int width, int height) {
         this(width, height, new float[width * height * elementSize]);
@@ -56,15 +56,15 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>,Container<Floa
     private final int toIndex(int x, int y) {
         return (x * elementSize) + (y * elementSize * X);
     }
-    
-    public int numElements(){
+
+    public int numElements() {
         return numElements;
     }
 
     public Float8 get(int x) {
         return get(x, 0);
     }
-    
+
     public void set(int x, Float8 value) {
         final int offset = toIndex(x, 0);
         value.storeToArray(storage, offset);
@@ -127,22 +127,22 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>,Container<Floa
     }
 
     public Float8 mean() {
-        final Float8 result = new Float8();
+        Float8 result = new Float8();
         for (int row = 0; row < Y; row++) {
             for (int col = 0; col < X; col++) {
-                Float8.add(result, get(col, row), result);
+                result = Float8.add(result, get(col, row));
             }
         }
-        Float8.div(result, (float) (X * Y));
+        result = Float8.div(result, (float) (X * Y));
         return result;
     }
 
     public Float8 min() {
-        final Float8 result = new Float8(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
+        Float8 result = new Float8(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
 
         for (int row = 0; row < Y; row++) {
             for (int col = 0; col < X; col++) {
-                Float8.min(result, get(col, row), result);
+                result = Float8.min(result, get(col, row));
             }
         }
 
@@ -150,11 +150,11 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>,Container<Floa
     }
 
     public Float8 max() {
-        final Float8 result = new Float8(Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE);
+        Float8 result = new Float8(Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE);
 
         for (int row = 0; row < Y; row++) {
             for (int col = 0; col < X; col++) {
-                Float8.max(result, get(col, row), result);
+                result = Float8.max(result, get(col, row));
             }
         }
 
@@ -163,18 +163,16 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>,Container<Floa
 
     public Float8 stdDev() {
         final Float8 mean = mean();
-        final Float8 varience = new Float8();
+        Float8 varience = new Float8();
         for (int row = 0; row < Y; row++) {
             for (int col = 0; col < X; col++) {
-                final Float8 v = Float8.sub(mean, get(col, row));
-                Float8.mult(v, v, v);
-                Float8.div(v, (float) X);
-                Float8.add(v, varience, varience);
-
+                Float8 v = Float8.sub(mean, get(col, row));
+                v = Float8.mult(v, v);
+                v = Float8.div(v, X);
+                varience = Float8.add(v, varience);
             }
         }
-        Float8.sqrt(varience);
-        return varience;
+        return Float8.sqrt(varience);
     }
 
     public String summerise() {
@@ -202,7 +200,7 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>,Container<Floa
         float averageULP = 0f;
 
         /*
-		 * check to make sure dimensions match
+         * check to make sure dimensions match
          */
         if (ref.X != X && ref.Y != Y) {
             return new FloatingPointError(-1f, 0f, 0f, 0f);
