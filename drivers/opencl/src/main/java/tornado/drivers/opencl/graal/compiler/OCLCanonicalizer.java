@@ -107,15 +107,15 @@ public class OCLCanonicalizer extends CustomCanonicalizer {
 //			System.out.printf("simplify: node=%s\n",node);
 //            simplfyVectorValueNode((VectorValueNode) node, tool);
         } else if (node instanceof ValuePhiNode) {
-            final ValuePhiNode phi = (ValuePhiNode) node;
-            if (phi.valueAt(0) instanceof VectorValueNode && phi.singleValue().equals(ValuePhiNode.MULTIPLE_VALUES) && phi.usages().count() > 1) {
-                //System.out.printf("simplify: phi=%s\n",phi.toString());
-                final VectorValueNode firstValue = (VectorValueNode) phi.valueAt(0);
-//                unimplemented();
-                final VectorValueNode newVector = phi.graph().addOrUnique(new VectorValueNode(firstValue.getOCLKind(), phi));
-                phi.replaceAtMatchingUsages(newVector, usage -> !usage.equals(newVector));
-                //System.out.printf("simplify: inserted=%s\n",newVector.toString());
-            }
+//            final ValuePhiNode phi = (ValuePhiNode) node;
+//            if (phi.valueAt(0) instanceof VectorValueNode && phi.singleValue().equals(ValuePhiNode.MULTIPLE_VALUES) && phi.usages().count() > 1) {
+//                //System.out.printf("simplify: phi=%s\n",phi.toString());
+//                final VectorValueNode firstValue = (VectorValueNode) phi.valueAt(0);
+////                unimplemented();
+//                final VectorValueNode newVector = phi.graph().addOrUnique(new VectorValueNode(firstValue.getOCLKind(), phi));
+//                phi.replaceAtMatchingUsages(newVector, usage -> !usage.equals(newVector));
+//                //System.out.printf("simplify: inserted=%s\n",newVector.toString());
+//            }
         }
     }
 
