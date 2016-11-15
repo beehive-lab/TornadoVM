@@ -1,35 +1,21 @@
 package tornado.collections.graphics;
 
-
 import tornado.api.Parallel;
 import tornado.api.Read;
 import tornado.api.Write;
 import tornado.collections.math.TornadoMath;
-import tornado.collections.types.Byte3;
-import tornado.collections.types.Byte4;
-import tornado.collections.types.Float3;
-import tornado.collections.types.Float4;
-import tornado.collections.types.ImageByte3;
-import tornado.collections.types.ImageByte4;
-import tornado.collections.types.ImageFloat;
-import tornado.collections.types.ImageFloat3;
-import tornado.collections.types.ImageFloat8;
-import tornado.collections.types.Matrix4x4Float;
-import tornado.collections.types.Short3;
-import tornado.collections.types.VolumeOps;
-import tornado.collections.types.VolumeShort2;
+import tornado.collections.types.*;
 
 public class Renderer {
+
     private static final float INVALID = -2f;
 
-    public static void renderLight( @Write ImageByte4 output,
-             @Read ImageFloat3 verticies, @Read ImageFloat3 normals,
-             @Read Float3 light,  @Read Float3 ambient) {
+    public static void renderLight(@Write ImageByte4 output,
+            @Read ImageFloat3 verticies, @Read ImageFloat3 normals,
+            @Read Float3 light, @Read Float3 ambient) {
 
-        for (@Parallel
-        int y = 0; y < output.Y(); y++) {
-            for (@Parallel
-            int x = 0; x < output.X(); x++) {
+        for (@Parallel int y = 0; y < output.Y(); y++) {
+            for (@Parallel int x = 0; x < output.X(); x++) {
 
                 final Float3 normal = normals.get(x, y);
                 Byte4 pixel = new Byte4((byte) 0, (byte) 0, (byte) 0,
@@ -41,10 +27,10 @@ public class Renderer {
 
                     final float dir = Math.max(Float3.dot(normal, vertex), 0f);
 
-                    final Float3 col = Float3.add(ambient, dir);
-                    Float3.clamp(col, 0f, 1f);
+                    Float3 col = Float3.add(ambient, dir);
+                    col = Float3.clamp(col, 0f, 1f);
 
-                    Float3.scale(col, 255f);
+                    col = Float3.scale(col, 255f);
 
                     pixel = new Byte4((byte) col.getX(), (byte) col.getY(),
                             (byte) col.getZ(), (byte) 255);
@@ -56,15 +42,13 @@ public class Renderer {
     }
 
     public static void renderVolume(@Write ImageByte4 output,
-             @Read VolumeShort2 volume,  @Read Float3 volumeDims,
-             @Read Matrix4x4Float view,  @Read float nearPlane,
-             @Read float farPlane,  @Read float smallStep,  @Read float largeStep,
-             @Read Float3 light, @Read Float3 ambient) {
+            @Read VolumeShort2 volume, @Read Float3 volumeDims,
+            @Read Matrix4x4Float view, @Read float nearPlane,
+            @Read float farPlane, @Read float smallStep, @Read float largeStep,
+            @Read Float3 light, @Read Float3 ambient) {
 
-        for (@Parallel
-        int y = 0; y < output.Y(); y++) {
-            for (@Parallel
-            int x = 0; x < output.X(); x++) {
+        for (@Parallel int y = 0; y < output.Y(); y++) {
+            for (@Parallel int x = 0; x < output.X(); x++) {
 
                 final Float4 hit = GraphicsMath.raycastPoint(volume,
                         volumeDims, x, y, view, nearPlane, farPlane, smallStep,
@@ -88,7 +72,7 @@ public class Renderer {
                         Float3 col = Float3.add(new Float3(dir, dir, dir),
                                 ambient);
 
-                        Float3.clamp(col, 0f, 1f);
+                        col = Float3.clamp(col, 0f, 1f);
                         col = Float3.mult(col, 255f);
 
                         pixel = new Byte4((byte) col.getX(), (byte) col.getY(),
@@ -106,8 +90,8 @@ public class Renderer {
         }
     }
 
-    public static void renderNorms(@Write ImageByte3 output,@Read  ImageFloat3 normals) {
-        for (@Parallel int y = 0; y < normals.Y(); y++)
+    public static void renderNorms(@Write ImageByte3 output, @Read ImageFloat3 normals) {
+        for (@Parallel int y = 0; y < normals.Y(); y++) {
             for (@Parallel int x = 0; x < normals.X(); x++) {
 
                 final Float3 normal = normals.get(x, y);
@@ -125,10 +109,11 @@ public class Renderer {
 
                 output.set(x, y, pixel);
             }
+        }
     }
 
-    public static void renderVertex(@Write ImageByte3 output,@Read ImageFloat3 vertices) {
-        for (@Parallel int y = 0; y < vertices.Y(); y++)
+    public static void renderVertex(@Write ImageByte3 output, @Read ImageFloat3 vertices) {
+        for (@Parallel int y = 0; y < vertices.Y(); y++) {
             for (@Parallel int x = 0; x < vertices.X(); x++) {
 
                 final Float3 vertex = vertices.get(x, y);
@@ -146,15 +131,14 @@ public class Renderer {
 
                 output.set(x, y, pixel);
             }
+        }
     }
 
     public static void renderTrack(@Write ImageByte3 output,
-             @Read ImageFloat8 track) {
+            @Read ImageFloat8 track) {
 
-        for (@Parallel
-        int y = 0; y < track.Y(); y++)
-            for (@Parallel
-            int x = 0; x < track.X(); x++) {
+        for (@Parallel int y = 0; y < track.Y(); y++) {
+            for (@Parallel int x = 0; x < track.X(); x++) {
 
                 Byte3 pixel = null;
                 final int result = (int) track.get(x, y).getS7();
@@ -185,70 +169,68 @@ public class Renderer {
 
                 output.set(x, y, pixel);
             }
+        }
     }
 
     public static void renderDepth(@Write ImageByte4 output,
-             @Read ImageFloat depthMap, @Read float nearPlane,
+            @Read ImageFloat depthMap, @Read float nearPlane,
             @Read float farPlane) {
         final Byte4 BLACK = new Byte4((byte) 255, (byte) 255, (byte) 255,
                 (byte) 0);
         final Byte4 ZERO = new Byte4();
 
-        for (@Parallel
-        int y = 0; y < depthMap.Y(); y++)
-            for (@Parallel
-            int x = 0; x < depthMap.X(); x++) {
+        for (@Parallel int y = 0; y < depthMap.Y(); y++) {
+            for (@Parallel int x = 0; x < depthMap.X(); x++) {
 
                 float depth = depthMap.get(x, y);
                 Byte4 pixel = null;
 
                 if (depth < nearPlane) {
                     pixel = BLACK; // black
+                } else if (depth >= farPlane) {
+                    pixel = ZERO;
                 } else {
-                    if (depth >= farPlane) {
-                        pixel = ZERO;
-                    } else {
-                        final float h = ((depth - nearPlane) / (farPlane - nearPlane)) * 6f;
+                    final float h = ((depth - nearPlane) / (farPlane - nearPlane)) * 6f;
 
-                        final int sextant = (int) h;
-                        final float fract = h - sextant;
-                        final float mid1 = 0.25f + (0.5f * fract);
-                        final float mid2 = 0.75f - (0.5f * fract);
-                        switch (sextant) {
-                            case 0:
-                                pixel = new Byte4((byte) 191,
-                                        (byte) (255f * mid1), (byte) 64,
-                                        (byte) 0);
-                                break;
-                            case 1:
-                                pixel = new Byte4((byte) (255f * mid2),
-                                        (byte) 191, (byte) 64, (byte) 0);
-                                break;
-                            case 2:
-                                pixel = new Byte4((byte) 64, (byte) 191,
-                                        (byte) (255f * mid1), (byte) 0);
-                                break;
-                            case 3:
-                                pixel = new Byte4((byte) 64,
-                                        (byte) (255f * mid2), (byte) 191,
-                                        (byte) 0);
-                                break;
-                            case 4:
-                                pixel = new Byte4((byte) (255f * mid1),
-                                        (byte) 64, (byte) 191, (byte) 0);
-                                break;
-                            case 5:
-                                pixel = new Byte4((byte) 191, (byte) 64,
-                                        (byte) (255f * mid2), (byte) 0);
-                                break;
-                            default:
-                            	pixel = ZERO;
-                        }
+                    final int sextant = (int) h;
+                    final float fract = h - sextant;
+                    final float mid1 = 0.25f + (0.5f * fract);
+                    final float mid2 = 0.75f - (0.5f * fract);
+                    switch (sextant) {
+                        case 0:
+                            pixel = new Byte4((byte) 191,
+                                    (byte) (255f * mid1), (byte) 64,
+                                    (byte) 0);
+                            break;
+                        case 1:
+                            pixel = new Byte4((byte) (255f * mid2),
+                                    (byte) 191, (byte) 64, (byte) 0);
+                            break;
+                        case 2:
+                            pixel = new Byte4((byte) 64, (byte) 191,
+                                    (byte) (255f * mid1), (byte) 0);
+                            break;
+                        case 3:
+                            pixel = new Byte4((byte) 64,
+                                    (byte) (255f * mid2), (byte) 191,
+                                    (byte) 0);
+                            break;
+                        case 4:
+                            pixel = new Byte4((byte) (255f * mid1),
+                                    (byte) 64, (byte) 191, (byte) 0);
+                            break;
+                        case 5:
+                            pixel = new Byte4((byte) 191, (byte) 64,
+                                    (byte) (255f * mid2), (byte) 0);
+                            break;
+                        default:
+                            pixel = ZERO;
                     }
                 }
 
                 output.set(x, y, pixel);
             }
+        }
     }
 
     public final static void gs2rgb(Short3 rgb, float d) {
@@ -308,10 +290,12 @@ public class Renderer {
         rgb.setZ((short) (b * 255));
     }
 
-    public static void renderRGB(@Write ImageByte3 output,@Read ImageByte3 video) {
-        for (@Parallel int y = 0; y < video.Y(); y++)
-            for (@Parallel int x = 0; x < video.X(); x++)
+    public static void renderRGB(@Write ImageByte3 output, @Read ImageByte3 video) {
+        for (@Parallel int y = 0; y < video.Y(); y++) {
+            for (@Parallel int x = 0; x < video.X(); x++) {
                 output.set(x, y, video.get(x, y));
+            }
+        }
     }
 
 }
