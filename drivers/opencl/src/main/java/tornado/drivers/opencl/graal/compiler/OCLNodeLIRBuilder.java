@@ -256,7 +256,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     private Value emitNegatedLogicNode(final LogicNode node) {
         Value result = null;
         trace("emitLogicNode: %s", node);
-        LIRKind lirKind = LIRKind.value(OCLKind.BOOL);
+        LIRKind lirKind = LIRKind.value(OCLKind.INT);
         if (node instanceof LogicalEqualsNode) {
             final LogicalEqualsNode condition = (LogicalEqualsNode) node;
             final Value x = operandOrConjunction(condition.getX());
@@ -274,7 +274,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
             result = getGen().getArithmetic().genBinaryExpr(
-                    OCLBinaryIntrinsicCmp.FLOAT_IS_GREATER_EQUAL, lirKind, x,
+                    OCLBinaryIntrinsicCmp.FLOAT_IS_GREATEREQUAL, lirKind, x,
                     y);
         } else if (node instanceof IntegerBelowNode) {
             final IntegerBelowNode condition = (IntegerBelowNode) node;
@@ -317,7 +317,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     private OCLLIROp emitLogicNode(final LogicNode node) {
         Value result = null;
         trace("emitLogicNode: %s", node);
-        LIRKind lirKind = LIRKind.value(OCLKind.BOOL);
+        LIRKind lirKind = LIRKind.value(OCLKind.INT);
         if (node instanceof LogicalEqualsNode) {
             final LogicalEqualsNode condition = (LogicalEqualsNode) node;
             final Value x = operandOrConjunction(condition.getX());
@@ -443,16 +443,16 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         final LabelRef falseBranch = getLIRBlock(x.falseSuccessor());
         if (falseBranch.getTargetBlock().isExceptionEntry()) {
             trace("emitExceptionEntry");
+            shouldNotReachHere("exceptions are unimplemented");
         }
 
         final boolean isLoop = gen.getCurrentBlock().isLoopHeader();
         final boolean invertedLoop = isLoop
                 && x.trueSuccessor() instanceof LoopExitNode;
 
-        trace("condition: %s", x.condition());
         final Value condition = (invertedLoop) ? emitNegatedLogicNode(x
                 .condition()) : emitLogicNode(x.condition());
-        trace("condition: %s", condition);
+        trace("condition: %s -> %s", x.condition(), condition);
 
         if (isLoop) {
             append(new OCLControlFlow.LoopConditionOp(condition));
@@ -460,12 +460,10 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             append(new OCLControlFlow.LinkedConditionalBranchOp(condition));
         } else {
             Value operand = operand(x.condition());
-            Variable newVariable = getGen().newVariable(LIRKind.value(OCLKind.BOOL));
+            Variable newVariable = getGen().newVariable(LIRKind.value(OCLKind.INT));
             append(new AssignStmt(newVariable, operand));
             append(new OCLControlFlow.ConditionalBranchOp(newVariable));
         }
-
-        // append(new OCLControlFlow.BeginScopeOp());
     }
 
     private void emitLoopBegin(final LoopBeginNode node) {
@@ -618,37 +616,37 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void emitSwitch(SwitchNode x) {
-        unimplemented();
-//        assert x.defaultSuccessor() != null;
-//        LabelRef defaultTarget = getLIRBlock(x.defaultSuccessor());
-//        int keyCount = x.keyCount();
-//        if (keyCount == 0) {
-//            gen.emitJump(defaultTarget);
-//        } else {
-//            Variable value = gen.load(operand(x.value()));
-//            if (keyCount == 1) {
-//                assert defaultTarget != null;
-//                double probability = x.probability(x.keySuccessor(0));
-//                PlatformKind kind = gen.getLIRKind(x.value().stamp())
-//                        .getPlatformKind();
+        assert x.defaultSuccessor() != null;
+        LabelRef defaultTarget = getLIRBlock(x.defaultSuccessor());
+        int keyCount = x.keyCount();
+        if (keyCount == 0) {
+            gen.emitJump(defaultTarget);
+        } else {
+            Variable value = gen.load(operand(x.value()));
+            if (keyCount == 1) {
+                assert defaultTarget != null;
+                double probability = x.probability(x.keySuccessor(0));
+                PlatformKind kind = gen.getLIRKind(x.value().stamp())
+                        .getPlatformKind();
+                unimplemented();
 //                gen.emitCompareBranch(kind, gen.load(operand(x.value())),
 //                        x.keyAt(0), Condition.EQ, false,
 //                        getLIRBlock(x.keySuccessor(0)), defaultTarget,
 //                        probability);
-//            } else {
-//                LabelRef[] keyTargets = new LabelRef[keyCount];
-//                JavaConstant[] keyConstants = new JavaConstant[keyCount];
-//                double[] keyProbabilities = new double[keyCount];
-//                for (int i = 0; i < keyCount; i++) {
-//                    keyTargets[i] = getLIRBlock(x.keySuccessor(i));
-//                    keyConstants[i] = x.keyAt(i);
-//                    keyProbabilities[i] = x.keyProbability(i);
-//                    // System.out.printf("switch: key=%s, target=%s\n",keyConstants[i],keyTargets[i]);
-//                }
-//                gen.emitStrategySwitch(keyConstants, keyProbabilities,
-//                        keyTargets, defaultTarget, value);
-//            }
-//        }
+            } else {
+                LabelRef[] keyTargets = new LabelRef[keyCount];
+                JavaConstant[] keyConstants = new JavaConstant[keyCount];
+                double[] keyProbabilities = new double[keyCount];
+                for (int i = 0; i < keyCount; i++) {
+                    keyTargets[i] = getLIRBlock(x.keySuccessor(i));
+                    keyConstants[i] = (JavaConstant) x.keyAt(i);
+                    keyProbabilities[i] = x.keyProbability(i);
+                    // System.out.printf("switch: key=%s, target=%s\n",keyConstants[i],keyTargets[i]);
+                }
+                gen.emitStrategySwitch(keyConstants, keyProbabilities,
+                        keyTargets, defaultTarget, value);
+            }
+        }
     }
 
     private void emitShortCircuitOrNode(ShortCircuitOrNode node) {
