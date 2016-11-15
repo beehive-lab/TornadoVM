@@ -56,7 +56,7 @@ public final class VectorLoadElementProxyNode extends FixedWithNextNode {
                 shouldNotReachHere();
             }
 
-            loadNode = new VectorLoadElementNode(vector, laneOrigin);
+            loadNode = new VectorLoadElementNode(kind, vector, laneOrigin);
             clearInputs();
         }
 
