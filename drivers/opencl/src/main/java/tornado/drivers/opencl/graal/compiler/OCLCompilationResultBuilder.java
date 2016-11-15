@@ -4,9 +4,12 @@ import com.oracle.graal.asm.Assembler;
 import com.oracle.graal.compiler.common.cfg.AbstractBlockBase;
 import com.oracle.graal.compiler.common.cfg.Loop;
 import com.oracle.graal.compiler.common.spi.ForeignCallsProvider;
+import com.oracle.graal.lir.InstructionValueProcedure;
+import com.oracle.graal.lir.LIR;
+import com.oracle.graal.lir.LIRInstruction;
 import com.oracle.graal.lir.LIRInstruction.OperandFlag;
 import com.oracle.graal.lir.LIRInstruction.OperandMode;
-import com.oracle.graal.lir.*;
+import com.oracle.graal.lir.Variable;
 import com.oracle.graal.lir.asm.CompilationResultBuilder;
 import com.oracle.graal.lir.asm.DataBuilder;
 import com.oracle.graal.lir.asm.FrameContext;
@@ -20,6 +23,7 @@ import com.oracle.graal.nodes.cfg.ControlFlowGraph;
 import com.oracle.graal.nodes.extended.SwitchNode;
 import java.util.*;
 import jdk.vm.ci.code.CodeCacheProvider;
+import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
 import tornado.common.exceptions.TornadoInternalError;
@@ -32,7 +36,6 @@ import tornado.drivers.opencl.graal.lir.OCLControlFlow.SwitchOp;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.graal.TornadoLIRGenerator.trace;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
@@ -49,6 +52,10 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext,
                 compilationResult, new IdentityHashMap<>());
         nonInlinedMethods = new HashSet<>();
+    }
+
+    public OCLCompilationResult getResult() {
+        return (OCLCompilationResult) compilationResult;
     }
 
     public void setKernel(boolean value) {
@@ -255,11 +262,13 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
             asm.beginScope();
 
+            Set<Block> targetBlocks = new HashSet<>();
             for (int i = 0; i < switchOp.getKeyTargets().length; i++) {
                 Block targetBlock = cfg.blockFor(sw.blockSuccessor(i));
-                shouldNotReachHere();
-                //patchCaseBlock(lir, switchOp.getKeyConstants()[i], targetBlock);
+//                shouldNotReachHere();
+                patchCaseBlock(lir, switchOp.getKeyConstants()[i], targetBlock);
                 emitBlock(targetBlock);
+                targetBlocks.add(targetBlock);
                 // System.out.printf("target: %s\n",targetBlock);
             }
 
@@ -267,6 +276,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                 Block targetBlock = cfg.blockFor(sw.defaultSuccessor());
                 patchDefaultCaseBlock(lir, targetBlock);
                 emitBlock(targetBlock);
+                targetBlocks.add(targetBlock);
                 // System.out.printf("target: %s\n",targetBlock);
             }
 
@@ -274,19 +284,13 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
             asm.endScope();
 
-            Set<Block> successors = new HashSet<>();
-            for (Block successor : b.getSuccessors()) {
-                successors.add(successor);
-            }
-//            successors.addAll(b.getSuccessors());
-
-            Block exit = null;
-            if (successors.size() == 1) {
-                exit = successors.iterator().next();
-            } else {
-                successors.removeAll(dominates);
-                exit = successors.iterator().next();
-            }
+            Block exit = b.getFirstSuccessor().getFirstSuccessor();
+//            if (targetBlocks.size() == 1) {
+//                exit = targetBlocks.iterator().next();
+//            } else {
+//                dominates.removeAll(targetBlocks);
+//                exit = dominates.iterator().next();
+//            }
 
             traverseCFG(cfg, asm, merges, exit);
 
@@ -319,7 +323,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         insns.add(1, new OCLControlFlow.DefaultCaseOp());
     }
 
-    private void patchCaseBlock(LIR lir, ConstantValue key, Block block) {
+    private void patchCaseBlock(LIR lir, Constant key, Block block) {
         final List<LIRInstruction> insns = lir.getLIRforBlock(block);
         insns.add(1, new OCLControlFlow.CaseOp(key));
         insns.add(new OCLControlFlow.CaseBreakOp());
