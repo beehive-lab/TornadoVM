@@ -313,14 +313,21 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             final CallingConvention incomingArguments = OCLCodeUtil.getCallingConvention(
                     codeCache, HotSpotCallingConventionType.JavaCallee, method, false);
             methodName = OCLUtils.makeMethodName(method);
+
             final JavaKind returnKind = method.getSignature().getReturnKind();
-            final ResolvedJavaType returnType = method.getSignature().getReturnType(null)
-                    .resolve(method.getDeclaringClass());
-            OCLKind returnOclKind = (returnType.getAnnotation(Vector.class) == null)
-                    ? getTarget().getOCLKind(returnKind)
-                    : OCLKind.fromResolvedJavaType(returnType);
+            String returnStr = "<unknown>";
+            if (returnKind == JavaKind.Void) {
+                returnStr = "void";
+            } else {
+                final ResolvedJavaType returnType = method.getSignature().getReturnType(null)
+                        .resolve(method.getDeclaringClass());
+                OCLKind returnOclKind = (returnType.getAnnotation(Vector.class) == null)
+                        ? getTarget().getOCLKind(returnKind)
+                        : OCLKind.fromResolvedJavaType(returnType);
+                returnStr = returnOclKind.toString();
+            }
             //getTarget().getLIRKind(returnKind);
-            asm.emit("%s %s(%s", returnOclKind.toString(),
+            asm.emit("%s %s(%s", returnStr,
                     methodName, architecture.getABI());
 
             final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
