@@ -111,7 +111,7 @@ public final class VectorPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode laneId) {
-                final VectorLoadElementNode loadElement = new VectorLoadElementNode(receiver.get(), laneId);
+                final VectorLoadElementNode loadElement = new VectorLoadElementNode(vectorKind.getElementKind(), receiver.get(), laneId);
                 b.push(javaElementKind, b.recursiveAppend(loadElement));
                 return true;
             }
