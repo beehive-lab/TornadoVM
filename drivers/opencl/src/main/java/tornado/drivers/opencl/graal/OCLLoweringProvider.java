@@ -19,6 +19,7 @@ import com.oracle.graal.nodes.memory.WriteNode;
 import com.oracle.graal.nodes.memory.address.AddressNode;
 import com.oracle.graal.nodes.spi.LoweringTool;
 import com.oracle.graal.nodes.type.StampTool;
+import com.oracle.graal.nodes.util.GraphUtil;
 import com.oracle.graal.replacements.DefaultJavaLoweringProvider;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
@@ -27,6 +28,7 @@ import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.nodes.AtomicAddNode;
 import tornado.drivers.opencl.graal.nodes.CastNode;
+import tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
@@ -320,9 +322,10 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
                     final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
 
-                    unimplemented("fixed array node is missing");
-                    //final FixedArrayNode fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(newArray.elementType(), newLengthNode));
-                    //newArray.replaceAtUsages(fixedArrayNode);
+                    final FixedArrayNode fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(newArray.elementType(), newLengthNode));
+                    newArray.replaceAtUsages(fixedArrayNode);
+                    newArray.clearInputs();
+                    GraphUtil.unlinkFixedNode(newArray);
                 } else {
                     shouldNotReachHere();
                 }
