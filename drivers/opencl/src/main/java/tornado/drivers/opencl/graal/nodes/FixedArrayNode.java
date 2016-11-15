@@ -12,6 +12,8 @@ import com.oracle.graal.nodes.spi.LIRLowerable;
 import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
+import tornado.drivers.opencl.graal.OCLArchitecture;
+import tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryTemplate;
 import tornado.drivers.opencl.graal.lir.OCLBinary;
 import tornado.drivers.opencl.graal.lir.OCLKind;
@@ -27,29 +29,23 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
     protected ConstantNode length;
 
     protected OCLKind elementKind;
+    protected OCLMemoryBase memoryRegister;
 
-    public FixedArrayNode(ResolvedJavaType elementType, ConstantNode length) {
+    public FixedArrayNode(OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
+        this.memoryRegister = memoryRegister;
         this.length = length;
         this.elementKind = OCLKind.fromResolvedJavaType(elementType);
     }
 
-//	private  OCLBinaryOp resolveOp(){
-//		switch(kind){
-//			case INT:
-//				return OCLUnaryTemplate.NEW_INT_ARRAY;
-//			case LONG:
-//				return OCLUnaryTemplate.NEW_LONG_ARRAY;
-//			case FLOAT:
-//				return OCLUnaryTemplate.NEW_FLOAT_ARRAY;
-//			case DOUBLE:
-//				return OCLUnaryTemplate.NEW_DOUBLE_ARRAY;
-//			default:
-//				TornadoInternalError.unimplemented("kind: "+ kind.toString());
-//				break;
-//		}
-//		return null;
-//	}
+    public FixedArrayNode(ResolvedJavaType elementType, ConstantNode length) {
+        this(OCLArchitecture.hp, elementType, length);
+    }
+
+    public OCLMemoryBase getMemoryRegister() {
+        return memoryRegister;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         /*
@@ -57,7 +53,7 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
          * (float) 1; and int value = 1, float x = &(value);
          */
         final Value lengthValue = gen.operand(length);
-        System.out.printf("gen operand: %s (%s)\n", lengthValue, lengthValue.getClass().getName());
+//        System.out.printf("gen operand: %s (%s)\n", lengthValue, lengthValue.getClass().getName());
 
         LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());
         final Variable variable = gen.getLIRGeneratorTool().newVariable(lirKind);
@@ -65,8 +61,7 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
 
         final OCLLIRStmt.ExprStmt expr = new OCLLIRStmt.ExprStmt(declaration);
 
-        System.out.printf("expr: %s\n", expr);
-
+//        System.out.printf("expr: %s\n", expr);
         gen.getLIRGeneratorTool().append(expr);
 
         gen.setResult(this, variable);
