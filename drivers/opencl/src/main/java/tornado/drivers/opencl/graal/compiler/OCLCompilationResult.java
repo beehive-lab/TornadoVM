@@ -5,13 +5,19 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Set;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.drivers.opencl.graal.backend.OCLBackend;
+import tornado.meta.Meta;
 
 public class OCLCompilationResult extends CompilationResult {
 
     protected Set<ResolvedJavaMethod> nonInlinedMethods;
+    protected Meta meta;
+    protected OCLBackend backend;
 
-    public OCLCompilationResult(String name) {
+    public OCLCompilationResult(String name, Meta meta, OCLBackend backend) {
         super(name);
+        this.meta = meta;
+        this.backend = backend;
     }
 
     public Set<ResolvedJavaMethod> getNonInlinedMethods() {
@@ -34,5 +40,13 @@ public class OCLCompilationResult extends CompilationResult {
         buffer.put((byte) '\n');
         buffer.put(oldCode);
         setTargetCode(newCode, size);
+    }
+
+    public Meta getMeta() {
+        return meta;
+    }
+
+    public OCLBackend getBackend() {
+        return backend;
     }
 }
