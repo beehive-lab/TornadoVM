@@ -382,13 +382,13 @@ public class OCLAssembler extends Assembler {
     public static class OCLBinaryIntrinsicCmp extends OCLBinaryOp {
 
         // @formatter:off
-        public static final OCLBinaryIntrinsic FLOAT_IS_EQUAL = new OCLBinaryIntrinsic("isequal");
-        public static final OCLBinaryIntrinsic FLOAT_IS_NOT_EQUAL = new OCLBinaryIntrinsic("isnotequal");
-        public static final OCLBinaryIntrinsic FLOAT_IS_GREATER = new OCLBinaryIntrinsic("isgreater");
-        public static final OCLBinaryIntrinsic FLOAT_IS_GREATER_EQUAL = new OCLBinaryIntrinsic("isgreaterequal");
-        public static final OCLBinaryIntrinsic FLOAT_IS_LESS = new OCLBinaryIntrinsic("isless");
-        public static final OCLBinaryIntrinsic FLOAT_IS_LESSEQUAL = new OCLBinaryIntrinsic("islessequal");
-        public static final OCLBinaryIntrinsic FLOAT_IS_LESSGREATER = new OCLBinaryIntrinsic("islessgreater");
+        public static final OCLBinaryIntrinsicCmp FLOAT_IS_EQUAL = new OCLBinaryIntrinsicCmp("isequal");
+        public static final OCLBinaryIntrinsicCmp FLOAT_IS_NOT_EQUAL = new OCLBinaryIntrinsicCmp("isnotequal");
+        public static final OCLBinaryIntrinsicCmp FLOAT_IS_GREATER = new OCLBinaryIntrinsicCmp("isgreater");
+        public static final OCLBinaryIntrinsicCmp FLOAT_IS_GREATEREQUAL = new OCLBinaryIntrinsicCmp("isgreaterequal");
+        public static final OCLBinaryIntrinsicCmp FLOAT_IS_LESS = new OCLBinaryIntrinsicCmp("isless");
+        public static final OCLBinaryIntrinsicCmp FLOAT_IS_LESSEQUAL = new OCLBinaryIntrinsicCmp("islessequal");
+        public static final OCLBinaryIntrinsicCmp FLOAT_IS_LESSGREATER = new OCLBinaryIntrinsicCmp("islessgreater");
         // @formatter:on
 
         protected OCLBinaryIntrinsicCmp(String opcode) {
@@ -962,6 +962,10 @@ public class OCLAssembler extends Assembler {
         emit(formatConstant(cv));
     }
 
+    public void emitConstant(Constant constant) {
+        emit(constant.toValueString());
+    }
+
     public String formatConstant(ConstantValue cv) {
         String result = "";
         JavaConstant javaConstant = cv.getJavaConstant();
@@ -1029,6 +1033,7 @@ public class OCLAssembler extends Assembler {
         emitSymbol(OCLAssemblerConstants.BRACKET_OPEN);
 
         emit(toString(condition));
+        emit(" == 1");
         //value(crb, condition);
 
         emitSymbol(OCLAssemblerConstants.BRACKET_CLOSE);
