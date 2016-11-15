@@ -6,6 +6,7 @@ import com.oracle.graal.graph.NodeClass;
 import com.oracle.graal.lir.ConstantValue;
 import com.oracle.graal.nodeinfo.InputType;
 import com.oracle.graal.nodeinfo.NodeInfo;
+import com.oracle.graal.nodes.ConstantNode;
 import com.oracle.graal.nodes.ValueNode;
 import com.oracle.graal.nodes.calc.FloatingNode;
 import com.oracle.graal.nodes.spi.LIRLowerable;
@@ -29,19 +30,21 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
     @Input(InputType.Extension)
     ValueNode vector;
 
-    protected final int lane;
+    @Input
+    ValueNode lane;
+
     protected final OCLKind oclKind;
 
     protected VectorElementOpNode(NodeClass<? extends VectorElementOpNode> c, OCLKind kind, ValueNode vector, ValueNode lane) {
         super(c, StampFactory.forKind(kind.asJavaKind()));
         this.oclKind = kind;
         this.vector = vector;
-        this.lane = lane.asJavaConstant().asInt();
+        this.lane = lane;
     }
 
     @Override
     public int compareTo(VectorElementOpNode o) {
-        return Integer.compare(lane, o.lane);
+        return Integer.compare(laneId(), o.laneId());
     }
 
     @Override
@@ -51,7 +54,7 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
     }
 
     public int laneId() {
-        return lane;
+        return (lane instanceof ConstantNode) ? lane.asJavaConstant().asInt() : -1;
     }
 
     public ValueNode getVector() {
@@ -72,7 +75,7 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
 //        }
 
         guarantee(targetVector != null, "vector is null 2");
-        final OCLVectorElementSelect element = new OCLVectorElementSelect(gen.getLIRGeneratorTool().getLIRKind(stamp), targetVector, new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(lane)));
+        final OCLVectorElementSelect element = new OCLVectorElementSelect(gen.getLIRGeneratorTool().getLIRKind(stamp), targetVector, new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(laneId())));
         gen.setResult(this, element);
 
     }
