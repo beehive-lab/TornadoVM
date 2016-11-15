@@ -18,15 +18,22 @@ public class OCLTPrintf extends OCLLIROp {
 
     @Override
     public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+        int depth = crb.getResult().getMeta().getDomain().getDepth();
+
         asm.emit("if( ");
         asm.emit("get_global_id(0) == ");
         asm.emitValue(crb, inputs[0]);
 
-        asm.emit(" && get_global_id(1) == ");
-        asm.emitValue(crb, inputs[1]);
+        if (depth > 1) {
+            asm.emit(" && get_global_id(1) == ");
+            asm.emitValue(crb, inputs[1]);
+        }
 
-        asm.emit(" && get_global_id(2) == ");
-        asm.emitValue(crb, inputs[2]);
+        if (depth > 2) {
+            asm.emit(" && get_global_id(2) == ");
+            asm.emitValue(crb, inputs[2]);
+        }
+
         asm.emit(" )");
         asm.beginScope();
 
