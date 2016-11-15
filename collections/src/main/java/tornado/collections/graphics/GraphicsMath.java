@@ -8,7 +8,6 @@ import tornado.collections.types.*;
 import static tornado.collections.math.TornadoMath.max;
 import static tornado.collections.math.TornadoMath.min;
 import static tornado.collections.types.Float3.*;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class GraphicsMath {
 
@@ -120,18 +119,6 @@ public class GraphicsMath {
      * [ x ] column vector representing the point to be transformed [ y ] [ z ]
      * [ 1 ]
      */
-    @Deprecated
-    public static final void rigidTransform(Matrix4x4Float T, Float3 point,
-            Float3 result) {
-        unimplemented();
-//        final Float3 col = T.column(3).asFloat3();
-//        result.setX(dot(T.row(0).asFloat3(), point));
-//        result.setY(dot(T.row(1).asFloat3(), point));
-//        result.setZ(dot(T.row(2).asFloat3(), point));
-//        add(result, col, result);
-
-    }
-
     public static final Float3 rigidTransform(Matrix4x4Float T, Float3 point) {
         final Float3 translation = T.column(3).asFloat3();
         final Float3 rotation = new Float3(dot(T.row(0).asFloat3(), point),
