@@ -1,9 +1,12 @@
 package tornado.drivers.opencl.graal.lir;
 
+import com.oracle.graal.lir.InstructionValueProcedure;
 import com.oracle.graal.lir.LIRInstruction.Use;
+import com.oracle.graal.lir.LIRInstructionClass;
+import com.oracle.graal.lir.LabelRef;
 import com.oracle.graal.lir.StandardOp.BlockEndOp;
-import com.oracle.graal.lir.*;
-import jdk.vm.ci.meta.JavaConstant;
+import com.oracle.graal.lir.Variable;
+import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
@@ -12,13 +15,6 @@ import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AbstractInstruction;
 import static com.oracle.graal.lir.LIRInstruction.OperandFlag.CONST;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLControlFlow {
 
@@ -261,13 +257,13 @@ public class OCLControlFlow {
         private final Variable value;
 
         @Use({CONST})
-        private final JavaConstant[] keyConstants;
+        private final Constant[] keyConstants;
 
         @Use
         private final LabelRef[] keyTargets;
         private final LabelRef defaultTarget;
 
-        public SwitchOp(Variable value, JavaConstant[] keyConstants, LabelRef[] keyTargets, LabelRef defaultTarget) {
+        public SwitchOp(Variable value, Constant[] keyConstants, LabelRef[] keyTargets, LabelRef defaultTarget) {
             super(TYPE);
             this.value = value;
             this.keyConstants = keyConstants;
@@ -284,7 +280,7 @@ public class OCLControlFlow {
             asm.emitSymbol(BRACKET_CLOSE);
         }
 
-        public JavaConstant[] getKeyConstants() {
+        public Constant[] getKeyConstants() {
             return keyConstants;
         }
 
@@ -303,9 +299,9 @@ public class OCLControlFlow {
                 .create(CaseOp.class);
 
         @Use
-        private final ConstantValue value;
+        private final Constant value;
 
-        public CaseOp(ConstantValue value) {
+        public CaseOp(Constant value) {
             super(TYPE);
             this.value = value;
         }
