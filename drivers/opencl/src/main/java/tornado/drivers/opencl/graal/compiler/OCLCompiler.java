@@ -473,7 +473,7 @@ public class OCLCompiler {
 
         SpeculationLog speculationLog = null;
 
-        OCLCompilationResult kernelCompResult = new OCLCompilationResult(resolvedMethod.getName());
+        OCLCompilationResult kernelCompResult = new OCLCompilationResult(resolvedMethod.getName(), meta, backend);
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         final OCLSuitesProvider suitesProvider = providers.getSuitesProvider();
@@ -492,7 +492,7 @@ public class OCLCompiler {
         while (!worklist.isEmpty()) {
             final ResolvedJavaMethod currentMethod = worklist.pop();
             if (!includedMethods.contains(currentMethod)) {
-                final OCLCompilationResult compResult = new OCLCompilationResult(currentMethod.getName());
+                final OCLCompilationResult compResult = new OCLCompilationResult(currentMethod.getName(), meta, backend);
                 final StructuredGraph graph = new StructuredGraph(currentMethod,
                         AllowAssumptions.YES);
                 Request<OCLCompilationResult> methodcompilationRequest = new Request<>(
