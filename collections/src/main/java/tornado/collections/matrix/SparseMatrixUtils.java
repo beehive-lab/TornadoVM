@@ -23,7 +23,7 @@ public class SparseMatrixUtils {
         boolean pattern = false;
         boolean symmetric = false;
 
-        final CSRMatrix<double[]> mat = new CSRMatrix<double[]>();
+        final CSRMatrix<double[]> mat = new CSRMatrix<>();
 
         Random rand = null;
         try {
@@ -112,9 +112,9 @@ public class SparseMatrixUtils {
 
             List<Coordinate> coords;
             if (symmetric) {
-                coords = new ArrayList<Coordinate>(2 * nElements);
+                coords = new ArrayList<>(2 * nElements);
             } else {
-                coords = new ArrayList<Coordinate>(nElements);
+                coords = new ArrayList<>(nElements);
             }
 
             int index = 0;
@@ -269,7 +269,7 @@ public class SparseMatrixUtils {
 
             @Override
             public int compareTo(final Coordinate c) {
-                int val = 0;
+                int val;
                 if (x != c.x) {
                     val = x - c.x;
                 } else {
