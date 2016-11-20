@@ -3,15 +3,14 @@ package tornado.graal;
 import com.oracle.graal.lir.phases.LIRPhaseSuite;
 import com.oracle.graal.lir.phases.PostAllocationOptimizationPhase.PostAllocationOptimizationContext;
 import com.oracle.graal.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
+import com.oracle.graal.phases.common.AddressLoweringPhase.AddressLowering;
 import com.oracle.graal.phases.common.CanonicalizerPhase.CustomCanonicalizer;
-import tornado.graal.compiler.TornadoCompilerConfiguration;
-import tornado.graal.compiler.TornadoHighTier;
-import tornado.graal.compiler.TornadoLowTier;
-import tornado.graal.compiler.TornadoMidTier;
+import tornado.graal.compiler.*;
 import tornado.graal.phases.lir.TornadoAllocationStage;
 
 public class TornadoSuites {
 
+    private final TornadoSketchTier sketchTier;
     private final TornadoHighTier highTier;
     private final TornadoMidTier midTier;
     private final TornadoLowTier lowTier;
@@ -20,13 +19,18 @@ public class TornadoSuites {
     private final LIRPhaseSuite<PreAllocationOptimizationContext> preAllocStage;
     private final LIRPhaseSuite<PostAllocationOptimizationContext> postAllocStage;
 
-    public TornadoSuites(TornadoCompilerConfiguration config, CustomCanonicalizer canonicalizer) {
-        highTier = config.createHighTier();
+    public TornadoSuites(TornadoCompilerConfiguration config, CustomCanonicalizer canonicalizer, AddressLowering addressLowering) {
+        sketchTier = config.createSketchTier(canonicalizer);
+        highTier = config.createHighTier(canonicalizer);
         midTier = config.createMidTier();
-        lowTier = config.createLowTier();
+        lowTier = config.createLowTier(addressLowering);
         allocStage = config.createAllocationStage();
         preAllocStage = config.createPreAllocationOptimizationStage();
         postAllocStage = config.createPostAllocationOptimizationStage();
+    }
+
+    public TornadoSketchTier getSketchTier() {
+        return sketchTier;
     }
 
     public TornadoHighTier getHighTier() {

@@ -2,31 +2,26 @@ package tornado.runtime.graph;
 
 import java.nio.ByteBuffer;
 import java.util.List;
-import tornado.common.DeviceMapping;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.common.SchedulableTask;
 import tornado.common.enums.Access;
 import tornado.common.exceptions.TornadoInternalError;
+import tornado.runtime.api.CompilableTask;
 import tornado.runtime.api.LocalObjectState;
 import tornado.runtime.api.TaskGraph;
-import tornado.runtime.graph.nodes.AbstractNode;
-import tornado.runtime.graph.nodes.AllocateNode;
-import tornado.runtime.graph.nodes.AsyncNode;
-import tornado.runtime.graph.nodes.ConstantNode;
-import tornado.runtime.graph.nodes.ContextNode;
-import tornado.runtime.graph.nodes.CopyInNode;
-import tornado.runtime.graph.nodes.CopyOutNode;
-import tornado.runtime.graph.nodes.DependentReadNode;
-import tornado.runtime.graph.nodes.ObjectNode;
-import tornado.runtime.graph.nodes.StreamInNode;
-import tornado.runtime.graph.nodes.TaskNode;
+import tornado.runtime.graph.nodes.*;
+import tornado.runtime.sketcher.Sketch;
+import tornado.runtime.sketcher.TornadoSketcher;
+
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class GraphBuilder {
 
     public static Graph buildGraph(ExecutionContext graphContext, ByteBuffer buffer) {
         Graph graph = new Graph();
-        DeviceMapping device = null;
+//        DeviceMapping device;
         Access[] accesses = null;
-        SchedulableTask task = null;
+        SchedulableTask task;
         AbstractNode[] args = null;
         ContextNode context = null;
         TaskNode taskNode = null;
@@ -147,14 +142,22 @@ public class GraphBuilder {
 
             } else if (op == TaskGraph.CONTEXT) {
                 final int globalTaskId = buffer.getInt();
-                device = graphContext.getDeviceForTask(globalTaskId);
+//                device = graphContext.getDeviceForTask(globalTaskId);
 
                 taskIndex = buffer.getInt();
                 task = graphContext.getTask(taskIndex);
 
                 context = graph.addUnique(new ContextNode(graphContext.getDeviceIndexForTask(globalTaskId)));
 
-                accesses = task.getArgumentsAccess();
+                if (task instanceof CompilableTask) {
+                    final ResolvedJavaMethod resolvedMethod = getTornadoRuntime()
+                            .resolveMethod(((CompilableTask) task).getMethod());
+                    Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
+                    accesses = sketch.getMeta().getArgumentsAccess();
+                } else {
+
+                    accesses = task.getArgumentsAccess();
+                }
 
 //				System.out.printf("task graph: new frame on %s for %s\n",
 //						device, task.getName());

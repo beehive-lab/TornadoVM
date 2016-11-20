@@ -1,6 +1,7 @@
 package tornado.drivers.opencl.graal.compiler;
 
 import com.oracle.graal.nodes.spi.LoweringTool;
+import com.oracle.graal.phases.common.AddressLoweringPhase.AddressLowering;
 import com.oracle.graal.phases.common.*;
 import com.oracle.graal.phases.schedule.SchedulePhase;
 import tornado.graal.compiler.TornadoLowTier;
@@ -12,7 +13,7 @@ import static com.oracle.graal.phases.common.DeadCodeEliminationPhase.Optionalit
 
 public class OCLLowTier extends TornadoLowTier {
 
-    public OCLLowTier() {
+    public OCLLowTier(AddressLowering addressLowering) {
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
         if (ImmutableCode.getValue()) {
             canonicalizer.disableReadCanonicalization();
@@ -36,6 +37,8 @@ public class OCLLowTier extends TornadoLowTier {
              */
 //            appendPhase(new ExpandLogicPhase());
         }
+
+        appendPhase(new AddressLoweringPhase(addressLowering));
 
         appendPhase(new UseTrappingNullChecksPhase());
 

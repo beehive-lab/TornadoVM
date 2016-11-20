@@ -1,20 +1,33 @@
 package tornado.runtime;
 
+import java.lang.reflect.Method;
 import tornado.api.Event;
 import tornado.api.enums.TornadoSchedulingStrategy;
-import tornado.common.CallStack;
-import tornado.common.DeviceMapping;
-import tornado.common.DeviceObjectState;
-import tornado.common.SchedulableTask;
-import tornado.common.TornadoInstalledCode;
+import tornado.common.*;
+import tornado.meta.Meta;
+
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class JVMMapping implements DeviceMapping {
+
+    @Override
+    public Meta createMeta(Method method) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Meta createMeta(int numParameters) {
+        unimplemented();
+        return null;
+    }
 
     @Override
     public TornadoSchedulingStrategy getPreferedSchedule() {
         return TornadoSchedulingStrategy.PER_BLOCK;
     }
 
+    @Override
     public String toString() {
         return "Host JVM";
     }
@@ -78,20 +91,20 @@ public class JVMMapping implements DeviceMapping {
 
     @Override
     public Event resolveEvent(int event) {
-       return new EmptyEvent();
+        return new EmptyEvent();
     }
-    
-    public void markEvent(){
-       
+
+    public void markEvent() {
+
     }
-    
+
     @Override
-    public void flushEvents(){
-        
+    public void flushEvents() {
+
     }
-    
+
     @Override
-    public String getDeviceName(){
+    public String getDeviceName() {
         return "jvm";
     }
 

@@ -1,5 +1,6 @@
 package tornado.drivers.opencl;
 
+import com.oracle.graal.phases.util.Providers;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
@@ -95,7 +96,13 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
         return contexts.get(index);
     }
 
+    @Override
+    public Providers getProviders() {
+        return getDefaultBackend().getProviders();
+    }
+
+    @Override
     public OCLSuitesProvider getSuitesProvider() {
-        return null;
+        return getDefaultBackend().getTornadoSuites();
     }
 }

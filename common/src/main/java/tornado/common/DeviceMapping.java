@@ -1,36 +1,45 @@
 package tornado.common;
 
+import java.lang.reflect.Method;
 import tornado.api.Event;
 import tornado.api.enums.TornadoSchedulingStrategy;
+import tornado.meta.Meta;
 
 public interface DeviceMapping {
 
-	public TornadoSchedulingStrategy getPreferedSchedule();
+    public Meta createMeta(Method method);
 
-	public boolean isDistibutedMemory();
+    public Meta createMeta(int numParameters);
 
-	public void ensureLoaded();
+    public TornadoSchedulingStrategy getPreferedSchedule();
 
-	public CallStack createStack(int numArgs);
+    public boolean isDistibutedMemory();
 
-	public int ensureAllocated(Object object, DeviceObjectState state);
+    public void ensureLoaded();
 
-	
+    public CallStack createStack(int numArgs);
 
-	public int ensurePresent(Object object, DeviceObjectState objectState);
-	public int streamIn(Object object, DeviceObjectState objectState);
-	public int streamOut(Object object, DeviceObjectState objectState,
-			int[] list);
+    public int ensureAllocated(Object object, DeviceObjectState state);
 
-	
-	public TornadoInstalledCode installCode(SchedulableTask task);
+    public int ensurePresent(Object object, DeviceObjectState objectState);
 
-        public Event resolveEvent(int event);
-        public void markEvent();
-        public void flushEvents();
-	public int enqueueBarrier();
-        public void sync();
-        
-        public String getDeviceName();
-	
+    public int streamIn(Object object, DeviceObjectState objectState);
+
+    public int streamOut(Object object, DeviceObjectState objectState,
+            int[] list);
+
+    public TornadoInstalledCode installCode(SchedulableTask task);
+
+    public Event resolveEvent(int event);
+
+    public void markEvent();
+
+    public void flushEvents();
+
+    public int enqueueBarrier();
+
+    public void sync();
+
+    public String getDeviceName();
+
 }

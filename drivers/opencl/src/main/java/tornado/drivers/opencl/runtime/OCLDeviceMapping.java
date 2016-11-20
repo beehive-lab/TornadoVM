@@ -1,6 +1,7 @@
 package tornado.drivers.opencl.runtime;
 
 import java.io.*;
+import java.lang.reflect.Method;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,12 +20,14 @@ import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import tornado.drivers.opencl.mm.*;
+import tornado.meta.Meta;
 import tornado.runtime.api.CompilableTask;
 import tornado.runtime.api.PrebuiltTask;
+import tornado.runtime.sketcher.Sketch;
+import tornado.runtime.sketcher.TornadoSketcher;
 
 import static tornado.common.Tornado.FORCE_ALL_TO_GPU;
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.*;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class OCLDeviceMapping implements DeviceMapping {
@@ -56,6 +59,17 @@ public class OCLDeviceMapping implements DeviceMapping {
         device = findDriver().getPlatformContext(platformIndex).devices()
                 .get(deviceIndex);
 
+    }
+
+    @Override
+    public Meta createMeta(Method method) {
+        return new OCLMeta(method, false);
+    }
+
+    @Override
+    public Meta createMeta(int numParameters) {
+        unimplemented();
+        return null;
     }
 
     public OCLDevice getDevice() {
@@ -134,8 +148,10 @@ public class OCLDeviceMapping implements DeviceMapping {
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime()
                     .resolveMethod(executable.getMethod());
 //			final long t1 = System.nanoTime();
-            final OCLInstalledCode code = OCLCompiler.compileCodeForDevice(
-                    resolvedMethod, task.getArguments(), task.meta(),
+            final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
+
+            final OCLInstalledCode code = OCLCompiler.compileSketchForDevice(
+                    sketch, task.getArguments(), task.meta(),
                     (OCLProviders) getBackend().getProviders(), getBackend());
 //			final long t2 = System.nanoTime();
 //			System.out.printf("resolve : %.9f s\n",(t1-t0)*1e-9);

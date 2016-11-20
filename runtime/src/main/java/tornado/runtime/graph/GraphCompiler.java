@@ -4,11 +4,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import tornado.common.DeviceMapping;
 import tornado.common.SchedulableTask;
-import tornado.runtime.graph.nodes.AbstractNode;
-import tornado.runtime.graph.nodes.AsyncNode;
-import tornado.runtime.graph.nodes.ContextNode;
-import tornado.runtime.graph.nodes.DependentReadNode;
-import tornado.runtime.graph.nodes.TaskNode;
+import tornado.runtime.graph.nodes.*;
 
 public class GraphCompiler {
 
@@ -24,7 +20,7 @@ public class GraphCompiler {
     }
 
     /*
-	 * Simplest case where all tasks are executed on the same device
+     * Simplest case where all tasks are executed on the same device
      */
     private static GraphCompilationResult compileSingleContext(Graph graph, ExecutionContext context,
             DeviceMapping device) {
@@ -34,7 +30,6 @@ public class GraphCompiler {
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof AsyncNode);
 
 //        System.out.printf("found: [%s]\n", toString(asyncNodes));
-
         final BitSet[] deps = new BitSet[asyncNodes.cardinality()];
         final BitSet tasks = new BitSet(asyncNodes.cardinality());
         final int[] nodeIds = new int[asyncNodes.cardinality()];
@@ -60,7 +55,6 @@ public class GraphCompiler {
         }
 
 //        printMatrix(graph, nodeIds, deps, tasks);
-
         result.begin(1, tasks.cardinality(), numDepLists + 1);
 
         schedule(result, graph, context, nodeIds, deps, tasks);
@@ -68,7 +62,6 @@ public class GraphCompiler {
         result.end(numDepLists);
 
 //        result.dump();
-
         return result;
     }
 
@@ -81,14 +74,14 @@ public class GraphCompiler {
 
 //        System.out.println("----- event lists ------");
         final int[] depLists = new int[deps.length];
-        Arrays.fill(depLists,-1);
-        
+        Arrays.fill(depLists, -1);
+
         int index = 0;
         for (int i = 0; i < deps.length; i++) {
             if (!deps[i].isEmpty()) {
-               
+
                 final AbstractNode current = graph.getNode(nodeIds[i]);
-                if(current instanceof DependentReadNode) {
+                if (current instanceof DependentReadNode) {
                     continue;
                 }
 //                    final DependentReadNode dependentRead = (DependentReadNode) current;
@@ -101,34 +94,32 @@ public class GraphCompiler {
 //                        }
 //                    }
 //                    TornadoInternalError.guarantee(id != -1, "unable to find task node id");
-//                    
+//
 //                    if(depLists[id] == -1){
 //                        depLists[id] = index;
-//                     
+//
 //                        index++;
 //                    }
-//                    
+//
 //                       depLists[i] = depLists[id];
 //                    System.out.printf("%s -> event list %d\n",current,depLists[id]);
-//                    
+//
 //                } else if(current instanceof TaskNode){
 //                    final SchedulableTask t = context.getTask(((TaskNode)current).getTaskIndex());
-//       
+//
 //                    if(depLists[i] == -1){
 //                        depLists[i] = index;
 //                        index++;
 //                    }
-//                    
+//
 //                     System.out.printf("%s (%s) -> event list %d\n",current,t.getName(),depLists[i]);
 //                } else {
-                    
-                    depLists[i] = index;
-                    index++;
-                    
+
+                depLists[i] = index;
+                index++;
+
 //                    System.out.printf("%s -> event list %d\n",current,depLists[i]);
 //                }
-                
-                
             }
         }
 
@@ -141,18 +132,18 @@ public class GraphCompiler {
                     final BitSet outstandingDeps = new BitSet(nodes.length());
                     outstandingDeps.or(deps[i]);
                     outstandingDeps.andNot(nodes);
-		
+
 //                    System.out.printf("trying: %d - %s\n",nodeIds[i],toString(outstandingDeps));
                     if (outstandingDeps.isEmpty()) {
                         final AsyncNode asyncNode = (AsyncNode) graph.getNode(nodeIds[i]);
-                        
+
                         result.emitAsyncNode(
-                                graph, 
-                                context, 
-                                asyncNode, 
-                                asyncNode.getContext().getIndex(), 
+                                graph,
+                                context,
+                                asyncNode,
+                                asyncNode.getContext().getIndex(),
                                 (deps[i].isEmpty()) ? -1 : depLists[i]);
-                        
+
                         for (int j = 0; j < deps.length; j++) {
                             if (j == i) {
                                 continue;
@@ -200,8 +191,8 @@ public class GraphCompiler {
         final AbstractNode node = graph.getNode(i);
         for (AbstractNode input : node.getInputs()) {
             if (input instanceof AsyncNode) {
-                if( input instanceof DependentReadNode){
-                    deps.set(((DependentReadNode)input).getDependent().getId());
+                if (input instanceof DependentReadNode) {
+                    deps.set(((DependentReadNode) input).getDependent().getId());
                 } else {
                     deps.set(input.getId());
                 }

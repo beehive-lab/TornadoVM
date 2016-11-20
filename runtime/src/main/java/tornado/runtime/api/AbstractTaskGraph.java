@@ -1,16 +1,21 @@
 package tornado.runtime.api;
 
+import com.oracle.graal.phases.util.Providers;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.function.Consumer;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.api.Event;
 import tornado.common.DeviceMapping;
 import tornado.common.RuntimeUtilities;
 import tornado.common.SchedulableTask;
+import tornado.graal.compiler.TornadoSuitesProvider;
 import tornado.runtime.TornadoVM;
 import tornado.runtime.graph.*;
+import tornado.runtime.sketcher.SketchRequest;
 
 import static tornado.common.RuntimeUtilities.isBoxedPrimitiveClass;
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public abstract class AbstractTaskGraph {
 
@@ -44,6 +49,17 @@ public abstract class AbstractTaskGraph {
     }
 
     protected void addInner(SchedulableTask task) {
+        Providers providers = getTornadoRuntime().getDriver(0).getProviders();
+        TornadoSuitesProvider suites = getTornadoRuntime().getDriver(0).getSuitesProvider();
+
+        if (task instanceof CompilableTask) {
+            CompilableTask compilableTask = (CompilableTask) task;
+            final ResolvedJavaMethod resolvedMethod = getTornadoRuntime()
+                    .resolveMethod(compilableTask.getMethod());
+//                getTornadoExecutor().execute(new SketchRequest(resolvedMethod, compilableTask.meta(), providers, suites.getGraphBuilderSuite(), suites.getSketchTier()));
+            new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
+
+        }
 
         hlBuffer.put(CONTEXT);
         int globalTaskId = graphContext.getTaskCount();

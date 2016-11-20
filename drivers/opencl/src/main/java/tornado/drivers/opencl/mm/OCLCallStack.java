@@ -2,10 +2,10 @@ package tornado.drivers.opencl.mm;
 
 import tornado.common.CallStack;
 import tornado.common.DeviceObjectState;
-import tornado.common.RuntimeUtilities;
 import tornado.drivers.opencl.OCLDeviceContext;
 
 import static tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static tornado.common.RuntimeUtilities.isBoxedPrimitive;
 import static tornado.common.Tornado.*;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
@@ -117,7 +117,7 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
                 debug("arg : (null)");
             }
             buffer.putLong(0);
-        } else if (RuntimeUtilities.isBoxedPrimitive(arg)
+        } else if (isBoxedPrimitive(arg)
                 || arg.getClass().isPrimitive()) {
             if (DEBUG) {
                 debug("arg : type=%s, value=%s", arg.getClass()

@@ -25,6 +25,8 @@ import tornado.runtime.TornadoVMConfig;
 
 import static jdk.vm.ci.common.InitTimer.timer;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static jdk.vm.ci.common.InitTimer.timer;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLHotSpotBackendFactory {
 
@@ -98,14 +100,8 @@ public class OCLHotSpotBackendFactory {
         OCLGraphBuilderPlugins.registerParameterPlugins(plugins);
         OCLGraphBuilderPlugins.registerNewInstancePlugins(plugins);
 
-//        invocationPlugins.defer(new Runnable() {
-//            @Override
-//            public void run() {
         StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, bytecodeProvider, true);
         OCLGraphBuilderPlugins.registerInvocationPlugins(invocationPlugins);
-//            }
-//        });
-
         return plugins;
     }
 

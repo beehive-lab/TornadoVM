@@ -1,14 +1,14 @@
 package tornado.drivers.opencl.graal.compiler;
 
+import tornado.graal.compiler.TornadoSketchTier;
 import com.oracle.graal.lir.phases.LIRPhaseSuite;
 import com.oracle.graal.lir.phases.PostAllocationOptimizationPhase.PostAllocationOptimizationContext;
 import com.oracle.graal.lir.phases.PostAllocationOptimizationStage;
 import com.oracle.graal.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
 import com.oracle.graal.lir.phases.PreAllocationOptimizationStage;
-import tornado.graal.compiler.TornadoCompilerConfiguration;
-import tornado.graal.compiler.TornadoHighTier;
-import tornado.graal.compiler.TornadoLowTier;
-import tornado.graal.compiler.TornadoMidTier;
+import com.oracle.graal.phases.common.AddressLoweringPhase.AddressLowering;
+import com.oracle.graal.phases.common.CanonicalizerPhase.CustomCanonicalizer;
+import tornado.graal.compiler.*;
 import tornado.graal.phases.lir.TornadoAllocationStage;
 
 public class OCLCompilerConfiguration implements TornadoCompilerConfiguration {
@@ -19,13 +19,18 @@ public class OCLCompilerConfiguration implements TornadoCompilerConfiguration {
     }
 
     @Override
-    public TornadoHighTier createHighTier() {
-        return new OCLHighTier(new OCLCanonicalizer());
+    public TornadoSketchTier createSketchTier(CustomCanonicalizer canonicalizer) {
+        return new TornadoSketchTier(canonicalizer);
     }
 
     @Override
-    public TornadoLowTier createLowTier() {
-        return new OCLLowTier();
+    public TornadoHighTier createHighTier(CustomCanonicalizer canonicalizer) {
+        return new OCLHighTier(canonicalizer);
+    }
+
+    @Override
+    public TornadoLowTier createLowTier(AddressLowering addressLowering) {
+        return new OCLLowTier(addressLowering);
     }
 
     @Override

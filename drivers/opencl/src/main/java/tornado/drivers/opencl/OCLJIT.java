@@ -3,10 +3,11 @@ package tornado.drivers.opencl;
 import java.lang.reflect.Method;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.common.DeviceMapping;
-import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
+import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompiler;
+import tornado.drivers.opencl.runtime.OCLMeta;
 import tornado.meta.Meta;
 
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
@@ -42,7 +43,7 @@ public class OCLJIT {
 
             final OCLBackend backend = getTornadoRuntime().getDriver(OCLDriver.class).getDefaultBackend();
 
-            Meta meta = new Meta();
+            Meta meta = new OCLMeta(method, false);
             meta.addProvider(DeviceMapping.class, OpenCL.defaultDevice());
 
             OCLInstalledCode code = OCLCompiler.compileCodeForDevice(resolvedMethod, new Object[]{}, meta, (OCLProviders) backend.getProviders(), backend);

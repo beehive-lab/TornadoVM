@@ -7,20 +7,19 @@ import tornado.common.DeviceMapping;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import tornado.common.TornadoLogger;
-
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
-
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.enums.OCLMemFlags;
-import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
+import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompiler;
+import tornado.drivers.opencl.runtime.OCLMeta;
 import tornado.meta.Meta;
 import tornado.meta.domain.DomainTree;
 import tornado.meta.domain.IntDomain;
 
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class OCLMemoryManager extends TornadoLogger {
@@ -84,7 +83,7 @@ public class OCLMemoryManager extends TornadoLogger {
 
     private void createMemoryInitializers(final OCLBackend backend) {
         initThreads = new DomainTree(1);
-        initMeta = new Meta();
+        initMeta = new OCLMeta(2);
         initMeta.addProvider(DeviceMapping.class, backend.getDeviceContext().asMapping());
 
 //    	initFP64Code = OCLCompiler.compileCodeForDevice(
@@ -152,7 +151,7 @@ public class OCLMemoryManager extends TornadoLogger {
         initCallStack.putLong(offset);
         initCallStack.putInt(count);
 
-        final Meta meta = new Meta();
+        final Meta meta = new OCLMeta(0);
         initThreads.set(0, new IntDomain(0, 1, count));
         meta.setDomain(initThreads);
 
@@ -187,6 +186,7 @@ public class OCLMemoryManager extends TornadoLogger {
      *
      * @param offset offset within the memory managers heap
      * @param length size in bytes of the sub-buffer
+     *
      * @return
      */
     public OCLByteBuffer getSubBuffer(final int offset, final int length) {

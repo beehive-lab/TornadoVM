@@ -1,4 +1,4 @@
-package tornado.drivers.opencl.graal;
+package tornado.graal;
 
 import com.oracle.graal.debug.*;
 import com.oracle.graal.serviceprovider.GraalServices;
@@ -9,7 +9,7 @@ import jdk.vm.ci.runtime.JVMCI;
 
 import static com.oracle.graal.debug.GraalDebugConfig.Options.*;
 
-public class OCLDebugEnvironment {
+public class TornadoDebugEnvironment {
 
     public static GraalDebugConfig initialize(PrintStream log, Object... extraArgs) {
         // Initialize JVMCI before loading class Debug

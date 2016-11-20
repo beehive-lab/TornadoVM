@@ -21,15 +21,15 @@ import tornado.graal.nodes.ParallelOffsetNode;
 import tornado.graal.nodes.ParallelRangeNode;
 import tornado.graal.nodes.ParallelStrideNode;
 
-public class TornadoApiReplacement extends BasePhase<TornadoHighTierContext> {
+public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
     @Override
-    protected void run(StructuredGraph graph, TornadoHighTierContext context) {
+    protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
         replaceParameterAnnotations(graph, context);
         replaceLocalAnnotations(graph, context);
     }
 
-    private void replaceParameterAnnotations(StructuredGraph graph, TornadoHighTierContext context) {
+    private void replaceParameterAnnotations(StructuredGraph graph, TornadoSketchTierContext context) {
         final Annotation[][] parameterAnnotations = graph.method().getParameterAnnotations();
 
         for (int i = 0; i < parameterAnnotations.length; i++) {
@@ -46,7 +46,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoHighTierContext> {
 
     }
 
-    private void replaceLocalAnnotations(StructuredGraph graph, TornadoHighTierContext context) {
+    private void replaceLocalAnnotations(StructuredGraph graph, TornadoSketchTierContext context) {
 
         // build node -> annotation mapping
         Map<ResolvedJavaMethod, LocalAnnotation[]> methodToAnnotations = new HashMap<>();

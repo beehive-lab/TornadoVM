@@ -63,7 +63,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     @Override
     public OCLTargetDescription getTarget() {
-        return (OCLTargetDescription) target;
+        return target;
     }
 
     final OCLTargetDescription target;

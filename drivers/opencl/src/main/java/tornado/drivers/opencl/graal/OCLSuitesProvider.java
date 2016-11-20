@@ -6,31 +6,38 @@ import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins;
 import com.oracle.graal.phases.PhaseSuite;
-import com.oracle.graal.phases.common.AddressLoweringPhase;
 import com.oracle.graal.phases.common.AddressLoweringPhase.AddressLowering;
-import com.oracle.graal.phases.common.RemoveValueProxyPhase;
 import com.oracle.graal.phases.tiers.HighTierContext;
 import jdk.vm.ci.meta.MetaAccessProvider;
-import tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.drivers.opencl.graal.compiler.OCLCanonicalizer;
+import tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
 import tornado.drivers.opencl.graal.compiler.plugins.OCLGraphBuilderPlugins;
 import tornado.graal.TornadoLIRSuites;
 import tornado.graal.TornadoSuites;
+import tornado.graal.compiler.TornadoSketchTier;
+import tornado.graal.compiler.TornadoSuitesProvider;
+import tornado.meta.Meta;
 
-public class OCLSuitesProvider {
+public class OCLSuitesProvider implements TornadoSuitesProvider {
 
     private final PhaseSuite<HighTierContext> graphBuilderSuite;
-    private TornadoSuites suites;
-    private TornadoLIRSuites lirSuites;
+    private final TornadoSuites suites;
+    private final TornadoLIRSuites lirSuites;
+    private final OCLCanonicalizer canonicalizer;
 
     public OCLSuitesProvider(Plugins plugins, MetaAccessProvider metaAccessProvider, OCLCompilerConfiguration compilerConfig, AddressLowering addressLowering) {
         graphBuilderSuite = createGraphBuilderSuite(plugins);
-        suites = new TornadoSuites(compilerConfig, new OCLCanonicalizer());
-        suites.getLowTier().findPhase(RemoveValueProxyPhase.class).add(new AddressLoweringPhase(addressLowering));
+        canonicalizer = new OCLCanonicalizer();
+        suites = new TornadoSuites(compilerConfig, canonicalizer, addressLowering);
         lirSuites = createLIRSuites();
     }
 
-    protected PhaseSuite<HighTierContext> createGraphBuilderSuite(Plugins plugins) {
+    public void setContext(MetaAccessProvider metaAccess, ResolvedJavaMethod method, Object[] args, Meta meta) {
+        canonicalizer.setContext(metaAccess, method, args, meta);
+    }
+
+    private PhaseSuite<HighTierContext> createGraphBuilderSuite(Plugins plugins) {
         PhaseSuite<HighTierContext> suite = new PhaseSuite<>();
 
         InvocationPlugins invocationPlugins = plugins.getInvocationPlugins();
@@ -47,7 +54,7 @@ public class OCLSuitesProvider {
         return suite;
     }
 
-    public TornadoLIRSuites createLIRSuites() {
+    private TornadoLIRSuites createLIRSuites() {
         PostAllocationOptimizationStage.Options.LIROptRedundantMoveElimination.setValue(false);
 
         return new TornadoLIRSuites(suites.getPreAllocationOptimizationStage(),
@@ -58,7 +65,8 @@ public class OCLSuitesProvider {
         return suites;
     }
 
-    public PhaseSuite<HighTierContext> getDefaultGraphBuilderSuite() {
+    @Override
+    public PhaseSuite<HighTierContext> getGraphBuilderSuite() {
         return graphBuilderSuite;
     }
 
@@ -68,6 +76,11 @@ public class OCLSuitesProvider {
 
     public TornadoSuites getSuites() {
         return suites;
+    }
+
+    @Override
+    public TornadoSketchTier getSketchTier() {
+        return suites.getSketchTier();
     }
 
 }

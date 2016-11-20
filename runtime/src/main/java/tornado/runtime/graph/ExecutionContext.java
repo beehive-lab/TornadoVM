@@ -11,7 +11,7 @@ import tornado.runtime.api.LocalObjectState;
 
 public class ExecutionContext {
 
-	private final int MAX_TASKS = 100;
+    private final int MAX_TASKS = 100;
 
     private final List<SchedulableTask> tasks;
     private final List<Object> constants;
@@ -107,7 +107,7 @@ public class ExecutionContext {
             deviceIndex = devices.size();
             devices.add(mapping);
         }
-
+        apply(task -> task.mapTo(mapping));
         Arrays.fill(taskToDevice, deviceIndex);
     }
 
