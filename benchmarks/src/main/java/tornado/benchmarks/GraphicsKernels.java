@@ -1,9 +1,6 @@
 package tornado.benchmarks;
 
 import tornado.api.Parallel;
-import tornado.api.Read;
-import tornado.api.ReadWrite;
-import tornado.api.Write;
 import tornado.collections.types.*;
 
 import static tornado.collections.graphics.GraphicsMath.rotate;
@@ -11,8 +8,8 @@ import static tornado.collections.types.Float3.add;
 
 public final class GraphicsKernels {
 
-    public static void rotateVector(@ReadWrite VectorFloat3 output,
-            @Read Matrix4x4Float m, @Read VectorFloat3 input) {
+    public static void rotateVector(VectorFloat3 output,
+            Matrix4x4Float m, VectorFloat3 input) {
 
         for (@Parallel int i = 0; i < output.getLength(); i++) {
             final Float3 x = input.get(i);
@@ -21,8 +18,8 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void dotVector(@Read VectorFloat3 A, @Read VectorFloat3 B,
-            @ReadWrite float[] c) {
+    public static void dotVector(VectorFloat3 A, VectorFloat3 B,
+            float[] c) {
 
         for (@Parallel int i = 0; i < c.length; i++) {
             final Float3 a = A.get(i);
@@ -32,16 +29,16 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void addVector(@Read VectorFloat4 a, @Read VectorFloat4 b,
-            @Write VectorFloat4 c) {
+    public static void addVector(VectorFloat4 a, VectorFloat4 b,
+            VectorFloat4 c) {
 
         for (@Parallel int i = 0; i < c.getLength(); i++) {
             c.set(i, Float4.add(a.get(i), b.get(i)));
         }
     }
 
-    public static void rotateImage(@ReadWrite ImageFloat3 output,
-            @Read Matrix4x4Float m, @Read ImageFloat3 input) {
+    public static void rotateImage(ImageFloat3 output,
+            Matrix4x4Float m, ImageFloat3 input) {
 
         for (@Parallel int i = 0; i < output.Y(); i++) {
             for (@Parallel int j = 0; j < output.X(); j++) {
@@ -54,8 +51,8 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void dotImage(@Read ImageFloat3 A, @Read ImageFloat3 B,
-            @ReadWrite ImageFloat C) {
+    public static void dotImage(ImageFloat3 A, ImageFloat3 B,
+            ImageFloat C) {
 
         for (@Parallel int i = 0; i < C.Y(); i++) {
             for (@Parallel int j = 0; j < C.X(); j++) {
@@ -67,8 +64,8 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void addImage(@Read ImageFloat3 a, @Read ImageFloat3 b,
-            @ReadWrite ImageFloat3 c) {
+    public static void addImage(ImageFloat3 a, ImageFloat3 b,
+            ImageFloat3 c) {
 
         for (@Parallel int i = 0; i < c.Y(); i++) {
             for (@Parallel int j = 0; j < c.X(); j++) {
@@ -77,10 +74,10 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void convolveImageArray(@Read final float[] input,
-            @Read final float[] filter, @Write final float[] output,
-            @Read final int iW, @Read final int iH, @Read final int fW,
-            @Read final int fH) {
+    public static void convolveImageArray(final float[] input,
+            final float[] filter, final float[] output,
+            final int iW, final int iH, final int fW,
+            final int fH) {
         int u, v;
 
         final int filterX2 = fW / 2;
@@ -108,8 +105,8 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void convolveImage(@Read final ImageFloat input,
-            @Read final ImageFloat filter, @Write final ImageFloat output) {
+    public static void convolveImage(final ImageFloat input,
+            final ImageFloat filter, final ImageFloat output) {
         int u, v;
 
         final int filterX2 = filter.X() / 2;

@@ -1,8 +1,6 @@
 package tornado.benchmarks;
 
 import tornado.api.Parallel;
-import tornado.api.Read;
-import tornado.api.Write;
 import tornado.collections.math.TornadoMath;
 import tornado.drivers.opencl.OpenCL;
 import tornado.runtime.api.TaskGraph;
@@ -29,7 +27,7 @@ public class BlackScholes {
         final BlackScholes bs = new BlackScholes(size);
 
         final TaskGraph tasks = new TaskGraph()
-                .add(BlackScholes::run, bs.randArray, bs.put, bs.call)
+                .add(BlackScholes::blackscholes, bs.randArray, bs.put, bs.call)
                 .mapAllTo(OpenCL.defaultDevice());
 
         long start = 0, end = 0;
@@ -40,7 +38,7 @@ public class BlackScholes {
                 if (DEBUG) {
                     System.out.printf("iteration %d\n", i);
                 }
-                run(bs.randArray, bs.put, bs.call);
+                blackscholes(bs.randArray, bs.put, bs.call);
             }
         } else {
             for (int i = 0; i < iterations; i++) {
@@ -140,8 +138,8 @@ public class BlackScholes {
      * or put price array @param call Array of calculated call price values
      * @param put Array of calculated put price values
      */
-    public static void run(@Read final float[] randArray,
-            @Write final float[] put, @Write final float[] call) {
+    public static void blackscholes(final float[] randArray,
+            final float[] put, final float[] call) {
         for (@Parallel int gid = 0; gid < call.length; gid++) {
             final float two = 2.0f;
             final float inRand = randArray[gid];
