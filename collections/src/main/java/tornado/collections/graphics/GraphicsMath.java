@@ -1,8 +1,6 @@
 package tornado.collections.graphics;
 
 import tornado.api.Parallel;
-import tornado.api.Read;
-import tornado.api.Write;
 import tornado.collections.types.*;
 
 import static tornado.collections.math.TornadoMath.max;
@@ -13,8 +11,8 @@ public class GraphicsMath {
 
     private static final float INVALID = -2;
 
-    public static void vertex2normal(@Write ImageFloat3 normals,
-            @Read ImageFloat3 verticies) {
+    public static void vertex2normal(ImageFloat3 normals,
+            ImageFloat3 verticies) {
 
         for (@Parallel int y = 0; y < normals.Y(); y++) {
             for (@Parallel int x = 0; x < normals.X(); x++) {
@@ -43,8 +41,8 @@ public class GraphicsMath {
         }
     }
 
-    public static void depth2vertex(@Write ImageFloat3 verticies,
-            @Read ImageFloat depths, @Read Matrix4x4Float invK) {
+    public static void depth2vertex(ImageFloat3 verticies,
+            ImageFloat depths, Matrix4x4Float invK) {
 
         for (@Parallel int y = 0; y < depths.Y(); y++) {
             for (@Parallel int x = 0; x < depths.X(); x++) {

@@ -1,8 +1,6 @@
 package tornado.collections.graphics;
 
 import tornado.api.Parallel;
-import tornado.api.Read;
-import tornado.api.Write;
 import tornado.collections.math.TornadoMath;
 import tornado.collections.types.Byte3;
 import tornado.collections.types.FloatOps;
@@ -11,9 +9,9 @@ import tornado.collections.types.ImageFloat;
 
 public class ImagingOps {
 
-    public static final void resizeImage6(@Write ImageFloat dest,
-            @Read ImageFloat src, @Read int scaleFactor, @Read float eDelta,
-            @Read int radius) {
+    public static final void resizeImage6(ImageFloat dest,
+            ImageFloat src, int scaleFactor, float eDelta,
+            int radius) {
 
         for (@Parallel int y = 0; y < dest.Y(); y++) {
             for (@Parallel int x = 0; x < dest.X(); x++) {
@@ -52,8 +50,8 @@ public class ImagingOps {
         }
     }
 
-    public static final void mm2metersKernel(@Write ImageFloat dest,
-            @Read ImageFloat src, @Read int scaleFactor) {
+    public static final void mm2metersKernel(ImageFloat dest,
+            ImageFloat src, int scaleFactor) {
         for (@Parallel int y = 0; y < dest.Y(); y++) {
             for (@Parallel int x = 0; x < dest.X(); x++) {
 
@@ -68,9 +66,9 @@ public class ImagingOps {
         }
     }
 
-    public static final void resizeImage(@Write ImageFloat dest,
-            @Read ImageFloat src, @Read int scaleFactor) {
-        
+    public static final void resizeImage(ImageFloat dest,
+            ImageFloat src, int scaleFactor) {
+
         for (@Parallel int y = 0; y < dest.Y(); y++) {
             for (@Parallel int x = 0; x < dest.X(); x++) {
 
@@ -84,8 +82,8 @@ public class ImagingOps {
         }
     }
 
-    public static final void resizeImage(@Write ImageByte3 dest,
-            @Read ImageByte3 src, @Read int scaleFactor) {
+    public static final void resizeImage(ImageByte3 dest,
+            ImageByte3 src, int scaleFactor) {
 
         for (@Parallel int y = 0; y < dest.Y(); y++) {
             for (@Parallel int x = 0; x < dest.X(); x++) {
@@ -101,9 +99,9 @@ public class ImagingOps {
         }
     }
 
-    public static final void bilateralFilter(@Write ImageFloat dest,
-            @Read ImageFloat src, @Read float[] gaussian, @Read float eDelta,
-            @Read int radius) {
+    public static final void bilateralFilter(ImageFloat dest,
+            ImageFloat src, float[] gaussian, float eDelta,
+            int radius) {
 
         final float e_d_squared_2 = eDelta * eDelta * 2f;
 
