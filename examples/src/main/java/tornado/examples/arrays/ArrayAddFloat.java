@@ -43,14 +43,15 @@ public class ArrayAddFloat {
         /*
          * Check to make sure result is correct
          */
+        int errors = 0;
         for (final float value : c) {
             if (value != 5f) {
-                System.out.printf("Invalid result: %f\n", value);
-                // break;
+                errors++;
             }
         }
-        
-        OpenCL.defaultDevice().dumpMemory("mem.dump");
 
+        if (errors > 0) {
+            System.out.printf("Invalid result: %d errors\n", errors);
+        }
     }
 }
