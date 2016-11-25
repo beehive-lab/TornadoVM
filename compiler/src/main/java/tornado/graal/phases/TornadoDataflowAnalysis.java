@@ -21,7 +21,6 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
 
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
-
         if (!context.hasMeta()) {
             return;
         }
