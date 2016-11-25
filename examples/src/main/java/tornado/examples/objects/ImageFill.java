@@ -1,7 +1,6 @@
 package tornado.examples.objects;
 
 import tornado.collections.types.ImageFloat;
-import tornado.common.enums.Access;
 import tornado.drivers.opencl.OpenCL;
 import tornado.runtime.api.CompilableTask;
 import tornado.runtime.api.TaskGraph;
@@ -25,9 +24,6 @@ public class ImageFill {
          * call.
          */
         final CompilableTask fillInvocation = TaskUtils.createTask(image::fill, 1f);
-
-        // workaround issue in class loaded with multiple runtime annotations
-        fillInvocation.getArgumentsAccess()[0] = Access.READ_WRITE;
 
         final TaskGraph graph = new TaskGraph()
                 .add(fillInvocation)
