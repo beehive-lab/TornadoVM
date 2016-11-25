@@ -37,8 +37,8 @@ public abstract class BenchmarkRunner {
 
         final double refElapsed = referenceTest.getElapsed();
 
-        final Set<Integer> blacklistedPlatforms = new HashSet<Integer>();
-        final Set<Integer> blacklistedDevices = new HashSet<Integer>();
+        final Set<Integer> blacklistedPlatforms = new HashSet<>();
+        final Set<Integer> blacklistedDevices = new HashSet<>();
 
         findBlacklisted(blacklistedPlatforms, "tornado.blacklist.platform");
         findBlacklisted(blacklistedDevices, "tornado.blacklist.device");
