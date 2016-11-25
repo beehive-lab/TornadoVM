@@ -4,6 +4,7 @@ import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 import jdk.vm.ci.meta.JavaKind;
 import sun.misc.Unsafe;
+
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class TornadoVMConfig extends HotSpotVMConfigAccess {
