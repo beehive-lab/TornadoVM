@@ -6,11 +6,12 @@ import com.oracle.graal.nodes.ValueNode;
 
 @NodeInfo(nameTemplate = "Offset")
 public class ParallelOffsetNode extends AbstractParallelNode {
-	public static final NodeClass<ParallelOffsetNode>	TYPE	= NodeClass
-															.create(ParallelOffsetNode.class);
-	
-	public ParallelOffsetNode(int index, ValueNode offset) {
-		super(TYPE, index, offset);
-	}
-	
+
+    public static final NodeClass<ParallelOffsetNode> TYPE = NodeClass
+            .create(ParallelOffsetNode.class);
+
+    public ParallelOffsetNode(int index, ValueNode offset) {
+        super(TYPE, index, offset);
+    }
+
 }
