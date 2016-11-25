@@ -9,8 +9,6 @@ import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.*
 import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic.CLAMP;
 import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.*;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLBuiltinTool {
 
