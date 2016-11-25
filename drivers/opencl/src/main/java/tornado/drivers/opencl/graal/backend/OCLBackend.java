@@ -50,6 +50,9 @@ import static tornado.common.Tornado.DEBUG_KERNEL_ARGS;
 import static tornado.common.exceptions.TornadoInternalError.*;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
