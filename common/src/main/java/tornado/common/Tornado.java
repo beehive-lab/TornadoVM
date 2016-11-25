@@ -15,6 +15,10 @@ public final class Tornado {
         tryLoadSettings();
     }
 
+    public static String getProperty(String key) {
+        return settings.getProperty(key);
+    }
+
     public static String getProperty(String key, String defaultValue) {
         return settings.getProperty(key, defaultValue);
     }
