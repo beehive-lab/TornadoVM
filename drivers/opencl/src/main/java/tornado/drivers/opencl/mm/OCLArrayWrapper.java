@@ -7,11 +7,10 @@ import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
 
-import static tornado.runtime.TornadoRuntime.*;
-
 import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.common.Tornado.*;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.runtime.TornadoRuntime.getVMConfig;
 
 public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
