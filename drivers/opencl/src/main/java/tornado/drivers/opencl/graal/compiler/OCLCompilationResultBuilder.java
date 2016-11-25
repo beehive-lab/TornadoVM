@@ -37,6 +37,9 @@ import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.graal.TornadoLIRGenerator.trace;
+import static tornado.graal.TornadoLIRGenerator.trace;
+import static tornado.graal.TornadoLIRGenerator.trace;
+import static tornado.graal.TornadoLIRGenerator.trace;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
