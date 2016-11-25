@@ -26,6 +26,9 @@ import tornado.drivers.opencl.graal.nodes.vector.VectorUtil;
 
 import static tornado.common.exceptions.TornadoInternalError.*;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
