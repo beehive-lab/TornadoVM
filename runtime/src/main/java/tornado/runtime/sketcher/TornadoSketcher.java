@@ -29,6 +29,12 @@ import static tornado.common.Tornado.fatal;
 import static tornado.common.Tornado.info;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.runtime.TornadoRuntime.getTornadoExecutor;
+import static tornado.common.Tornado.fatal;
+import static tornado.common.Tornado.info;
+import static tornado.common.Tornado.fatal;
+import static tornado.common.Tornado.info;
+import static tornado.common.Tornado.fatal;
+import static tornado.common.Tornado.info;
 
 public class TornadoSketcher {
 

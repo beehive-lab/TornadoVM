@@ -1,10 +1,15 @@
 package tornado.drivers.opencl.graal.compiler;
 
+import com.oracle.graal.loop.DefaultLoopPolicies;
+import com.oracle.graal.loop.LoopPolicies;
+import com.oracle.graal.loop.phases.LoopFullUnrollPhase;
 import com.oracle.graal.nodes.spi.LoweringTool;
 import com.oracle.graal.phases.common.CanonicalizerPhase.CustomCanonicalizer;
 import com.oracle.graal.phases.common.*;
 import com.oracle.graal.phases.common.inlining.InliningPhase;
+import com.oracle.graal.phases.schedule.SchedulePhase;
 import com.oracle.graal.virtual.phases.ea.PartialEscapePhase;
+import tornado.drivers.opencl.graal.phases.OCLThreadCoarsener;
 import tornado.drivers.opencl.graal.phases.TornadoParallelScheduler;
 import tornado.drivers.opencl.graal.phases.TornadoTaskSpecialisation;
 import tornado.graal.compiler.TornadoHighTier;
@@ -59,9 +64,16 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(new RemoveValueProxyPhase());
 
         appendPhase(new TornadoShapeAnalysis());
+        appendPhase(new OCLThreadCoarsener());
         appendPhase(new TornadoParallelScheduler());
-
         appendPhase(canonicalizer);
+
+        LoopPolicies loopPolicies = new DefaultLoopPolicies();
+        appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
+        appendPhase(canonicalizer);
+        appendPhase(new DeadCodeEliminationPhase(Optional));
+
+        appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
 
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER));
         appendPhase(new ExceptionSuppression());
