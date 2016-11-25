@@ -6,6 +6,7 @@ import com.oracle.graal.compiler.common.spi.ForeignCallDescriptor;
 import com.oracle.graal.compiler.common.spi.ForeignCallLinkage;
 import com.oracle.graal.compiler.common.spi.ForeignCallsProvider;
 import jdk.vm.ci.meta.JavaKind;
+
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class TornadoForeignCallsProvider implements ForeignCallsProvider {
@@ -45,5 +46,5 @@ public class TornadoForeignCallsProvider implements ForeignCallsProvider {
         unimplemented();
         return LIRKind.Illegal;
     }
-    
+
 }
