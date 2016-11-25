@@ -40,6 +40,12 @@ public class LinearAlgebraArrays {
         }
     }
 
+    public static void ladd(long[] a, long[] b, long[] c) {
+        for (@Parallel int i = 0; i < c.length; i++) {
+            c[i] = a[i] + b[i];
+        }
+    }
+
     public static void sadd(float[] a, float[] b, float[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];
