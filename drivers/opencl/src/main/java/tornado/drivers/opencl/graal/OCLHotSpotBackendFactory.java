@@ -25,8 +25,6 @@ import tornado.runtime.TornadoVMConfig;
 
 import static jdk.vm.ci.common.InitTimer.timer;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static jdk.vm.ci.common.InitTimer.timer;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLHotSpotBackendFactory {
 
