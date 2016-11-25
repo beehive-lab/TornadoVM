@@ -2,32 +2,57 @@ package tornado.meta.domain;
 
 public class IntDomain implements Domain {
 
-	private final int offset;
-	private final int step;
-	private final int length;
-	
-	public IntDomain(int offset, int step, int length){
-		this.offset = offset;
-		this.step = step;
-		this.length = length;
-	}
-	
-	public IntDomain(int length){
-		this(0,1,length);
-	}
-	
-	@Override
-	public int cardinality() {
-		return length;
-	}
+    private int offset;
+    private int step;
+    private int length;
 
-	@Override
-	public int map(int index) {
-		return (index * step) + offset;
-	}
-	
-	public String toString(){
-		return String.format("IntDomain: [%d, %d, %d]",offset,length,step);
-	}
+    public IntDomain(int offset, int step, int length) {
+        this.offset = offset;
+        this.step = step;
+        this.length = length;
+    }
+
+    public IntDomain(int length) {
+        this(0, 1, length);
+    }
+
+    @Override
+    public int cardinality() {
+        return length;
+    }
+
+    @Override
+    public int map(int index) {
+        return (index * step) + offset;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("IntDomain: {offset=%d, step=%d, length=%d}", offset, step, length);
+    }
+
+    public int getOffset() {
+        return offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
+
+    public int getStep() {
+        return step;
+    }
+
+    public void setStep(int step) {
+        this.step = step;
+    }
+
+    public int getLength() {
+        return length;
+    }
+
+    public void setLength(int length) {
+        this.length = length;
+    }
 
 }
