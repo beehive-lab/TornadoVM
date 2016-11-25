@@ -11,8 +11,6 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.api.Event;
 import tornado.common.DeviceMapping;
 import tornado.common.enums.Access;
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import tornado.meta.domain.DomainTree;
 import tornado.meta.domain.IntDomain;
 import tornado.runtime.TornadoRuntime;
@@ -26,6 +24,9 @@ import tornado.runtime.api.TornadoFunctions.Task6;
 import tornado.runtime.api.TornadoFunctions.Task7;
 import tornado.runtime.api.TornadoFunctions.Task8;
 import tornado.runtime.api.TornadoFunctions.Task9;
+
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class TaskUtils {
 
@@ -64,22 +65,19 @@ public class TaskUtils {
         // events.clear();
     }
 
-   
-
     private final static Method resolveMethodHandle(Object task) {
         final Class<?> type = task.getClass();
 
         /*
-         * task should implement one of the TaskX interfaces...
-         * ...so we look for the apply function.
-         * Note: apply will perform some type casting and then call
-         * the function we really want to use, so we need to resolve
-         * the nested function.
+         * task should implement one of the TaskX interfaces... ...so we look
+         * for the apply function. Note: apply will perform some type casting
+         * and then call the function we really want to use, so we need to
+         * resolve the nested function.
          */
         Method entryPoint = null;
         for (Method m : type.getDeclaredMethods()) {
 //            System.out.printf("ep m: %s\n",m.getName());
-        	if (m.getName().equals("apply")) {
+            if (m.getName().equals("apply")) {
                 entryPoint = m;
 //                break;
             }
@@ -88,20 +86,20 @@ public class TaskUtils {
         guarantee(entryPoint != null, "unable to find entry point");
 
         /*
-         * Fortunately we can do a bit of JVMCI magic to resolve the function
-         * to a Method.
+         * Fortunately we can do a bit of JVMCI magic to resolve the function to
+         * a Method.
          */
         final ResolvedJavaMethod resolvedMethod = TornadoRuntime.getVMBackend()
                 .getMetaAccess().lookupJavaMethod(entryPoint);
         final ConstantPool cp = resolvedMethod.getConstantPool();
-        final byte[] bc = resolvedMethod.getCode(); 
-        
+        final byte[] bc = resolvedMethod.getCode();
+
         for (int i = 0; i < bc.length; i++) {
             if (bc[i] == (byte) Bytecodes.INVOKESTATIC) {
                 cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKESTATIC);
-                JavaMethod jm =  cp
+                JavaMethod jm = cp
                         .lookupMethod(bc[i + 2], Bytecodes.INVOKESTATIC);
-                
+
                 try {
                     Method toJavaMethod = jm.getClass().getDeclaredMethod(
                             "toJava");
@@ -109,25 +107,23 @@ public class TaskUtils {
                     Method m = (Method) toJavaMethod.invoke(jm);
                     m.setAccessible(true);
                     return m;
-                } catch (NoSuchMethodException | SecurityException
-                        | IllegalAccessException | IllegalArgumentException
-                        | InvocationTargetException e) {
+                } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 
                     e.printStackTrace();
                 }
 
                 break;
-            } else if (bc[i] == (byte) Bytecodes.INVOKEVIRTUAL){
-            	cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
-                JavaMethod jm =  cp
+            } else if (bc[i] == (byte) Bytecodes.INVOKEVIRTUAL) {
+                cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
+                JavaMethod jm = cp
                         .lookupMethod(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
 //                System.out.println(jm.getName());
-                
-                switch(jm.getName()){
-                case "floatValue":
-                case "doubleValue":
-                case "intValue":
-                	continue;
+
+                switch (jm.getName()) {
+                    case "floatValue":
+                    case "doubleValue":
+                    case "intValue":
+                        continue;
                 }
                 try {
                     Method toJavaMethod = jm.getClass().getDeclaredMethod(
@@ -136,13 +132,10 @@ public class TaskUtils {
                     Method m = (Method) toJavaMethod.invoke(jm);
                     m.setAccessible(true);
                     return m;
-                } catch (NoSuchMethodException | SecurityException
-                        | IllegalAccessException | IllegalArgumentException
-                        | InvocationTargetException e) {
+                } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 
                     e.printStackTrace();
                 }
-                
 
                 break;
             }
@@ -225,77 +218,76 @@ public class TaskUtils {
 
     public static Object[] extractCapturedVariables(Object code) {
         final Class<?> type = code.getClass();
-        
+
         int count = 0;
-        for(Field field : type.getDeclaredFields()){
-        	System.out.printf("cv: type=%s, name=%s\n",field.getType().getName(),field.getName());
-        	if(!field.getType().getName().contains("$$Lambda$")){
-        		count++;
-        	}
+        for (Field field : type.getDeclaredFields()) {
+            System.out.printf("cv: type=%s, name=%s\n", field.getType().getName(), field.getName());
+            if (!field.getType().getName().contains("$$Lambda$")) {
+                count++;
+            }
         }
-        
+
         final Object[] cvs = new Object[count];
         int index = 0;
         for (Field field : type.getDeclaredFields()) {
-        	if(!field.getType().getName().contains("$$Lambda$")){
-            field.setAccessible(true);
-            try {
-                cvs[index] = field.get(code);
-            } catch (IllegalArgumentException | IllegalAccessException e) {
-                e.printStackTrace();
+            if (!field.getType().getName().contains("$$Lambda$")) {
+                field.setAccessible(true);
+                try {
+                    cvs[index] = field.get(code);
+                } catch (IllegalArgumentException | IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+                index++;
             }
-            index++;
-        	}
         }
         return cvs;
     }
 
-   public static PrebuiltTask createTask(String entryPoint, String filename, Object[] args, Access[] accesses, DeviceMapping device, int[] dims){
-	   final DomainTree domain = new DomainTree(dims.length);
-	   for(int i=0;i<dims.length;i++){
-		   domain.set(i, new IntDomain(0,1,dims[i]));
-	   }
-	   
-	   return new PrebuiltTask(entryPoint,filename,args,accesses,device,domain);
-   }
+    public static PrebuiltTask createTask(String entryPoint, String filename, Object[] args, Access[] accesses, DeviceMapping device, int[] dims) {
+        final DomainTree domain = new DomainTree(dims.length);
+        for (int i = 0; i < dims.length; i++) {
+            domain.set(i, new IntDomain(0, 1, dims[i]));
+        }
+
+        return new PrebuiltTask(entryPoint, filename, args, accesses, device, domain);
+    }
 
     public static CompilableTask createTask(Runnable runnable) {
         final Method method = resolveRunnable(runnable);
         return createTask(method, runnable, false);
     }
-    
- 
-   	private static CompilableTask createTask(Method method, Object code,
-   			boolean extractCVs, Object... args) {
-   		 final int numArgs;
-   	        final Object[] cvs;
 
-   	        if (extractCVs) {
-   	            cvs = TaskUtils.extractCapturedVariables(code);
-   	            numArgs = cvs.length + args.length;
-   	        } else {
-   	            cvs = null;
-   	            numArgs = args.length;
-   	        }
+    private static CompilableTask createTask(Method method, Object code,
+            boolean extractCVs, Object... args) {
+        final int numArgs;
+        final Object[] cvs;
+
+        if (extractCVs) {
+            cvs = TaskUtils.extractCapturedVariables(code);
+            numArgs = cvs.length + args.length;
+        } else {
+            cvs = null;
+            numArgs = args.length;
+        }
 //   	        final boolean isStatic = Modifier.isStatic(method.getModifiers());
 
-   	        final Object[] parameters = new Object[numArgs];
-   	        int index = 0;
-   	        if (extractCVs) {
-   	            for (Object cv : cvs) {
-   	                parameters[index] = cv;
-   	                index++;
-   	            }
-   	        }
+        final Object[] parameters = new Object[numArgs];
+        int index = 0;
+        if (extractCVs) {
+            for (Object cv : cvs) {
+                parameters[index] = cv;
+                index++;
+            }
+        }
 
-   	        for (Object arg : args) {
-   	            parameters[index] = arg;
-   	            index++;
-   	        }
+        for (Object arg : args) {
+            parameters[index] = arg;
+            index++;
+        }
 
 //   	        final Object thisObject = (isStatic) ? null : code;
-   	        return new CompilableTask(method, parameters);
-   	}
+        return new CompilableTask(method, parameters);
+    }
 
     private static Method resolveRunnable(Runnable runnable) {
         final Class<?> type = runnable.getClass();
