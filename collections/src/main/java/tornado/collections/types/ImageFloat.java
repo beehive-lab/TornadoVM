@@ -1,12 +1,13 @@
 package tornado.collections.types;
 
 import java.nio.FloatBuffer;
+import tornado.api.Parallel;
 import tornado.collections.math.TornadoMath;
 import tornado.common.exceptions.TornadoInternalError;
 
 
 public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
-    
+
 	/**
 	 * backing array
 	 */
@@ -21,13 +22,13 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
      * Number of rows
      */
 	final protected int Y;
-    
+
     /**
      * Number of columns
      */
 	final protected int X;
-    
-    
+
+
 	/**
      * Storage format for matrix
      * @param height number of columns
@@ -40,7 +41,7 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
     	Y = height;
     	numElements = X*Y;
     }
-    
+
     /**
      * Storage format for matrix
      * @param height number of columns
@@ -50,20 +51,20 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
     	this(width,height,new float[width*height]);
     }
 
-    
+
     public ImageFloat(float[][] matrix){
     	this(matrix.length,matrix[0].length,StorageFormats.toRowMajor(matrix));
     }
-    
+
     public float get(int i){
     	return storage[i];
     }
-    
+
     public void set(int i, float value){
     	storage[i] = value;
     }
 
-    
+
     /***
      * returns the ith column of the jth row
      * @param i row index
@@ -73,7 +74,7 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
     public float get(int i, int j){
     	return storage[StorageFormats.toRowMajor(j, i, X)];
     }
-    
+
     /***
      * sets the ith column of the jth row to value
      * @param i row index
@@ -83,48 +84,48 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
     public void set(int i, int j, float value){
     	storage[StorageFormats.toRowMajor(j, i, X)] = value;
     }
-    
+
     public void put(float[] array){
     	System.arraycopy(array, 0, storage, 0, array.length);
     }
-    
+
     public int Y(){
     	return Y;
     }
-    
+
     public int X(){
     	return X;
     }
-    
+
 //    public VectorFloat row(int row){
 //    	int index = getOffset() + StorageFormats.toRowMajor(row,0, LDA);
 //    	VectorFloat v = new VectorFloat(X,index,getStep(),getElementSize(),storage );
 //    	return v;
 //    }
-//    
+//
 //    public VectorFloat column(int col){
 //    	int index = getOffset() + StorageFormats.toRowMajor(0, col, LDA);
 //    	VectorFloat v = new VectorFloat(Y,index,LDA,getElementSize(),storage );
 //    	return v;
 //    }
-//    
+//
 //    public VectorFloat diag(){
 //    	VectorFloat v = new VectorFloat(Math.min(Y,X), getOffset(), LDA + 1,getElementSize(),storage);
 //    	return v;
 //    }
-//    
+//
 //    public ImageFloat subImage(int x0, int y0, int x1, int y1){
 //    	int index = getOffset() + StorageFormats.toRowMajor(y0, x0, LDA);
 //    	ImageFloat subM = new ImageFloat(x1,y1,LDA,index,getStep(),getElementSize(),storage);
 //    	return subM;
 //    }
-    
+
     public void fill(float value){
-    	for( int i=0;i<Y;i++)
-    		for( int j=0;j<X;j++)
+    	for(@Parallel int i=0;i<Y;i++)
+    		for(@Parallel int j=0;j<X;j++)
     			set(i,j,value);
     }
-    
+
     @Deprecated
     public void multiply(ImageFloat a, ImageFloat b){
     	TornadoInternalError.shouldNotReachHere();
@@ -134,11 +135,11 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
 				float sum = 0.0f;
 				for(k=0;k<a.Y;k++){
 					sum += a.get(i, k) * b.get(k, j);
-				}			
+				}
 				set(i, j, sum);
 			}
     }
-    
+
     /**
      * Transposes the matrix in-place
      * @param m matrix to transpose
@@ -157,24 +158,24 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
             }
         } else {
             // transpose rectangular matrix
-           
+
         	// not implemented
-            
+
         }
     }
-    
+
     public ImageFloat duplicate(){
     	final ImageFloat matrix = new ImageFloat(X,Y);
     	matrix.set(this);
     	return matrix;
     }
-    
+
     public void set(ImageFloat m) {
     	for(int i=0;i<storage.length;i++)
     		storage[i] = m.storage[i];
 	}
 
-    
+
     public String toString(String fmt){
     	 String str = "";
 
@@ -187,7 +188,7 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
 
          return str;
     }
-    
+
     public String toString(){
     	String result = String.format("ImageFloat <%d x %d>",X,Y);
 		 if(Y<16 && X<16)
@@ -200,28 +201,28 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
     		image.storage[i] *= alpha;
 	}
 
-	
+
 	public float mean(){
 		float result = 0f;
 		for(int i=0;i<storage.length;i++)
 			result += storage[i];
 		return result / (float) (X*Y);
 	}
-	
+
 	public float min(){
 		float result = Float.MAX_VALUE;
 			for(int i=0;i<storage.length;i++)
 				result = Math.min(result,storage[i]);
 		return result;
 	}
-	
+
 	public float max(){
 		float result = Float.MIN_VALUE;
 		for(int i=0;i<storage.length;i++)
 			result = Math.max(result,storage[i]);
 		return result;
 	}
-	
+
 	public float stdDev(){
 		final float mean = mean();
 		float varience = 0f;
@@ -233,11 +234,11 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
 		}
 		return TornadoMath.sqrt(varience);
 	}
-	
+
 	public String summerise(){
 		return String.format("ImageFloat<%dx%d>: min=%e, max=%e, mean=%e, sd=%e",X,Y,min(),max(),mean(),stdDev());
 	}
-	
+
 	 @Override
 		public void loadFromBuffer(FloatBuffer buffer) {
 			asBuffer().put(buffer);
@@ -252,12 +253,12 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
 		public int size() {
 			return numElements;
 		}
-		
+
 		public FloatingPointError calculateULP(ImageFloat ref){
 			float maxULP = Float.MIN_VALUE;
 			float minULP = Float.MAX_VALUE;
 			float averageULP = 0f;
-			
+
 			/*
 			 * check to make sure dimensions match
 			 */
@@ -269,30 +270,30 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
 				for(int i=0;i<X;i++){
 					final float v = get(i, j);
 					final float r = ref.get(i, j);
-					
+
 					final float ulpFactor = FloatOps.findMaxULP(v, r);
 					averageULP += ulpFactor;
 					minULP = Math.min(ulpFactor, minULP);
 					maxULP = Math.max(ulpFactor, maxULP);
-					
+
 				}
 			}
-			
+
 			averageULP /= (float) X * Y;
 
 			return new FloatingPointError(averageULP, minULP, maxULP, -1f);
 		}
-	
+
 //	public void map(ImageFloat dest, FloatToFloatFunction function){
 //		for(@Parallel int i=0;i<Y;i++)
 //			for(@Parallel int j=0;j<X;j++)
 //				dest.set(i,j,function.apply(get(i,j)));
 //	}
-//	
+//
 //	public void apply(FloatToFloatFunction function){
 //		map(this,function);
 //	}
-//	
+//
 //	/*
 //	 * maps an image patch to a float
 //	 */
@@ -307,7 +308,7 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
 //				dest.set(i,j,function.apply(patch));
 //			}
 //	}
-//	
+//
 //	public void stencilApply(int rx, int ry, ToFloatFunction<ImageFloat> function){
 //		stencilMap(this,rx,ry,function);
 //	}
