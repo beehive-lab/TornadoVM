@@ -3,8 +3,9 @@ package tornado.runtime.graph;
 import java.util.BitSet;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import tornado.runtime.graph.nodes.AbstractNode;
+
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class Graph {
 
