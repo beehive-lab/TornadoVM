@@ -9,7 +9,6 @@ import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLMoveFactory implements MoveFactory {
 
