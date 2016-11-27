@@ -56,7 +56,6 @@ public class SpmvTornado extends BenchmarkDriver {
 
     @Override
     public void code() {
-
         graph.schedule().waitOn();
     }
 
@@ -66,9 +65,8 @@ public class SpmvTornado extends BenchmarkDriver {
         final float[] ref = new float[matrix.size];
 
         code();
+        graph.clearProfiles();
 
-//        System.out.printf("spmv: status=%s %s\n", spmv.getEvent().getStatus(),
-//                spmv.getEvent().toString());
         LinearAlgebraArrays.spmv(matrix.vals, matrix.cols, matrix.rows, v,
                 matrix.size, ref);
 

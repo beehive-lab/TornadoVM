@@ -14,7 +14,7 @@ public class SaddTornado extends BenchmarkDriver {
 
     private float[] a, b, c;
 
-   private TaskGraph graph; 
+    private TaskGraph graph;
 
     public SaddTornado(int iterations, int numElements, DeviceMapping device) {
         super(iterations);
@@ -38,7 +38,7 @@ public class SaddTornado extends BenchmarkDriver {
                 .add(LinearAlgebraArrays::sadd, a, b, c)
                 .streamOut(c)
                 .mapAllTo(device);
-        
+
         graph.warmup();
     }
 
@@ -57,11 +57,8 @@ public class SaddTornado extends BenchmarkDriver {
 
     @Override
     public void code() {
-
         graph.schedule().waitOn();
     }
-
-   
 
     @Override
     public boolean validate() {
@@ -69,21 +66,23 @@ public class SaddTornado extends BenchmarkDriver {
         final float[] result = new float[numElements];
 
         code();
+        graph.clearProfiles();
 
         LinearAlgebraArrays.sadd(a, b, result);
 
-        final float ulp = TornadoMath.findULPDistance(c,result);
+        final float ulp = TornadoMath.findULPDistance(c, result);
         return ulp < MAX_ULP;
     }
 
     public void printSummary() {
-        if (isValid())
+        if (isValid()) {
             System.out.printf(
                     "id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
                     ((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
                     getElapsedPerIteration());
-        else
+        } else {
             System.out.printf("id=opencl-device-%d produced invalid result\n",
                     ((OCLDeviceMapping) device).getDeviceIndex());
+        }
     }
 }

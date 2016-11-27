@@ -1,13 +1,14 @@
 package tornado.benchmarks.convolvearray;
 
 import tornado.benchmarks.BenchmarkDriver;
-import static tornado.benchmarks.BenchmarkUtils.createFilter;
-import static tornado.benchmarks.BenchmarkUtils.createImage;
 import tornado.benchmarks.GraphicsKernels;
 import tornado.collections.types.FloatOps;
 import tornado.common.DeviceMapping;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.runtime.api.TaskGraph;
+
+import static tornado.benchmarks.BenchmarkUtils.createFilter;
+import static tornado.benchmarks.BenchmarkUtils.createImage;
 
 public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
@@ -38,19 +39,19 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
         graph = new TaskGraph()
                 .add(GraphicsKernels::convolveImageArray,
-                input, filter, output, imageSizeX, imageSizeY, filterSize,
-                filterSize)
+                        input, filter, output, imageSizeX, imageSizeY, filterSize,
+                        filterSize)
                 .streamOut(output)
                 .mapAllTo(device);
-        
+
         graph.warmup();
 
     }
 
     @Override
     public void tearDown() {
-       graph.dumpTimes();
-       graph.dumpProfiles();
+        graph.dumpTimes();
+        graph.dumpProfiles();
 
         input = null;
         output = null;
@@ -62,11 +63,8 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
     @Override
     public void code() {
-
         graph.schedule().waitOn();
     }
-
-    
 
     @Override
     public boolean validate() {
@@ -74,15 +72,16 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         final float[] result = new float[imageSizeX * imageSizeY];
 
         code();
+        graph.clearProfiles();
 
         GraphicsKernels.convolveImageArray(input, filter, result, imageSizeX,
                 imageSizeY, filterSize, filterSize);
 
         float maxULP = 0f;
         for (int i = 0; i < output.length; i++) {
-            final float ulp = FloatOps.findMaxULP(result[i],output[i]);
-      
-        	if (ulp > maxULP) {
+            final float ulp = FloatOps.findMaxULP(result[i], output[i]);
+
+            if (ulp > maxULP) {
                 maxULP = ulp;
             }
         }
@@ -90,13 +89,14 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
     }
 
     public void printSummary() {
-        if (isValid())
+        if (isValid()) {
             System.out.printf(
                     "id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
                     ((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
                     getElapsedPerIteration());
-        else
+        } else {
             System.out.printf("id=opencl-device-%d produced invalid result\n",
                     ((OCLDeviceMapping) device).getDeviceIndex());
+        }
     }
 }

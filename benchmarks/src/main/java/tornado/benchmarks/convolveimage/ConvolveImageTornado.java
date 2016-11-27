@@ -1,14 +1,15 @@
 package tornado.benchmarks.convolveimage;
 
 import tornado.benchmarks.BenchmarkDriver;
-import static tornado.benchmarks.BenchmarkUtils.createFilter;
-import static tornado.benchmarks.BenchmarkUtils.createImage;
 import tornado.benchmarks.GraphicsKernels;
 import tornado.collections.types.FloatOps;
 import tornado.collections.types.ImageFloat;
 import tornado.common.DeviceMapping;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.runtime.api.TaskGraph;
+
+import static tornado.benchmarks.BenchmarkUtils.createFilter;
+import static tornado.benchmarks.BenchmarkUtils.createImage;
 
 public class ConvolveImageTornado extends BenchmarkDriver {
 
@@ -62,7 +63,6 @@ public class ConvolveImageTornado extends BenchmarkDriver {
 
     @Override
     public void code() {
-
         graph.schedule().waitOn();
     }
 
@@ -72,6 +72,7 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         final ImageFloat result = new ImageFloat(imageSizeX, imageSizeY);
 
         code();
+        graph.clearProfiles();
 
         GraphicsKernels.convolveImage(input, filter, result);
 

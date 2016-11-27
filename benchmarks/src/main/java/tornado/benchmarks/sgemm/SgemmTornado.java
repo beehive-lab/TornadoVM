@@ -73,6 +73,7 @@ public class SgemmTornado extends BenchmarkDriver {
         final float[] result = new float[m * n];
 
         code();
+        graph.clearProfiles();
 
         LinearAlgebraArrays.sgemm(m, n, m, a, b, result);
 

@@ -76,6 +76,7 @@ public class RotateTornado extends BenchmarkDriver {
         final ImageFloat3 result = new ImageFloat3(numElementsX, numElementsY);
 
         code();
+        graph.clearProfiles();
 
         GraphicsKernels.rotateImage(result, m, input);
 

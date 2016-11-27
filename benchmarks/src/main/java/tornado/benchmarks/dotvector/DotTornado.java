@@ -18,7 +18,7 @@ public class DotTornado extends BenchmarkDriver {
     private float[] c;
 
     private TaskGraph graph;
-    
+
     public DotTornado(int iterations, int numElements, DeviceMapping device) {
         super(iterations);
         this.numElements = numElements;
@@ -31,18 +31,18 @@ public class DotTornado extends BenchmarkDriver {
         b = new VectorFloat3(numElements);
         c = new float[numElements];
 
-        final Float3 valueA = new Float3(new float[] { 1f, 1f, 1f });
-        final Float3 valueB = new Float3(new float[] { 2f, 2f, 2f });
+        final Float3 valueA = new Float3(new float[]{1f, 1f, 1f});
+        final Float3 valueB = new Float3(new float[]{2f, 2f, 2f});
         for (int i = 0; i < numElements; i++) {
             a.set(i, valueA);
             b.set(i, valueB);
         }
 
         graph = new TaskGraph()
-            .add(GraphicsKernels::dotVector, a, b, c)
-            .streamOut(c)
-            .mapAllTo(device);
-        
+                .add(GraphicsKernels::dotVector, a, b, c)
+                .streamOut(c)
+                .mapAllTo(device);
+
         graph.warmup();
     }
 
@@ -61,11 +61,8 @@ public class DotTornado extends BenchmarkDriver {
 
     @Override
     public void code() {
-
-      graph.schedule().waitOn();
+        graph.schedule().waitOn();
     }
-
-   
 
     @Override
     public boolean validate() {
@@ -73,21 +70,23 @@ public class DotTornado extends BenchmarkDriver {
         final float[] result = new float[numElements];
 
         code();
+        graph.clearProfiles();
 
         GraphicsKernels.dotVector(a, b, result);
 
-       final float ulp = TornadoMath.findULPDistance(result, c);
+        final float ulp = TornadoMath.findULPDistance(result, c);
         return ulp < MAX_ULP;
     }
 
     public void printSummary() {
-        if (isValid())
+        if (isValid()) {
             System.out.printf(
                     "id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
                     ((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
                     getElapsedPerIteration());
-        else
+        } else {
             System.out.printf("id=opencl-device-%d produced invalid result\n",
                     ((OCLDeviceMapping) device).getDeviceIndex());
+        }
     }
 }

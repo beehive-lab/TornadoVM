@@ -36,7 +36,7 @@ public class SaxpyTornado extends BenchmarkDriver {
                 .add(LinearAlgebraArrays::saxpy, alpha, x, y)
                 .streamOut(y)
                 .mapAllTo(device);
-        
+
         graph.warmup();
     }
 
@@ -54,7 +54,6 @@ public class SaxpyTornado extends BenchmarkDriver {
 
     @Override
     public void code() {
-
         graph.schedule().waitOn();
     }
 
@@ -64,21 +63,23 @@ public class SaxpyTornado extends BenchmarkDriver {
         final float[] result = new float[numElements];
 
         code();
+        graph.clearProfiles();
 
         LinearAlgebraArrays.saxpy(alpha, x, result);
 
-        final float ulp = TornadoMath.findULPDistance(y,result);
+        final float ulp = TornadoMath.findULPDistance(y, result);
         return ulp < MAX_ULP;
     }
 
     public void printSummary() {
-        if (isValid())
+        if (isValid()) {
             System.out.printf(
                     "id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
                     ((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
                     getElapsedPerIteration());
-        else
+        } else {
             System.out.printf("id=opencl-device-%d produced invalid result\n",
                     ((OCLDeviceMapping) device).getDeviceIndex());
+        }
     }
 }

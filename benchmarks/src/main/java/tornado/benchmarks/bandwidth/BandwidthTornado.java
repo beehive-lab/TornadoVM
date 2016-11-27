@@ -56,7 +56,6 @@ public class BandwidthTornado extends BenchmarkDriver {
 
     @Override
     public void code() {
-
         graph.schedule().waitOn();
     }
 
@@ -66,6 +65,7 @@ public class BandwidthTornado extends BenchmarkDriver {
         final long[] result = new long[numElements];
 
         code();
+        graph.clearProfiles();
 
         LinearAlgebraArrays.ladd(a, b, result);
 

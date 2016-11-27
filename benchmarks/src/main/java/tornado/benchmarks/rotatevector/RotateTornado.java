@@ -12,89 +12,91 @@ import tornado.runtime.api.TaskGraph;
 
 public class RotateTornado extends BenchmarkDriver {
 
-	private final int numElements;
-	private final DeviceMapping device;
+    private final int numElements;
+    private final DeviceMapping device;
 
-	private VectorFloat3 input, output;
-	private Matrix4x4Float m;
+    private VectorFloat3 input, output;
+    private Matrix4x4Float m;
 
-	private TaskGraph graph;
+    private TaskGraph graph;
 
-	public RotateTornado(int iterations, int numElements, DeviceMapping device) {
-		super(iterations);
-		this.numElements = numElements;
-		this.device = device;
-	}
+    public RotateTornado(int iterations, int numElements, DeviceMapping device) {
+        super(iterations);
+        this.numElements = numElements;
+        this.device = device;
+    }
 
-	@Override
-	public void setUp() {
-		input = new VectorFloat3(numElements);
-		output = new VectorFloat3(numElements);
+    @Override
+    public void setUp() {
+        input = new VectorFloat3(numElements);
+        output = new VectorFloat3(numElements);
 
-		m = new Matrix4x4Float();
-		m.identity();
+        m = new Matrix4x4Float();
+        m.identity();
 
-		final Float3 value = new Float3(new float[] { 1f, 2f, 3f });
-		for (int i = 0; i < numElements; i++) {
-			input.set(i, value);
-		}
+        final Float3 value = new Float3(new float[]{1f, 2f, 3f});
+        for (int i = 0; i < numElements; i++) {
+            input.set(i, value);
+        }
 
-		graph = new TaskGraph()
-                        .add(GraphicsKernels::rotateVector, output, m,
-				input)
-                        .streamOut(output)
-                        .mapAllTo(device);
-		
-                graph.warmup();
-	}
+        graph = new TaskGraph()
+                .add(GraphicsKernels::rotateVector, output, m,
+                        input)
+                .streamOut(output)
+                .mapAllTo(device);
 
-	@Override
-	public void tearDown() {
-		graph.dumpTimes();
-                graph.dumpProfiles();
+        graph.warmup();
+    }
 
-		input = null;
-		output = null;
-		m = null;
+    @Override
+    public void tearDown() {
+        graph.dumpTimes();
+        graph.dumpProfiles();
 
-		((OCLDeviceMapping) device).reset();
-		super.tearDown();
-	}
+        input = null;
+        output = null;
+        m = null;
 
-	@Override
-	public void code() {
-            graph.schedule().waitOn();
-	}
+        ((OCLDeviceMapping) device).reset();
+        super.tearDown();
+    }
 
-	@Override
-	public boolean validate() {
+    @Override
+    public void code() {
+        graph.schedule().waitOn();
+    }
 
-		final VectorFloat3 result = new VectorFloat3(numElements);
+    @Override
+    public boolean validate() {
 
-		code();
+        final VectorFloat3 result = new VectorFloat3(numElements);
 
-		GraphicsKernels.rotateVector(result, m, input);
+        code();
+        graph.clearProfiles();
 
-		float maxULP = 0f;
-		for (int i = 0; i < numElements; i++) {
-			final float ulp = FloatOps.findMaxULP(output.get(i), result.get(i));
+        GraphicsKernels.rotateVector(result, m, input);
 
-			if (ulp > maxULP) {
-				maxULP = ulp;
-			}
-		}
+        float maxULP = 0f;
+        for (int i = 0; i < numElements; i++) {
+            final float ulp = FloatOps.findMaxULP(output.get(i), result.get(i));
 
-		return maxULP < MAX_ULP;
-	}
+            if (ulp > maxULP) {
+                maxULP = ulp;
+            }
+        }
 
-	public void printSummary() {
-		if (isValid())
-			System.out.printf(
-					"id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
-					((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
-					getElapsedPerIteration());
-		else
-			System.out.printf("id=opencl-device-%d produced invalid result\n",
-					((OCLDeviceMapping) device).getDeviceIndex());
-	}
+        return maxULP < MAX_ULP;
+    }
+
+    public void printSummary() {
+        if (isValid()) {
+            System.out.printf(
+                    "id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
+                    ((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
+                    getElapsedPerIteration());
+        } else {
+            System.out.printf("id=opencl-device-%d produced invalid result\n",
+                    ((OCLDeviceMapping) device).getDeviceIndex());
+        }
+    }
 }

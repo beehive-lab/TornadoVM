@@ -1,82 +1,84 @@
 package tornado.benchmarks;
 
-import tornado.common.RuntimeUtilities;
+import static tornado.common.RuntimeUtilities.elapsedTimeInSeconds;
+import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 
 public abstract class BenchmarkDriver {
-	private static final boolean	PRINT_MEM_USAGE	= Boolean
-															.parseBoolean(System.getProperty(
-																	"tornado.benchmarks.memusage",
-																	"false"));
-	public static final float		MAX_ULP = Float.parseFloat(System.getProperty("tornado.benchmarks.maxulp","5.0"));
-	
-	private long					iterations;
-	private double					elapsed;
-	private boolean					validResult;
 
-	public BenchmarkDriver(long iterations) {
-		this.iterations = iterations;
-	}
+    private static final boolean PRINT_MEM_USAGE = Boolean
+            .parseBoolean(System.getProperty(
+                    "tornado.benchmarks.memusage",
+                    "false"));
+    public static final float MAX_ULP = Float.parseFloat(System.getProperty("tornado.benchmarks.maxulp", "5.0"));
 
-	public abstract void setUp();
+    private long iterations;
+    private double elapsed;
+    private boolean validResult;
 
-	public void tearDown() {
-		final Runtime runtime = Runtime.getRuntime();
-		runtime.gc();
-		if (PRINT_MEM_USAGE) {
-			System.out.printf("memory: free=%s, total=%s, max=%s\n",
-					RuntimeUtilities.humanReadableByteCount(runtime.freeMemory(), false),
-					RuntimeUtilities.humanReadableByteCount(runtime.totalMemory(), false),
-					RuntimeUtilities.humanReadableByteCount(runtime.maxMemory(), false));
-		}
-	}
+    public BenchmarkDriver(long iterations) {
+        this.iterations = iterations;
+    }
 
-	public abstract boolean validate();
+    public abstract void setUp();
 
-	public abstract void code();
+    public void tearDown() {
+        final Runtime runtime = Runtime.getRuntime();
+        runtime.gc();
+        if (PRINT_MEM_USAGE) {
+            System.out.printf("memory: free=%s, total=%s, max=%s\n",
+                    humanReadableByteCount(runtime.freeMemory(), false),
+                    humanReadableByteCount(runtime.totalMemory(), false),
+                    humanReadableByteCount(runtime.maxMemory(), false));
+        }
+    }
 
-	protected void barrier() {
+    public abstract boolean validate();
 
-	}
+    public abstract void code();
 
-	public void benchmark() {
+    protected void barrier() {
 
-		setUp();
+    }
 
-		validResult = validate();
+    public void benchmark() {
 
-		if (validResult) {
+        setUp();
 
-			long start = System.nanoTime();
-			for (long i = 0; i < iterations; i++) {
-				code();
-			}
+        validResult = validate();
 
-			barrier();
-			long end = System.nanoTime();
+        if (validResult) {
 
-			elapsed = RuntimeUtilities.elapsedTimeInSeconds(start, end);
+            long start = System.nanoTime();
+            for (long i = 0; i < iterations; i++) {
+                code();
+            }
 
-		}
+            barrier();
+            long end = System.nanoTime();
 
-		tearDown();
+            elapsed = elapsedTimeInSeconds(start, end);
 
-	}
+        }
 
-	public double getElapsed() {
-		return elapsed;
-	}
+        tearDown();
 
-	public double getElapsedPerIteration() {
-		return elapsed / iterations;
-	}
+    }
 
-	public boolean isValid() {
-		return validResult;
-	}
+    public double getElapsed() {
+        return elapsed;
+    }
 
-	public String getSummary() {
-		return String.format("elapsed=%6e, per iteration=%6e", getElapsed(),
-				getElapsedPerIteration());
-	}
+    public double getElapsedPerIteration() {
+        return elapsed / iterations;
+    }
+
+    public boolean isValid() {
+        return validResult;
+    }
+
+    public String getSummary() {
+        return String.format("elapsed=%6e, per iteration=%6e", getElapsed(),
+                getElapsedPerIteration());
+    }
 
 }

@@ -385,6 +385,12 @@ public class TornadoVM extends TornadoLogger {
                 invocations, (totalTime / invocations));
     }
 
+    public void clearProfiles() {
+        for (final SchedulableTask task : tasks) {
+            task.meta().getProfiles().clear();
+        }
+    }
+
     public void dumpProfiles() {
         for (final SchedulableTask task : tasks) {
             final Meta meta = task.meta();

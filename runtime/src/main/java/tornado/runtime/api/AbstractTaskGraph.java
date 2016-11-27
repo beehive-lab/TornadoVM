@@ -151,6 +151,10 @@ public abstract class AbstractTaskGraph {
         vm.dumpProfiles();
     }
 
+    public void clearProfiles() {
+        vm.clearProfiles();
+    }
+
     public void waitOn() {
         if (event != null) {
             event.waitOn();
