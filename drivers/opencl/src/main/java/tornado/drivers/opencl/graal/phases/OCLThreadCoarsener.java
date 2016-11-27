@@ -106,7 +106,7 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
 
             for (LoopEx l : loops) {
                 ParallelRangeNode rangeNode = findParallelRange(l.loopBegin());
-//                System.out.printf("loop: %s -> range %s\n", l.loopBegin(), rangeNode);
+//                System.out.printf("loop: %s -> range %s\n", l.oldLoopBodyBegin(), rangeNode);
                 if (rangeNode != null) {
                     int index = l.loop().getDepth() - 1;
                     parallelLoops[index] = l;
@@ -119,18 +119,19 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
 //            System.out.println("parallel loops:");
 //            System.out.println(Arrays.toString(parallelLoops));
 //
-//            System.out.printf("insertion loop: %s\n", insertionLoop.loopBegin());
+//            System.out.printf("insertion loop: %s\n", insertionLoop.oldLoopBodyBegin());
 
             LoopFragmentInside inside = insertionLoop.inside();
             NodeBitMap nodes = inside.nodes().copy();
 
-            AbstractBeginNode loopBegin = pruneNodes(nodes, insertionLoop.loopBegin());
-            final IfNode ifNode = (IfNode) loopBegin.predecessor();
+            LoopBeginNode oldLoopBegin = insertionLoop.loopBegin();
+            AbstractBeginNode oldLoopBodyBegin = pruneNodes(nodes, oldLoopBegin);
+            final IfNode oldIf = (IfNode) oldLoopBodyBegin.predecessor();
 
-            final LoopEndNode oldLoopEnd = insertionLoop.loopBegin().loopEnds().first();
+            final LoopEndNode[] oldLoopEnds = oldLoopBegin.orderedLoopEnds();
+            final List<LoopExitNode> oldLoopExits = oldLoopBegin.loopExits().snapshot();
 
             ConstantNode zero = graph.addOrUnique(ConstantNode.forInt(0));
-//            ConstantNode one = graph.addOrUnique(ConstantNode.forInt(1));
 
             for (int loopIndex = parallelLoops.length - 1; loopIndex >= 0; loopIndex--) {
 
@@ -145,30 +146,42 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
 
                     ConstantNode cv = graph.addOrUnique(ConstantNode.forInt(coarseness.getCoarseness(domainIndex)));
 
-                    LoopBeginNode newLoopBegin = createLoop(graph, cv);
+                    LoopBeginNode newLoopBegin = graph.addWithoutUnique(new LoopBeginNode());
+                    IfNode newIf = createLoop(graph, newLoopBegin, cv);
                     Translation newLoopTranslation = new Translation(zero, cv);
-
-                    LoopEndNode newLoopEnd = newLoopBegin.loopEnds().first();
-                    LoopExitNode newLoopExit = newLoopBegin.loopExits().first();
                     ValuePhiNode newPhi = (ValuePhiNode) newLoopBegin.phis().first();
-
-                    BeginNode newTrueBegin = (BeginNode) newLoopEnd.predecessor();
 
                     /*
                      * use cfg graph to connect the inner loop into the newly
                      * created loop.
                      */
+                    BeginNode newBegin = graph.addOrUnique(new BeginNode());
                     EndNode newEnd = graph.addOrUnique(new EndNode());
-                    AbstractBeginNode oldTrueBegin = ifNode.trueSuccessor();
-                    FixedNode next = oldTrueBegin.next();
+                    newBegin.setNext(newEnd);
 
-                    oldTrueBegin.replaceFirstSuccessor(next, newEnd);
-                    newTrueBegin.setNext(next);
-
+                    oldIf.setTrueSuccessor(newBegin);
                     newLoopBegin.addForwardEnd(newEnd);
 
-                    oldLoopEnd.replaceAtPredecessor(newLoopEnd);
-                    newLoopExit.setNext(oldLoopEnd);
+                    // oldLoopBodyBegin
+                    newIf.setTrueSuccessor(oldLoopBodyBegin);
+
+                    for (LoopEndNode loopEnd : oldLoopEnds) {
+                        oldLoopBegin.removeEnd(loopEnd);
+                        LoopEndNode newLoopEnd = graph.addOrUnique(new LoopEndNode(newLoopBegin));
+                        loopEnd.replaceAndDelete(newLoopEnd);
+                    }
+
+                    LoopEndNode oldLoopEnd = graph.addWithoutUnique(new LoopEndNode(oldLoopBegin));
+
+                    guarantee(oldLoopExits.size() == 1, "unsupported parallel loop: %s", oldLoopBegin);
+                    LoopExitNode targetExit = oldLoopExits.get(0);
+                    LoopExitNode newExit = graph.addWithoutUnique(new LoopExitNode(newLoopBegin));
+                    newExit.setNext(oldLoopEnd);
+
+                    targetExit.replaceAtPredecessor(newExit);
+                    oldIf.setFalseSuccessor(targetExit);
+                    newIf.setFalseSuccessor(newExit);
+
 
                     /*
                      * update the iv of the inner (newest) loop
@@ -206,29 +219,22 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
         }
     }
 
-    private LoopBeginNode createLoop(StructuredGraph graph, ConstantNode cv) {
+    private IfNode createLoop(StructuredGraph graph, LoopBeginNode newLoopBegin, ConstantNode cv) {
 
         ConstantNode zero = graph.addOrUnique(ConstantNode.forInt(0));
         ConstantNode one = graph.addOrUnique(ConstantNode.forInt(1));
-
-        LoopBeginNode newLoopBegin = graph.addWithoutUnique(new LoopBeginNode());
-        LoopEndNode newLoopEnd = graph.addWithoutUnique(new LoopEndNode(newLoopBegin));
-        LoopExitNode newLoopExit = graph.addWithoutUnique(new LoopExitNode(newLoopBegin));
 
         ValuePhiNode newPhi = graph.addOrUnique(new ValuePhiNode(StampFactory.forKind(JavaKind.Int), newLoopBegin));
         AddNode newStride = graph.addOrUnique(new AddNode(newPhi, one));
         newPhi.initializeValueAt(0, zero);
         newPhi.initializeValueAt(1, newStride);
 
-        BeginNode newTrueBegin = graph.addWithoutUnique(new BeginNode());
-
         LogicNode newLoopCondition = graph.addOrUnique(new IntegerLessThanNode(newPhi, cv));
 
-        IfNode newLoopIf = graph.addWithoutUnique(new IfNode(newLoopCondition, newTrueBegin, newLoopExit, .5));
+        IfNode newLoopIf = graph.addWithoutUnique(new IfNode(newLoopCondition, null, null, .5));
         newLoopBegin.setNext(newLoopIf);
 
-        newTrueBegin.setNext(newLoopEnd);
-        return newLoopBegin;
+        return newLoopIf;
     }
 
     private static class Translation {

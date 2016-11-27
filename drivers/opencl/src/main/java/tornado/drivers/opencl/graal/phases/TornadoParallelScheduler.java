@@ -96,8 +96,6 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         replacePerIteration(graph, node);
 
         stride.clearInputs();
-        stride.safeDelete();
-
         node.clearInputs();
     }
 
