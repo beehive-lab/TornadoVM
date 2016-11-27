@@ -1,6 +1,7 @@
 package tornado.drivers.opencl.graal.backend;
 
 import com.oracle.graal.code.CompilationResult;
+import com.oracle.graal.compiler.common.CompilationIdentifier;
 import com.oracle.graal.compiler.common.alloc.RegisterAllocationConfig;
 import com.oracle.graal.compiler.common.cfg.AbstractBlockBase;
 import com.oracle.graal.lir.LIR;
@@ -23,10 +24,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.code.CompiledCode;
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.code.*;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.*;
 import tornado.api.Vector;
@@ -50,9 +48,6 @@ import static tornado.common.Tornado.DEBUG_KERNEL_ARGS;
 import static tornado.common.exceptions.TornadoInternalError.*;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -424,9 +419,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     @Override
-    public LIRGenerationResult newLIRGenerationResult(String compilationUnitName, LIR lir,
+    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir,
             FrameMapBuilder frameMapBuilder, StructuredGraph graph, Object stub) {
-        return new OCLLIRGenerationResult(compilationUnitName, lir, frameMapBuilder, new CallingConvention(0, null, (AllocatableValue[]) null));
+        return new OCLLIRGenerationResult(identifier, lir, frameMapBuilder, new CallingConvention(0, null, (AllocatableValue[]) null));
     }
 
     @Override
@@ -497,7 +492,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     @Override
-    protected CompiledCode createCompiledCode(ResolvedJavaMethod rjm, CompilationResult cr) {
+    protected CompiledCode createCompiledCode(ResolvedJavaMethod rjm, CompilationRequest cr, CompilationResult cr1) {
         unimplemented();
         return null;
     }

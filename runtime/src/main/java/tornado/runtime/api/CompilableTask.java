@@ -7,7 +7,7 @@ import tornado.common.SchedulableTask;
 import tornado.common.enums.Access;
 import tornado.meta.Meta;
 
-import static com.oracle.graal.compiler.common.util.Util.guarantee;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
 
 public class CompilableTask implements SchedulableTask {
 

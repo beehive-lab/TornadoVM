@@ -22,9 +22,9 @@ import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.nodes.vector.*;
 
-import static com.oracle.graal.compiler.common.util.Util.guarantee;
 import static tornado.common.Tornado.ENABLE_VECTORS;
 import static tornado.common.Tornado.TORNADO_ENABLE_BIFS;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
 
 public final class VectorPlugins {
 

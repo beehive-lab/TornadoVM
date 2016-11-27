@@ -44,6 +44,7 @@ import tornado.drivers.opencl.runtime.OCLMemoryRegions;
 import tornado.graal.TornadoDebugEnvironment;
 import tornado.graal.TornadoLIRSuites;
 import tornado.graal.TornadoSuites;
+import tornado.graal.compiler.TornadoCompilerIdentifier;
 import tornado.graal.phases.TornadoHighTierContext;
 import tornado.graal.phases.TornadoMidTierContext;
 import tornado.meta.Meta;
@@ -333,8 +334,8 @@ public class OCLCompiler {
                 throw Debug.handle(e);
             }
             FrameMapBuilder frameMapBuilder = backend.newFrameMapBuilder(registerConfig);
-            String compilationUnitName = getCompilationUnitName(graph, compilationResult);
-            LIRGenerationResult lirGenRes = backend.newLIRGenerationResult(compilationUnitName, lir, frameMapBuilder, graph, stub);
+//            String compilationUnitName = getCompilationUnitName(graph, compilationResult);
+            LIRGenerationResult lirGenRes = backend.newLIRGenerationResult(graph.compilationId(), lir, frameMapBuilder, graph, stub);
             LIRGeneratorTool lirGen = backend.newLIRGenerator(lirGenRes);
             NodeLIRBuilderTool nodeLirGen = backend.newNodeLIRBuilder(graph, lirGen);
 
@@ -467,8 +468,9 @@ public class OCLCompiler {
             Object[] args, Meta meta, OCLProviders providers, OCLBackend backend) {
         Tornado.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext()
                 .getDevice().getName());
+        TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
         final StructuredGraph kernelGraph = new StructuredGraph(resolvedMethod,
-                AllowAssumptions.YES);
+                AllowAssumptions.YES, id);
         final OCLCodeCache codeCache = backend.getCodeCache();
 
         if (meta != null && !meta.hasProvider(OCLMemoryRegions.class)) {
@@ -503,8 +505,9 @@ public class OCLCompiler {
             final ResolvedJavaMethod currentMethod = worklist.pop();
             if (!includedMethods.contains(currentMethod)) {
                 final OCLCompilationResult compResult = new OCLCompilationResult(currentMethod.getName(), meta, backend);
+                TornadoCompilerIdentifier id1 = new TornadoCompilerIdentifier("compile-call" + currentMethod.getName(), compilationId.getAndIncrement());
                 final StructuredGraph graph = new StructuredGraph(currentMethod,
-                        AllowAssumptions.YES);
+                        AllowAssumptions.YES, id1);
                 Request<OCLCompilationResult> methodcompilationRequest = new Request<>(
                         graph, currentMethod, null, null, providers, backend,
                         suitesProvider.getGraphBuilderSuite(),

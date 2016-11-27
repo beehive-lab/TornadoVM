@@ -24,8 +24,8 @@ import tornado.meta.Meta;
 import tornado.meta.domain.DomainTree;
 import tornado.meta.domain.IntDomain;
 
-import static com.oracle.graal.compiler.common.util.Util.guarantee;
 import static tornado.common.Tornado.debug;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoUnsupportedError.unsupported;
 

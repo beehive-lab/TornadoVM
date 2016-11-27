@@ -17,9 +17,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.graal.TornadoDebugEnvironment;
+import tornado.graal.compiler.TornadoCompilerIdentifier;
 import tornado.graal.compiler.TornadoSketchTier;
 import tornado.graal.phases.TornadoSketchTierContext;
 import tornado.meta.Meta;
@@ -29,14 +31,10 @@ import static tornado.common.Tornado.fatal;
 import static tornado.common.Tornado.info;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.runtime.TornadoRuntime.getTornadoExecutor;
-import static tornado.common.Tornado.fatal;
-import static tornado.common.Tornado.info;
-import static tornado.common.Tornado.fatal;
-import static tornado.common.Tornado.info;
-import static tornado.common.Tornado.fatal;
-import static tornado.common.Tornado.info;
 
 public class TornadoSketcher {
+
+    private static final AtomicInteger sketchId = new AtomicInteger(0);
 
     private static final Map<ResolvedJavaMethod, Future<Sketch>> cache = new ConcurrentHashMap<>();
 
@@ -80,8 +78,9 @@ public class TornadoSketcher {
 
         info("Building sketch of %s", resolvedMethod.getName());
 
+        TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("sketch-" + resolvedMethod.getName(), sketchId.getAndIncrement());
         final StructuredGraph graph = new StructuredGraph(resolvedMethod,
-                AllowAssumptions.YES);
+                AllowAssumptions.YES, id);
 
         Meta meta = new Meta(resolvedMethod.isStatic() ? resolvedMethod.getParameters().length : resolvedMethod.getParameters().length + 1);
 

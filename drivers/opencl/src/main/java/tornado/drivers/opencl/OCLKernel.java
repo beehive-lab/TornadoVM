@@ -1,12 +1,13 @@
 package tornado.drivers.opencl;
 
-import static com.oracle.graal.compiler.common.util.Util.guarantee;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import tornado.common.TornadoLogger;
 import tornado.drivers.opencl.enums.OCLKernelInfo;
 import tornado.drivers.opencl.exceptions.OCLException;
+
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
 
 public class OCLKernel extends TornadoLogger {
 
@@ -40,29 +41,29 @@ public class OCLKernel extends TornadoLogger {
             error(e.getMessage());
         }
     }
-    
-    public void setArgUnused(int index){
-     try {
+
+    public void setArgUnused(int index) {
+        try {
             clSetKernelArg(id, index, 8, null);
         } catch (OCLException e) {
             error(e.getMessage());
-        }   
+        }
     }
-    
-    public void setConstantRegion(int index, ByteBuffer buffer){
-        long maxSize  = deviceContext.getDevice().getMaxConstantBufferSize();
+
+    public void setConstantRegion(int index, ByteBuffer buffer) {
+        long maxSize = deviceContext.getDevice().getMaxConstantBufferSize();
         guarantee(buffer.position() <= maxSize, "constant buffer is too large for device");
         setArg(index, buffer);
     }
-    
-    public void setLocalRegion(int index, long size){
-       long maxSize = deviceContext.getDevice().getLocalMemorySize();
-       guarantee(size <= maxSize,"local allocation is too large for device");
-       try {
+
+    public void setLocalRegion(int index, long size) {
+        long maxSize = deviceContext.getDevice().getLocalMemorySize();
+        guarantee(size <= maxSize, "local allocation is too large for device");
+        try {
             clSetKernelArg(id, index, size, null);
         } catch (OCLException e) {
             error(e.getMessage());
-        }      
+        }
     }
 
     public void cleanup() {

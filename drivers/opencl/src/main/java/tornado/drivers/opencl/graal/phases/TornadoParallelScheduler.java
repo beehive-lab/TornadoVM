@@ -78,19 +78,19 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         newMerge.setNext(next);
 
         final ConstantNode index = graph.addOrUnique(ConstantNode.forInt(offset.index()));
-
-//        ValueNode offsetValue = offset.value();
         ValueNode threadId = graph.addOrUnique(new GlobalThreadIdNode(index));
         offset.replaceAndDelete(threadId);
 
-//        final AddNode addNode = graph.addOrUnique(new AddNode(threadId, offsetValue));
-//        offset.replaceAndDelete(addNode);
         for (PhiNode phi : loopBegin.phis()) {
             phi.replaceAtUsages(phi.firstValue());
         }
 
         graph.reduceDegenerateLoopBegin(loopBegin);
         GraphUtil.killWithUnusedFloatingInputs(ifNode.condition());
+
+        AbstractBeginNode branch = ifNode.falseSuccessor();
+        branch.predecessor().replaceFirstSuccessor(branch, null);
+        GraphUtil.killCFG(branch);
         graph.removeSplitPropagate(ifNode, ifNode.trueSuccessor());
 
         replacePerIteration(graph, node);
@@ -99,7 +99,6 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         stride.safeDelete();
 
         node.clearInputs();
-//        node.safeDelete();
     }
 
 }

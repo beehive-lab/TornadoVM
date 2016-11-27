@@ -18,9 +18,7 @@ import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.lir.OCLLIROp;
 import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 
-import static com.oracle.graal.compiler.common.util.Util.guarantee;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.common.exceptions.TornadoInternalError.*;
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
 import static tornado.drivers.opencl.graal.lir.OCLKind.*;
 
