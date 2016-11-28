@@ -96,20 +96,21 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
          */
         LoopExitNode loopExit = (LoopExitNode) ifNode.falseSuccessor();
         LoopBeginNode loopBegin = loopExit.loopBegin();
-        LoopEndNode loopEnd = loopBegin.loopEnds().first();
 
         BeginNode newFalseBegin = graph.addWithoutUnique(new BeginNode());
         EndNode newFalseEnd = graph.addWithoutUnique(new EndNode());
-
-        EndNode newTrueEnd = graph.addWithoutUnique(new EndNode());
-
-        loopEnd.replaceAndDelete(newTrueEnd);
         newFalseBegin.setNext(newFalseEnd);
 
         MergeNode newMerge = graph.addWithoutUnique(new MergeNode());
 
-        newMerge.addForwardEnd(newTrueEnd);
+        for (LoopEndNode loopEnd : loopBegin.loopEnds().snapshot()) {
+            EndNode newEnd = graph.addWithoutUnique(new EndNode());
+            loopEnd.replaceAndDelete(newEnd);
+            newMerge.addForwardEnd(newEnd);
+        }
+
         newMerge.addForwardEnd(newFalseEnd);
+
         FixedNode next = loopExit.next();
 
         loopExit.setNext(null);

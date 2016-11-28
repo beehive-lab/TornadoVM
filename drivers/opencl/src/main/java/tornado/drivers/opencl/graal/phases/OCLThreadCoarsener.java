@@ -128,9 +128,6 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
             AbstractBeginNode oldLoopBodyBegin = pruneNodes(nodes, oldLoopBegin);
             final IfNode oldIf = (IfNode) oldLoopBodyBegin.predecessor();
 
-            final LoopEndNode[] oldLoopEnds = oldLoopBegin.orderedLoopEnds();
-            final List<LoopExitNode> oldLoopExits = oldLoopBegin.loopExits().snapshot();
-
             ConstantNode zero = graph.addOrUnique(ConstantNode.forInt(0));
 
             for (int loopIndex = parallelLoops.length - 1; loopIndex >= 0; loopIndex--) {
@@ -140,6 +137,9 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
                 ValueNode originalPhi = (ValueNode) range.offset().usages().first();
                 ParallelStrideNode stride = range.stride();
                 ValueNode opNode = getOp(stride);
+
+                final LoopEndNode[] oldLoopEnds = oldLoopBegin.orderedLoopEnds();
+                final List<LoopExitNode> oldLoopExits = oldLoopBegin.loopExits().snapshot();
 
                 // skip coarsness of 1
                 if (coarseness.getCoarseness(domainIndex) > 1) {
@@ -164,11 +164,14 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
 
                     // oldLoopBodyBegin
                     newIf.setTrueSuccessor(oldLoopBodyBegin);
+                    oldLoopBodyBegin = newBegin;
 
                     for (LoopEndNode loopEnd : oldLoopEnds) {
-                        oldLoopBegin.removeEnd(loopEnd);
+                        oldLoopBegin.removeUsage(loopEnd);
+                        loopEnd.clearInputs();
                         LoopEndNode newLoopEnd = graph.addOrUnique(new LoopEndNode(newLoopBegin));
-                        loopEnd.replaceAndDelete(newLoopEnd);
+                        loopEnd.replaceAtPredecessor(newLoopEnd);
+                        loopEnd.safeDelete();
                     }
 
                     LoopEndNode oldLoopEnd = graph.addWithoutUnique(new LoopEndNode(oldLoopBegin));
