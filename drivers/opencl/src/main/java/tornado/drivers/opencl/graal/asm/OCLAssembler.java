@@ -1031,9 +1031,9 @@ public class OCLAssembler extends Assembler {
         emitSymbol(OCLAssemblerConstants.BRACKET_OPEN);
 
         emit(toString(condition));
-        if (((OCLKind) condition.getPlatformKind()) == OCLKind.INT) {
-            emit(" == 1");
-        }
+//        if (((OCLKind) condition.getPlatformKind()) == OCLKind.INT) {
+//            emit(" == 1");
+//        }
         //value(crb, condition);
 
         emitSymbol(OCLAssemblerConstants.BRACKET_CLOSE);
