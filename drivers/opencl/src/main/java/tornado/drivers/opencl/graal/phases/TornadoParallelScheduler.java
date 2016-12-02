@@ -33,7 +33,6 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
             Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "after scheduling loop index=" + node.index());
         });
 
-        graph.clearAllStateAfter();
         graph.clearLastSchedule();
 
     }
