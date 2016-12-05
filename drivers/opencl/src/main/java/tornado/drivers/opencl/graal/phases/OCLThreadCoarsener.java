@@ -75,6 +75,7 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
                 int index = 0;
                 for (String str : configCpu.split(",")) {
                     config[index] = Integer.parseInt(str);
+                    index++;
                 }
             } else {
                 config[0] = mapping.getDevice().getMaxComputeUnits();
@@ -138,7 +139,7 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
                 ParallelStrideNode stride = range.stride();
                 ValueNode opNode = getOp(stride);
 
-                final LoopEndNode[] oldLoopEnds = oldLoopBegin.orderedLoopEnds();
+                final List<LoopEndNode> oldLoopEnds = oldLoopBegin.loopEnds().snapshot();
                 final List<LoopExitNode> oldLoopExits = oldLoopBegin.loopExits().snapshot();
 
                 // skip coarsness of 1
@@ -217,6 +218,14 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
                 } else {
                     ValueNode newIv = applyTranslation(graph, translations[loopIndex], originalPhi);
                     nodes.filter((Node n) -> !n.equals(opNode)).forEach((Node n) -> n.replaceFirstInput(originalPhi, newIv));
+
+                    /*
+                     * update domain tree - need to change
+                     */
+//                    IntDomain cr = (IntDomain) domain.get(domainIndex);
+//                    cr.setOffset(0);
+//                    cr.setLength(1);
+//                    cr.setStep(1);
                 }
             }
         }
