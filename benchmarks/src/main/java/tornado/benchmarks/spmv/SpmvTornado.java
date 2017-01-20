@@ -2,11 +2,13 @@ package tornado.benchmarks.spmv;
 
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.LinearAlgebraArrays;
-import tornado.collections.math.TornadoMath;
 import tornado.collections.matrix.SparseMatrixUtils.CSRMatrix;
-import tornado.common.DeviceMapping;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
+
+import static tornado.benchmarks.LinearAlgebraArrays.spmv;
+import static tornado.benchmarks.spmv.Benchmark.populateVector;
+import static tornado.collections.math.TornadoMath.findULPDistance;
+import static tornado.common.Tornado.getProperty;
 
 public class SpmvTornado extends BenchmarkDriver {
 
@@ -14,16 +16,11 @@ public class SpmvTornado extends BenchmarkDriver {
 
     private float[] v, y;
 
-    private final DeviceMapping device;
+    private TaskSchedule graph;
 
-    private TaskGraph graph;
-
-    public SpmvTornado(int iterations, CSRMatrix<float[]> matrix,
-            DeviceMapping device) {
+    public SpmvTornado(int iterations, CSRMatrix<float[]> matrix) {
         super(iterations);
         this.matrix = matrix;
-        this.device = device;
-
     }
 
     @Override
@@ -31,13 +28,12 @@ public class SpmvTornado extends BenchmarkDriver {
         v = new float[matrix.size];
         y = new float[matrix.size];
 
-        Benchmark.populateVector(v);
+        populateVector(v);
 
-        graph = new TaskGraph()
-                .add(LinearAlgebraArrays::spmv, matrix.vals,
+        graph = new TaskSchedule("s0")
+                .task("t0", LinearAlgebraArrays::spmv, matrix.vals,
                         matrix.cols, matrix.rows, v, matrix.size, y)
-                .streamOut(y)
-                .mapAllTo(device);
+                .streamOut(y);
 
         graph.warmup();
     }
@@ -50,13 +46,13 @@ public class SpmvTornado extends BenchmarkDriver {
         v = null;
         y = null;
 
-        ((OCLDeviceMapping) device).reset();
+        graph.getDefaultDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void code() {
-        graph.schedule().waitOn();
+        graph.execute();
     }
 
     @Override
@@ -67,22 +63,22 @@ public class SpmvTornado extends BenchmarkDriver {
         code();
         graph.clearProfiles();
 
-        LinearAlgebraArrays.spmv(matrix.vals, matrix.cols, matrix.rows, v,
-                matrix.size, ref);
+        spmv(matrix.vals, matrix.cols, matrix.rows, v, matrix.size, ref);
 
-        final float ulp = TornadoMath.findULPDistance(y, ref);
+        final float ulp = findULPDistance(y, ref);
+        System.out.printf("ulp is %f\n", ulp);
         return ulp < MAX_ULP;
     }
 
     public void printSummary() {
         if (isValid()) {
             System.out.printf(
-                    "id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
-                    ((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
+                    "id=%s, elapsed=%f, per iteration=%f\n",
+                    getProperty("s0.device"), getElapsed(),
                     getElapsedPerIteration());
         } else {
-            System.out.printf("id=opencl-device-%d produced invalid result\n",
-                    ((OCLDeviceMapping) device).getDeviceIndex());
+            System.out.printf("id=%s produced invalid result\n",
+                    getProperty("s0.device"));
         }
     }
 }

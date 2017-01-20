@@ -21,8 +21,7 @@ import tornado.drivers.opencl.graal.nodes.*;
 import tornado.lang.CompilerInternals;
 import tornado.lang.Debug;
 
-import static tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMAX;
-import static tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMIN;
+import static tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.*;
 import static tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.FABS;
 import static tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MAX;
 import static tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
@@ -201,6 +200,20 @@ public class OCLGraphBuilderPlugins {
         registerOpenCLOverridesForType(r, Integer.TYPE, JavaKind.Int);
         registerOpenCLOverridesForType(r, Long.TYPE, JavaKind.Long);
 
+//        registerFPIntrinsics(r, Float.TYPE, JavaKind.Float);
+        registerFPIntrinsics(r, Double.TYPE, JavaKind.Double);
+
+    }
+
+    private static void registerFPIntrinsics(Registration r, Class<?> type, JavaKind kind) {
+        r.register2("pow", type, type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                    Receiver receiver, ValueNode x, ValueNode y) {
+                b.push(kind, b.recursiveAppend(OCLFPBinaryIntrinsicNode.create(x, y, POW, kind)));
+                return true;
+            }
+        });
     }
 
     private static void registerOpenCLOverridesForType(Registration r, Class<?> type, JavaKind kind) {

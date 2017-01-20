@@ -22,7 +22,7 @@ import static tornado.common.exceptions.TornadoInternalError.*;
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
 import static tornado.drivers.opencl.graal.lir.OCLKind.*;
 
-public class OCLAssembler extends Assembler {
+public final class OCLAssembler extends Assembler {
 
     /**
      * Base class for OpenCL opcodes.
@@ -734,6 +734,8 @@ public class OCLAssembler extends Assembler {
         operandStack = new ArrayList<>(10);
         pushToStack = false;
 
+        emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable");
+
     }
 
     private static OCLAssembler getAssembler(OCLCompilationResultBuilder crb) {
@@ -1031,9 +1033,9 @@ public class OCLAssembler extends Assembler {
         emitSymbol(OCLAssemblerConstants.BRACKET_OPEN);
 
         emit(toString(condition));
-//        if (((OCLKind) condition.getPlatformKind()) == OCLKind.INT) {
-//            emit(" == 1");
-//        }
+        if (((OCLKind) condition.getPlatformKind()) == OCLKind.INT) {
+            emit(" == 1");
+        }
         //value(crb, condition);
 
         emitSymbol(OCLAssemblerConstants.BRACKET_CLOSE);

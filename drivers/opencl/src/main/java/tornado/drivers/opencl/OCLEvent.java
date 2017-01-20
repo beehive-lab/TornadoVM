@@ -4,40 +4,44 @@ import java.nio.ByteBuffer;
 import tornado.api.Event;
 import tornado.api.enums.TornadoExecutionStatus;
 import tornado.common.RuntimeUtilities;
-import static tornado.common.Tornado.ENABLE_PROFILING;
 import tornado.common.TornadoLogger;
-import static tornado.drivers.opencl.OCLCommandQueue.EVENT_DESCRIPTIONS;
 import tornado.drivers.opencl.enums.OCLCommandExecutionStatus;
-import static tornado.drivers.opencl.enums.OCLCommandExecutionStatus.*;
-import static tornado.drivers.opencl.enums.OCLEventInfo.*;
-import static tornado.drivers.opencl.enums.OCLProfilingInfo.*;
 import tornado.drivers.opencl.exceptions.OCLException;
+
+import static tornado.common.Tornado.ENABLE_PROFILING;
+import static tornado.drivers.opencl.OCLCommandQueue.EVENT_DESCRIPTIONS;
+import static tornado.drivers.opencl.enums.OCLCommandExecutionStatus.*;
+import static tornado.drivers.opencl.enums.OCLEventInfo.CL_EVENT_COMMAND_EXECUTION_STATUS;
+import static tornado.drivers.opencl.enums.OCLProfilingInfo.*;
 
 public class OCLEvent extends TornadoLogger implements Event {
 
     private static final long[] internalBuffer = new long[2];
-    
+
     private final OCLCommandQueue queue;
     private int localId;
     private long id;
     private static final ByteBuffer buffer = ByteBuffer.allocate(8);
     private final String name;
-    
+    private int status;
+
     static {
         buffer.order(OpenCL.BYTE_ORDER);
-    } 
-    
+    }
+
     public OCLEvent(final OCLCommandQueue queue, final int event, final long eventId) {
         this.queue = queue;
         this.localId = event;
         this.id = eventId;
-        name = String.format("%s: 0x%x",EVENT_DESCRIPTIONS[queue.descriptors[localId]],queue.tags[localId]);
+        this.name = String.format("%s: 0x%x", EVENT_DESCRIPTIONS[queue.descriptors[localId]], queue.tags[localId]);
+        this.status = -1;
     }
 
-    protected void setEventId(int localId, long eventId){
-        localId = localId;
-        id = eventId;
+    protected void setEventId(int localId, long eventId) {
+        this.localId = localId;
+        this.id = eventId;
     }
+
     native static void clGetEventInfo(long eventId, int param, byte[] buffer) throws OCLException;
 
     native static void clGetEventProfilingInfo(long eventId, int param,
@@ -99,7 +103,10 @@ public class OCLEvent extends TornadoLogger implements Event {
     }
 
     protected OCLCommandExecutionStatus getCLStatus() {
-        int status = 0;
+        if (status == 0) {
+            return CL_COMPLETE;
+        }
+
         buffer.clear();
 
         try {
@@ -114,8 +121,8 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     @Override
     public void waitOn() {
-        
-        switch(getCLStatus()){
+
+        switch (getCLStatus()) {
             case CL_COMPLETE:
                 break;
             case CL_SUBMITTED:
@@ -126,7 +133,7 @@ public class OCLEvent extends TornadoLogger implements Event {
                 break;
             case CL_ERROR:
             case CL_UNKNOWN:
-                fatal("error on event: %s",name);
+                fatal("error on event: %s", name);
         }
     }
 
@@ -142,9 +149,7 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     @Override
     public String toString() {
-//        return String.format("event: name=%s, active time=%.9f, total time=%.9f",
-//                name, getExecutionTime(), getTotalTime());
-        return String.format("event: name=%s, status=%s",name,getStatus());
+        return String.format("event: name=%s, status=%s", name, getStatus());
     }
 
     public long getId() {

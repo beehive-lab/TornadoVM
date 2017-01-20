@@ -1,12 +1,11 @@
 package tornado.examples.arrays;
 
 import java.util.Arrays;
-
 import tornado.collections.math.SimpleMath;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskGraph;
-import tornado.runtime.api.TaskUtils;
 import tornado.runtime.api.CompilableTask;
+import tornado.runtime.api.TaskSchedule;
+import tornado.runtime.api.TaskUtils;
 
 public class ArrayMultiplyAdd {
 
@@ -35,7 +34,7 @@ public class ArrayMultiplyAdd {
          * Create a task to perform vector multiplication and assign it to the
          * cpu
          */
-        final CompilableTask multiply = TaskUtils.createTask(
+        final CompilableTask multiply = TaskUtils.createTask("t0",
                 SimpleMath::vectorMultiply, a, b, c);
         multiply.mapTo(new OCLDeviceMapping(0, 0));
 
@@ -43,22 +42,21 @@ public class ArrayMultiplyAdd {
          * Create a task to perform vector addition and assign it to the
          * external gpu
          */
-        final CompilableTask add = TaskUtils.createTask(
+        final CompilableTask add = TaskUtils.createTask("t1",
                 SimpleMath::vectorAdd, c, b, d);
         add.mapTo(new OCLDeviceMapping(0, 2));
 
         /*
          * build an execution graph
          */
-        final TaskGraph graph = new TaskGraph().add(multiply).add(add)
+        TaskSchedule schedule = new TaskSchedule("s0")
+                .task(multiply)
+                .task(add)
                 .streamOut(d);
 
-        /*
-         * schedule the execution of the graph
-         */
-        graph.schedule().waitOn();
-        
-        graph.dumpTimes();
+        schedule.execute();
+
+        schedule.dumpTimes();
 
         /*
          * Check to make sure result is correct

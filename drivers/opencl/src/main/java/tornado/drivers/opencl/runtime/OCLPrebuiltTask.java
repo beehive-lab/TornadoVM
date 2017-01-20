@@ -18,9 +18,9 @@ public class OCLPrebuiltTask extends PrebuiltTask {
     private OCLInstalledCode code;
     private final OCLBackend backend;
 
-    protected OCLPrebuiltTask(String entryPoint, String filename, Object[] args,
+    protected OCLPrebuiltTask(String id, String entryPoint, String filename, Object[] args,
             Access[] access, OCLDeviceMapping device, DomainTree domain) {
-        super(entryPoint, filename, args, access, device, domain);
+        super(id, entryPoint, filename, args, access, device, domain);
 
         backend = device.getBackend();
     }

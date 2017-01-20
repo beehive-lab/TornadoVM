@@ -3,29 +3,26 @@ package tornado.benchmarks.convolvearray;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
 import tornado.collections.types.FloatOps;
-import tornado.common.DeviceMapping;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
 
 import static tornado.benchmarks.BenchmarkUtils.createFilter;
 import static tornado.benchmarks.BenchmarkUtils.createImage;
+import static tornado.common.Tornado.getProperty;
 
 public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
     private final int imageSizeX, imageSizeY, filterSize;
-    private final DeviceMapping device;
 
     private float[] input, output, filter;
 
-    private TaskGraph graph;
+    private TaskSchedule graph;
 
     public ConvolveImageArrayTornado(int iterations, int imageSizeX,
-            int imageSizeY, int filterSize, DeviceMapping device) {
+            int imageSizeY, int filterSize) {
         super(iterations);
         this.imageSizeX = imageSizeX;
         this.imageSizeY = imageSizeY;
         this.filterSize = filterSize;
-        this.device = device;
     }
 
     @Override
@@ -37,12 +34,11 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         createImage(input, imageSizeX, imageSizeY);
         createFilter(filter, filterSize, filterSize);
 
-        graph = new TaskGraph()
-                .add(GraphicsKernels::convolveImageArray,
+        graph = new TaskSchedule("s0")
+                .task("t0", GraphicsKernels::convolveImageArray,
                         input, filter, output, imageSizeX, imageSizeY, filterSize,
                         filterSize)
-                .streamOut(output)
-                .mapAllTo(device);
+                .streamOut(output);
 
         graph.warmup();
 
@@ -57,7 +53,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         output = null;
         filter = null;
 
-        ((OCLDeviceMapping) device).reset();
+        graph.getDefaultDevice().reset();
         super.tearDown();
     }
 
@@ -91,12 +87,12 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
     public void printSummary() {
         if (isValid()) {
             System.out.printf(
-                    "id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
-                    ((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
+                    "id=%s, elapsed=%f, per iteration=%f\n",
+                    getProperty("s0.device"), getElapsed(),
                     getElapsedPerIteration());
         } else {
-            System.out.printf("id=opencl-device-%d produced invalid result\n",
-                    ((OCLDeviceMapping) device).getDeviceIndex());
+            System.out.printf("id=%s produced invalid result\n",
+                    getProperty("s0.device"));
         }
     }
 }

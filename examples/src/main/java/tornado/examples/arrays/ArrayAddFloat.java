@@ -3,8 +3,7 @@ package tornado.examples.arrays;
 import java.util.Arrays;
 import tornado.collections.math.SimpleMath;
 import tornado.common.RuntimeUtilities;
-import tornado.drivers.opencl.OpenCL;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
 
 public class ArrayAddFloat {
 
@@ -21,15 +20,14 @@ public class ArrayAddFloat {
         Arrays.fill(c, 0);
 
         //@formatter:off
-        final TaskGraph graph = new TaskGraph()
-                .add(SimpleMath::vectorAdd, a, b, c)
-                .streamOut(c)
-                .mapAllTo(OpenCL.defaultDevice());
+        final TaskSchedule schedule = new TaskSchedule("s0")
+                .task("t0", SimpleMath::vectorAdd, a, b, c)
+                .streamOut(c);
         //@formatter:on
 
         long start = System.nanoTime();
         for (int i = 0; i < iterations; i++) {
-            graph.schedule().waitOn();
+            schedule.execute();
         }
         long stop = System.nanoTime();
 

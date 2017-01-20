@@ -2,14 +2,16 @@ package tornado.runtime.api;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import tornado.common.DeviceMapping;
 import tornado.common.SchedulableTask;
+import tornado.common.TornadoDevice;
 import tornado.common.enums.Access;
 import tornado.meta.Meta;
 
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 
 public class CompilableTask implements SchedulableTask {
+
+    protected final String id;
 
     protected final Object[] args;
 //    protected final Access[] argumentsAccess;
@@ -22,7 +24,8 @@ public class CompilableTask implements SchedulableTask {
 
     protected Access thisAccess;
 
-    public CompilableTask(Method method, Object... args) {
+    public CompilableTask(String id, Method method, Object... args) {
+        this.id = id;
         this.method = method;
         this.args = args;
         this.shouldCompile = true;
@@ -68,9 +71,9 @@ public class CompilableTask implements SchedulableTask {
     }
 
     @Override
-    public DeviceMapping getDeviceMapping() {
-        return (meta.hasProvider(DeviceMapping.class)) ? meta
-                .getProvider(DeviceMapping.class) : null;
+    public TornadoDevice getDeviceMapping() {
+        return (meta.hasProvider(TornadoDevice.class)) ? meta
+                .getProvider(TornadoDevice.class) : null;
     }
 
     public String getMethodName() {
@@ -83,14 +86,14 @@ public class CompilableTask implements SchedulableTask {
     }
 
     @Override
-    public CompilableTask mapTo(final DeviceMapping mapping) {
+    public CompilableTask mapTo(final TornadoDevice mapping) {
         meta = mapping.createMeta(method);
-        if (meta.hasProvider(DeviceMapping.class)
-                && meta.getProvider(DeviceMapping.class) == mapping) {
+        if (meta.hasProvider(TornadoDevice.class)
+                && meta.getProvider(TornadoDevice.class) == mapping) {
             return this;
         }
 
-        meta.addProvider(DeviceMapping.class, mapping);
+        meta.addProvider(TornadoDevice.class, mapping);
         return this;
     }
 
@@ -102,5 +105,10 @@ public class CompilableTask implements SchedulableTask {
 
     public Method getMethod() {
         return method;
+    }
+
+    @Override
+    public String getId() {
+        return id;
     }
 }

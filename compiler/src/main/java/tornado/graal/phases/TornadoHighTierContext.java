@@ -5,8 +5,8 @@ import com.oracle.graal.phases.PhaseSuite;
 import com.oracle.graal.phases.tiers.HighTierContext;
 import com.oracle.graal.phases.util.Providers;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import tornado.common.DeviceMapping;
 import tornado.meta.Meta;
+import tornado.common.TornadoDevice;
 
 public class TornadoHighTierContext extends HighTierContext {
 
@@ -55,11 +55,11 @@ public class TornadoHighTierContext extends HighTierContext {
     }
 
     public boolean hasDeviceMapping() {
-        return meta != null && meta.hasProvider(DeviceMapping.class);
+        return meta != null && meta.hasProvider(TornadoDevice.class);
     }
 
-    public DeviceMapping getDeviceMapping() {
-        return meta.getProvider(DeviceMapping.class);
+    public TornadoDevice getDeviceMapping() {
+        return meta.getProvider(TornadoDevice.class);
     }
 
     public boolean hasMeta() {

@@ -15,6 +15,10 @@ public final class Tornado {
         tryLoadSettings();
     }
 
+    public static void setProperty(String key, String value) {
+        settings.setProperty(key, value);
+    }
+
     public static String getProperty(String key) {
         return settings.getProperty(key);
     }
@@ -86,6 +90,8 @@ public final class Tornado {
             .getProperty("tornado.opencl.gpu.block2d.x", "4"));
     public static final int OPENCL_GPU_BLOCK_2D_Y = Integer.parseInt(settings
             .getProperty("tornado.opencl.gpu.block2d.y", "4"));
+
+    public static final boolean SHOULD_LOAD_RMI = Boolean.parseBoolean(settings.getProperty("tornado.rmi.enable", "false"));
 
     public static final TornadoLogger log = new TornadoLogger(Tornado.class);
 

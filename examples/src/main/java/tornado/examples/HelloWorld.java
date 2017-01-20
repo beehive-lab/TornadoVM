@@ -2,9 +2,8 @@ package tornado.examples;
 
 import tornado.api.Parallel;
 import tornado.api.Read;
-import tornado.drivers.opencl.OpenCL;
 import tornado.lang.Debug;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
 
 public class HelloWorld {
 
@@ -19,11 +18,9 @@ public class HelloWorld {
         /*
          * Simple hello world example which runs on 8 threads
          */
-        TaskGraph graph = new TaskGraph()
-                .add(HelloWorld::printHello, 8)
-                .mapAllTo(OpenCL.defaultDevice());
-
-        graph.schedule().waitOn();
+        new TaskSchedule("s0")
+                .task("t0", HelloWorld::printHello, 8)
+                .execute();
 
     }
 }

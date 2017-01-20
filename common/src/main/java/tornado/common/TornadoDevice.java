@@ -5,7 +5,7 @@ import tornado.api.Event;
 import tornado.api.enums.TornadoSchedulingStrategy;
 import tornado.meta.Meta;
 
-public interface DeviceMapping {
+public interface TornadoDevice {
 
     public Meta createMeta(Method method);
 
@@ -41,5 +41,11 @@ public interface DeviceMapping {
     public void sync();
 
     public String getDeviceName();
+
+    public String getDescription();
+
+    public TornadoMemoryProvider getMemoryProvider();
+
+    public void reset();
 
 }

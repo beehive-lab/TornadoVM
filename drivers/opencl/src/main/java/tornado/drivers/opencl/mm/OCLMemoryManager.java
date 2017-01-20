@@ -3,10 +3,7 @@ package tornado.drivers.opencl.mm;
 import java.lang.reflect.Method;
 import tornado.api.Parallel;
 import tornado.api.Write;
-import tornado.common.DeviceMapping;
-import tornado.common.RuntimeUtilities;
-import tornado.common.Tornado;
-import tornado.common.TornadoLogger;
+import tornado.common.*;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.enums.OCLMemFlags;
@@ -22,7 +19,7 @@ import tornado.meta.domain.IntDomain;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
-public class OCLMemoryManager extends TornadoLogger {
+public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
     private final long callStackLimit;
     private long callStackPosition;
@@ -50,6 +47,31 @@ public class OCLMemoryManager extends TornadoLogger {
         initialised = false;
 
         reset();
+    }
+
+    @Override
+    public long getCallStackAllocated() {
+        return callStackPosition;
+    }
+
+    @Override
+    public long getCallStackRemaining() {
+        return callStackLimit - callStackPosition;
+    }
+
+    @Override
+    public long getCallStackSize() {
+        return callStackLimit;
+    }
+
+    @Override
+    public long getHeapAllocated() {
+        return heapPosition - callStackLimit;
+    }
+
+    @Override
+    public long getHeapRemaining() {
+        return heapLimit - heapPosition;
     }
 
     private void initFP64(@Write double[] data, int count) {
@@ -84,7 +106,7 @@ public class OCLMemoryManager extends TornadoLogger {
     private void createMemoryInitializers(final OCLBackend backend) {
         initThreads = new DomainTree(1);
         initMeta = new OCLMeta(2);
-        initMeta.addProvider(DeviceMapping.class, backend.getDeviceContext().asMapping());
+        initMeta.addProvider(TornadoDevice.class, backend.getDeviceContext().asMapping());
 
 //    	initFP64Code = OCLCompiler.compileCodeForDevice(
 //				TornadoRuntime.resolveMethod(getMethod("initFP64",double[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
@@ -104,11 +126,12 @@ public class OCLMemoryManager extends TornadoLogger {
                 deviceContext.getDevice().getName());
     }
 
+    @Override
     public long getHeapSize() {
         return heapLimit - callStackLimit;
     }
 
-    private static final long align(final long address, final long alignment) {
+    private static long align(final long address, final long alignment) {
         return (address % alignment == 0) ? address : address
                 + (alignment - address % alignment);
     }
@@ -206,7 +229,7 @@ public class OCLMemoryManager extends TornadoLogger {
     public void init(OCLBackend backend, long address) {
         deviceBufferAddress = address;
         initialised = true;
-        Tornado.info("Located heap @ 0x%x (%s) on %s", deviceBufferAddress,
+        info("Located heap @ 0x%x (%s) on %s", deviceBufferAddress,
                 RuntimeUtilities.humanReadableByteCount(heapLimit, true),
                 deviceContext.getDevice().getName());
 

@@ -1,18 +1,17 @@
 package tornado.examples.vectors;
 
 import tornado.api.Parallel;
-import tornado.api.Read;
-import tornado.api.Write;
 import tornado.collections.types.Float3;
-import static tornado.collections.types.Float3.add;
+
 import tornado.collections.types.VectorFloat3;
-import tornado.drivers.opencl.OpenCL;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
+
+import static tornado.collections.types.Float3.add;
 
 public class VectorAddTest {
 
-    private static void test(@Read VectorFloat3 a, @Read VectorFloat3 b,
-            @Write VectorFloat3 results) {
+    private static void test(VectorFloat3 a, VectorFloat3 b,
+            VectorFloat3 results) {
         for (@Parallel int i = 0; i < a.getLength(); i++) {
             results.set(i, add(a.get(i), b.get(i)));
         }
@@ -34,14 +33,11 @@ public class VectorAddTest {
         System.out.printf("vector<float3>: %s\n", b.toString());
 
         //@formatter:off
-        TaskGraph graph = new TaskGraph()
-                .add(VectorAddTest::test, a, b, results)
+        new TaskSchedule("s0")
+                .task("t0", VectorAddTest::test, a, b, results)
                 .streamOut(results)
-                .mapAllTo(OpenCL.defaultDevice())
-                .schedule();
+                .execute();
         //@formatter:on
-
-        graph.waitOn();
 
         System.out.printf("result: %s\n", results.toString());
 

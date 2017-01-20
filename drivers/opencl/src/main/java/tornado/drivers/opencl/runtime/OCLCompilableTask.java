@@ -8,8 +8,8 @@ import java.nio.file.Paths;
 import java.util.*;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.api.Event;
-import tornado.common.DeviceMapping;
 import tornado.common.Tornado;
+import tornado.common.TornadoDevice;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.runtime.api.CompilableTask;
@@ -24,9 +24,9 @@ public class OCLCompilableTask extends CompilableTask {
 
     private final Map<OCLBackend, OCLInstalledCode> codeCache;
 
-    public OCLCompilableTask(Method method, Object thisObject,
+    public OCLCompilableTask(String id, Method method, Object thisObject,
             Object... args) {
-        super(method, thisObject, args);
+        super(id, method, thisObject, args);
         this.codeCache = new HashMap<>();
     }
 
@@ -39,7 +39,7 @@ public class OCLCompilableTask extends CompilableTask {
     }
 
     @Override
-    public CompilableTask mapTo(final DeviceMapping mapping) {
+    public CompilableTask mapTo(final TornadoDevice mapping) {
         super.mapTo(mapping);
 
         activeBackend = ((OCLDeviceMapping) mapping).getBackend();

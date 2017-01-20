@@ -30,7 +30,7 @@ public class TornadoVM extends TornadoLogger {
     private final CallStack[] stacks;
     private final int[][] events;
     private final int[] eventsIndicies;
-    private final List<DeviceMapping> contexts;
+    private final List<TornadoDevice> contexts;
     private final TornadoInstalledCode[] installedCodes;
 
     private final List<Object> constants;
@@ -109,12 +109,18 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private static CallStack resolveStack(int index, int numArgs,
-            CallStack[] stacks, DeviceMapping device) {
+            CallStack[] stacks, TornadoDevice device) {
         if (stacks[index] == null) {
             stacks[index] = device.createStack(numArgs);
         }
 
         return stacks[index];
+    }
+
+    public void invalidateObjects() {
+        for (GlobalObjectState globalState : globalStates) {
+            globalState.invalidate();
+        }
     }
 
     public void warmup() {
@@ -135,7 +141,7 @@ public class TornadoVM extends TornadoLogger {
         }
 
 //        if (!isWarmup) {
-//            for (DeviceMapping device : contexts) {
+//            for (TornadoDevice device : contexts) {
 //                device.markEvent();
 //            }
 //        }
@@ -150,7 +156,7 @@ public class TornadoVM extends TornadoLogger {
                     continue;
                 }
 
-                final DeviceMapping device = contexts.get(contextIndex);
+                final TornadoDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
 
                 if (DEBUG) {
@@ -171,7 +177,7 @@ public class TornadoVM extends TornadoLogger {
                     continue;
                 }
 
-                final DeviceMapping device = contexts.get(contextIndex);
+                final TornadoDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
                 if (DEBUG) {
                     debug("vm: COPY_IN [0x%x] %s on %s [event list=%d]",
@@ -194,7 +200,7 @@ public class TornadoVM extends TornadoLogger {
                     continue;
                 }
 
-                final DeviceMapping device = contexts.get(contextIndex);
+                final TornadoDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
                 if (DEBUG) {
                     debug("vm: STREAM_IN [0x%x] %s on %s [event list=%d]",
@@ -217,7 +223,7 @@ public class TornadoVM extends TornadoLogger {
                     continue;
                 }
 
-                final DeviceMapping device = contexts.get(contextIndex);
+                final TornadoDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
                 if (DEBUG) {
                     debug("vm: STREAM_OUT [0x%x] %s on %s [event list=%d]",
@@ -236,7 +242,7 @@ public class TornadoVM extends TornadoLogger {
                 final int numArgs = buffer.getInt();
                 final int eventList = buffer.getInt();
 
-                final DeviceMapping device = contexts.get(contextIndex);
+                final TornadoDevice device = contexts.get(contextIndex);
                 final CallStack stack = resolveStack(gtid, numArgs, stacks,
                         device);
                 final int[] waitList = (eventList == -1) ? null : events[eventList];
@@ -354,7 +360,7 @@ public class TornadoVM extends TornadoLogger {
         Event barrier = EMPTY_EVENT;
         if (!isWarmup) {
             if (contexts.size() == 1) {
-                final DeviceMapping device = contexts.get(0);
+                final TornadoDevice device = contexts.get(0);
                 final int event = device.enqueueBarrier();
                 barrier = device.resolveEvent(event);
 //                device.flushEvents();
@@ -392,6 +398,10 @@ public class TornadoVM extends TornadoLogger {
     }
 
     public void dumpProfiles() {
+        if (!ENABLE_PROFILING) {
+            warn("profiling is not enabled");
+        }
+
         for (final SchedulableTask task : tasks) {
             final Meta meta = task.meta();
             for (final Event profile : meta.getProfiles()) {

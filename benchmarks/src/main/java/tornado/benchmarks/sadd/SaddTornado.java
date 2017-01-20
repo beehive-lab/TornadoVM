@@ -2,24 +2,23 @@ package tornado.benchmarks.sadd;
 
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.LinearAlgebraArrays;
-import tornado.collections.math.TornadoMath;
-import tornado.common.DeviceMapping;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
+
+import static tornado.benchmarks.LinearAlgebraArrays.sadd;
+import static tornado.collections.math.TornadoMath.findULPDistance;
+import static tornado.common.Tornado.getProperty;
 
 public class SaddTornado extends BenchmarkDriver {
 
     private final int numElements;
-    private final DeviceMapping device;
 
     private float[] a, b, c;
 
-    private TaskGraph graph;
+    private TaskSchedule graph;
 
-    public SaddTornado(int iterations, int numElements, DeviceMapping device) {
+    public SaddTornado(int iterations, int numElements) {
         super(iterations);
         this.numElements = numElements;
-        this.device = device;
     }
 
     @Override
@@ -34,10 +33,9 @@ public class SaddTornado extends BenchmarkDriver {
             c[i] = 0;
         }
 
-        graph = new TaskGraph()
-                .add(LinearAlgebraArrays::sadd, a, b, c)
-                .streamOut(c)
-                .mapAllTo(device);
+        graph = new TaskSchedule("s0")
+                .task("t0", LinearAlgebraArrays::sadd, a, b, c)
+                .streamOut(c);
 
         graph.warmup();
     }
@@ -51,13 +49,13 @@ public class SaddTornado extends BenchmarkDriver {
         b = null;
         c = null;
 
-        ((OCLDeviceMapping) device).reset();
+        graph.getDefaultDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void code() {
-        graph.schedule().waitOn();
+        graph.execute();
     }
 
     @Override
@@ -68,21 +66,21 @@ public class SaddTornado extends BenchmarkDriver {
         code();
         graph.clearProfiles();
 
-        LinearAlgebraArrays.sadd(a, b, result);
+        sadd(a, b, result);
 
-        final float ulp = TornadoMath.findULPDistance(c, result);
+        final float ulp = findULPDistance(c, result);
         return ulp < MAX_ULP;
     }
 
     public void printSummary() {
         if (isValid()) {
             System.out.printf(
-                    "id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
-                    ((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
+                    "id=%s, elapsed=%f, per iteration=%f\n",
+                    getProperty("s0.device"), getElapsed(),
                     getElapsedPerIteration());
         } else {
-            System.out.printf("id=opencl-device-%d produced invalid result\n",
-                    ((OCLDeviceMapping) device).getDeviceIndex());
+            System.out.printf("id=%s produced invalid result\n",
+                    getProperty("s0.device"));
         }
     }
 }

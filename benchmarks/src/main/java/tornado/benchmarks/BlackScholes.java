@@ -3,7 +3,7 @@ package tornado.benchmarks;
 import tornado.api.Parallel;
 import tornado.collections.math.TornadoMath;
 import tornado.drivers.opencl.OpenCL;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
 
 public class BlackScholes {
 
@@ -26,9 +26,8 @@ public class BlackScholes {
 
         final BlackScholes bs = new BlackScholes(size);
 
-        final TaskGraph tasks = new TaskGraph()
-                .add(BlackScholes::blackscholes, bs.randArray, bs.put, bs.call)
-                .mapAllTo(OpenCL.defaultDevice());
+        final TaskSchedule tasks = new TaskSchedule("s0")
+                .task("t0", BlackScholes::blackscholes, bs.randArray, bs.put, bs.call);
 
         long start = 0, end = 0;
 

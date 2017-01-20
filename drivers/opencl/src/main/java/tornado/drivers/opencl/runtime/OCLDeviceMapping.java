@@ -30,7 +30,7 @@ import static tornado.common.Tornado.FORCE_ALL_TO_GPU;
 import static tornado.common.exceptions.TornadoInternalError.*;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
-public class OCLDeviceMapping implements DeviceMapping {
+public class OCLDeviceMapping implements TornadoDevice {
 
     private final OCLDevice device;
     private final int deviceIndex;
@@ -43,13 +43,6 @@ public class OCLDeviceMapping implements DeviceMapping {
             guarantee(driver != null, "unable to find OpenCL driver");
         }
         return driver;
-//        for (int i = 0; i < getTornadoRuntime().getNumDrivers(); i++) {
-//            if (getTornadoRuntime().getDriver(i) instanceof OCLDriver) {
-//                return (OCLDriver) getTornadoRuntime().getDriver(i);
-//            }
-//        }
-//        shouldNotReachHere("unable to find OpenCL driver");
-//        return null;
     }
 
     public OCLDeviceMapping(final int platformIndex, final int deviceIndex) {
@@ -72,12 +65,23 @@ public class OCLDeviceMapping implements DeviceMapping {
         return null;
     }
 
+    @Override
+    public String getDescription() {
+        final String availability = (device.isAvailable()) ? "available" : "not available";
+        return String.format("%s %s (%s)", device.getName(), device.getDeviceType(), availability);
+    }
+
     public OCLDevice getDevice() {
         return device;
     }
 
     public int getDeviceIndex() {
         return deviceIndex;
+    }
+
+    @Override
+    public TornadoMemoryProvider getMemoryProvider() {
+        return getDeviceContext().getMemoryManager();
     }
 
     public int getPlatformIndex() {

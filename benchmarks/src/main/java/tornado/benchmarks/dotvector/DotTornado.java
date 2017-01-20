@@ -2,27 +2,25 @@ package tornado.benchmarks.dotvector;
 
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
-import tornado.collections.math.TornadoMath;
 import tornado.collections.types.Float3;
 import tornado.collections.types.VectorFloat3;
-import tornado.common.DeviceMapping;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
+
+import static tornado.collections.math.TornadoMath.findULPDistance;
+import static tornado.common.Tornado.getProperty;
 
 public class DotTornado extends BenchmarkDriver {
 
     private final int numElements;
-    private final DeviceMapping device;
 
     private VectorFloat3 a, b;
     private float[] c;
 
-    private TaskGraph graph;
+    private TaskSchedule graph;
 
-    public DotTornado(int iterations, int numElements, DeviceMapping device) {
+    public DotTornado(int iterations, int numElements) {
         super(iterations);
         this.numElements = numElements;
-        this.device = device;
     }
 
     @Override
@@ -38,10 +36,9 @@ public class DotTornado extends BenchmarkDriver {
             b.set(i, valueB);
         }
 
-        graph = new TaskGraph()
-                .add(GraphicsKernels::dotVector, a, b, c)
-                .streamOut(c)
-                .mapAllTo(device);
+        graph = new TaskSchedule("s0")
+                .task("t0", GraphicsKernels::dotVector, a, b, c)
+                .streamOut(c);
 
         graph.warmup();
     }
@@ -55,13 +52,13 @@ public class DotTornado extends BenchmarkDriver {
         b = null;
         c = null;
 
-        ((OCLDeviceMapping) device).reset();
+        graph.getDefaultDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void code() {
-        graph.schedule().waitOn();
+        graph.execute();
     }
 
     @Override
@@ -74,19 +71,19 @@ public class DotTornado extends BenchmarkDriver {
 
         GraphicsKernels.dotVector(a, b, result);
 
-        final float ulp = TornadoMath.findULPDistance(result, c);
+        final float ulp = findULPDistance(result, c);
         return ulp < MAX_ULP;
     }
 
     public void printSummary() {
         if (isValid()) {
             System.out.printf(
-                    "id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
-                    ((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
+                    "id=%s, elapsed=%f, per iteration=%f\n",
+                    getProperty("s0.device"), getElapsed(),
                     getElapsedPerIteration());
         } else {
-            System.out.printf("id=opencl-device-%d produced invalid result\n",
-                    ((OCLDeviceMapping) device).getDeviceIndex());
+            System.out.printf("id=%s produced invalid result\n",
+                    getProperty("s0.device"));
         }
     }
 }

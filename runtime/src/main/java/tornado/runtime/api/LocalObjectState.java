@@ -1,8 +1,10 @@
 package tornado.runtime.api;
 
-import tornado.common.DeviceMapping;
 import tornado.common.DeviceObjectState;
+
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+
+import tornado.common.TornadoDevice;
 
 public class LocalObjectState {
 
@@ -59,11 +61,11 @@ public class LocalObjectState {
 		return global.isExclusive();
 	}
 
-	public DeviceMapping getOwner() {
+	public TornadoDevice getOwner() {
 		return global.getOwner();
 	}
 
-	public void setOwner(DeviceMapping owner) {
+	public void setOwner(TornadoDevice owner) {
 		global.setOwner(owner);
 	}
 

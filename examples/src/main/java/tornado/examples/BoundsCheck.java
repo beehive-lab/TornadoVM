@@ -1,10 +1,8 @@
 package tornado.examples;
 
 import java.util.Arrays;
-
 import tornado.common.exceptions.TornadoRuntimeException;
-import tornado.drivers.opencl.OpenCL;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
 
 public class BoundsCheck {
 
@@ -34,18 +32,14 @@ public class BoundsCheck {
          * involves finding the methods called and the arguments used in each
          * call.
          */
-        TaskGraph graph = new TaskGraph()
-                .add(BoundsCheck::add, a, b, c);
-
-        /*
-         * Next we map each invocation onto a specific compute device
-         */
-        graph.mapAllTo(OpenCL.defaultDevice());
+        TaskSchedule graph = new TaskSchedule("s0")
+                .task("t0", BoundsCheck::add, a, b, c)
+                .streamOut(c);
 
         /*
          * Calculate a (3) + b (2) = c (5)
          */
-        graph.schedule().waitOn();
+        graph.execute();
 
         /*
          * Check to make sure result is correct

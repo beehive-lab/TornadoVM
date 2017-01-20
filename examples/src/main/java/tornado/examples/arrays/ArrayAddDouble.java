@@ -4,9 +4,9 @@ import java.util.Arrays;
 import tornado.api.Parallel;
 import tornado.runtime.api.TaskSchedule;
 
-public class ArrayAddInt {
+public class ArrayAddDouble {
 
-    public static void add(int[] a, int[] b, int[] c) {
+    public static void add(double[] a, double[] b, double[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];
         }
@@ -15,9 +15,9 @@ public class ArrayAddInt {
     public static void main(String[] args) {
 
         final int numElements = 8;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+        double[] a = new double[numElements];
+        double[] b = new double[numElements];
+        double[] c = new double[numElements];
 
         Arrays.fill(a, 1);
         Arrays.fill(b, 2);
@@ -25,7 +25,7 @@ public class ArrayAddInt {
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0", ArrayAddInt::add, a, b, c)
+                .task("t0", ArrayAddDouble::add, a, b, c)
                 .streamOut(c)
                 .execute();
         //@formatter:on

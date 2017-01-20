@@ -2,9 +2,9 @@ package tornado.runtime.graph;
 
 import java.util.Arrays;
 import java.util.BitSet;
-import tornado.common.DeviceMapping;
 import tornado.common.SchedulableTask;
 import tornado.runtime.graph.nodes.*;
+import tornado.common.TornadoDevice;
 
 public class GraphCompiler {
 
@@ -23,7 +23,7 @@ public class GraphCompiler {
      * Simplest case where all tasks are executed on the same device
      */
     private static GraphCompilationResult compileSingleContext(Graph graph, ExecutionContext context,
-            DeviceMapping device) {
+            TornadoDevice device) {
 
         final GraphCompilationResult result = new GraphCompilationResult();
 

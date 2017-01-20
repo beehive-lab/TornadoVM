@@ -3,10 +3,9 @@ package tornado.benchmarks;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import tornado.common.DeviceMapping;
-import tornado.drivers.opencl.OCLDriver;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.runtime.TornadoDriver;
 
+import static tornado.common.Tornado.setProperty;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public abstract class BenchmarkRunner {
@@ -19,7 +18,7 @@ public abstract class BenchmarkRunner {
 
     protected abstract BenchmarkDriver getJavaDriver();
 
-    protected abstract BenchmarkDriver getTornadoDriver(DeviceMapping device);
+    protected abstract BenchmarkDriver getTornadoDriver();
 
     protected int iterations = 0;
 
@@ -37,34 +36,35 @@ public abstract class BenchmarkRunner {
 
         final double refElapsed = referenceTest.getElapsed();
 
-        final Set<Integer> blacklistedPlatforms = new HashSet<>();
+        final Set<Integer> blacklistedDrivers = new HashSet<>();
         final Set<Integer> blacklistedDevices = new HashSet<>();
 
-        findBlacklisted(blacklistedPlatforms, "tornado.blacklist.platform");
+        findBlacklisted(blacklistedDrivers, "tornado.blacklist.drivers");
         findBlacklisted(blacklistedDevices, "tornado.blacklist.device");
 
-        final OCLDriver oclRuntime = getTornadoRuntime().getDriver(OCLDriver.class);
-        for (int platformIndex = 0; platformIndex < oclRuntime.getNumPlatforms(); platformIndex++) {
-
-            if (blacklistedPlatforms.contains(platformIndex)) {
+        final int numDrivers = getTornadoRuntime().getNumDrivers();
+        for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
+            if (blacklistedDrivers.contains(driverIndex)) {
                 continue;
             }
 
-            for (int deviceIndex = 0; deviceIndex < oclRuntime.getNumDevices(platformIndex); deviceIndex++) {
+            final TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
+            final int numDevices = driver.getDeviceCount();
 
+            for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
                 if (blacklistedDevices.contains(deviceIndex)) {
                     continue;
                 }
 
-                final OCLDeviceMapping device = new OCLDeviceMapping(platformIndex, deviceIndex);
-
-                final BenchmarkDriver deviceTest = getTornadoDriver(device);
+                setProperty("s0.device", driverIndex + ":" + deviceIndex);
+                final BenchmarkDriver deviceTest = getTornadoDriver();
 
                 deviceTest.benchmark();
 
-                System.out.printf("bm=%-15s, id=%-20s, %s, speedup=%.4f\n", id,
-                        "opencl-device-" + platformIndex + "-" + deviceIndex,
+                System.out.printf("bm=%-15s, device=%-5s, %s, speedup=%.4f\n", id,
+                        driverIndex + ":" + deviceIndex,
                         deviceTest.getSummary(), refElapsed / deviceTest.getElapsed());
+
             }
         }
     }

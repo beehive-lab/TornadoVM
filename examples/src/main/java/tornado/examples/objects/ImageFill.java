@@ -1,10 +1,7 @@
 package tornado.examples.objects;
 
 import tornado.collections.types.ImageFloat;
-import tornado.drivers.opencl.OpenCL;
-import tornado.runtime.api.CompilableTask;
-import tornado.runtime.api.TaskGraph;
-import tornado.runtime.api.TaskUtils;
+import tornado.runtime.api.TaskSchedule;
 
 public class ImageFill {
 
@@ -18,21 +15,9 @@ public class ImageFill {
         final ImageFloat image = new ImageFloat(numElementsX, numElementsY);
         image.fill(-1f);
 
-        /*
-         * First step is to create a reference to the method invocation This
-         * involves finding the methods called and the arguments used in each
-         * call.
-         */
-        final CompilableTask fillInvocation = TaskUtils.createTask(image::fill, 1f);
-
-        final TaskGraph graph = new TaskGraph()
-                .add(fillInvocation)
+        final TaskSchedule graph = new TaskSchedule("s0")
+                .task("t0", image::fill, 1f)
                 .streamOut(image);
-
-        /*
-         * Next we map each invocation onto a specific compute device
-         */
-        graph.mapAllTo(OpenCL.defaultDevice());
 
         System.out.println("Before:");
         System.out.println(image.toString());
@@ -40,7 +25,7 @@ public class ImageFill {
         /*
          * Fill the array
          */
-        graph.schedule().waitOn();
+        graph.execute();
         /*
          * Ouput result to console
          */

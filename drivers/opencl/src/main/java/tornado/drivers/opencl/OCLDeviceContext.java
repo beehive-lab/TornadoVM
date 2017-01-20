@@ -4,11 +4,12 @@ import java.nio.ByteOrder;
 import java.util.List;
 import tornado.api.Event;
 import tornado.common.Initialisable;
-import static tornado.common.Tornado.getProperty;
 import tornado.common.TornadoLogger;
 import tornado.drivers.opencl.enums.OCLMemFlags;
 import tornado.drivers.opencl.mm.OCLMemoryManager;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+
+import static tornado.common.Tornado.getProperty;
 
 public class OCLDeviceContext extends TornadoLogger implements Initialisable {
 

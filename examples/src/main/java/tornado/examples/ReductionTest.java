@@ -3,7 +3,7 @@ package tornado.examples;
 import java.util.Arrays;
 
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
 
 public class ReductionTest {
 
@@ -14,7 +14,7 @@ public class ReductionTest {
 
         Arrays.fill(data, 1);
 
-//        final TaskGraph graph = new TaskGraph()
+//        final TaskSchedule graph = new TaskSchedule()
 //                .add(LinearAlgebraArrays::reduceInt, result, data)
 //                .collect(result).mapAllTo(new OCLDeviceMapping(0, 0));
 //

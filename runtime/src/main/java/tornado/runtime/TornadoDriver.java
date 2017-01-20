@@ -1,14 +1,20 @@
 package tornado.runtime;
 
 import com.oracle.graal.phases.util.Providers;
-import tornado.common.DeviceMapping;
 import tornado.graal.compiler.TornadoSuitesProvider;
+import tornado.common.TornadoDevice;
 
 public interface TornadoDriver {
 
-    public DeviceMapping getDefaultDevice();
+    public TornadoDevice getDefaultDevice();
+
+    public int getDeviceCount();
+
+    public TornadoDevice getDevice(int index);
 
     public Providers getProviders();
 
     public TornadoSuitesProvider getSuitesProvider();
+
+    public String getName();
 }

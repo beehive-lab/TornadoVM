@@ -5,23 +5,21 @@ import tornado.benchmarks.GraphicsKernels;
 import tornado.collections.types.Float4;
 import tornado.collections.types.FloatOps;
 import tornado.collections.types.VectorFloat4;
-import tornado.common.DeviceMapping;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
+
+import static tornado.common.Tornado.getProperty;
 
 public class AddTornado extends BenchmarkDriver {
 
     private final int numElements;
-    private final DeviceMapping device;
 
     private VectorFloat4 a, b, c;
 
-    private TaskGraph graph;
+    private TaskSchedule graph;
 
-    public AddTornado(int iterations, int numElements, DeviceMapping device) {
+    public AddTornado(int iterations, int numElements) {
         super(iterations);
         this.numElements = numElements;
-        this.device = device;
     }
 
     @Override
@@ -37,10 +35,9 @@ public class AddTornado extends BenchmarkDriver {
             b.set(i, valueB);
         }
 
-        graph = new TaskGraph()
-                .add(GraphicsKernels::addVector, a, b, c)
-                .streamOut(c)
-                .mapAllTo(device);
+        graph = new TaskSchedule("s0")
+                .task("t0", GraphicsKernels::addVector, a, b, c)
+                .streamOut(c);
 
         graph.warmup();
     }
@@ -54,13 +51,13 @@ public class AddTornado extends BenchmarkDriver {
         b = null;
         c = null;
 
-        ((OCLDeviceMapping) device).reset();
+        graph.getDefaultDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void code() {
-        graph.schedule().waitOn();
+        graph.execute();
     }
 
     @Override
@@ -87,12 +84,12 @@ public class AddTornado extends BenchmarkDriver {
     public void printSummary() {
         if (isValid()) {
             System.out.printf(
-                    "id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
-                    ((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
+                    "id=%s, elapsed=%f, per iteration=%f\n",
+                    getProperty("s0.device"), getElapsed(),
                     getElapsedPerIteration());
         } else {
-            System.out.printf("id=opencl-device-%d produced invalid result\n",
-                    ((OCLDeviceMapping) device).getDeviceIndex());
+            System.out.printf("id=%s produced invalid result\n",
+                    getProperty("s0.device"));
         }
     }
 

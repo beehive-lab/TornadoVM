@@ -4,13 +4,11 @@ import java.util.Random;
 
 import tornado.api.Atomic;
 import tornado.api.Parallel;
-import tornado.api.Read;
-import tornado.api.Write;
 import tornado.benchmarks.rodinia.kmean.DataLoader.KmeansData;
-import tornado.drivers.opencl.OpenCL;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
 
 public class Kmean {
+
     private static final boolean USE_RSME = true;
     private static final float threshold = 0.001f;
 
@@ -35,9 +33,10 @@ public class Kmean {
     private float rmse;
     private float delta;
 
-    private final TaskGraph graph;
+    private final TaskSchedule graph;
 
     public final class IntResult {
+
         @Atomic
         public int value;
 
@@ -70,9 +69,12 @@ public class Kmean {
         membership = new int[numPoints];
         membershipChanges = new IntResult();
 
-        graph = new TaskGraph().add(Kmean::mapToNearestCluster, data,
-                numPoints, numFeatures, clusters, maxClusters, membership,
-                membershipChanges).mapAllTo(OpenCL.defaultDevice());
+        //@formatter:off
+        graph = new TaskSchedule("s0")
+                .task("t0", Kmean::mapToNearestCluster, data,
+                        numPoints, numFeatures, clusters, maxClusters, membership,
+                        membershipChanges);
+        //@formatter:on
     }
 
     public void init(int numClusters) {
@@ -89,8 +91,9 @@ public class Kmean {
             newClusterSizes[i] = 0;
         }
 
-        for (int i = 0; i < numPoints; i++)
+        for (int i = 0; i < numPoints; i++) {
             membership[i] = -1;
+        }
 
     }
 
@@ -119,13 +122,12 @@ public class Kmean {
         return value;
     }
 
-    public static void mapToNearestCluster(@Read final float[] data,
-            @Read final int numPoints, @Read final int numFeatures,
-            @Read final float[] clusters, @Read final int numClusters,
-            @Write final int[] membership, @Write IntResult result) {
+    public static void mapToNearestCluster(final float[] data,
+            final int numPoints, final int numFeatures,
+            final float[] clusters, final int numClusters,
+            final int[] membership, IntResult result) {
 
-        for (@Parallel
-        int i = 0; i < numPoints; i++) {
+        for (@Parallel int i = 0; i < numPoints; i++) {
             int index = -1;
             float minDist = Float.MAX_VALUE;
             int membershipChanges = 0;
@@ -156,8 +158,7 @@ public class Kmean {
     public static void updateClusters(final float[] data, final int numPoints,
             final int numFeatures, final int[] membership,
             final float[] clusters, final int[] clusterSizes) {
-        for (@Parallel
-        int i = 0; i < numPoints; i++) {
+        for (@Parallel int i = 0; i < numPoints; i++) {
             final int clusterId = membership[i];
             clusterSizes[clusterId]++;
 
@@ -175,10 +176,11 @@ public class Kmean {
             final int[] newClusterSizes) {
         for (int i = 0; i < numClusters; i++) {
             for (int j = 0; j < numFeatures; j++) {
-                if (newClusterSizes[i] > 0)
+                if (newClusterSizes[i] > 0) {
                     clusters[(i * numFeatures) + j] = newClusters[(i * numFeatures)
                             + j]
                             / newClusterSizes[i];
+                }
                 newClusters[(i * numFeatures) + j] = 0f;
             }
             clusterSizes[i] = newClusterSizes[i];
@@ -254,8 +256,9 @@ public class Kmean {
         }
 
         for (int nclusters = clustersMin; nclusters <= clustersMax; nclusters++) {
-            if (nclusters > numPoints)
+            if (nclusters > numPoints) {
                 break;
+            }
 
             final long start = System.nanoTime();
             for (int i = 0; i < numberOfLoops; i++) {

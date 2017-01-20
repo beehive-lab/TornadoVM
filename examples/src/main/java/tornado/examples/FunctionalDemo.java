@@ -1,77 +1,73 @@
 package tornado.examples;
 
 import java.util.function.IntUnaryOperator;
-
 import tornado.api.Parallel;
-import tornado.drivers.opencl.OpenCL;
-import tornado.runtime.api.TaskUtils;
 import tornado.runtime.api.CompilableTask;
+import tornado.runtime.api.TaskUtils;
 
 public class FunctionalDemo {
 
-	public static class Matrix {
-		private final int[]	array;
-		private final int	m;
-		private final int	n;
+    public static class Matrix {
 
-		public Matrix(final int m, final int n) {
-			this.m = m;
-			this.n = n;
-			array = new int[m * n];
-		}
+        private final int[] array;
+        private final int m;
+        private final int n;
 
-		public void apply(final IntUnaryOperator action) {
-			for (@Parallel
-					int i = 0; i < m; i++) {
-				for (@Parallel
-						int j = 0; j < n; j++) {
-					set(i, j, action.applyAsInt(get(i, j)));
-				}
-			}
-		}
+        public Matrix(final int m, final int n) {
+            this.m = m;
+            this.n = n;
+            array = new int[m * n];
+        }
 
-		public int get(final int r, final int c) {
-			return array[(r * m) + c];
-		}
+        public void apply(final IntUnaryOperator action) {
+            for (@Parallel int i = 0; i < m; i++) {
+                for (@Parallel int j = 0; j < n; j++) {
+                    set(i, j, action.applyAsInt(get(i, j)));
+                }
+            }
+        }
 
-		public void set(final int r, final int c, final int value) {
-			array[(r * m) + c] = value;
-		}
+        public int get(final int r, final int c) {
+            return array[(r * m) + c];
+        }
 
-		public void times2() {
-			final IntUnaryOperator times2 = (value) -> value << 1;
-			apply(times2);
-		}
+        public void set(final int r, final int c, final int value) {
+            array[(r * m) + c] = value;
+        }
 
-		@Override
-		public String toString() {
-			final StringBuilder sb = new StringBuilder();
+        public void times2() {
+            final IntUnaryOperator times2 = (value) -> value << 1;
+            apply(times2);
+        }
 
-			for (int i = 0; i < m; i++) {
-				for (int j = 0; j < n; j++) {
-					sb.append(String.format("%2d ", get(i, j)));
-				}
-				sb.append("\n");
-			}
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
 
-			return sb.toString();
-		}
-	}
+            for (int i = 0; i < m; i++) {
+                for (int j = 0; j < n; j++) {
+                    sb.append(String.format("%2d ", get(i, j)));
+                }
+                sb.append("\n");
+            }
 
-	public static void main(final String[] args) {
+            return sb.toString();
+        }
+    }
 
-		final Matrix m = new Matrix(4, 4);
+    public static void main(final String[] args) {
 
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
-				m.set(i, j, (i * 4) + j);
-			}
-		}
+        final Matrix m = new Matrix(4, 4);
 
-	
-		final CompilableTask times2 = TaskUtils.createTask(Matrix::times2, m);
-		times2.mapTo(OpenCL.defaultDevice());
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                m.set(i, j, (i * 4) + j);
+            }
+        }
+
+        final CompilableTask times2 = TaskUtils.createTask("t0", Matrix::times2, m);
+//        times2.mapTo(OpenCL.defaultDevice());
 //		times2.execute();
-		System.out.println(m);
-	}
+        System.out.println(m);
+    }
 }

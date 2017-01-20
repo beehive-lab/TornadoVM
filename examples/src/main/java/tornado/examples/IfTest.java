@@ -1,8 +1,7 @@
 package tornado.examples;
 
-import tornado.drivers.opencl.OpenCL;
 import tornado.lang.Debug;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
 
 public class IfTest {
 
@@ -19,11 +18,9 @@ public class IfTest {
          * Simple hello world example which runs on 8 threads
          */
         int[] a = new int[]{8};
-        TaskGraph graph = new TaskGraph()
-                .add(IfTest::printHello, a)
-                .mapAllTo(OpenCL.defaultDevice());
-
-        graph.schedule().waitOn();
+        new TaskSchedule("s0")
+                .task("t0", IfTest::printHello, a)
+                .execute();
 
     }
 }

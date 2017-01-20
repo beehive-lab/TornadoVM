@@ -8,7 +8,7 @@ import tornado.meta.Meta;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
-public class JVMMapping implements DeviceMapping {
+public class JVMMapping implements TornadoDevice {
 
     @Override
     public Meta createMeta(Method method) {
@@ -23,8 +23,24 @@ public class JVMMapping implements DeviceMapping {
     }
 
     @Override
+    public String getDescription() {
+        return "default JVM";
+    }
+
+    @Override
+    public TornadoMemoryProvider getMemoryProvider() {
+        unimplemented();
+        return null;
+    }
+
+    @Override
     public TornadoSchedulingStrategy getPreferedSchedule() {
         return TornadoSchedulingStrategy.PER_BLOCK;
+    }
+
+    @Override
+    public void reset() {
+        unimplemented();
     }
 
     @Override
@@ -94,6 +110,7 @@ public class JVMMapping implements DeviceMapping {
         return new EmptyEvent();
     }
 
+    @Override
     public void markEvent() {
 
     }

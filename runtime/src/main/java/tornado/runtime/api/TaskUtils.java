@@ -9,7 +9,7 @@ import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.api.Event;
-import tornado.common.DeviceMapping;
+import tornado.common.TornadoDevice;
 import tornado.common.enums.Access;
 import tornado.meta.domain.DomainTree;
 import tornado.meta.domain.IntDomain;
@@ -30,7 +30,7 @@ import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class TaskUtils {
 
-    public static CompilableTask scalaTask(Object object, Object... args) {
+    public static CompilableTask scalaTask(String id, Object object, Object... args) {
         Class<?> type = object.getClass();
         // System.out.printf("lambda: type=%s, %s\n", type.getName(), object);
         //
@@ -52,7 +52,7 @@ public class TaskUtils {
             }
         }
 
-        return createTask(entryPoint, object, false, args);
+        return createTask(id, entryPoint, object, false, args);
     }
 
     public static void waitForEvents(List<Event> events) {
@@ -65,7 +65,7 @@ public class TaskUtils {
         // events.clear();
     }
 
-    private final static Method resolveMethodHandle(Object task) {
+    private static Method resolveMethodHandle(Object task) {
         final Class<?> type = task.getClass();
 
         /*
@@ -145,74 +145,75 @@ public class TaskUtils {
         return null;
     }
 
-    public static <T1> CompilableTask createTask(Task1<T1> code, T1 arg) {
+    public static <T1> CompilableTask createTask(String id, Task1<T1> code, T1 arg) {
         final Method method = resolveMethodHandle(code);
-        return createTask(method, code, true, arg);
+        return createTask(id, method, code, true, arg);
     }
 
-    public static <T1, T2> CompilableTask createTask(Task2<T1, T2> code,
+    public static <T1, T2> CompilableTask createTask(String id, Task2<T1, T2> code,
             T1 arg1, T2 arg2) {
         final Method method = resolveMethodHandle(code);
-        return createTask(method, code, true, arg1, arg2);
+        return createTask(id, method, code, true, arg1, arg2);
     }
 
-    public static <T1, T2, T3> CompilableTask createTask(
+    public static <T1, T2, T3> CompilableTask createTask(String id,
             Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3) {
         final Method method = resolveMethodHandle(code);
-        return createTask(method, code, true, arg1, arg2, arg3);
+        return createTask(id, method, code, true, arg1, arg2, arg3);
     }
 
-    public static <T1, T2, T3, T4> CompilableTask createTask(
+    public static <T1, T2, T3, T4> CompilableTask createTask(String id,
             Task4<T1, T2, T3, T4> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4) {
         final Method method = resolveMethodHandle(code);
-        return createTask(method, code, true, arg1, arg2, arg3, arg4);
+        return createTask(id, method, code, true, arg1, arg2, arg3, arg4);
     }
 
-    public static <T1, T2, T3, T4, T5> CompilableTask createTask(
+    public static <T1, T2, T3, T4, T5> CompilableTask createTask(String id,
             Task5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4,
             T5 arg5) {
         final Method method = resolveMethodHandle(code);
-        return createTask(method, code, true, arg1, arg2, arg3, arg4, arg5);
+        return createTask(id, method, code, true, arg1, arg2, arg3, arg4, arg5);
     }
 
-    public static <T1, T2, T3, T4, T5, T6> CompilableTask createTask(
+    public static <T1, T2, T3, T4, T5, T6> CompilableTask createTask(String id,
             Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3,
             T4 arg4, T5 arg5, T6 arg6) {
         final Method method = resolveMethodHandle(code);
-        return createTask(method, code, true, arg1, arg2, arg3, arg4, arg5,
+        return createTask(id, method, code, true, arg1, arg2, arg3, arg4, arg5,
                 arg6);
     }
 
-    public static <T1, T2, T3, T4, T5, T6, T7> CompilableTask createTask(
+    public static <T1, T2, T3, T4, T5, T6, T7> CompilableTask createTask(String id,
             Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3,
             T4 arg4, T5 arg5, T6 arg6, T7 arg7) {
         final Method method = resolveMethodHandle(code);
-        return createTask(method, code, true, arg1, arg2, arg3, arg4, arg5,
+        return createTask(id, method, code, true, arg1, arg2, arg3, arg4, arg5,
                 arg6, arg7);
     }
 
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> CompilableTask createTask(
+    public static <T1, T2, T3, T4, T5, T6, T7, T8> CompilableTask createTask(String id,
             Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2,
             T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) {
         final Method method = resolveMethodHandle(code);
-        return createTask(method, code, true, arg1, arg2, arg3, arg4, arg5,
+        return createTask(id, method, code, true, arg1, arg2, arg3, arg4, arg5,
                 arg6, arg7, arg8);
     }
 
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9> CompilableTask createTask(
+            String id,
             Task9<T1, T2, T3, T4, T5, T6, T7, T8, T9> code, T1 arg1, T2 arg2,
             T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) {
         final Method method = resolveMethodHandle(code);
-        return createTask(method, code, true, arg1, arg2, arg3, arg4, arg5,
+        return createTask(id, method, code, true, arg1, arg2, arg3, arg4, arg5,
                 arg6, arg7, arg8, arg9);
     }
 
-    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> CompilableTask createTask(
+    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> CompilableTask createTask(String id,
             Task10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> code, T1 arg1,
             T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8,
             T9 arg9, T10 arg10) {
         final Method method = resolveMethodHandle(code);
-        return createTask(method, code, true, arg1, arg2, arg3, arg4, arg5,
+        return createTask(id, method, code, true, arg1, arg2, arg3, arg4, arg5,
                 arg6, arg7, arg8, arg9, arg10);
     }
 
@@ -243,21 +244,21 @@ public class TaskUtils {
         return cvs;
     }
 
-    public static PrebuiltTask createTask(String entryPoint, String filename, Object[] args, Access[] accesses, DeviceMapping device, int[] dims) {
+    public static PrebuiltTask createTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dims) {
         final DomainTree domain = new DomainTree(dims.length);
         for (int i = 0; i < dims.length; i++) {
             domain.set(i, new IntDomain(0, 1, dims[i]));
         }
 
-        return new PrebuiltTask(entryPoint, filename, args, accesses, device, domain);
+        return new PrebuiltTask(id, entryPoint, filename, args, accesses, device, domain);
     }
 
-    public static CompilableTask createTask(Runnable runnable) {
+    public static CompilableTask createTask(String id, Runnable runnable) {
         final Method method = resolveRunnable(runnable);
-        return createTask(method, runnable, false);
+        return createTask(id, method, runnable, false);
     }
 
-    private static CompilableTask createTask(Method method, Object code,
+    private static CompilableTask createTask(String id, Method method, Object code,
             boolean extractCVs, Object... args) {
         final int numArgs;
         final Object[] cvs;
@@ -286,7 +287,7 @@ public class TaskUtils {
         }
 
 //   	        final Object thisObject = (isStatic) ? null : code;
-        return new CompilableTask(method, parameters);
+        return new CompilableTask(id, method, parameters);
     }
 
     private static Method resolveRunnable(Runnable runnable) {

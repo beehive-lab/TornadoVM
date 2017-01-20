@@ -4,24 +4,38 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
-import tornado.common.DeviceMapping;
 import tornado.common.RuntimeUtilities;
 import tornado.common.SchedulableTask;
+import tornado.common.Tornado;
+import tornado.common.TornadoDevice;
+import tornado.runtime.TornadoDriver;
 import tornado.runtime.api.LocalObjectState;
+
+import static tornado.common.Tornado.getProperty;
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class ExecutionContext {
 
+    private final String name;
     private final int MAX_TASKS = 100;
 
     private final List<SchedulableTask> tasks;
     private final List<Object> constants;
     private final List<Object> objects;
     private final List<LocalObjectState> objectState;
-    private final List<DeviceMapping> devices;
+    private final List<TornadoDevice> devices;
     private final int[] taskToDevice;
     private int nextTask;
+    private final TornadoDevice defaultDevice;
 
-    public ExecutionContext() {
+    private static TornadoDevice resolveDevice(String device) {
+        final String[] ids = device.split(":");
+        final TornadoDriver driver = getTornadoRuntime().getDriver(Integer.parseInt(ids[0]));
+        return driver.getDevice(Integer.parseInt(ids[1]));
+    }
+
+    public ExecutionContext(String id) {
+        name = id;
         tasks = new ArrayList<>();
         constants = new ArrayList<>();
         objects = new ArrayList<>();
@@ -30,7 +44,8 @@ public class ExecutionContext {
         taskToDevice = new int[MAX_TASKS];
 
         // default device
-//	devices.add(TornadoRuntime.JVM);
+        defaultDevice = resolveDevice(getProperty(name + ".device", "0:0"));
+
         nextTask = 0;
     }
 
@@ -83,11 +98,11 @@ public class ExecutionContext {
         return taskToDevice[index];
     }
 
-    public DeviceMapping getDeviceForTask(int index) {
+    public TornadoDevice getDeviceForTask(int index) {
         return getDevice(taskToDevice[index]);
     }
 
-    public DeviceMapping getDevice(int index) {
+    public TornadoDevice getDevice(int index) {
         return devices.get(index);
     }
 
@@ -101,7 +116,8 @@ public class ExecutionContext {
         }
     }
 
-    public void mapAllTo(DeviceMapping mapping) {
+    @Deprecated
+    public void mapAllTo(TornadoDevice mapping) {
         int deviceIndex = devices.indexOf(mapping);
         if (deviceIndex == -1) {
             deviceIndex = devices.size();
@@ -109,6 +125,28 @@ public class ExecutionContext {
         }
         apply(task -> task.mapTo(mapping));
         Arrays.fill(taskToDevice, deviceIndex);
+    }
+
+    private void assignTask(int index, SchedulableTask task) {
+        String id = task.getId();
+        String device = getProperty(name + "." + id + ".device");
+        TornadoDevice target = (device != null) ? resolveDevice(device) : defaultDevice;
+        task.mapTo(target);
+
+        Tornado.info("assigning %s.%s to %s\n", name, id, target.getDeviceName());
+
+        int deviceIndex = devices.indexOf(target);
+        if (deviceIndex == -1) {
+            deviceIndex = devices.size();
+            devices.add(defaultDevice);
+        }
+        taskToDevice[index] = deviceIndex;
+    }
+
+    public void assignToDevices() {
+        for (int i = 0; i < tasks.size(); i++) {
+            assignTask(i, tasks.get(i));
+        }
     }
 
     public LocalObjectState getObjectState(Object object) {
@@ -135,8 +173,20 @@ public class ExecutionContext {
         return tasks;
     }
 
-    public List<DeviceMapping> getDevices() {
+    public List<TornadoDevice> getDevices() {
         return devices;
     }
 
+    public TornadoDevice getDefaultDevice() {
+        return defaultDevice;
+    }
+
+    public TornadoDevice getDeviceForTask(String id) {
+        for (int i = 0; i < tasks.size(); i++) {
+            if (tasks.get(i).getId().equalsIgnoreCase(id)) {
+                return devices.get(taskToDevice[i]);
+            }
+        }
+        return null;
+    }
 }

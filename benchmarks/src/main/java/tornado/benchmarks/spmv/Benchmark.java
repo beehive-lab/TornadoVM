@@ -5,7 +5,6 @@ import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.BenchmarkRunner;
 import tornado.collections.matrix.SparseMatrixUtils;
 import tornado.collections.matrix.SparseMatrixUtils.CSRMatrix;
-import tornado.common.DeviceMapping;
 
 public class Benchmark extends BenchmarkRunner {
 
@@ -55,8 +54,8 @@ public class Benchmark extends BenchmarkRunner {
     }
 
     @Override
-    protected BenchmarkDriver getTornadoDriver(DeviceMapping device) {
-        return new SpmvTornado(iterations, matrix, device);
+    protected BenchmarkDriver getTornadoDriver() {
+        return new SpmvTornado(iterations, matrix);
     }
 
 }

@@ -187,9 +187,9 @@ public class OCLControlFlow {
                 asm.emitValue(crb, condition);
             }
 
-//            if (((OCLKind) condition.getPlatformKind()) == OCLKind.INT) {
-//                asm.emit(" == 1");
-//            }
+            if (((OCLKind) condition.getPlatformKind()) == OCLKind.INT) {
+                asm.emit(" == 1");
+            }
             asm.delimiter();
             asm.setDelimiter(EXPR_DELIMITER);
         }

@@ -128,13 +128,15 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
          * eliminate any unneccesary nodes/branches from the graph
          */
         graph.reduceDegenerateLoopBegin(loopBegin);
-        GraphUtil.killWithUnusedFloatingInputs(ifNode.condition());
 
+        /*
+         * removes the if stmt (thread id check)
+         */
+        GraphUtil.killWithUnusedFloatingInputs(ifNode.condition());
         AbstractBeginNode branch = ifNode.falseSuccessor();
         branch.predecessor().replaceFirstSuccessor(branch, null);
         GraphUtil.killCFG(branch);
         graph.removeSplitPropagate(ifNode, ifNode.trueSuccessor());
-
     }
 
 }

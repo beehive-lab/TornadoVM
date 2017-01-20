@@ -3,8 +3,7 @@ package tornado.examples.objects;
 import java.util.Random;
 import tornado.collections.graphics.ImagingOps;
 import tornado.collections.types.ImageFloat;
-import tornado.drivers.opencl.OpenCL;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
 
 public class ResizeImage {
 
@@ -16,26 +15,24 @@ public class ResizeImage {
 
         System.out.printf("image: x=%d, y=%d\n", numElementsX, numElementsY);
         final ImageFloat image1 = new ImageFloat(numElementsX, numElementsY);
-        final ImageFloat image2 = new ImageFloat(numElementsX/2, numElementsY/2);
-       
+        final ImageFloat image2 = new ImageFloat(numElementsX / 2, numElementsY / 2);
 
         final Random rand = new Random();
-        
-        for(int y=0;y<numElementsY;y++){
-        	for(int x=0;x<numElementsX;x++){
-        		image1.set(x,y,rand.nextFloat());
-        	}
+
+        for (int y = 0; y < numElementsY; y++) {
+            for (int x = 0; x < numElementsX; x++) {
+                image1.set(x, y, rand.nextFloat());
+            }
         }
-        
-        final TaskGraph graph = new TaskGraph()
-        	.add(ImagingOps::resizeImage,image2,image1,2)
-        	.streamOut(image2)
-        	.mapAllTo(OpenCL.defaultDevice());
+
+        final TaskSchedule schedule = new TaskSchedule("s0")
+                .task("t0", ImagingOps::resizeImage, image2, image1, 2)
+                .streamOut(image2);
 
         System.out.println("Before:");
         System.out.println(image1.toString());
 
-        graph.schedule().waitOn();
+        schedule.execute();
 
         /*
          * Ouput result to console

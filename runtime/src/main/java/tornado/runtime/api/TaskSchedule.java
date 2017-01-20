@@ -1,8 +1,8 @@
 package tornado.runtime.api;
 
 import tornado.api.Event;
-import tornado.common.DeviceMapping;
 import tornado.common.SchedulableTask;
+import tornado.common.TornadoDevice;
 import tornado.runtime.api.TornadoFunctions.Task1;
 import tornado.runtime.api.TornadoFunctions.Task10;
 import tornado.runtime.api.TornadoFunctions.Task2;
@@ -14,102 +14,117 @@ import tornado.runtime.api.TornadoFunctions.Task7;
 import tornado.runtime.api.TornadoFunctions.Task8;
 import tornado.runtime.api.TornadoFunctions.Task9;
 
-public class TaskGraph extends AbstractTaskGraph {
+public class TaskSchedule extends AbstractTaskGraph {
 
     private Event event;
 
-    public <T1> TaskGraph add(Task1<T1> code, T1 arg) {
-        addInner(TaskUtils.createTask(code, arg));
+    public TaskSchedule(String name) {
+        super(name);
+    }
+
+    public <T1> TaskSchedule task(String id, Task1<T1> code, T1 arg) {
+        addInner(TaskUtils.createTask(id, code, arg));
         return this;
     }
 
-    public <T1, T2> TaskGraph add(Task2<T1, T2> code, T1 arg1, T2 arg2) {
-        addInner(TaskUtils.createTask(code, arg1, arg2));
+    public <T1, T2> TaskSchedule task(String id, Task2<T1, T2> code, T1 arg1, T2 arg2) {
+        addInner(TaskUtils.createTask(id, code, arg1, arg2));
         return this;
     }
 
-    public <T1, T2, T3> TaskGraph add(Task3<T1, T2, T3> code, T1 arg1, T2 arg2,
+    public <T1, T2, T3> TaskSchedule task(String id, Task3<T1, T2, T3> code, T1 arg1, T2 arg2,
             T3 arg3) {
-        addInner(TaskUtils.createTask(code, arg1, arg2, arg3));
+        addInner(TaskUtils.createTask(id, code, arg1, arg2, arg3));
         return this;
     }
 
-    public <T1, T2, T3, T4> TaskGraph add(Task4<T1, T2, T3, T4> code, T1 arg1,
+    public <T1, T2, T3, T4> TaskSchedule task(String id, Task4<T1, T2, T3, T4> code, T1 arg1,
             T2 arg2, T3 arg3, T4 arg4) {
-        addInner(TaskUtils.createTask(code, arg1, arg2, arg3, arg4));
+        addInner(TaskUtils.createTask(id, code, arg1, arg2, arg3, arg4));
         return this;
     }
 
-    public <T1, T2, T3, T4, T5> TaskGraph add(Task5<T1, T2, T3, T4, T5> code,
+    public <T1, T2, T3, T4, T5> TaskSchedule task(String id, Task5<T1, T2, T3, T4, T5> code,
             T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) {
-        addInner(TaskUtils.createTask(code, arg1, arg2, arg3, arg4, arg5));
+        addInner(TaskUtils.createTask(id, code, arg1, arg2, arg3, arg4, arg5));
         return this;
     }
 
-    public <T1, T2, T3, T4, T5, T6> TaskGraph add(
+    public <T1, T2, T3, T4, T5, T6> TaskSchedule task(String id,
             Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3,
             T4 arg4, T5 arg5, T6 arg6) {
-        addInner(TaskUtils.createTask(code, arg1, arg2, arg3, arg4, arg5,
+        addInner(TaskUtils.createTask(id, code, arg1, arg2, arg3, arg4, arg5,
                 arg6));
         return this;
     }
 
-    public <T1, T2, T3, T4, T5, T6, T7> TaskGraph add(
+    public <T1, T2, T3, T4, T5, T6, T7> TaskSchedule task(String id,
             Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3,
             T4 arg4, T5 arg5, T6 arg6, T7 arg7) {
-        addInner(TaskUtils.createTask(code, arg1, arg2, arg3, arg4, arg5,
+        addInner(TaskUtils.createTask(id, code, arg1, arg2, arg3, arg4, arg5,
                 arg6, arg7));
         return this;
     }
 
-    public <T1, T2, T3, T4, T5, T6, T7, T8> TaskGraph add(
+    public <T1, T2, T3, T4, T5, T6, T7, T8> TaskSchedule task(String id,
             Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2,
             T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) {
-        addInner(TaskUtils.createTask(code, arg1, arg2, arg3, arg4, arg5,
+        addInner(TaskUtils.createTask(id, code, arg1, arg2, arg3, arg4, arg5,
                 arg6, arg7, arg8));
         return this;
     }
 
-    public <T1, T2, T3, T4, T5, T6, T7, T8, T9> TaskGraph add(
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9> TaskSchedule task(String id,
             Task9<T1, T2, T3, T4, T5, T6, T7, T8, T9> code, T1 arg1, T2 arg2,
             T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) {
-        addInner(TaskUtils.createTask(code, arg1, arg2, arg3, arg4, arg5,
+        addInner(TaskUtils.createTask(id, code, arg1, arg2, arg3, arg4, arg5,
                 arg6, arg7, arg8, arg9));
         return this;
     }
 
-    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> TaskGraph add(
+    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> TaskSchedule task(String id,
             Task10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> code, T1 arg1,
             T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8,
             T9 arg9, T10 arg10) {
-        addInner(TaskUtils.createTask(code, arg1, arg2, arg3, arg4, arg5,
+        addInner(TaskUtils.createTask(id, code, arg1, arg2, arg3, arg4, arg5,
                 arg6, arg7, arg8, arg9, arg10));
         return this;
     }
 
-    public TaskGraph add(SchedulableTask task) {
+    @Deprecated
+    public TaskSchedule add(SchedulableTask task) {
         addInner(task);
         return this;
     }
 
-    public TaskGraph mapAllTo(DeviceMapping mapping) {
+    public TaskSchedule task(SchedulableTask task) {
+        addInner(task);
+        return this;
+    }
+
+    @Deprecated
+    public TaskSchedule mapAllTo(TornadoDevice mapping) {
         mapAllToInner(mapping);
         return this;
     }
 
-    public TaskGraph streamIn(Object... objects) {
+    public TaskSchedule streamIn(Object... objects) {
         streamInInner(objects);
         return this;
     }
 
-    public TaskGraph streamOut(Object... objects) {
+    public TaskSchedule streamOut(Object... objects) {
         streamOutInner(objects);
         return this;
     }
 
-    public TaskGraph schedule() {
+    public TaskSchedule schedule() {
         scheduleInner();
         return this;
+    }
+
+    public void execute() {
+        schedule().waitOn();
     }
 
     public void printCompileTimes() {

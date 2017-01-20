@@ -2,23 +2,22 @@ package tornado.benchmarks.bandwidth;
 
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.LinearAlgebraArrays;
-import tornado.common.DeviceMapping;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
+
+import static tornado.benchmarks.LinearAlgebraArrays.ladd;
+import static tornado.common.Tornado.getProperty;
 
 public class BandwidthTornado extends BenchmarkDriver {
 
     private final int numElements;
-    private final DeviceMapping device;
 
     private long[] a, b, c;
 
-    private TaskGraph graph;
+    private TaskSchedule graph;
 
-    public BandwidthTornado(int iterations, int numElements, DeviceMapping device) {
+    public BandwidthTornado(int iterations, int numElements) {
         super(iterations);
         this.numElements = numElements;
-        this.device = device;
     }
 
     @Override
@@ -33,10 +32,9 @@ public class BandwidthTornado extends BenchmarkDriver {
             c[i] = 0;
         }
 
-        graph = new TaskGraph()
-                .add(LinearAlgebraArrays::ladd, a, b, c)
-                .streamOut(c)
-                .mapAllTo(device);
+        graph = new TaskSchedule("s0")
+                .task("t0", LinearAlgebraArrays::ladd, a, b, c)
+                .streamOut(c);
 
         graph.warmup();
     }
@@ -50,13 +48,13 @@ public class BandwidthTornado extends BenchmarkDriver {
         b = null;
         c = null;
 
-        ((OCLDeviceMapping) device).reset();
+        graph.getDefaultDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void code() {
-        graph.schedule().waitOn();
+        graph.execute();
     }
 
     @Override
@@ -67,7 +65,7 @@ public class BandwidthTornado extends BenchmarkDriver {
         code();
         graph.clearProfiles();
 
-        LinearAlgebraArrays.ladd(a, b, result);
+        ladd(a, b, result);
 
         int errors = 0;
         for (int i = 0; i < numElements; i++) {
@@ -82,12 +80,12 @@ public class BandwidthTornado extends BenchmarkDriver {
     public void printSummary() {
         if (isValid()) {
             System.out.printf(
-                    "id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
-                    ((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
+                    "id=%s, elapsed=%f, per iteration=%f\n",
+                    getProperty("s0.device"), getElapsed(),
                     getElapsedPerIteration());
         } else {
-            System.out.printf("id=opencl-device-%d produced invalid result\n",
-                    ((OCLDeviceMapping) device).getDeviceIndex());
+            System.out.printf("id=%s produced invalid result\n",
+                    getProperty("s0.device"));
         }
     }
 }

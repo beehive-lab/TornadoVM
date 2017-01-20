@@ -6,14 +6,14 @@ import java.nio.ByteOrder;
 import java.util.function.Consumer;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.api.Event;
-import tornado.common.DeviceMapping;
-import tornado.common.RuntimeUtilities;
 import tornado.common.SchedulableTask;
+import tornado.common.TornadoDevice;
 import tornado.graal.compiler.TornadoSuitesProvider;
 import tornado.runtime.TornadoVM;
 import tornado.runtime.graph.*;
 import tornado.runtime.sketcher.SketchRequest;
 
+import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.common.RuntimeUtilities.isBoxedPrimitiveClass;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
@@ -38,14 +38,22 @@ public abstract class AbstractTaskGraph {
     private TornadoVM vm;
     private Event event;
 
-    public AbstractTaskGraph() {
-        graphContext = new ExecutionContext();
+    public AbstractTaskGraph(String name) {
+        graphContext = new ExecutionContext(name);
 
         hlBuffer = ByteBuffer.wrap(hlcode);
         hlBuffer.order(ByteOrder.LITTLE_ENDIAN);
         hlBuffer.rewind();
         result = null;
         event = null;
+    }
+
+    public TornadoDevice getDefaultDevice() {
+        return graphContext.getDefaultDevice();
+    }
+
+    public TornadoDevice getDeviceForTask(String id) {
+        return graphContext.getDeviceForTask(id);
     }
 
     protected void addInner(SchedulableTask task) {
@@ -122,6 +130,7 @@ public abstract class AbstractTaskGraph {
     protected void scheduleInner() {
 
         if (result == null) {
+            graphContext.assignToDevices();
             compile();
         }
 
@@ -133,7 +142,7 @@ public abstract class AbstractTaskGraph {
         graphContext.apply(consumer);
     }
 
-    protected void mapAllToInner(DeviceMapping mapping) {
+    protected void mapAllToInner(TornadoDevice mapping) {
         graphContext.mapAllTo(mapping);
     }
 
@@ -176,9 +185,8 @@ public abstract class AbstractTaskGraph {
     public void dump() {
         final int width = 16;
         System.out.printf("code  : capacity = %s, in use = %s \n",
-                RuntimeUtilities.humanReadableByteCount(hlBuffer.capacity(),
-                        true), RuntimeUtilities.humanReadableByteCount(
-                        hlBuffer.position(), true));
+                humanReadableByteCount(hlBuffer.capacity(), true),
+                humanReadableByteCount(hlBuffer.position(), true));
         for (int i = 0; i < hlBuffer.position(); i += width) {
             System.out.printf("[0x%04x]: ", i);
             for (int j = 0; j < Math.min(hlBuffer.capacity() - i, width); j++) {
@@ -197,10 +205,15 @@ public abstract class AbstractTaskGraph {
 
     public void warmup() {
         if (result == null) {
+            graphContext.assignToDevices();
             compile();
         }
 
         vm.warmup();
+    }
+
+    public void invalidateObjects() {
+        vm.invalidateObjects();
     }
 
 }

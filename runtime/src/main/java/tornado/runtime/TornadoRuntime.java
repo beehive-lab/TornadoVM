@@ -11,10 +11,11 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
-import tornado.common.DeviceMapping;
+import tornado.common.TornadoDevice;
 import tornado.common.TornadoLogger;
 import tornado.runtime.api.GlobalObjectState;
 
+import static tornado.common.Tornado.SHOULD_LOAD_RMI;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class TornadoRuntime extends TornadoLogger {
@@ -47,6 +48,7 @@ public class TornadoRuntime extends TornadoLogger {
 
     private final Map<Object, GlobalObjectState> objectMappings;
     private TornadoDriver[] drivers;
+    private int driverCount;
     private final JVMCIBackend vmBackend;
     private final HotSpotJVMCIRuntime vmRuntime;
     private final TornadoVMConfig vmConfig;
@@ -70,33 +72,21 @@ public class TornadoRuntime extends TornadoLogger {
         objectMappings.clear();
     }
 
-    private final TornadoDriver[] loadDrivers() {
-//        final String driversString = Tornado.getProperty("tornado.runtime.drivers",
-//                "tornado.drivers.opencl.OCLDriver");
-//
-//        final String[] classNames = driversString.split(",");
-//        final TornadoDriver[] drivers = new TornadoDriver[classNames.length];
-//
-//        debug("loading %d drivers:", drivers.length);
-//        for (int i = 0; i < classNames.length; i++) {
-//            try {
-//                debug("\t[%d] %s", i, classNames[i]);
-//                final Class<?> klazz = Class.forName(classNames[i]);
-//                final Constructor<?> constructor = klazz.getConstructor(
-//                        HotSpotGraalRuntimeProvider.class, HotSpotProviders.class);
-//                drivers[i] = (TornadoDriver) constructor.newInstance(vmRuntime,
-//                        vmProviders);
-//            } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-//                throw new TornadoRuntimeException("Unable to load driver: " + e.getMessage());
-//            }
-//
-//        }
-
+    private TornadoDriver[] loadDrivers() {
         ServiceLoader<TornadoDriverProvider> loader = ServiceLoader.load(TornadoDriverProvider.class);
-        drivers = new TornadoDriver[1];
+        drivers = new TornadoDriver[2];
+        int index = 0;
         for (TornadoDriverProvider provider : loader) {
-            drivers[0] = provider.createDriver(vmRuntime, vmConfig);
+            boolean isRMI = provider.getName().equalsIgnoreCase("RMI Driver");
+            if ((!isRMI) || (isRMI && SHOULD_LOAD_RMI)) {
+                drivers[index] = provider.createDriver(vmRuntime, vmConfig);
+                if (drivers[index] != null) {
+                    index++;
+                }
+            }
         }
+
+        driverCount = index;
 
         return drivers;
     }
@@ -131,10 +121,10 @@ public class TornadoRuntime extends TornadoLogger {
     }
 
     public int getNumDrivers() {
-        return drivers.length;
+        return driverCount;
     }
 
-    public DeviceMapping getDefaultDevice() {
+    public TornadoDevice getDefaultDevice() {
         return (drivers == null || drivers[defaultDriver] == null) ? JVM : drivers[defaultDriver].getDefaultDevice();
     }
 }

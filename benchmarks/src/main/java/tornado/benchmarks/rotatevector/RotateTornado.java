@@ -3,27 +3,26 @@ package tornado.benchmarks.rotatevector;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
 import tornado.collections.types.Float3;
-import tornado.collections.types.FloatOps;
 import tornado.collections.types.Matrix4x4Float;
 import tornado.collections.types.VectorFloat3;
-import tornado.common.DeviceMapping;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
+
+import static tornado.benchmarks.GraphicsKernels.rotateVector;
+import static tornado.collections.types.FloatOps.findMaxULP;
+import static tornado.common.Tornado.getProperty;
 
 public class RotateTornado extends BenchmarkDriver {
 
     private final int numElements;
-    private final DeviceMapping device;
 
     private VectorFloat3 input, output;
     private Matrix4x4Float m;
 
-    private TaskGraph graph;
+    private TaskSchedule graph;
 
-    public RotateTornado(int iterations, int numElements, DeviceMapping device) {
+    public RotateTornado(int iterations, int numElements) {
         super(iterations);
         this.numElements = numElements;
-        this.device = device;
     }
 
     @Override
@@ -39,11 +38,10 @@ public class RotateTornado extends BenchmarkDriver {
             input.set(i, value);
         }
 
-        graph = new TaskGraph()
-                .add(GraphicsKernels::rotateVector, output, m,
+        graph = new TaskSchedule("s0")
+                .task("t0", GraphicsKernels::rotateVector, output, m,
                         input)
-                .streamOut(output)
-                .mapAllTo(device);
+                .streamOut(output);
 
         graph.warmup();
     }
@@ -57,13 +55,13 @@ public class RotateTornado extends BenchmarkDriver {
         output = null;
         m = null;
 
-        ((OCLDeviceMapping) device).reset();
+        graph.getDefaultDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void code() {
-        graph.schedule().waitOn();
+        graph.execute();
     }
 
     @Override
@@ -74,11 +72,11 @@ public class RotateTornado extends BenchmarkDriver {
         code();
         graph.clearProfiles();
 
-        GraphicsKernels.rotateVector(result, m, input);
+        rotateVector(result, m, input);
 
         float maxULP = 0f;
         for (int i = 0; i < numElements; i++) {
-            final float ulp = FloatOps.findMaxULP(output.get(i), result.get(i));
+            final float ulp = findMaxULP(output.get(i), result.get(i));
 
             if (ulp > maxULP) {
                 maxULP = ulp;
@@ -91,12 +89,12 @@ public class RotateTornado extends BenchmarkDriver {
     public void printSummary() {
         if (isValid()) {
             System.out.printf(
-                    "id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
-                    ((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
+                    "id=%s, elapsed=%f, per iteration=%f\n",
+                    getProperty("s0.device"), getElapsed(),
                     getElapsedPerIteration());
         } else {
-            System.out.printf("id=opencl-device-%d produced invalid result\n",
-                    ((OCLDeviceMapping) device).getDeviceIndex());
+            System.out.printf("id=%s produced invalid result\n",
+                    getProperty("s0.device"));
         }
     }
 }

@@ -2,8 +2,7 @@ package tornado.examples.arrays;
 
 import java.util.Arrays;
 import tornado.api.Parallel;
-import tornado.drivers.opencl.OpenCL;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
 
 public class ArrayAddLong {
 
@@ -25,13 +24,10 @@ public class ArrayAddLong {
         Arrays.fill(c, 0);
 
         //@formatter:off
-        final TaskGraph graph = new TaskGraph();
-        graph
-                .add(ArrayAddLong::add, a, b, c)
+        new TaskSchedule("s0")
+                .task("t0", ArrayAddLong::add, a, b, c)
                 .streamOut(c)
-                .mapAllTo(OpenCL.defaultDevice())
-                .schedule()
-                .waitOn();
+                .execute();
         //@formatter:on
 
         System.out.println("a: " + Arrays.toString(a));

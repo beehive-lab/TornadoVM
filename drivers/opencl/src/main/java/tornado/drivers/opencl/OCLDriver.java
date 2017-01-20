@@ -4,7 +4,7 @@ import com.oracle.graal.phases.util.Providers;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import tornado.common.DeviceMapping;
+import tornado.common.TornadoDevice;
 import tornado.common.TornadoLogger;
 import tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
 import tornado.drivers.opencl.graal.OCLSuitesProvider;
@@ -14,21 +14,42 @@ import tornado.runtime.TornadoVMConfig;
 
 public final class OCLDriver extends TornadoLogger implements TornadoDriver {
 
+    private final OCLBackend[] flatBackends;
     private final OCLBackend[][] backends;
     private final List<OCLContext> contexts;
 
     public OCLDriver(final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
         final int numPlatforms = OpenCL.getNumPlatforms();
         backends = new OCLBackend[numPlatforms][];
-
         contexts = new ArrayList<>();
 
         discoverDevices(vmRuntime, vmConfig);
+        flatBackends = new OCLBackend[getDeviceCount()];
+        int index = 0;
+        for (int i = 0; i < getNumPlatforms(); i++) {
+            for (int j = 0; j < getNumDevices(i); j++, index++) {
+                flatBackends[index] = backends[i][j];
+            }
+        }
     }
 
     @Override
-    public DeviceMapping getDefaultDevice() {
+    public TornadoDevice getDefaultDevice() {
         return getDefaultBackend().getDeviceContext().asMapping();
+    }
+
+    @Override
+    public TornadoDevice getDevice(int index) {
+        return flatBackends[index].getDeviceContext().asMapping();
+    }
+
+    @Override
+    public int getDeviceCount() {
+        int count = 0;
+        for (int i = 0; i < getNumPlatforms(); i++) {
+            count += getNumDevices(i);
+        }
+        return count;
     }
 
     private OCLBackend checkAndInitBackend(final int platform,
@@ -104,5 +125,10 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
     @Override
     public OCLSuitesProvider getSuitesProvider() {
         return getDefaultBackend().getTornadoSuites();
+    }
+
+    @Override
+    public String getName() {
+        return "OpenCL Driver";
     }
 }

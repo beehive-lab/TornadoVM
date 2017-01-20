@@ -25,6 +25,7 @@ import tornado.meta.domain.DomainTree;
 import tornado.meta.domain.IntDomain;
 
 import static tornado.common.Tornado.debug;
+import static tornado.common.Tornado.error;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoUnsupportedError.unsupported;
@@ -54,18 +55,26 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-        if (!context.hasDeviceMapping()) {
+        if (!context.hasDeviceMapping() || !context.getMeta().hasDomain()) {
             return;
         }
 
         Meta meta = context.getMeta();
         DomainTree domain = meta.getDomain();
+
+        if (domain.getDepth() == 0) {
+            return;
+        }
+
         Coarseness coarseness;
         if (meta.hasProvider(Coarseness.class)) {
             coarseness = meta.getProvider(Coarseness.class);
         } else {
             coarseness = new Coarseness(domain.getDepth());
         }
+
+        boolean oversizeDomain = false;
+        boolean loadImbalance = false;
 
         OCLDeviceMapping mapping = (OCLDeviceMapping) context.getDeviceMapping();
         if (mapping.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_CPU) {
@@ -149,6 +158,8 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
 
                     LoopBeginNode newLoopBegin = graph.addWithoutUnique(new LoopBeginNode());
                     IfNode newIf = createLoop(graph, newLoopBegin, cv);
+
+                    // if(x < cv [&&  x < max])
                     Translation newLoopTranslation = new Translation(zero, cv);
                     ValuePhiNode newPhi = (ValuePhiNode) newLoopBegin.phis().first();
 
@@ -167,15 +178,21 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
                     newIf.setTrueSuccessor(oldLoopBodyBegin);
                     oldLoopBodyBegin = newBegin;
 
+                    LoopEndNode oldLoopEnd = graph.addWithoutUnique(new LoopEndNode(oldLoopBegin));
+                    int idx = oldLoopBegin.phiPredecessorIndex(oldLoopEnd);
+                    for (PhiNode phi : oldLoopBegin.phis()) {
+                        ValueNode backValue = phi.singleBackValue();
+                        guarantee(backValue != PhiNode.MULTIPLE_VALUES, "phis with multiple back values not supported");
+                        phi.initializeValueAt(idx, backValue);
+                    }
+
                     for (LoopEndNode loopEnd : oldLoopEnds) {
+                        oldLoopBegin.removeEnd(loopEnd);
                         oldLoopBegin.removeUsage(loopEnd);
-                        loopEnd.clearInputs();
-                        LoopEndNode newLoopEnd = graph.addOrUnique(new LoopEndNode(newLoopBegin));
+                        LoopEndNode newLoopEnd = graph.addWithoutUnique(new LoopEndNode(newLoopBegin));
                         loopEnd.replaceAtPredecessor(newLoopEnd);
                         loopEnd.safeDelete();
                     }
-
-                    LoopEndNode oldLoopEnd = graph.addWithoutUnique(new LoopEndNode(oldLoopBegin));
 
                     guarantee(oldLoopExits.size() == 1, "unsupported parallel loop: %s", oldLoopBegin);
                     LoopExitNode targetExit = oldLoopExits.get(0);
@@ -198,10 +215,12 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
 
                     ValueNode newIv = graph.addOrUnique(new AddNode(newInnerIV, newOuterIV));
 
+                    // replace all uses of the newPhi node
                     nodes.filter((Node n) -> !n.equals(opNode)).forEach((Node n) -> n.replaceFirstInput(originalPhi, newIv));
 
                     // reduce the range of the outer loop by coarseness
-                    ValueNode rangeValue = graph.addOrUnique(new DivNode(range.value(), cv));
+                    ValueNode oldRange = range.value();
+                    ValueNode rangeValue = graph.addOrUnique(new DivNode(oldRange, cv));
                     range.replaceFirstInput(range.value(), rangeValue);
 
                     /*
@@ -209,10 +228,68 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
                      */
                     IntDomain cr = (IntDomain) domain.get(domainIndex);
                     int size = (cr.getLength() - cr.getOffset()) / cr.getStep();
+                    loadImbalance = size % coarseness.getCoarseness(domainIndex) > 0;
+
                     size /= coarseness.getCoarseness(domainIndex);
                     cr.setOffset(0);
                     cr.setLength(size);
                     cr.setStep(1);
+                    if (loadImbalance) {
+                        // insert newIv < max
+                        error("load imbalance detected");
+                        BeginNode trueBranch = graph.addWithoutUnique(new BeginNode());
+                        LoopExitNode falseBranch = graph.addWithoutUnique(new LoopExitNode(newLoopBegin));
+
+                        IntegerLessThanNode loadCond = graph.addWithoutUnique(new IntegerLessThanNode(newIv, oldRange));
+                        IfNode loadImbalanceCheck = graph.addWithoutUnique(new IfNode(loadCond, trueBranch, falseBranch, 0.5));
+
+                        AbstractBeginNode target = newIf.trueSuccessor();
+                        trueBranch.setNext(target.next());
+                        target.setNext(loadImbalanceCheck);
+
+                        guarantee(loadImbalanceCheck.verify(), "invalid check");
+
+                        FixedNode originalExitNext = newExit.next();
+                        if (originalExitNext instanceof LoopEndNode) {
+                            LoopEndNode outerLoopEnd = (LoopEndNode) originalExitNext;
+                            AbstractMergeNode merge = outerLoopEnd.merge();
+//                            System.out.printf("merge: %s\n", merge);
+//                            System.out.printf("preds: %d\n", merge.phiPredecessorCount());
+//                            System.out.printf("old end: %s\n", outerLoopEnd);
+//
+//                            System.out.printf("old pred index: %d\n", merge.phiPredecessorIndex(outerLoopEnd));
+
+                            LoopEndNode newOuterLoopEnd = graph.addWithoutUnique(new LoopEndNode(outerLoopEnd.loopBegin()));
+
+                            falseBranch.setNext(newOuterLoopEnd);
+
+                            int oldIndex = merge.phiPredecessorIndex(outerLoopEnd);
+                            int newIndex = merge.phiPredecessorIndex(newOuterLoopEnd);
+//                            System.out.printf("new pred index: %d\n", newIndex);
+                            for (PhiNode phi : merge.phis()) {
+//                                NodeInputList<ValueNode> values = phi.values();
+//                                for (int i = 0; i < values.size(); i++) {
+//                                    System.out.printf("value[%d]: %s\n", i, values.get(i));
+//                                }
+
+                                ValueNode value = phi.valueAt(oldIndex);
+                                phi.initializeValueAt(newIndex, value);
+                            }
+                            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "phi adjust");
+                        } else {
+                            //newExit
+                            // falseBranch
+                            EndNode fe1 = graph.addWithoutUnique(new EndNode());
+                            EndNode fe2 = graph.addWithoutUnique(new EndNode());
+
+                            MergeNode exitMerge = graph.addWithoutUnique(new MergeNode());
+                            exitMerge.setNext(originalExitNext);
+                            newExit.setNext(fe1);
+                            falseBranch.setNext(fe2);
+                            exitMerge.addForwardEnd(fe1);
+                            exitMerge.addForwardEnd(fe2);
+                        }
+                    }
 
                     Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "after coarsening index=" + domainIndex);
                 } else {
@@ -231,7 +308,7 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
         }
     }
 
-    private IfNode createLoop(StructuredGraph graph, LoopBeginNode newLoopBegin, ConstantNode cv) {
+    private IfNode createLoop(StructuredGraph graph, LoopBeginNode newLoopBegin, ValueNode cv) {
 
         ConstantNode zero = graph.addOrUnique(ConstantNode.forInt(0));
         ConstantNode one = graph.addOrUnique(ConstantNode.forInt(1));

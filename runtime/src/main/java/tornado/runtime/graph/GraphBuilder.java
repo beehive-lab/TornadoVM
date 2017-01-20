@@ -8,7 +8,7 @@ import tornado.common.enums.Access;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.runtime.api.CompilableTask;
 import tornado.runtime.api.LocalObjectState;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
 import tornado.runtime.graph.nodes.*;
 import tornado.runtime.sketcher.Sketch;
 import tornado.runtime.sketcher.TornadoSketcher;
@@ -19,7 +19,7 @@ public class GraphBuilder {
 
     public static Graph buildGraph(ExecutionContext graphContext, ByteBuffer buffer) {
         Graph graph = new Graph();
-//        DeviceMapping device;
+//        TornadoDevice device;
         Access[] accesses = null;
         SchedulableTask task;
         AbstractNode[] args = null;
@@ -54,13 +54,13 @@ public class GraphBuilder {
             final byte op = buffer.get();
 //			System.out.printf("op: 0x%x\n", op);
 
-            if (op == TaskGraph.ARG_LIST) {
+            if (op == TaskSchedule.ARG_LIST) {
                 final int size = buffer.getInt();
 //				System.out.printf("task graph: ARG_LIST %d\n", size);
                 args = new AbstractNode[size];
                 argIndex = 0;
                 taskNode = new TaskNode(context, taskIndex, args);
-            } else if (op == TaskGraph.LOAD_REF) {
+            } else if (op == TaskSchedule.LOAD_REF) {
                 final int variableIndex = buffer.getInt();
 
                 final AbstractNode arg = objectNodes[variableIndex];
@@ -125,7 +125,7 @@ public class GraphBuilder {
 //				System.out.printf("task graph: arg[%d] = %s\n", argIndex,
 //						args[argIndex]);
                 argIndex++;
-            } else if (op == TaskGraph.LOAD_PRIM) {
+            } else if (op == TaskSchedule.LOAD_PRIM) {
                 final int variableIndex = buffer.getInt();
 
                 args[argIndex] = constantNodes[variableIndex];
@@ -133,14 +133,14 @@ public class GraphBuilder {
 //				System.out.printf("task graph: arg[%d] = %s\n", argIndex,
 //						args[argIndex]);
                 argIndex++;
-            } else if (op == TaskGraph.LAUNCH) {
+            } else if (op == TaskSchedule.LAUNCH) {
 //				System.out.printf("task graph: launch task %s\n",
 //						task.getName());
 
                 context.addUse(taskNode);
                 graph.add(taskNode);
 
-            } else if (op == TaskGraph.CONTEXT) {
+            } else if (op == TaskSchedule.CONTEXT) {
                 final int globalTaskId = buffer.getInt();
 //                device = graphContext.getDeviceForTask(globalTaskId);
 

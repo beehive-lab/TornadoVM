@@ -1,20 +1,22 @@
 package tornado.runtime.api;
 
-import tornado.common.DeviceMapping;
 import tornado.common.SchedulableTask;
+import tornado.common.TornadoDevice;
 import tornado.common.enums.Access;
 import tornado.meta.Meta;
 import tornado.meta.domain.DomainTree;
 
 public class PrebuiltTask implements SchedulableTask {
 
+    protected final String id;
     protected final String entryPoint;
     protected final String filename;
     protected final Object[] args;
     protected final Access[] argumentsAccess;
     protected final Meta meta;
 
-    protected PrebuiltTask(String entryPoint, String filename, Object[] args, Access[] access, DeviceMapping device, DomainTree domain) {
+    protected PrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] access, TornadoDevice device, DomainTree domain) {
+        this.id = id;
         this.entryPoint = entryPoint;
         this.filename = filename;
         this.args = args;
@@ -23,7 +25,7 @@ public class PrebuiltTask implements SchedulableTask {
         for (int i = 0; i < access.length; i++) {
             meta.getArgumentsAccess()[i] = access[i];
         }
-        meta.addProvider(DeviceMapping.class, device);
+        meta.addProvider(TornadoDevice.class, device);
         meta.setDomain(domain);
     }
 
@@ -57,15 +59,15 @@ public class PrebuiltTask implements SchedulableTask {
     }
 
     @Override
-    public SchedulableTask mapTo(DeviceMapping mapping) {
+    public SchedulableTask mapTo(TornadoDevice mapping) {
 
         return this;
     }
 
     @Override
-    public DeviceMapping getDeviceMapping() {
-        return (meta.hasProvider(DeviceMapping.class)) ? meta
-                .getProvider(DeviceMapping.class) : null;
+    public TornadoDevice getDeviceMapping() {
+        return (meta.hasProvider(TornadoDevice.class)) ? meta
+                .getProvider(TornadoDevice.class) : null;
     }
 
     @Override
@@ -79,5 +81,10 @@ public class PrebuiltTask implements SchedulableTask {
 
     public String getEntryPoint() {
         return entryPoint;
+    }
+
+    @Override
+    public String getId() {
+        return id;
     }
 }

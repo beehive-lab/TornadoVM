@@ -2,25 +2,24 @@ package tornado.benchmarks.saxpy;
 
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.LinearAlgebraArrays;
-import tornado.collections.math.TornadoMath;
-import tornado.common.DeviceMapping;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskGraph;
+import tornado.runtime.api.TaskSchedule;
+
+import static tornado.benchmarks.LinearAlgebraArrays.saxpy;
+import static tornado.collections.math.TornadoMath.findULPDistance;
+import static tornado.common.Tornado.getProperty;
 
 public class SaxpyTornado extends BenchmarkDriver {
 
     private final int numElements;
-    private final DeviceMapping device;
 
     private float[] x, y;
     private final float alpha = 2f;
 
-    private TaskGraph graph;
+    private TaskSchedule graph;
 
-    public SaxpyTornado(int iterations, int numElements, DeviceMapping device) {
+    public SaxpyTornado(int iterations, int numElements) {
         super(iterations);
         this.numElements = numElements;
-        this.device = device;
     }
 
     @Override
@@ -32,10 +31,9 @@ public class SaxpyTornado extends BenchmarkDriver {
             x[i] = i;
         }
 
-        graph = new TaskGraph()
-                .add(LinearAlgebraArrays::saxpy, alpha, x, y)
-                .streamOut(y)
-                .mapAllTo(device);
+        graph = new TaskSchedule("s0")
+                .task("t0", LinearAlgebraArrays::saxpy, alpha, x, y)
+                .streamOut(y);
 
         graph.warmup();
     }
@@ -48,13 +46,13 @@ public class SaxpyTornado extends BenchmarkDriver {
         x = null;
         y = null;
 
-        ((OCLDeviceMapping) device).reset();
+        graph.getDefaultDevice().reset();
         super.tearDown();
     }
 
     @Override
     public void code() {
-        graph.schedule().waitOn();
+        graph.execute();
     }
 
     @Override
@@ -65,21 +63,21 @@ public class SaxpyTornado extends BenchmarkDriver {
         code();
         graph.clearProfiles();
 
-        LinearAlgebraArrays.saxpy(alpha, x, result);
+        saxpy(alpha, x, result);
 
-        final float ulp = TornadoMath.findULPDistance(y, result);
+        final float ulp = findULPDistance(y, result);
         return ulp < MAX_ULP;
     }
 
     public void printSummary() {
         if (isValid()) {
             System.out.printf(
-                    "id=opencl-device-%d, elapsed=%f, per iteration=%f\n",
-                    ((OCLDeviceMapping) device).getDeviceIndex(), getElapsed(),
+                    "id=%s, elapsed=%f, per iteration=%f\n",
+                    getProperty("s0.device"), getElapsed(),
                     getElapsedPerIteration());
         } else {
-            System.out.printf("id=opencl-device-%d produced invalid result\n",
-                    ((OCLDeviceMapping) device).getDeviceIndex());
+            System.out.printf("id=%s produced invalid result\n",
+                    getProperty("s0.device"));
         }
     }
 }
