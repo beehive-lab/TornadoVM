@@ -213,7 +213,9 @@ public abstract class AbstractTaskGraph {
     }
 
     public void invalidateObjects() {
-        vm.invalidateObjects();
+        if (vm != null) {
+            vm.invalidateObjects();
+        }
     }
 
 }
