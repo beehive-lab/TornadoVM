@@ -54,6 +54,7 @@ public class GlobalObjectState {
         }
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
@@ -62,12 +63,12 @@ public class GlobalObjectState {
         sb.append(" ");
 
         if (owner != null) {
-            sb.append("owner=" + owner.toString() + ", devices=[");
+            sb.append("owner=").append(owner.toString()).append(", devices=[");
         }
 
         for (TornadoDevice device : deviceStates.keySet()) {
             if (device != owner) {
-                sb.append(device.toString() + " ");
+                sb.append(device.toString()).append(" ");
             }
         }
 

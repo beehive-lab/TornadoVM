@@ -1,85 +1,85 @@
 package tornado.runtime.api;
 
 import tornado.common.DeviceObjectState;
+import tornado.common.TornadoDevice;
 
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
-import tornado.common.TornadoDevice;
-
 public class LocalObjectState {
 
-	private boolean streamIn;
-	private boolean streamOut;
-	
-	private GlobalObjectState global;
-	private DeviceObjectState device;
-	
-	public LocalObjectState(Object object){
-		global = getTornadoRuntime().resolveObject(object);
-		device = null;
-		streamIn = false;
-		streamOut = false;
-	}
+    private boolean streamIn;
+    private boolean streamOut;
 
-	public boolean isStreamIn() {
-		return streamIn;
-	}
+    private GlobalObjectState global;
+    private DeviceObjectState device;
 
-	public void setStreamIn(boolean streamIn) {
-		this.streamIn = streamIn;
-	}
+    public LocalObjectState(Object object) {
+        global = getTornadoRuntime().resolveObject(object);
+        device = null;
+        streamIn = false;
+        streamOut = false;
+    }
 
-	public boolean isStreamOut() {
-		return streamOut;
-	}
+    public boolean isStreamIn() {
+        return streamIn;
+    }
 
-	public void setStreamOut(boolean streamOut) {
-		this.streamOut = streamOut;
-	}
+    public void setStreamIn(boolean streamIn) {
+        this.streamIn = streamIn;
+    }
 
-	public boolean isModified() {
-		return device.isModified();
-	}
+    public boolean isStreamOut() {
+        return streamOut;
+    }
 
-	public void setModified(boolean modified) {
-		device.setModified(modified);
-	}
+    public void setStreamOut(boolean streamOut) {
+        this.streamOut = streamOut;
+    }
 
-	public boolean isShared() {
-		return global.isShared();
-	}
+    public boolean isModified() {
+        return device.isModified();
+    }
 
-	public boolean isValid() {
-		return (device==null)? false : device.isValid();
-	}
+    public void setModified(boolean modified) {
+        device.setModified(modified);
+    }
 
-	public void setValid(boolean valid) {
-		device.setValid(valid);
-	}
+    public boolean isShared() {
+        return global.isShared();
+    }
 
-	public boolean isExclusive() {
-		return global.isExclusive();
-	}
+    public boolean isValid() {
+        return (device == null) ? false : device.isValid();
+    }
 
-	public TornadoDevice getOwner() {
-		return global.getOwner();
-	}
+    public void setValid(boolean valid) {
+        device.setValid(valid);
+    }
 
-	public void setOwner(TornadoDevice owner) {
-		global.setOwner(owner);
-	}
+    public boolean isExclusive() {
+        return global.isExclusive();
+    }
 
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
+    public TornadoDevice getOwner() {
+        return global.getOwner();
+    }
 
-		sb.append(streamIn ? "SI" : "--");
-		sb.append(streamOut ? "SO" : "--");
-		sb.append(" ");
-		
-		if(device!=null){
-			sb.append(device.toString()+ " ");
-		}
-		sb.append(global.toString() + " ");
-		return sb.toString();
-	}
+    public void setOwner(TornadoDevice owner) {
+        global.setOwner(owner);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(streamIn ? "SI" : "--");
+        sb.append(streamOut ? "SO" : "--");
+        sb.append(" ");
+
+        if (device != null) {
+            sb.append(device.toString()).append(" ");
+        }
+        sb.append(global.toString()).append(" ");
+        return sb.toString();
+    }
 }
