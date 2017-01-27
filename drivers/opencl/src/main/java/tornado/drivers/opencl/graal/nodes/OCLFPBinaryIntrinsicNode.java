@@ -92,6 +92,9 @@ public class OCLFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
             case FMAX:
                 result = gen.genFloatMax(x, y);
                 break;
+            case POW:
+                result = gen.genFloatPow(x, y);
+                break;
             default:
                 throw shouldNotReachHere();
         }
@@ -107,6 +110,8 @@ public class OCLFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
                 return Math.min(x, y);
             case FMAX:
                 return Math.max(x, y);
+            case POW:
+                return Math.pow(x, y);
             default:
                 throw new TornadoInternalError("unknown op %s", op);
         }

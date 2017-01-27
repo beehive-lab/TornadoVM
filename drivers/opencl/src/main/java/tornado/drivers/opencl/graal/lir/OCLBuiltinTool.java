@@ -298,8 +298,8 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatPow(Value x, Value y) {
-        unimplemented();
-        return null;
+        trace("genFloatPow: pow(%s,%s)", x, y);
+        return new OCLBinary.Intrinsic(FLOAT_POW, LIRKind.combine(x, y), x, y);
     }
 
     public Value genFloatPown(Value x, Value y) {
