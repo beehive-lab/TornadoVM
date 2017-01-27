@@ -15,10 +15,9 @@ import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDevice;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.OCLDriver;
-import tornado.drivers.opencl.graal.OCLInstalledCode;
 import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
-import tornado.drivers.opencl.graal.compiler.OCLCompiler;
+import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import tornado.drivers.opencl.mm.*;
 import tornado.meta.Meta;
 import tornado.runtime.api.CompilableTask;
@@ -28,6 +27,8 @@ import tornado.runtime.sketcher.TornadoSketcher;
 
 import static tornado.common.Tornado.FORCE_ALL_TO_GPU;
 import static tornado.common.exceptions.TornadoInternalError.*;
+import static tornado.drivers.opencl.graal.backend.OCLBackend.SHOW_OPENCL;
+import static tornado.drivers.opencl.graal.compiler.OCLCompiler.compileSketchForDevice;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class OCLDeviceMapping implements TornadoDevice {
@@ -96,6 +97,7 @@ public class OCLDeviceMapping implements TornadoDevice {
         return findDriver().getBackend(platformIndex, deviceIndex);
     }
 
+    @Override
     public void reset() {
         getBackend().reset();
     }
@@ -146,43 +148,49 @@ public class OCLDeviceMapping implements TornadoDevice {
 
     @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {
+        final OCLDeviceContext deviceContext = getDeviceContext();
+
         if (task instanceof CompilableTask) {
             final CompilableTask executable = (CompilableTask) task;
 //			final long t0 = System.nanoTime();
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime()
                     .resolveMethod(executable.getMethod());
+
+            if (deviceContext.isCached(resolvedMethod.getName())) {
+                return deviceContext.getCode(resolvedMethod.getName());
+            }
 //			final long t1 = System.nanoTime();
             final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
 
-            final OCLInstalledCode code = OCLCompiler.compileSketchForDevice(
+            final OCLCompilationResult result = compileSketchForDevice(
                     sketch, task.getArguments(), task.meta(),
                     (OCLProviders) getBackend().getProviders(), getBackend());
-//			final long t2 = System.nanoTime();
-//			System.out.printf("resolve : %.9f s\n",(t1-t0)*1e-9);
-//			System.out.printf("compiler: %.9f s\n",(t2-t1)*1e-9);
-            if (OCLBackend.SHOW_OPENCL) {
+
+            if (SHOW_OPENCL) {
                 String filename = getFile(executable.getMethodName());
                 // Tornado.info("Generated code for device %s - %s\n",
                 // deviceContext.getDevice().getName(), filename);
                 try {
                     PrintWriter fileOut = new PrintWriter(filename);
-                    String source = new String(code.getCode(), "ASCII");
+                    String source = new String(result.getTargetCode(), "ASCII");
                     fileOut.println(source.trim());
                     fileOut.close();
                 } catch (UnsupportedEncodingException | FileNotFoundException e) {
                     e.printStackTrace();
-                    // Tornado.warn("Unable to write source to file: %s",
-                    // e.getMessage());
                 }
             }
-            return code;
+            return deviceContext.installCode(result);
         } else if (task instanceof PrebuiltTask) {
             final PrebuiltTask executable = (PrebuiltTask) task;
+            if (deviceContext.isCached(executable.getEntryPoint())) {
+                return deviceContext.getCode(executable.getEntryPoint());
+            }
+
             final Path path = Paths.get(executable.getFilename());
             guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
             try {
                 final byte[] source = Files.readAllBytes(path);
-                return getBackend().getCodeCache().addMethod(null, executable.getEntryPoint(),
+                return deviceContext.installCode(executable.getEntryPoint(),
                         source);
             } catch (IOException e) {
                 e.printStackTrace();

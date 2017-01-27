@@ -8,16 +8,13 @@ import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.enums.OCLMemFlags;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
-import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
-import tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import tornado.drivers.opencl.runtime.OCLMeta;
 import tornado.meta.Meta;
 import tornado.meta.domain.DomainTree;
 import tornado.meta.domain.IntDomain;
 
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
@@ -110,10 +107,10 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
 //    	initFP64Code = OCLCompiler.compileCodeForDevice(
 //				TornadoRuntime.resolveMethod(getMethod("initFP64",double[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
-        initFP32Code = OCLCompiler.compileCodeForDevice(
-                getTornadoRuntime().resolveMethod(getMethod("initFP32", float[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
-        initU32Code = OCLCompiler.compileCodeForDevice(
-                getTornadoRuntime().resolveMethod(getMethod("initU32", int[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
+//        initFP32Code = OCLCompiler.compileCodeForDevice(
+//                getTornadoRuntime().resolveMethod(getMethod("initFP32", float[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
+//        initU32Code = OCLCompiler.compileCodeForDevice(
+//                getTornadoRuntime().resolveMethod(getMethod("initU32", int[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
         initCallStack = createCallStack(4);
 
     }

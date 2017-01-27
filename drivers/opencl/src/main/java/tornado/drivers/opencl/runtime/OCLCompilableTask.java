@@ -1,21 +1,13 @@
 package tornado.drivers.opencl.runtime;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.api.Event;
 import tornado.common.Tornado;
 import tornado.common.TornadoDevice;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.runtime.api.CompilableTask;
-
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLCompilableTask extends CompilableTask {
 
@@ -99,21 +91,21 @@ public class OCLCompilableTask extends CompilableTask {
         shouldCompile = false;
     }
 
-    public void loadFromFile(String filename) {
-        final Path path = Paths.get(filename);
-        guarantee(path.toFile().exists(), "file does not exist: %s", filename);
-
-        final ResolvedJavaMethod resolvedMethod = activeBackend.getProviders()
-                .getMetaAccess().lookupJavaMethod(method);
-        try {
-            final byte[] source = Files.readAllBytes(path);
-            activeCode = activeBackend.getCodeCache().addMethod(resolvedMethod,
-                    source);
-
-        } catch (IOException e) {
-            shouldNotReachHere();
-        }
-
-    }
-
+//    public void loadFromFile(String filename) {
+//        final Path path = Paths.get(filename);
+//        guarantee(path.toFile().exists(), "file does not exist: %s", filename);
+//
+//        final ResolvedJavaMethod resolvedMethod = activeBackend.getProviders()
+//                .getMetaAccess().lookupJavaMethod(method);
+//        try {
+//            final byte[] source = Files.readAllBytes(path);
+//            ((OCLDeviceMapping) mapping).i
+//            activeCode = activeBackend.getCodeCache().addMethod(resolvedMethod,
+//                    source);
+//
+//        } catch (IOException e) {
+//            shouldNotReachHere();
+//        }
+//
+//    }
 }

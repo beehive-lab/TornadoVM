@@ -55,7 +55,7 @@ public class OCLHotSpotBackendFactory {
 
         OCLArchitecture arch = new OCLArchitecture(wordKind, device.getByteOrder());
         OCLTargetDescription target = new OCLTargetDescription(arch);
-        OCLCodeCache codeCache = new OCLCodeCache(target);
+        OCLCodeProvider codeCache = new OCLCodeProvider(target);
         OCLDeviceContext deviceContext = openclContext.createDeviceContext(device.getIndex());
 
         OCLProviders providers;
@@ -84,7 +84,6 @@ public class OCLHotSpotBackendFactory {
         }
         try (InitTimer rt = timer("instantiate backend")) {
             OCLBackend backend = new OCLBackend(providers, target, codeCache, openclContext, deviceContext);
-            codeCache.setBackend(backend);
             return backend;
         }
     }

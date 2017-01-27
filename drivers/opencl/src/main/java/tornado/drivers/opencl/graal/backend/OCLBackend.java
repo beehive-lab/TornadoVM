@@ -18,9 +18,6 @@ import com.oracle.graal.lir.gen.LIRGeneratorTool;
 import com.oracle.graal.nodes.StructuredGraph;
 import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
 import com.oracle.graal.phases.tiers.SuitesProvider;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -30,7 +27,6 @@ import jdk.vm.ci.meta.*;
 import tornado.api.Vector;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
-import tornado.common.enums.Access;
 import tornado.drivers.opencl.OCLContext;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.OCLTargetDescription;
@@ -42,7 +38,6 @@ import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.mm.OCLByteBuffer;
 import tornado.graal.backend.TornadoBackend;
 import tornado.lang.CompilerInternals;
-import tornado.meta.Meta;
 
 import static tornado.common.Tornado.DEBUG_KERNEL_ARGS;
 import static tornado.common.exceptions.TornadoInternalError.*;
@@ -68,14 +63,14 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     final OCLArchitecture architecture;
     final OCLContext openclContext;
     final OCLDeviceContext deviceContext;
-    final OCLCodeCache codeCache;
+    final OCLCodeProvider codeCache;
     OCLInstalledCode lookupCode;
     final AtomicInteger id = new AtomicInteger(0);
 
     public OCLBackend(
             OCLProviders providers,
             OCLTargetDescription target,
-            OCLCodeCache codeCache,
+            OCLCodeProvider codeCache,
             OCLContext openclContext,
             OCLDeviceContext deviceContext) {
         super(providers);
@@ -164,8 +159,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         /*
          * Retrive the address of the heap on the device
          */
-        lookupCode = OCLCompiler.compileCodeForDevice(
+        OCLCompilationResult result = OCLCompiler.compileCodeForDevice(
                 getTornadoRuntime().resolveMethod(getLookupMethod()), null, null, (OCLProviders) getProviders(), this);
+        lookupCode = deviceContext.installCode(result);
 
         deviceContext.getMemoryManager().init(this, readHeapBaseAddress());
     }
@@ -434,37 +430,36 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new OCLNodeLIRBuilder(graph, lirGen, new OCLNodeMatchRules(lirGen));
     }
 
-    public OCLInstalledCode compile(final Method method, final Object[] parameters,
-            final Access[] access, final Meta meta) {
-        Tornado.info("invoke: %s", method.getName());
-        Tornado.info("args: %s", RuntimeUtilities.formatArray(parameters));
-        Tornado.info("access: %s", RuntimeUtilities.formatArray(access));
-        Tornado.info("meta: ");
-        for (Object provider : meta.providers()) {
-            Tornado.info("\t%s", provider.toString().trim());
-        }
-
-        final ResolvedJavaMethod resolvedMethod = getProviders().getMetaAccess().lookupJavaMethod(
-                method);
-        final OCLInstalledCode methodCode = OCLCompiler.compileCodeForDevice(resolvedMethod,
-                parameters, meta, (OCLProviders) getProviders(), this);
-
-        if (SHOW_OPENCL) {
-            String filename = getFile(method.getName() + "-" + meta.hashCode());
-            Tornado.info("Generated code for device %s - %s\n",
-                    deviceContext.getDevice().getName(), filename);
-
-            try (PrintWriter fileOut = new PrintWriter(filename)) {
-                String source = new String(methodCode.getCode(), "ASCII");
-                fileOut.println(source.trim());
-            } catch (UnsupportedEncodingException | FileNotFoundException e) {
-                Tornado.warn("Unable to write source to file: %s", e.getMessage());
-            }
-        }
-
-        return methodCode;
-    }
-
+//    public OCLInstalledCode compile(final Method method, final Object[] parameters,
+//            final Access[] access, final Meta meta) {
+//        info("invoke: %s", method.getName());
+//        info("args: %s", RuntimeUtilities.formatArray(parameters));
+//        info("access: %s", RuntimeUtilities.formatArray(access));
+//        info("meta: ");
+//        for (Object provider : meta.providers()) {
+//            Tornado.info("\t%s", provider.toString().trim());
+//        }
+//
+//        final ResolvedJavaMethod resolvedMethod = getProviders().getMetaAccess().lookupJavaMethod(
+//                method);
+//        final OCLInstalledCode methodCode = compileCodeForDevice(resolvedMethod,
+//                parameters, meta, (OCLProviders) getProviders(), this);
+//
+//        if (SHOW_OPENCL) {
+//            String filename = getFile(method.getName() + "-" + meta.hashCode());
+//            Tornado.info("Generated code for device %s - %s\n",
+//                    deviceContext.getDevice().getName(), filename);
+//
+//            try (PrintWriter fileOut = new PrintWriter(filename)) {
+//                String source = new String(methodCode.getCode(), "ASCII");
+//                fileOut.println(source.trim());
+//            } catch (UnsupportedEncodingException | FileNotFoundException e) {
+//                Tornado.warn("Unable to write source to file: %s", e.getMessage());
+//            }
+//        }
+//
+//        return methodCode;
+//    }
     private static String getFile(String name) {
         return String.format("%s/%s.cl", OPENCL_PATH.trim(), name.trim());
     }
@@ -476,7 +471,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     @Override
-    public OCLCodeCache getCodeCache() {
+    public OCLCodeProvider getCodeCache() {
         return codeCache;
     }
 
@@ -488,7 +483,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     public void reset() {
         getDeviceContext().reset();
-        codeCache.reset();
     }
 
     @Override

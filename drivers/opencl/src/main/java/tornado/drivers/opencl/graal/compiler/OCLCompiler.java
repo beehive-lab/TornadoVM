@@ -37,7 +37,10 @@ import jdk.vm.ci.meta.*;
 import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.OCLTargetDescription;
-import tornado.drivers.opencl.graal.*;
+import tornado.drivers.opencl.graal.OCLCodeProvider;
+import tornado.drivers.opencl.graal.OCLCodeUtil;
+import tornado.drivers.opencl.graal.OCLProviders;
+import tornado.drivers.opencl.graal.OCLSuitesProvider;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLLIRGenerationPhase.LIRGenerationContext;
 import tornado.drivers.opencl.runtime.OCLMemoryRegions;
@@ -407,7 +410,7 @@ public class OCLCompiler {
 
     public static byte[] compileGraphForDevice(StructuredGraph graph, Meta meta, String entryPoint, OCLProviders providers, OCLBackend backend) {
         throw unimplemented();
-//        final OCLCodeCache codeCache = backend.getCodeCache();
+//        final OCLCodeProvider codeCache = backend.getCodeCache();
 //
 //        if (!meta.hasProvider(OCLMemoryRegions.class)) {
 //            meta.addProvider(OCLMemoryRegions.class, new OCLMemoryRegions());
@@ -464,14 +467,14 @@ public class OCLCompiler {
 //        return compilationResult.getTargetCode();
     }
 
-    public static OCLInstalledCode compileCodeForDevice(ResolvedJavaMethod resolvedMethod,
+    public static OCLCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod,
             Object[] args, Meta meta, OCLProviders providers, OCLBackend backend) {
         Tornado.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext()
                 .getDevice().getName());
         TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
         final StructuredGraph kernelGraph = new StructuredGraph(resolvedMethod,
                 AllowAssumptions.YES, id);
-        final OCLCodeCache codeCache = backend.getCodeCache();
+        final OCLCodeProvider codeCache = backend.getCodeCache();
 
         if (meta != null && !meta.hasProvider(OCLMemoryRegions.class)) {
             meta.addProvider(OCLMemoryRegions.class, new OCLMemoryRegions());
@@ -522,10 +525,10 @@ public class OCLCompiler {
             }
         }
 
-        return codeCache.addMethod(resolvedMethod, kernelCompResult.getTargetCode());
+        return kernelCompResult;
     }
 
-    public static OCLInstalledCode compileSketchForDevice(Sketch sketch,
+    public static OCLCompilationResult compileSketchForDevice(Sketch sketch,
             Object[] args, Meta taskMeta, OCLProviders providers, OCLBackend backend) {
 
         final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().getReadonlyCopy().copy();
@@ -535,7 +538,7 @@ public class OCLCompiler {
                 .getDevice().getName()
         );
 
-        final OCLCodeCache codeCache = backend.getCodeCache();
+        final OCLCodeProvider codeCache = backend.getCodeCache();
 
         if (taskMeta != null && !taskMeta.hasProvider(OCLMemoryRegions.class)) {
             taskMeta.addProvider(OCLMemoryRegions.class, new OCLMemoryRegions());
@@ -586,6 +589,6 @@ public class OCLCompiler {
 //            }
         }
 
-        return codeCache.addMethod(resolvedMethod, kernelCompResult.getTargetCode());
+        return kernelCompResult;
     }
 }

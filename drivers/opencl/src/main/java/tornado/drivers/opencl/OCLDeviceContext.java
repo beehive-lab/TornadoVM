@@ -6,6 +6,8 @@ import tornado.api.Event;
 import tornado.common.Initialisable;
 import tornado.common.TornadoLogger;
 import tornado.drivers.opencl.enums.OCLMemFlags;
+import tornado.drivers.opencl.graal.OCLInstalledCode;
+import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import tornado.drivers.opencl.mm.OCLMemoryManager;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 
@@ -23,6 +25,8 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
     private boolean needsBump;
     private final long bumpBuffer;
 
+    private final OCLCodeCache codeCache;
+
     protected OCLDeviceContext(
             OCLDevice device,
             OCLCommandQueue queue,
@@ -31,6 +35,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         this.queue = queue;
         this.context = context;
         this.memoryManager = new OCLMemoryManager(this);
+        this.codeCache = new OCLCodeCache(this);
 
         needsBump = false;
         for (String bumpDevice : BUMP_DEVICES) {
@@ -86,8 +91,12 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         return queue.enqueueBarrier();
     }
 
-    public OCLProgram createProgram(byte[] source, long[] lengths) {
-        return context.createProgram(source, lengths, this);
+    public OCLProgram createProgramWithSource(byte[] source, long[] lengths) {
+        return context.createProgramWithSource(source, lengths, this);
+    }
+
+    public OCLProgram createProgramWithBinary(byte[] binary, long[] lengths) {
+        return context.createProgramWithBinary(device.getId(), binary, lengths, this);
     }
 
     public void printEvents() {
@@ -280,7 +289,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
     public void reset() {
         queue.reset();
         memoryManager.reset();
-
+        codeCache.reset();
     }
 
     public OCLDeviceMapping asMapping() {
@@ -328,5 +337,21 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
 
     public void flushEvents() {
         queue.flushEvents();
+    }
+
+    public OCLInstalledCode installCode(OCLCompilationResult result) {
+        return installCode(result.getName(), result.getTargetCode());
+    }
+
+    public OCLInstalledCode installCode(String entryPoint, byte[] code) {
+        return codeCache.installSource(entryPoint, code);
+    }
+
+    public boolean isCached(String entryPoint) {
+        return codeCache.isCached(entryPoint);
+    }
+
+    public OCLInstalledCode getCode(String entryPoint) {
+        return codeCache.getCode(entryPoint);
     }
 }

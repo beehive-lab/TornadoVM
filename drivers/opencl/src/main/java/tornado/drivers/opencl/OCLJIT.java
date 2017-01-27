@@ -2,16 +2,16 @@ package tornado.drivers.opencl;
 
 import java.lang.reflect.Method;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.common.TornadoDevice;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
 import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
+import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import tornado.drivers.opencl.runtime.OCLMeta;
 import tornado.meta.Meta;
 
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
-
-import tornado.common.TornadoDevice;
 
 public class OCLJIT {
 
@@ -47,8 +47,8 @@ public class OCLJIT {
             Meta meta = new OCLMeta(method, false);
             meta.addProvider(TornadoDevice.class, OpenCL.defaultDevice());
 
-            OCLInstalledCode code = OCLCompiler.compileCodeForDevice(resolvedMethod, new Object[]{}, meta, (OCLProviders) backend.getProviders(), backend);
-
+            OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolvedMethod, new Object[]{}, meta, (OCLProviders) backend.getProviders(), backend);
+            OCLInstalledCode code = OpenCL.defaultDevice().getDeviceContext().installCode(result);
             System.out.printf("Installed Code:\n");
             for (byte b : code.getCode()) {
                 System.out.printf("%c", b);
