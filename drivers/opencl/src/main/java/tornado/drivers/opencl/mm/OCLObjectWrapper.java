@@ -19,6 +19,8 @@ import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.runtime.TornadoRuntime.getVMConfig;
 import static tornado.runtime.TornadoRuntime.getVMRuntime;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLObjectWrapper implements ObjectBuffer {
 
@@ -41,7 +43,6 @@ public class OCLObjectWrapper implements ObjectBuffer {
     private boolean isFinal;
     private final int[] internalEvents;
 
-//    private final HotSpotGraalRuntimeProvider runtime;
     public OCLObjectWrapper(final OCLDeviceContext device, Object object) {
         this.type = object.getClass();
         this.deviceContext = device;
@@ -49,7 +50,6 @@ public class OCLObjectWrapper implements ObjectBuffer {
         valid = false;
         isFinal = true;
 
-//        runtime = getVMRuntime();
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset;
         bufferOffset = -1;
@@ -73,6 +73,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
         internalEvents = new int[fields.length];
 
         int index = 0;
+
         // calculate object size
         bytes = (fields.length > 0) ? fields[0].offset() : fieldsOffset;
         for (HotSpotResolvedJavaField field : fields) {
@@ -103,7 +104,6 @@ public class OCLObjectWrapper implements ObjectBuffer {
                     wrappedField = new OCLFloatArrayWrapper(device, isFinal);
                 } else if (type == double[].class) {
                     wrappedField = new OCLDoubleArrayWrapper(device, isFinal);
-
                 } else if (type == long[].class) {
                     wrappedField = new OCLLongArrayWrapper(device, isFinal);
                 } else if (type == short[].class) {
