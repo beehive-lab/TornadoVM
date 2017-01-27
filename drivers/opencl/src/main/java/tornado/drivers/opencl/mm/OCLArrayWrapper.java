@@ -11,6 +11,7 @@ import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.common.Tornado.*;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.runtime.TornadoRuntime.getVMConfig;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
