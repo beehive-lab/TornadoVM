@@ -341,6 +341,7 @@ public final class OCLAssembler extends Assembler {
 
         public static final OCLBinaryIntrinsic FLOAT_MIN = new OCLBinaryIntrinsic("fmin");
         public static final OCLBinaryIntrinsic FLOAT_MAX = new OCLBinaryIntrinsic("fmax");
+        public static final OCLBinaryIntrinsic FLOAT_POW = new OCLBinaryIntrinsic("pow");
 
         public static final OCLBinaryIntrinsic ATOMIC_ADD = new OCLBinaryIntrinsic("atomic_add");
         public static final OCLBinaryIntrinsic ATOMIC_SUB = new OCLBinaryIntrinsic("atomic_sub");
