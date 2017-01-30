@@ -10,8 +10,12 @@ import tornado.common.Tornado;
 import tornado.common.TornadoLogger;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.enums.OCLBufferCreateType;
-import tornado.drivers.opencl.enums.OCLCommandQueueProperties;
 import tornado.drivers.opencl.exceptions.OCLException;
+
+import static tornado.common.Tornado.ENABLE_OOO_EXECUTION;
+import static tornado.common.Tornado.ENABLE_PROFILING;
+import static tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
+import static tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
 
 @SuppressWarnings("restriction")
 public class OCLContext extends TornadoLogger {
@@ -128,9 +132,9 @@ public class OCLContext extends TornadoLogger {
                     .split(" ")[1].replace(".", "")) * 10;
             final int deviceVersion = Integer.parseInt(device.getVersion()
                     .split(" ")[1].replace(".", "")) * 10;
-            Tornado.info("platform: version=%s (%s) on %s", platformVersion,
+            info("platform: version=%s (%s) on %s", platformVersion,
                     platform.getVersion(), device.getName());
-            Tornado.info("device  : version=%s (%s) on %s", deviceVersion,
+            info("device  : version=%s (%s) on %s", deviceVersion,
                     device.getVersion(), device.getName());
 
             queues[index] = new OCLCommandQueue(queueId, properties,
@@ -142,12 +146,12 @@ public class OCLContext extends TornadoLogger {
 
     public void createCommandQueue(int index) {
         long properties = 0;
-        if (Tornado.ENABLE_PROFILING) {
-            properties |= OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
+        if (ENABLE_PROFILING) {
+            properties |= CL_QUEUE_PROFILING_ENABLE;
         }
 
-        if (Tornado.ENABLE_OOO_EXECUTION) {
-            properties |= OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
+        if (ENABLE_OOO_EXECUTION) {
+            properties |= CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
         }
         createCommandQueue(index, properties);
     }
@@ -160,9 +164,9 @@ public class OCLContext extends TornadoLogger {
 
     public void createAllCommandQueues() {
         long properties = 0;
-        properties |= OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
-        if (Tornado.ENABLE_OOO_EXECUTION) {
-            properties |= OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
+        properties |= CL_QUEUE_PROFILING_ENABLE;
+        if (ENABLE_OOO_EXECUTION) {
+            properties |= CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
         }
         createAllCommandQueues(properties);
     }
