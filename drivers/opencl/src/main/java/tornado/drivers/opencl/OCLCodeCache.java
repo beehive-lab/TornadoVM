@@ -19,10 +19,13 @@ import static tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
 
 public class OCLCodeCache {
 
+    private final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", "False"));
     private final boolean OPENCL_LOAD_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.load", "False"));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", "False"));
+    private final boolean OPENCL_DUMP_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.dump", "False"));
     private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "opencl-cache");
+    private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "opencl-src");
 
     private final Map<String, OCLInstalledCode> cache;
     private final OCLDeviceContext deviceContext;
@@ -40,6 +43,22 @@ public class OCLCodeCache {
     private Path resolveCacheDir() {
         final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
         final Path outDir = Paths.get(OPENCL_CACHE_DIR + "/" + deviceDir);
+        if (!Files.exists(outDir)) {
+            try {
+                Files.createDirectories(outDir);
+            } catch (IOException e) {
+                error("unable to create cache dir: %s", outDir.toString());
+                error(e.getMessage());
+            }
+        }
+
+        TornadoInternalError.guarantee(Files.isDirectory(outDir), "cache directory is not a directory: %s", outDir.toAbsolutePath().toString());
+        return outDir;
+    }
+
+    private Path resolveSourceDir() {
+        final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
+        final Path outDir = Paths.get(OPENCL_SOURCE_DIR + "/" + deviceDir);
         if (!Files.exists(outDir)) {
             try {
                 Files.createDirectories(outDir);
@@ -85,6 +104,16 @@ public class OCLCodeCache {
                 System.out.printf("compile: kernel %s opencl %.9f\n", entryPoint, (t1 - t0) * 1e-9f);
             }
             cache.put(entryPoint, code);
+            if (OPENCL_DUMP_SOURCE) {
+                final Path outDir = resolveSourceDir();
+                File file = new File(outDir + "/" + entryPoint + OPENCL_SOURCE_SUFFIX);
+                try (FileOutputStream fos = new FileOutputStream(file);) {
+                    fos.write(source);
+                } catch (IOException e) {
+                    error("unable to dump source: ", e.getMessage());
+                }
+
+            }
 
             // BUG Apple does not seem to like implementing the OpenCL spec properly, this causes a sigfault.
             if ((OPENCL_CACHE_ENABLE || OPENCL_DUMP_BINS) && !deviceContext.getPlatformContext().getPlatform().getVendor().equalsIgnoreCase("Apple")) {
@@ -109,6 +138,10 @@ public class OCLCodeCache {
         info("Installing binary for %s into code cache", entryPoint);
         final OCLProgram program = deviceContext.createProgramWithBinary(binary,
                 new long[]{binary.length});
+
+        if (program == null) {
+            throw new OCLException("unable to load binary for " + entryPoint);
+        }
 
         final long t0 = System.nanoTime();
         program.build("");
