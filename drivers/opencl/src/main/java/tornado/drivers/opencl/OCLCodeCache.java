@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.enums.OCLBuildStatus;
+import tornado.drivers.opencl.exceptions.OCLException;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
 
 import static tornado.common.Tornado.*;
@@ -98,20 +99,19 @@ public class OCLCodeCache {
         return code;
     }
 
-    public OCLInstalledCode installBinary(String entryPoint, byte[] binary) {
+    public OCLInstalledCode installBinary(String entryPoint, byte[] binary) throws OCLException {
         return installBinary(entryPoint, binary, false);
     }
 
-    private OCLInstalledCode installBinary(String entryPoint, byte[] binary, boolean alreadyCached) {
+    private OCLInstalledCode installBinary(String entryPoint, byte[] binary, boolean alreadyCached) throws OCLException {
         OCLInstalledCode code = null;
 
         info("Installing binary for %s into code cache", entryPoint);
         final OCLProgram program = deviceContext.createProgramWithBinary(binary,
                 new long[]{binary.length});
 
-        // TODO add support for passing compiler optimisation flags here
         final long t0 = System.nanoTime();
-        program.build(OPENCL_CFLAGS);
+        program.build("");
         final long t1 = System.nanoTime();
 
         final OCLBuildStatus status = program.getStatus(deviceContext.getDeviceId());
@@ -160,10 +160,14 @@ public class OCLCodeCache {
 
     private void loadBinary(Path path) {
         final File file = path.toFile();
+        if (file.length() == 0) {
+            return;
+        }
+        info("loading %s into cache", file.getAbsoluteFile());
         try {
             final byte[] binary = Files.readAllBytes(path);
             installBinary(file.getName(), binary, true);
-        } catch (IOException e) {
+        } catch (OCLException | IOException e) {
             error("unable to load binary: %s (%s)", file, e.getMessage());
         }
     }

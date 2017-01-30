@@ -4,13 +4,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 import tornado.common.TornadoLogger;
 import tornado.drivers.opencl.enums.OCLBuildStatus;
-import tornado.drivers.opencl.enums.OCLProgramBuildInfo;
-import tornado.drivers.opencl.enums.OCLProgramInfo;
 import tornado.drivers.opencl.exceptions.OCLException;
+
+import static tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_UNKNOWN;
+import static tornado.drivers.opencl.enums.OCLProgramBuildInfo.CL_PROGRAM_BUILD_STATUS;
+import static tornado.drivers.opencl.enums.OCLProgramInfo.*;
 
 public class OCLProgram extends TornadoLogger {
 
@@ -46,14 +49,14 @@ public class OCLProgram extends TornadoLogger {
     native static long clCreateKernel(long programId, String name)
             throws OCLException;
 
-    native static void getBinaries(long programId, long numDevices, byte[] buffer) throws OCLException;
+    native static void getBinaries(long programId, long numDevices, ByteBuffer buffer) throws OCLException;
 
     public OCLBuildStatus getStatus(long deviceId) {
-        OCLBuildStatus result = OCLBuildStatus.CL_BUILD_UNKNOWN;
+        OCLBuildStatus result = CL_BUILD_UNKNOWN;
         buffer.clear();
         try {
             clGetProgramBuildInfo(id, deviceId,
-                    OCLProgramBuildInfo.CL_PROGRAM_BUILD_STATUS.getValue(),
+                    CL_PROGRAM_BUILD_STATUS.getValue(),
                     buffer.array());
             result = OCLBuildStatus.toEnum(buffer.getInt());
         } catch (OCLException e) {
@@ -67,7 +70,7 @@ public class OCLProgram extends TornadoLogger {
         buffer.clear();
         try {
             clGetProgramBuildInfo(id, deviceId,
-                    OCLProgramBuildInfo.CL_PROGRAM_BUILD_STATUS.getValue(),
+                    CL_PROGRAM_BUILD_STATUS.getValue(),
                     buffer.array());
 
             result = new String(buffer.array(), "ASCII");
@@ -89,15 +92,16 @@ public class OCLProgram extends TornadoLogger {
             error(e.getMessage());
         }
 
-        for (long device : devices) {
-            if (getStatus(device) != OCLBuildStatus.CL_BUILD_SUCCESS) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(String.format("build: device=0x%x, status=%s:\n",
-                        device, getStatus(device)));
-                sb.append(getBuildLog(device));
-                error(sb.toString().trim());
-            }
-        }
+//        for (long device : devices) {
+//            if (getStatus(device) != CL_BUILD_SUCCESS) {
+//                StringBuilder sb = new StringBuilder();
+//                sb.append(String.format("build: device=0x%x, status=%s:\n",
+//                        device, getStatus(device)));
+//                sb.append(getBuildLog(device));
+//                error(sb.toString().trim());
+//                return false;
+//            }
+//        }
     }
 
     public void cleanup() {
@@ -117,7 +121,7 @@ public class OCLProgram extends TornadoLogger {
         buffer.clear();
         try {
             clGetProgramInfo(id,
-                    OCLProgramInfo.CL_PROGRAM_NUM_DEVICES.getValue(),
+                    CL_PROGRAM_NUM_DEVICES.getValue(),
                     buffer.array());
             result = buffer.getInt();
         } catch (OCLException e) {
@@ -133,7 +137,7 @@ public class OCLProgram extends TornadoLogger {
         buffer.clear();
         try {
             clGetProgramInfo(id,
-                    OCLProgramInfo.CL_PROGRAM_DEVICES.getValue(),
+                    CL_PROGRAM_DEVICES.getValue(),
                     buffer.array());
             for (int i = 0; i < numDevices; i++) {
                 result[i] = buffer.getLong();
@@ -151,7 +155,7 @@ public class OCLProgram extends TornadoLogger {
         buffer.clear();
         try {
             clGetProgramInfo(id,
-                    OCLProgramInfo.CL_PROGRAM_BINARY_SIZES.getValue(),
+                    CL_PROGRAM_BINARY_SIZES.getValue(),
                     buffer.array());
             for (int i = 0; i < numDevices; i++) {
                 result[i] = buffer.getLong();
@@ -167,32 +171,38 @@ public class OCLProgram extends TornadoLogger {
 
         final long[] devices = getDevices();
         final int numDevices = getNumDevices();
-
         final long[] sizes = getBinarySizes();
+
+        int index = 0;
+        int offset = 0;
+        for (; index < devices.length; index++) {
+            if (devices[index] == deviceContext.getDeviceId()) {
+                break;
+            }
+            offset += sizes[index];
+        }
 
         int totalSize = 0;
         for (long size : sizes) {
-            totalSize += size;
+            totalSize += (int) size;
         }
 
-        final ByteBuffer binary = ByteBuffer.allocate(totalSize);
+        final ByteBuffer binary = ByteBuffer.allocateDirect(totalSize);
         try {
-            getBinaries(id, numDevices, binary.array());
+            getBinaries(id, numDevices, binary);
+
+            info("dumping binary %s", filenamePrefix);
+            try (FileOutputStream fis = new FileOutputStream(filenamePrefix);
+                    FileChannel vChannel = fis.getChannel();) {
+                binary.position(offset);
+                binary.limit(offset + (int) sizes[index]);
+                vChannel.write(binary);
+            } catch (IOException e) {
+                error("unable to dump binary: %s", e.getMessage());
+            }
+
         } catch (OCLException e) {
             error("unable to retrieve binary from OpenCL driver: %s", e.getMessage());
-        }
-
-        int start = 0;
-        for (int i = 0; i < numDevices; i++) {
-            if (devices[i] == deviceContext.getDeviceId()) {
-                info("dumping binary %s", filenamePrefix);
-                try (FileOutputStream fis = new FileOutputStream(filenamePrefix);) {
-                    fis.write(binary.array(), start, (int) sizes[i]);
-                } catch (IOException e) {
-                    error("unable to dump binary: %s", e.getMessage());
-                }
-            }
-            start += sizes[i];
         }
 
     }
