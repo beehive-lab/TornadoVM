@@ -4,11 +4,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 import tornado.common.TornadoLogger;
-import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.enums.OCLBuildStatus;
 import tornado.drivers.opencl.enums.OCLProgramBuildInfo;
 import tornado.drivers.opencl.enums.OCLProgramInfo;
@@ -26,7 +24,7 @@ public class OCLProgram extends TornadoLogger {
         this.id = id;
         this.deviceContext = deviceContext;
         this.devices = new long[]{deviceContext.getDeviceId()};
-        this.kernels = new ArrayList<OCLKernel>();
+        this.kernels = new ArrayList<>();
         this.buffer = ByteBuffer.allocate(8192);
         this.buffer.order(OpenCL.BYTE_ORDER);
     }
@@ -129,6 +127,24 @@ public class OCLProgram extends TornadoLogger {
         return result;
     }
 
+    public long[] getDevices() {
+        final int numDevices = getNumDevices();
+        long result[] = new long[numDevices];
+        buffer.clear();
+        try {
+            clGetProgramInfo(id,
+                    OCLProgramInfo.CL_PROGRAM_DEVICES.getValue(),
+                    buffer.array());
+            for (int i = 0; i < numDevices; i++) {
+                result[i] = buffer.getLong();
+            }
+        } catch (OCLException e) {
+            error(e.getMessage());
+            e.printStackTrace();
+        }
+        return result;
+    }
+
     public long[] getBinarySizes() {
         final int numDevices = getNumDevices();
         long result[] = new long[numDevices];
@@ -148,8 +164,10 @@ public class OCLProgram extends TornadoLogger {
     }
 
     public void dumpBinaries(String filenamePrefix) {
+
+        final long[] devices = getDevices();
         final int numDevices = getNumDevices();
-        TornadoInternalError.guarantee(numDevices == 1, "dumping binaries for multiple devices: %s (%d devices)", filenamePrefix, numDevices);
+
         final long[] sizes = getBinarySizes();
 
         int totalSize = 0;
@@ -160,23 +178,21 @@ public class OCLProgram extends TornadoLogger {
         final ByteBuffer binary = ByteBuffer.allocate(totalSize);
         try {
             getBinaries(id, numDevices, binary.array());
-        } catch (OCLException e1) {
-            e1.printStackTrace();
+        } catch (OCLException e) {
+            error("unable to retrieve binary from OpenCL driver: %s", e.getMessage());
         }
 
+        int start = 0;
         for (int i = 0; i < numDevices; i++) {
-            try {
+            if (devices[i] == deviceContext.getDeviceId()) {
                 info("dumping binary %s", filenamePrefix);
-                FileOutputStream fis = new FileOutputStream(filenamePrefix);
-                FileChannel vChannel = fis.getChannel();
-
-                vChannel.write(binary);
-                vChannel.close();
-                fis.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+                try (FileOutputStream fis = new FileOutputStream(filenamePrefix);) {
+                    fis.write(binary.array(), start, (int) sizes[i]);
+                } catch (IOException e) {
+                    error("unable to dump binary: %s", e.getMessage());
+                }
             }
-
+            start += sizes[i];
         }
 
     }
