@@ -607,7 +607,7 @@ public class OCLCommandQueue extends TornadoLogger {
 
     public int enqueueBarrier(int[] events) {
         final long[] waitEvents = serialiseEvents(events) ? waitEventsBuffer : null;
-        return (openclVersion == 110) ? enqueueBarrier11(waitEvents) : enqueueBarrier12(waitEvents);
+        return (openclVersion < 120) ? enqueueBarrier11(waitEvents) : enqueueBarrier12(waitEvents);
     }
 
     private int enqueueBarrier11(long[] events) {
@@ -631,7 +631,7 @@ public class OCLCommandQueue extends TornadoLogger {
 
     public int enqueueMarker(int[] events) {
         final long[] waitEvents = serialiseEvents(events) ? waitEventsBuffer : null;
-        return (openclVersion == 110) ? enqueueMarker11(waitEvents) : enqueueMarker12(waitEvents);
+        return (openclVersion < 120) ? enqueueMarker11(waitEvents) : enqueueMarker12(waitEvents);
     }
 
     private int enqueueMarker11(long[] events) {
