@@ -156,15 +156,16 @@ public class OCLDeviceMapping implements TornadoDevice {
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime()
                     .resolveMethod(executable.getMethod());
 
-            if (deviceContext.isCached(resolvedMethod.getName())) {
-                return deviceContext.getCode(resolvedMethod.getName());
-            }
 //			final long t1 = System.nanoTime();
             final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
 
             final OCLCompilationResult result = compileSketchForDevice(
                     sketch, task.getArguments(), task.meta(),
                     (OCLProviders) getBackend().getProviders(), getBackend());
+
+            if (deviceContext.isCached(resolvedMethod.getName())) {
+                return deviceContext.getCode(resolvedMethod.getName());
+            }
 
             if (SHOW_OPENCL) {
                 String filename = getFile(executable.getMethodName());
