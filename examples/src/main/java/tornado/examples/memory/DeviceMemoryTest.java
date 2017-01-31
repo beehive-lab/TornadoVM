@@ -1,7 +1,6 @@
 package tornado.examples.memory;
 
 import tornado.api.Parallel;
-import tornado.api.ReadWrite;
 import tornado.drivers.opencl.OpenCL;
 import tornado.drivers.opencl.mm.OCLMemoryManager;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
@@ -38,7 +37,7 @@ public class DeviceMemoryTest {
 
     }
 
-    private static void fill(@ReadWrite int[] data) {
+    private static void fill(int[] data) {
         for (@Parallel int i = 0; i < data.length; i++) {
             data[i] = i;
         }
