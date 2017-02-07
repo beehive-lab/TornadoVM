@@ -387,7 +387,7 @@ public class OCLCommandQueue extends TornadoLogger {
 
         try {
             event = registerEvent(
-                    clEnqueueNDRangeKernel(id, kernel.getId(), dim, globalWorkOffset,
+                    clEnqueueNDRangeKernel(id, kernel.getId(), dim, (openclVersion > 100) ? globalWorkOffset : null,
                             globalWorkSize, localWorkSize, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
                     DESC_PARALLEL_KERNEL, kernel.getId());
         } catch (OCLException e) {
