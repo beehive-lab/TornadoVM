@@ -84,53 +84,6 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clFinish
     OPENCL_SOFT_ERROR("clFinish", clFinish((cl_command_queue) queue_id),);
 }
 
-///*
-// * Class:     jacc_runtime_drivers_opencl_OCLCommandQueue
-// * Method:    clEnqueueReadBuffer
-// * Signature: (JJZJJJ[J)J
-// */
-//JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueReadBuffer
-//(JNIEnv *env, jclass clazz, jlong queue_id, jlong buffer, jboolean blocking, jlong offset, jlong cb, jlong ptr, jlongArray array) {
-//    OPENCL_PROLOGUE;
-//
-//    cl_bool blocking_read = (blocking) ? CL_TRUE : CL_FALSE;
-//    jlong *events = (array != NULL) ? &(*env)->GetPrimitiveArrayCritical(env, array, NULL)[1] : NULL;
-//    jlong len = (array != NULL) ? events[0] : 0;
-//
-//    cl_event event;
-//    OPENCL_SOFT_ERROR("clEnqueueReadBuffer",
-//            clEnqueueReadBuffer((cl_command_queue) queue_id, (cl_mem) buffer, blocking_read, (size_t) offset, (size_t) cb, (void *) ptr, (cl_uint) len, (const cl_event*) events, &event), -1);
-//
-//    if (array != NULL)
-//        (*env)->ReleasePrimitiveArrayCritical(env, array, events, JNI_ABORT);
-//
-//    return (jlong) event;
-//}
-//
-///*
-// * Class:     jacc_runtime_drivers_opencl_OCLCommandQueue
-// * Method:    clEnqueueWriteBuffer
-// * Signature: (JJZJJJ[J)J
-// */
-//JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueWriteBuffer
-//(JNIEnv *env, jclass clazz, jlong queue_id, jlong buffer, jboolean blocking, jlong offset, jlong cb, jlong ptr, jlongArray array) {
-//    OPENCL_PROLOGUE;
-//
-//    cl_bool blocking_write = (blocking) ? CL_TRUE : CL_FALSE;
-//
-//    jlong *events = (array != NULL) ? &(*env)->GetPrimitiveArrayCritical(env, array, NULL)[1] : NULL;
-//    jlong len = (array != NULL) ? events[0] : 0;
-//
-//    cl_event event;
-//    OPENCL_SOFT_ERROR("clEnqueueWriteBuffer",
-//            clEnqueueWriteBuffer((cl_command_queue) queue_id, (cl_mem) buffer, blocking_write, (size_t) offset, (size_t) cb, (void *) ptr, (cl_uint) len, (const cl_event*) events, &event), -1);
-//
-//    if (array != NULL)
-//        (*env)->ReleasePrimitiveArrayCritical(env, array, events, JNI_ABORT);
-//
-//    return (jlong) event;
-//}
-
 /*
  * Class:     jacc_runtime_drivers_opencl_OCLCommandQueue
  * Method:    clEnqueueNDRangeKernel
@@ -141,20 +94,10 @@ JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueNDR
     OPENCL_PROLOGUE;
 
     JNI_ACQUIRE_ARRAY_OR_NULL(jlong, global_work_offset, array1);
-    //    jlong *global_work_offset = (array1 != NULL) ? (*env)->GetPrimitiveArrayCritical(env, array1, NULL) : NULL;
-
     JNI_ACQUIRE_ARRAY_OR_NULL(jlong, global_work_size, array2);
-    //    jlong *global_work_size = (*env)->GetPrimitiveArrayCritical(env, array2, NULL);
-
     JNI_ACQUIRE_ARRAY_OR_NULL(jlong, local_work_size, array3);
-    //    jlong *local_work_size = (array3 != NULL) ? (*env)->GetPrimitiveArrayCritical(env, array3, NULL) : NULL;
 
     OPENCL_DECODE_WAITLIST(array4, events, numEvents);
-    //    jlong *waitList = (array4 != NULL) ? (*env)->GetPrimitiveArrayCritical(env, array4, NULL) : NULL;
-    //    jlong *events = (array4 != NULL) ? &waitList[1] : NULL;
-    //    jsize numEvents = (array4 != NULL) ? waitList[0] : 0;
-
-//    printf("num_events=%d, event1=0x%lx\n", numEvents, events[0]);
 
     cl_event event;
     OPENCL_SOFT_ERROR("clEnqueueNDRangeKernel",
@@ -162,20 +105,8 @@ JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueNDR
 
     OPENCL_RELEASE_WAITLIST(array4);
 
-    //    if (array4 != NULL)
-    //        (*env)->ReleasePrimitiveArrayCritical(env, array4, waitList, JNI_ABORT);
-    JNI_RELEASE_ARRAY(array3, local_work_size);
     JNI_RELEASE_ARRAY(array1, global_work_offset);
     JNI_RELEASE_ARRAY(array2, global_work_size);
-
-    //    if (array3 != NULL)
-    //        (*env)->ReleasePrimitiveArrayCritical(env, array3, local_work_size, JNI_ABORT);
-    //
-    //    if (array1 != NULL)
-    //        (*env)->ReleasePrimitiveArrayCritical(env, array1, global_work_offset, JNI_ABORT);
-    //
-    //    (*env)->ReleasePrimitiveArrayCritical(env, array2, global_work_size, JNI_ABORT);
-
 
     return (jlong) event;
 }
