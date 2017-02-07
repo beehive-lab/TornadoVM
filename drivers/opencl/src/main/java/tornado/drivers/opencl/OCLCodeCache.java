@@ -74,11 +74,19 @@ public class OCLCodeCache {
 
     public OCLInstalledCode installSource(String entryPoint, byte[] source) {
 
-        OCLInstalledCode code = null;
-
         info("Installing code for %s into code cache", entryPoint);
         final OCLProgram program = deviceContext.createProgramWithSource(source,
                 new long[]{source.length});
+
+        if (OPENCL_DUMP_SOURCE) {
+            final Path outDir = resolveSourceDir();
+            File file = new File(outDir + "/" + entryPoint + OPENCL_SOURCE_SUFFIX);
+            try (FileOutputStream fos = new FileOutputStream(file);) {
+                fos.write(source);
+            } catch (IOException e) {
+                error("unable to dump source: ", e.getMessage());
+            }
+        }
 
         // TODO add support for passing compiler optimisation flags here
         final long t0 = System.nanoTime();
@@ -95,7 +103,7 @@ public class OCLCodeCache {
 
         final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
 
-        code = new OCLInstalledCode(entryPoint, source, deviceContext, program,
+        final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, deviceContext, program,
                 kernel);
 
         if (status == CL_BUILD_SUCCESS) {
@@ -104,16 +112,6 @@ public class OCLCodeCache {
                 System.out.printf("compile: kernel %s opencl %.9f\n", entryPoint, (t1 - t0) * 1e-9f);
             }
             cache.put(entryPoint, code);
-            if (OPENCL_DUMP_SOURCE) {
-                final Path outDir = resolveSourceDir();
-                File file = new File(outDir + "/" + entryPoint + OPENCL_SOURCE_SUFFIX);
-                try (FileOutputStream fos = new FileOutputStream(file);) {
-                    fos.write(source);
-                } catch (IOException e) {
-                    error("unable to dump source: ", e.getMessage());
-                }
-
-            }
 
             // BUG Apple does not seem to like implementing the OpenCL spec properly, this causes a sigfault.
             if ((OPENCL_CACHE_ENABLE || OPENCL_DUMP_BINS) && !deviceContext.getPlatformContext().getPlatform().getVendor().equalsIgnoreCase("Apple")) {
@@ -133,7 +131,6 @@ public class OCLCodeCache {
     }
 
     private OCLInstalledCode installBinary(String entryPoint, byte[] binary, boolean alreadyCached) throws OCLException {
-        OCLInstalledCode code = null;
 
         info("Installing binary for %s into code cache", entryPoint);
         final OCLProgram program = deviceContext.createProgramWithBinary(binary,
@@ -157,7 +154,7 @@ public class OCLCodeCache {
 
         final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
 
-        code = new OCLInstalledCode(entryPoint, null, deviceContext, program,
+        final OCLInstalledCode code = new OCLInstalledCode(entryPoint, null, deviceContext, program,
                 kernel);
 
         if (status == CL_BUILD_SUCCESS) {
