@@ -1,11 +1,11 @@
 
 # Installing Tornado #
 
-  $ git clone https://bitbucket.org/clarksoj/tornado_maven.git tornado
-  $ cd tornado
-  $ git checkout develop
-  $ vi etc/tornado.env
-  $ (copy and paste the following - but update paths)
+  - `$ git clone https://bitbucket.org/clarksoj/tornado_maven.git tornado`
+  - `$ cd tornado`
+  - `$ git checkout develop`
+  - `$ vi etc/tornado.env`
+  - `$ (copy and paste the following - but update paths)`
 
 ```bash
 #!/bin/bash
@@ -21,26 +21,26 @@ else
 fi
 ```
 
-  $ . etc/tornado.env
-  $ mvn -DskipTests package
-  $ cd drivers/opencl/jni-bindings
-  $ autoreconf -f -i -s
-  $ ./configure --prefix=${PWD} --with-jdk=${JAVA_HOME}
-  ...
-  $ make && make install
+  - `$ . etc/tornado.env`
+  - `$ mvn -DskipTests package`
+  - `$ cd drivers/opencl/jni-bindings`
+  - `$ autoreconf -f -i -s`
+  - `$ ./configure --prefix=${PWD} --with-jdk=${JAVA_HOME}`
+  - `...`
+  - `$ make && make install`
 
 Complete
 
 # Running Examples #
 
   [Optional]
-  $ . etc/tornado.env
+  - `$ . etc/tornado.env`
   
-  $ tornado tornado.examples.HelloWorld
+  - `$ tornado tornado.examples.HelloWorld`
 
 
 # Running Benchmarks #
 
-  $ tornado tornado.benchmarks.BenchmarkRunner tornado.benchmarks.sadd.Benchmark
+  - `$ tornado tornado.benchmarks.BenchmarkRunner tornado.benchmarks.sadd.Benchmark`
 
 
