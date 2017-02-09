@@ -1,15 +1,20 @@
 #!/bin/bash
 
-echo "converting ${1} to ${2}..."
+BASE=$(basename ${1} | cut -f1 -d.)
+DIR=$(dirname ${1})
+echo "converting ${1} to ${BASE}.csv ..."
 
-FIELDS="bm= id= elapsed= per iteration= speedup= overhead="
+FIELDS="bm= id= device= elapsed= per iteration= speedup= overhead="
 
-echo "benchmark, device, total, iteration, speedup, overhead" > ${2}
-
-grep -v "benchmark" ${1} >> ${2}
+OUTPUT="${DIR}/${BASE}.csv"
+echo "benchmark, device, total, iteration, speedup, overhead" > ${OUTPUT}
+grep "bm=" ${1} >> "${OUTPUT}"
 
 for field in ${FIELDS}; do
-
-	perl -pi -e "s/${field}//g" ${2}
-
+        perl -pi -e "s/${field}//g" ${OUTPUT}
 done
+
+KERNELS="${DIR}/${BASE}-kernels.csv"
+grep "task:" ${1} > ${KERNELS}
+
+perl -pi -e "s/task:\s+//g" ${KERNELS}
