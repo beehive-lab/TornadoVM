@@ -12,6 +12,8 @@ import tornado.graal.nodes.ParallelRangeNode;
 import tornado.graal.nodes.ParallelStrideNode;
 import tornado.graal.phases.TornadoHighTierContext;
 
+import static tornado.common.Tornado.ENABLE_PARALLELIZATION;
+
 public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> {
 
     @Override
@@ -24,7 +26,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         long[] maxWorkItemSizes = device.getDevice().getMaxWorkItemSizes();
 
         graph.getNodes().filter(ParallelRangeNode.class).forEach(node -> {
-            if (maxWorkItemSizes[node.index()] > 1) {
+            if (ENABLE_PARALLELIZATION && maxWorkItemSizes[node.index()] > 1) {
                 paralleliseLoop(graph, node);
             } else {
                 serialiseLoop(node);

@@ -61,6 +61,7 @@ public final class Tornado {
             .parseBoolean(settings.getProperty("tornado.opencl.blocking",
                     "False"));
 
+    public static final boolean ENABLE_PARALLELIZATION = Boolean.parseBoolean(Tornado.getProperty("tornado.kernels.parallelize", "True"));
     public static final boolean ENABLE_VECTORS = Boolean.parseBoolean(settings
             .getProperty("tornado.vectors.enable", "True"));
     public static final boolean TORNADO_ENABLE_BIFS = Boolean
@@ -77,8 +78,6 @@ public final class Tornado {
 
     public static final boolean DUMP_PROFILES = Boolean.parseBoolean(settings.getProperty("tornado.profiles.print", "false"));
 
-//    public static final boolean DUMP_BINARIES = Boolean.parseBoolean(settings
-//            .getProperty("tornado.opencl.binaries", "False"));
     public static final String OPENCL_CFLAGS = settings.getProperty(
             "tornado.opencl.cflags", "-w");
 
