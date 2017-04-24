@@ -114,9 +114,6 @@ public abstract class AbstractTaskGraph {
 //		final long t0 = System.nanoTime();
         final Graph graph = GraphBuilder.buildGraph(graphContext, buffer);
 //		final long t1 = System.nanoTime();
-
-//        graphContext.print();
-//        graph.print();
         result = GraphCompiler.compile(graph, graphContext);
 //		final long t2 = System.nanoTime();
         vm = new TornadoVM(graphContext, result.getCode(), result.getCodeSize());
@@ -142,8 +139,8 @@ public abstract class AbstractTaskGraph {
         graphContext.apply(consumer);
     }
 
-    protected void mapAllToInner(TornadoDevice mapping) {
-        graphContext.mapAllTo(mapping);
+    protected void mapAllToInner(TornadoDevice device) {
+        graphContext.mapAllTo(device);
     }
 
     public void dumpTimes() {
@@ -158,6 +155,10 @@ public abstract class AbstractTaskGraph {
 
     public void dumpProfiles() {
         vm.dumpProfiles();
+    }
+
+    public void dumpEvents() {
+        vm.dumpEvents();
     }
 
     public void clearProfiles() {
