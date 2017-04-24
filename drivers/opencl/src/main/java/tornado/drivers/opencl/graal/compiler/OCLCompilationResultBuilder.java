@@ -37,9 +37,6 @@ import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.graal.TornadoLIRGenerator.trace;
-import static tornado.graal.TornadoLIRGenerator.trace;
-import static tornado.graal.TornadoLIRGenerator.trace;
-import static tornado.graal.TornadoLIRGenerator.trace;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
@@ -382,7 +379,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
         LIRInstruction current = header.get(index);
         while (!(current instanceof LoopConditionOp)) {
-            // System.out.printf("moving: %s from blokc %s to block %s...\n",current,
+            // System.out.printf("moving: %s from block %s to block %s...\n",current,
             // header, body);
             if (!(current instanceof LoopPostOp)) {
                 body.add(insertAt, header.remove(index));
