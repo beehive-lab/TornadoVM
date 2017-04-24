@@ -112,9 +112,8 @@ public class TaskSchedule extends AbstractTaskGraph {
         return this;
     }
 
-    @Deprecated
-    public TaskSchedule mapAllTo(TornadoDevice mapping) {
-        mapAllToInner(mapping);
+    public TaskSchedule mapAllTo(TornadoDevice device) {
+        mapAllToInner(device);
         return this;
     }
 
