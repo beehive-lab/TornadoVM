@@ -1,7 +1,8 @@
 package tornado.drivers.opencl.graal.meta;
 
 import java.util.Arrays;
-import tornado.common.Tornado;
+
+import static tornado.common.Tornado.getProperty;
 
 public class Coarseness {
 
@@ -10,7 +11,7 @@ public class Coarseness {
     public Coarseness(int depth) {
         values = new int[depth];
 
-        String str[] = Tornado.getProperty("tornado.coarseness", "1,1,1").split(",");
+        String str[] = getProperty("tornado.coarseness", "1,1,1").split(",");
         for (int i = 0; i < values.length; i++) {
             values[i] = Integer.parseInt(str[i]);
         }

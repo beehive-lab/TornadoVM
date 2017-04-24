@@ -165,7 +165,6 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
         newPhi.initializeValueAt(1, newStride);
 
         ValueNode coarsenessLimit = graph.addOrUnique(new AddNode(oldIv, coarseness));
-
         LogicNode lessThanCoarsenessLimit = graph.addOrUnique(new IntegerLessThanNode(newPhi, coarsenessLimit));
 
         /*
@@ -212,7 +211,7 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
 
         ValueNode opNode = getOp(stride);
         if (!(opNode instanceof AddNode)) {
-            unsupported("parallel loop uses unsupoorted op: %s", opNode);
+            unsupported("parallel loop uses unsupported op: %s", opNode);
         }
 
         final ValueNode desiredCoarseness = ConstantNode.forInt(coarseness.getCoarseness(range.index()), graph);
@@ -224,7 +223,7 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
         final GlobalThreadSizeNode threadCount = graph.addOrUnique(new GlobalThreadSizeNode(index));
         final ValueNode updatedStride1 = graph.addOrUnique(new MulNode(threadCount, updatedStride));
 
-        // remove parallel placeholders
+        // replace useages of parallel placeholders
         offset.replaceAtUsages(x0);
         stride.replaceAtUsages(updatedStride1);
         Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "after re-writing=" + range.index());
@@ -234,23 +233,18 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
             /*
              * update domain tree - need to change
              */
-            IntDomain cr = (IntDomain) domain.get(range.index());
-            int size = (cr.getLength() - cr.getOffset()) / cr.getStep();
-            size = (size + coarseness.getCoarseness(range.index()) - 1) / coarseness.getCoarseness(range.index());
+            final int cv = coarseness.getCoarseness(range.index());
+            final IntDomain cr = (IntDomain) domain.get(range.index());
+            final int size = (cr.cardinality() + cv - 1) / cv;
             cr.setOffset(0);
             cr.setLength(size);
             cr.setStep(1);
-        } else {
-
-//            /*
-//             * update domain tree - need to change
-//             */
-//            IntDomain cr = (IntDomain) domain.get(range.index());
-//            cr.setOffset(0);
-//            cr.setLength(1);
-//            cr.setStep(1);
         }
 
+        //TODO potential optimisation - remove if-stmts if OpenCL can generate exact schedule
+        /*
+         * delete all parallel placeholders
+         */
         offset.safeDelete();
         stride.safeDelete();
         range.replaceAndDelete(range.value());
