@@ -100,7 +100,7 @@ public class TornadoVM extends TornadoLogger {
         constants = graphContext.getConstants();
         tasks = graphContext.getTasks();
 
-        debug("vm ready to go");
+        debug("%s - vm ready to go", graphContext.getId());
         buffer.mark();
     }
 
@@ -397,9 +397,21 @@ public class TornadoVM extends TornadoLogger {
         }
     }
 
+    public void dumpEvents() {
+        if (!ENABLE_PROFILING) {
+            warn("profiling is not enabled");
+            return;
+        }
+
+        for (final TornadoDevice device : contexts) {
+            device.dumpEvents();
+        }
+    }
+
     public void dumpProfiles() {
         if (!ENABLE_PROFILING) {
             warn("profiling is not enabled");
+            return;
         }
 
         for (final SchedulableTask task : tasks) {
