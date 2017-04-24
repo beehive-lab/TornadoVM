@@ -42,6 +42,7 @@ public class ExecutionContext {
         objectState = new ArrayList<>();
         devices = new ArrayList<>();
         taskToDevice = new int[MAX_TASKS];
+        Arrays.fill(taskToDevice, -1);
 
         // default device
         defaultDevice = resolveDevice(getProperty(name + ".device", "0:0"));
@@ -116,18 +117,18 @@ public class ExecutionContext {
         }
     }
 
-    @Deprecated
     public void mapAllTo(TornadoDevice mapping) {
-        int deviceIndex = devices.indexOf(mapping);
-        if (deviceIndex == -1) {
-            deviceIndex = devices.size();
-            devices.add(mapping);
-        }
+        devices.clear();
+        devices.add(0, mapping);
         apply(task -> task.mapTo(mapping));
-        Arrays.fill(taskToDevice, deviceIndex);
+        Arrays.fill(taskToDevice, 0);
     }
 
     private void assignTask(int index, SchedulableTask task) {
+        if (taskToDevice[index] != -1) {
+            return;
+        }
+
         String id = task.getId();
         String device = getProperty(name + "." + id + ".device");
         TornadoDevice target = (device != null) ? resolveDevice(device) : defaultDevice;
@@ -154,6 +155,11 @@ public class ExecutionContext {
     }
 
     public void print() {
+        System.out.println("device table:");
+        for (int i = 0; i < devices.size(); i++) {
+            System.out.printf("[%d]: %s\n", i, devices.get(i));
+        }
+
         System.out.println("constant table:");
         for (int i = 0; i < constants.size(); i++) {
             System.out.printf("[%d]: %s\n", i, constants.get(i));
@@ -188,5 +194,9 @@ public class ExecutionContext {
             }
         }
         return null;
+    }
+
+    public String getId() {
+        return name;
     }
 }
