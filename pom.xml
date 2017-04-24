@@ -13,7 +13,42 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+    <profiles>
+        <profile>
+            <id>graal-dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+                <property>
+                    <name>env</name>
+                    <value>dev</value>
+                </property>
+            </activation>
+            <properties>
+                <tornado.version>0.0.2-SNAPSHOT</tornado.version>
+                <graal.root>/Users/jamesclarkson/git/graal/graal/graal-core/mxbuild/dists</graal.root>
+                <graal.version>0.17</graal.version>
+                <jvmci.version>1.8.0_73</jvmci.version>
+                <jvmci.root>/Users/jamesclarkson/hg/graal-jvmci-8/jdk1.8.0_73/product</jvmci.root>
+            </properties>
+        </profile>
 
+        <profile>
+            <id>graal-env</id>
+            <activation>
+                <property>
+                    <name>env</name>
+                    <value>prod</value>
+                </property>
+            </activation>
+            <properties>
+                <tornado.version>0.0.2</tornado.version>
+                <graal.root>${GRAAL_ROOT}</graal.root>
+                <jvmci.root>${JAVA_HOME}</jvmci.root>
+                <graal.version>${GRAAL_VERSION}</graal.version>
+                <jvmci.version>${JVMCI_VERSION}</jvmci.version>
+            </properties>
+        </profile>
+    </profiles>
     <build>
         <plugins>
             <plugin>
