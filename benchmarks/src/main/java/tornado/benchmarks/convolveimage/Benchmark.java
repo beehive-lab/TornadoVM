@@ -1,7 +1,7 @@
 package tornado.benchmarks.convolveimage;
 
-import tornado.benchmarks.BenchmarkRunner;
 import tornado.benchmarks.BenchmarkDriver;
+import tornado.benchmarks.BenchmarkRunner;
 
 public class Benchmark extends BenchmarkRunner {
 
@@ -50,6 +50,11 @@ public class Benchmark extends BenchmarkRunner {
     @Override
     protected BenchmarkDriver getTornadoDriver() {
         return new ConvolveImageTornado(iterations, width, height, filtersize);
+    }
+
+    @Override
+    protected BenchmarkDriver getStreamsDriver() {
+        return new ConvolveImageStreams(iterations, width, height, filtersize);
     }
 
 }

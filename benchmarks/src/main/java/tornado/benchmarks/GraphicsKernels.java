@@ -1,5 +1,6 @@
 package tornado.benchmarks;
 
+import java.util.stream.IntStream;
 import tornado.api.Parallel;
 import tornado.collections.types.*;
 
@@ -49,6 +50,21 @@ public final class GraphicsKernels {
                 output.set(j, i, y);
             }
         }
+    }
+
+    public static void rotateImageStreams(ImageFloat3 output,
+            Matrix4x4Float m, ImageFloat3 input) {
+
+        IntStream.range(0, output.X() * output.Y()).parallel().forEach((int index) -> {
+            final int j = index % output.X();
+            final int i = index / output.X();
+
+            final Float3 x = input.get(j, i);
+
+            final Float3 y = rotate(m, x);
+
+            output.set(j, i, y);
+        });
     }
 
     public static void dotImage(ImageFloat3 A, ImageFloat3 B,
@@ -132,6 +148,36 @@ public final class GraphicsKernels {
                 output.set(x, y, sum);
             }
         }
+    }
+
+    public static void convolveImageStreams(final ImageFloat input,
+            final ImageFloat filter, final ImageFloat output) {
+
+        final int filterX2 = filter.X() / 2;
+        final int filterY2 = filter.Y() / 2;
+
+        IntStream.range(0, output.X() * output.Y()).parallel().forEach((int index) -> {
+            final int x = index % output.X();
+            final int y = index / output.X();
+
+            float sum = 0.0f;
+            for (int v = 0; v < filter.Y(); v++) {
+                for (int u = 0; u < filter.X(); u++) {
+
+                    if ((((y - filterY2) + v) >= 0)
+                            && ((y + v) < output.Y())) {
+                        if ((((x - filterX2) + u) >= 0)
+                                && ((x + u) < output.X())) {
+                            sum += filter.get(u, v)
+                                    * input.get(x - filterX2 + u, y
+                                            - filterY2 + v);
+                        }
+                    }
+                }
+            }
+            output.set(x, y, sum);
+        });
+
     }
 
 }

@@ -20,6 +20,10 @@ public abstract class BenchmarkRunner {
 
     protected abstract BenchmarkDriver getTornadoDriver();
 
+    protected BenchmarkDriver getStreamsDriver() {
+        return null;
+    }
+
     protected int iterations = 0;
 
     public void run() {
@@ -35,6 +39,16 @@ public abstract class BenchmarkRunner {
                 referenceTest.getSummary());
 
         final double refElapsed = referenceTest.getElapsed();
+
+        final BenchmarkDriver streamsTest = getStreamsDriver();
+        if (streamsTest != null) {
+            streamsTest.benchmark();
+
+            System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-streams",
+                    streamsTest.getSummary());
+
+            // final double refElapsed = streamsTest.getElapsed();
+        }
 
         final Set<Integer> blacklistedDrivers = new HashSet<>();
         final Set<Integer> blacklistedDevices = new HashSet<>();

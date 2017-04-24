@@ -48,4 +48,9 @@ public class Benchmark extends BenchmarkRunner {
         return new RotateTornado(iterations, width, height);
     }
 
+    @Override
+    protected BenchmarkDriver getStreamsDriver() {
+        return new RotateStreams(iterations, width, height);
+    }
+
 }
