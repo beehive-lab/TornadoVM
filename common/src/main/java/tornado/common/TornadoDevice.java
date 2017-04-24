@@ -48,4 +48,6 @@ public interface TornadoDevice {
 
     public void reset();
 
+    public void dumpEvents();
+
 }

@@ -1,8 +1,8 @@
 package tornado.drivers.opencl;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import tornado.api.Event;
 import tornado.common.TornadoLogger;
@@ -657,7 +657,15 @@ public class OCLCommandQueue extends TornadoLogger {
     }
 
     public List<OCLEvent> getEvents() {
-        return Collections.emptyList();
+        List<OCLEvent> result = new ArrayList<>();
+        for (int i = 0; i < eventIndex; i++) {
+            final long eventId = events[i];
+            if (eventId <= 0) {
+                continue;
+            }
+            result.add(new OCLEvent(this, i, eventId));
+        }
+        return result;
     }
 
     public void reset() {

@@ -310,11 +310,13 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
             }
             return result;
         });
-        System.out.printf("Found %d events:\n", events.size());
+        final String deviceName = "opencl-" + context.getPlatformIndex() + ":" + device.getIndex();
+        System.out.printf("Found %d events on device %s:\n", events.size(), deviceName);
+
         long base = events.get(0).getCLSubmitTime();
-        System.out.println("id,submitted,start,end,status");
+        System.out.println("event: device,type,info,submitted,start,end,status");
         events.stream().forEach((e) -> {
-            System.out.printf("%s - 0x%x, %9d, %9d, %9d, %s\n", e.getName(), e.getId(), e.getCLSubmitTime() - base, e.getCLStartTime() - base, e.getCLEndTime() - base, e.getStatus());
+            System.out.printf("event: %s,%s,0x%x,%d,%d,%d,%s\n", deviceName, e.getName(), e.getId(), e.getCLSubmitTime() - base, e.getCLStartTime() - base, e.getCLEndTime() - base, e.getStatus());
         });
 
     }

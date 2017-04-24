@@ -67,6 +67,11 @@ public class OCLDeviceMapping implements TornadoDevice {
     }
 
     @Override
+    public void dumpEvents() {
+        getDeviceContext().dumpEvents();
+    }
+
+    @Override
     public String getDescription() {
         final String availability = (device.isAvailable()) ? "available" : "not available";
         return String.format("%s %s (%s)", device.getName(), device.getDeviceType(), availability);
