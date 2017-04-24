@@ -26,6 +26,11 @@
         </dependency>
         <dependency>
             <groupId>tornado</groupId>
+            <artifactId>tornado-collections</artifactId>
+            <version>0.0.2-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>tornado</groupId>
             <artifactId>tornado-runtime</artifactId>
             <version>0.0.2-SNAPSHOT</version>
         </dependency>

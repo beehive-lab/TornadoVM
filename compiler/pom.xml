@@ -34,24 +34,24 @@
             <groupId>graal</groupId>
             <artifactId>graal</artifactId>
             <scope>system</scope>
-            <systemPath>${GRAAL_ROOT}/graal.jar</systemPath>
-            <version>0.17</version>
+            <systemPath>${graal.root}/graal.jar</systemPath>
+            <version>${graal.version}</version>
         </dependency>
 
         <dependency>
             <groupId>jvmci</groupId>
             <artifactId>api</artifactId>
             <scope>system</scope>
-            <systemPath>${JAVA_HOME}/jre/lib/jvmci/jvmci-api.jar</systemPath>
-            <version>1.8.0_73</version>
+            <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-api.jar</systemPath>
+            <version>${jvmci.version}</version>
         </dependency>
 
         <dependency>
             <groupId>jvmci</groupId>
             <artifactId>hotspot</artifactId>
             <scope>system</scope>
-            <systemPath>${JAVA_HOME}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
-            <version>1.8.0_73</version>
+            <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
+            <version>${jvmci.version}</version>
         </dependency>
     </dependencies>
 </project>
