@@ -31,11 +31,12 @@ public class OCLCpuScheduler extends OCLKernelScheduler {
 //                break;
 //        }
         for (int i = 0; i < kernelInfo.getDims(); i++) {
-            long value = maxItems[i] > 1 ? (long) (kernelInfo.getDomain().get(i).cardinality()) : 1; /// utils[utilsIndex]);
+//            long value = maxItems[i] > 1 ? (long) (kernelInfo.getDomain().get(i).cardinality())  : 1; /// utils[utilsIndex]);
             /*
              * if( value % 32 != 0){ value = ((value / 32) + 1) * 32; }
              */
-            globalWork[i] = value;
+//            globalWork[i] = value;
+            globalWork[i] = maxItems[i] > 1 ? deviceContext.getDevice().getMaxComputeUnits() : 1;
         }
     }
 
