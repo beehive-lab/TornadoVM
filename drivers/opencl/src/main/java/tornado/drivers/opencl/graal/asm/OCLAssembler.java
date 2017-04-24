@@ -1014,7 +1014,6 @@ public final class OCLAssembler extends Assembler {
     }
 
     public void emitValue(OCLCompilationResultBuilder crb, Value value) {
-//        System.out.printf("emitValue: %s (%s)\n", emitValue, emitValue.getClass().getName());
         if (value instanceof OCLReturnSlot) {
             ((OCLReturnSlot) value).emit(crb, this);
         } else {
