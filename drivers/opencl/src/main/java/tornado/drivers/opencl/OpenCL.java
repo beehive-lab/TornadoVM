@@ -3,17 +3,17 @@ package tornado.drivers.opencl;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
-
 import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoRuntimeException;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 
 public class OpenCL {
+
     public static final String OPENCL_LIBRARY = "tornado-opencl";
 
     private static boolean initialised = false;
 
-    private static final List<OCLPlatform> platforms = new ArrayList<OCLPlatform>();
+    private static final List<OCLPlatform> platforms = new ArrayList<>();
 
     private final static boolean DUMP_EVENTS = Boolean.parseBoolean(Tornado
             .getProperty("tornado.opencl.events", "False"));
@@ -133,7 +133,7 @@ public class OpenCL {
                     System.out.printf("[%d:%d] device: %s\n", platformIndex,
                             deviceIndex,
                             context.createDeviceContext(deviceIndex)
-                                    .getDevice().getName());
+                            .getDevice().getName());
                 }
             }
 
