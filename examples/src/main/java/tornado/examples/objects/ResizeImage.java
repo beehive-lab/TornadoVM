@@ -29,15 +29,24 @@ public class ResizeImage {
                 .task("t0", ImagingOps::resizeImage, image2, image1, 2)
                 .streamOut(image2);
 
-        System.out.println("Before:");
-        System.out.println(image1.toString());
+        schedule.warmup();
 
+        if (image1.X() < 16 && image1.Y() < 16) {
+            System.out.println("Before:");
+            System.out.println(image1.toString());
+        }
+
+        final long start = System.nanoTime();
         schedule.execute();
+        final long end = System.nanoTime();
+        System.out.printf("time: %.9f s\n", (end - start) * 1e-9);
 
         /*
          * Ouput result to console
          */
-        System.out.println("Result:");
-        System.out.println(image2.toString());
+        if (image2.X() < 16 && image2.Y() < 16) {
+            System.out.println("Result:");
+            System.out.println(image2.toString());
+        }
     }
 }
