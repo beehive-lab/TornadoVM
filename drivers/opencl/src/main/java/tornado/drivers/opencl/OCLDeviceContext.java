@@ -79,7 +79,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
     }
 
     public void sync() {
-//                queue.flush();
+        queue.flush();
         queue.finish();
     }
 
@@ -278,7 +278,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
     }
 
     public int enqueueMarker(int[] events) {
-        return queue.enqueueMarker(events);
+        return queue.enqueueBarrier(events);
     }
 
     @Override
@@ -342,18 +342,18 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
     }
 
     public OCLInstalledCode installCode(OCLCompilationResult result) {
-        return installCode(result.getName(), result.getTargetCode());
+        return installCode(result.getId(), result.getName(), result.getTargetCode());
     }
 
-    public OCLInstalledCode installCode(String entryPoint, byte[] code) {
-        return codeCache.installSource(entryPoint, code);
+    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code) {
+        return codeCache.installSource(id, entryPoint, code);
     }
 
-    public boolean isCached(String entryPoint) {
-        return codeCache.isCached(entryPoint);
+    public boolean isCached(String id, String entryPoint) {
+        return codeCache.isCached(id, entryPoint);
     }
 
-    public OCLInstalledCode getCode(String entryPoint) {
-        return codeCache.getCode(entryPoint);
+    public OCLInstalledCode getCode(String id, String entryPoint) {
+        return codeCache.getCode(id, entryPoint);
     }
 }

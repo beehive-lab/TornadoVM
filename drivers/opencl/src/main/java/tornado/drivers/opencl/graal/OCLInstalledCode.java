@@ -200,13 +200,15 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             task = deviceContext.enqueueTask(kernel, waitEvents);
         }
 
-        if (DUMP_PROFILES) {
-            meta.addProfile(deviceContext.resolveEvent(task));
+        if (meta != null && DUMP_PROFILES) {
+//            meta.addProfile(deviceContext.resolveEvent(task));
         }
 
         if (ENABLE_EXCEPTIONS) {
             internalEvents[0] = task;
             task = stack.enqueueRead(internalEvents);
+//            deviceContext.resolveEvent(task).waitOn();
+//            stack.dump();
         }
 
         return task;

@@ -51,6 +51,7 @@ import tornado.graal.compiler.TornadoCompilerIdentifier;
 import tornado.graal.phases.TornadoHighTierContext;
 import tornado.graal.phases.TornadoMidTierContext;
 import tornado.meta.Meta;
+import tornado.runtime.api.CompilableTask;
 import tornado.runtime.sketcher.Sketch;
 import tornado.runtime.sketcher.TornadoSketcher;
 
@@ -488,7 +489,7 @@ public class OCLCompiler {
 
         SpeculationLog speculationLog = null;
 
-        OCLCompilationResult kernelCompResult = new OCLCompilationResult(resolvedMethod.getName(), meta, backend);
+        OCLCompilationResult kernelCompResult = new OCLCompilationResult("internal", resolvedMethod.getName(), meta, backend);
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         final OCLSuitesProvider suitesProvider = providers.getSuitesProvider();
@@ -507,7 +508,7 @@ public class OCLCompiler {
         while (!worklist.isEmpty()) {
             final ResolvedJavaMethod currentMethod = worklist.pop();
             if (!includedMethods.contains(currentMethod)) {
-                final OCLCompilationResult compResult = new OCLCompilationResult(currentMethod.getName(), meta, backend);
+                final OCLCompilationResult compResult = new OCLCompilationResult("internal", currentMethod.getName(), meta, backend);
                 TornadoCompilerIdentifier id1 = new TornadoCompilerIdentifier("compile-call" + currentMethod.getName(), compilationId.getAndIncrement());
                 final StructuredGraph graph = new StructuredGraph(currentMethod,
                         AllowAssumptions.YES, id1);
@@ -529,7 +530,7 @@ public class OCLCompiler {
     }
 
     public static OCLCompilationResult compileSketchForDevice(Sketch sketch,
-            Object[] args, Meta taskMeta, OCLProviders providers, OCLBackend backend) {
+            CompilableTask task, OCLProviders providers, OCLBackend backend) {
 
         final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().getReadonlyCopy().copy();
         ResolvedJavaMethod resolvedMethod = kernelGraph.method();
@@ -539,6 +540,8 @@ public class OCLCompiler {
         );
 
         final OCLCodeProvider codeCache = backend.getCodeCache();
+        final Meta taskMeta = task.meta();
+        final Object[] args = task.getArguments();
 
         if (taskMeta != null && !taskMeta.hasProvider(OCLMemoryRegions.class)) {
             taskMeta.addProvider(OCLMemoryRegions.class, new OCLMemoryRegions());
@@ -552,7 +555,7 @@ public class OCLCompiler {
 
         SpeculationLog speculationLog = null;
 
-        OCLCompilationResult kernelCompResult = new OCLCompilationResult(resolvedMethod.getName(), taskMeta, backend);
+        OCLCompilationResult kernelCompResult = new OCLCompilationResult(task.getId(), resolvedMethod.getName(), taskMeta, backend);
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         final OCLSuitesProvider suitesProvider = providers.getSuitesProvider();
@@ -572,7 +575,7 @@ public class OCLCompiler {
             final ResolvedJavaMethod currentMethod = worklist.pop();
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod);
 //            if (!includedMethods.contains(currentMethod)) {
-            final OCLCompilationResult compResult = new OCLCompilationResult(currentMethod.getName(), taskMeta, backend);
+            final OCLCompilationResult compResult = new OCLCompilationResult(task.getId(), currentMethod.getName(), taskMeta, backend);
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
 
             Request<OCLCompilationResult> methodcompilationRequest = new Request<>(

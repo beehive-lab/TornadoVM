@@ -13,9 +13,11 @@ public class OCLCompilationResult extends CompilationResult {
     protected Set<ResolvedJavaMethod> nonInlinedMethods;
     protected Meta meta;
     protected OCLBackend backend;
+    protected String id;
 
-    public OCLCompilationResult(String name, Meta meta, OCLBackend backend) {
+    public OCLCompilationResult(String id, String name, Meta meta, OCLBackend backend) {
         super(name);
+        this.id = id;
         this.meta = meta;
         this.backend = backend;
     }
@@ -48,5 +50,9 @@ public class OCLCompilationResult extends CompilationResult {
 
     public OCLBackend getBackend() {
         return backend;
+    }
+
+    public String getId() {
+        return id;
     }
 }

@@ -72,7 +72,7 @@ public class OCLCodeCache {
         return outDir;
     }
 
-    public OCLInstalledCode installSource(String entryPoint, byte[] source) {
+    public OCLInstalledCode installSource(String id, String entryPoint, byte[] source) {
 
         info("Installing code for %s into code cache", entryPoint);
         final OCLProgram program = deviceContext.createProgramWithSource(source,
@@ -80,7 +80,7 @@ public class OCLCodeCache {
 
         if (OPENCL_DUMP_SOURCE) {
             final Path outDir = resolveSourceDir();
-            File file = new File(outDir + "/" + entryPoint + OPENCL_SOURCE_SUFFIX);
+            File file = new File(outDir + "/" + id + "-" + entryPoint + OPENCL_SOURCE_SUFFIX);
             try (FileOutputStream fos = new FileOutputStream(file);) {
                 fos.write(source);
             } catch (IOException e) {
@@ -111,7 +111,7 @@ public class OCLCodeCache {
             if (PRINT_COMPILE_TIMES) {
                 System.out.printf("compile: kernel %s opencl %.9f\n", entryPoint, (t1 - t0) * 1e-9f);
             }
-            cache.put(entryPoint, code);
+            cache.put(id + "-" + entryPoint, code);
 
             // BUG Apple does not seem to like implementing the OpenCL spec properly, this causes a sigfault.
             if ((OPENCL_CACHE_ENABLE || OPENCL_DUMP_BINS) && !deviceContext.getPlatformContext().getPlatform().getVendor().equalsIgnoreCase("Apple")) {
@@ -220,11 +220,11 @@ public class OCLCodeCache {
         cache.clear();
     }
 
-    public boolean isCached(String entryPoint) {
-        return cache.containsKey(entryPoint);
+    public boolean isCached(String id, String entryPoint) {
+        return cache.containsKey(id + "-" + entryPoint);
     }
 
-    public OCLInstalledCode getCode(String entryPoint) {
-        return cache.get(entryPoint);
+    public OCLInstalledCode getCode(String id, String entryPoint) {
+        return cache.get(id + "-" + entryPoint);
     }
 }

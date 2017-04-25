@@ -159,8 +159,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         /*
          * Retrive the address of the heap on the device
          */
-        if (deviceContext.isCached("lookupBufferAddress")) {
-            lookupCode = deviceContext.getCode("lookupBufferAddress");
+        if (deviceContext.isCached("internal", "lookupBufferAddress")) {
+            lookupCode = deviceContext.getCode("internal", "lookupBufferAddress");
         } else {
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(
                     getTornadoRuntime().resolveMethod(getLookupMethod()), null, null, (OCLProviders) getProviders(), this);

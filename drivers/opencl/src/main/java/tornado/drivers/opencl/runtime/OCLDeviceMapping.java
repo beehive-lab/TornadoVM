@@ -1,6 +1,7 @@
 package tornado.drivers.opencl.runtime;
 
-import java.io.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -10,6 +11,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.api.Event;
 import tornado.api.enums.TornadoSchedulingStrategy;
 import tornado.common.*;
+import tornado.common.enums.Access;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDevice;
@@ -27,7 +29,6 @@ import tornado.runtime.sketcher.TornadoSketcher;
 
 import static tornado.common.Tornado.FORCE_ALL_TO_GPU;
 import static tornado.common.exceptions.TornadoInternalError.*;
-import static tornado.drivers.opencl.graal.backend.OCLBackend.SHOW_OPENCL;
 import static tornado.drivers.opencl.graal.compiler.OCLCompiler.compileSketchForDevice;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
@@ -164,39 +165,48 @@ public class OCLDeviceMapping implements TornadoDevice {
 //			final long t1 = System.nanoTime();
             final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
 
+            // copy meta data into task
+            final Meta sketchMeta = sketch.getMeta();
+            final Meta taskMeta = task.meta();
+            final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
+            final Access[] taskAccess = taskMeta.getArgumentsAccess();
+            for (int i = 0; i < sketchAccess.length; i++) {
+                taskAccess[i] = sketchAccess[i];
+            }
+
             final OCLCompilationResult result = compileSketchForDevice(
-                    sketch, task.getArguments(), task.meta(),
+                    sketch, executable,
                     (OCLProviders) getBackend().getProviders(), getBackend());
 
-            if (deviceContext.isCached(resolvedMethod.getName())) {
-                return deviceContext.getCode(resolvedMethod.getName());
+            if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
+                return deviceContext.getCode(task.getId(), resolvedMethod.getName());
             }
 
-            if (SHOW_OPENCL) {
-                String filename = getFile(executable.getMethodName());
-                // Tornado.info("Generated code for device %s - %s\n",
-                // deviceContext.getDevice().getName(), filename);
-                try {
-                    PrintWriter fileOut = new PrintWriter(filename);
-                    String source = new String(result.getTargetCode(), "ASCII");
-                    fileOut.println(source.trim());
-                    fileOut.close();
-                } catch (UnsupportedEncodingException | FileNotFoundException e) {
-                    e.printStackTrace();
-                }
-            }
+//            if (SHOW_OPENCL) {
+//                String filename = getFile(executable.getMethodName());
+//                // Tornado.info("Generated code for device %s - %s\n",
+//                // deviceContext.getDevice().getName(), filename);
+//                try {
+//                    PrintWriter fileOut = new PrintWriter(filename);
+//                    String source = new String(result.getTargetCode(), "ASCII");
+//                    fileOut.println(source.trim());
+//                    fileOut.close();
+//                } catch (UnsupportedEncodingException | FileNotFoundException e) {
+//                    e.printStackTrace();
+//                }
+//            }
             return deviceContext.installCode(result);
         } else if (task instanceof PrebuiltTask) {
             final PrebuiltTask executable = (PrebuiltTask) task;
-            if (deviceContext.isCached(executable.getEntryPoint())) {
-                return deviceContext.getCode(executable.getEntryPoint());
+            if (deviceContext.isCached(task.getId(), executable.getEntryPoint())) {
+                return deviceContext.getCode(task.getId(), executable.getEntryPoint());
             }
 
             final Path path = Paths.get(executable.getFilename());
             guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
             try {
                 final byte[] source = Files.readAllBytes(path);
-                return deviceContext.installCode(executable.getEntryPoint(),
+                return deviceContext.installCode(task.getId(), executable.getEntryPoint(),
                         source);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -213,7 +223,7 @@ public class OCLDeviceMapping implements TornadoDevice {
 
     private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg,
             OCLDeviceContext device) throws TornadoOutOfMemoryException {
-//		System.out.printf("creating bufffer: type=%s, arg=%s, device=%s\n",type.getSimpleName(),arg,device);
+//		System.out.printf("creating buffer: type=%s, arg=%s, device=%s\n",type.getSimpleName(),arg,device);
         ObjectBuffer result = null;
         if (type.isArray()) {
 
@@ -315,7 +325,7 @@ public class OCLDeviceMapping implements TornadoDevice {
     }
 
     public void sync(Object object) {
-        DeviceObjectState state = getTornadoRuntime().resolveObject(object).getDeviceState(this);
+        final DeviceObjectState state = getTornadoRuntime().resolveObject(object).getDeviceState(this);
         resolveEvent(streamOut(object, state, null)).waitOn();
     }
 
