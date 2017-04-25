@@ -3,7 +3,6 @@ package tornado.drivers.opencl.mm;
 import java.lang.reflect.Array;
 import jdk.vm.ci.meta.JavaKind;
 import tornado.common.ObjectBuffer;
-import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
 
@@ -11,7 +10,6 @@ import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.common.Tornado.*;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.runtime.TornadoRuntime.getVMConfig;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
@@ -103,7 +101,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
             internalEvents[0] = prepareArrayHeader().enqueueRead(null);
             internalEvents[1] = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
                     - arrayHeaderSize, array, events);
-            return ENABLE_OOO_EXECUTION | Boolean.parseBoolean(Tornado.getProperty("tornado.vm.deps", "False")) ? deviceContext.enqueueMarker(internalEvents) : internalEvents[1];
+            return ENABLE_OOO_EXECUTION | VM_USE_DEPS ? deviceContext.enqueueBarrier(internalEvents) : internalEvents[1];
         }
     }
 
@@ -125,7 +123,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
             internalEvents[1] = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
                     - arrayHeaderSize, array, events);
             onDevice = true;
-            return ENABLE_OOO_EXECUTION | Boolean.parseBoolean(Tornado.getProperty("tornado.vm.deps", "False")) ? deviceContext.enqueueMarker(internalEvents) : internalEvents[1];
+            return ENABLE_OOO_EXECUTION | VM_USE_DEPS ? deviceContext.enqueueMarker(internalEvents) : internalEvents[1];
         }
     }
 
