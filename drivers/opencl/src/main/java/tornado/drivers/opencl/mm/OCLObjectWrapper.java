@@ -427,7 +427,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
                     return internalEvents[0];
                 default:
                     return deviceContext
-                            .enqueueBarrier(internalEvents);
+                            .enqueueMarker(internalEvents);
             }
 
         }
@@ -474,7 +474,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
                     return internalEvents[0];
                 default:
                     return deviceContext
-                            .enqueueBarrier(internalEvents);
+                            .enqueueMarker(internalEvents);
             }
         }
     }
