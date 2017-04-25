@@ -6,6 +6,7 @@ import java.nio.ByteOrder;
 import java.util.function.Consumer;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.api.Event;
+import tornado.common.DeviceObjectState;
 import tornado.common.SchedulableTask;
 import tornado.common.TornadoDevice;
 import tornado.graal.compiler.TornadoSuitesProvider;
@@ -15,6 +16,9 @@ import tornado.runtime.sketcher.SketchRequest;
 
 import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.common.RuntimeUtilities.isBoxedPrimitiveClass;
+import static tornado.common.Tornado.DUMP_TASK_SCHEDULE;
+import static tornado.common.Tornado.warn;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public abstract class AbstractTaskGraph {
@@ -60,6 +64,8 @@ public abstract class AbstractTaskGraph {
         Providers providers = getTornadoRuntime().getDriver(0).getProviders();
         TornadoSuitesProvider suites = getTornadoRuntime().getDriver(0).getSuitesProvider();
 
+        int index = graphContext.addTask(task);
+
         if (task instanceof CompilableTask) {
             CompilableTask compilableTask = (CompilableTask) task;
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime()
@@ -73,8 +79,6 @@ public abstract class AbstractTaskGraph {
         int globalTaskId = graphContext.getTaskCount();
         hlBuffer.putInt(globalTaskId);
         graphContext.incrGlobalTaskCount();
-
-        int index = graphContext.addTask(task);
         hlBuffer.putInt(index);
 //		System.out.printf("inserting: 0x%x 0x%x 0x%x\n", CONTEXT, globalTaskId,
 //				index);
@@ -95,6 +99,7 @@ public abstract class AbstractTaskGraph {
                     || isBoxedPrimitiveClass(arg.getClass())) {
                 hlBuffer.put(LOAD_PRIM);
             } else {
+                guarantee(arg != null, "null argument passed to task");
                 hlBuffer.put(LOAD_REF);
             }
             hlBuffer.putInt(index);
@@ -122,6 +127,12 @@ public abstract class AbstractTaskGraph {
 //		System.out.printf("task graph: build graph %.9f s\n",(t1-t0)*1e-9);
 //		System.out.printf("task graph: compile     %.9f s\n",(t2-t1)*1e-9);
 //		System.out.printf("task graph: vm          %.9f s\n",(t3-t2)*1e-9);
+        if (DUMP_TASK_SCHEDULE) {
+
+            graphContext.print();
+            graph.print();
+//            result.dump();
+        }
     }
 
     protected void scheduleInner() {
@@ -173,12 +184,20 @@ public abstract class AbstractTaskGraph {
 
     protected void streamInInner(Object... objects) {
         for (Object object : objects) {
+            if (object == null) {
+                warn("null object passed into streamIn() in schedule %s", graphContext.getId());
+                continue;
+            }
             graphContext.getObjectState(object).setStreamIn(true);
         }
     }
 
     protected void streamOutInner(Object... objects) {
         for (Object object : objects) {
+            if (object == null) {
+                warn("null object passed into streamIn() in schedule %s", graphContext.getId());
+                continue;
+            }
             graphContext.getObjectState(object).setStreamOut(true);
         }
     }
@@ -216,6 +235,27 @@ public abstract class AbstractTaskGraph {
     public void invalidateObjects() {
         if (vm != null) {
             vm.invalidateObjects();
+        }
+    }
+
+    public void syncObjects(Object... objects) {
+        if (vm == null) {
+            return;
+        }
+
+        Event[] events = new Event[objects.length];
+        for (int i = 0; i < objects.length; i++) {
+            Object object = objects[i];
+            final LocalObjectState localState = graphContext.getObjectState(object);
+            final GlobalObjectState globalState = localState.getGlobalState();
+            final DeviceObjectState deviceState = globalState.getDeviceState();
+            final TornadoDevice device = globalState.getOwner();
+            events[i] = device.resolveEvent(device.streamOut(object, deviceState, null));
+//            events[i] = localState.sync(object);
+        }
+
+        for (Event event : events) {
+            event.waitOn();
         }
     }
 

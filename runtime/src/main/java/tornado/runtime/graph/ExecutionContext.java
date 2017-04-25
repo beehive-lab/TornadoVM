@@ -1,8 +1,6 @@
 package tornado.runtime.graph;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
 import tornado.common.RuntimeUtilities;
 import tornado.common.SchedulableTask;
@@ -21,6 +19,7 @@ public class ExecutionContext {
 
     private final List<SchedulableTask> tasks;
     private final List<Object> constants;
+    private final Map<Integer, Integer> objectMap;
     private final List<Object> objects;
     private final List<LocalObjectState> objectState;
     private final List<TornadoDevice> devices;
@@ -38,6 +37,7 @@ public class ExecutionContext {
         name = id;
         tasks = new ArrayList<>();
         constants = new ArrayList<>();
+        objectMap = new HashMap<>();
         objects = new ArrayList<>();
         objectState = new ArrayList<>();
         devices = new ArrayList<>();
@@ -59,13 +59,13 @@ public class ExecutionContext {
                 index = constants.size();
                 constants.add(var);
             }
+        } else if (objectMap.containsKey(var.hashCode())) {
+            index = objectMap.get(var.hashCode());
         } else {
-            index = objects.indexOf(var);
-            if (index == -1) {
-                index = objects.size();
-                objects.add(var);
-                objectState.add(new LocalObjectState(var));
-            }
+            index = objects.size();
+            objects.add(var);
+            objectMap.put(var.hashCode(), index);
+            objectState.add(index, new LocalObjectState(var));
         }
         return index;
     }
@@ -76,6 +76,10 @@ public class ExecutionContext {
 
     public void incrGlobalTaskCount() {
         nextTask++;
+    }
+
+    public int hasTask(SchedulableTask task) {
+        return tasks.indexOf(task);
     }
 
     public int addTask(SchedulableTask task) {
@@ -167,7 +171,14 @@ public class ExecutionContext {
 
         System.out.println("object table:");
         for (int i = 0; i < objects.size(); i++) {
-            System.out.printf("[%d]: %s\n", i, objects.get(i));
+            final Object obj = objects.get(i);
+            System.out.printf("[%d]: 0x%x %s\n", i, obj.hashCode(), obj.toString());
+        }
+
+        System.out.println("task table:");
+        for (int i = 0; i < tasks.size(); i++) {
+            final SchedulableTask task = tasks.get(i);
+            System.out.printf("[%d]: %s\n", i, task.getName());
         }
     }
 

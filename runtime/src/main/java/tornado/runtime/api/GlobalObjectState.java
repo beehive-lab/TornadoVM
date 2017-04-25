@@ -12,7 +12,7 @@ public class GlobalObjectState {
 
     private TornadoDevice owner;
 
-    private Map<TornadoDevice, DeviceObjectState> deviceStates;
+    private final Map<TornadoDevice, DeviceObjectState> deviceStates;
 
     public GlobalObjectState() {
         shared = false;
@@ -31,6 +31,10 @@ public class GlobalObjectState {
 
     public TornadoDevice getOwner() {
         return owner;
+    }
+
+    public DeviceObjectState getDeviceState() {
+        return getDeviceState(getOwner());
     }
 
     public DeviceObjectState getDeviceState(TornadoDevice device) {

@@ -1,5 +1,6 @@
 package tornado.runtime.api;
 
+import tornado.api.Event;
 import tornado.common.DeviceObjectState;
 import tornado.common.TornadoDevice;
 
@@ -64,8 +65,21 @@ public class LocalObjectState {
         return global.getOwner();
     }
 
+    public GlobalObjectState getGlobalState() {
+        return global;
+    }
+
     public void setOwner(TornadoDevice owner) {
         global.setOwner(owner);
+    }
+
+    public Event sync(Object object) {
+//        if (isModified()) {
+        TornadoDevice owner = getOwner();
+        int eventId = owner.streamOut(object, device, null);
+        return owner.resolveEvent(eventId);
+//        }
+//        return null;
     }
 
     @Override

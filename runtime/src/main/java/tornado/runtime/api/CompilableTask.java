@@ -2,6 +2,7 @@ package tornado.runtime.api;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Objects;
 import tornado.common.SchedulableTask;
 import tornado.common.TornadoDevice;
 import tornado.common.enums.Access;
@@ -82,12 +83,14 @@ public class CompilableTask implements SchedulableTask {
 
     @Override
     public String getName() {
-        return "task - " + method.getName();
+        return "task " + id + " - " + method.getName();
     }
 
     @Override
     public CompilableTask mapTo(final TornadoDevice mapping) {
-        meta = mapping.createMeta(method);
+        if (meta == null) {
+            meta = mapping.createMeta(method);
+        }
         if (meta.hasProvider(TornadoDevice.class)
                 && meta.getProvider(TornadoDevice.class) == mapping) {
             return this;
@@ -111,4 +114,23 @@ public class CompilableTask implements SchedulableTask {
     public String getId() {
         return id;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof CompilableTask) {
+            CompilableTask other = (CompilableTask) obj;
+            return getId().equals(other.getId());
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 71 * hash + Objects.hashCode(this.id);
+        hash = 71 * hash + Objects.hashCode(this.method);
+        return hash;
+    }
+
 }

@@ -1,5 +1,6 @@
 package tornado.runtime.api;
 
+import java.util.Objects;
 import tornado.common.SchedulableTask;
 import tornado.common.TornadoDevice;
 import tornado.common.enums.Access;
@@ -86,5 +87,24 @@ public class PrebuiltTask implements SchedulableTask {
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof CompilableTask) {
+            CompilableTask other = (CompilableTask) obj;
+            return getId().equals(other.getId());
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 71 * hash + Objects.hashCode(this.id);
+        hash = 71 * hash + Objects.hashCode(this.entryPoint);
+        hash = 71 * hash + Objects.hashCode(this.filename);
+        return hash;
     }
 }

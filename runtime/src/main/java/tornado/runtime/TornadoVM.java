@@ -13,6 +13,8 @@ import tornado.runtime.api.GlobalObjectState;
 import tornado.runtime.graph.ExecutionContext;
 
 import static tornado.common.Tornado.*;
+import static tornado.common.enums.Access.READ_WRITE;
+import static tornado.common.enums.Access.WRITE;
 import static tornado.common.exceptions.TornadoInternalError.*;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import static tornado.runtime.graph.GraphAssembler.*;
@@ -47,7 +49,7 @@ public class TornadoVM extends TornadoLogger {
         this.graphContext = graphContext;
         this.code = code;
 
-        useDependencies = ENABLE_OOO_EXECUTION | Boolean.parseBoolean(Tornado.getProperty("tornado.vm.deps", "False"));
+        useDependencies = ENABLE_OOO_EXECUTION | VM_USE_DEPS;
         totalTime = 0;
         invocations = 0;
 
@@ -80,6 +82,7 @@ public class TornadoVM extends TornadoLogger {
         debug("fetching %d object states...", globalStates.length);
         for (int i = 0; i < objects.size(); i++) {
             final Object object = objects.get(i);
+            guarantee(object != null, "null object found in TornadoVM");
             globalStates[i] = getTornadoRuntime().resolveObject(object);
             debug("\tobject[%d]: [0x%x] %s %s", i, object.hashCode(), object,
                     globalStates[i]);
@@ -102,6 +105,10 @@ public class TornadoVM extends TornadoLogger {
 
         debug("%s - vm ready to go", graphContext.getId());
         buffer.mark();
+    }
+
+    private GlobalObjectState resolveGlobalObjectState(int index) {
+        return globalStates[index];
     }
 
     private DeviceObjectState resolveObjectState(int index, int device) {
@@ -250,7 +257,7 @@ public class TornadoVM extends TornadoLogger {
 
                 if (DEBUG) {
                     debug("vm: LAUNCH %s on %s [event list=%d]",
-                            tasks.get(taskIndex).getName(),
+                            task.getName(),
                             contexts.get(contextIndex), eventList);
                 }
 
@@ -295,14 +302,16 @@ public class TornadoVM extends TornadoLogger {
                     if (argType == CONSTANT_ARG) {
                         stack.push(constants.get(argIndex));
                     } else if (argType == REFERENCE_ARG) {
-                        final DeviceObjectState objectState = resolveObjectState(
-                                argIndex, contextIndex);
+                        final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
+                        final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
+
                         guarantee(objectState.isValid(),
                                 "object is not valid: %s %s",
                                 objects.get(argIndex), objectState);
                         stack.push(objects.get(argIndex), objectState);
-                        if (accesses[i] == Access.WRITE
-                                || accesses[i] == Access.READ_WRITE) {
+                        if (accesses[i] == WRITE
+                                || accesses[i] == READ_WRITE) {
+                            globalState.setOwner(device);
                             objectState.setContents(true);
                         }
                     } else {
