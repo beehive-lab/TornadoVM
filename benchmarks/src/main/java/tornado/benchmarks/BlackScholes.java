@@ -2,7 +2,6 @@ package tornado.benchmarks;
 
 import tornado.api.Parallel;
 import tornado.collections.math.TornadoMath;
-import tornado.drivers.opencl.OpenCL;
 import tornado.runtime.api.TaskSchedule;
 
 public class BlackScholes {
@@ -41,9 +40,9 @@ public class BlackScholes {
             }
         } else {
             for (int i = 0; i < iterations; i++) {
-                tasks.schedule().waitOn();
+                tasks.execute();
             }
-            OpenCL.defaultDevice().sync(bs.put, bs.call);
+            tasks.syncObjects(bs.put, bs.call);
         }
         end = System.nanoTime();
 
