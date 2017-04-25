@@ -250,7 +250,7 @@ public class OCLContext extends TornadoLogger {
     }
 
     public OCLDeviceContext createDeviceContext(int index) {
-        Tornado.debug("creating device context for device: %s",
+        debug("creating device context for device: %s",
                 devices.get(index).toString());
         createCommandQueue(index);
         return new OCLDeviceContext(devices.get(index), queues[index], this);
@@ -290,7 +290,7 @@ public class OCLContext extends TornadoLogger {
             allocatedRegions[allocatedRegionCount] = devicePtr;
             allocatedRegionCount++;
             info("buffer allocated %s @ 0x%x",
-                    RuntimeUtilities.humanReadableByteCount(bytes, true),
+                    RuntimeUtilities.humanReadableByteCount(bytes, false),
                     devicePtr);
         } catch (OCLException e) {
             error(e.getMessage());
