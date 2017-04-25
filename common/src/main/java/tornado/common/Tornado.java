@@ -30,6 +30,7 @@ public final class Tornado {
     /*
      * Forces the executing kernel to output its arguements before execution
      */
+    public static final boolean DUMP_TASK_SCHEDULE = Boolean.parseBoolean(settings.getProperty("tornado.schedule.dump", "False"));
     public static final boolean DEBUG_KERNEL_ARGS = Boolean.parseBoolean(settings.getProperty("tornado.debug.kernelargs", "False"));
 
     public static final boolean PRINT_COMPILE_TIMES = Boolean.parseBoolean(settings.getProperty("tornado.debug.compiletimes", "False"));
@@ -57,6 +58,7 @@ public final class Tornado {
     public static final boolean ENABLE_OOO_EXECUTION = Boolean
             .parseBoolean(settings.getProperty("tornado.ooo-execution.enable",
                     "False"));
+    public static final boolean VM_USE_DEPS = Boolean.parseBoolean(Tornado.getProperty("tornado.vm.deps", "False"));
     public static final boolean FORCE_BLOCKING_API_CALLS = Boolean
             .parseBoolean(settings.getProperty("tornado.opencl.blocking",
                     "False"));
