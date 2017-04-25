@@ -76,7 +76,7 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
         }
 
         OCLDeviceMapping mapping = (OCLDeviceMapping) context.getDeviceMapping();
-        if (mapping.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_CPU) {
+        if (mapping.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_CPU || mapping.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR) {
             int[] config = new int[3];
             String configCpu = Tornado.getProperty("tornado.opencl.cpu.config");
             if (configCpu != null) {
