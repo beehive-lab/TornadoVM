@@ -2,7 +2,6 @@ package tornado.drivers.opencl.mm;
 
 import java.lang.reflect.Method;
 import tornado.api.Parallel;
-import tornado.api.Write;
 import tornado.common.*;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
@@ -71,19 +70,19 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return heapLimit - heapPosition;
     }
 
-    private void initFP64(@Write double[] data, int count) {
+    private void initFP64(double[] data, int count) {
         for (@Parallel int i = 0; i < count; i++) {
             data[i] = 0;
         }
     }
 
-    private void initFP32(@Write float[] data, int count) {
+    private void initFP32(float[] data, int count) {
         for (@Parallel int i = 0; i < count; i++) {
             data[i] = -1f;
         }
     }
 
-    private void initU32(@Write int[] data, int count) {
+    private void initU32(int[] data, int count) {
         for (@Parallel int i = 0; i < count; i++) {
             data[i] = 0;
         }
@@ -188,7 +187,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
                     32);
         } else {
             callStack = null;
-            Tornado.fatal("Out of call-stack memory");
+            fatal("Out of call-stack memory");
             System.exit(-1);
         }
 
@@ -227,7 +226,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         deviceBufferAddress = address;
         initialised = true;
         info("Located heap @ 0x%x (%s) on %s", deviceBufferAddress,
-                RuntimeUtilities.humanReadableByteCount(heapLimit, true),
+                RuntimeUtilities.humanReadableByteCount(heapLimit, false),
                 deviceContext.getDevice().getName());
 
 //        createMemoryInitializers(backend);
