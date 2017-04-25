@@ -19,8 +19,6 @@ import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.runtime.TornadoRuntime.getVMConfig;
 import static tornado.runtime.TornadoRuntime.getVMRuntime;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLObjectWrapper implements ObjectBuffer {
 
@@ -429,7 +427,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
                     return internalEvents[0];
                 default:
                     return deviceContext
-                            .enqueueMarker(internalEvents);
+                            .enqueueBarrier(internalEvents);
             }
 
         }
@@ -476,7 +474,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
                     return internalEvents[0];
                 default:
                     return deviceContext
-                            .enqueueMarker(internalEvents);
+                            .enqueueBarrier(internalEvents);
             }
         }
     }
