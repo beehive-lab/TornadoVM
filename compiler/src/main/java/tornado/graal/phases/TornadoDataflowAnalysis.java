@@ -35,7 +35,6 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             // Only interested in objects
             if (param != null && param.stamp() instanceof ObjectStamp) {
                 accesses[i] = processUseages(param);
-
             }
 
             debug("access: parameter %d -> %s\n", i, accesses[i]);
