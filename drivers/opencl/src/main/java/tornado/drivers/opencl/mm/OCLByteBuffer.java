@@ -25,7 +25,7 @@ public class OCLByteBuffer {
     }
 
     public OCLByteBuffer(final OCLDeviceContext device, final long offset, final long numBytes) {
-        this.deviceContext = device;
+        this(device);
         this.offset = offset;
         this.bytes = numBytes;
         buffer = ByteBuffer.allocate((int) numBytes);
@@ -66,7 +66,6 @@ public class OCLByteBuffer {
         write(null);
     }
 
-   
     public void write(final int[] events) {
         deviceContext.writeBuffer(toBuffer(), offset, bytes, buffer.array(), events);
     }
@@ -74,7 +73,7 @@ public class OCLByteBuffer {
     public int enqueueWrite() {
         return enqueueWrite(null);
     }
-    
+
     public int enqueueWrite(final int[] events) {
         return deviceContext.enqueueWriteBuffer(toBuffer(), offset, bytes, buffer.array(), events);
     }
