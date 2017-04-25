@@ -101,7 +101,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
             internalEvents[0] = prepareArrayHeader().enqueueRead(null);
             internalEvents[1] = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
                     - arrayHeaderSize, array, events);
-            return ENABLE_OOO_EXECUTION | VM_USE_DEPS ? deviceContext.enqueueBarrier(internalEvents) : internalEvents[1];
+            return ENABLE_OOO_EXECUTION | VM_USE_DEPS ? deviceContext.enqueueMarker(internalEvents) : internalEvents[1];
         }
     }
 
