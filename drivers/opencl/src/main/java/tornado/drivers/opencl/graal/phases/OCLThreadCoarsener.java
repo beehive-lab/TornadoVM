@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,13 +41,14 @@ import tornado.meta.Meta;
 import tornado.meta.domain.DomainTree;
 import tornado.meta.domain.IntDomain;
 
-import static tornado.common.Tornado.USE_THREAD_COARSENING;
-import static tornado.common.Tornado.debug;
+import static tornado.common.Tornado.*;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoUnsupportedError.unsupported;
 
 public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
+
+    private static final boolean XEON_PHI_AS_CPU = Boolean.parseBoolean(getProperty("tornado.coarsener.xeonphi.ascpu", "False"));
 
     private ParallelRangeNode findParallelRange(LoopBeginNode loopBegin) {
 
@@ -91,7 +92,7 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
         }
 
         OCLDeviceMapping mapping = (OCLDeviceMapping) context.getDeviceMapping();
-        if (mapping.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_CPU || mapping.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR) {
+        if (mapping.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_CPU || (mapping.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && XEON_PHI_AS_CPU)) {
             int[] config = new int[3];
             String configCpu = Tornado.getProperty("tornado.opencl.cpu.config");
             if (configCpu != null) {
