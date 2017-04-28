@@ -7,7 +7,7 @@ MAIN_CLASS="Benchmark"
 TORNADO_CMD="tornado"
 DATE=$(date '+%Y-%m-%d-%H:%M')
 
-RESULTS_ROOT="./results"
+RESULTS_ROOT="${TORNADO_ROOT}/var/results"
 BM_ROOT="${RESULTS_ROOT}/${DATE}"
 
 if [ ! -d ${BM_ROOT} ]; then
@@ -22,7 +22,7 @@ if [ ! -z "${TORNADO_FLAGS}" ];then
   echo ${TORNADO_FLAGS} > "${BM_ROOT}/tornado.flags"
 fi
 
-echo $(git rev-parse HEAD) > "${BM_ROOT}/git.sha"
+#echo $(git rev-parse HEAD) > "${BM_ROOT}/git.sha"
 
 for bm in ${BENCHMARKS}; do
 	for (( i=0; i<${ITERATIONS}; i++ )); do
@@ -31,16 +31,3 @@ for bm in ${BENCHMARKS}; do
 	done
 done
 
-DEVICES=$(${TORNADO_CMD} tornado.drivers.opencl.OpenCL | grep "\[.:.\]" | awk '{print $1}' | perl -pe 's/\[(.):(.)\]/$1-$2/g' | tr '\n' ' ')
-for device in ${DEVICES}; do
-    device_flags=$(echo "${device}" | perl -pe 's/(.)-(.)/-Dtornado.platform=$1 -Dtornado.device=$2/g')
-    for (( i=0; i<${ITERATIONS}; i++ )); do
-	echo "running ${i} black scholes on ${device} ..."
-        ${TORNADO_CMD} ${device_flags} ${TORNADO_FLAGS} ${PACKAGE}.BlackScholes >> "${LOGFILE}-blackscholes-${device}-${i}.log"
-    done
-done
-
-for (( i=0; i<${ITERATIONS}; i++ )); do
-    echo "running ${i} black scholes java ..."
-    ${TORNADO_CMD} -Dbs.java=True ${TORNADO_FLAGS} ${PACKAGE}.BlackScholes >> "${LOGFILE}-blackscholes-java-${i}.log"
-done
