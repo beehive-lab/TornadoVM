@@ -1,3 +1,19 @@
+/*
+ * Copyright 2012 James Clarkson.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <jni.h>
 #ifdef _OSX
 #include <OpenCL/cl.h>
@@ -14,14 +30,14 @@
  * Signature: (JI)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_tornado_drivers_opencl_OCLPlatform_clGetPlatformInfo
-(JNIEnv *env, jclass clazz, jlong platform_id, jint platform_info){
+(JNIEnv *env, jclass clazz, jlong platform_id, jint platform_info) {
     OPENCL_PROLOGUE;
-    
+
     char value[512];
-    
+
     OPENCL_SOFT_ERROR("clGetPlatformInfo",
-                    clGetPlatformInfo((cl_platform_id) platform_id,(cl_platform_info) platform_info,sizeof(char)*512,value,NULL),0);
-  
+            clGetPlatformInfo((cl_platform_id) platform_id, (cl_platform_info) platform_info, sizeof (char)*512, value, NULL), 0);
+
     return (*env)->NewStringUTF(env, value);
 }
 
@@ -31,11 +47,11 @@ JNIEXPORT jstring JNICALL Java_tornado_drivers_opencl_OCLPlatform_clGetPlatformI
  * Signature: (JJ)I
  */
 JNIEXPORT jint JNICALL Java_tornado_drivers_opencl_OCLPlatform_clGetDeviceCount
-(JNIEnv *env, jclass clazz, jlong platform_id, jlong device_type){
+(JNIEnv *env, jclass clazz, jlong platform_id, jlong device_type) {
     OPENCL_PROLOGUE;
     cl_uint num_devices = 0;
     OPENCL_SOFT_ERROR("clGetDeviceIDs",
-                    clGetDeviceIDs((cl_platform_id) platform_id, (cl_device_type) device_type,0,NULL,&num_devices),0);
+            clGetDeviceIDs((cl_platform_id) platform_id, (cl_device_type) device_type, 0, NULL, &num_devices), 0);
     return (jint) num_devices;
 }
 
@@ -45,27 +61,27 @@ JNIEXPORT jint JNICALL Java_tornado_drivers_opencl_OCLPlatform_clGetDeviceCount
  * Signature: (JJ[J)I
  */
 JNIEXPORT jint JNICALL Java_tornado_drivers_opencl_OCLPlatform_clGetDeviceIDs
-(JNIEnv *env, jclass clazz, jlong platform_id, jlong device_type, jlongArray array){
+(JNIEnv *env, jclass clazz, jlong platform_id, jlong device_type, jlongArray array) {
     OPENCL_PROLOGUE;
-    
+
     jlong *devices;
     jsize len;
-    
+
     devices = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
     len = (*env)->GetArrayLength(env, array);
-    
+
     cl_uint num_devices = 0;
     OPENCL_SOFT_ERROR("clGetDeviceIDs",
-                    clGetDeviceIDs((cl_platform_id) platform_id, (cl_device_type) device_type,len, (cl_device_id*) devices,&num_devices),0);
-    
+            clGetDeviceIDs((cl_platform_id) platform_id, (cl_device_type) device_type, len, (cl_device_id*) devices, &num_devices), 0);
+
     (*env)->ReleasePrimitiveArrayCritical(env, array, devices, 0);
     return (jint) num_devices;
 
 }
 
-void context_notify(const char *errinfo, const void *private_info, size_t cb, void * user_data){
+void context_notify(const char *errinfo, const void *private_info, size_t cb, void * user_data) {
     printf("tornado.drivers.opencl> notify error:\n");
-    printf("tornado.drivers.opencl> %s\n",errinfo);
+    printf("tornado.drivers.opencl> %s\n", errinfo);
 }
 
 /*
@@ -74,22 +90,22 @@ void context_notify(const char *errinfo, const void *private_info, size_t cb, vo
  * Signature: (J[J)J
  */
 JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLPlatform_clCreateContext
-(JNIEnv *env, jclass clazz, jlong platform_id, jlongArray array){
+(JNIEnv *env, jclass clazz, jlong platform_id, jlongArray array) {
     OPENCL_PROLOGUE;
-    
+
     jlong *devices;
     jsize len;
     cl_context context;
-    
-    cl_context_properties properties[] = {CL_CONTEXT_PLATFORM, platform_id, 0 };
-    
+
+    cl_context_properties properties[] = {CL_CONTEXT_PLATFORM, platform_id, 0};
+
     devices = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
     len = (*env)->GetArrayLength(env, array);
-    
-    OPENCL_CHECK_ERROR("clCreateContext",
-                      context = clCreateContext(properties,len,(cl_device_id*) devices,&context_notify,NULL,&error_id),0);
 
-    
+    OPENCL_CHECK_ERROR("clCreateContext",
+            context = clCreateContext(properties, len, (cl_device_id*) devices, &context_notify, NULL, &error_id), 0);
+
+
     (*env)->ReleasePrimitiveArrayCritical(env, array, devices, 0);
     return (jlong) context;
 }

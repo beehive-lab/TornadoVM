@@ -1,3 +1,19 @@
+/*
+ * Copyright 2012 James Clarkson.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <jni.h>
 #ifdef _OSX
 #include <OpenCL/cl.h>
@@ -18,7 +34,7 @@
             OPENCL_CHECK_ERROR("clCreateBuffer (byte)", mem = clCreateBuffer((cl_context) context_id, (cl_mem_flags) flags, (size_t) len, (void *) buffer, &error_id),-1); \
             (*env)->ReleasePrimitiveArrayCritical(env, array, buffer, JNI_ABORT); \
             return (jlong) mem; \
-        } 
+        }
 
 CREATE_ARRAY(Java_tornado_drivers_opencl_OCLContext, B, byte)
 CREATE_ARRAY(Java_tornado_drivers_opencl_OCLContext, I, int)
@@ -65,9 +81,9 @@ WRITE_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, D, double)
             OPENCL_RELEASE_WAITLIST(array2); \
             return (jlong) event; \
     }
-READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue,B,byte)
-READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue,S,short)
-READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue,I,int)
-READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue,J,long)
-READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue,F,float)
-READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue,D,double)
+READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, B, byte)
+READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, S, short)
+READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, I, int)
+READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, J, long)
+READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, F, float)
+READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, D, double)
