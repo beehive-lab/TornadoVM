@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,13 +20,16 @@ import tornado.api.Payload;
 import tornado.api.Vector;
 import tornado.collections.math.TornadoMath;
 
+import static java.lang.String.format;
+import static java.nio.ByteBuffer.wrap;
+
 /**
  * Class that represents a vector of 3x bytes e.g. <byte,byte,byte>
  *
  * @author jamesclarkson
  */
 @Vector
-public class Byte4 implements PrimitiveStorage<ByteBuffer> {
+public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
 
     private static final String numberFormat = "{ x=%-7d, y=%-7d, z=%-7d, w=%-7d }";
 
@@ -118,7 +121,7 @@ public class Byte4 implements PrimitiveStorage<ByteBuffer> {
     }
 
     public String toString(String fmt) {
-        return String.format(fmt, getX(), getY(), getZ(), getW());
+        return format(fmt, getX(), getY(), getZ(), getW());
     }
 
     @Override
@@ -149,7 +152,7 @@ public class Byte4 implements PrimitiveStorage<ByteBuffer> {
 
     @Override
     public ByteBuffer asBuffer() {
-        return ByteBuffer.wrap(storage);
+        return wrap(storage);
     }
 
     @Override

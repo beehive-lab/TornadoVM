@@ -15,53 +15,53 @@
  */
 package tornado.collections.types;
 
-import java.nio.FloatBuffer;
+import java.nio.DoubleBuffer;
 import tornado.api.Payload;
 import tornado.api.Vector;
 import tornado.collections.math.TornadoMath;
 
 import static java.lang.String.format;
-import static java.nio.FloatBuffer.wrap;
-import static tornado.collections.types.FloatOps.fmt4;
+import static java.nio.DoubleBuffer.wrap;
+import static tornado.collections.types.DoubleOps.fmt4;
 
 /**
- * Class that represents a vector of 4x floats e.g. <float,float,float>
+ * Class that represents a vector of 4x doubles e.g. <double,double,double>
  *
  * @author jamesclarkson
  */
 @Vector
-public final class Float4 implements PrimitiveStorage<FloatBuffer> {
+public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
 
-    public static final Class<Float4> TYPE = Float4.class;
+    public static final Class<Double4> TYPE = Double4.class;
 
     /**
      * backing array
      */
     @Payload
-    final protected float[] storage;
+    final protected double[] storage;
 
     /**
      * number of elements in the storage
      */
     final private static int numElements = 4;
 
-    public Float4(float[] storage) {
+    public Double4(double[] storage) {
         this.storage = storage;
     }
 
-    public Float4() {
-        this(new float[numElements]);
+    public Double4() {
+        this(new double[numElements]);
     }
 
-    public float get(int index) {
+    public double get(int index) {
         return storage[index];
     }
 
-    public void set(int index, float value) {
+    public void set(int index, double value) {
         storage[index] = value;
     }
 
-    public Float4(float x, float y, float z, float w) {
+    public Double4(double x, double y, double z, double w) {
         this();
         setX(x);
         setY(y);
@@ -69,42 +69,42 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         setW(w);
     }
 
-    public void set(Float4 value) {
+    public void set(Double4 value) {
         setX(value.getX());
         setY(value.getY());
         setZ(value.getZ());
         setW(value.getW());
     }
 
-    public float getX() {
+    public double getX() {
         return get(0);
     }
 
-    public float getY() {
+    public double getY() {
         return get(1);
     }
 
-    public float getZ() {
+    public double getZ() {
         return get(2);
     }
 
-    public float getW() {
+    public double getW() {
         return get(3);
     }
 
-    public void setX(float value) {
+    public void setX(double value) {
         set(0, value);
     }
 
-    public void setY(float value) {
+    public void setY(double value) {
         set(1, value);
     }
 
-    public void setZ(float value) {
+    public void setZ(double value) {
         set(2, value);
     }
 
-    public void setW(float value) {
+    public void setW(double value) {
         set(3, value);
     }
 
@@ -113,8 +113,8 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
      *
      * @return
      */
-    public Float4 duplicate() {
-        final Float4 vector = new Float4();
+    public Double4 duplicate() {
+        final Double4 vector = new Double4();
         vector.set(this);
         return vector;
     }
@@ -129,28 +129,28 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * Cast vector into a Float2
+     * Cast vector into a Double2
      *
      * @return
      */
-    public Float2 asFloat2() {
-        return new Float2(getX(), getY());
+    public Double2 asDouble2() {
+        return new Double2(getX(), getY());
     }
 
-    public Float3 asFloat3() {
-        return new Float3(getX(), getY(), getZ());
+    public Double3 asDouble3() {
+        return new Double3(getX(), getY(), getZ());
     }
 
-    public Float2 getLo() {
-        return asFloat2();
+    public Double2 getLo() {
+        return asDouble2();
     }
 
-    public Float2 getHi() {
-        return new Float2(getZ(), getW());
+    public Double2 getHi() {
+        return new Double2(getZ(), getW());
     }
 
-    protected static final Float4 loadFromArray(final float[] array, int index) {
-        final Float4 result = new Float4();
+    protected static final Double4 loadFromArray(final double[] array, int index) {
+        final Double4 result = new Double4();
         result.setX(array[index]);
         result.setY(array[index + 1]);
         result.setZ(array[index + 2]);
@@ -158,7 +158,7 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         return result;
     }
 
-    protected final void storeToArray(final float[] array, int index) {
+    protected final void storeToArray(final double[] array, int index) {
         array[index] = getX();
         array[index + 1] = getY();
         array[index + 2] = getZ();
@@ -166,12 +166,12 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     @Override
-    public void loadFromBuffer(FloatBuffer buffer) {
+    public void loadFromBuffer(DoubleBuffer buffer) {
         asBuffer().put(buffer);
     }
 
     @Override
-    public FloatBuffer asBuffer() {
+    public DoubleBuffer asBuffer() {
         return wrap(storage);
     }
 
@@ -180,7 +180,7 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         return numElements;
     }
 
-    public void fill(float value) {
+    public void fill(double value) {
         for (int i = 0; i < storage.length; i++) {
             storage[i] = value;
         }
@@ -189,124 +189,124 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * *
-     * Operations on Float4 vectors
+     * Operations on Double4 vectors
      */
 
     /*
      * vector = op( vector, vector )
      */
-    public static Float4 add(Float4 a, Float4 b) {
-        return new Float4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW()
+    public static Double4 add(Double4 a, Double4 b) {
+        return new Double4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW()
                 + b.getW());
     }
 
-    public static Float4 sub(Float4 a, Float4 b) {
-        return new Float4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW()
+    public static Double4 sub(Double4 a, Double4 b) {
+        return new Double4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW()
                 - b.getW());
     }
 
-    public static Float4 div(Float4 a, Float4 b) {
-        return new Float4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW()
+    public static Double4 div(Double4 a, Double4 b) {
+        return new Double4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW()
                 / b.getW());
     }
 
-    public static Float4 mult(Float4 a, Float4 b) {
-        return new Float4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW()
+    public static Double4 mult(Double4 a, Double4 b) {
+        return new Double4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW()
                 * b.getW());
     }
 
-    public static Float4 min(Float4 a, Float4 b) {
-        return new Float4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(
+    public static Double4 min(Double4 a, Double4 b) {
+        return new Double4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(
                 a.getZ(), b.getZ()), Math.min(a.getW(), b.getW()));
     }
 
-    public static Float4 max(Float4 a, Float4 b) {
-        return new Float4(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(
+    public static Double4 max(Double4 a, Double4 b) {
+        return new Double4(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(
                 a.getZ(), b.getZ()), Math.max(a.getW(), b.getW()));
     }
 
     /*
      * vector = op (vector, scalar)
      */
-    public static Float4 add(Float4 a, float b) {
-        return new Float4(a.getX() + b, a.getY() + b, a.getZ() + b, a.getW() + b);
+    public static Double4 add(Double4 a, double b) {
+        return new Double4(a.getX() + b, a.getY() + b, a.getZ() + b, a.getW() + b);
     }
 
-    public static Float4 sub(Float4 a, float b) {
-        return new Float4(a.getX() - b, a.getY() - b, a.getZ() - b, a.getW() - b);
+    public static Double4 sub(Double4 a, double b) {
+        return new Double4(a.getX() - b, a.getY() - b, a.getZ() - b, a.getW() - b);
     }
 
-    public static Float4 mult(Float4 a, float b) {
-        return new Float4(a.getX() * b, a.getY() * b, a.getZ() * b, a.getW() * b);
+    public static Double4 mult(Double4 a, double b) {
+        return new Double4(a.getX() * b, a.getY() * b, a.getZ() * b, a.getW() * b);
     }
 
-    public static Float4 div(Float4 a, float b) {
-        return new Float4(a.getX() / b, a.getY() / b, a.getZ() / b, a.getW() / b);
+    public static Double4 div(Double4 a, double b) {
+        return new Double4(a.getX() / b, a.getY() / b, a.getZ() / b, a.getW() / b);
     }
 
-    public static Float4 inc(Float4 a, float value) {
+    public static Double4 inc(Double4 a, double value) {
         return add(a, value);
     }
 
-    public static Float4 dec(Float4 a, float value) {
+    public static Double4 dec(Double4 a, double value) {
         return sub(a, value);
     }
 
-    public static Float4 scaleByInverse(Float4 a, float value) {
+    public static Double4 scaleByInverse(Double4 a, double value) {
         return mult(a, 1f / value);
     }
 
-    public static Float4 scale(Float4 a, float value) {
+    public static Double4 scale(Double4 a, double value) {
         return mult(a, value);
     }
 
     /*
      * vector = op(vector)
      */
-    public static Float4 sqrt(Float4 a) {
-        return new Float4(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()),
+    public static Double4 sqrt(Double4 a) {
+        return new Double4(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()),
                 TornadoMath.sqrt(a.getZ()), TornadoMath.sqrt(a.getW()));
     }
 
-    public static Float4 floor(Float4 a) {
-        return new Float4(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()),
+    public static Double4 floor(Double4 a) {
+        return new Double4(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()),
                 TornadoMath.floor(a.getZ()), TornadoMath.floor(a.getW()));
     }
 
-    public static Float4 fract(Float4 a) {
-        return new Float4(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()),
+    public static Double4 fract(Double4 a) {
+        return new Double4(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()),
                 TornadoMath.fract(a.getZ()), TornadoMath.fract(a.getW()));
     }
 
     /*
      * misc inplace vector ops
      */
-    public static Float4 clamp(Float4 x, float min, float max) {
-        return new Float4(
+    public static Double4 clamp(Double4 x, double min, double max) {
+        return new Double4(
                 TornadoMath.clamp(x.getX(), min, max),
                 TornadoMath.clamp(x.getY(), min, max),
                 TornadoMath.clamp(x.getZ(), min, max),
                 TornadoMath.clamp(x.getW(), min, max));
     }
 
-    public static void normalise(Float4 value) {
-        final float len = length(value);
+    public static void normalise(Double4 value) {
+        final double len = length(value);
         scaleByInverse(value, len);
     }
 
     /*
      * vector wide operations
      */
-    public static float min(Float4 value) {
+    public static double min(Double4 value) {
         return Math.min(value.getX(), Math.min(value.getY(), Math.min(value.getZ(), value.getW())));
     }
 
-    public static float max(Float4 value) {
+    public static double max(Double4 value) {
         return Math.max(value.getX(), Math.max(value.getY(), Math.max(value.getZ(), value.getW())));
     }
 
-    public static float dot(Float4 a, Float4 b) {
-        final Float4 m = mult(a, b);
+    public static double dot(Double4 a, Double4 b) {
+        final Double4 m = mult(a, b);
         return m.getX() + m.getY() + m.getZ() + m.getW();
     }
 
@@ -315,11 +315,11 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
      *
      * @return
      */
-    public static float length(Float4 value) {
+    public static double length(Double4 value) {
         return TornadoMath.sqrt(dot(value, value));
     }
 
-    public static boolean isEqual(Float4 a, Float4 b) {
+    public static boolean isEqual(Double4 a, Double4 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 

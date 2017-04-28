@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,9 @@ import tornado.api.Payload;
 import tornado.api.Vector;
 import tornado.collections.math.TornadoMath;
 
+import static java.lang.String.format;
+import static java.nio.IntBuffer.wrap;
+
 /**
  * Class that represents a vector of 3x ints e.g. <int,int,int>
  *
@@ -27,7 +30,7 @@ import tornado.collections.math.TornadoMath;
  *
  */
 @Vector
-public class Int3 implements PrimitiveStorage<IntBuffer> {
+public final class Int3 implements PrimitiveStorage<IntBuffer> {
 
     public static final Class<Int3> TYPE = Int3.class;
 
@@ -113,7 +116,7 @@ public class Int3 implements PrimitiveStorage<IntBuffer> {
     }
 
     public String toString(String fmt) {
-        return String.format(fmt, getX(), getY(), getZ());
+        return format(fmt, getX(), getY(), getZ());
     }
 
     @Override
@@ -142,7 +145,7 @@ public class Int3 implements PrimitiveStorage<IntBuffer> {
 
     @Override
     public IntBuffer asBuffer() {
-        return IntBuffer.wrap(storage);
+        return wrap(storage);
     }
 
     @Override

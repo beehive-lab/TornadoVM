@@ -15,13 +15,14 @@
  */
 package tornado.collections.types;
 
-import static java.lang.Float.floatToRawIntBits;
-import static java.lang.Math.*;
+import static java.lang.Double.doubleToRawLongBits;
+import static java.lang.Math.abs;
+import static java.lang.Math.ulp;
 import static tornado.collections.math.TornadoMath.findULPDistance;
 
-public class FloatOps {
+public class DoubleOps {
 
-    public static final float EPSILON = 1e-7f;
+    public static final double EPSILON = 1e-7f;
     public static final String fmt = "%.3f";
     public static final String fmt2 = "{%.3f,%.3f}";
     public static final String fmt3 = "{%.3f,%.3f,%.3f}";
@@ -33,16 +34,16 @@ public class FloatOps {
     public static final String fmt8 = "{%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f}";
     public static final String fmt6e = "{%e,%e,%e,%e,%e,%e}";
 
-    public static final boolean compareBits(float a, float b) {
-        long ai = floatToRawIntBits(a);
-        long bi = floatToRawIntBits(b);
+    public static final boolean compareBits(double a, double b) {
+        long ai = doubleToRawLongBits(a);
+        long bi = doubleToRawLongBits(b);
 
         long diff = ai ^ bi;
         return (diff == 0);
     }
 
-    public static final boolean compareULP(float value, float expected, float ulps) {
-        final float tol = ulps * ulp(expected);
+    public static final boolean compareULP(double value, double expected, double ulps) {
+        final double tol = ulps * ulp(expected);
         if (value == expected) {
             return true;
         }
@@ -50,50 +51,50 @@ public class FloatOps {
         return abs(value - expected) < tol;
     }
 
-    public static final float findMaxULP(Float2 value, Float2 expected) {
+    public static final double findMaxULP(Double2 value, Double2 expected) {
         return findULPDistance(value.storage, expected.storage);
     }
 
-    public static final float findMaxULP(Float3 value, Float3 expected) {
+    public static final double findMaxULP(Double3 value, Double3 expected) {
         return findULPDistance(value.storage, expected.storage);
     }
 
-    public static final float findMaxULP(Float4 value, Float4 expected) {
+    public static final double findMaxULP(Double4 value, Double4 expected) {
         return findULPDistance(value.storage, expected.storage);
     }
 
-    public static final float findMaxULP(Float6 value, Float6 expected) {
+    public static final double findMaxULP(Double6 value, Double6 expected) {
         return findULPDistance(value.storage, expected.storage);
     }
 
-    public static final float findMaxULP(Float8 value, Float8 expected) {
+    public static final double findMaxULP(Double8 value, Double8 expected) {
         return findULPDistance(value.storage, expected.storage);
     }
 
-    public static final float findMaxULP(float value, float expected) {
-        final float ULP = ulp(expected);
+    public static final double findMaxULP(double value, double expected) {
+        final double ULP = ulp(expected);
 
         if (value == expected) {
             return 0f;
         }
 
-        final float absValue = abs(value - expected);
+        final double absValue = abs(value - expected);
         return absValue / ULP;
     }
 
-    public static final boolean compare(float a, float b) {
+    public static final boolean compare(double a, double b) {
         return (abs(a - b) <= EPSILON);
     }
 
-    public static final boolean compare(float a, float b, float tol) {
+    public static final boolean compare(double a, double b, double tol) {
         return (abs(a - b) <= tol);
     }
 
-    public static final float sq(float value) {
+    public static final double sq(double value) {
         return value * value;
     }
 
-    public static final void atomicAdd(float[] array, int index, float value) {
+    public static final void atomicAdd(double[] array, int index, double value) {
         array[index] += value;
     }
 }

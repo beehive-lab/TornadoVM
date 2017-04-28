@@ -17,6 +17,12 @@ package tornado.collections.types;
 
 import java.nio.ByteBuffer;
 
+import static java.lang.String.format;
+import static java.nio.ByteBuffer.wrap;
+import static tornado.collections.types.Byte3.loadFromArray;
+import static tornado.collections.types.ByteOps.fmt3;
+import static tornado.collections.types.StorageFormats.toRowMajor;
+
 public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
 
     /**
@@ -65,7 +71,7 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     }
 
     public ImageByte3(byte[][] matrix) {
-        this(matrix.length / elementSize, matrix[0].length / elementSize, StorageFormats.toRowMajor(matrix));
+        this(matrix.length / elementSize, matrix[0].length / elementSize, toRowMajor(matrix));
     }
 
     private final int toIndex(int x, int y) {
@@ -82,7 +88,7 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
 
     public Byte3 get(int x, int y) {
         final int offset = toIndex(x, y);
-        return Byte3.loadFromArray(storage, offset);
+        return loadFromArray(storage, offset);
     }
 
     public void set(int x, int y, Byte3 value) {
@@ -129,9 +135,9 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     }
 
     public String toString() {
-        String result = String.format("ImageByte3 <%d x %d>", X, Y);
+        String result = format("ImageByte3 <%d x %d>", X, Y);
         if (X <= 8 && Y <= 8) {
-            result += "\n" + toString(ByteOps.fmt3);
+            result += "\n" + toString(fmt3);
         }
         return result;
     }
@@ -143,7 +149,7 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
 
     @Override
     public ByteBuffer asBuffer() {
-        return ByteBuffer.wrap(storage);
+        return wrap(storage);
     }
 
     @Override

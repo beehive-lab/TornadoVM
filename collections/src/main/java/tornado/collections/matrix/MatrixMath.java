@@ -19,6 +19,8 @@ import tornado.collections.types.Float6;
 import tornado.collections.types.Matrix4x4Float;
 import tornado.collections.types.MatrixFloat;
 import tornado.collections.types.VectorFloat;
+
+import static java.lang.Math.abs;
 import static tornado.collections.types.MatrixFloat.*;
 import static tornado.collections.types.VectorFloat.*;
 import static tornado.collections.types.Float6.*;
@@ -103,7 +105,7 @@ public final class MatrixMath {
     	         double scale = 0.0;
     	         double h = 0.0;
     	         for (int k = 0; k < i; k++) {
-    	            scale = scale + Math.abs(d[k]);
+    	            scale = scale + abs(d[k]);
     	         }
     	         if (scale == 0.0) {
     	            e[i] = d[i-1];

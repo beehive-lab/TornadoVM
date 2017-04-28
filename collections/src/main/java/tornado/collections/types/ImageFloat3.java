@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,16 @@
 package tornado.collections.types;
 
 import java.nio.FloatBuffer;
-import tornado.common.exceptions.TornadoInternalError;
+
+import static java.lang.Float.MAX_VALUE;
+import static java.lang.Float.MIN_VALUE;
+import static java.lang.String.format;
+import static java.nio.FloatBuffer.wrap;
+import static tornado.collections.types.Float3.findULPDistance;
+import static tornado.collections.types.Float3.sqrt;
+import static tornado.collections.types.FloatOps.fmt3;
+import static tornado.collections.types.StorageFormats.toRowMajor;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
@@ -66,10 +75,10 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public ImageFloat3(float[][] matrix) {
-        this(matrix.length / elementSize, matrix[0].length / elementSize, StorageFormats.toRowMajor(matrix));
+        this(matrix.length / elementSize, matrix[0].length / elementSize, toRowMajor(matrix));
     }
 
-    private final int toIndex(int x, int y) {
+    private int toIndex(int x, int y) {
         return elementSize * (x + (y * X));
     }
 
@@ -101,7 +110,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
     @Deprecated
     public VectorFloat3 row(int row) {
-        TornadoInternalError.shouldNotReachHere();
+        shouldNotReachHere();
         return null;
 //    	int index = toIndex(0,row);
 //    	VectorFloat3 v = new VectorFloat3(X,index,1,getElementSize(),storage);
@@ -110,7 +119,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
     @Deprecated
     public VectorFloat3 column(int col) {
-        TornadoInternalError.shouldNotReachHere();
+        shouldNotReachHere();
         return null;
 //    	int index = toIndex(col, 0);
 //    	VectorFloat3 v = new VectorFloat3(Y,index,getStep(),getElementSize(),storage );
@@ -119,7 +128,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
     @Deprecated
     public VectorFloat3 diag() {
-        TornadoInternalError.shouldNotReachHere();
+        shouldNotReachHere();
         return null;
 //    	VectorFloat3 v = new VectorFloat3(Math.min(X,Y), getOffset(), getStep() + 1,getElementSize(),storage);
 //    	return v;
@@ -127,7 +136,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
     @Deprecated
     public ImageFloat3 subImage(int x0, int y0, int x1, int y1) {
-        TornadoInternalError.shouldNotReachHere();
+        shouldNotReachHere();
         return null;
 //    	int index = get(x0,y0).getOffset();
 //    	ImageFloat3 subM = new ImageFloat3(x1,y1,index,getStep(),getElementSize(),storage);
@@ -147,7 +156,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
      */
     @Deprecated
     public void transpose() {
-        TornadoInternalError.shouldNotReachHere();
+        shouldNotReachHere();
 
 //        if(X == Y){
 //            // transpose square matrix
@@ -191,17 +200,18 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
         return str;
     }
 
+    @Override
     public String toString() {
-        String result = String.format("ImageFloat3 <%d x %d>", X, Y);
+        String result = format("ImageFloat3 <%d x %d>", X, Y);
         if (X <= 8 && Y <= 8) {
-            result += "\n" + toString(FloatOps.fmt3);
+            result += "\n" + toString(fmt3);
         }
         return result;
     }
 
     @Deprecated
     public void scale(float alpha) {
-        TornadoInternalError.shouldNotReachHere();
+        shouldNotReachHere();
     }
 
     public Float3 mean() {
@@ -212,11 +222,11 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
             }
         }
 
-        return Float3.div(result, (float) (X * Y));
+        return Float3.div(result, (X * Y));
     }
 
     public Float3 min() {
-        Float3 result = new Float3(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
+        Float3 result = new Float3(MAX_VALUE, MAX_VALUE, MAX_VALUE);
 
         for (int row = 0; row < Y; row++) {
             for (int col = 0; col < X; col++) {
@@ -228,7 +238,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public Float3 max() {
-        Float3 result = new Float3(Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE);
+        Float3 result = new Float3(MIN_VALUE, MIN_VALUE, MIN_VALUE);
 
         for (int row = 0; row < Y; row++) {
             for (int col = 0; col < X; col++) {
@@ -246,16 +256,16 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
             for (int col = 0; col < X; col++) {
                 Float3 v = Float3.sub(mean, get(col, row));
                 v = Float3.mult(v, v);
-                v = Float3.div(v, (float) X);
+                v = Float3.div(v, X);
                 varience = Float3.add(v, varience);
             }
         }
 
-        return Float3.sqrt(varience);
+        return sqrt(varience);
     }
 
     public String summerise() {
-        return String.format("ImageFloat3<%dx%d>: min=%s, max=%s, mean=%s, sd=%s", X, Y, min(), max(), mean(), stdDev());
+        return format("ImageFloat3<%dx%d>: min=%s, max=%s, mean=%s, sd=%s", X, Y, min(), max(), mean(), stdDev());
     }
 
     @Override
@@ -265,7 +275,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return wrap(storage);
     }
 
     @Override
@@ -274,8 +284,8 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public FloatingPointError calculateULP(ImageFloat3 ref) {
-        float maxULP = Float.MIN_VALUE;
-        float minULP = Float.MAX_VALUE;
+        float maxULP = MIN_VALUE;
+        float minULP = MAX_VALUE;
         float averageULP = 0f;
 
         /*
@@ -291,7 +301,7 @@ public class ImageFloat3 implements PrimitiveStorage<FloatBuffer> {
                 final Float3 v = get(i, j);
                 final Float3 r = ref.get(i, j);
 
-                final float ulpFactor = Float3.findULPDistance(v, r);
+                final float ulpFactor = findULPDistance(v, r);
                 averageULP += ulpFactor;
                 minULP = Math.min(ulpFactor, minULP);
                 maxULP = Math.max(ulpFactor, maxULP);

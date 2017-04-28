@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,7 @@ import tornado.collections.types.*;
 import static tornado.collections.math.TornadoMath.max;
 import static tornado.collections.math.TornadoMath.min;
 import static tornado.collections.types.Float3.*;
+import static tornado.collections.types.VolumeOps.interp;
 
 public class GraphicsMath {
 
@@ -172,14 +173,14 @@ public class GraphicsMath {
 
             Float3 pos = add(mult(direction, t), origin);
 
-            float f_t = VolumeOps.interp(volume, dim, pos);
+            float f_t = interp(volume, dim, pos);
 
             float f_tt = 0f;
             if (f_t > 0) {
                 for (; t < tfar; t += stepsize) {
                     pos = add(mult(direction, t), origin);
 
-                    f_tt = VolumeOps.interp(volume, dim, pos);
+                    f_tt = interp(volume, dim, pos);
 
                     if (f_tt < 0f) {
                         break;

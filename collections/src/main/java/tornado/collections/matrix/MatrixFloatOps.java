@@ -20,11 +20,14 @@ import org.ejml.simple.SimpleMatrix;
 
 import tornado.collections.types.Matrix4x4Float;
 
+import static tornado.collections.matrix.EjmlUtil.toMatrix;
+import static tornado.collections.matrix.EjmlUtil.toMatrix4x4Float;
+
 public class MatrixFloatOps {
 	  public static void inverse(Matrix4x4Float m){
 		  try {
-	        SimpleMatrix sm = EjmlUtil.toMatrix(m).invert();
-	        m.set(EjmlUtil.toMatrix4x4Float(sm));
+	        SimpleMatrix sm = toMatrix(m).invert();
+	        m.set(toMatrix4x4Float(sm));
 		  } catch(SingularMatrixException e){
 			 // e.printStackTrace();
 		  }

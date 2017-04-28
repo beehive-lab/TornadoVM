@@ -17,6 +17,10 @@ package tornado.collections.types;
 
 import java.nio.ShortBuffer;
 
+import static java.lang.String.format;
+import static java.nio.ShortBuffer.wrap;
+import static tornado.collections.types.Short2.loadFromArray;
+
 
 public class VolumeShort2  implements PrimitiveStorage<ShortBuffer> {
     
@@ -79,7 +83,7 @@ public class VolumeShort2  implements PrimitiveStorage<ShortBuffer> {
     
     public Short2 get(int x, int y, int z){
     	final int index = toIndex(x,y,z);
-    	return Short2.loadFromArray(storage, index);
+    	return loadFromArray(storage, index);
     }
     
     public void set(int x, int y, int z, Short2 value){
@@ -143,11 +147,11 @@ public class VolumeShort2  implements PrimitiveStorage<ShortBuffer> {
     	 String str = "";
 
     	 for(int z=0;z<Z();z++){
-    		 str += String.format("z = %d\n", z);
+    		 str += format("z = %d\n", z);
     		 for(int y=0;y<Y();y++){
     			 for(int x=0;x<X();x++){
     				 final Short2 point = get(x,y,z);
-    				 str += String.format(fmt, point.getX(),point.getY()) + " ";
+    				 str += format(fmt, point.getX(),point.getY()) + " ";
     			 }
     		 str += "\n";
     		 }
@@ -157,7 +161,7 @@ public class VolumeShort2  implements PrimitiveStorage<ShortBuffer> {
     }
     
     public String toString(){
-    	String result = String.format("VolumeShort2 <%d x %d x %d>",Y,X,Z);
+    	String result = format("VolumeShort2 <%d x %d x %d>",Y,X,Z);
 		return result;
 	 }
 
@@ -168,7 +172,7 @@ public class VolumeShort2  implements PrimitiveStorage<ShortBuffer> {
 
 	@Override
 	public ShortBuffer asBuffer() {
-		return ShortBuffer.wrap(storage);
+		return wrap(storage);
 	}
 
 	@Override

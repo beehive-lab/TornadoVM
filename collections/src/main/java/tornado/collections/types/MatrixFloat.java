@@ -18,6 +18,13 @@ package tornado.collections.types;
 import java.nio.FloatBuffer;
 import java.util.Arrays;
 
+import static java.lang.Math.min;
+import static java.lang.String.format;
+import static java.nio.FloatBuffer.wrap;
+import static java.util.Arrays.copyOfRange;
+import static tornado.collections.types.FloatOps.fmt;
+import static tornado.collections.types.StorageFormats.toRowMajor;
+
 
 
 public class MatrixFloat  implements PrimitiveStorage<FloatBuffer> {
@@ -66,15 +73,15 @@ public class MatrixFloat  implements PrimitiveStorage<FloatBuffer> {
 
     
     public MatrixFloat(float[][] matrix){
-    	this(matrix.length,matrix[0].length,StorageFormats.toRowMajor(matrix));
+    	this(matrix.length,matrix[0].length,toRowMajor(matrix));
     }
     
     public float get(int i, int j){
-    	return storage[StorageFormats.toRowMajor(i, j, N)];
+    	return storage[toRowMajor(i, j, N)];
     }
     
     public void set(int i, int j, float value){
-    	storage[StorageFormats.toRowMajor(i, j, N)] = value;
+    	storage[toRowMajor(i, j, N)] = value;
     }
     
     public int M(){
@@ -86,12 +93,12 @@ public class MatrixFloat  implements PrimitiveStorage<FloatBuffer> {
     }
     
     public VectorFloat row(int row){
-    	int index = StorageFormats.toRowMajor(row, 0, N);
-    	return  new VectorFloat(N,Arrays.copyOfRange(storage, index, N));
+    	int index = toRowMajor(row, 0, N);
+    	return  new VectorFloat(N,copyOfRange(storage, index, N));
     }
     
     public VectorFloat column(int col){
-    	int index = StorageFormats.toRowMajor(0, col, N);
+    	int index = toRowMajor(0, col, N);
     	final VectorFloat v = new VectorFloat(M);
     	for(int i=0;i<M;i++)
     		v.set(i,storage[index + (i*N)]);
@@ -99,7 +106,7 @@ public class MatrixFloat  implements PrimitiveStorage<FloatBuffer> {
     }
     
     public VectorFloat diag(){
-    	final VectorFloat v = new VectorFloat(Math.min(M, N));
+    	final VectorFloat v = new VectorFloat(min(M, N));
     	for(int i=0;i<M;i++)
     		v.set(i,storage[i*(N+1)]);
     	return v;
@@ -206,7 +213,7 @@ public class MatrixFloat  implements PrimitiveStorage<FloatBuffer> {
 
          for(int i=0;i<M;i++){
         	 for(int j=0;j<N;j++){
-             str += String.format(fmt,get(i,j)) + " ";
+             str += format(fmt,get(i,j)) + " ";
         	 }
         	 str+= "\n";
          }
@@ -216,9 +223,9 @@ public class MatrixFloat  implements PrimitiveStorage<FloatBuffer> {
     }
     
     public String toString(){
-    	String result = String.format("MatrixFloat <%d x %d>",M,N);
+    	String result = format("MatrixFloat <%d x %d>",M,N);
 		 if(M<16 && N<16)
-			result += "\n" + toString(FloatOps.fmt);
+			result += "\n" + toString(fmt);
 		return result;
 	 }
 
@@ -248,7 +255,7 @@ public class MatrixFloat  implements PrimitiveStorage<FloatBuffer> {
 
    	@Override
    	public FloatBuffer asBuffer() {
-   		return FloatBuffer.wrap(storage);
+   		return wrap(storage);
    	}
 
    	@Override

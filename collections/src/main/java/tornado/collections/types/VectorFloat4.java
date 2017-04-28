@@ -17,6 +17,13 @@ package tornado.collections.types;
 
 import java.nio.FloatBuffer;
 
+import static java.lang.String.format;
+import static java.lang.System.out;
+import static java.nio.FloatBuffer.wrap;
+import static tornado.collections.types.Float4.add;
+import static tornado.collections.types.Float4.loadFromArray;
+import static tornado.collections.types.FloatOps.fmt4;
+
 public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
 
     /**
@@ -77,7 +84,7 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
      * @return value
      */
     public Float4 get(int index) {
-        return Float4.loadFromArray(storage, toIndex(index));
+        return loadFromArray(storage, toIndex(index));
     }
 
     /**
@@ -139,7 +146,7 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
      */
     public String toString(String fmt) {
         String str = "";
-        System.out.printf("has %d elements\n", numElements);
+        out.printf("has %d elements\n", numElements);
         for (int i = 0; i < numElements; i++) {
             str += get(i).toString() + " ";
         }
@@ -152,16 +159,16 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
      */
     public String toString() {
         if (numElements > 4) {
-            return String.format("VectorFloat4 <%d>", numElements);
+            return format("VectorFloat4 <%d>", numElements);
         } else {
-            return toString(FloatOps.fmt4);
+            return toString(fmt4);
         }
     }
 
     public Float4 sum() {
         Float4 result = new Float4();
         for (int i = 0; i < numElements; i++) {
-            result = Float4.add(result, get(i));
+            result = add(result, get(i));
         }
         return result;
     }
@@ -189,7 +196,7 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return wrap(storage);
     }
 
     @Override

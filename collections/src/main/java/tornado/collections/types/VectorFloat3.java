@@ -17,7 +17,11 @@ package tornado.collections.types;
 
 import java.nio.FloatBuffer;
 
+import static java.lang.String.format;
+import static java.nio.FloatBuffer.wrap;
 import static tornado.collections.types.Float3.add;
+import static tornado.collections.types.Float3.loadFromArray;
+import static tornado.collections.types.FloatOps.fmt3;
 
 public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
 
@@ -79,7 +83,7 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
      * @return value
      */
     public Float3 get(int index) {
-        return Float3.loadFromArray(storage, toIndex(index));
+        return loadFromArray(storage, toIndex(index));
     }
 
     /**
@@ -154,9 +158,9 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
      */
     public String toString() {
         if (numElements > 4) {
-            return String.format("VectorFloat3 <%d>", numElements);
+            return format("VectorFloat3 <%d>", numElements);
         } else {
-            return toString(FloatOps.fmt3);
+            return toString(fmt3);
         }
     }
 
@@ -191,7 +195,7 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return wrap(storage);
     }
 
     @Override

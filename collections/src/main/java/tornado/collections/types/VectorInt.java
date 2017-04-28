@@ -19,6 +19,13 @@ import java.nio.IntBuffer;
 import java.util.Arrays;
 import tornado.collections.math.TornadoMath;
 
+import static java.lang.Integer.MAX_VALUE;
+import static java.lang.Integer.MIN_VALUE;
+import static java.lang.String.format;
+import static java.nio.IntBuffer.wrap;
+import static java.util.Arrays.copyOf;
+import static tornado.collections.types.IntOps.fmt;
+
 public class VectorInt implements PrimitiveStorage<IntBuffer> {
 	
 	private final int numElements;
@@ -120,12 +127,12 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
 	 * @return
 	 */
 	public VectorInt duplicate(){
-		return new VectorInt(Arrays.copyOf(storage, storage.length));
+		return new VectorInt(copyOf(storage, storage.length));
 	}
 	
 	
 	public static int min(VectorInt v){
-		int result = Integer.MAX_VALUE;
+		int result = MAX_VALUE;
 		for(int i=0;i<v.storage.length;i++)
 			result = Math.min(v.storage[i],result);
 		
@@ -133,7 +140,7 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
 	}
 	
 	public static int max(VectorInt v){
-		int result = Integer.MIN_VALUE;
+		int result = MIN_VALUE;
 		for(int i=0;i<v.storage.length;i++)
 			result = Math.max(v.storage[i],result);
 		
@@ -411,7 +418,7 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
 		String str = "[ ";
 
 		for(int i=0;i<numElements;i++){
-			str += String.format(fmt,get(i)) + " ";
+			str += format(fmt,get(i)) + " ";
 		}
 
 		str += "]";
@@ -423,9 +430,9 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
 	 * 
 	 */
 	public String toString(){
-		String str = String.format("VectorInt <%d>",numElements);
+		String str = format("VectorInt <%d>",numElements);
 		if(numElements < 32)
-			str += toString(IntOps.fmt);
+			str += toString(fmt);
 		return str;
 	}
 
@@ -437,7 +444,7 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
 
 	@Override
 	public IntBuffer asBuffer() {
-		return IntBuffer.wrap(storage);
+		return wrap(storage);
 	}
 
 	@Override

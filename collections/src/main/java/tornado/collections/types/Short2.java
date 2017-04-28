@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,10 @@ import tornado.api.Payload;
 import tornado.api.Vector;
 import tornado.collections.math.TornadoMath;
 
+import static java.lang.String.format;
+import static java.nio.ShortBuffer.wrap;
+import static tornado.collections.types.ShortOps.fmt2;
+
 /**
  * Class that represents a vector of 2x shorts e.g. <short,short>
  *
@@ -27,7 +31,7 @@ import tornado.collections.math.TornadoMath;
  *
  */
 @Vector
-public class Short2 implements PrimitiveStorage<ShortBuffer> {
+public final class Short2 implements PrimitiveStorage<ShortBuffer> {
 
     public static final Class<Short2> TYPE = Short2.class;
 
@@ -97,12 +101,12 @@ public class Short2 implements PrimitiveStorage<ShortBuffer> {
     }
 
     public String toString(String fmt) {
-        return String.format(fmt, getX(), getY());
+        return format(fmt, getX(), getY());
     }
 
     @Override
     public String toString() {
-        return toString(ShortOps.fmt2);
+        return toString(fmt2);
     }
 
     protected static final Short2 loadFromArray(final short[] array, int index) {
@@ -124,7 +128,7 @@ public class Short2 implements PrimitiveStorage<ShortBuffer> {
 
     @Override
     public ShortBuffer asBuffer() {
-        return ShortBuffer.wrap(storage);
+        return wrap(storage);
     }
 
     @Override

@@ -22,6 +22,11 @@ import tornado.collections.types.FloatOps;
 import tornado.collections.types.ImageByte3;
 import tornado.collections.types.ImageFloat;
 
+import static java.lang.Math.abs;
+import static tornado.collections.math.TornadoMath.clamp;
+import static tornado.collections.math.TornadoMath.exp;
+import static tornado.collections.types.FloatOps.sq;
+
 public class ImagingOps {
 
     public static final void resizeImage6(ImageFloat dest,
@@ -32,9 +37,9 @@ public class ImagingOps {
             for (@Parallel int x = 0; x < dest.X(); x++) {
 
                 // co-ords of center pixel
-                final int cx = TornadoMath.clamp(scaleFactor * x, 0,
+                final int cx = clamp(scaleFactor * x, 0,
                         src.X() - 1);
-                final int cy = TornadoMath.clamp(scaleFactor * y, 0,
+                final int cy = clamp(scaleFactor * y, 0,
                         src.Y() - 1);
 
                 float sum = 0f;
@@ -47,12 +52,12 @@ public class ImagingOps {
 
                         // co-ords of supporting pixel
                         // co-ords of supporting pixel
-                        final int px = TornadoMath.clamp(cx + xx, 0, src.X() - 1);
-                        final int py = TornadoMath.clamp(cy + yy, 0, src.Y() - 1);
+                        final int px = clamp(cx + xx, 0, src.X() - 1);
+                        final int py = clamp(cy + yy, 0, src.Y() - 1);
 
                         final float current = src.get(px, py);
 
-                        if (Math.abs(current - center) < eDelta) {
+                        if (abs(current - center) < eDelta) {
                             sum += 1f;
                             t += current;
                         }
@@ -88,8 +93,8 @@ public class ImagingOps {
             for (@Parallel int x = 0; x < dest.X(); x++) {
 
                 // co-ords of center pixel
-                int cx = TornadoMath.clamp(scaleFactor * x, 0, src.X() - 1);
-                int cy = TornadoMath.clamp(scaleFactor * y, 0, src.Y() - 1);
+                int cx = clamp(scaleFactor * x, 0, src.X() - 1);
+                int cy = clamp(scaleFactor * y, 0, src.Y() - 1);
 
                 float center = src.get(cx, cy);
                 dest.set(x, y, center);
@@ -104,8 +109,8 @@ public class ImagingOps {
             for (@Parallel int x = 0; x < dest.X(); x++) {
 
                 // co-ords of center pixel
-                int cx = TornadoMath.clamp(scaleFactor * x, 0, src.X() - 1);
-                int cy = TornadoMath.clamp(scaleFactor * y, 0, src.Y() - 1);
+                int cx = clamp(scaleFactor * x, 0, src.X() - 1);
+                int cy = clamp(scaleFactor * y, 0, src.Y() - 1);
 
                 final Byte3 center = src.get(cx, cy);
 
@@ -133,20 +138,19 @@ public class ImagingOps {
 
                     for (int yy = -radius; yy <= radius; yy++) {
                         for (int xx = -radius; xx <= radius; xx++) {
-                            final int px = TornadoMath.clamp(x + xx, 0,
+                            final int px = clamp(x + xx, 0,
                                     src.X() - 1);
-                            final int py = TornadoMath.clamp(y + yy, 0,
+                            final int py = clamp(y + yy, 0,
                                     src.Y() - 1);
                             final float currentPixel = src.get(px, py);
 
                             if (currentPixel > 0f) {
-                                final float mod = FloatOps.sq(currentPixel
+                                final float mod = sq(currentPixel
                                         - center);
 
                                 // TODO find out gaussian size
                                 final float factor = (gaussian[xx + radius]
-                                        * gaussian[yy + radius] * TornadoMath
-                                        .exp(-mod / e_d_squared_2));
+                                        * gaussian[yy + radius] * exp(-mod / e_d_squared_2));
 
                                 t += factor * currentPixel;
 

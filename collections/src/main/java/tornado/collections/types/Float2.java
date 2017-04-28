@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,10 @@ import tornado.api.Payload;
 import tornado.api.Vector;
 import tornado.collections.math.TornadoMath;
 
+import static java.lang.String.format;
+import static java.nio.FloatBuffer.wrap;
+import static tornado.collections.types.FloatOps.fmt2;
+
 /**
  * Class that represents a vector of 2x floats e.g. <float,float>
  *
@@ -27,7 +31,7 @@ import tornado.collections.math.TornadoMath;
  *
  */
 @Vector
-public class Float2 implements PrimitiveStorage<FloatBuffer> {
+public final class Float2 implements PrimitiveStorage<FloatBuffer> {
 
     public static final Class<Float2> TYPE = Float2.class;
 
@@ -97,12 +101,12 @@ public class Float2 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public String toString(String fmt) {
-        return String.format(fmt, getX(), getY());
+        return format(fmt, getX(), getY());
     }
 
     @Override
     public String toString() {
-        return toString(FloatOps.fmt2);
+        return toString(fmt2);
     }
 
     protected static final Float2 loadFromArray(final float[] array, int index) {
@@ -124,7 +128,7 @@ public class Float2 implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return wrap(storage);
     }
 
     @Override

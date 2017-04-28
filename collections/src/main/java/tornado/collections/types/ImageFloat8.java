@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,15 @@
 package tornado.collections.types;
 
 import java.nio.FloatBuffer;
+
+import static java.lang.Float.MAX_VALUE;
+import static java.lang.Float.MIN_VALUE;
+import static java.lang.String.format;
+import static java.nio.FloatBuffer.wrap;
+import static tornado.collections.types.Float8.findULPDistance;
+import static tornado.collections.types.Float8.sqrt;
+import static tornado.collections.types.FloatOps.fmt8;
+import static tornado.collections.types.StorageFormats.toRowMajor;
 
 public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>, Container<Float8> {
 
@@ -65,7 +74,7 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>, Container<Flo
     }
 
     public ImageFloat8(float[][] matrix) {
-        this(matrix.length / elementSize, matrix[0].length / elementSize, StorageFormats.toRowMajor(matrix));
+        this(matrix.length / elementSize, matrix[0].length / elementSize, toRowMajor(matrix));
     }
 
     private final int toIndex(int x, int y) {
@@ -133,10 +142,11 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>, Container<Flo
         return str;
     }
 
+    @Override
     public String toString() {
-        String result = String.format("ImageFloat8 <%d x %d>", X, Y);
+        String result = format("ImageFloat8 <%d x %d>", X, Y);
         if (X <= 4 && Y <= 4) {
-            result += "\n" + toString(FloatOps.fmt8);
+            result += "\n" + toString(fmt8);
         }
         return result;
     }
@@ -148,12 +158,12 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>, Container<Flo
                 result = Float8.add(result, get(col, row));
             }
         }
-        result = Float8.div(result, (float) (X * Y));
+        result = Float8.div(result, (X * Y));
         return result;
     }
 
     public Float8 min() {
-        Float8 result = new Float8(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
+        Float8 result = new Float8(MAX_VALUE, MAX_VALUE, MAX_VALUE, MAX_VALUE, MAX_VALUE, MAX_VALUE, MAX_VALUE, MAX_VALUE);
 
         for (int row = 0; row < Y; row++) {
             for (int col = 0; col < X; col++) {
@@ -165,7 +175,7 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>, Container<Flo
     }
 
     public Float8 max() {
-        Float8 result = new Float8(Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE, Float.MIN_VALUE);
+        Float8 result = new Float8(MIN_VALUE, MIN_VALUE, MIN_VALUE, MIN_VALUE, MIN_VALUE, MIN_VALUE, MIN_VALUE, MIN_VALUE);
 
         for (int row = 0; row < Y; row++) {
             for (int col = 0; col < X; col++) {
@@ -187,11 +197,11 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>, Container<Flo
                 varience = Float8.add(v, varience);
             }
         }
-        return Float8.sqrt(varience);
+        return sqrt(varience);
     }
 
     public String summerise() {
-        return String.format("ImageFloat8<%dx%d>: min=%s, max=%s, mean=%s, sd=%s", X, Y, min(), max(), mean(), stdDev());
+        return format("ImageFloat8<%dx%d>: min=%s, max=%s, mean=%s, sd=%s", X, Y, min(), max(), mean(), stdDev());
     }
 
     @Override
@@ -201,7 +211,7 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>, Container<Flo
 
     @Override
     public FloatBuffer asBuffer() {
-        return FloatBuffer.wrap(storage);
+        return wrap(storage);
     }
 
     @Override
@@ -210,8 +220,8 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>, Container<Flo
     }
 
     public FloatingPointError calculateULP(ImageFloat8 ref) {
-        float maxULP = Float.MIN_VALUE;
-        float minULP = Float.MAX_VALUE;
+        float maxULP = MIN_VALUE;
+        float minULP = MAX_VALUE;
         float averageULP = 0f;
 
         /*
@@ -226,7 +236,7 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>, Container<Flo
                 final Float8 v = get(i, j);
                 final Float8 r = ref.get(i, j);
 
-                final float ulpFactor = Float8.findULPDistance(v, r);
+                final float ulpFactor = findULPDistance(v, r);
                 averageULP += ulpFactor;
                 minULP = Math.min(ulpFactor, minULP);
                 maxULP = Math.max(ulpFactor, maxULP);

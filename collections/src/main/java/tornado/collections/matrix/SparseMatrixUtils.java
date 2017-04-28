@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,9 +17,15 @@ package tornado.collections.matrix;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+
+import static java.lang.Float.parseFloat;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
+import static java.lang.System.err;
+import static java.lang.System.out;
+import static java.util.Collections.sort;
 
 public class SparseMatrixUtils {
 
@@ -41,8 +47,7 @@ public class SparseMatrixUtils {
         final CSRMatrix<double[]> mat = new CSRMatrix<>();
 
         Random rand = null;
-        try {
-            final BufferedReader br = new BufferedReader(new FileReader(path));
+        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
 
             String line = br.readLine();
 
@@ -97,9 +102,9 @@ public class SparseMatrixUtils {
                 }
 
                 public Coordinate(final String[] opts) {
-                    x = Integer.parseInt(opts[0]) - 1;
-                    y = Integer.parseInt(opts[1]) - 1;
-                    val = Float.parseFloat(opts[2]);
+                    x = parseInt(opts[0]) - 1;
+                    y = parseInt(opts[1]) - 1;
+                    val = parseFloat(opts[2]);
                 }
 
                 @Override
@@ -137,8 +142,8 @@ public class SparseMatrixUtils {
                 opts = line.split(" ");
                 if (pattern) {
                     final Coordinate c = new Coordinate(
-                            Integer.parseInt(opts[0]) - 1,
-                            Integer.parseInt(opts[1]) - 1,
+                            parseInt(opts[0]) - 1,
+                            parseInt(opts[1]) - 1,
                             rand.nextFloat() * 256.0f);
                     coords.add(c);
                 } else {
@@ -156,23 +161,16 @@ public class SparseMatrixUtils {
                 }
             }
 
-            br.close();
-
-            Collections.sort(coords);
-
+            sort(coords);
             nElements = index;
-
             mat.n = nElements;
             mat.size = nRows;
             mat.vals = new double[nElements];
             mat.cols = new int[nElements];
             mat.rows = new int[nRows + 1];
-
             mat.rows[0] = 0;
             mat.rows[nRows] = nElements;
-
             int r = 0;
-
             for (int i = 0; i < nElements; i++) {
 
                 final Coordinate c = coords.get(i);
@@ -183,7 +181,6 @@ public class SparseMatrixUtils {
                 mat.vals[i] = c.val;
                 mat.cols[i] = c.y;
             }
-
             coords.clear();
         } catch (final FileNotFoundException e) {
             System.out.printf("Unable to open matrix %s\n", path);
@@ -199,7 +196,7 @@ public class SparseMatrixUtils {
         try (final BufferedReader br = new BufferedReader(new InputStreamReader(inStream))) {
             return loadMatrixF(br);
         } catch (IOException e) {
-            System.err.printf("unable to read matrix from input steam: %s\n", e.getMessage());
+            err.printf("unable to read matrix from input steam: %s\n", e.getMessage());
             e.printStackTrace();
         }
         return null;
@@ -209,7 +206,7 @@ public class SparseMatrixUtils {
         try (final BufferedReader br = new BufferedReader(new FileReader(path))) {
             return loadMatrixF(br);
         } catch (IOException e) {
-            System.err.printf("unable to read matrix from file: %s (%s)\n", path, e.getMessage());
+            err.printf("unable to read matrix from file: %s (%s)\n", path, e.getMessage());
             e.printStackTrace();
         }
         return null;
@@ -229,13 +226,13 @@ public class SparseMatrixUtils {
         // id object format field symmetry
 
         if (!opts[1].equalsIgnoreCase("matrix")) {
-            System.out.printf("Matrix file doesnot contain matrix\n");
+            out.printf("Matrix file doesnot contain matrix\n");
             br.close();
             return null;
         }
 
         if (!opts[2].equalsIgnoreCase("coordinate")) {
-            System.out.printf("Matrix representation is dense\n");
+            out.printf("Matrix representation is dense\n");
             br.close();
             return null;
         }
@@ -260,9 +257,9 @@ public class SparseMatrixUtils {
 
         opts = line.split(" ");
 
-        final int nRows = Integer.parseInt(opts[0]);
-        final int nCols = Integer.parseInt(opts[1]);
-        int nElements = Integer.parseInt(opts[2]);
+        final int nRows = parseInt(opts[0]);
+        final int nCols = parseInt(opts[1]);
+        int nElements = parseInt(opts[2]);
 
         class Coordinate implements Comparable<Coordinate> {
 
@@ -277,9 +274,9 @@ public class SparseMatrixUtils {
             }
 
             public Coordinate(final String[] opts) {
-                x = Integer.parseInt(opts[0]) - 1;
-                y = Integer.parseInt(opts[1]) - 1;
-                val = Float.parseFloat(opts[2]);
+                x = parseInt(opts[0]) - 1;
+                y = parseInt(opts[1]) - 1;
+                val = parseFloat(opts[2]);
             }
 
             @Override
@@ -296,12 +293,12 @@ public class SparseMatrixUtils {
 
             @Override
             public String toString() {
-                return String.format("[ %d, %d, %10.2f ]", x, y, val);
+                return format("[ %d, %d, %10.2f ]", x, y, val);
             }
         }
 
         if (VERBOSE) {
-            System.out.printf("Matrix: rows=%d, cols=%d, elements=%d\n",
+            out.printf("Matrix: rows=%d, cols=%d, elements=%d\n",
                     nRows, nCols, nElements);
         }
 
@@ -317,8 +314,8 @@ public class SparseMatrixUtils {
             opts = line.split(" ");
             if (pattern) {
                 final Coordinate c = new Coordinate(
-                        Integer.parseInt(opts[0]) - 1,
-                        Integer.parseInt(opts[1]) - 1,
+                        parseInt(opts[0]) - 1,
+                        parseInt(opts[1]) - 1,
                         rand.nextFloat() * 256.0f);
                 coords.add(c);
             } else {
@@ -338,7 +335,7 @@ public class SparseMatrixUtils {
 
         br.close();
 
-        Collections.sort(coords);
+        sort(coords);
 
         nElements = index;
 

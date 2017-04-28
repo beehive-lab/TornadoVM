@@ -15,6 +15,8 @@
  */
 package tornado.collections.types;
 
+import static java.lang.String.format;
+
 public class FloatingPointError {
 	private final float averageUlp;
 	private final float minUlp;
@@ -35,7 +37,7 @@ public class FloatingPointError {
 	}
 	
 	public String toString(){
-		return String.format("errors=%d, mean ulp=%f, std. dev =%f, min ulp=%f, max ulp=%f",errors, averageUlp,stdDevUlp,minUlp,maxUlp);
+		return format("errors=%d, mean ulp=%f, std. dev =%f, min ulp=%f, max ulp=%f",errors, averageUlp,stdDevUlp,minUlp,maxUlp);
 	}
 
 	public float getErrors() {

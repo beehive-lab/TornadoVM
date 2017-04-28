@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,12 @@
 package tornado.collections.graphics;
 
 import tornado.api.Parallel;
-import tornado.collections.math.TornadoMath;
 import tornado.collections.types.*;
+
+import static tornado.collections.graphics.GraphicsMath.raycastPoint;
+import static tornado.collections.types.Float3.add;
+import static tornado.collections.types.Float3.mult;
+import static tornado.collections.types.VolumeOps.grad;
 
 public class Renderer {
 
@@ -40,7 +44,7 @@ public class Renderer {
 
                     final float dir = Math.max(Float3.dot(normal, vertex), 0f);
 
-                    Float3 col = Float3.add(ambient, dir);
+                    Float3 col = add(ambient, dir);
                     col = Float3.clamp(col, 0f, 1f);
 
                     col = Float3.scale(col, 255f);
@@ -63,26 +67,24 @@ public class Renderer {
         for (@Parallel int y = 0; y < output.Y(); y++) {
             for (@Parallel int x = 0; x < output.X(); x++) {
 
-                final Float4 hit = GraphicsMath.raycastPoint(volume,
+                final Float4 hit = raycastPoint(volume,
                         volumeDims, x, y, view, nearPlane, farPlane, smallStep,
                         largeStep);
 
                 final Byte4 pixel;
                 if (hit.getW() > 0) {
                     final Float3 test = hit.asFloat3();
-                    final Float3 surfNorm = VolumeOps.grad(volume, volumeDims,
+                    final Float3 surfNorm = grad(volume, volumeDims,
                             test);
 
                     if (Float3.length(surfNorm) > 0) {
                         final Float3 diff = Float3.normalise(Float3.sub(light,
                                 test));
 
-                        final Float3 normalizedSurfNorm = Float3
-                                .normalise(surfNorm);
+                        final Float3 normalizedSurfNorm = Float3.normalise(surfNorm);
 
-                        final float dir = TornadoMath.max(
-                                Float3.dot(normalizedSurfNorm, diff), 0f);
-                        Float3 col = Float3.add(new Float3(dir, dir, dir),
+                        final float dir = Math.max(Float3.dot(normalizedSurfNorm, diff), 0f);
+                        Float3 col = add(new Float3(dir, dir, dir),
                                 ambient);
 
                         col = Float3.clamp(col, 0f, 1f);
@@ -112,8 +114,8 @@ public class Renderer {
 
                 if (normal.getX() != INVALID) {
                     Float3.normalise(normal);
-                    Float3.mult(normal, 128f);
-                    Float3.add(normal, 128f);
+                    mult(normal, 128f);
+                    add(normal, 128f);
 
                     pixel.setX((byte) normal.getX());
                     pixel.setY((byte) normal.getY());
@@ -134,8 +136,8 @@ public class Renderer {
 
                 if (vertex.getZ() != 0) {
                     Float3.normalise(vertex);
-                    Float3.mult(vertex, 128f);
-                    Float3.add(vertex, 128f);
+                    mult(vertex, 128f);
+                    add(vertex, 128f);
 
                     pixel.setX((byte) vertex.getZ());
                     pixel.setY((byte) 0);

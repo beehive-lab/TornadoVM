@@ -19,6 +19,17 @@ import java.nio.FloatBuffer;
 
 import tornado.common.exceptions.TornadoInternalError;
 
+import static java.lang.Float.MAX_VALUE;
+import static java.lang.Float.MIN_VALUE;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.String.format;
+import static java.nio.FloatBuffer.wrap;
+import static tornado.collections.types.Float4.loadFromArray;
+import static tornado.collections.types.FloatOps.findMaxULP;
+import static tornado.collections.types.FloatOps.fmt4m;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+
 
 public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     
@@ -102,7 +113,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     
     public Float4 row(int row){
     	int offset = M * row;
-    	return Float4.loadFromArray(storage, offset);
+    	return loadFromArray(storage, offset);
     }
     
     public Float4 column(int col){
@@ -121,7 +132,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     
     @Deprecated
     public void multiply(Matrix4x4Float a, Matrix4x4Float b){
-    	TornadoInternalError.shouldNotReachHere();
+    	shouldNotReachHere();
 //    	 for(int row=0; row < M(); row++){
 //             for(int col=0; col< N(); col++){
 //                 //final float sum = VectorFloatOps.dot(a.row(row),b.column(col));
@@ -136,7 +147,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
      */
     @Deprecated
     public void transpose() {
-    	TornadoInternalError.shouldNotReachHere();
+    	shouldNotReachHere();
       
 //            // transpose square matrix
 //            for(int i=0;i<M;i++){
@@ -165,7 +176,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     @Deprecated
 	public void inverse2()
     {
-    	TornadoInternalError.shouldNotReachHere();
+    	shouldNotReachHere();
 //    	Matrix4x4Float rref = duplicate();
 //    	Matrix4x4Float ident = this;
 //
@@ -213,14 +224,14 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     }
     
     public String toString(){
-    	String result = String.format("MatrixFloat <%d x %d>",M,N);
-		result += "\n" + toString(FloatOps.fmt4m);
+    	String result = format("MatrixFloat <%d x %d>",M,N);
+		result += "\n" + toString(fmt4m);
 		return result;
 	 }
 
     @Deprecated
 	public void scale(float alpha) {
-    	TornadoInternalError.shouldNotReachHere();
+    	shouldNotReachHere();
 //		for(int i=0;i<M;i++)
 //			row(i).scale(alpha);
 	}
@@ -245,7 +256,7 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 
 	@Override
 	public FloatBuffer asBuffer() {
-		return FloatBuffer.wrap(storage);
+		return wrap(storage);
 	}
 
 	@Override
@@ -254,8 +265,8 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 	}
 	
 	public FloatingPointError calculateULP(Matrix4x4Float ref){
-		float maxULP = Float.MIN_VALUE;
-		float minULP = Float.MAX_VALUE;
+		float maxULP = MIN_VALUE;
+		float minULP = MAX_VALUE;
 		float averageULP = 0f;
 		
 		/*
@@ -270,10 +281,10 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 				final float v = get(i, j);
 				final float r = ref.get(i, j);
 				
-				final float ulpFactor = FloatOps.findMaxULP(v, r);
+				final float ulpFactor = findMaxULP(v, r);
 				averageULP += ulpFactor;
-				minULP = Math.min(ulpFactor, minULP);
-				maxULP = Math.max(ulpFactor, maxULP);
+				minULP = min(ulpFactor, minULP);
+				maxULP = max(ulpFactor, maxULP);
 				
 			}
 		}

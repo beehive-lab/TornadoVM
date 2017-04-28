@@ -15,46 +15,46 @@
  */
 package tornado.collections.types;
 
-import java.nio.FloatBuffer;
+import java.nio.DoubleBuffer;
 import tornado.api.Payload;
 import tornado.collections.math.TornadoMath;
 
-import static java.lang.Float.MAX_VALUE;
-import static java.lang.Float.MIN_VALUE;
+import static java.lang.Double.MAX_VALUE;
+import static java.lang.Double.MIN_VALUE;
 import static java.lang.String.format;
-import static java.nio.FloatBuffer.wrap;
-import static tornado.collections.types.FloatOps.fmt6;
+import static java.nio.DoubleBuffer.wrap;
+import static tornado.collections.types.DoubleOps.fmt6;
 
 /**
- * Class that represents a vector of 3x floats e.g. <float,float,float>
+ * Class that represents a vector of 3x doubles e.g. <double,double,double>
  *
  * @author jamesclarkson
  *
  */
-public final class Float6 implements PrimitiveStorage<FloatBuffer> {
+public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
 
-    public static final Class<Float6> TYPE = Float6.class;
+    public static final Class<Double6> TYPE = Double6.class;
 
     /**
      * backing array
      */
     @Payload
-    final protected float[] storage;
+    final protected double[] storage;
 
     /**
      * number of elements in the storage
      */
     final private static int numElements = 6;
 
-    public Float6(float[] storage) {
+    public Double6(double[] storage) {
         this.storage = storage;
     }
 
-    public Float6() {
-        this(new float[numElements]);
+    public Double6() {
+        this(new double[numElements]);
     }
 
-    public Float6(float s0, float s1, float s2, float s3, float s4, float s5) {
+    public Double6(double s0, double s1, double s2, double s3, double s4, double s5) {
         this();
         setS0(s0);
         setS1(s1);
@@ -64,7 +64,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
         setS5(s5);
     }
 
-    public void set(Float6 value) {
+    public void set(Double6 value) {
         setS0(value.getS0());
         setS1(value.getS1());
         setS2(value.getS2());
@@ -73,68 +73,68 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
         setS5(value.getS5());
     }
 
-    public float get(int index) {
+    public double get(int index) {
         return storage[index];
     }
 
-    public void set(int index, float value) {
+    public void set(int index, double value) {
         storage[index] = value;
     }
 
-    public float getS0() {
+    public double getS0() {
         return get(0);
     }
 
-    public float getS1() {
+    public double getS1() {
         return get(1);
     }
 
-    public float getS2() {
+    public double getS2() {
         return get(2);
     }
 
-    public float getS3() {
+    public double getS3() {
         return get(3);
     }
 
-    public float getS4() {
+    public double getS4() {
         return get(4);
     }
 
-    public float getS5() {
+    public double getS5() {
         return get(5);
     }
 
-    public void setS0(float value) {
+    public void setS0(double value) {
         set(0, value);
     }
 
-    public void setS1(float value) {
+    public void setS1(double value) {
         set(1, value);
     }
 
-    public void setS2(float value) {
+    public void setS2(double value) {
         set(2, value);
     }
 
-    public void setS3(float value) {
+    public void setS3(double value) {
         set(3, value);
     }
 
-    public void setS4(float value) {
+    public void setS4(double value) {
         set(4, value);
     }
 
-    public void setS5(float value) {
+    public void setS5(double value) {
         set(5, value);
     }
 
-    public Float3 getHi() {
-        return Float3.loadFromArray(storage, 0);
+    public Double3 getHi() {
+        return Double3.loadFromArray(storage, 0);
     }
 
-    public Float3 getLo() {
-        return Float3.loadFromArray(storage, 3);
+    public Double3 getLo() {
+        return Double3.loadFromArray(storage, 3);
     }
 
     /**
@@ -142,8 +142,8 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
      *
      * @return
      */
-    public Float6 duplicate() {
-        final Float6 vector = new Float6();
+    public Double6 duplicate() {
+        final Double6 vector = new Double6();
         vector.set(this);
         return vector;
     }
@@ -157,27 +157,27 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
         return toString(fmt6);
     }
 
-    public static final Float6 loadFromArray(final float[] array, int index) {
-        final Float6 result = new Float6();
+    public static final Double6 loadFromArray(final double[] array, int index) {
+        final Double6 result = new Double6();
         for (int i = 0; i < numElements; i++) {
             result.set(i, array[index + i]);
         }
         return result;
     }
 
-    public final void storeToArray(final float[] array, int index) {
+    public final void storeToArray(final double[] array, int index) {
         for (int i = 0; i < numElements; i++) {
             array[index + i] = get(i);
         }
     }
 
     @Override
-    public void loadFromBuffer(FloatBuffer buffer) {
+    public void loadFromBuffer(DoubleBuffer buffer) {
         asBuffer().put(buffer);
     }
 
     @Override
-    public FloatBuffer asBuffer() {
+    public DoubleBuffer asBuffer() {
         return wrap(storage);
     }
 
@@ -188,53 +188,53 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * *
-     * Operations on Float6 vectors
+     * Operations on Double6 vectors
      */
     /*
      * vector = op( vector, vector )
      */
-    public static Float6 add(Float6 a, Float6 b) {
-        final Float6 result = new Float6();
+    public static Double6 add(Double6 a, Double6 b) {
+        final Double6 result = new Double6();
         for (int i = 0; i < numElements; i++) {
             result.set(i, a.get(i) + b.get(i));
         }
         return result;
     }
 
-    public static Float6 sub(Float6 a, Float6 b) {
-        final Float6 result = new Float6();
+    public static Double6 sub(Double6 a, Double6 b) {
+        final Double6 result = new Double6();
         for (int i = 0; i < numElements; i++) {
             result.set(i, a.get(i) - b.get(i));
         }
         return result;
     }
 
-    public static Float6 div(Float6 a, Float6 b) {
-        final Float6 result = new Float6();
+    public static Double6 div(Double6 a, Double6 b) {
+        final Double6 result = new Double6();
         for (int i = 0; i < numElements; i++) {
             result.set(i, a.get(i) / b.get(i));
         }
         return result;
     }
 
-    public static Float6 mult(Float6 a, Float6 b) {
-        final Float6 result = new Float6();
+    public static Double6 mult(Double6 a, Double6 b) {
+        final Double6 result = new Double6();
         for (int i = 0; i < numElements; i++) {
             result.set(i, a.get(i) * b.get(i));
         }
         return result;
     }
 
-    public static Float6 min(Float6 a, Float6 b) {
-        final Float6 result = new Float6();
+    public static Double6 min(Double6 a, Double6 b) {
+        final Double6 result = new Double6();
         for (int i = 0; i < numElements; i++) {
             result.set(i, Math.min(a.get(i), b.get(i)));
         }
         return result;
     }
 
-    public static Float6 max(Float6 a, Float6 b) {
-        final Float6 result = new Float6();
+    public static Double6 max(Double6 a, Double6 b) {
+        final Double6 result = new Double6();
         for (int i = 0; i < numElements; i++) {
             result.set(i, Math.max(a.get(i), b.get(i)));
         }
@@ -244,75 +244,75 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
     /*
      * vector = op (vector, scalar)
      */
-    public static Float6 add(Float6 a, float b) {
-        final Float6 result = new Float6();
+    public static Double6 add(Double6 a, double b) {
+        final Double6 result = new Double6();
         for (int i = 0; i < numElements; i++) {
             result.set(i, a.get(i) + b);
         }
         return result;
     }
 
-    public static Float6 sub(Float6 a, float b) {
-        final Float6 result = new Float6();
+    public static Double6 sub(Double6 a, double b) {
+        final Double6 result = new Double6();
         for (int i = 0; i < numElements; i++) {
             result.set(i, a.get(i) - b);
         }
         return result;
     }
 
-    public static Float6 mult(Float6 a, float b) {
-        final Float6 result = new Float6();
+    public static Double6 mult(Double6 a, double b) {
+        final Double6 result = new Double6();
         for (int i = 0; i < numElements; i++) {
             result.set(i, a.get(i) * b);
         }
         return result;
     }
 
-    public static Float6 inc(Float6 a, float value) {
+    public static Double6 inc(Double6 a, double value) {
         return add(a, value);
     }
 
-    public static Float6 dec(Float6 a, float value) {
+    public static Double6 dec(Double6 a, double value) {
         return sub(a, value);
     }
 
-    public static Float6 scale(Float6 a, float value) {
+    public static Double6 scale(Double6 a, double value) {
         return mult(a, value);
     }
 
-    public static Float6 scaleByInverse(Float6 a, float value) {
+    public static Double6 scaleByInverse(Double6 a, double value) {
         return mult(a, 1f / value);
     }
 
     /*
      * vector = op(vector)
      */
-    public static Float6 sqrt(Float6 a) {
-        final Float6 result = new Float6();
+    public static Double6 sqrt(Double6 a) {
+        final Double6 result = new Double6();
         for (int i = 0; i < numElements; i++) {
             a.set(i, TornadoMath.sqrt(a.get(i)));
         }
         return result;
     }
 
-    public static Float6 floor(Float6 a) {
-        final Float6 result = new Float6();
+    public static Double6 floor(Double6 a) {
+        final Double6 result = new Double6();
         for (int i = 0; i < numElements; i++) {
             a.set(i, TornadoMath.floor(a.get(i)));
         }
         return result;
     }
 
-    public static Float6 fract(Float6 a) {
-        final Float6 result = new Float6();
+    public static Double6 fract(Double6 a) {
+        final Double6 result = new Double6();
         for (int i = 0; i < numElements; i++) {
             a.set(i, TornadoMath.fract(a.get(i)));
         }
         return result;
     }
 
-    public static Float6 clamp(Float6 a, float min, float max) {
-        Float6 result = new Float6();
+    public static Double6 clamp(Double6 a, double min, double max) {
+        Double6 result = new Double6();
         for (int i = 0; i < numElements; i++) {
             a.set(i, TornadoMath.clamp(a.get(i), min, max));
         }
@@ -322,25 +322,25 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
     /*
      * vector wide operations
      */
-    public static float min(Float6 value) {
-        float result = MAX_VALUE;
+    public static double min(Double6 value) {
+        double result = MAX_VALUE;
         for (int i = 0; i < numElements; i++) {
             result = Math.min(result, value.get(i));
         }
         return result;
     }
 
-    public static float max(Float6 value) {
-        float result = MIN_VALUE;
+    public static double max(Double6 value) {
+        double result = MIN_VALUE;
         for (int i = 0; i < numElements; i++) {
             result = Math.max(result, value.get(i));
         }
         return result;
     }
 
-    public static float dot(Float6 a, Float6 b) {
-        float result = 0f;
-        final Float6 m = mult(a, b);
+    public static double dot(Double6 a, Double6 b) {
+        double result = 0f;
+        final Double6 m = mult(a, b);
         for (int i = 0; i < numElements; i++) {
             result += m.get(i);
         }
@@ -352,11 +352,11 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
      *
      * @return
      */
-    public static float length(Float6 value) {
+    public static double length(Double6 value) {
         return TornadoMath.sqrt(dot(value, value));
     }
 
-    public static boolean isEqual(Float6 a, Float6 b) {
+    public static boolean isEqual(Double6 a, Double6 b) {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 

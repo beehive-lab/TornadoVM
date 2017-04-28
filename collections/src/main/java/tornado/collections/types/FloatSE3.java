@@ -17,6 +17,10 @@ package tornado.collections.types;
 
 import tornado.collections.math.TornadoMath;
 
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+import static tornado.collections.math.TornadoMath.sqrt;
+import static tornado.collections.types.Float3.*;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class FloatSE3 {
@@ -98,18 +102,18 @@ public class FloatSE3 {
         //VectorFloat3 result = new VectorFloat3(v.());
         Float3 mu_lo = mu.getHi();
         Float3 w = mu.getLo();
-        final float theta_sq = Float3.dot(w, w);
-        final float theta = TornadoMath.sqrt(theta_sq);
+        final float theta_sq = dot(w, w);
+        final float theta = sqrt(theta_sq);
 
         float A, B, C;
 
-        Float3 crossProduct = Float3.cross(w, mu_lo);
+        Float3 crossProduct = cross(w, mu_lo);
 
         //final Float3 translation = result.get(0);
         if (theta_sq < 1e-8f) {
             A = 1f - one_6th * theta_sq;
             B = 0.5f;
-            translation = Float3.add(mu_lo, Float3.mult(crossProduct, 0.5f));
+            translation = add(mu_lo, mult(crossProduct, 0.5f));
         } else {
             if (theta_sq < 1e-6f) {
                 C = one_6th * (1 - one_20th * theta_sq);
@@ -117,14 +121,14 @@ public class FloatSE3 {
                 B = (float) (0.5 - 0.25 * one_6th * theta_sq);
             } else {
                 final float inv_theta = 1f / theta;
-                A = (float) (Math.sin(theta) * inv_theta);
-                B = (float) ((1 - Math.cos(theta)) * (sq(inv_theta)));
+                A = (float) (sin(theta) * inv_theta);
+                B = (float) ((1 - cos(theta)) * (sq(inv_theta)));
                 C = (1 - A) * (sq(inv_theta));
             }
 
-            Float3 wcp = Float3.cross(w, crossProduct);
-            Float3 Btmp = Float3.add(Float3.mult(crossProduct, B), Float3.mult(wcp, C));
-            translation = Float3.add(mu_lo, Btmp);
+            Float3 wcp = cross(w, crossProduct);
+            Float3 Btmp = add(mult(crossProduct, B), mult(wcp, C));
+            translation = add(mu_lo, Btmp);
 
         }
         rodrigues_so3_exp(w, A, B);

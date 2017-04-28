@@ -21,6 +21,13 @@ import java.util.Arrays;
 import tornado.collections.math.TornadoMath;
 import tornado.common.exceptions.TornadoInternalError;
 
+import static java.lang.Float.MAX_VALUE;
+import static java.lang.Float.MIN_VALUE;
+import static java.lang.String.format;
+import static java.nio.FloatBuffer.wrap;
+import static java.util.Arrays.copyOf;
+import static tornado.collections.types.FloatOps.fmt;
+
 public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
 	
 	private final int numElements;
@@ -122,12 +129,12 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
 	 * @return
 	 */
 	public VectorFloat duplicate(){
-		return new VectorFloat(Arrays.copyOf(storage, storage.length));
+		return new VectorFloat(copyOf(storage, storage.length));
 	}
 	
 	
 	public static float min(VectorFloat v){
-		float result = Float.MAX_VALUE;
+		float result = MAX_VALUE;
 		for(int i=0;i<v.storage.length;i++)
 			result = Math.min(v.storage[i],result);
 		
@@ -135,7 +142,7 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
 	}
 	
 	public static float max(VectorFloat v){
-		float result = Float.MIN_VALUE;
+		float result = MIN_VALUE;
 		for(int i=0;i<v.storage.length;i++)
 			result = Math.max(v.storage[i],result);
 		
@@ -413,7 +420,7 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
 		String str = "[ ";
 
 		for(int i=0;i<numElements;i++){
-			str += String.format(fmt,get(i)) + " ";
+			str += format(fmt,get(i)) + " ";
 		}
 
 		str += "]";
@@ -425,9 +432,9 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
 	 * 
 	 */
 	public String toString(){
-		String str = String.format("VectorFloat <%d>",numElements);
+		String str = format("VectorFloat <%d>",numElements);
 		if(numElements < 32)
-			str += toString(FloatOps.fmt);
+			str += toString(fmt);
 		return str;
 	}
 
@@ -439,7 +446,7 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
 
 	@Override
 	public FloatBuffer asBuffer() {
-		return FloatBuffer.wrap(storage);
+		return wrap(storage);
 	}
 
 	@Override
