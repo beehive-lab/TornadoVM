@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -55,7 +55,7 @@ public class Benchmark extends BenchmarkRunner {
 
     @Override
     protected String getIdString() {
-        return String.format("%s-%d-%s", getName(), iterations, path);
+        return String.format("%s-%d-%d-%s", getName(), iterations, matrix.size, path);
     }
 
     @Override
