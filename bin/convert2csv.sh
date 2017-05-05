@@ -16,7 +16,7 @@ done
 
 KERNELS="${DIR}/${BASE}-kernels.csv"
 echo "device kernel time submit start end" > ${KERNELS}
-grep "task:" ${1} > ${KERNELS}
+grep "task:" ${1} >> ${KERNELS}
 
 perl -pi -e "s/task:\s+//g" ${KERNELS}
 perl -pi -e "s/ /,/g" ${KERNELS}
