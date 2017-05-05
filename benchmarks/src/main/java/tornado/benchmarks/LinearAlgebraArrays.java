@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -91,6 +91,21 @@ public class LinearAlgebraArrays {
         for (@Parallel int i = 0; i < N; i++) {
             for (@Parallel int j = 0; j < N; j++) {
                 float sum = 0.0f;
+                for (int k = 0; k < K; k++) {
+                    sum += A[(i * N) + k] * B[(k * N) + j];
+                }
+                C[(i * N) + j] = sum;
+            }
+        }
+
+    }
+
+    public static void dgemm(final int M, final int N, final int K, final double A[], final double B[],
+            final double C[]) {
+
+        for (@Parallel int i = 0; i < N; i++) {
+            for (@Parallel int j = 0; j < N; j++) {
+                double sum = 0.0;
                 for (int k = 0; k < K; k++) {
                     sum += A[(i * N) + k] * B[(k * N) + j];
                 }
