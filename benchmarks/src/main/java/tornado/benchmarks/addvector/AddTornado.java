@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -59,7 +59,6 @@ public class AddTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        graph.dumpTimes();
         graph.dumpProfiles();
 
         a = null;

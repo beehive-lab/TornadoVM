@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,8 +35,10 @@ public class BlackScholes {
 
         final int size = Integer.getInteger("bs.size", 16777216);
         final int iterations = Integer.getInteger("bs.iterations", 300);
-        // System.out.println("size =" + size);
-        // System.out.println("iterations =" + iterations);
+        if (DEBUG) {
+            System.out.println("size =" + size);
+            System.out.println("iterations =" + iterations);
+        }
 
         final BlackScholes bs = new BlackScholes(size);
 
@@ -67,6 +69,7 @@ public class BlackScholes {
 
         if (!USE_JAVA) {
             tasks.dumpProfiles();
+            tasks.dumpEvents();
         }
 
         if (DEBUG) {

@@ -23,7 +23,6 @@ import tornado.runtime.TornadoDriver;
 import static tornado.common.Tornado.getProperty;
 import static tornado.common.Tornado.setProperty;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
-import static tornado.common.Tornado.getProperty;
 
 public abstract class BenchmarkRunner {
 

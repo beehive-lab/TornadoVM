@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -61,7 +61,6 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        graph.dumpTimes();
         graph.dumpProfiles();
 
         input = null;
@@ -74,7 +73,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
     @Override
     public void code() {
-        graph.schedule().waitOn();
+        graph.execute();
     }
 
     @Override
