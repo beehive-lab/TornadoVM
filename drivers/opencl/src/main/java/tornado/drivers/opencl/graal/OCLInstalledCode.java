@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -216,7 +216,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
 
         if (meta != null && DUMP_PROFILES) {
-//            meta.addProfile(deviceContext.resolveEvent(task));
+            meta.addProfile(deviceContext.resolveEvent(task));
         }
 
         if (ENABLE_EXCEPTIONS) {
