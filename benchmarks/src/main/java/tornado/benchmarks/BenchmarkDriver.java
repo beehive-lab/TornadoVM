@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +26,7 @@ public abstract class BenchmarkDriver {
                     "false"));
     public static final float MAX_ULP = Float.parseFloat(System.getProperty("tornado.benchmarks.maxulp", "5.0"));
 
-    private long iterations;
+    private final long iterations;
     private double elapsed;
     private boolean validResult;
 
@@ -38,7 +38,8 @@ public abstract class BenchmarkDriver {
 
     public void tearDown() {
         final Runtime runtime = Runtime.getRuntime();
-        runtime.gc();
+// BUG - this potentially triggers a crash
+//        runtime.gc();
         if (PRINT_MEM_USAGE) {
             System.out.printf("memory: free=%s, total=%s, max=%s\n",
                     humanReadableByteCount(runtime.freeMemory(), false),
