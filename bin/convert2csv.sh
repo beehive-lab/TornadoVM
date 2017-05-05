@@ -7,7 +7,7 @@ echo "converting ${1} to ${BASE}.csv ..."
 FIELDS="bm= id= device= elapsed= per iteration= speedup= overhead="
 
 OUTPUT="${DIR}/${BASE}.csv"
-echo "benchmark, device, total, iteration, speedup, overhead" > ${OUTPUT}
+echo "benchmark, device, elapsed, iteration, speedup, overhead" > ${OUTPUT}
 grep "bm=" ${1} >> "${OUTPUT}"
 
 for field in ${FIELDS}; do
@@ -15,6 +15,8 @@ for field in ${FIELDS}; do
 done
 
 KERNELS="${DIR}/${BASE}-kernels.csv"
+echo "device kernel time submit start end" > ${KERNELS}
 grep "task:" ${1} > ${KERNELS}
 
 perl -pi -e "s/task:\s+//g" ${KERNELS}
+perl -pi -e "s/ /,/g" ${KERNELS}
