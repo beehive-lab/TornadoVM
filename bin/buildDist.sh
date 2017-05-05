@@ -8,12 +8,6 @@ printf "packaging into %s (build in %s)\n" ${OUTPUT_FILE} ${ROOT_DIR}
 BIN_FILES="bin/runBenchmarks.sh bin/convert2csv.sh"
 DRIVER_FILES="drivers/opencl/jni-bindings"
 
-function copyFiles {
-	for file in $1; do
-		cp -pr $1 $2
-	done
-}
-
 if [ -e ${ROOT_DIR} ];then
 	rm -f ${ROOT_DIR}
 fi
@@ -21,7 +15,10 @@ fi
 mkdir -p ${ROOT_DIR}
 mkdir -p ${ROOT_DIR}/{bin,etc,lib,drivers,var,share/examples,share/benchmarks}
 
-copyFiles ${BIN_FILES} ${ROOT_DIR}/bin/
+for f in ${BIN_FILES};do
+	cp -p ${f} ${ROOT_DIR}/bin/
+done
+
 find ${TORNADO_ROOT}/target -name "*.jar" -exec cp {} ${ROOT_DIR}/lib/ \;
 cp -r ${DRIVER_FILES} ${ROOT_DIR}/drivers/opencl
 cp -r ${TORNADO_ROOT}/examples/src/main/java ${ROOT_DIR}/share/examples
@@ -74,6 +71,7 @@ fi
 
 CLASSPATH=\${CLASSPATH} \${JAVA_CMD} \${JAVA_FLAGS} \$@
 EOF
+chmod +x ${ROOT_DIR}/bin/*
 
 
 
@@ -132,4 +130,5 @@ sudo chown -R 0:0 ${ROOT_DIR}
 pushd ${ROOT_DIR}/..
 DIR=$(basename ${ROOT_DIR})
 tar cfz ${OUTPUT_FILE} ${DIR} 
+sudo rm -rf ./${DIR}
 popd
