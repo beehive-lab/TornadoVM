@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -62,7 +62,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
 
         if (needsBump) {
             bumpBuffer = context.createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, BUMP_BUFFER_SIZE);
-            warn("device requires bump buffer: %s", device.getName());
+            info("device requires bump buffer: %s", device.getName());
         } else {
             bumpBuffer = -1;
         }
@@ -325,7 +325,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
             }
             return result;
         });
-        final String deviceName = "opencl-" + context.getPlatformIndex() + ":" + device.getIndex();
+        final String deviceName = "opencl-" + context.getPlatformIndex() + "-" + device.getIndex();
         System.out.printf("Found %d events on device %s:\n", events.size(), deviceName);
 
         long base = events.get(0).getCLSubmitTime();
