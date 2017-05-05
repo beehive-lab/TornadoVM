@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,14 +21,13 @@ import java.util.Arrays;
 import java.util.List;
 import sun.misc.Unsafe;
 import tornado.common.RuntimeUtilities;
-import tornado.common.Tornado;
 import tornado.common.TornadoLogger;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.enums.OCLBufferCreateType;
 import tornado.drivers.opencl.exceptions.OCLException;
 
-import static tornado.common.Tornado.ENABLE_OOO_EXECUTION;
-import static tornado.common.Tornado.ENABLE_PROFILING;
+import static tornado.common.Tornado.*;
+import static tornado.drivers.opencl.OpenCL.DUMP_OPENCL_EVENTS;
 import static tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
 import static tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
 
@@ -62,6 +61,7 @@ public class OCLContext extends TornadoLogger {
 
     private final long id;
     private final List<OCLDevice> devices;
+    private final List<OCLDeviceContext> deviceContexts;
     private final OCLCommandQueue[] queues;
     private final List<OCLProgram> programs;
     private final long[] allocatedRegions;
@@ -74,6 +74,7 @@ public class OCLContext extends TornadoLogger {
         this.platform = platform;
         this.id = id;
         this.devices = devices;
+        this.deviceContexts = new ArrayList<>(devices.size());
         this.queues = new OCLCommandQueue[devices.size()];
         this.programs = new ArrayList<>();
         this.allocatedRegions = new long[64];
@@ -218,6 +219,12 @@ public class OCLContext extends TornadoLogger {
 
     public void cleanup() {
 
+        if (DUMP_OPENCL_EVENTS) {
+            for (OCLDeviceContext deviceContext : deviceContexts) {
+                deviceContext.dumpEvents();
+            }
+        }
+
         try {
             long t0 = System.nanoTime();
             for (OCLProgram program : programs) {
@@ -241,7 +248,7 @@ public class OCLContext extends TornadoLogger {
 
             long t4 = System.nanoTime();
 
-            if (Tornado.DEBUG) {
+            if (DEBUG) {
                 System.out.printf("cleanup: %-10s..........%.9f s\n",
                         "programs", (t1 - t0) * 1e-9);
                 System.out.printf("cleanup: %-10s..........%.9f s\n", "memory",
@@ -268,7 +275,9 @@ public class OCLContext extends TornadoLogger {
         debug("creating device context for device: %s",
                 devices.get(index).toString());
         createCommandQueue(index);
-        return new OCLDeviceContext(devices.get(index), queues[index], this);
+        final OCLDeviceContext deviceContext = new OCLDeviceContext(devices.get(index), queues[index], this);
+        deviceContexts.add(deviceContext);
+        return deviceContext;
     }
 
     /**
