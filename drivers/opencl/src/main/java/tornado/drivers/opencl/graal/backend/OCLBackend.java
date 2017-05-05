@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,7 +40,6 @@ import jdk.vm.ci.code.*;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.*;
 import tornado.api.Vector;
-import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import tornado.drivers.opencl.OCLContext;
 import tornado.drivers.opencl.OCLDeviceContext;
@@ -54,6 +53,7 @@ import tornado.drivers.opencl.mm.OCLByteBuffer;
 import tornado.graal.backend.TornadoBackend;
 import tornado.lang.CompilerInternals;
 
+import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.common.Tornado.DEBUG_KERNEL_ARGS;
 import static tornado.common.exceptions.TornadoInternalError.*;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
@@ -162,13 +162,13 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         final long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice()
                 .getMaxAllocationSize());
         if (memorySize < DEFAULT_HEAP_ALLOCATION) {
-            Tornado.warn(
+            Tornado.info(
                     "Unable to allocate %s of heap space - resized to %s",
-                    RuntimeUtilities.humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false),
-                    RuntimeUtilities.humanReadableByteCount(memorySize, false));
+                    humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false),
+                    humanReadableByteCount(memorySize, false));
         }
         Tornado.info("%s: allocating %s of heap space", deviceContext.getDevice().getName(),
-                RuntimeUtilities.humanReadableByteCount(memorySize, false));
+                humanReadableByteCount(memorySize, false));
         deviceContext.getMemoryManager().allocateRegion(memorySize);
 
         /*
