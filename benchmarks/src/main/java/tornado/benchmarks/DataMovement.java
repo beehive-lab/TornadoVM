@@ -38,7 +38,7 @@ public class DataMovement {
     }
 
     public static void main(String args[]) {
-        final int startSize = Integer.parseInt(System.getProperty("startsize", "0"));
+        final int startSize = Integer.parseInt(System.getProperty("startsize", "2"));
         final int endSize = Integer.parseInt(System.getProperty("endsize", "8192"));
         final int iterations = Integer.parseInt(System.getProperty("iterations", "100"));
         final String[] types = System.getProperty("types", "i8,i32,i64,f32,f64").split(",");
