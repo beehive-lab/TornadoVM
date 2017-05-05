@@ -6,9 +6,11 @@ MAIN_CLASS="Benchmark"
 
 TORNADO_CMD="tornado"
 
-if [ -z "${TORNADO_FLAGS}" ]; then
-	TORNADO_FLAGS="-Xms8G -Dtornado.kernels.coarsener=False -Dtornado.profiles.dump=False -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
+if [ -z "${TORNADO_BM_FLAGS}" ]; then
+	TORNADO_BM_FLAGS="-Xms8G -Dtornado.kernels.coarsener=False -Dtornado.profiles.dump=False -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
 fi
+
+TORNADO_FLAGS="${TORNADO_FLAGS} ${TORNADO_BM_FLAGS}"
 
 DATE=$(date '+%Y-%m-%d-%H:%M')
 
@@ -37,7 +39,7 @@ if [ -e ${TORNADO_ROOT}/.git ]; then
 	echo $(git rev-parse HEAD) > "${BM_ROOT}/git.sha"
 fi
 
-${TORNADO_CMD} -Xms8G -Ddevices=${DEVICES} -DstartSize=2 -DendSize=16777216 tornado.benchmarks.DataMovement > "${BM_ROOT}/data-movement.csv"
+${TORNADO_CMD} -Xms8G -Ddevices=${DEVICES} -Dstartsize=2 -Dendsize=16777216 tornado.benchmarks.DataMovement > "${BM_ROOT}/data-movement.csv"
 
 for bm in ${BENCHMARKS}; do
 	for (( i=0; i<${ITERATIONS}; i++ )); do
