@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,11 +19,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import tornado.common.ObjectBuffer;
 import tornado.common.RuntimeUtilities;
-import static tornado.common.Tornado.DEBUG;
-import static tornado.common.Tornado.debug;
-import static tornado.common.Tornado.trace;
-import static tornado.common.Tornado.warn;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
+
+import static tornado.common.Tornado.*;
 
 public class FieldBuffer {
 
