@@ -216,11 +216,10 @@ public class MatrixDouble  implements PrimitiveStorage<DoubleBuffer> {
         	 }
         	 str+= "\n";
          }
-         str.trim();
-
-         return str;
+         return str.trim();
     }
 
+        @Override
     public String toString(){
     	String result = format("MatrixDouble <%d x %d>",M,N);
 		 if(M<16 && N<16)
@@ -247,7 +246,7 @@ public class MatrixDouble  implements PrimitiveStorage<DoubleBuffer> {
 //		diag().fill(1f);
 //	}
 
-    @Override
+        @Override
    	public void loadFromBuffer(DoubleBuffer buffer) {
    		asBuffer().put(buffer);
    	}
