@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -70,13 +70,9 @@ public final class Tornado {
             .parseBoolean(settings.getProperty("tornado.profiling.enable",
                     "False"));
 
-    public static final boolean ENABLE_OOO_EXECUTION = Boolean
-            .parseBoolean(settings.getProperty("tornado.ooo-execution.enable",
-                    "False"));
+    public static final boolean ENABLE_OOO_EXECUTION = Boolean.parseBoolean(settings.getProperty("tornado.ooo-execution.enable", "False"));
     public static final boolean VM_USE_DEPS = Boolean.parseBoolean(Tornado.getProperty("tornado.vm.deps", "False"));
-    public static final boolean FORCE_BLOCKING_API_CALLS = Boolean
-            .parseBoolean(settings.getProperty("tornado.opencl.blocking",
-                    "False"));
+    public static final boolean FORCE_BLOCKING_API_CALLS = Boolean.parseBoolean(settings.getProperty("tornado.opencl.blocking", "False"));
 
     public static final boolean ENABLE_PARALLELIZATION = Boolean.parseBoolean(Tornado.getProperty("tornado.kernels.parallelize", "True"));
     public static final boolean USE_THREAD_COARSENING = Boolean.parseBoolean(Tornado.getProperty("tornado.kernels.coarsener", "True"));
@@ -92,10 +88,10 @@ public final class Tornado {
     public static final boolean ENABLE_MEM_CHECKS = Boolean
             .parseBoolean(settings.getProperty("tornado.memory.check", "False"));
 
-    public static final boolean LOG_EVENTS = Boolean.parseBoolean(settings
-            .getProperty("tornado.events.log", "False"));
+    public static final boolean DUMP_EVENTS = Boolean.parseBoolean(settings
+            .getProperty("tornado.events.dump", "False"));
 
-    public static final boolean DUMP_PROFILES = Boolean.parseBoolean(settings.getProperty("tornado.profiles.print", "false"));
+    public static final boolean DUMP_PROFILES = Boolean.parseBoolean(settings.getProperty("tornado.profiles.dump", "false"));
 
     public static final String OPENCL_CFLAGS = settings.getProperty(
             "tornado.opencl.cflags", "-w");
