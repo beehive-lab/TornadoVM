@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,8 +30,8 @@ public class OpenCL {
 
     private static final List<OCLPlatform> platforms = new ArrayList<>();
 
-    private final static boolean DUMP_EVENTS = Boolean.parseBoolean(Tornado
-            .getProperty("tornado.opencl.events", "False"));
+    public final static boolean DUMP_OPENCL_EVENTS = Boolean.parseBoolean(Tornado
+            .getProperty("tornado.opencl.events.dump", "False"));
 
     public static final ByteOrder BYTE_ORDER = ByteOrder.LITTLE_ENDIAN;
 
@@ -58,7 +58,7 @@ public class OpenCL {
             public void run() {
                 setName("OpenCL Cleanup");
 //                if (DUMP_EVENTS)
-//                    TornadoRuntime.dumpEvents();
+//                    TornadoRuntime.getTornadoRuntime().
                 OpenCL.cleanup();
             }
 
@@ -78,8 +78,7 @@ public class OpenCL {
 
     public static void cleanup() {
         if (initialised) {
-            for (OCLPlatform platform : platforms) {
-//                Tornado.info("cleaning up platform: %s", platform.getName());
+            for (final OCLPlatform platform : platforms) {
                 platform.cleanup();
             }
         }
