@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,13 +20,13 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
 import tornado.api.Event;
-import tornado.api.enums.TornadoExecutionStatus;
 import tornado.common.*;
 import tornado.common.enums.Access;
 import tornado.meta.Meta;
 import tornado.runtime.api.GlobalObjectState;
 import tornado.runtime.graph.ExecutionContext;
 
+import static tornado.api.enums.TornadoExecutionStatus.COMPLETE;
 import static tornado.common.Tornado.*;
 import static tornado.common.enums.Access.READ_WRITE;
 import static tornado.common.enums.Access.WRITE;
@@ -410,9 +410,9 @@ public class TornadoVM extends TornadoLogger {
         return barrier;
     }
 
-    public void dumpTimes() {
-        System.out.printf("vm: complete %d iterations, %.9f s mean\n",
-                invocations, (totalTime / invocations));
+    public void printTimes() {
+        System.out.printf("vm: complete %d iterations - %.9f s mean and %.9f s total\n",
+                invocations, (totalTime / invocations), totalTime);
     }
 
     public void clearProfiles() {
@@ -422,8 +422,8 @@ public class TornadoVM extends TornadoLogger {
     }
 
     public void dumpEvents() {
-        if (!ENABLE_PROFILING) {
-            warn("profiling is not enabled");
+        if (!ENABLE_PROFILING || !DUMP_EVENTS) {
+            info("profiling and/or event dumping is not enabled");
             return;
         }
 
@@ -434,15 +434,15 @@ public class TornadoVM extends TornadoLogger {
 
     public void dumpProfiles() {
         if (!ENABLE_PROFILING) {
-            warn("profiling is not enabled");
+            info("profiling is not enabled");
             return;
         }
 
         for (final SchedulableTask task : tasks) {
             final Meta meta = task.meta();
             for (final Event profile : meta.getProfiles()) {
-                if (profile.getStatus() == TornadoExecutionStatus.COMPLETE) {
-                    System.out.printf("task: %s %s %.9f %9d %9d %9d\n", task.getDeviceMapping().getDeviceName(), task.getName().substring(7), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(), profile.getEndTime());
+                if (profile.getStatus() == COMPLETE) {
+                    System.out.printf("task: %s %s %.9f %9d %9d %9d\n", task.getDeviceMapping().getDeviceName(), task.getName().substring(5).replace(" ", ""), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(), profile.getEndTime());
                 }
             }
         }

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -176,7 +176,7 @@ public abstract class AbstractTaskGraph {
 //						task.getName(), task.getStatus(),
 //						task.getExecutionTime(), task.getTotalTime(),
 //						task.getQueuedTime()));
-        vm.dumpTimes();
+        vm.printTimes();
     }
 
     public void dumpProfiles() {
