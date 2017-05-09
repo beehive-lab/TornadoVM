@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
  */
 package tornado.drivers.opencl;
 
-import tornado.common.Tornado;
+import tornado.api.meta.TaskMetaData;
 import tornado.meta.domain.DomainTree;
 
 public class OCLGpuScheduler extends OCLKernelScheduler {
@@ -45,14 +45,14 @@ public class OCLGpuScheduler extends OCLKernelScheduler {
     }
 
     @Override
-    public void calculateGlobalWork(final OCLKernelConfig kernelInfo) {
-        final long[] globalWork = kernelInfo.getGlobalWork();
-        if (kernelInfo.getDims() > 1) {
+    public void calculateGlobalWork(final TaskMetaData meta) {
+        final long[] globalWork = meta.getGlobalWork();
+        if (meta.getDims() > 1) {
             utilsIndex = 0;
         }
 
-        for (int i = 0; i < kernelInfo.getDims(); i++) {
-            long value = (long) (kernelInfo.getDomain().get(i).cardinality()); /// utils[utilsIndex]);
+        for (int i = 0; i < meta.getDims(); i++) {
+            long value = (long) (meta.getDomain().get(i).cardinality()); /// utils[utilsIndex]);
             /*
              * if( value % 32 != 0){ value = ((value / 32) + 1) * 32; }
              */
@@ -62,14 +62,14 @@ public class OCLGpuScheduler extends OCLKernelScheduler {
     }
 
     @Override
-    public void calculateLocalWork(OCLKernelConfig kernelInfo) {
+    public void calculateLocalWork(final TaskMetaData meta) {
         final int maxWorkGroupSize = (int) ((int) deviceContext.getDevice()
                 .getMaxWorkGroupSize() * GPU_WORK_GROUP_COEFF);
 
         //System.out.printf("max item size: {%d, %d, %d}\n",maxWorkItemSizes[0],maxWorkItemSizes[1],maxWorkItemSizes[2]);
-        final DomainTree domain = kernelInfo.getDomain();
-        final long[] localWork = kernelInfo.getLocalWork();
-        switch (kernelInfo.getDims()) {
+        final DomainTree domain = meta.getDomain();
+        final long[] localWork = meta.getLocalWork();
+        switch (meta.getDims()) {
             case 3:
                 localWork[2] = 1;
 
@@ -77,13 +77,13 @@ public class OCLGpuScheduler extends OCLKernelScheduler {
                 final int sqrtMaxWorkGroupSize = (int) Math
                         .sqrt(maxWorkGroupSize);
 
-                localWork[1] = calculateGroupSize(maxWorkItemSizes[1], Tornado.OPENCL_GPU_BLOCK_2D_Y, kernelInfo.getGlobalWork()[1]);
-                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], Tornado.OPENCL_GPU_BLOCK_2D_X, kernelInfo.getGlobalWork()[0]);
+                localWork[1] = calculateGroupSize(maxWorkItemSizes[1], meta.getOpenclGpuBlock2DY(), meta.getGlobalWork()[1]);
+                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenclGpuBlock2DX(), meta.getGlobalWork()[0]);
 
                 break;
             case 1:
 
-                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], Tornado.OPENCL_GPU_BLOCK_X, kernelInfo.getGlobalWork()[0]);
+                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenclGpuBlockX(), meta.getGlobalWork()[0]);
                 break;
             default:
                 break;

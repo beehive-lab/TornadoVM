@@ -18,6 +18,7 @@ package tornado.drivers.opencl;
 import java.nio.ByteOrder;
 import java.util.List;
 import tornado.api.Event;
+import tornado.api.meta.TaskMetaData;
 import tornado.common.Initialisable;
 import tornado.common.TornadoLogger;
 import tornado.drivers.opencl.enums.OCLMemFlags;
@@ -311,6 +312,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         return new OCLDeviceMapping(context.getPlatformIndex(), device.getIndex());
     }
 
+    public String getId() {
+        return String.format("opencl-%d-%d", context.getPlatformIndex(), device.getIndex());
+    }
+
     public void dumpEvents() {
         List<OCLEvent> events = queue.getEvents();
 
@@ -357,11 +362,11 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
     }
 
     public OCLInstalledCode installCode(OCLCompilationResult result) {
-        return installCode(result.getId(), result.getName(), result.getTargetCode());
+        return installCode(result.getMeta(), result.getId(), result.getName(), result.getTargetCode());
     }
 
-    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code) {
-        return codeCache.installSource(id, entryPoint, code);
+    public OCLInstalledCode installCode(TaskMetaData meta, String id, String entryPoint, byte[] code) {
+        return codeCache.installSource(meta, id, entryPoint, code);
     }
 
     public boolean isCached(String id, String entryPoint) {

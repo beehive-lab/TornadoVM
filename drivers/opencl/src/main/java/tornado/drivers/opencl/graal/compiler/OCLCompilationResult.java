@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,17 +20,17 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Set;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.api.meta.TaskMetaData;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
-import tornado.meta.Meta;
 
 public class OCLCompilationResult extends CompilationResult {
 
     protected Set<ResolvedJavaMethod> nonInlinedMethods;
-    protected Meta meta;
+    protected TaskMetaData meta;
     protected OCLBackend backend;
     protected String id;
 
-    public OCLCompilationResult(String id, String name, Meta meta, OCLBackend backend) {
+    public OCLCompilationResult(String id, String name, TaskMetaData meta, OCLBackend backend) {
         super(name);
         this.id = id;
         this.meta = meta;
@@ -59,7 +59,7 @@ public class OCLCompilationResult extends CompilationResult {
         setTargetCode(newCode, size);
     }
 
-    public Meta getMeta() {
+    public TaskMetaData getMeta() {
         return meta;
     }
 

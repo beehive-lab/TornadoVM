@@ -27,9 +27,9 @@ import com.oracle.graal.nodes.calc.MulNode;
 import com.oracle.graal.phases.BasePhase;
 import java.util.List;
 import jdk.vm.ci.meta.JavaKind;
-import tornado.common.Tornado;
+import tornado.api.meta.Coarseness;
+import tornado.api.meta.TaskMetaData;
 import tornado.drivers.opencl.enums.OCLDeviceType;
-import tornado.drivers.opencl.graal.meta.Coarseness;
 import tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
@@ -37,11 +37,11 @@ import tornado.graal.nodes.ParallelOffsetNode;
 import tornado.graal.nodes.ParallelRangeNode;
 import tornado.graal.nodes.ParallelStrideNode;
 import tornado.graal.phases.TornadoHighTierContext;
-import tornado.meta.Meta;
 import tornado.meta.domain.DomainTree;
 import tornado.meta.domain.IntDomain;
 
-import static tornado.common.Tornado.*;
+import static tornado.common.Tornado.debug;
+import static tornado.common.Tornado.getProperty;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoUnsupportedError.unsupported;
@@ -73,29 +73,25 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-        if (!USE_THREAD_COARSENING || !context.hasDeviceMapping() || !context.getMeta().hasDomain()) {
+        TaskMetaData meta = context.getMeta();
+        if (meta == null || !meta.hasDomain() || !meta.enableThreadCoarsener()) {
             return;
         }
 
-        Meta meta = context.getMeta();
-        DomainTree domain = meta.getDomain();
+        final DomainTree domain = meta.getDomain();
 
         if (domain.getDepth() == 0) {
             return;
         }
 
-        Coarseness coarseness;
-        if (meta.hasProvider(Coarseness.class)) {
-            coarseness = meta.getProvider(Coarseness.class);
-        } else {
-            coarseness = new Coarseness(domain.getDepth());
-        }
+        Coarseness coarseness = meta.getCoarseness();
 
         OCLDeviceMapping mapping = (OCLDeviceMapping) context.getDeviceMapping();
         if (mapping.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_CPU || (mapping.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && XEON_PHI_AS_CPU)) {
             int[] config = new int[3];
-            String configCpu = Tornado.getProperty("tornado.opencl.cpu.config");
-            if (configCpu != null) {
+
+            if (meta.isCpuConfigDefined()) {
+                String configCpu = meta.getCpuConfig();
                 int index = 0;
                 for (String str : configCpu.split(",")) {
                     config[index] = Integer.parseInt(str);

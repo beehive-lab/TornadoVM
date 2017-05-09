@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +15,7 @@
  */
 package tornado.drivers.opencl.runtime;
 
+import tornado.api.meta.ScheduleMetaData;
 import tornado.common.enums.Access;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
@@ -26,9 +27,9 @@ public class OCLPrebuiltTask extends PrebuiltTask {
     private OCLInstalledCode code;
     private final OCLBackend backend;
 
-    protected OCLPrebuiltTask(String id, String entryPoint, String filename, Object[] args,
+    protected OCLPrebuiltTask(ScheduleMetaData meta, String id, String entryPoint, String filename, Object[] args,
             Access[] access, OCLDeviceMapping device, DomainTree domain) {
-        super(id, entryPoint, filename, args, access, device, domain);
+        super(meta, id, entryPoint, filename, args, access, device, domain);
 
         backend = device.getBackend();
     }

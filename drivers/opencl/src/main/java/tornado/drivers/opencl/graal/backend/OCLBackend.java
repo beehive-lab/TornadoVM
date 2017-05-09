@@ -40,6 +40,8 @@ import jdk.vm.ci.code.*;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.*;
 import tornado.api.Vector;
+import tornado.api.meta.ScheduleMetaData;
+import tornado.api.meta.TaskMetaData;
 import tornado.common.Tornado;
 import tornado.drivers.opencl.OCLContext;
 import tornado.drivers.opencl.OCLDeviceContext;
@@ -82,6 +84,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     OCLInstalledCode lookupCode;
     final AtomicInteger id = new AtomicInteger(0);
 
+    final ScheduleMetaData scheduleMeta;
+
     public OCLBackend(
             OCLProviders providers,
             OCLTargetDescription target,
@@ -94,6 +98,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         this.openclContext = openclContext;
         this.deviceContext = deviceContext;
         architecture = (OCLArchitecture) target.arch;
+        scheduleMeta = new ScheduleMetaData("oclbackend");
 
     }
 
@@ -140,12 +145,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return method;
     }
 
-    public long readHeapBaseAddress() {
+    public long readHeapBaseAddress(TaskMetaData meta) {
         final OCLByteBuffer bb = deviceContext.getMemoryManager().getSubBuffer(0, 16);
         bb.putLong(0);
         bb.putLong(0);
 
-        lookupCode.execute(bb, null);
+        lookupCode.execute(bb, meta);
 
 //        bb.dump();
         final long address = bb.getLong(0);
@@ -174,15 +179,17 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         /*
          * Retrive the address of the heap on the device
          */
+        TaskMetaData meta = new TaskMetaData(scheduleMeta, "lookupBufferAddress", 0);
         if (deviceContext.isCached("internal", "lookupBufferAddress")) {
             lookupCode = deviceContext.getCode("internal", "lookupBufferAddress");
         } else {
+
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(
-                    getTornadoRuntime().resolveMethod(getLookupMethod()), null, null, (OCLProviders) getProviders(), this);
+                    getTornadoRuntime().resolveMethod(getLookupMethod()), null, meta, (OCLProviders) getProviders(), this);
             lookupCode = deviceContext.installCode(result);
         }
 
-        deviceContext.getMemoryManager().init(this, readHeapBaseAddress());
+        deviceContext.getMemoryManager().init(this, readHeapBaseAddress(meta));
     }
 
     public OCLDeviceContext getDeviceContext() {

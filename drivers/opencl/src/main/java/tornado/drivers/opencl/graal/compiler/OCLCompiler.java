@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -49,6 +49,7 @@ import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.*;
+import tornado.api.meta.TaskMetaData;
 import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.OCLTargetDescription;
@@ -58,14 +59,12 @@ import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.OCLSuitesProvider;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLLIRGenerationPhase.LIRGenerationContext;
-import tornado.drivers.opencl.runtime.OCLMemoryRegions;
 import tornado.graal.TornadoDebugEnvironment;
 import tornado.graal.TornadoLIRSuites;
 import tornado.graal.TornadoSuites;
 import tornado.graal.compiler.TornadoCompilerIdentifier;
 import tornado.graal.phases.TornadoHighTierContext;
 import tornado.graal.phases.TornadoMidTierContext;
-import tornado.meta.Meta;
 import tornado.runtime.api.CompilableTask;
 import tornado.runtime.sketcher.Sketch;
 import tornado.runtime.sketcher.TornadoSketcher;
@@ -100,7 +99,7 @@ public class OCLCompiler {
         public final StructuredGraph graph;
         public final ResolvedJavaMethod installedCodeOwner;
         public final Object[] args;
-        public final Meta meta;
+        public final TaskMetaData meta;
         public final Providers providers;
         public final OCLBackend backend;
         public final PhaseSuite<HighTierContext> graphBuilderSuite;
@@ -139,7 +138,7 @@ public class OCLCompiler {
                 StructuredGraph graph,
                 ResolvedJavaMethod installedCodeOwner,
                 Object[] args,
-                Meta meta,
+                TaskMetaData meta,
                 Providers providers,
                 OCLBackend backend,
                 PhaseSuite<HighTierContext> graphBuilderSuite,
@@ -191,7 +190,7 @@ public class OCLCompiler {
      * @return the result of the compilation
      */
     public static <T extends OCLCompilationResult> T compileGraph(StructuredGraph graph,
-            ResolvedJavaMethod installedCodeOwner, Object[] args, Meta meta,
+            ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta,
             Providers providers, OCLBackend backend,
             PhaseSuite<HighTierContext> graphBuilderSuite,
             OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo,
@@ -239,7 +238,7 @@ public class OCLCompiler {
      * Builds the graph, optimizes it.
      */
     public static void emitFrontEnd(Providers providers, OCLBackend backend,
-            ResolvedJavaMethod method, Object[] args, Meta meta, StructuredGraph graph,
+            ResolvedJavaMethod method, Object[] args, TaskMetaData meta, StructuredGraph graph,
             PhaseSuite<HighTierContext> graphBuilderSuite,
             OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo,
             TornadoSuites suites, boolean isKernel, boolean buildGraph) {
@@ -424,7 +423,7 @@ public class OCLCompiler {
 
     }
 
-    public static byte[] compileGraphForDevice(StructuredGraph graph, Meta meta, String entryPoint, OCLProviders providers, OCLBackend backend) {
+    public static byte[] compileGraphForDevice(StructuredGraph graph, TaskMetaData meta, String entryPoint, OCLProviders providers, OCLBackend backend) {
         throw unimplemented();
 //        final OCLCodeProvider codeCache = backend.getCodeCache();
 //
@@ -484,17 +483,13 @@ public class OCLCompiler {
     }
 
     public static OCLCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod,
-            Object[] args, Meta meta, OCLProviders providers, OCLBackend backend) {
+            Object[] args, TaskMetaData meta, OCLProviders providers, OCLBackend backend) {
         Tornado.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext()
                 .getDevice().getName());
         TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
         final StructuredGraph kernelGraph = new StructuredGraph(resolvedMethod,
                 AllowAssumptions.YES, id);
         final OCLCodeProvider codeCache = backend.getCodeCache();
-
-        if (meta != null && !meta.hasProvider(OCLMemoryRegions.class)) {
-            meta.addProvider(OCLMemoryRegions.class, new OCLMemoryRegions());
-        }
 
         CallingConvention cc = OCLCodeUtil.getCallingConvention(codeCache,
                 HotSpotCallingConventionType.JavaCallee, resolvedMethod, false);
@@ -555,12 +550,8 @@ public class OCLCompiler {
         );
 
         final OCLCodeProvider codeCache = backend.getCodeCache();
-        final Meta taskMeta = task.meta();
+        final TaskMetaData taskMeta = task.meta();
         final Object[] args = task.getArguments();
-
-        if (taskMeta != null && !taskMeta.hasProvider(OCLMemoryRegions.class)) {
-            taskMeta.addProvider(OCLMemoryRegions.class, new OCLMemoryRegions());
-        }
 
         CallingConvention cc = OCLCodeUtil.getCallingConvention(codeCache,
                 HotSpotCallingConventionType.JavaCallee, resolvedMethod, false);

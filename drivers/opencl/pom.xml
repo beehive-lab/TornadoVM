@@ -22,27 +22,12 @@
     <dependencies>
         <dependency>
             <groupId>tornado</groupId>
-            <artifactId>tornado-common</artifactId>
-            <version>0.0.2-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>tornado</groupId>
-            <artifactId>tornado-api</artifactId>
-            <version>0.0.2-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>tornado</groupId>
             <artifactId>tornado-collections</artifactId>
             <version>0.0.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-runtime</artifactId>
-            <version>0.0.2-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>tornado</groupId>
-            <artifactId>tornado-compiler</artifactId>
             <version>0.0.2-SNAPSHOT</version>
         </dependency>
         <dependency>

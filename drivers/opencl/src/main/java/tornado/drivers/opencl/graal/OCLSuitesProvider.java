@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,7 @@ import com.oracle.graal.phases.common.AddressLoweringPhase.AddressLowering;
 import com.oracle.graal.phases.tiers.HighTierContext;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.api.meta.TaskMetaData;
 import tornado.drivers.opencl.graal.compiler.OCLCanonicalizer;
 import tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
 import tornado.drivers.opencl.graal.compiler.plugins.OCLGraphBuilderPlugins;
@@ -32,7 +33,6 @@ import tornado.graal.TornadoLIRSuites;
 import tornado.graal.TornadoSuites;
 import tornado.graal.compiler.TornadoSketchTier;
 import tornado.graal.compiler.TornadoSuitesProvider;
-import tornado.meta.Meta;
 
 public class OCLSuitesProvider implements TornadoSuitesProvider {
 
@@ -48,7 +48,7 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
         lirSuites = createLIRSuites();
     }
 
-    public void setContext(MetaAccessProvider metaAccess, ResolvedJavaMethod method, Object[] args, Meta meta) {
+    public void setContext(MetaAccessProvider metaAccess, ResolvedJavaMethod method, Object[] args, TaskMetaData meta) {
         canonicalizer.setContext(metaAccess, method, args, meta);
     }
 

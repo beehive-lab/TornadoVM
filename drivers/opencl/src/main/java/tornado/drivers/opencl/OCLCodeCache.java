@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import tornado.api.meta.TaskMetaData;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.enums.OCLBuildStatus;
 import tornado.drivers.opencl.exceptions.OCLException;
@@ -87,7 +88,7 @@ public class OCLCodeCache {
         return outDir;
     }
 
-    public OCLInstalledCode installSource(String id, String entryPoint, byte[] source) {
+    public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
 
         info("Installing code for %s into code cache", entryPoint);
         final OCLProgram program = deviceContext.createProgramWithSource(source,
@@ -105,7 +106,7 @@ public class OCLCodeCache {
 
         // TODO add support for passing compiler optimisation flags here
         final long t0 = System.nanoTime();
-        program.build(OPENCL_CFLAGS);
+        program.build(meta.getOpenclCompilerFlags());
         final long t1 = System.nanoTime();
 
         final OCLBuildStatus status = program.getStatus(deviceContext.getDeviceId());
@@ -123,7 +124,7 @@ public class OCLCodeCache {
 
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
-            if (PRINT_COMPILE_TIMES) {
+            if (meta.shouldPrintCompileTimes()) {
                 System.out.printf("compile: kernel %s opencl %.9f\n", entryPoint, (t1 - t0) * 1e-9f);
             }
             cache.put(id + "-" + entryPoint, code);

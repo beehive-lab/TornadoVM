@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,8 +38,6 @@ import tornado.graal.phases.TornadoHighTierContext;
 
 import static tornado.api.enums.TornadoSchedulingStrategy.PER_BLOCK;
 import static tornado.api.enums.TornadoSchedulingStrategy.PER_ITERATION;
-import static tornado.common.Tornado.ENABLE_PARALLELIZATION;
-import static tornado.common.Tornado.USE_THREAD_COARSENING;
 
 public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> {
 
@@ -150,7 +148,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-        if (!context.hasDeviceMapping() || USE_THREAD_COARSENING) {
+        if (context.getMeta().enableThreadCoarsener()) {
             return;
         }
 
@@ -159,7 +157,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         long[] maxWorkItemSizes = device.getDevice().getMaxWorkItemSizes();
 
         graph.getNodes().filter(ParallelRangeNode.class).forEach(node -> {
-            if (ENABLE_PARALLELIZATION && maxWorkItemSizes[node.index()] > 1) {
+            if (context.getMeta().enableParallelization() && maxWorkItemSizes[node.index()] > 1) {
 
                 ParallelOffsetNode offset = node.offset();
                 ParallelStrideNode stride = node.stride();

@@ -19,13 +19,12 @@ import java.nio.ByteBuffer;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import tornado.api.Event;
+import tornado.api.meta.TaskMetaData;
 import tornado.common.CallStack;
 import tornado.common.TornadoInstalledCode;
 import tornado.drivers.opencl.*;
 import tornado.drivers.opencl.mm.OCLByteBuffer;
 import tornado.drivers.opencl.mm.OCLCallStack;
-import tornado.drivers.opencl.runtime.OCLMemoryRegions;
-import tornado.meta.Meta;
 
 import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.common.Tornado.*;
@@ -72,7 +71,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return valid;
     }
 
-    public void execute(final OCLByteBuffer stack, final Meta meta) {
+    public void execute(final OCLByteBuffer stack, final TaskMetaData meta) {
         debug("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(),
                 kernel.getName(), deviceContext.getDevice().getName());
         debug("\tstack    : buffer id=0x%x, address=0x%x relative=0x%x", stack.toBuffer(),
@@ -80,8 +79,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         internalEvents[0] = stack.enqueueWrite();
 
-        OCLMemoryRegions memoryRegions = (meta == null) ? null : meta.getProvider(OCLMemoryRegions.class);
-        setKernelArgs(stack, memoryRegions);
+        setKernelArgs(stack, meta);
 
         if (meta != null && meta.isParallel()) {
             internalEvents[0] = scheduler.submit(kernel, meta, internalEvents);
@@ -89,7 +87,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             internalEvents[0] = deviceContext.enqueueTask(kernel, internalEvents);
         }
 
-        if (meta != null && DUMP_PROFILES) {
+        if (meta != null && meta.shouldDumpProfiles()) {
 //            meta.addProfile(task);
         }
 
@@ -101,7 +99,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                 kernel.getName(), deviceContext.getDevice().getName());
         debug("\tstatus   : %s", event.getStatus());
 
-        if (ENABLE_PROFILING) {
+        if (meta != null && meta.enableProfiling()) {
             debug("\texecuting: %f seconds", event.getExecutionTime());
             debug("\ttotal    : %f seconds", event.getTotalTime());
         }
@@ -131,7 +129,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         sb.append("[");
         for (final long value : array) {
-            sb.append(" " + value);
+            sb.append(" ").append(value);
         }
         sb.append(" ]");
 
@@ -143,7 +141,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return code;
     }
 
-    private void setKernelArgs(final OCLByteBuffer stack, OCLMemoryRegions regions) {
+    private void setKernelArgs(final OCLByteBuffer stack, TaskMetaData meta) {
         int index = 0;
 
         if (deviceContext.needsBump()) {
@@ -166,17 +164,17 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         index++;
 
         // constant
-        if (regions != null && regions.getConstantSize() > 0) {
-            kernel.setArg(index, ByteBuffer.wrap(regions.getConstantData()));
+        if (meta.getConstantSize() > 0) {
+            kernel.setArg(index, ByteBuffer.wrap(meta.getConstantData()));
         } else {
             kernel.setArgUnused(index);
         }
         index++;
 
         // local
-        if (regions != null && regions.getLocalSize() > 0) {
-            info("\tallocating %s of local memory", humanReadableByteCount(regions.getLocalSize(), true));
-            kernel.setLocalRegion(index, regions.getLocalSize());
+        if (meta.getLocalSize() > 0) {
+            info("\tallocating %s of local memory", humanReadableByteCount(meta.getLocalSize(), true));
+            kernel.setLocalRegion(index, meta.getLocalSize());
         } else {
             kernel.setArgUnused(index);
         }
@@ -186,7 +184,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         kernel.setArgUnused(index);
     }
 
-    public int submit(final OCLCallStack stack, final Meta meta,
+    public int submit(final OCLCallStack stack, final TaskMetaData meta,
             final int[] events) {
 
         if (DEBUG) {
@@ -197,8 +195,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
 
         final int[] waitEvents;
-        OCLMemoryRegions regions = (meta == null) ? null : meta.getProvider(OCLMemoryRegions.class);
-        setKernelArgs(stack, regions);
+        setKernelArgs(stack, meta);
         if (!stack.isOnDevice()) {
             internalEvents[0] = stack.enqueueWrite(events);
             waitEvents = internalEvents;
@@ -215,11 +212,11 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             task = deviceContext.enqueueTask(kernel, waitEvents);
         }
 
-        if (meta != null && DUMP_PROFILES) {
+        if (meta != null && meta.shouldDumpProfiles()) {
             meta.addProfile(deviceContext.resolveEvent(task));
         }
 
-        if (ENABLE_EXCEPTIONS) {
+        if (meta != null && meta.enableExceptions()) {
             internalEvents[0] = task;
             task = stack.enqueueRead(internalEvents);
 //            deviceContext.resolveEvent(task).waitOn();
@@ -230,7 +227,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     @Override
-    public int launch(CallStack stack, Meta meta, int[] waitEvents) {
+    public int launch(CallStack stack, TaskMetaData meta, int[] waitEvents) {
         return submit((OCLCallStack) stack, meta, waitEvents);
     }
 

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,8 @@
  */
 package tornado.drivers.opencl;
 
-import static tornado.common.Tornado.USE_THREAD_COARSENING;
+import tornado.api.meta.TaskMetaData;
+
 import static tornado.common.Tornado.getProperty;
 
 public class OCLCpuScheduler extends OCLKernelScheduler {
@@ -27,13 +28,13 @@ public class OCLCpuScheduler extends OCLKernelScheduler {
     }
 
     @Override
-    public void calculateGlobalWork(final OCLKernelConfig kernelInfo) {
+    public void calculateGlobalWork(final TaskMetaData meta) {
         long[] maxItems = deviceContext.getDevice().getMaxWorkItemSizes();
 
-        final long[] globalWork = kernelInfo.getGlobalWork();
-        for (int i = 0; i < kernelInfo.getDims(); i++) {
-            if (USE_THREAD_COARSENING) {
-                globalWork[i] = maxItems[i] > 1 ? (long) (kernelInfo.getDomain().get(i).cardinality()) : 1;
+        final long[] globalWork = meta.getGlobalWork();
+        for (int i = 0; i < meta.getDims(); i++) {
+            if (meta.enableThreadCoarsener()) {
+                globalWork[i] = maxItems[i] > 1 ? (long) (meta.getDomain().get(i).cardinality()) : 1;
             } else {
                 globalWork[i] = i == 0 ? (long) (deviceContext.getDevice().getMaxComputeUnits() * CPU_COMPUTE_UNIT_COEFF) : 1;
             }
@@ -41,9 +42,9 @@ public class OCLCpuScheduler extends OCLKernelScheduler {
     }
 
     @Override
-    public void calculateLocalWork(OCLKernelConfig kernelInfo) {
-        final long[] globalWork = kernelInfo.getGlobalWork();
-        final long[] localWork = kernelInfo.getLocalWork();
+    public void calculateLocalWork(final TaskMetaData meta) {
+        final long[] globalWork = meta.getGlobalWork();
+        final long[] localWork = meta.getLocalWork();
 
         for (int i = 0; i < globalWork.length; i++) {
             localWork[i] = 1;

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,14 +17,13 @@ package tornado.drivers.opencl;
 
 import java.lang.reflect.Method;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import tornado.common.TornadoDevice;
+import tornado.api.meta.ScheduleMetaData;
+import tornado.api.meta.TaskMetaData;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
 import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import tornado.drivers.opencl.graal.compiler.OCLCompiler;
-import tornado.drivers.opencl.runtime.OCLMeta;
-import tornado.meta.Meta;
 
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
@@ -59,8 +58,7 @@ public class OCLJIT {
 
             final OCLBackend backend = getTornadoRuntime().getDriver(OCLDriver.class).getDefaultBackend();
 
-            Meta meta = new OCLMeta(method, false);
-            meta.addProvider(TornadoDevice.class, OpenCL.defaultDevice());
+            TaskMetaData meta = TaskMetaData.create(new ScheduleMetaData("s0"), methodName, method, false);
 
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolvedMethod, new Object[]{}, meta, (OCLProviders) backend.getProviders(), backend);
             OCLInstalledCode code = OpenCL.defaultDevice().getDeviceContext().installCode(result);

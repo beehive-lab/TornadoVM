@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,14 +17,17 @@ package tornado.drivers.opencl.mm;
 
 import java.lang.reflect.Method;
 import tornado.api.Parallel;
-import tornado.common.*;
+import tornado.api.meta.ScheduleMetaData;
+import tornado.api.meta.TaskMetaData;
+import tornado.common.RuntimeUtilities;
+import tornado.common.Tornado;
+import tornado.common.TornadoLogger;
+import tornado.common.TornadoMemoryProvider;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.enums.OCLMemFlags;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
-import tornado.drivers.opencl.runtime.OCLMeta;
-import tornado.meta.Meta;
 import tornado.meta.domain.DomainTree;
 import tornado.meta.domain.IntDomain;
 
@@ -32,6 +35,7 @@ import static tornado.common.exceptions.TornadoInternalError.guarantee;
 
 public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
+    private final ScheduleMetaData scheduleMeta;
     private final long callStackLimit;
     private long callStackPosition;
     private long deviceBufferAddress;
@@ -49,13 +53,15 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     private OCLInstalledCode initU32Code;
     private OCLCallStack initCallStack;
     private DomainTree initThreads;
-    private Meta initMeta;
+    private TaskMetaData initMeta;
 
     public OCLMemoryManager(final OCLDeviceContext device) {
 
         deviceContext = device;
         callStackLimit = 8192;
         initialised = false;
+//        System.out.printf("device id %s\n", device.getId());
+        scheduleMeta = new ScheduleMetaData("mm-" + device.getDeviceId());
 
         reset();
     }
@@ -115,9 +121,9 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     }
 
     private void createMemoryInitializers(final OCLBackend backend) {
-        initThreads = new DomainTree(1);
-        initMeta = new OCLMeta(2);
-        initMeta.addProvider(TornadoDevice.class, backend.getDeviceContext().asMapping());
+//        initThreads = new DomainTree(1);
+//        initMeta = new OCLMeta(2);
+//        initMeta.addProvider(TornadoDevice.class, backend.getDeviceContext().asMapping());
 
 //    	initFP64Code = OCLCompiler.compileCodeForDevice(
 //				TornadoRuntime.resolveMethod(getMethod("initFP64",double[].class)), null, initMeta, (OCLProviders) backend.getProviders(), backend);
@@ -129,7 +135,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
     }
 
-    public void reset() {
+    public final void reset() {
         callStackPosition = 0;
         heapPosition = callStackLimit;
         Tornado.info("Reset heap @ 0x%x (%s) on %s", deviceBufferAddress,
@@ -185,7 +191,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         initCallStack.putLong(offset);
         initCallStack.putInt(count);
 
-        final Meta meta = new OCLMeta(0);
+        final TaskMetaData meta = new TaskMetaData(scheduleMeta, "init-call-stack", 0);
         initThreads.set(0, new IntDomain(0, 1, count));
         meta.setDomain(initThreads);
 
@@ -244,6 +250,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
                 RuntimeUtilities.humanReadableByteCount(heapLimit, false),
                 deviceContext.getDevice().getName());
 
+        scheduleMeta.setDevice(backend.getDeviceContext().asMapping());
 //        createMemoryInitializers(backend);
     }
 

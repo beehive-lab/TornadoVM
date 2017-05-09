@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,6 @@ package tornado.drivers.opencl.runtime;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,6 +24,7 @@ import java.nio.file.Paths;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.api.Event;
 import tornado.api.enums.TornadoSchedulingStrategy;
+import tornado.api.meta.TaskMetaData;
 import tornado.common.*;
 import tornado.common.enums.Access;
 import tornado.common.exceptions.TornadoInternalError;
@@ -36,14 +36,14 @@ import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import tornado.drivers.opencl.mm.*;
-import tornado.meta.Meta;
 import tornado.runtime.api.CompilableTask;
 import tornado.runtime.api.PrebuiltTask;
 import tornado.runtime.sketcher.Sketch;
 import tornado.runtime.sketcher.TornadoSketcher;
 
 import static tornado.common.Tornado.FORCE_ALL_TO_GPU;
-import static tornado.common.exceptions.TornadoInternalError.*;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.drivers.opencl.graal.compiler.OCLCompiler.compileSketchForDevice;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
@@ -71,17 +71,16 @@ public class OCLDeviceMapping implements TornadoDevice {
 
     }
 
-    @Override
-    public Meta createMeta(Method method) {
-        return new OCLMeta(method, false);
-    }
-
-    @Override
-    public Meta createMeta(int numParameters) {
-        unimplemented();
-        return null;
-    }
-
+//    @Override
+//    public Meta createMeta(Method method) {
+//        return new OCLMeta(method, false);
+//    }
+//
+//    @Override
+//    public Meta createMeta(int numParameters) {
+//        unimplemented();
+//        return null;
+//    }
     @Override
     public void dumpEvents() {
         getDeviceContext().dumpEvents();
@@ -181,8 +180,8 @@ public class OCLDeviceMapping implements TornadoDevice {
             final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
 
             // copy meta data into task
-            final Meta sketchMeta = sketch.getMeta();
-            final Meta taskMeta = task.meta();
+            final TaskMetaData sketchMeta = sketch.getMeta();
+            final TaskMetaData taskMeta = executable.meta();
             final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
             final Access[] taskAccess = taskMeta.getArgumentsAccess();
             for (int i = 0; i < sketchAccess.length; i++) {
@@ -221,7 +220,7 @@ public class OCLDeviceMapping implements TornadoDevice {
             guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
             try {
                 final byte[] source = Files.readAllBytes(path);
-                return deviceContext.installCode(task.getId(), executable.getEntryPoint(),
+                return deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(),
                         source);
             } catch (IOException e) {
                 e.printStackTrace();

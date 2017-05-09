@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,7 @@
  */
 package tornado.drivers.opencl;
 
-import static tornado.common.Tornado.*;
-import tornado.meta.Meta;
+import tornado.api.meta.TaskMetaData;
 
 public abstract class OCLKernelScheduler {
 
@@ -37,36 +36,31 @@ public abstract class OCLKernelScheduler {
 
     }
 
-    public abstract void calculateGlobalWork(final OCLKernelConfig kernelInfo);
+    public abstract void calculateGlobalWork(final TaskMetaData meta);
 
-    public abstract void calculateLocalWork(final OCLKernelConfig kernelInfo);
+    public abstract void calculateLocalWork(final TaskMetaData meta);
 
     public void adjust() {
 
     }
 
-    public int submit(final OCLKernel kernel, final Meta meta, final int[] waitEvents) {
-        final OCLKernelConfig kernelInfo;
-        if (meta.hasProvider(OCLKernelConfig.class)) {
-            kernelInfo = meta.getProvider(OCLKernelConfig.class);
-        } else {
-            kernelInfo = OCLKernelConfig.create(meta);
-            calculateGlobalWork(kernelInfo);
-            calculateLocalWork(kernelInfo);
-        }
+    public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents) {
 
-        if (DEBUG) {
-            kernelInfo.printToLog();
+        calculateGlobalWork(meta);
+        calculateLocalWork(meta);
+
+        if (meta.isDebug()) {
+            meta.printThreadDims();
         }
 
         final int task;
-        if (USE_OPENCL_SCHEDULING) {
-            task = deviceContext.enqueueNDRangeKernel(kernel, kernelInfo.getDims(), kernelInfo.getGlobalOffset(),
-                    kernelInfo.getGlobalWork(), null, waitEvents);
+        if (meta.shouldUseOpenclScheduling()) {
+            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(),
+                    meta.getGlobalWork(), null, waitEvents);
         } else {
 
-            task = deviceContext.enqueueNDRangeKernel(kernel, kernelInfo.getDims(), kernelInfo.getGlobalOffset(),
-                    kernelInfo.getGlobalWork(), kernelInfo.getLocalWork(), waitEvents);
+            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(),
+                    meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
 
         }
         return task;

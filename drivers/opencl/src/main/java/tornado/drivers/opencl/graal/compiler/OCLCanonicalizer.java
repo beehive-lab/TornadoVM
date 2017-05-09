@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,12 +33,12 @@ import java.util.List;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.api.Vector;
+import tornado.api.meta.TaskMetaData;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.OCLStamp;
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.nodes.vector.*;
-import tornado.meta.Meta;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
@@ -46,10 +46,10 @@ public class OCLCanonicalizer extends CustomCanonicalizer {
 
     protected MetaAccessProvider metaAccess;
     protected ResolvedJavaMethod method;
-    protected Meta meta;
+    protected TaskMetaData meta;
     protected Object[] args;
 
-    public void setContext(MetaAccessProvider metaAccess, ResolvedJavaMethod method, Object[] args, Meta meta) {
+    public void setContext(MetaAccessProvider metaAccess, ResolvedJavaMethod method, Object[] args, TaskMetaData meta) {
         this.metaAccess = metaAccess;
         this.method = method;
         this.meta = meta;

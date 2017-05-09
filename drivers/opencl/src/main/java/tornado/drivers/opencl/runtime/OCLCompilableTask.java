@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@ package tornado.drivers.opencl.runtime;
 import java.lang.reflect.Method;
 import java.util.*;
 import tornado.api.Event;
+import tornado.api.meta.ScheduleMetaData;
 import tornado.common.Tornado;
 import tornado.common.TornadoDevice;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
@@ -31,9 +32,9 @@ public class OCLCompilableTask extends CompilableTask {
 
     private final Map<OCLBackend, OCLInstalledCode> codeCache;
 
-    public OCLCompilableTask(String id, Method method, Object thisObject,
+    public OCLCompilableTask(ScheduleMetaData meta, String id, Method method, Object thisObject,
             Object... args) {
-        super(id, method, thisObject, args);
+        super(meta, id, method, thisObject, args);
         this.codeCache = new HashMap<>();
     }
 
