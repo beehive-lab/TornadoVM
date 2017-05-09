@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,27 +15,13 @@
  */
 package tornado.runtime;
 
-import java.lang.reflect.Method;
 import tornado.api.Event;
 import tornado.api.enums.TornadoSchedulingStrategy;
 import tornado.common.*;
-import tornado.meta.Meta;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class JVMMapping implements TornadoDevice {
-
-    @Override
-    public Meta createMeta(Method method) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Meta createMeta(int numParameters) {
-        unimplemented();
-        return null;
-    }
 
     @Override
     public void dumpEvents() {

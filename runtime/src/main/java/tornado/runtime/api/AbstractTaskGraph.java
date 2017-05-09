@@ -21,6 +21,7 @@ import java.nio.ByteOrder;
 import java.util.function.Consumer;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.api.Event;
+import tornado.api.meta.ScheduleMetaData;
 import tornado.common.DeviceObjectState;
 import tornado.common.SchedulableTask;
 import tornado.common.TornadoDevice;
@@ -31,7 +32,6 @@ import tornado.runtime.sketcher.SketchRequest;
 
 import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.common.RuntimeUtilities.isBoxedPrimitiveClass;
-import static tornado.common.Tornado.DUMP_TASK_SCHEDULE;
 import static tornado.common.Tornado.warn;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
@@ -67,6 +67,10 @@ public abstract class AbstractTaskGraph {
         event = null;
     }
 
+    public SchedulableTask getTask(String id) {
+        return graphContext.getTask(id);
+    }
+
     public TornadoDevice getDefaultDevice() {
         return graphContext.getDefaultDevice();
     }
@@ -85,8 +89,7 @@ public abstract class AbstractTaskGraph {
             CompilableTask compilableTask = (CompilableTask) task;
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime()
                     .resolveMethod(compilableTask.getMethod());
-//                getTornadoExecutor().execute(new SketchRequest(resolvedMethod, compilableTask.meta(), providers, suites.getGraphBuilderSuite(), suites.getSketchTier()));
-            new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
+            new SketchRequest(compilableTask.meta(), resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
 
         }
 
@@ -142,8 +145,7 @@ public abstract class AbstractTaskGraph {
 //		System.out.printf("task graph: build graph %.9f s\n",(t1-t0)*1e-9);
 //		System.out.printf("task graph: compile     %.9f s\n",(t2-t1)*1e-9);
 //		System.out.printf("task graph: vm          %.9f s\n",(t3-t2)*1e-9);
-        if (DUMP_TASK_SCHEDULE) {
-
+        if (meta().shouldDumpSchedule()) {
             graphContext.print();
             graph.print();
 //            result.dump();
@@ -272,6 +274,14 @@ public abstract class AbstractTaskGraph {
         for (Event event : events) {
             event.waitOn();
         }
+    }
+
+    public String getId() {
+        return meta().getId();
+    }
+
+    public ScheduleMetaData meta() {
+        return graphContext.meta();
     }
 
 }

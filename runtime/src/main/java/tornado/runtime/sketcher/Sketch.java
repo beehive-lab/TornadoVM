@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,14 @@
 package tornado.runtime.sketcher;
 
 import com.oracle.graal.graph.CachedGraph;
-import tornado.meta.Meta;
+import tornado.api.meta.TaskMetaData;
 
 public class Sketch {
 
     private final CachedGraph graph;
-    private final Meta meta;
+    private final TaskMetaData meta;
 
-    public Sketch(CachedGraph graph, Meta meta) {
+    public Sketch(CachedGraph graph, TaskMetaData meta) {
         this.graph = graph;
         this.meta = meta;
     }
@@ -32,7 +32,7 @@ public class Sketch {
         return graph;
     }
 
-    public Meta getMeta() {
+    public TaskMetaData getMeta() {
         return meta;
     }
 

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,12 +34,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.api.meta.TaskMetaData;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.graal.TornadoDebugEnvironment;
 import tornado.graal.compiler.TornadoCompilerIdentifier;
 import tornado.graal.compiler.TornadoSketchTier;
 import tornado.graal.phases.TornadoSketchTierContext;
-import tornado.meta.Meta;
 
 import static com.oracle.graal.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static tornado.common.Tornado.fatal;
@@ -82,14 +82,14 @@ public class TornadoSketcher {
         cache.put(request.resolvedMethod, request);
         try (Scope s = MethodMetricsRootScopeInfo.createRootScopeIfAbsent(request.resolvedMethod)) {
             try (Scope s0 = Debug.scope("SketchCompiler")) {
-                request.result = buildSketch(request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier);
+                request.result = buildSketch(request.meta, request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier);
             } catch (Throwable e) {
                 throw Debug.handle(e);
             }
         }
     }
 
-    private static Sketch buildSketch(ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier) {
+    private static Sketch buildSketch(TaskMetaData meta, ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier) {
 
         info("Building sketch of %s", resolvedMethod.getName());
 
@@ -97,8 +97,7 @@ public class TornadoSketcher {
         final StructuredGraph graph = new StructuredGraph(resolvedMethod,
                 AllowAssumptions.YES, id);
 
-        Meta meta = new Meta(resolvedMethod.isStatic() ? resolvedMethod.getParameters().length : resolvedMethod.getParameters().length + 1);
-
+//        TaskMetaData meta = new TaskMetaData(resolvedMethod.isStatic() ? resolvedMethod.getParameters().length : resolvedMethod.getParameters().length + 1);
         // may need to deprecate this...?
         //providers.getSuitesProvider().setContext(null, resolvedMethod, null, meta);
         try (Scope s = Debug.scope("Sketcher", new DebugDumpScope("Sketcher"));
@@ -118,7 +117,7 @@ public class TornadoSketcher {
             graph.maybeCompress();
 
             // compile any non-inlined call targets
-            graph.getInvokes().forEach(invoke -> getTornadoExecutor().execute(new SketchRequest(invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier)));
+            graph.getInvokes().forEach(invoke -> getTornadoExecutor().execute(new SketchRequest(meta, invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier)));
 
             return new Sketch(CachedGraph.fromReadonlyCopy(graph), meta);
         } catch (Throwable e) {

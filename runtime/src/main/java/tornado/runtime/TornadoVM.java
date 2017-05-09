@@ -20,14 +20,15 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
 import tornado.api.Event;
+import tornado.api.meta.TaskMetaData;
 import tornado.common.*;
 import tornado.common.enums.Access;
-import tornado.meta.Meta;
 import tornado.runtime.api.GlobalObjectState;
 import tornado.runtime.graph.ExecutionContext;
 
 import static tornado.api.enums.TornadoExecutionStatus.COMPLETE;
-import static tornado.common.Tornado.*;
+import static tornado.common.Tornado.ENABLE_PROFILING;
+import static tornado.common.Tornado.VM_USE_DEPS;
 import static tornado.common.enums.Access.READ_WRITE;
 import static tornado.common.enums.Access.WRITE;
 import static tornado.common.exceptions.TornadoInternalError.*;
@@ -64,7 +65,7 @@ public class TornadoVM extends TornadoLogger {
         this.graphContext = graphContext;
         this.code = code;
 
-        useDependencies = ENABLE_OOO_EXECUTION | VM_USE_DEPS;
+        useDependencies = graphContext.meta().enableOooExecution() | VM_USE_DEPS;
         totalTime = 0;
         invocations = 0;
 
@@ -181,7 +182,7 @@ public class TornadoVM extends TornadoLogger {
                 final TornadoDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
 
-                if (DEBUG) {
+                if (graphContext.meta().isDebug()) {
                     debug("vm: ALLOCATE [0x%x] %s on %s", object.hashCode(),
                             object, device);
                 }
@@ -201,13 +202,13 @@ public class TornadoVM extends TornadoLogger {
 
                 final TornadoDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
-                if (DEBUG) {
+                if (graphContext.meta().isDebug()) {
                     debug("vm: COPY_IN [0x%x] %s on %s [event list=%d]",
                             object.hashCode(), object, device, eventList);
                 }
                 final DeviceObjectState objectState = resolveObjectState(
                         objectIndex, contextIndex);
-                if (DEBUG) {
+                if (graphContext.meta().isDebug()) {
                     debug("vm: state=%s", objectState);
                 }
 
@@ -224,13 +225,13 @@ public class TornadoVM extends TornadoLogger {
 
                 final TornadoDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
-                if (DEBUG) {
+                if (graphContext.meta().isDebug()) {
                     debug("vm: STREAM_IN [0x%x] %s on %s [event list=%d]",
                             object.hashCode(), object, device, eventList);
                 }
                 final DeviceObjectState objectState = resolveObjectState(
                         objectIndex, contextIndex);
-                if (DEBUG) {
+                if (graphContext.meta().isDebug()) {
                     debug("vm: state=%s", objectState);
                 }
 
@@ -247,7 +248,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final TornadoDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
-                if (DEBUG) {
+                if (graphContext.meta().isDebug()) {
                     debug("vm: STREAM_OUT [0x%x] %s on %s [event list=%d]",
                             object.hashCode(), object, device, eventList);
                 }
@@ -270,7 +271,7 @@ public class TornadoVM extends TornadoLogger {
                 final int[] waitList = (eventList == -1) ? null : events[eventList];
                 final SchedulableTask task = tasks.get(taskIndex);
 
-                if (DEBUG) {
+                if (graphContext.meta().isDebug()) {
                     debug("vm: LAUNCH %s on %s [event list=%d]",
                             task.getName(),
                             contexts.get(contextIndex), eventList);
@@ -281,11 +282,11 @@ public class TornadoVM extends TornadoLogger {
                     task.mapTo(device);
                     installedCodes[taskIndex] = device.installCode(task);
                     final long compileEnd = System.nanoTime();
-                    if (PRINT_COMPILE_TIMES) {
+                    if (graphContext.meta().shouldPrintCompileTimes()) {
                         System.out.printf("compile: task %s tornado %.9f\n", task.getName(), (compileEnd - compileStart) * 1e-9);
                     }
 
-                    if (DEBUG) {
+                    if (graphContext.meta().isDebug()) {
                         debug("vm: compiled in %.9f s",
                                 (compileEnd - compileStart) * 1e-9);
                     }
@@ -347,7 +348,7 @@ public class TornadoVM extends TornadoLogger {
                 }
 
                 if (useDependencies && lastEvent != -1) {
-                    if (DEBUG) {
+                    if (graphContext.meta().isDebug()) {
                         debug("vm: ADD_DEP %s to event list %d", lastEvent,
                                 eventList);
                     }
@@ -364,17 +365,17 @@ public class TornadoVM extends TornadoLogger {
                     continue;
                 }
 
-                if (DEBUG) {
+                if (graphContext.meta().isDebug()) {
                     debug("vm: BARRIER event list %d", eventList);
                 }
 
             } else if (op == END) {
-                if (DEBUG) {
+                if (graphContext.meta().isDebug()) {
                     debug("vm: END");
                 }
                 break;
             } else {
-                if (DEBUG) {
+                if (graphContext.meta().isDebug()) {
                     debug("vm: invalid op 0x%x(%d)", op, op);
                 }
                 shouldNotReachHere();
@@ -400,7 +401,7 @@ public class TornadoVM extends TornadoLogger {
             invocations++;
         }
 
-        if (DEBUG) {
+        if (graphContext.meta().isDebug()) {
             debug("vm: complete elapsed=%.9f s (%d iterations, %.9f s mean)",
                     elapsed, invocations, (totalTime / invocations));
         }
@@ -422,7 +423,7 @@ public class TornadoVM extends TornadoLogger {
     }
 
     public void dumpEvents() {
-        if (!ENABLE_PROFILING || !DUMP_EVENTS) {
+        if (!ENABLE_PROFILING || !graphContext.meta().shouldDumpEvents()) {
             info("profiling and/or event dumping is not enabled");
             return;
         }
@@ -433,16 +434,16 @@ public class TornadoVM extends TornadoLogger {
     }
 
     public void dumpProfiles() {
-        if (!ENABLE_PROFILING) {
+        if (!graphContext.meta().shouldDumpProfiles()) {
             info("profiling is not enabled");
             return;
         }
 
         for (final SchedulableTask task : tasks) {
-            final Meta meta = task.meta();
+            final TaskMetaData meta = task.meta();
             for (final Event profile : meta.getProfiles()) {
                 if (profile.getStatus() == COMPLETE) {
-                    System.out.printf("task: %s %s %.9f %9d %9d %9d\n", task.getDeviceMapping().getDeviceName(), task.getName().substring(5).replace(" ", ""), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(), profile.getEndTime());
+                    System.out.printf("task: %s %s %.9f %9d %9d %9d\n", task.getDevice().getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(), profile.getEndTime());
                 }
             }
         }

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,32 +16,31 @@
 package tornado.runtime.api;
 
 import java.util.Objects;
+import tornado.api.meta.ScheduleMetaData;
+import tornado.api.meta.TaskMetaData;
 import tornado.common.SchedulableTask;
 import tornado.common.TornadoDevice;
 import tornado.common.enums.Access;
-import tornado.meta.Meta;
 import tornado.meta.domain.DomainTree;
 
 public class PrebuiltTask implements SchedulableTask {
 
-    protected final String id;
     protected final String entryPoint;
     protected final String filename;
     protected final Object[] args;
     protected final Access[] argumentsAccess;
-    protected final Meta meta;
+    protected final TaskMetaData meta;
 
-    protected PrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] access, TornadoDevice device, DomainTree domain) {
-        this.id = id;
+    protected PrebuiltTask(ScheduleMetaData scheduleMeta, String id, String entryPoint, String filename, Object[] args, Access[] access, TornadoDevice device, DomainTree domain) {
         this.entryPoint = entryPoint;
         this.filename = filename;
         this.args = args;
         this.argumentsAccess = access;
-        meta = device.createMeta(access.length);
+        meta = new TaskMetaData(scheduleMeta, id, access.length);
         for (int i = 0; i < access.length; i++) {
             meta.getArgumentsAccess()[i] = access[i];
         }
-        meta.addProvider(TornadoDevice.class, device);
+        meta.setDevice(device);
         meta.setDomain(domain);
     }
 
@@ -70,25 +69,23 @@ public class PrebuiltTask implements SchedulableTask {
     }
 
     @Override
-    public Meta meta() {
+    public TaskMetaData meta() {
         return meta;
     }
 
     @Override
     public SchedulableTask mapTo(TornadoDevice mapping) {
-
         return this;
     }
 
     @Override
-    public TornadoDevice getDeviceMapping() {
-        return (meta.hasProvider(TornadoDevice.class)) ? meta
-                .getProvider(TornadoDevice.class) : null;
+    public TornadoDevice getDevice() {
+        return meta.getDevice();
     }
 
     @Override
     public String getName() {
-        return "task - " + entryPoint;
+        return "task - " + meta.getId() + "[" + entryPoint + "]";
     }
 
     public String getFilename() {
@@ -101,7 +98,7 @@ public class PrebuiltTask implements SchedulableTask {
 
     @Override
     public String getId() {
-        return id;
+        return meta.getId();
     }
 
     @Override
@@ -117,7 +114,7 @@ public class PrebuiltTask implements SchedulableTask {
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 71 * hash + Objects.hashCode(this.id);
+        hash = 71 * hash + Objects.hashCode(getId());
         hash = 71 * hash + Objects.hashCode(this.entryPoint);
         hash = 71 * hash + Objects.hashCode(this.filename);
         return hash;

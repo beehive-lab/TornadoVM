@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,20 +17,18 @@ package tornado.runtime.graph;
 
 import java.util.*;
 import java.util.function.Consumer;
+import tornado.api.meta.ScheduleMetaData;
 import tornado.common.RuntimeUtilities;
 import tornado.common.SchedulableTask;
 import tornado.common.Tornado;
 import tornado.common.TornadoDevice;
-import tornado.runtime.TornadoDriver;
 import tornado.runtime.api.LocalObjectState;
-
-import static tornado.common.Tornado.getProperty;
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class ExecutionContext {
 
     private final String name;
     private final int MAX_TASKS = 100;
+    private final ScheduleMetaData meta;
 
     private final List<SchedulableTask> tasks;
     private final List<Object> constants;
@@ -40,16 +38,10 @@ public class ExecutionContext {
     private final List<TornadoDevice> devices;
     private final int[] taskToDevice;
     private int nextTask;
-    private final TornadoDevice defaultDevice;
-
-    private static TornadoDevice resolveDevice(String device) {
-        final String[] ids = device.split(":");
-        final TornadoDriver driver = getTornadoRuntime().getDriver(Integer.parseInt(ids[0]));
-        return driver.getDevice(Integer.parseInt(ids[1]));
-    }
 
     public ExecutionContext(String id) {
         name = id;
+        meta = new ScheduleMetaData(name);
         tasks = new ArrayList<>();
         constants = new ArrayList<>();
         objectMap = new HashMap<>();
@@ -58,10 +50,6 @@ public class ExecutionContext {
         devices = new ArrayList<>();
         taskToDevice = new int[MAX_TASKS];
         Arrays.fill(taskToDevice, -1);
-
-        // default device
-        defaultDevice = resolveDevice(getProperty(name + ".device", "0:0"));
-
         nextTask = 0;
     }
 
@@ -102,6 +90,7 @@ public class ExecutionContext {
         if (index == -1) {
             index = tasks.size();
             tasks.add(task);
+//            task.
         }
         return index;
     }
@@ -149,16 +138,14 @@ public class ExecutionContext {
         }
 
         String id = task.getId();
-        String device = getProperty(name + "." + id + ".device");
-        TornadoDevice target = (device != null) ? resolveDevice(device) : defaultDevice;
-        task.mapTo(target);
+        TornadoDevice target = task.getDevice();
 
-        Tornado.info("assigning %s.%s to %s\n", name, id, target.getDeviceName());
+        Tornado.info("assigning %s to %s\n", name, id, target.getDeviceName());
 
         int deviceIndex = devices.indexOf(target);
         if (deviceIndex == -1) {
             deviceIndex = devices.size();
-            devices.add(defaultDevice);
+            devices.add(target);
         }
         taskToDevice[index] = deviceIndex;
     }
@@ -210,19 +197,27 @@ public class ExecutionContext {
     }
 
     public TornadoDevice getDefaultDevice() {
-        return defaultDevice;
+        return meta.getDevice();
     }
 
-    public TornadoDevice getDeviceForTask(String id) {
+    public SchedulableTask getTask(String id) {
         for (int i = 0; i < tasks.size(); i++) {
             if (tasks.get(i).getId().equalsIgnoreCase(id)) {
-                return devices.get(taskToDevice[i]);
+                return tasks.get(i);
             }
         }
         return null;
     }
 
+    public TornadoDevice getDeviceForTask(String id) {
+        return getTask(id) == null ? null : getTask(id).getDevice();
+    }
+
     public String getId() {
         return name;
+    }
+
+    public ScheduleMetaData meta() {
+        return meta;
     }
 }

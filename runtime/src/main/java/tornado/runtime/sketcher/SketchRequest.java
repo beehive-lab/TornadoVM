@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,23 +23,26 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.api.meta.TaskMetaData;
 import tornado.graal.compiler.TornadoSketchTier;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class SketchRequest implements Future<Sketch>, Runnable {
 
+    public final TaskMetaData meta;
     public final ResolvedJavaMethod resolvedMethod;
     public final Providers providers;
     public final PhaseSuite<HighTierContext> graphBuilderSuite;
     public final TornadoSketchTier sketchTier;
     public Sketch result;
 
-    public SketchRequest(ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier) {
+    public SketchRequest(TaskMetaData meta, ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier) {
         this.resolvedMethod = resolvedMethod;
         this.providers = providers;
         this.graphBuilderSuite = graphBuilderSuite;
         this.sketchTier = sketchTier;
+        this.meta = meta;
     }
 
     @Override

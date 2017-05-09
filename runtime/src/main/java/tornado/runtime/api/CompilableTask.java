@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,21 +18,18 @@ package tornado.runtime.api;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
+import tornado.api.meta.ScheduleMetaData;
+import tornado.api.meta.TaskMetaData;
 import tornado.common.SchedulableTask;
 import tornado.common.TornadoDevice;
 import tornado.common.enums.Access;
-import tornado.meta.Meta;
-
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
 
 public class CompilableTask implements SchedulableTask {
-
-    protected final String id;
 
     protected final Object[] args;
 //    protected final Access[] argumentsAccess;
 
-    protected Meta meta;
+    protected TaskMetaData meta;
 
     protected final Method method;
     protected final Object[] resolvedArgs;
@@ -40,19 +37,19 @@ public class CompilableTask implements SchedulableTask {
 
     protected Access thisAccess;
 
-    public CompilableTask(String id, Method method, Object... args) {
-        this.id = id;
+    public CompilableTask(ScheduleMetaData meta, String id, Method method, Object... args) {
         this.method = method;
         this.args = args;
         this.shouldCompile = true;
         this.resolvedArgs = args;
+        this.meta = TaskMetaData.create(meta, id, method, false);
     }
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
 
-        sb.append("task: ").append(method.getName()).append("()\n");
+        sb.append("task: ").append(meta.getId()).append(" ").append(method.getName()).append("()\n");
         Access[] argumentsAccess = meta.getArgumentsAccess();
         for (int i = 0; i < args.length; i++) {
             sb.append(String.format("arg  : [%s] %s -> %s\n", argumentsAccess[i], args[i], resolvedArgs[i]));
@@ -87,9 +84,8 @@ public class CompilableTask implements SchedulableTask {
     }
 
     @Override
-    public TornadoDevice getDeviceMapping() {
-        return (meta.hasProvider(TornadoDevice.class)) ? meta
-                .getProvider(TornadoDevice.class) : null;
+    public TornadoDevice getDevice() {
+        return meta.getDevice();
     }
 
     public String getMethodName() {
@@ -98,26 +94,17 @@ public class CompilableTask implements SchedulableTask {
 
     @Override
     public String getName() {
-        return "task " + id + " - " + method.getName();
+        return "task " + meta.getId() + " - " + method.getName();
     }
 
     @Override
     public CompilableTask mapTo(final TornadoDevice mapping) {
-        if (meta == null) {
-            meta = mapping.createMeta(method);
-        }
-        if (meta.hasProvider(TornadoDevice.class)
-                && meta.getProvider(TornadoDevice.class) == mapping) {
-            return this;
-        }
-
-        meta.addProvider(TornadoDevice.class, mapping);
+        meta.setDevice(mapping);
         return this;
     }
 
     @Override
-    public Meta meta() {
-        guarantee(meta != null, "task needs to be assigned first");
+    public TaskMetaData meta() {
         return meta;
     }
 
@@ -127,7 +114,7 @@ public class CompilableTask implements SchedulableTask {
 
     @Override
     public String getId() {
-        return id;
+        return meta.getId();
     }
 
     @Override
@@ -143,7 +130,7 @@ public class CompilableTask implements SchedulableTask {
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 71 * hash + Objects.hashCode(this.id);
+        hash = 71 * hash + Objects.hashCode(getId());
         hash = 71 * hash + Objects.hashCode(this.method);
         return hash;
     }
