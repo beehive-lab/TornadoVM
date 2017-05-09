@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,9 +19,7 @@ import java.util.Arrays;
 import tornado.api.Parallel;
 import tornado.common.enums.Access;
 import tornado.drivers.opencl.OpenCL;
-import tornado.runtime.api.PrebuiltTask;
 import tornado.runtime.api.TaskSchedule;
-import tornado.runtime.api.TaskUtils;
 
 public class ArrayAddIntPrebuilt {
 
@@ -42,16 +40,14 @@ public class ArrayAddIntPrebuilt {
         Arrays.fill(b, 2);
         Arrays.fill(c, 0);
 
-        final PrebuiltTask add = TaskUtils.createTask("t0",
-                "add",
-                "opencl/add.cl",
-                new Object[]{a, b, c},
-                new Access[]{Access.READ, Access.READ, Access.WRITE},
-                OpenCL.defaultDevice(),
-                new int[]{numElements});
-
         new TaskSchedule("s0")
-                .task(add)
+                .prebuiltTask("t0",
+                        "add",
+                        "opencl/add.cl",
+                        new Object[]{a, b, c},
+                        new Access[]{Access.READ, Access.READ, Access.WRITE},
+                        OpenCL.defaultDevice(),
+                        new int[]{numElements})
                 .streamOut(c)
                 .execute();
 

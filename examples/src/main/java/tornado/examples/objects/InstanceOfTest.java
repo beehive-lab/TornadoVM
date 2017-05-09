@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,9 +15,7 @@
  */
 package tornado.examples.objects;
 
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.TaskUtils;
-import tornado.runtime.api.CompilableTask;
+import tornado.runtime.api.TaskSchedule;
 
 public class InstanceOfTest {
 
@@ -46,18 +44,24 @@ public class InstanceOfTest {
 
         Foo foo = new Foo(1);
 
+        TaskSchedule s0 = new TaskSchedule("s0")
+                .task("t0", InstanceOfTest::instanceOf, foo);
+
+        s0.execute();
+
+//        s0.getTask("t0").
         /*
          * First step is to create a reference to the method invocation This
          * involves finding the methods called and the arguments used in each
          * call.
          */
-        final CompilableTask instanceOfInvocation = TaskUtils.createTask("t0",
-                InstanceOfTest::instanceOf, foo);
+//        final CompilableTask instanceOfInvocation = TaskUtils.createTask("t0",
+//                InstanceOfTest::instanceOf, foo);
 
         /*
          * Next we map each invocation onto a specific compute device
          */
-        instanceOfInvocation.mapTo(new OCLDeviceMapping(0, 0));
+//        instanceOfInvocation.mapTo(new OCLDeviceMapping(0, 0));
 
         /*
          * schedule execution of a instanceof Foo

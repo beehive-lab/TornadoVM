@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,9 +18,7 @@ package tornado.examples.arrays;
 import java.util.Arrays;
 import tornado.collections.math.SimpleMath;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.CompilableTask;
 import tornado.runtime.api.TaskSchedule;
-import tornado.runtime.api.TaskUtils;
 
 public class ArrayMultiplyAdd {
 
@@ -46,28 +44,15 @@ public class ArrayMultiplyAdd {
         Arrays.fill(d, 0);
 
         /*
-         * Create a task to perform vector multiplication and assign it to the
-         * cpu
-         */
-        final CompilableTask multiply = TaskUtils.createTask("t0",
-                SimpleMath::vectorMultiply, a, b, c);
-        multiply.mapTo(new OCLDeviceMapping(0, 0));
-
-        /*
-         * Create a task to perform vector addition and assign it to the
-         * external gpu
-         */
-        final CompilableTask add = TaskUtils.createTask("t1",
-                SimpleMath::vectorAdd, c, b, d);
-        add.mapTo(new OCLDeviceMapping(0, 2));
-
-        /*
          * build an execution graph
          */
         TaskSchedule schedule = new TaskSchedule("s0")
-                .task(multiply)
-                .task(add)
+                .task("t0", SimpleMath::vectorMultiply, a, b, c)
+                .task("t1", SimpleMath::vectorAdd, c, b, d)
                 .streamOut(d);
+
+        schedule.getTask("t0").mapTo(new OCLDeviceMapping(0, 0));
+        schedule.getTask("t1").mapTo(new OCLDeviceMapping(0, 2));
 
         schedule.execute();
 

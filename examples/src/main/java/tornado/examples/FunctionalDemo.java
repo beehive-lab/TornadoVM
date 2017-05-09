@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,8 +17,6 @@ package tornado.examples;
 
 import java.util.function.IntUnaryOperator;
 import tornado.api.Parallel;
-import tornado.runtime.api.CompilableTask;
-import tornado.runtime.api.TaskUtils;
 
 public class FunctionalDemo {
 
@@ -80,7 +78,7 @@ public class FunctionalDemo {
             }
         }
 
-        final CompilableTask times2 = TaskUtils.createTask("t0", Matrix::times2, m);
+//        final CompilableTask times2 = TaskUtils.createTask("t0", Matrix::times2, m);
 //        times2.mapTo(OpenCL.defaultDevice());
 //		times2.execute();
         System.out.println(m);
