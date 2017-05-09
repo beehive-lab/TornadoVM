@@ -41,14 +41,11 @@ import tornado.meta.domain.DomainTree;
 import tornado.meta.domain.IntDomain;
 
 import static tornado.common.Tornado.debug;
-import static tornado.common.Tornado.getProperty;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoUnsupportedError.unsupported;
 
 public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
-
-    private static final boolean XEON_PHI_AS_CPU = Boolean.parseBoolean(getProperty("tornado.coarsener.xeonphi.ascpu", "False"));
 
     private ParallelRangeNode findParallelRange(LoopBeginNode loopBegin) {
 
@@ -87,7 +84,7 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
         Coarseness coarseness = meta.getCoarseness();
 
         OCLDeviceMapping mapping = (OCLDeviceMapping) context.getDeviceMapping();
-        if (mapping.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_CPU || (mapping.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && XEON_PHI_AS_CPU)) {
+        if (mapping.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_CPU || (mapping.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && meta.shouldTreatXeonPhiAsCpu())) {
             int[] config = new int[3];
 
             if (meta.isCpuConfigDefined()) {

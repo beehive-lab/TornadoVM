@@ -148,7 +148,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-        if (context.getMeta().enableThreadCoarsener()) {
+        if (context.getMeta() == null || context.getMeta().enableThreadCoarsener()) {
             return;
         }
 
