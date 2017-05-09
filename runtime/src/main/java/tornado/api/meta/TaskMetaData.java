@@ -303,6 +303,16 @@ public class TaskMetaData extends AbstractMetaData {
         return super.shouldUseVmWaitEvent() || scheduleMetaData.shouldUseVmWaitEvent();
     }
 
+    @Override
+    public boolean enableThreadCoarsener() {
+        return super.enableThreadCoarsener() || scheduleMetaData.enableThreadCoarsener();
+    }
+
+    @Override
+    public boolean shouldTreatXeonPhiAsCpu() {
+        return super.shouldTreatXeonPhiAsCpu() || scheduleMetaData.shouldTreatXeonPhiAsCpu();
+    }
+
     private void readStaticMethodMetadata(Method method) {
 
         final int paramCount = method.getParameterCount();
