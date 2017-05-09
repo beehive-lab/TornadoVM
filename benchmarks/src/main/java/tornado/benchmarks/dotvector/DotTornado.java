@@ -66,7 +66,7 @@ public class DotTornado extends BenchmarkDriver {
         b = null;
         c = null;
 
-        graph.getDefaultDevice().reset();
+        graph.getDevice().reset();
         super.tearDown();
     }
 

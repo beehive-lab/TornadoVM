@@ -22,6 +22,8 @@ import tornado.runtime.api.TaskSchedule;
 import static tornado.benchmarks.LinearAlgebraArrays.sadd;
 import static tornado.collections.math.TornadoMath.findULPDistance;
 import static tornado.common.Tornado.getProperty;
+import static tornado.collections.math.TornadoMath.findULPDistance;
+import static tornado.common.Tornado.getProperty;
 
 public class SaddTornado extends BenchmarkDriver {
 
@@ -63,7 +65,7 @@ public class SaddTornado extends BenchmarkDriver {
         b = null;
         c = null;
 
-        graph.getDefaultDevice().reset();
+        graph.getDevice().reset();
         super.tearDown();
     }
 

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,8 @@
  */
 package tornado.benchmarks.addvector;
 
-import tornado.benchmarks.BenchmarkRunner;
 import tornado.benchmarks.BenchmarkDriver;
+import tornado.benchmarks.BenchmarkRunner;
 
 public class Benchmark extends BenchmarkRunner {
 
@@ -55,7 +55,7 @@ public class Benchmark extends BenchmarkRunner {
 
         } else {
             iterations = 100;
-            size = 76800; //4194304
+            size = 4194304;
         }
     }
 

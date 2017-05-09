@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,8 @@
  */
 package tornado.benchmarks.convolvearray;
 
-import tornado.benchmarks.BenchmarkRunner;
 import tornado.benchmarks.BenchmarkDriver;
+import tornado.benchmarks.BenchmarkRunner;
 
 public class Benchmark extends BenchmarkRunner {
 
@@ -34,8 +34,8 @@ public class Benchmark extends BenchmarkRunner {
 
         } else {
             iterations = 100;
-            width = 1080;
-            height = 1920;
+            width = 2048;
+            height = 2048;
             filtersize = 5;
 
         }

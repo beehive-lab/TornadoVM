@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,7 +30,7 @@ public class Benchmark extends BenchmarkRunner {
 
         } else {
             iterations = 100;
-            size = 307200;
+            size = 4194304;
 
         }
     }

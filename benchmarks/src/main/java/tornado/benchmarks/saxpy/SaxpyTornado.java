@@ -22,6 +22,8 @@ import tornado.runtime.api.TaskSchedule;
 import static tornado.benchmarks.LinearAlgebraArrays.saxpy;
 import static tornado.collections.math.TornadoMath.findULPDistance;
 import static tornado.common.Tornado.getProperty;
+import static tornado.collections.math.TornadoMath.findULPDistance;
+import static tornado.common.Tornado.getProperty;
 
 public class SaxpyTornado extends BenchmarkDriver {
 
@@ -60,7 +62,7 @@ public class SaxpyTornado extends BenchmarkDriver {
         x = null;
         y = null;
 
-        graph.getDefaultDevice().reset();
+        graph.getDevice().reset();
         super.tearDown();
     }
 
