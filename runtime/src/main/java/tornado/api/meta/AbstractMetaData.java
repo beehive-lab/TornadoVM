@@ -176,6 +176,7 @@ public abstract class AbstractMetaData {
     private final boolean useThreadCoarsener;
     private final boolean dumpTaskSchedule;
     private final boolean vmUseDeps;
+    private final boolean xeonPhiAsCpu;
 
     private final boolean isCpuConfigDefined;
     private final String cpuConfig;
@@ -205,6 +206,10 @@ public abstract class AbstractMetaData {
         return isCpuConfigDefined;
     }
 
+    public boolean shouldTreatXeonPhiAsCpu() {
+        return xeonPhiAsCpu;
+    }
+
     private static String getDefault(String keySuffix, String id, String defaultValue) {
         if (getProperty(id + "." + keySuffix) == null) {
             return getProperty("tornado" + "." + keySuffix, defaultValue);
@@ -223,6 +228,7 @@ public abstract class AbstractMetaData {
         printCompileTimes = parseBoolean(getDefault("debug.compiletimes", id, "False"));
         openclUseRelativeAddresses = parseBoolean(getDefault("opencl.userelative", id, "False"));
         openclWaitActive = parseBoolean(getDefault("opencl.wait.active", id, "False"));
+        xeonPhiAsCpu = parseBoolean(getDefault("coarsener.xeonphi.ascpu", id, "False"));
 
         /*
          * Allows the OpenCL driver to select the size of local work groups
