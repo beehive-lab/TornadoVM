@@ -152,12 +152,9 @@
         </dependency>
     </dependencies>
     <modules>
-        <module>collections</module>
-        <module>common</module>
-        <module>api</module>
         <module>runtime</module>
+        <module>collections</module>
         <module>drivers</module>
-        <module>compiler</module>
         <module>examples</module>
         <module>benchmarks</module>
     </modules>
