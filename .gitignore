@@ -1,5 +1,5 @@
-etc/tornado.env
-target/
+/etc/tornado.env
+/target/
 .project
 .classpath
 Makefile
@@ -16,8 +16,12 @@ Makefile.in
 autom4te.cache
 /results/*
 /opencl/*
+/opencl-src/*
+/opencl-bin/*
+/var/*
 /drivers/opencl/jni-bindings/config.status
 /drivers/opencl/jni-bindings/configure
 /drivers/opencl/jni-bindings/libtool
+/drivers/opencl/jni-bindings/m4/*
 *.dylib
 *.a
