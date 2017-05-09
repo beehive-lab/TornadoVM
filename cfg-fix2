@@ -1,0 +1,95 @@
+diff --git a/drivers/opencl/src/main/java/tornado/drivers/opencl/graal/compiler/OCLCompilationResultBuilder.java b/drivers/opencl/src/main/java/tornado/drivers/opencl/graal/compiler/OCLCompilationResultBuilder.java
+index 2ac7f64..9db6c05 100644
+--- a/drivers/opencl/src/main/java/tornado/drivers/opencl/graal/compiler/OCLCompilationResultBuilder.java
++++ b/drivers/opencl/src/main/java/tornado/drivers/opencl/graal/compiler/OCLCompilationResultBuilder.java
+@@ -37,9 +37,6 @@
+ 
+ import static tornado.common.exceptions.TornadoInternalError.guarantee;
+ import static tornado.graal.TornadoLIRGenerator.trace;
+-import static tornado.graal.TornadoLIRGenerator.trace;
+-import static tornado.graal.TornadoLIRGenerator.trace;
+-import static tornado.graal.TornadoLIRGenerator.trace;
+ 
+ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
+ 
+@@ -158,7 +155,7 @@
+ 
+         final int numDominated = dominates.size();
+ 
+-        // System.out.printf("schedule: block=%s, succs=%s, dominates=%s, floating=%s, pdom=%s\n",b.getId(),toString(b.getSuccessors()),toString(dominates),toString(merges),b.getPostdominator());
++        System.out.printf("schedule: block=%s, succs=%s, dominates=%s, floating=%s, pdom=%s\n", b.getId(), toString(b.getSuccessors()), toString(dominates), toString(merges), b.getPostdominator());
+         if (b.isLoopEnd()) {
+             patchLoopEnd(b);
+         }
+@@ -180,24 +177,42 @@
+ 
+             // more than one exit means that there are break statements inside
+             // the loopbody...
+-            Block exit = null;
+-            if (loop.getExits().size() > 1) {
+-                // multiple exists should converge at a merge node
+-                exit = loop.getExits().get(0);
++            Block exit = loop.getExits().get(0);
++//            if (loop.getExits().size() > 1) {
++//                // multiple exists should converge at a merge node
++//                exit = loop.getExits().get(0);
++//
++//                Set<Block> successors = new HashSet<>();
++//                successors.addAll(dominates);
++//                successors.removeAll(loop.getExits());
++//                successors.removeAll(loop.getBlocks());
++//                System.out.printf("exit: block=%s, succ=%d, pred=%d\n", exit, exit.getSuccessorCount(), exit.getPredecessorCount());
++//                System.out.printf("exit: dominates %s\n", toString(dominates));
++//                System.out.printf("exit: loop blocks %s\n", toString(loop.getBlocks()));
++//                if (successors.size() == 1) {
++//                    exit = successors.iterator().next();
++//                }
++//                guarantee(exit.getBeginNode() instanceof AbstractMergeNode,
++//                        "loop exits do not converge: block=%d", b.getId());
++//            } else {
++//                exit = loop.getExits().get(0);
++//            }
++
++            boolean needsMerge = loop.getExits().size() > 1;
++            Block merge = exit;
++            if (needsMerge) {
+                 Set<Block> successors = new HashSet<>();
+                 successors.addAll(dominates);
+                 successors.removeAll(loop.getExits());
+                 successors.removeAll(loop.getBlocks());
+-                // System.out.printf("exit: block=%s, succ=%d, pred=%d\n",exit,exit.getSuccessorCount(),exit.getPredecessorCount());
+-                // System.out.printf("exit: dominates %s\n",toString(dominates));
+-                // System.out.printf("exit: loop blocks %s\n",toString(loop.getBlocks()));
++                System.out.printf("merge: block=%s, succ=%d, pred=%d\n", exit, exit.getSuccessorCount(), exit.getPredecessorCount());
++                System.out.printf("merge: dominates %s\n", toString(dominates));
++                System.out.printf("merge: loop blocks %s\n", toString(loop.getBlocks()));
+                 if (successors.size() == 1) {
+-                    exit = successors.iterator().next();
++                    merge = successors.iterator().next();
+                 }
+-                guarantee(exit.getBeginNode() instanceof AbstractMergeNode,
+-                        "loop exists do not converge: block=%d", b.getId());
+-            } else {
+-                exit = loop.getExits().get(0);
++                guarantee(merge.getBeginNode() instanceof AbstractMergeNode,
++                        "loop exits do not converge: block=%d", b.getId());
+             }
+ 
+             final boolean inverted = (dominates.get(0).equals(exit));
+@@ -213,11 +228,14 @@
+ 
+             asm.beginScope();
+             traverseCFG(cfg, asm, merges, body);
++            if (needsMerge) {
++                traverseCFG(cfg, asm, merges, exit);
++            }
+             asm.endScope();
+ 
+             // System.out.printf("backedge: %s\n",backedge);
+-            // System.out.printf("loop exit: exit=%s, exit count=%d\n",exit,b.getLoop().getExits().size());
+-            traverseCFG(cfg, asm, merges, exit);
++            System.out.printf("loop exit: exit=%s, merge=%s, exit count=%d\n", exit, merge, b.getLoop().getExits().size());
++            traverseCFG(cfg, asm, merges, merge);
+         } else if (isIfBlock(b)) {
+             // System.out.printf("branch: succ=%s, doms=%s\n",toString(b.getSuccessors()),toString(dominates));
+ 

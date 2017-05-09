@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+        <action>
+            <actionName>profile.single.main</actionName>
+            <packagings>
+                <packaging>*</packaging>
+            </packagings>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>-server -XX:-UseJVMCIClassLoader -XX:-UseCompressedOops -Djava.library.path=${TORNADO_ROOT}/drivers/opencl/jni-bindings/lib -Dlog4j.configurationFile=${TORNADO_ROOT}/etc/log4j2.xml  -classpath %classpath ${packageClassName}</exec.args>
+                <exec.executable>java</exec.executable>
+                <exec.classpathScope>${classPathScope}</exec.classpathScope>
+            </properties>
+        </action>
+        <action>
+            <actionName>run</actionName>
+            <packagings>
+                <packaging>jar</packaging>
+            </packagings>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>-classpath %classpath tornado.benchmarks.BenchmarkRunner tornado.benchmarks.sadd.Benchmark</exec.args>
+                <exec.executable>java</exec.executable>
+                <exec.workingdir>/Users/jamesclarkson/NetBeansProjects/tornado-develop</exec.workingdir>
+            </properties>
+        </action>
+        <action>
+            <actionName>debug</actionName>
+            <packagings>
+                <packaging>jar</packaging>
+            </packagings>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath tornado.benchmarks.BenchmarkRunner tornado.benchmarks.sadd.Benchmark</exec.args>
+                <exec.executable>java</exec.executable>
+                <jpda.listen>true</jpda.listen>
+                <exec.workingdir>/Users/jamesclarkson/NetBeansProjects/tornado-develop</exec.workingdir>
+            </properties>
+        </action>
+        <action>
+            <actionName>profile</actionName>
+            <packagings>
+                <packaging>jar</packaging>
+            </packagings>
+            <goals>
+                <goal>process-classes</goal>
+                <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
+            </goals>
+            <properties>
+                <exec.args>-server -XX:-UseJVMCIClassLoader -XX:-UseCompressedOops -Djava.library.path=/Users/jamesclarkson/NetBeansProjects/tornado-develop/drivers/opencl/jni-bindings/lib -classpath %classpath tornado.benchmarks.BenchmarkRunner tornado.benchmarks.sadd.Benchmark</exec.args>
+                <exec.executable>java</exec.executable>
+                <exec.workingdir>/Users/jamesclarkson/NetBeansProjects/tornado-develop</exec.workingdir>
+                <exec.classpathScope>compile</exec.classpathScope>
+            </properties>
+        </action>
+    </actions>

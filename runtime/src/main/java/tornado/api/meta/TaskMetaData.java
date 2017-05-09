@@ -123,9 +123,9 @@ public class TaskMetaData extends AbstractMetaData {
 
     @Override
     public String getCpuConfig() {
-        if (isCpuConfigDefined()) {
+        if (super.isCpuConfigDefined()) {
             return super.getCpuConfig();
-        } else if (!isCpuConfigDefined() && scheduleMetaData.isCpuConfigDefined()) {
+        } else if (!super.isCpuConfigDefined() && scheduleMetaData.isCpuConfigDefined()) {
             return scheduleMetaData.getCpuConfig();
         } else {
             return "";
