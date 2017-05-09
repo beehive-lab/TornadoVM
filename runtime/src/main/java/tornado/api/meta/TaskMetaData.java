@@ -338,6 +338,11 @@ public class TaskMetaData extends AbstractMetaData {
         }
     }
 
+    @Override
+    public boolean isCpuConfigDefined() {
+        return super.isCpuConfigDefined() || scheduleMetaData.isCpuConfigDefined();
+    }
+
     private void readTaskMetadata(Method method) {
         if (Modifier.isStatic(method.getModifiers())) {
             readStaticMethodMetadata(method);
