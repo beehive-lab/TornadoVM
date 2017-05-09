@@ -49,8 +49,8 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         createImage(input, imageSizeX, imageSizeY);
         createFilter(filter, filterSize, filterSize);
 
-        graph = new TaskSchedule("s0")
-                .task("t0", GraphicsKernels::convolveImageArray,
+        graph = new TaskSchedule("benchmark")
+                .task("convolveImageArray", GraphicsKernels::convolveImageArray,
                         input, filter, output, imageSizeX, imageSizeY, filterSize,
                         filterSize)
                 .streamOut(output);

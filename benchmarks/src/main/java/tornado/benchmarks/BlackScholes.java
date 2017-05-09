@@ -19,6 +19,8 @@ import tornado.api.Parallel;
 import tornado.collections.math.TornadoMath;
 import tornado.runtime.api.TaskSchedule;
 
+import static tornado.common.Tornado.getProperty;
+
 public class BlackScholes {
 
     private static final boolean USE_JAVA = Boolean.parseBoolean(System.getProperty("bs.java", "False"));
@@ -42,12 +44,12 @@ public class BlackScholes {
 
         final BlackScholes bs = new BlackScholes(size);
 
-        final TaskSchedule tasks = new TaskSchedule("s0")
-                .task("t0", BlackScholes::blackscholes, bs.randArray, bs.put, bs.call);
+        final TaskSchedule tasks = new TaskSchedule("benchmark")
+                .task("blackscholes", BlackScholes::blackscholes, bs.randArray, bs.put, bs.call);
 
-        long start = 0, end = 0;
+        tasks.warmup();
 
-        start = System.nanoTime();
+        final long start = System.nanoTime();
         if (USE_JAVA) {
             for (int i = 0; i < iterations; i++) {
                 if (DEBUG) {
@@ -61,15 +63,19 @@ public class BlackScholes {
             }
             tasks.syncObjects(bs.put, bs.call);
         }
-        end = System.nanoTime();
+        final long end = System.nanoTime();
 
         final double elapsed = (end - start) * 1e-9;
         // final double exec = elapsed - compile;
-        System.out.printf("bm: blackscholes, %d, %d, %.8f \n", iterations, size, elapsed);
 
-        if (!USE_JAVA) {
+        final String id = String.format("bm=blackscholes-%d-%d", size, iterations);
+
+        if (USE_JAVA) {
+            System.out.printf("%s, id=java-reference, elapsed=%.9f, per iteration=%.9f \n", id, elapsed, elapsed / iterations);
+
+        } else {
+            System.out.printf("%s, id=%s, elapsed=%.9f, per iteration=%.9f \n", id, getProperty("benchmark.device"), elapsed, elapsed / iterations);
             tasks.dumpProfiles();
-            tasks.dumpEvents();
         }
 
         if (DEBUG) {

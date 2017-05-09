@@ -48,8 +48,8 @@ public class SaddTornado extends BenchmarkDriver {
             c[i] = 0;
         }
 
-        graph = new TaskSchedule("s0")
-                .task("t0", LinearAlgebraArrays::sadd, a, b, c)
+        graph = new TaskSchedule("benchmark")
+                .task("sadd", LinearAlgebraArrays::sadd, a, b, c)
                 .streamOut(c);
 
         graph.warmup();
@@ -90,11 +90,11 @@ public class SaddTornado extends BenchmarkDriver {
         if (isValid()) {
             System.out.printf(
                     "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("s0.device"), getElapsed(),
+                    getProperty("benchmark.device"), getElapsed(),
                     getElapsedPerIteration());
         } else {
             System.out.printf("id=%s produced invalid result\n",
-                    getProperty("s0.device"));
+                    getProperty("benchmark.device"));
         }
     }
 }

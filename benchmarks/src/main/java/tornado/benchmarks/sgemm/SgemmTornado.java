@@ -54,8 +54,8 @@ public class SgemmTornado extends BenchmarkDriver {
             b[i] = random.nextFloat();
         }
 
-        graph = new TaskSchedule("s0")
-                .task("t0", LinearAlgebraArrays::sgemm, m, n, n, a, b,
+        graph = new TaskSchedule("benchmark")
+                .task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b,
                         c)
                 .streamOut(c);
 
@@ -97,11 +97,11 @@ public class SgemmTornado extends BenchmarkDriver {
         if (isValid()) {
             System.out.printf(
                     "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("s0.device"), getElapsed(),
+                    getProperty("benchmark.device"), getElapsed(),
                     getElapsedPerIteration());
         } else {
             System.out.printf("id=%s produced invalid result\n",
-                    getProperty("s0.device"));
+                    getProperty("benchmark.device"));
         }
     }
 

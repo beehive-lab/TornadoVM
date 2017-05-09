@@ -50,8 +50,8 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         createImage(input);
         createFilter(filter);
 
-        graph = new TaskSchedule("s0")
-                .task("t0", GraphicsKernels::convolveImage, input,
+        graph = new TaskSchedule("benchmark")
+                .task("convolveImage", GraphicsKernels::convolveImage, input,
                         filter, output)
                 .streamOut(output);
 
@@ -102,11 +102,11 @@ public class ConvolveImageTornado extends BenchmarkDriver {
         if (isValid()) {
             System.out.printf(
                     "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("s0.device"), getElapsed(),
+                    getProperty("benchmark.device"), getElapsed(),
                     getElapsedPerIteration());
         } else {
             System.out.printf("id=%s produced invalid result\n",
-                    getProperty("s0.device"));
+                    getProperty("benchmark.device"));
         }
     }
 

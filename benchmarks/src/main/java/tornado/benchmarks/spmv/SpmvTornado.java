@@ -45,8 +45,8 @@ public class SpmvTornado extends BenchmarkDriver {
 
         populateVector(v);
 
-        graph = new TaskSchedule("s0")
-                .task("t0", LinearAlgebraArrays::spmv, matrix.vals,
+        graph = new TaskSchedule("benchmark")
+                .task("spmv", LinearAlgebraArrays::spmv, matrix.vals,
                         matrix.cols, matrix.rows, v, matrix.size, y)
                 .streamOut(y);
 
@@ -88,11 +88,11 @@ public class SpmvTornado extends BenchmarkDriver {
         if (isValid()) {
             System.out.printf(
                     "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("s0.device"), getElapsed(),
+                    getProperty("benchmark.device"), getElapsed(),
                     getElapsedPerIteration());
         } else {
             System.out.printf("id=%s produced invalid result\n",
-                    getProperty("s0.device"));
+                    getProperty("benchmark.device"));
         }
     }
 }

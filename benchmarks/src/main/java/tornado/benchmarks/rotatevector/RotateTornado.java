@@ -53,8 +53,8 @@ public class RotateTornado extends BenchmarkDriver {
             input.set(i, value);
         }
 
-        graph = new TaskSchedule("s0")
-                .task("t0", GraphicsKernels::rotateVector, output, m,
+        graph = new TaskSchedule("benchmark")
+                .task("rotateVector", GraphicsKernels::rotateVector, output, m,
                         input)
                 .streamOut(output);
 
@@ -104,11 +104,11 @@ public class RotateTornado extends BenchmarkDriver {
         if (isValid()) {
             System.out.printf(
                     "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("s0.device"), getElapsed(),
+                    getProperty("benchmark.device"), getElapsed(),
                     getElapsedPerIteration());
         } else {
             System.out.printf("id=%s produced invalid result\n",
-                    getProperty("s0.device"));
+                    getProperty("benchmark.device"));
         }
     }
 }
