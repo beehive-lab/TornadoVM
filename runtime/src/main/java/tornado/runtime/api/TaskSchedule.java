@@ -140,7 +140,7 @@ public class TaskSchedule extends AbstractTaskGraph {
     }
 
     public TaskSchedule mapAllTo(TornadoDevice device) {
-        mapAllToInner(device);
+        setDevice(device);
         return this;
     }
 
