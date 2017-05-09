@@ -18,6 +18,7 @@ autom4te.cache
 /opencl/*
 /opencl-src/*
 /opencl-bin/*
+/opencl-cache/*
 /var/*
 /drivers/opencl/jni-bindings/config.status
 /drivers/opencl/jni-bindings/configure
