@@ -90,7 +90,6 @@ public class ExecutionContext {
         if (index == -1) {
             index = tasks.size();
             tasks.add(task);
-//            task.
         }
         return index;
     }
@@ -128,6 +127,7 @@ public class ExecutionContext {
     public void mapAllTo(TornadoDevice mapping) {
         devices.clear();
         devices.add(0, mapping);
+        System.out.printf("map all to: %s\n", mapping);
         apply(task -> task.mapTo(mapping));
         Arrays.fill(taskToDevice, 0);
     }
@@ -140,7 +140,7 @@ public class ExecutionContext {
         String id = task.getId();
         TornadoDevice target = task.getDevice();
 
-        Tornado.info("assigning %s to %s\n", name, id, target.getDeviceName());
+        Tornado.info("assigning %s to %s\n", id, target.getDeviceName());
 
         int deviceIndex = devices.indexOf(target);
         if (deviceIndex == -1) {
