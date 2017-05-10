@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -750,8 +750,7 @@ public final class OCLAssembler extends Assembler {
         operandStack = new ArrayList<>(10);
         pushToStack = false;
 
-        emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable");
-
+        //emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable");
     }
 
     private static OCLAssembler getAssembler(OCLCompilationResultBuilder crb) {
