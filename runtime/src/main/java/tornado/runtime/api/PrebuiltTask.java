@@ -42,6 +42,13 @@ public class PrebuiltTask implements SchedulableTask {
         }
         meta.setDevice(device);
         meta.setDomain(domain);
+
+        final long[] values = new long[domain.getDepth()];
+        for (int i = 0; i < domain.getDepth(); i++) {
+            values[i] = domain.get(i).cardinality();
+        }
+        meta.setGlobalWork(values);
+
     }
 
     @Override

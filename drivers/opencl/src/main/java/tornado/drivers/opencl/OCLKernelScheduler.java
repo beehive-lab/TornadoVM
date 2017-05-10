@@ -46,8 +46,13 @@ public abstract class OCLKernelScheduler {
 
     public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents) {
 
-        calculateGlobalWork(meta);
-        calculateLocalWork(meta);
+        if (!meta.isGlobalWorkDefined()) {
+            calculateGlobalWork(meta);
+        }
+
+        if (!meta.isLocalWorkDefined()) {
+            calculateLocalWork(meta);
+        }
 
         if (meta.isDebug()) {
             meta.printThreadDims();
@@ -58,7 +63,6 @@ public abstract class OCLKernelScheduler {
             task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(),
                     meta.getGlobalWork(), null, waitEvents);
         } else {
-
             task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(),
                     meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
 

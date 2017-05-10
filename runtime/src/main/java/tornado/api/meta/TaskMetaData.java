@@ -15,6 +15,7 @@ import tornado.common.enums.Access;
 import tornado.meta.domain.DomainTree;
 
 import static tornado.common.Tornado.getProperty;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
 
 public class TaskMetaData extends AbstractMetaData {
 
@@ -51,6 +52,9 @@ public class TaskMetaData extends AbstractMetaData {
     protected Access[] argumentsAccess;
     protected DomainTree domain;
     protected final List<Event> profiles;
+    private boolean schedule;
+    private boolean localWorkDefined;
+    private boolean globalWorkDefined;
 
     public TaskMetaData(ScheduleMetaData scheduleMetaData, String id, int numParameters) {
         super(scheduleMetaData.getId() + "." + id);
@@ -63,6 +67,58 @@ public class TaskMetaData extends AbstractMetaData {
         profiles = new ArrayList<>(8192);
         argumentsAccess = new Access[numParameters];
         Arrays.fill(argumentsAccess, Access.NONE);
+
+        localWorkDefined = getProperty(getId() + ".local.dims") != null;
+        if (localWorkDefined) {
+            final String[] values = getProperty(getId() + ".local.dims").split(",");
+            localWork = new long[values.length];
+            for (int i = 0; i < values.length; i++) {
+                localWork[i] = Long.parseLong(values[i]);
+            }
+        }
+
+        globalWorkDefined = getProperty(getId() + ".global.dims") != null;
+        if (globalWorkDefined) {
+            final String[] values = getProperty(getId() + ".global.dims").split(",");
+            globalWork = new long[values.length];
+            for (int i = 0; i < values.length; i++) {
+                globalWork[i] = Long.parseLong(values[i]);
+            }
+        }
+
+        this.schedule = !(globalWorkDefined && localWorkDefined);
+    }
+
+    public boolean isLocalWorkDefined() {
+        return localWorkDefined;
+    }
+
+    public boolean isGlobalWorkDefined() {
+        return globalWorkDefined;
+    }
+
+    public void setGlobalWork(long[] values) {
+        for (int i = 0; i < values.length; i++) {
+            globalWork[i] = values[i];
+        }
+        globalWorkDefined = true;
+        schedule = !(globalWorkDefined && localWorkDefined);
+    }
+
+    public void setLocalWork(long[] values) {
+        for (int i = 0; i < values.length; i++) {
+            localWork[i] = values[i];
+        }
+        localWorkDefined = true;
+        schedule = !(globalWorkDefined && localWorkDefined);
+    }
+
+    public void setSchedule(boolean value) {
+        schedule = value;
+    }
+
+    public boolean shouldSchedule() {
+        return schedule;
     }
 
     public void addProfile(Event event) {
@@ -177,7 +233,11 @@ public class TaskMetaData extends AbstractMetaData {
         final int dims = domain.getDepth();
         globalOffset = new long[dims];
         globalWork = new long[dims];
-        localWork = new long[dims];
+        if (localWorkDefined) {
+            guarantee(localWork.length == dims, "task %s has local work dims specified of wrong length", getId());
+        } else {
+            localWork = new long[dims];
+        }
     }
 
     public long[] getGlobalOffset() {

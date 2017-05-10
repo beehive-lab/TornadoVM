@@ -16,7 +16,7 @@ public abstract class AbstractMetaData {
     private boolean deviceLoaded = false;
 
     public TornadoDevice getDevice() {
-        if (!deviceLoaded) {
+        if (device == null && !deviceLoaded) {
             device = resolveDevice(getProperty(id + ".device", "0:0"));
             deviceLoaded = true;
         }
@@ -31,7 +31,7 @@ public abstract class AbstractMetaData {
         return cpuConfig;
     }
 
-    public String getId() {
+    public final String getId() {
         return id;
     }
 
@@ -148,8 +148,8 @@ public abstract class AbstractMetaData {
     private final boolean debugKernelArgs;
     private final boolean printCompileTimes;
 //    private final boolean forceAllToGpu;
-    private final boolean isOpenclCompilerFlagsDefined;
-    private final String openclCompilerFlags;
+    private boolean isOpenclCompilerFlagsDefined;
+    private String openclCompilerFlags;
     private final boolean isOpenclGpuBlockXDefined;
     private final int openclGpuBlockX;
     private final boolean isOpenclGpuBlock2DXDefined;
@@ -188,6 +188,11 @@ public abstract class AbstractMetaData {
 
     public boolean isOpenclCompilerFlagsDefined() {
         return isOpenclCompilerFlagsDefined;
+    }
+
+    public void setOpenclCompilerFlags(String value) {
+        openclCompilerFlags = value;
+        isOpenclCompilerFlagsDefined = true;
     }
 
     public boolean isOpenclGpuBlockXDefined() {
