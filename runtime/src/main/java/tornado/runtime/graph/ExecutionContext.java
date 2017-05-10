@@ -127,7 +127,6 @@ public class ExecutionContext {
     public void mapAllTo(TornadoDevice mapping) {
         devices.clear();
         devices.add(0, mapping);
-        System.out.printf("map all to: %s\n", mapping);
         apply(task -> task.mapTo(mapping));
         Arrays.fill(taskToDevice, 0);
     }
