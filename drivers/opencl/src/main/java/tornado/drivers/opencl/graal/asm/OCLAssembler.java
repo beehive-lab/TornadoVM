@@ -28,6 +28,7 @@ import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
+import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.lir.OCLLIROp;
@@ -750,7 +751,9 @@ public final class OCLAssembler extends Assembler {
         operandStack = new ArrayList<>(10);
         pushToStack = false;
 
-        //emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable");
+        if (((OCLTargetDescription) target).supportsFP64()) {
+            emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable");
+        }
     }
 
     private static OCLAssembler getAssembler(OCLCompilationResultBuilder crb) {

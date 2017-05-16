@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,13 +28,15 @@ public class OCLTargetDescription extends TargetDescription {
 
     private static final int STACK_ALIGNMENT = 8;
     private static final boolean INLINE_OBJECTS = true;
+    private final boolean supportsFP64;
 
-    public OCLTargetDescription(Architecture arch) {
-        this(arch, false, STACK_ALIGNMENT, 4096, INLINE_OBJECTS);
+    public OCLTargetDescription(Architecture arch, boolean supportsFP64) {
+        this(arch, false, STACK_ALIGNMENT, 4096, INLINE_OBJECTS, supportsFP64);
     }
 
-    protected OCLTargetDescription(Architecture arch, boolean isMP, int stackAlignment, int implicitNullCheckLimit, boolean inlineObjects) {
+    protected OCLTargetDescription(Architecture arch, boolean isMP, int stackAlignment, int implicitNullCheckLimit, boolean inlineObjects, boolean supportsFP64) {
         super(arch, isMP, stackAlignment, implicitNullCheckLimit, inlineObjects);
+        this.supportsFP64 = supportsFP64;
     }
 
     //@formatter:off
@@ -55,6 +57,10 @@ public class OCLTargetDescription extends TargetDescription {
 
     public OCLArchitecture getArch() {
         return (OCLArchitecture) arch;
+    }
+
+    public boolean supportsFP64() {
+        return supportsFP64;
     }
 
     // should use OCLKind.lookupLengthIndex instead

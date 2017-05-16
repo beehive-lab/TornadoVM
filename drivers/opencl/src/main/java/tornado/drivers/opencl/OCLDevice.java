@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -46,6 +46,8 @@ public class OCLDevice extends TornadoLogger {
     private long[] maxWorkItemSizes;
     private long maxWorkGroupSize;
     private long maxConstantBufferSize;
+    private long doubleFPConfig;
+    private long singleFPConfig;
     private String version;
     private OCLDeviceType deviceType;
 
@@ -63,6 +65,8 @@ public class OCLDevice extends TornadoLogger {
         this.maxWorkItemDimensions = -1;
         this.maxWorkGroupSize = -1;
         this.maxConstantBufferSize = -1;
+        this.doubleFPConfig = -1;
+        this.singleFPConfig = -1;
         this.maxWorkItemSizes = null;
         this.name = null;
         this.version = null;
@@ -354,6 +358,38 @@ public class OCLDevice extends TornadoLogger {
         return maxConstantBufferSize;
     }
 
+    public long getDoubleFPConfig() {
+        if (doubleFPConfig != -1) {
+            return doubleFPConfig;
+        }
+
+        Arrays.fill(buffer.array(), (byte) 0);
+        buffer.clear();
+
+        clGetDeviceInfo(id,
+                OCLDeviceInfo.CL_DEVICE_DOUBLE_FP_CONFIG.getValue(),
+                buffer.array());
+
+        doubleFPConfig = buffer.getLong();
+        return doubleFPConfig;
+    }
+
+    public long getSingleFPConfig() {
+        if (singleFPConfig != -1) {
+            return singleFPConfig;
+        }
+
+        Arrays.fill(buffer.array(), (byte) 0);
+        buffer.clear();
+
+        clGetDeviceInfo(id,
+                OCLDeviceInfo.CL_DEVICE_SINGLE_FP_CONFIG.getValue(),
+                buffer.array());
+
+        singleFPConfig = buffer.getLong();
+        return singleFPConfig;
+    }
+
     public int getDeviceAddressBits() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
@@ -367,7 +403,7 @@ public class OCLDevice extends TornadoLogger {
         buffer.clear();
 
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_HOST_UNIFIED_MEMORY.getValue(), buffer.array());
-        return buffer.getInt() == OpenCL.CL_TRUE ? true : false;
+        return buffer.getInt() == OpenCL.CL_TRUE;
     }
 
     public OCLLocalMemType getLocalMemoryType() {
@@ -380,7 +416,7 @@ public class OCLDevice extends TornadoLogger {
 
     boolean isLittleEndian() {
         if (deviceEndianLittle != -1) {
-            return deviceEndianLittle == CL_TRUE ? true : false;
+            return deviceEndianLittle == CL_TRUE;
         }
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
@@ -437,6 +473,8 @@ public class OCLDevice extends TornadoLogger {
         sb.append(String.format("OpenCL C version : %s\n", getOpenCLCVersion()));
         sb.append(String.format("Endianess        : %s\n", isLittleEndian() ? "little" : "big"));
         sb.append(String.format("address size     : %d\n", getDeviceAddressBits()));
+        sb.append(String.format("single fp config : 0x%x\n", getSingleFPConfig()));
+        sb.append(String.format("double fp config : 0x%x\n", getDoubleFPConfig()));
         return sb.toString();
     }
 

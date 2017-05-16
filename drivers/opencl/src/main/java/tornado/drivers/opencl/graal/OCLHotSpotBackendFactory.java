@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -69,7 +69,7 @@ public class OCLHotSpotBackendFactory {
         }
 
         OCLArchitecture arch = new OCLArchitecture(wordKind, device.getByteOrder());
-        OCLTargetDescription target = new OCLTargetDescription(arch);
+        OCLTargetDescription target = new OCLTargetDescription(arch, device.getDoubleFPConfig() != 0);
         OCLCodeProvider codeCache = new OCLCodeProvider(target);
         OCLDeviceContext deviceContext = openclContext.createDeviceContext(device.getIndex());
 
