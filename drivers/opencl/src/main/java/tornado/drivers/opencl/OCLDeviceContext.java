@@ -294,7 +294,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
     }
 
     public int enqueueMarker(int[] events) {
-        return queue.enqueueBarrier(events);
+        return queue.enqueueMarker(events);
     }
 
     @Override
