@@ -18,6 +18,7 @@ package tornado.drivers.opencl;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 import tornado.api.Event;
 import tornado.common.TornadoLogger;
@@ -81,6 +82,7 @@ public class OCLCommandQueue extends TornadoLogger {
     protected final long[][] eventsBuffers;
     protected final int[] descriptors;
     protected final long[] tags;
+    protected final BitSet retain;
     private int eventIndex;
     private final int openclVersion;
 
@@ -95,6 +97,8 @@ public class OCLCommandQueue extends TornadoLogger {
         this.buffer = ByteBuffer.allocate(128);
         this.buffer.order(OpenCL.BYTE_ORDER);
         this.eventsBuffers = new long[NUM_EVENTS_BUFFERS][EVENT_WINDOW];
+        this.retain = new BitSet(EVENT_WINDOW);
+        retain.clear();
         this.eventsBufferIndex = 0;
         this.events = eventsBuffers[eventsBufferIndex];
         this.descriptors = new int[EVENT_WINDOW];
@@ -223,6 +227,14 @@ public class OCLCommandQueue extends TornadoLogger {
         eventMark = eventIndex;
     }
 
+    public void retainEvent(int localId) {
+        retain.set(localId);
+    }
+
+    public void releaseEvent(int localId) {
+        retain.clear(localId);
+    }
+
     public void flushEvents() {
 //        System.out.println("flush");
         if (eventIndex >= EVENT_WINDOW - MAX_WAIT_EVENTS) {
@@ -270,8 +282,17 @@ public class OCLCommandQueue extends TornadoLogger {
 //        eventWalker.r TornadoRuntime
 //        .EXECUTOR.execute(eventWalker);
 //    }
+    private void findNextEventSlot() {
+        guarantee(retain.cardinality() < EVENT_WINDOW, "event window is full (index=%d, retained=%d, capacity=%d)", eventIndex, retain.cardinality(), EVENT_WINDOW);
+        eventIndex = retain.nextClearBit(0);
+    }
+
     private int registerEvent(long eventId, int descriptorId, long tag) {
+        if (retain.get(eventIndex)) {
+            findNextEventSlot();
+        }
         final int currentEvent = eventIndex;
+        guarantee(!retain.get(currentEvent), "overwriting retained event");
 
         /*
          * OpenCL can generate an out of resources error which produces an
@@ -284,7 +305,7 @@ public class OCLCommandQueue extends TornadoLogger {
             System.exit(-1);
         }
 
-        if (events[currentEvent] > 0) {
+        if (events[currentEvent] > 0 && !retain.get(currentEvent)) {
             internalEvent.setEventId(currentEvent, events[currentEvent]);
             internalEvent.release();
         }
@@ -292,7 +313,7 @@ public class OCLCommandQueue extends TornadoLogger {
         descriptors[currentEvent] = descriptorId;
         tags[currentEvent] = tag;
 
-        eventIndex = (eventIndex + 1) % EVENT_WINDOW;
+        findNextEventSlot();
         return currentEvent;
     }
 

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,62 +20,67 @@ import tornado.api.enums.TornadoExecutionStatus;
 
 public class EmptyEvent implements Event {
 
-	private final String name;
-	
-	public EmptyEvent(String name){
-		this.name = name;
-	}
-	
-	public EmptyEvent(){
-		this("Empty Event");
-	}
-	
-	@Override
-	public String getName() {
-		return name;
-	}
+    private final String name;
 
-	@Override
-	public double getExecutionTime() {
-		return 0;
-	}
+    public EmptyEvent(String name) {
+        this.name = name;
+    }
 
-	@Override
-	public double getQueuedTime() {
-		return 0;
-	}
+    public EmptyEvent() {
+        this("Empty Event");
+    }
 
-	@Override
-	public TornadoExecutionStatus getStatus() {
-		return TornadoExecutionStatus.COMPLETE;
-	}
+    @Override
+    public String getName() {
+        return name;
+    }
 
-	@Override
-	public double getTotalTime() {
-		return 0;
-	}
+    @Override
+    public double getExecutionTime() {
+        return 0;
+    }
 
-	@Override
-	public void waitOn() {
+    @Override
+    public double getQueuedTime() {
+        return 0;
+    }
 
-	}
+    @Override
+    public TornadoExecutionStatus getStatus() {
+        return TornadoExecutionStatus.COMPLETE;
+    }
 
-	@Override
-	public long getSubmitTime() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public double getTotalTime() {
+        return 0;
+    }
 
-	@Override
-	public long getStartTime() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public void retain() {
 
-	@Override
-	public long getEndTime() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    }
+
+    @Override
+    public void waitOn() {
+
+    }
+
+    @Override
+    public long getSubmitTime() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public long getStartTime() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public long getEndTime() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
 }

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,6 +50,11 @@ public class OCLEvent extends TornadoLogger implements Event {
         this.id = eventId;
         this.name = String.format("%s: 0x%x", EVENT_DESCRIPTIONS[queue.descriptors[localId]], queue.tags[localId]);
         this.status = -1;
+    }
+
+    @Override
+    public void retain() {
+        queue.retainEvent(localId);
     }
 
     protected void setEventId(int localId, long eventId) {
@@ -203,6 +208,7 @@ public class OCLEvent extends TornadoLogger implements Event {
     }
 
     void release() {
+        queue.releaseEvent(localId);
         try {
             clReleaseEvent(id);
         } catch (OCLException e) {
