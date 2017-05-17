@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +26,6 @@ import tornado.runtime.EmptyEvent;
 
 import static tornado.common.Tornado.*;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_CONTEXT;
 import static tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_DEVICE;
 
@@ -241,40 +240,56 @@ public class OCLCommandQueue extends TornadoLogger {
         }
     }
 
-    private void releaseEvents(int index) {
-
-        final Runnable eventWalker = () -> {
-            final long[] ids = eventsBuffers[index];
-            for (int i = 0; i < EVENT_WINDOW; i++) {
-                final long eventId = ids[i];
-                if (eventId <= 0) {
-                    continue;
-                }
-
-                final OCLEvent e = new OCLEvent(this, i, eventId);
-
-                switch (e.getStatus()) {
-                    default:
-                        e.waitOn();
-                    case COMPLETE:
-//                        System.out.println("releasing: " + e.toString());
-//                        e.release();
-                        events[i] = 0;
-                        break;
-                    case ERROR:
-                        shouldNotReachHere("Found event with error: %s", e.getName());
+//    private void releaseEvents(int index) {
+//
+//        final Runnable eventWalker = () -> {
+//            final long[] ids = eventsBuffers[index];
+//            for (int i = 0; i < EVENT_WINDOW; i++) {
+//                final long eventId = ids[i];
+//                if (eventId <= 0) {
+//                    continue;
+//                }
+//
+//                final OCLEvent e = new OCLEvent(this, i, eventId);
+//
+//                switch (e.getStatus()) {
 //                    default:
-                }
-            }
-        };
-
-//        TornadoRuntime.EXECUTOR.execute(eventWalker);
-    }
-
+//                        e.waitOn();
+//                    case COMPLETE:
+////                        System.out.println("releasing: " + e.toString());
+////                        e.release();
+//                        events[i] = 0;
+//                        break;
+//                    case ERROR:
+//                        shouldNotReachHere("Found event with error: %s", e.getName());
+////                    default:
+//                }
+//            }
+//        };
+//
+//        eventWalker.r TornadoRuntime
+//        .EXECUTOR.execute(eventWalker);
+//    }
     private int registerEvent(long eventId, int descriptorId, long tag) {
         final int currentEvent = eventIndex;
 
-        if (events[currentEvent] != 0) {
+        /*
+         * OpenCL can generate an out of resources error which produces an
+         * invalid event (-1) we need to avoid releasing any invalid events and
+         * trigger a fatal exception when we miss an event
+         */
+        if (eventId == -1) {
+            if (ENABLE_OOO_EXECUTION) {
+                fatal("invalid event: event=0x%x, description=%s, tag=0x%x\n", eventId, EVENT_DESCRIPTIONS[descriptorId], tag);
+                fatal("terminating application as system integrity has been compromised.");
+                System.exit(-1);
+            } else {
+                // we are using a mode where we are not dependent on events to maintain data-dependencies between tasks
+                info("invalid event: event=0x%x, description=%s, tag=0x%x\n", eventId, EVENT_DESCRIPTIONS[descriptorId], tag);
+            }
+        }
+
+        if (events[currentEvent] > 0) {
             internalEvent.setEventId(currentEvent, events[currentEvent]);
             internalEvent.release();
         }
