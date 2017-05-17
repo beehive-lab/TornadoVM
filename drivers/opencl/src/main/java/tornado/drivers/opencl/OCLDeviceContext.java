@@ -349,6 +349,14 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         return bumpBuffer;
     }
 
+    public void retainEvent(int event) {
+        queue.retainEvent(event);
+    }
+
+    public void releaseEvent(int event) {
+        queue.releaseEvent(event);
+    }
+
     public Event resolveEvent(int event) {
         return queue.resolveEvent(event);
     }

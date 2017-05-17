@@ -221,9 +221,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
 
         if (meta != null && meta.shouldDumpProfiles()) {
-            Event event = deviceContext.resolveEvent(task);
-            event.retain();
-            meta.addProfile(event);
+            deviceContext.retainEvent(task);
+            meta.addProfile(task);
         }
 
         if (meta != null && meta.enableExceptions()) {

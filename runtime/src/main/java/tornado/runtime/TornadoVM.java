@@ -18,6 +18,7 @@ package tornado.runtime;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 import tornado.api.Event;
 import tornado.api.meta.TaskMetaData;
@@ -441,11 +442,18 @@ public class TornadoVM extends TornadoLogger {
 
         for (final SchedulableTask task : tasks) {
             final TaskMetaData meta = task.meta();
-            for (final Event profile : meta.getProfiles()) {
-                if (profile.getStatus() == COMPLETE) {
-                    System.out.printf("task: %s %s %.9f %9d %9d %9d\n", task.getDevice().getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(), profile.getEndTime());
+            for (final EventSet events : meta.getProfiles()) {
+                final BitSet profiles = events.getProfiles();
+                for (int i = profiles.nextSetBit(0); i != -1; i = profiles.nextSetBit(i + 1)) {
+                    final Event profile = events.getDevice().resolveEvent(i);
+
+                    if (profile.getStatus() == COMPLETE) {
+                        System.out.printf("task: %s %s %.9f %9d %9d %9d\n", task.getDevice().getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(), profile.getEndTime());
+                    }
                 }
+
             }
+
         }
     }
 

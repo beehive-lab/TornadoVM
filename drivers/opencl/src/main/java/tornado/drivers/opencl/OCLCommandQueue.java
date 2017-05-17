@@ -33,9 +33,7 @@ import static tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_DEVICE;
 public class OCLCommandQueue extends TornadoLogger {
 
     protected static final Event EMPTY_EVENT = new EmptyEvent();
-    private static final int NUM_EVENTS_BUFFERS = 2;
-    protected static final int EVENT_WINDOW = Integer.parseInt(getProperty("tornado.opencl.eventwindow", "8192"));
-    protected static final int MAX_WAIT_EVENTS = Integer.parseInt(getProperty("tornado.opencl.maxwaitevents", "32"));
+    private static final int NUM_EVENTS_BUFFERS = 1;
 
     protected static final String[] EVENT_DESCRIPTIONS = {
         "kernel - serial",
@@ -235,56 +233,13 @@ public class OCLCommandQueue extends TornadoLogger {
         retain.clear(localId);
     }
 
+    @Deprecated
     public void flushEvents() {
-//        System.out.println("flush");
-        if (eventIndex >= EVENT_WINDOW - MAX_WAIT_EVENTS) {
-//            System.out.println("hit threshold releasing events...");
-//            final int nextBuffer = (eventsBufferIndex + 1) % NUM_EVENTS_BUFFERS;
-//            for(int i=eventMark;i<eventIndex;i++){
-//                eventsBuffers[nextBuffer][i] = events[i];
-//                eventsBuffers[nextBuffer][i-eventMark] = events[i];
-//                events[i] = 0;
-//            }
-//            events = eventsBuffers[nextBuffer];
-//            releaseEvents(eventsBufferIndex);
-//            eventsBufferIndex = nextBuffer;
-//            eventIndex = eventIndex - eventMark;
-        }
     }
 
-//    private void releaseEvents(int index) {
-//
-//        final Runnable eventWalker = () -> {
-//            final long[] ids = eventsBuffers[index];
-//            for (int i = 0; i < EVENT_WINDOW; i++) {
-//                final long eventId = ids[i];
-//                if (eventId <= 0) {
-//                    continue;
-//                }
-//
-//                final OCLEvent e = new OCLEvent(this, i, eventId);
-//
-//                switch (e.getStatus()) {
-//                    default:
-//                        e.waitOn();
-//                    case COMPLETE:
-////                        System.out.println("releasing: " + e.toString());
-////                        e.release();
-//                        events[i] = 0;
-//                        break;
-//                    case ERROR:
-//                        shouldNotReachHere("Found event with error: %s", e.getName());
-////                    default:
-//                }
-//            }
-//        };
-//
-//        eventWalker.r TornadoRuntime
-//        .EXECUTOR.execute(eventWalker);
-//    }
     private void findNextEventSlot() {
-        guarantee(retain.cardinality() < EVENT_WINDOW, "event window is full (index=%d, retained=%d, capacity=%d)", eventIndex, retain.cardinality(), EVENT_WINDOW);
-        eventIndex = retain.nextClearBit(0);
+        eventIndex = retain.nextClearBit(eventIndex);
+        guarantee(eventIndex != -1, "event window is full (retained=%d, capacity=%d)", retain.cardinality(), EVENT_WINDOW);
     }
 
     private int registerEvent(long eventId, int descriptorId, long tag) {
