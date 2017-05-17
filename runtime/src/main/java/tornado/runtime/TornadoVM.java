@@ -442,10 +442,10 @@ public class TornadoVM extends TornadoLogger {
 
         for (final SchedulableTask task : tasks) {
             final TaskMetaData meta = task.meta();
-            for (final EventSet events : meta.getProfiles()) {
-                final BitSet profiles = events.getProfiles();
+            for (final EventSet eventset : meta.getProfiles()) {
+                final BitSet profiles = eventset.getProfiles();
                 for (int i = profiles.nextSetBit(0); i != -1; i = profiles.nextSetBit(i + 1)) {
-                    final Event profile = events.getDevice().resolveEvent(i);
+                    final Event profile = eventset.getDevice().resolveEvent(i);
 
                     if (profile.getStatus() == COMPLETE) {
                         System.out.printf("task: %s %s %.9f %9d %9d %9d\n", task.getDevice().getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(), profile.getEndTime());
