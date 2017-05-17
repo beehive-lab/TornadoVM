@@ -32,9 +32,9 @@ import tornado.runtime.sketcher.SketchRequest;
 
 import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.common.RuntimeUtilities.isBoxedPrimitiveClass;
+import static tornado.common.Tornado.warn;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
-import static tornado.common.Tornado.warn;
 
 public abstract class AbstractTaskGraph {
 
@@ -200,6 +200,8 @@ public abstract class AbstractTaskGraph {
     public void waitOn() {
         if (event != null) {
             event.waitOn();
+        } else {
+            graphContext.getDevices().forEach((TornadoDevice device) -> device.sync());
         }
     }
 
