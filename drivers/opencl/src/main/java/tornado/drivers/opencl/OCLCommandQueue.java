@@ -279,14 +279,9 @@ public class OCLCommandQueue extends TornadoLogger {
          * trigger a fatal exception when we miss an event
          */
         if (eventId == -1) {
-            if (ENABLE_OOO_EXECUTION) {
-                fatal("invalid event: event=0x%x, description=%s, tag=0x%x\n", eventId, EVENT_DESCRIPTIONS[descriptorId], tag);
-                fatal("terminating application as system integrity has been compromised.");
-                System.exit(-1);
-            } else {
-                // we are using a mode where we are not dependent on events to maintain data-dependencies between tasks
-                info("invalid event: event=0x%x, description=%s, tag=0x%x\n", eventId, EVENT_DESCRIPTIONS[descriptorId], tag);
-            }
+            fatal("invalid event: event=0x%x, description=%s, tag=0x%x\n", eventId, EVENT_DESCRIPTIONS[descriptorId], tag);
+            fatal("terminating application as system integrity has been compromised.");
+            System.exit(-1);
         }
 
         if (events[currentEvent] > 0) {
