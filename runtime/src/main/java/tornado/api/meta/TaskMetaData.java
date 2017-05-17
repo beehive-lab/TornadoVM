@@ -3,17 +3,16 @@ package tornado.api.meta;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import tornado.api.Event;
+import java.util.*;
 import tornado.api.Read;
 import tornado.api.ReadWrite;
 import tornado.api.Write;
 import tornado.common.TornadoDevice;
 import tornado.common.enums.Access;
 import tornado.meta.domain.DomainTree;
+import tornado.runtime.EventSet;
 
+import static tornado.common.Tornado.EVENT_WINDOW;
 import static tornado.common.Tornado.getProperty;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 
@@ -51,10 +50,11 @@ public class TaskMetaData extends AbstractMetaData {
     private final ScheduleMetaData scheduleMetaData;
     protected Access[] argumentsAccess;
     protected DomainTree domain;
-    protected final List<Event> profiles;
+    protected final Map<TornadoDevice, BitSet> profiles;
     private boolean schedule;
     private boolean localWorkDefined;
     private boolean globalWorkDefined;
+    private boolean canAssumeExact;
 
     public TaskMetaData(ScheduleMetaData scheduleMetaData, String id, int numParameters) {
         super(scheduleMetaData.getId() + "." + id);
@@ -64,7 +64,7 @@ public class TaskMetaData extends AbstractMetaData {
         this.localSize = 0;
         this.privateSize = 0;
         this.constantData = null;
-        profiles = new ArrayList<>(8192);
+        profiles = new HashMap<>();
         argumentsAccess = new Access[numParameters];
         Arrays.fill(argumentsAccess, Access.NONE);
 
@@ -87,6 +87,11 @@ public class TaskMetaData extends AbstractMetaData {
         }
 
         this.schedule = !(globalWorkDefined && localWorkDefined);
+        this.canAssumeExact = Boolean.parseBoolean(getDefault("coarsener.exact", getId(), "False"));
+    }
+
+    public boolean canAssumeExact() {
+        return canAssumeExact;
     }
 
     public boolean isLocalWorkDefined() {
@@ -121,8 +126,15 @@ public class TaskMetaData extends AbstractMetaData {
         return schedule;
     }
 
-    public void addProfile(Event event) {
-        profiles.add(event);
+    public void addProfile(int id) {
+        final TornadoDevice device = getDevice();
+        BitSet events = null;
+        if (!profiles.containsKey(device)) {
+            events = new BitSet(EVENT_WINDOW);
+            profiles.put(device, events);
+        }
+        events = profiles.get(device);
+        events.set(id);
     }
 
     public void allocConstant(int size) {
@@ -284,8 +296,12 @@ public class TaskMetaData extends AbstractMetaData {
         return privateSize;
     }
 
-    public List<Event> getProfiles() {
-        return profiles;
+    public List<EventSet> getProfiles() {
+        final List<EventSet> result = new ArrayList<>(profiles.keySet().size());
+        for (TornadoDevice device : profiles.keySet()) {
+            result.add(new EventSet(device, profiles.get(device)));
+        }
+        return result;
     }
 
     public String getScheduleId() {

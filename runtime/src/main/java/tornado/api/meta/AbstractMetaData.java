@@ -215,7 +215,7 @@ public abstract class AbstractMetaData {
         return xeonPhiAsCpu;
     }
 
-    private static String getDefault(String keySuffix, String id, String defaultValue) {
+    protected static String getDefault(String keySuffix, String id, String defaultValue) {
         if (getProperty(id + "." + keySuffix) == null) {
             return getProperty("tornado" + "." + keySuffix, defaultValue);
         } else {
