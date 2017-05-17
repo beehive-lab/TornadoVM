@@ -92,16 +92,24 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
 
         final int task = stack.enqueueRead(internalEvents);
-        final Event event = deviceContext.resolveEvent(task);
-        event.waitOn();
+
+        Event event = null;
+        if (ENABLE_OOO_EXECUTION || VM_USE_DEPS) {
+            event = deviceContext.resolveEvent(task);
+            event.waitOn();
+        } else {
+            deviceContext.sync();
+        }
 
         debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getId(),
                 kernel.getName(), deviceContext.getDevice().getName());
-        debug("\tstatus   : %s", event.getStatus());
+        if (event != null) {
+            debug("\tstatus   : %s", event.getStatus());
 
-        if (meta != null && meta.enableProfiling()) {
-            debug("\texecuting: %f seconds", event.getExecutionTime());
-            debug("\ttotal    : %f seconds", event.getTotalTime());
+            if (meta != null && meta.enableProfiling()) {
+                debug("\texecuting: %f seconds", event.getExecutionTime());
+                debug("\ttotal    : %f seconds", event.getTotalTime());
+            }
         }
     }
 
