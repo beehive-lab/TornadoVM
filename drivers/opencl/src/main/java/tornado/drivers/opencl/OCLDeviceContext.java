@@ -365,6 +365,14 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         queue.markEvent();
     }
 
+    public void flush() {
+        queue.flush();
+    }
+
+    public void finish() {
+        queue.finish();
+    }
+
     public void flushEvents() {
         queue.flushEvents();
     }

@@ -344,6 +344,11 @@ public class OCLDeviceMapping implements TornadoDevice {
     }
 
     @Override
+    public void flush() {
+        this.getDeviceContext().flush();
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof OCLDeviceMapping) {
             final OCLDeviceMapping other = (OCLDeviceMapping) obj;

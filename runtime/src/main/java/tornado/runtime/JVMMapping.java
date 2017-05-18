@@ -29,6 +29,11 @@ public class JVMMapping implements TornadoDevice {
     }
 
     @Override
+    public void flush() {
+        unimplemented();
+    }
+
+    @Override
     public String getDescription() {
         return "default JVM";
     }

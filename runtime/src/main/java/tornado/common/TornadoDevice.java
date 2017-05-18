@@ -49,6 +49,8 @@ public interface TornadoDevice {
 
     public void sync();
 
+    public void flush();
+
     public String getDeviceName();
 
     public String getDescription();

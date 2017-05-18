@@ -370,6 +370,18 @@ public class TornadoVM extends TornadoLogger {
                     debug("vm: BARRIER event list %d", eventList);
                 }
 
+                if (contexts.size() == 1) {
+                    final TornadoDevice device = contexts.get(0);
+
+                    lastEvent = device.enqueueBarrier();
+                    if (eventList != -1) {
+                        eventsIndicies[eventList] = 0;
+                    }
+
+                } else {
+                    shouldNotReachHere("unimplemented barrier");
+                }
+
             } else if (op == END) {
                 if (graphContext.meta().isDebug()) {
                     debug("vm: END");
@@ -387,8 +399,10 @@ public class TornadoVM extends TornadoLogger {
         if (!isWarmup) {
             if (contexts.size() == 1) {
                 final TornadoDevice device = contexts.get(0);
+
                 final int event = device.enqueueBarrier();
                 barrier = device.resolveEvent(event);
+                device.flush();
 //                device.flushEvents();
             } else if (contexts.size() > 1) {
                 unimplemented("multi-context applications");
