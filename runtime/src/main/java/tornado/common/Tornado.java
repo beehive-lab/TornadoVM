@@ -67,7 +67,7 @@ public final class Tornado {
                     "False"));
     public static final boolean ENABLE_OOO_EXECUTION = Boolean.parseBoolean(settings.getProperty("tornado.ooo-execution.enable", "False"));
     public static final boolean VM_USE_DEPS = Boolean.parseBoolean(Tornado.getProperty("tornado.vm.deps", "False"));
-    public static final boolean FORCE_BLOCKING_API_CALLS = Boolean.parseBoolean(settings.getProperty("tornado.opencl.blocking", "False"));
+    public static boolean FORCE_BLOCKING_API_CALLS;
 //    public static final boolean ENABLE_PARALLELIZATION = Boolean.parseBoolean(Tornado.getProperty("tornado.kernels.parallelize", "True"));
 //    public static final boolean USE_THREAD_COARSENING = Boolean.parseBoolean(Tornado.getProperty("tornado.kernels.coarsener", "True"));
     public static final boolean ENABLE_VECTORS = Boolean.parseBoolean(settings
@@ -120,6 +120,7 @@ public final class Tornado {
         for (String key : diff) {
             settings.setProperty(key, loadProperties.getProperty(key));
         }
+        FORCE_BLOCKING_API_CALLS = Boolean.parseBoolean(settings.getProperty("tornado.opencl.blocking", "False"));
     }
 
     private static void tryLoadSettings() {
