@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,11 +15,16 @@
  */
 package tornado.drivers.opencl;
 
+import static tornado.common.Tornado.FORCE_ALL_TO_GPU;
 import static tornado.common.Tornado.fatal;
 
 public class OCLScheduler {
 
     public static final OCLKernelScheduler create(final OCLDeviceContext context) {
+
+        if (FORCE_ALL_TO_GPU) {
+            return new OCLGpuScheduler(context);
+        }
 
         if (null != context.getDevice().getDeviceType()) {
             switch (context.getDevice().getDeviceType()) {
