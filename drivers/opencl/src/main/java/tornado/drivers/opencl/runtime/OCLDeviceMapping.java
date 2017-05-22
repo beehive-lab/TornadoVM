@@ -375,6 +375,21 @@ public class OCLDeviceMapping implements TornadoDevice {
         return getDeviceContext().enqueueBarrier();
     }
 
+    @Override
+    public int enqueueBarrier(int[] events) {
+        return getDeviceContext().enqueueBarrier(events);
+    }
+
+    @Override
+    public int enqueueMarker() {
+        return getDeviceContext().enqueueMarker();
+    }
+
+    @Override
+    public int enqueueMarker(int[] events) {
+        return getDeviceContext().enqueueMarker(events);
+    }
+
     public void dumpMemory(String file) {
         final OCLMemoryManager mm = getDeviceContext().getMemoryManager();
         final OCLByteBuffer buffer = mm.getSubBuffer(0, (int) mm.getHeapSize());

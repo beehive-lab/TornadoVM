@@ -28,8 +28,7 @@ import tornado.runtime.api.GlobalObjectState;
 import tornado.runtime.graph.ExecutionContext;
 
 import static tornado.api.enums.TornadoExecutionStatus.COMPLETE;
-import static tornado.common.Tornado.ENABLE_PROFILING;
-import static tornado.common.Tornado.VM_USE_DEPS;
+import static tornado.common.Tornado.*;
 import static tornado.common.enums.Access.READ_WRITE;
 import static tornado.common.enums.Access.WRITE;
 import static tornado.common.exceptions.TornadoInternalError.*;
@@ -361,6 +360,7 @@ public class TornadoVM extends TornadoLogger {
                 }
             } else if (op == BARRIER) {
                 final int eventList = buffer.getInt();
+                final int[] waitList = (eventList == -1) ? null : events[eventList];
 
                 if (isWarmup) {
                     continue;
@@ -373,13 +373,13 @@ public class TornadoVM extends TornadoLogger {
                 if (contexts.size() == 1) {
                     final TornadoDevice device = contexts.get(0);
 
-                    lastEvent = device.enqueueBarrier();
+                    lastEvent = device.enqueueMarker(waitList);
                     if (eventList != -1) {
                         eventsIndicies[eventList] = 0;
                     }
 
-                } else {
-                    shouldNotReachHere("unimplemented barrier");
+                } else if (contexts.size() > 1) {
+                    shouldNotReachHere("unimplemented multi-context barrier");
                 }
 
             } else if (op == END) {
@@ -400,10 +400,14 @@ public class TornadoVM extends TornadoLogger {
             if (contexts.size() == 1) {
                 final TornadoDevice device = contexts.get(0);
 
-                final int event = device.enqueueBarrier();
-                barrier = device.resolveEvent(event);
-                device.flush();
-//                device.flushEvents();
+                if (useDependencies) {
+                    final int event = device.enqueueBarrier();
+                    barrier = device.resolveEvent(event);
+                }
+
+                if (USE_VM_FLUSH) {
+                    device.flush();
+                }
             } else if (contexts.size() > 1) {
                 unimplemented("multi-context applications");
             }

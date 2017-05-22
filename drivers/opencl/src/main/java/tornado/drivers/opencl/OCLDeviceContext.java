@@ -27,6 +27,7 @@ import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import tornado.drivers.opencl.mm.OCLMemoryManager;
 import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 
+import static tornado.common.Tornado.USE_SYNC_FLUSH;
 import static tornado.common.Tornado.getProperty;
 
 public class OCLDeviceContext extends TornadoLogger implements Initialisable {
@@ -95,7 +96,9 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
     }
 
     public void sync() {
-        queue.flush();
+        if (USE_SYNC_FLUSH) {
+            queue.flush();
+        }
         queue.finish();
     }
 
@@ -105,6 +108,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
 
     public int enqueueBarrier() {
         return queue.enqueueBarrier();
+    }
+
+    public int enqueueMarker() {
+        return queue.enqueueMarker();
     }
 
     public OCLProgram createProgramWithSource(byte[] source, long[] lengths) {

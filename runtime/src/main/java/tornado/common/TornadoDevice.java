@@ -47,6 +47,12 @@ public interface TornadoDevice {
 
     public int enqueueBarrier();
 
+    public int enqueueBarrier(int[] events);
+
+    public int enqueueMarker();
+
+    public int enqueueMarker(int[] events);
+
     public void sync();
 
     public void flush();
