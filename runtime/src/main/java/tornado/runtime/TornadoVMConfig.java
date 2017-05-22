@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,9 +30,9 @@ public class TornadoVMConfig extends HotSpotVMConfigAccess {
 
     public final boolean useCompressedClassPointers = getFlag("UseCompressedClassPointers", Boolean.class);
     final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
-    public final int arrayOopDescSize = getTypeSize("arrayOopDesc");
+    public final int arrayOopDescSize = getFieldValue("CompilerToVM::Data::sizeof_arrayOopDesc", Integer.class, "int");
     public final int hubOffset = getFieldOffset("oopDesc::_metadata._klass", Integer.class, "Klass*");
-    public final int narrowKlassSize = getTypeSize("narrowKlass");
+    public final int narrowKlassSize = getFieldValue("CompilerToVM::Data::sizeof_narrowKlass", Integer.class, "int");
     public final int instanceKlassFieldsOffset = getFieldOffset("InstanceKlass::_fields", Integer.class, "Array<u2>*");
 
 //    @HotSpotVMValue(expression = "arrayOopDesc::length_offset_in_bytes()") @Stable public int arrayLengthOffset;
