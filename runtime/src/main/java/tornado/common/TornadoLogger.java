@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,62 +20,62 @@ import org.apache.logging.log4j.Logger;
 
 public class TornadoLogger {
 
-	private final Logger	logger;
+    private final Logger logger;
 
-	public TornadoLogger(Class<?> clazz){
-		logger = LogManager.getLogger(clazz == null ? this.getClass() : clazz);
-	}
-	
-	public TornadoLogger(){
-		this(null);
-	}
+    public TornadoLogger(Class<?> clazz) {
+        logger = LogManager.getLogger(clazz == null ? this.getClass() : clazz);
+    }
 
-	public void debug(final String msg) {
-		logger.debug(msg);
-	}
+    public TornadoLogger() {
+        this(null);
+    }
 
-	public void debug(final String pattern, final Object... args) {
-		debug(String.format(pattern, args));
-	}
+    public final void debug(final String msg) {
+        logger.debug(msg);
+    }
 
-	public void error(final String msg) {
-		logger.error(msg);
-	}
+    public final void debug(final String pattern, final Object... args) {
+        debug(String.format(pattern, args));
+    }
 
-	public void error(final String pattern, final Object... args) {
-		error(String.format(pattern, args));
-	}
+    public final void error(final String msg) {
+        logger.error(msg);
+    }
 
-	public void fatal(final String msg) {
-		logger.fatal(msg);
-	}
+    public final void error(final String pattern, final Object... args) {
+        error(String.format(pattern, args));
+    }
 
-	public void fatal(final String pattern, final Object... args) {
-		fatal(String.format(pattern, args));
-	}
+    public final void fatal(final String msg) {
+        logger.fatal(msg);
+    }
 
-	public void info(final String msg) {
-		logger.info(msg);
-	}
+    public final void fatal(final String pattern, final Object... args) {
+        fatal(String.format(pattern, args));
+    }
 
-	public void info(final String pattern, final Object... args) {
-		info(String.format(pattern, args));
-	}
+    public final void info(final String msg) {
+        logger.info(msg);
+    }
 
-	public void trace(final String msg) {
-		logger.trace(msg);
-	}
+    public final void info(final String pattern, final Object... args) {
+        info(String.format(pattern, args));
+    }
 
-	public void trace(final String pattern, final Object... args) {
-		trace(String.format(pattern, args));
-	}
+    public final void trace(final String msg) {
+        logger.trace(msg);
+    }
 
-	public void warn(final String msg) {
-		logger.warn(msg);
-	}
+    public final void trace(final String pattern, final Object... args) {
+        trace(String.format(pattern, args));
+    }
 
-	public void warn(final String pattern, final Object... args) {
-		warn(String.format(pattern, args));
-	}
+    public final void warn(final String msg) {
+        logger.warn(msg);
+    }
+
+    public final void warn(final String pattern, final Object... args) {
+        warn(String.format(pattern, args));
+    }
 
 }
