@@ -3,8 +3,8 @@ package tornado.api.meta;
 import tornado.common.TornadoDevice;
 
 import static java.lang.Boolean.parseBoolean;
-import static java.lang.Integer.parseInt;
 import static tornado.api.meta.MetaDataUtils.resolveDevice;
+import static java.lang.Integer.parseInt;
 import static tornado.common.Tornado.getProperty;
 
 public abstract class AbstractMetaData {
@@ -176,7 +176,7 @@ public abstract class AbstractMetaData {
     private final boolean useThreadCoarsener;
     private final boolean dumpTaskSchedule;
     private final boolean vmUseDeps;
-    private final boolean xeonPhiAsCpu;
+    private final boolean coarsenWithCpuConfig;
 
     private final boolean isCpuConfigDefined;
     private final String cpuConfig;
@@ -211,8 +211,8 @@ public abstract class AbstractMetaData {
         return isCpuConfigDefined;
     }
 
-    public boolean shouldTreatXeonPhiAsCpu() {
-        return xeonPhiAsCpu;
+    public boolean shouldCoarsenWithCpuConfig() {
+        return coarsenWithCpuConfig;
     }
 
     protected static String getDefault(String keySuffix, String id, String defaultValue) {
@@ -233,7 +233,7 @@ public abstract class AbstractMetaData {
         printCompileTimes = parseBoolean(getDefault("debug.compiletimes", id, "False"));
         openclUseRelativeAddresses = parseBoolean(getDefault("opencl.userelative", id, "False"));
         openclWaitActive = parseBoolean(getDefault("opencl.wait.active", id, "False"));
-        xeonPhiAsCpu = parseBoolean(getDefault("coarsener.xeonphi.ascpu", id, "False"));
+        coarsenWithCpuConfig = parseBoolean(getDefault("coarsener.ascpu", id, "False"));
 
         /*
          * Allows the OpenCL driver to select the size of local work groups
