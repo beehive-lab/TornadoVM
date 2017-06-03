@@ -46,6 +46,7 @@ public final class Tornado {
      * Forces the executing kernel to output its arguements before execution
      */
 //    public static final boolean DUMP_TASK_SCHEDULE = Boolean.parseBoolean(settings.getProperty("tornado.schedule.dump", "False"));
+    public static final boolean MARKER_USE_BARRIER = Boolean.parseBoolean(settings.getProperty("tornado.opencl.marker.asbarrier", "False"));
     public static final boolean DEBUG_KERNEL_ARGS = Boolean.parseBoolean(settings.getProperty("tornado.debug.kernelargs", "False"));
     public static final boolean PRINT_COMPILE_TIMES = Boolean.parseBoolean(settings.getProperty("tornado.debug.compiletimes", "False"));
     public static final boolean FORCE_ALL_TO_GPU = Boolean.parseBoolean(settings.getProperty("tornado.opencl.forcegpu", "False"));
