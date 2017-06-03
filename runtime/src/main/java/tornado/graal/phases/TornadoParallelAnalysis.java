@@ -24,7 +24,6 @@ import com.oracle.graal.nodes.StructuredGraph;
 import com.oracle.graal.phases.BasePhase;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import tornado.graal.phases.TornadoHighTierContext;
 
 public class TornadoParallelAnalysis extends BasePhase<TornadoHighTierContext> {
 

@@ -31,6 +31,7 @@ import tornado.api.meta.TaskMetaData;
 import tornado.common.enums.Access;
 
 import static tornado.common.Tornado.debug;
+import static tornado.common.Tornado.debug;
 
 public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext> {
 
