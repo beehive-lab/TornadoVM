@@ -235,9 +235,48 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return task;
     }
 
+    public void submit(final OCLCallStack stack, final TaskMetaData meta) {
+
+        if (DEBUG) {
+            info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(),
+                    kernel.getName(), deviceContext.getDevice().getName());
+            info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(),
+                    stack.toAbsoluteAddress(), stack.toRelativeAddress());
+        }
+
+        setKernelArgs(stack, meta);
+        if (!stack.isOnDevice()) {
+            stack.enqueueWrite();
+        }
+
+        guarantee(kernel != null, "kernel is null");
+
+        int task;
+        if (meta != null && meta.isParallel()) {
+            task = scheduler.submit(kernel, meta, null);
+        } else {
+            task = deviceContext.enqueueTask(kernel, null);
+        }
+
+        if (meta != null && meta.shouldDumpProfiles()) {
+            deviceContext.retainEvent(task);
+            meta.addProfile(task);
+        }
+
+        if (meta != null && meta.enableExceptions()) {
+            stack.enqueueRead(null);
+        }
+    }
+
     @Override
-    public int launch(CallStack stack, TaskMetaData meta, int[] waitEvents) {
+    public int launchWithDeps(CallStack stack, TaskMetaData meta, int[] waitEvents) {
         return submit((OCLCallStack) stack, meta, waitEvents);
+    }
+
+    @Override
+    public int launchWithoutDeps(CallStack stack, TaskMetaData meta) {
+        submit((OCLCallStack) stack, meta);
+        return -1;
     }
 
 }

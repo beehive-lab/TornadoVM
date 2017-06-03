@@ -42,18 +42,18 @@ public class FieldBuffer {
         objectBuffer.allocate(getFieldValue(ref));
     }
 
-    public int enqueueRead(final Object ref, final int[] events) {
+    public int enqueueRead(final Object ref, final int[] events, boolean useDeps) {
         if (DEBUG) {
             trace("fieldBuffer: enqueueRead* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
-        return objectBuffer.enqueueRead(getFieldValue(ref), events);
+        return (useDeps) ? objectBuffer.enqueueRead(getFieldValue(ref), (useDeps) ? events : null, useDeps) : -1;
     }
 
-    public int enqueueWrite(final Object ref, final int[] events) {
+    public int enqueueWrite(final Object ref, final int[] events, boolean useDeps) {
         if (DEBUG) {
             trace("fieldBuffer: enqueueWrite* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
-        return objectBuffer.enqueueWrite(getFieldValue(ref), events);
+        return (useDeps) ? objectBuffer.enqueueWrite(getFieldValue(ref), (useDeps) ? events : null, useDeps) : -1;
     }
 
     public int getAlignment() {

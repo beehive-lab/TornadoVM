@@ -32,9 +32,11 @@ import tornado.runtime.sketcher.SketchRequest;
 
 import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.common.RuntimeUtilities.isBoxedPrimitiveClass;
+import static tornado.common.Tornado.VM_USE_DEPS;
 import static tornado.common.Tornado.warn;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static tornado.common.Tornado.warn;
 
 public abstract class AbstractTaskGraph {
 
@@ -198,9 +200,11 @@ public abstract class AbstractTaskGraph {
     }
 
     public void waitOn() {
-        if (event != null) {
+        if (VM_USE_DEPS && event != null) {
+//        if (event != null) {
             event.waitOn();
         } else {
+            // BUG waiting on an event seems unreliable, so we block on clFinish()
             graphContext.getDevices().forEach((TornadoDevice device) -> device.sync());
         }
     }

@@ -47,6 +47,12 @@ public class JVMMapping implements TornadoDevice {
     }
 
     @Override
+    public int ensurePresent(Object object, DeviceObjectState objectState, int[] events) {
+        unimplemented();
+        return -1;
+    }
+
+    @Override
     public void flush() {
         unimplemented();
     }
@@ -70,6 +76,18 @@ public class JVMMapping implements TornadoDevice {
     @Override
     public void reset() {
         unimplemented();
+    }
+
+    @Override
+    public int streamIn(Object object, DeviceObjectState objectState, int[] events) {
+        unimplemented();
+        return -1;
+    }
+
+    @Override
+    public int streamOut(Object object, DeviceObjectState objectState) {
+        unimplemented();
+        return -1;
     }
 
     @Override

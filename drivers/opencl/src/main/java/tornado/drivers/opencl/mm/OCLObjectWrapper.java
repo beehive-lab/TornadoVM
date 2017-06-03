@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,8 +34,6 @@ import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.runtime.TornadoRuntime.getVMConfig;
 import static tornado.runtime.TornadoRuntime.getVMRuntime;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLObjectWrapper implements ObjectBuffer {
 
@@ -413,24 +411,25 @@ public class OCLObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public int enqueueRead(Object ref, int[] events) {
+    public int enqueueRead(Object ref, int[] events, boolean useDeps) {
+        final int returnEvent;
         if (vectorObject) {
             final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
-            return fieldBuffer.enqueueRead(ref, events);
+            returnEvent = fieldBuffer.enqueueRead(ref, (useDeps) ? events : null, useDeps);
         } else {
             int index = 0;
             Arrays.fill(internalEvents, -1);
 
             for (FieldBuffer fb : wrappedFields) {
                 if (fb != null) {
-                    internalEvents[index] = fb.enqueueRead(ref, events);
+                    internalEvents[index] = fb.enqueueRead(ref, (useDeps) ? events : null, useDeps);
                     index++;
                 }
             }
 
             if (!isFinal) {
                 internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer(),
-                        bufferOffset, bytes, buffer.array(), events);
+                        bufferOffset, bytes, buffer.array(), (useDeps) ? events : null);
                 index++;
 
                 // TODO this needs to run asynchronously
@@ -439,27 +438,31 @@ public class OCLObjectWrapper implements ObjectBuffer {
 
             switch (index) {
                 case 0:
-                    return -1;
+                    returnEvent = -1;
+                    break;
                 case 1:
-                    return internalEvents[0];
+                    returnEvent = internalEvents[0];
+                    break;
                 default:
-                    return deviceContext
+                    returnEvent = deviceContext
                             .enqueueMarker(internalEvents);
+
             }
 
         }
+        return useDeps ? returnEvent : -1;
     }
 
     @Override
-    public int enqueueWrite(Object ref, int[] events) {
-
+    public int enqueueWrite(Object ref, int[] events, boolean useDeps) {
+        final int returnEvent;
         if (vectorObject) {
             final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
             if (!valid) {
                 valid = true;
-                return fieldBuffer.enqueueWrite(ref, events);
+                returnEvent = fieldBuffer.enqueueWrite(ref, (useDeps) ? events : null, useDeps);
             } else {
-                return -1;
+                returnEvent = -1;
             }
 
         } else {
@@ -471,7 +474,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 serialise(ref);
 
                 internalEvents[index] = deviceContext.enqueueWriteBuffer(toBuffer(),
-                        bufferOffset, bytes, buffer.array(), events);
+                        bufferOffset, bytes, buffer.array(), (useDeps) ? events : null);
                 index++;
 
                 valid = true;
@@ -479,21 +482,25 @@ public class OCLObjectWrapper implements ObjectBuffer {
 
             for (final FieldBuffer fb : wrappedFields) {
                 if (fb != null && fb.needsWrite()) {
-                    internalEvents[index] = fb.enqueueWrite(ref, events);
+                    internalEvents[index] = fb.enqueueWrite(ref, (useDeps) ? events : null, useDeps);
                     index++;
                 }
             }
 
             switch (index) {
                 case 0:
-                    return -1;
+                    returnEvent = -1;
+                    break;
                 case 1:
-                    return internalEvents[0];
+                    returnEvent = internalEvents[0];
+                    break;
                 default:
-                    return deviceContext
+                    returnEvent = deviceContext
                             .enqueueMarker(internalEvents);
+
             }
         }
+        return useDeps ? returnEvent : -1;
     }
 
     @Override

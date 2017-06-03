@@ -195,6 +195,7 @@ public class TornadoVM extends TornadoLogger {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
                 final int eventList = buffer.getInt();
+                final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
 
                 if (isWarmup) {
                     continue;
@@ -212,12 +213,20 @@ public class TornadoVM extends TornadoLogger {
                     debug("vm: state=%s", objectState);
                 }
 
-                lastEvent = device.ensurePresent(object, objectState);
+                if (useDependencies) {
+                    lastEvent = device.ensurePresent(object, objectState, waitList);
+                } else {
+                    lastEvent = device.ensurePresent(object, objectState);
+                }
+                if (eventList != -1) {
+                    eventsIndicies[eventList] = 0;
+                }
 
             } else if (op == STREAM_IN) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
                 final int eventList = buffer.getInt();
+                final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
 
                 if (isWarmup) {
                     continue;
@@ -235,12 +244,20 @@ public class TornadoVM extends TornadoLogger {
                     debug("vm: state=%s", objectState);
                 }
 
-                lastEvent = device.streamIn(object, objectState);
+                if (useDependencies) {
+                    lastEvent = device.streamIn(object, objectState, waitList);
+                } else {
+                    lastEvent = device.streamIn(object, objectState);
+                }
+                if (eventList != -1) {
+                    eventsIndicies[eventList] = 0;
+                }
 
             } else if (op == STREAM_OUT) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
                 final int eventList = buffer.getInt();
+                final int[] waitList = (useDependencies) ? events[eventList] : null;
 
                 if (isWarmup) {
                     continue;
@@ -255,9 +272,14 @@ public class TornadoVM extends TornadoLogger {
                 final DeviceObjectState objectState = resolveObjectState(
                         objectIndex, contextIndex);
 
-                lastEvent = device.streamOut(object, objectState,
-                        events[eventList]);
-                eventsIndicies[eventList] = 0;
+                if (useDependencies) {
+                    lastEvent = device.streamOut(object, objectState, waitList);
+                } else {
+                    lastEvent = device.streamOut(object, objectState);
+                }
+                if (eventList != -1) {
+                    eventsIndicies[eventList] = 0;
+                }
             } else if (op == LAUNCH) {
                 final int gtid = buffer.getInt();
                 final int contextIndex = buffer.getInt();
@@ -268,7 +290,7 @@ public class TornadoVM extends TornadoLogger {
                 final TornadoDevice device = contexts.get(contextIndex);
                 final CallStack stack = resolveStack(gtid, numArgs, stacks,
                         device);
-                final int[] waitList = (eventList == -1) ? null : events[eventList];
+                final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
                 final SchedulableTask task = tasks.get(taskIndex);
 
                 if (graphContext.meta().isDebug()) {
@@ -335,7 +357,11 @@ public class TornadoVM extends TornadoLogger {
                     }
                 }
 
-                lastEvent = installedCode.launch(stack, task.meta(), waitList);
+                if (useDependencies) {
+                    lastEvent = installedCode.launchWithDeps(stack, task.meta(), waitList);
+                } else {
+                    lastEvent = installedCode.launchWithoutDeps(stack, task.meta());
+                }
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
@@ -360,7 +386,7 @@ public class TornadoVM extends TornadoLogger {
                 }
             } else if (op == BARRIER) {
                 final int eventList = buffer.getInt();
-                final int[] waitList = (eventList == -1) ? null : events[eventList];
+                final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
 
                 if (isWarmup) {
                     continue;
@@ -372,16 +398,14 @@ public class TornadoVM extends TornadoLogger {
 
                 if (contexts.size() == 1) {
                     final TornadoDevice device = contexts.get(0);
-
                     lastEvent = device.enqueueMarker(waitList);
-                    if (eventList != -1) {
-                        eventsIndicies[eventList] = 0;
-                    }
-
                 } else if (contexts.size() > 1) {
                     shouldNotReachHere("unimplemented multi-context barrier");
                 }
 
+                if (eventList != -1) {
+                    eventsIndicies[eventList] = 0;
+                }
             } else if (op == END) {
                 if (graphContext.meta().isDebug()) {
                     debug("vm: END");
@@ -401,7 +425,7 @@ public class TornadoVM extends TornadoLogger {
                 final TornadoDevice device = contexts.get(0);
 
                 if (useDependencies) {
-                    final int event = device.enqueueBarrier();
+                    final int event = device.enqueueMarker();
                     barrier = device.resolveEvent(event);
                 }
 

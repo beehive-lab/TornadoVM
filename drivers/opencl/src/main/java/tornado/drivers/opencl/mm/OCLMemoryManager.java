@@ -155,9 +155,10 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
     public long tryAllocate(final Class<?> type, final long bytes, final int headerSize, int alignment)
             throws TornadoOutOfMemoryException {
-        long offset = heapPosition;
-        if (heapPosition + bytes < heapLimit) {
-            heapPosition = align(heapPosition + bytes, alignment);
+        final long alignedDataStart = align(heapPosition + headerSize, alignment);
+        final long headerStart = alignedDataStart - headerSize;
+        if (headerStart + bytes < heapLimit) {
+            heapPosition = headerStart + bytes;
 
 //            final long byteCount = bytes - headerSize;
 //            if(type != null && type.isArray() && RuntimeUtilities.isPrimitiveArray(type)){
@@ -178,7 +179,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
                     + deviceContext.getDevice().getName());
         }
 
-        return offset;
+        return headerStart;
     }
 
     private void initialiseMemory(OCLInstalledCode code, long offset, int count) {

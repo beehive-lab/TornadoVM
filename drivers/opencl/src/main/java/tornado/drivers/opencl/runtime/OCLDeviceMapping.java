@@ -71,16 +71,6 @@ public class OCLDeviceMapping implements TornadoDevice {
 
     }
 
-//    @Override
-//    public Meta createMeta(Method method) {
-//        return new OCLMeta(method, false);
-//    }
-//
-//    @Override
-//    public Meta createMeta(int numParameters) {
-//        unimplemented();
-//        return null;
-//    }
     @Override
     public void dumpEvents() {
         getDeviceContext().dumpEvents();
@@ -188,13 +178,14 @@ public class OCLDeviceMapping implements TornadoDevice {
                 taskAccess[i] = sketchAccess[i];
             }
 
-            final OCLCompilationResult result = compileSketchForDevice(
-                    sketch, executable,
-                    (OCLProviders) getBackend().getProviders(), getBackend());
+            try {
+                final OCLCompilationResult result = compileSketchForDevice(
+                        sketch, executable,
+                        (OCLProviders) getBackend().getProviders(), getBackend());
 
-            if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
-                return deviceContext.getCode(task.getId(), resolvedMethod.getName());
-            }
+                if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
+                    return deviceContext.getCode(task.getId(), resolvedMethod.getName());
+                }
 
 //            if (SHOW_OPENCL) {
 //                String filename = getFile(executable.getMethodName());
@@ -209,7 +200,15 @@ public class OCLDeviceMapping implements TornadoDevice {
 //                    e.printStackTrace();
 //                }
 //            }
-            return deviceContext.installCode(result);
+                return deviceContext.installCode(result);
+            } catch (Exception e) {
+                driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
+                driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
+                driver.fatal("exception: %s", e.toString());
+//                driver.fatal("cause: %s", e.getCause().toString());
+                e.printStackTrace();
+            }
+            return null;
         } else if (task instanceof PrebuiltTask) {
             final PrebuiltTask executable = (PrebuiltTask) task;
             if (deviceContext.isCached(task.getId(), executable.getEntryPoint())) {
@@ -302,26 +301,44 @@ public class OCLDeviceMapping implements TornadoDevice {
 
     @Override
     public int ensurePresent(Object object, DeviceObjectState state) {
+        ensurePresent(object, state, null);
+        return -1;
+    }
+
+    @Override
+    public int ensurePresent(Object object, DeviceObjectState state, int[] events) {
         if (!state.isValid()) {
             ensureAllocated(object, state);
         }
 
         if (!state.hasContents()) {
             state.setContents(true);
-            return state.getBuffer().enqueueWrite(object, null);
+            return state.getBuffer().enqueueWrite(object, events, events == null);
         }
         return -1;
     }
 
     @Override
     public int streamIn(Object object, DeviceObjectState state) {
+        streamIn(object, state, null);
+        return -1;
+    }
+
+    @Override
+    public int streamIn(Object object, DeviceObjectState state, int[] events) {
         if (!state.isValid()) {
             ensureAllocated(object, state);
         }
 
         state.setContents(true);
-        return state.getBuffer().enqueueWrite(object, null);
+        return state.getBuffer().enqueueWrite(object, events, events == null);
 
+    }
+
+    @Override
+    public int streamOut(Object object, DeviceObjectState state) {
+        streamOut(object, state, null);
+        return -1;
     }
 
     @Override
@@ -329,7 +346,7 @@ public class OCLDeviceMapping implements TornadoDevice {
             int[] list) {
         guarantee(state.isValid(), "invalid variable");
 
-        return state.getBuffer().enqueueRead(object, list);
+        return state.getBuffer().enqueueRead(object, list, list == null);
     }
 
     public void sync(Object... objects) {
@@ -340,7 +357,7 @@ public class OCLDeviceMapping implements TornadoDevice {
 
     public void sync(Object object) {
         final DeviceObjectState state = getTornadoRuntime().resolveObject(object).getDeviceState(this);
-        resolveEvent(streamOut(object, state, null)).waitOn();
+        resolveEvent(streamOut(object, state)).waitOn();
     }
 
     @Override

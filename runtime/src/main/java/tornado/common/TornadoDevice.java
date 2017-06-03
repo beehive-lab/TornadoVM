@@ -32,7 +32,13 @@ public interface TornadoDevice {
 
     public int ensurePresent(Object object, DeviceObjectState objectState);
 
+    public int ensurePresent(Object object, DeviceObjectState objectState, int[] events);
+
     public int streamIn(Object object, DeviceObjectState objectState);
+
+    public int streamIn(Object object, DeviceObjectState objectState, int[] events);
+
+    public int streamOut(Object object, DeviceObjectState objectState);
 
     public int streamOut(Object object, DeviceObjectState objectState,
             int[] list);

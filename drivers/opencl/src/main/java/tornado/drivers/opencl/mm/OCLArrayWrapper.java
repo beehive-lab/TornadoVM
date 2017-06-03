@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +27,8 @@ import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.runtime.TornadoRuntime.getVMConfig;
 
 public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
+
+    private static final int ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.opencl.array.align", "128"));
 
     private final int arrayHeaderSize;
 
@@ -107,39 +109,48 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public int enqueueRead(final Object value, final int[] events) {
+    public int enqueueRead(final Object value, final int[] events, boolean useDeps) {
         final T array = cast(value);
+        final int returnEvent;
         if (isFinal) {
-            return enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
-                    - arrayHeaderSize, array, events);
+            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
+                    - arrayHeaderSize, array, (useDeps) ? events : null);
         } else {
-            internalEvents[0] = prepareArrayHeader().enqueueRead(null);
-            internalEvents[1] = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
-                    - arrayHeaderSize, array, events);
-            return ENABLE_OOO_EXECUTION | VM_USE_DEPS ? deviceContext.enqueueMarker(internalEvents) : internalEvents[1];
+//            int index = 0;
+            internalEvents[1] = -1;
+//            internalEvents[0] = prepareArrayHeader().enqueueRead(null);
+            internalEvents[0] = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
+                    - arrayHeaderSize, array, (useDeps) ? events : null);
+            returnEvent = internalEvents[0];//(index == 0) ? internalEvents[0] : deviceContext.enqueueMarker(internalEvents);
         }
+        return useDeps ? returnEvent : -1;
     }
 
     abstract protected int enqueueReadArrayData(long bufferId, long offset, long bytes,
             T value, int[] waitEvents);
 
     @Override
-    public int enqueueWrite(final Object value, final int[] events) {
+    public int enqueueWrite(final Object value, final int[] events, boolean useDeps) {
         final T array = cast(value);
-
+        final int returnEvent;
         if (isFinal && onDevice) {
-            return enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
-                    - arrayHeaderSize, array, events);
+            returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
+                    - arrayHeaderSize, array, (useDeps) ? events : null);
         } else {
+            int index = 0;
+            internalEvents[0] = -1;
             if (!onDevice || !isFinal) {
-                internalEvents[0] = buildArrayHeader((T) array).enqueueWrite(
-                        events);
+                internalEvents[0] = buildArrayHeader(array).enqueueWrite(
+                        (useDeps) ? events : null);
+                index++;
             }
-            internalEvents[1] = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
-                    - arrayHeaderSize, array, events);
+            internalEvents[index] = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
+                    - arrayHeaderSize, array, (useDeps) ? events : null);
             onDevice = true;
-            return ENABLE_OOO_EXECUTION | VM_USE_DEPS ? deviceContext.enqueueMarker(internalEvents) : internalEvents[1];
+            returnEvent = (index == 0) ? internalEvents[0] : deviceContext.enqueueMarker(internalEvents);
+
         }
+        return useDeps ? returnEvent : -1;
     }
 
     abstract protected int enqueueWriteArrayData(long bufferId, long offset, long bytes,
@@ -147,7 +158,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public int getAlignment() {
-        return 64;
+        return ARRAY_ALIGNMENT;
     }
 
     private OCLByteBuffer getArrayHeader() {
