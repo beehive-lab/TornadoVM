@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +35,8 @@ import tornado.graal.nodes.AtomicAccessNode;
 import tornado.graal.nodes.ParallelOffsetNode;
 import tornado.graal.nodes.ParallelRangeNode;
 import tornado.graal.nodes.ParallelStrideNode;
+
+import static tornado.common.Tornado.TORNADO_LOOPS_REVERSE;
 
 public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
@@ -100,7 +102,9 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
             data.detectedCountedLoops();
 
             int loopIndex = 0;
-            for (LoopEx loop : data.innerFirst()) {
+
+            final List<LoopEx> loops = (TORNADO_LOOPS_REVERSE) ? data.innerFirst() : data.outerFirst();
+            for (LoopEx loop : loops) {
 
                 for (InductionVariable iv : loop.getInductionVariables().values()) {
                     if (!parallelNodes.containsKey(iv.valueNode())) {
