@@ -32,6 +32,8 @@ import static tornado.common.exceptions.TornadoInternalError.guarantee;
 
 public class OCLInstalledCode extends InstalledCode implements TornadoInstalledCode {
 
+    private final OCLKernelScheduler DEFAULT_SCHEDULER;
+
     //TODO replace with a system property/Tornado setting
     private final ByteBuffer buffer = ByteBuffer.allocate(8);
     private final byte[] code;
@@ -52,6 +54,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         this.code = code;
         this.deviceContext = deviceContext;
         this.scheduler = OCLScheduler.create(deviceContext);
+        this.DEFAULT_SCHEDULER = new OCLGpuScheduler(deviceContext);
         this.kernel = kernel;
         valid = kernel != null;
         buffer.order(deviceContext.getByteOrder());
@@ -77,32 +80,41 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         debug("\tstack    : buffer id=0x%x, address=0x%x relative=0x%x", stack.toBuffer(),
                 stack.toAbsoluteAddress(), stack.toRelativeAddress());
 
-        internalEvents[0] = stack.enqueueWrite();
-
         setKernelArgs(stack, meta);
+        stack.write();
 
-        if (meta != null && meta.isParallel()) {
-            internalEvents[0] = scheduler.submit(kernel, meta, internalEvents);
+        int task;
+        if (meta == null) {
+            task = deviceContext.enqueueTask(kernel, internalEvents);
+            deviceContext.flush();
+            deviceContext.finish();
         } else {
-            internalEvents[0] = deviceContext.enqueueTask(kernel, internalEvents);
-        }
 
-        if (meta != null && meta.shouldDumpProfiles()) {
+            if (meta != null && meta.isParallel()) {
+                if (meta.enableThreadCoarsener()) {
+                    task = DEFAULT_SCHEDULER.submit(kernel, meta, null);
+                } else {
+                    task = scheduler.submit(kernel, meta, null);
+                }
+            } else {
+                task = deviceContext.enqueueTask(kernel, null);
+            }
+
+            if (meta != null && meta.shouldDumpProfiles()) {
 //            meta.addProfile(task);
+            }
+
         }
+        //NOTE stack needs to be read so that the return value
+        //     is transfered back to the host
+        //     - As this is blocking then no clFinish() is needed
+        stack.read();
 
-        final int task = stack.enqueueRead(internalEvents);
+        Event event = deviceContext.resolveEvent(task);
 
-        Event event = null;
-        if (ENABLE_OOO_EXECUTION || VM_USE_DEPS) {
-            event = deviceContext.resolveEvent(task);
-            event.waitOn();
-        } else {
-            deviceContext.sync();
-        }
-
-        debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getId(),
-                kernel.getName(), deviceContext.getDevice().getName());
+        debug("kernel completed: id=0x%x, method = %s, device = %s",
+                kernel.getId(), kernel.getName(),
+                deviceContext.getDevice().getName());
         if (event != null) {
             debug("\tstatus   : %s", event.getStatus());
 
@@ -172,7 +184,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         index++;
 
         // constant
-        if (meta.getConstantSize() > 0) {
+        if (meta != null && meta.getConstantSize() > 0) {
             kernel.setArg(index, ByteBuffer.wrap(meta.getConstantData()));
         } else {
             kernel.setArgUnused(index);
@@ -180,7 +192,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         index++;
 
         // local
-        if (meta.getLocalSize() > 0) {
+        if (meta != null && meta.getLocalSize() > 0) {
             info("\tallocating %s of local memory", humanReadableByteCount(meta.getLocalSize(), true));
             kernel.setLocalRegion(index, meta.getLocalSize());
         } else {
@@ -202,9 +214,13 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                     stack.toAbsoluteAddress(), stack.toRelativeAddress());
         }
 
+        /*
+         * Only set the kernel arguments if they are either: - not set or - have
+         * changed
+         */
         final int[] waitEvents;
-        setKernelArgs(stack, meta);
         if (!stack.isOnDevice()) {
+            setKernelArgs(stack, meta);
             internalEvents[0] = stack.enqueueWrite(events);
             waitEvents = internalEvents;
         } else {
@@ -214,22 +230,30 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         guarantee(kernel != null, "kernel is null");
 
         int task;
-        if (meta != null && meta.isParallel()) {
-            task = scheduler.submit(kernel, meta, waitEvents);
-        } else {
+        if (meta == null) {
             task = deviceContext.enqueueTask(kernel, waitEvents);
-        }
+        } else {
+            if (meta.isParallel()) {
+                if (meta.enableThreadCoarsener()) {
+                    //FIXME hack to support both the old paralleliser and the
+                    //      new thread coarsener schemes
+                    task = DEFAULT_SCHEDULER.submit(kernel, meta, waitEvents);
+                } else {
+                    task = scheduler.submit(kernel, meta, waitEvents);
+                }
+            } else {
+                task = deviceContext.enqueueTask(kernel, waitEvents);
+            }
 
-        if (meta != null && meta.shouldDumpProfiles()) {
-            deviceContext.retainEvent(task);
-            meta.addProfile(task);
-        }
+            if (meta.shouldDumpProfiles()) {
+                deviceContext.retainEvent(task);
+                meta.addProfile(task);
+            }
 
-        if (meta != null && meta.enableExceptions()) {
-            internalEvents[0] = task;
-            task = stack.enqueueRead(internalEvents);
-//            deviceContext.resolveEvent(task).waitOn();
-//            stack.dump();
+            if (meta.enableExceptions()) {
+                internalEvents[0] = task;
+                task = stack.enqueueRead(internalEvents);
+            }
         }
 
         return task;
@@ -244,27 +268,42 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                     stack.toAbsoluteAddress(), stack.toRelativeAddress());
         }
 
-        setKernelArgs(stack, meta);
+        /*
+         * Only set the kernel arguments if they are either: - not set or - have
+         * changed
+         */
         if (!stack.isOnDevice()) {
+            setKernelArgs(stack, meta);
             stack.enqueueWrite();
         }
 
         guarantee(kernel != null, "kernel is null");
 
-        int task;
-        if (meta != null && meta.isParallel()) {
-            task = scheduler.submit(kernel, meta, null);
+        if (meta == null) {
+            deviceContext.enqueueTask(kernel, null);
         } else {
-            task = deviceContext.enqueueTask(kernel, null);
-        }
 
-        if (meta != null && meta.shouldDumpProfiles()) {
-            deviceContext.retainEvent(task);
-            meta.addProfile(task);
-        }
+            final int task;
+            if (meta.isParallel()) {
+                //FIXME hack to support both the old paralleliser and the
+                //      new thread coarsener schemes
+                if (meta.enableThreadCoarsener()) {
+                    task = DEFAULT_SCHEDULER.submit(kernel, meta, null);
+                } else {
+                    task = scheduler.submit(kernel, meta, null);
+                }
+            } else {
+                task = deviceContext.enqueueTask(kernel, null);
+            }
 
-        if (meta != null && meta.enableExceptions()) {
-            stack.enqueueRead(null);
+            if (meta.shouldDumpProfiles()) {
+                deviceContext.retainEvent(task);
+                meta.addProfile(task);
+            }
+
+            if (meta.enableExceptions()) {
+                stack.enqueueRead(null);
+            }
         }
     }
 
