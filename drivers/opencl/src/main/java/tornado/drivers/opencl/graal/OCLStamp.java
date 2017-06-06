@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,6 @@ import com.oracle.graal.compiler.common.type.Stamp;
 import jdk.vm.ci.meta.*;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 
-import static tornado.common.Tornado.debug;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
@@ -130,8 +129,6 @@ public class OCLStamp extends AbstractObjectStamp {
         if (stamp instanceof OCLStamp && ((OCLStamp) stamp).oclKind == oclKind) {
             return this;
         }
-
-        debug("stamp join: %s + %s", this, stamp);
         return this;
     }
 
