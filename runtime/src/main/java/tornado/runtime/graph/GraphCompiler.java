@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,8 +18,11 @@ package tornado.runtime.graph;
 import java.util.Arrays;
 import java.util.BitSet;
 import tornado.common.SchedulableTask;
-import tornado.runtime.graph.nodes.*;
 import tornado.common.TornadoDevice;
+import tornado.runtime.graph.nodes.*;
+
+import static tornado.runtime.graph.GraphAssembler.STREAM_OUT;
+import static tornado.runtime.graph.GraphAssembler.STREAM_OUT_BLOCKING;
 
 public class GraphCompiler {
 
@@ -42,7 +45,7 @@ public class GraphCompiler {
 
         final GraphCompilationResult result = new GraphCompilationResult();
 
-        final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof AsyncNode);
+        final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
 //        System.out.printf("found: [%s]\n", toString(asyncNodes));
         final BitSet[] deps = new BitSet[asyncNodes.cardinality()];
@@ -73,11 +76,23 @@ public class GraphCompiler {
         result.begin(1, tasks.cardinality(), numDepLists + 1);
 
         schedule(result, graph, context, nodeIds, deps, tasks);
+        peephole(result, numDepLists);
 
-        result.end(numDepLists);
+        result.end();
 
 //        result.dump();
         return result;
+    }
+
+    private static void peephole(GraphCompilationResult result, int numDepLists) {
+        final byte[] code = result.getCode();
+        final int codeSize = result.getCodeSize();
+
+        if (code[codeSize - 13] == STREAM_OUT) {
+            code[codeSize - 13] = STREAM_OUT_BLOCKING;
+        } else {
+            result.barrier(numDepLists);
+        }
     }
 
     private static void schedule(GraphCompilationResult result, Graph graph, ExecutionContext context,
@@ -99,42 +114,9 @@ public class GraphCompiler {
                 if (current instanceof DependentReadNode) {
                     continue;
                 }
-//                    final DependentReadNode dependentRead = (DependentReadNode) current;
-//                    final TaskNode taskNode = dependentRead.getDependent();
-//                    int id = -1;
-//                    for(int j=0;j<nodeIds.length;j++){
-//                        if(nodeIds[j] == taskNode.getId()){
-//                            id = j;
-//                            break;
-//                        }
-//                    }
-//                    TornadoInternalError.guarantee(id != -1, "unable to find task node id");
-//
-//                    if(depLists[id] == -1){
-//                        depLists[id] = index;
-//
-//                        index++;
-//                    }
-//
-//                       depLists[i] = depLists[id];
-//                    System.out.printf("%s -> event list %d\n",current,depLists[id]);
-//
-//                } else if(current instanceof TaskNode){
-//                    final SchedulableTask t = context.getTask(((TaskNode)current).getTaskIndex());
-//
-//                    if(depLists[i] == -1){
-//                        depLists[i] = index;
-//                        index++;
-//                    }
-//
-//                     System.out.printf("%s (%s) -> event list %d\n",current,t.getName(),depLists[i]);
-//                } else {
 
                 depLists[i] = index;
                 index++;
-
-//                    System.out.printf("%s -> event list %d\n",current,depLists[i]);
-//                }
             }
         }
 
@@ -150,7 +132,7 @@ public class GraphCompiler {
 
 //                    System.out.printf("trying: %d - %s\n",nodeIds[i],toString(outstandingDeps));
                     if (outstandingDeps.isEmpty()) {
-                        final AsyncNode asyncNode = (AsyncNode) graph.getNode(nodeIds[i]);
+                        final ContextOpNode asyncNode = (ContextOpNode) graph.getNode(nodeIds[i]);
 
                         result.emitAsyncNode(
                                 graph,
@@ -205,7 +187,7 @@ public class GraphCompiler {
 
         final AbstractNode node = graph.getNode(i);
         for (AbstractNode input : node.getInputs()) {
-            if (input instanceof AsyncNode) {
+            if (input instanceof ContextOpNode) {
                 if (input instanceof DependentReadNode) {
                     deps.set(((DependentReadNode) input).getDependent().getId());
                 } else {

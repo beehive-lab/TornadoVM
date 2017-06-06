@@ -18,7 +18,7 @@ package tornado.runtime.graph.nodes;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TaskNode extends AsyncNode {
+public class TaskNode extends ContextOpNode {
 
     private AbstractNode[] arguments;
     private int taskIndex;

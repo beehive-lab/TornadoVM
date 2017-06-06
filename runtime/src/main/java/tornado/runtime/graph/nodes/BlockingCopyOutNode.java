@@ -19,9 +19,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class CopyOutNode extends ContextOpNode {
+public class BlockingCopyOutNode extends ContextOpNode {
 
-    public CopyOutNode(ContextNode context) {
+    public BlockingCopyOutNode(ContextNode context) {
         super(context);
     }
 
@@ -37,7 +37,7 @@ public class CopyOutNode extends ContextOpNode {
 
     @Override
     public String toString() {
-        return String.format("[%d]: copy out object %d after task %d", id, value.getValue().getIndex(), value.getDependent().getId());
+        return String.format("[%d]: blocking copy out object %d after task %d", id, value.getValue().getIndex(), value.getDependent().getId());
     }
 
     @Override

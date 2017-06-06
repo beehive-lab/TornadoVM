@@ -80,7 +80,7 @@ public class GraphBuilder {
 
                 final AbstractNode arg = objectNodes[variableIndex];
 
-                if (!(arg instanceof AsyncNode)) {
+                if (!(arg instanceof ContextOpNode)) {
 
                     if (accesses[argIndex] == Access.WRITE) {
                         final AllocateNode allocateNode = new AllocateNode(context);

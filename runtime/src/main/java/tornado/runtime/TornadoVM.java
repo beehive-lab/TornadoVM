@@ -280,6 +280,33 @@ public class TornadoVM extends TornadoLogger {
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
+            } else if (op == STREAM_OUT_BLOCKING) {
+                final int objectIndex = buffer.getInt();
+                final int contextIndex = buffer.getInt();
+                final int eventList = buffer.getInt();
+                final int[] waitList = (useDependencies) ? events[eventList] : null;
+
+                if (isWarmup) {
+                    continue;
+                }
+
+                final TornadoDevice device = contexts.get(contextIndex);
+                final Object object = objects.get(objectIndex);
+                if (graphContext.meta().isDebug()) {
+                    debug("vm: STREAM_OUT_BLOCKING [0x%x] %s on %s [event list=%d]",
+                            object.hashCode(), object, device, eventList);
+                }
+                final DeviceObjectState objectState = resolveObjectState(
+                        objectIndex, contextIndex);
+
+                if (useDependencies) {
+                    lastEvent = device.streamOut(object, objectState, waitList);
+                } else {
+                    lastEvent = device.streamOut(object, objectState);
+                }
+                if (eventList != -1) {
+                    eventsIndicies[eventList] = 0;
+                }
             } else if (op == LAUNCH) {
                 final int gtid = buffer.getInt();
                 final int contextIndex = buffer.getInt();

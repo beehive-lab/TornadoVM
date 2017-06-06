@@ -29,6 +29,8 @@ public interface ObjectBuffer {
 
     public void read(Object ref);
 
+    public void read(Object ref, int[] events, boolean useDeps);
+
     public void write(Object ref);
 
     public int enqueueRead(Object ref, int[] events, boolean useDeps);

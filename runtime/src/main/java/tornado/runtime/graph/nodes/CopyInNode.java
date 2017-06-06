@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class CopyInNode extends AsyncNode {
+public class CopyInNode extends ContextOpNode {
 	
 	public CopyInNode(ContextNode context) {
 		super(context);

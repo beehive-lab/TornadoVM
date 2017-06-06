@@ -43,6 +43,11 @@ public interface TornadoDevice {
     public int streamOut(Object object, DeviceObjectState objectState,
             int[] list);
 
+    public void streamOutBlocking(Object object, DeviceObjectState objectState);
+
+    public void streamOutBlocking(Object object, DeviceObjectState objectState,
+            int[] list);
+
     public TornadoInstalledCode installCode(SchedulableTask task);
 
     public Event resolveEvent(int event);

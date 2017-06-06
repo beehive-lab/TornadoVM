@@ -349,6 +349,19 @@ public class OCLDeviceMapping implements TornadoDevice {
         return state.getBuffer().enqueueRead(object, list, list == null);
     }
 
+    @Override
+    public void streamOutBlocking(Object object, DeviceObjectState state) {
+        streamOutBlocking(object, state, null);
+    }
+
+    @Override
+    public void streamOutBlocking(Object object, DeviceObjectState state,
+            int[] events) {
+        guarantee(state.isValid(), "invalid variable");
+
+        state.getBuffer().read(object, events, events == null);
+    }
+
     public void sync(Object... objects) {
         for (Object obj : objects) {
             sync(obj);

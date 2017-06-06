@@ -91,6 +91,16 @@ public class JVMMapping implements TornadoDevice {
     }
 
     @Override
+    public void streamOutBlocking(Object object, DeviceObjectState objectState) {
+        unimplemented();
+    }
+
+    @Override
+    public void streamOutBlocking(Object object, DeviceObjectState objectState, int[] list) {
+        unimplemented();
+    }
+
+    @Override
     public String toString() {
         return "Host JVM";
     }

@@ -337,13 +337,18 @@ public class OCLObjectWrapper implements ObjectBuffer {
 
     @Override
     public void read(Object object) {
+        read(object, null, false);
+    }
+
+    @Override
+    public void read(Object object, int[] events, boolean useDeps) {
         if (vectorObject) {
             final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
-            fieldBuffer.read(object);
+            fieldBuffer.read(object, events, useDeps);
         } else {
             buffer.position(buffer.capacity());
             deviceContext.readBuffer(toBuffer(), bufferOffset, bytes,
-                    buffer.array(), null);
+                    buffer.array(), (useDeps) ? events : null);
             for (int i = 0; i < fields.length; i++) {
                 if (wrappedFields[i] != null) {
                     wrappedFields[i].read(object);

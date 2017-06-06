@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +15,7 @@
  */
 package tornado.runtime.graph;
 
-import tornado.runtime.graph.nodes.AbstractNode;
-import tornado.runtime.graph.nodes.AllocateNode;
-import tornado.runtime.graph.nodes.ConstantNode;
-import tornado.runtime.graph.nodes.CopyInNode;
-import tornado.runtime.graph.nodes.CopyOutNode;
-import tornado.runtime.graph.nodes.DependentReadNode;
-import tornado.runtime.graph.nodes.StreamInNode;
-import tornado.runtime.graph.nodes.TaskNode;
+import tornado.runtime.graph.nodes.*;
 
 public class GraphCompilationResult {
 
@@ -44,8 +37,11 @@ public class GraphCompilationResult {
         asm.begin();
     }
 
-    public void end(int dep) {
+    public void barrier(int dep) {
         asm.barrier(dep);
+    }
+
+    public void end() {
         asm.end();
     }
 
@@ -95,7 +91,6 @@ public class GraphCompilationResult {
     }
 
     public void emitAddDep(int dep) {
-//		System.out.printf("emit: add dep %d\n",dep);
         asm.addDependency(dep);
     }
 

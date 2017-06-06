@@ -195,10 +195,15 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public void read(final Object value) {
+        read(value, null, false);
+    }
+
+    @Override
+    public void read(final Object value, int[] events, boolean useDeps) {
         final T array = cast(value);
         if (validateArrayHeader(array)) {
             readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize,
-                    array, null);
+                    array, (useDeps) ? events : null);
         } else {
             shouldNotReachHere("Array header is invalid");
         }

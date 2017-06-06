@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class DependentReadNode extends AsyncNode {
+public class DependentReadNode extends ContextOpNode {
 	
 	public DependentReadNode(ContextNode context) {
 		super(context);

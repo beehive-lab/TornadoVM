@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class AllocateNode extends AsyncNode {
+public class AllocateNode extends ContextOpNode {
 	
 	public AllocateNode(ContextNode context) {
 		super(context);

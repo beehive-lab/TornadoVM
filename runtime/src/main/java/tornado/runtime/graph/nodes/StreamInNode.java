@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class StreamInNode extends AsyncNode {
+public class StreamInNode extends ContextOpNode {
 	
 	public StreamInNode(ContextNode context) {
 		super(context);

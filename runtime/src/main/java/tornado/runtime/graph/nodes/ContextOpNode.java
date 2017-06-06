@@ -16,10 +16,10 @@
 package tornado.runtime.graph.nodes;
 
 
-public abstract class AsyncNode extends AbstractNode {
+public abstract class ContextOpNode extends AbstractNode {
 	private final ContextNode context;
 	
-	public AsyncNode(ContextNode context){
+	public ContextOpNode(ContextNode context){
 		this.context = context;
 	}
 	
