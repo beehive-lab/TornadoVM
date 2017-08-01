@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,9 +40,6 @@ import tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 import tornado.drivers.opencl.graal.nodes.vector.VectorUtil;
 
 import static tornado.common.exceptions.TornadoInternalError.*;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLArithmeticTool extends ArithmeticLIRGenerator {
@@ -99,7 +96,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitAnd(Value x, Value y) {
-        trace("emitAnd: %s = %s & %s", x, y);
+        trace("emitAnd: %s & %s", x, y);
         return emitBinaryAssign(OCLBinaryOp.BITWISE_AND, LIRKind.combine(x, y), x, y);
     }
 
@@ -111,8 +108,15 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitFloatConvert(FloatConvert floatConvert, Value input) {
-        unimplemented();
+        trace("emitFloatConvert: (%s) %s", floatConvert, input);
+        switch (floatConvert) {
+            case I2D:
+                return emitUnaryAssign(OCLUnaryOp.CAST_TO_DOUBLE, LIRKind.value(OCLKind.DOUBLE), input);
+            default:
+                unimplemented("float convert %s", floatConvert);
+        }
         return null;
+
     }
 
     @Override
@@ -154,8 +158,8 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitRem(Value x, Value y, LIRFrameState frameState) {
-        unimplemented();
-        return null;
+        trace("emitRem: %s %% %s", x, y);
+        return emitBinaryAssign(OCLBinaryOp.MOD, LIRKind.combine(x, y), x, y);
     }
 
     @Override
@@ -220,8 +224,8 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitURem(Value x, Value y, LIRFrameState frameState) {
-        unimplemented();
-        return null;
+        trace("emitURem: %s %% %s", x, y);
+        return emitBinaryAssign(OCLBinaryOp.MOD, LIRKind.combine(x, y), x, y);
     }
 
     @Override
