@@ -19,31 +19,25 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class PrefetchNode extends FixedDeviceOpNode {
+public class CopyOutNode extends ContextOpNode {
 
-    public PrefetchNode(TaskNode task) {
-        super(task.getDevice());
-        this.task = task;
+    public CopyOutNode(ContextNode context) {
+        super(context);
     }
 
-    private TaskNode task;
-    private ParameterNode value;
+    private DependentReadNode value;
 
-    public void setValue(ParameterNode object) {
+    public void setValue(DependentReadNode object) {
         value = object;
     }
 
-    public ParameterNode getValue() {
+    public DependentReadNode getValue() {
         return value;
-    }
-
-    public TaskNode getTask() {
-        return task;
     }
 
     @Override
     public String toString() {
-        return String.format("[%d]: prefetch parameter %d before task %d", id, value.getIndex(), task.getId());
+        return String.format("[%d]: copy out object %d after task %d", id, value.getValue().getIndex(), value.getDependent().getId());
     }
 
     @Override

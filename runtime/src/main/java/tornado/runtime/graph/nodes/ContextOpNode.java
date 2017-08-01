@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,24 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tornado.common;
+package tornado.runtime.graph.nodes;
 
-public interface DeviceFrame {
 
-    public void reset();
-
-    public long getDeoptValue();
-
-    public long getReturnValue();
-
-    public int getArgCount();
-
-    public void push(Object arg);
-
-    public void push(Object arg, long address);
-
-    public boolean isOnDevice();
-
-    public void dump();
-
+public abstract class ContextOpNode extends AbstractNode {
+	private final ContextNode context;
+	
+	public ContextOpNode(ContextNode context){
+		this.context = context;
+	}
+	
+	public ContextNode getContext(){
+		return context;
+	}
 }

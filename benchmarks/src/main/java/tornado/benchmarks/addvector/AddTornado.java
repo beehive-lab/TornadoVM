@@ -24,8 +24,6 @@ import tornado.runtime.api.TaskSchedule;
 
 import static tornado.common.Tornado.getProperty;
 import static tornado.common.Tornado.getProperty;
-import static tornado.common.Tornado.getProperty;
-import static tornado.common.Tornado.getProperty;
 
 public class AddTornado extends BenchmarkDriver {
 
@@ -68,7 +66,7 @@ public class AddTornado extends BenchmarkDriver {
         b = null;
         c = null;
 
-        graph.getDefaultDevice().reset();
+        graph.getDevice().reset();
         super.tearDown();
     }
 

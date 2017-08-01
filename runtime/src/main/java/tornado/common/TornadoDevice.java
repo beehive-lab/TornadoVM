@@ -20,33 +20,33 @@ import tornado.api.enums.TornadoSchedulingStrategy;
 
 public interface TornadoDevice {
 
-    public enum CacheMode {
-        CACHABLE, NON_CACHEABLE;
-    }
-
-    public enum BlockingMode {
-        BLOCKING, NON_BLOCKING;
-    }
-
-    public enum SharingMode {
-        EXCLUSIVE, SHARED;
-    }
-
     public TornadoSchedulingStrategy getPreferedSchedule();
+
+    public boolean isDistibutedMemory();
 
     public void ensureLoaded();
 
-    public DeviceFrame createStack(int numArgs);
+    public CallStack createStack(int numArgs);
 
-    public int read(BlockingMode blocking, SharingMode sharing, CacheMode caching, Object object, int[] waitList);
+    public int ensureAllocated(Object object, DeviceObjectState state);
 
-    public int write(BlockingMode blocking, CacheMode caching, Object object, int[] waitList);
+    public int ensurePresent(Object object, DeviceObjectState objectState);
 
-    public long toAbsoluteDeviceAddress(Object object);
+    public int ensurePresent(Object object, DeviceObjectState objectState, int[] events);
 
-    public long toRelativeDeviceAddress(Object object);
+    public int streamIn(Object object, DeviceObjectState objectState);
 
-    public int flushCache();
+    public int streamIn(Object object, DeviceObjectState objectState, int[] events);
+
+    public int streamOut(Object object, DeviceObjectState objectState);
+
+    public int streamOut(Object object, DeviceObjectState objectState,
+            int[] list);
+
+    public void streamOutBlocking(Object object, DeviceObjectState objectState);
+
+    public void streamOutBlocking(Object object, DeviceObjectState objectState,
+            int[] list);
 
     public TornadoInstalledCode installCode(SchedulableTask task);
 
@@ -59,6 +59,10 @@ public interface TornadoDevice {
     public int enqueueBarrier();
 
     public int enqueueBarrier(int[] events);
+
+    public int enqueueMarker();
+
+    public int enqueueMarker(int[] events);
 
     public void sync();
 

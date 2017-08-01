@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,29 +15,26 @@
  */
 package tornado.runtime.graph.nodes;
 
-import tornado.common.TornadoDevice.BlockingMode;
 
-import static tornado.common.TornadoDevice.BlockingMode.NON_BLOCKING;
-
-public abstract class FixedDeviceOpNode extends FixedNode {
-
-    private final DeviceNode device;
-    private BlockingMode blocking;
-
-    public FixedDeviceOpNode(DeviceNode device) {
-        this.device = device;
-        this.blocking = NON_BLOCKING;
-    }
-
-    public DeviceNode getDevice() {
-        return device;
-    }
-
-    public BlockingMode getBlocking() {
-        return blocking;
-    }
-
-    public void setBlocking(BlockingMode value) {
-        blocking = value;
-    }
+public class ObjectNode extends AbstractNode {
+	private int index;
+	
+	public ObjectNode(int index){
+		this.index = index;
+	}
+	
+	public int getIndex(){
+		return index;
+	}
+	
+	@Override
+	public int compareTo(AbstractNode o) {
+		if(!(o instanceof ObjectNode)) return -1;
+		return Integer.compare(index,((ObjectNode)o).index);
+	}
+	
+	public String toString(){
+		return String.format("[%d]: object %d",id,index);
+	}
+	
 }

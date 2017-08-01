@@ -13,40 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tornado.runtime.api;
+package tornado.drivers.opencl.mm;
 
-import java.nio.ByteOrder;
-import tornado.common.DeviceFrame;
-import tornado.runtime.cache.PrimitiveSerialiser;
-import tornado.runtime.cache.TornadoByteBuffer;
-import tornado.runtime.cache.TornadoDataMover.AllocateOp;
-import tornado.runtime.cache.TornadoDataMover.AsyncOp;
-import tornado.runtime.cache.TornadoDataMover.BarrierOp;
-import tornado.runtime.cache.TornadoDataMover.SyncOp;
+import tornado.common.CallStack;
+import tornado.common.DeviceObjectState;
+import tornado.drivers.opencl.OCLDeviceContext;
 
 import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.common.RuntimeUtilities.isBoxedPrimitive;
-import static tornado.common.Tornado.DEBUG;
-import static tornado.common.Tornado.debug;
+import static tornado.common.Tornado.*;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
-public class TornadoCallStack extends TornadoByteBuffer implements DeviceFrame {
+public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
-    public final static int RETURN_VALUE_INDEX = 0;
-    public final static int DEOPT_VALUE_INDEX = 1;
-    public final static int RESERVED_SLOTS = 6;
+    private final static int RESERVED_SLOTS = 6;
 
     private final int numArgs;
 
     private boolean onDevice;
 
-    public TornadoCallStack(final int numArgs, final long bufferId, final long offset,
-            final long numBytes, final long baseAddress,
-            ByteOrder byteOrder, AllocateOp allocator,
-            BarrierOp barrier,
-            SyncOp<byte[]> write, AsyncOp<byte[]> enqueueWrite,
-            SyncOp<byte[]> read, AsyncOp<byte[]> enqueueRead) {
-        super(bufferId, offset, numBytes, baseAddress, byteOrder, allocator, barrier, write, enqueueWrite, read, enqueueRead);
+    public OCLCallStack(long offset, int numArgs, OCLDeviceContext device) {
+        super(device, offset, (numArgs + RESERVED_SLOTS) << 3);
         this.numArgs = numArgs;
 
         // clear the buffer and set the mark at the beginning of the arguments
@@ -55,7 +42,7 @@ public class TornadoCallStack extends TornadoByteBuffer implements DeviceFrame {
         buffer.putLong(0);
         buffer.putLong(0);
         buffer.putLong(0);
-        buffer.putLong(baseAddress + offset);
+        buffer.putLong(toAbsoluteAddress());
         buffer.putInt(0);
         buffer.putInt(numArgs);
         buffer.mark();
@@ -74,20 +61,20 @@ public class TornadoCallStack extends TornadoByteBuffer implements DeviceFrame {
     }
 
     @Override
-    public void syncWrite() {
-        super.syncWrite();
+    public void write() {
+        super.write();
         onDevice = true;
     }
 
     @Override
-    public int asyncWrite() {
-        return asyncWrite(null);
+    public int enqueueWrite() {
+        return enqueueWrite(null);
     }
 
     @Override
-    public int asyncWrite(int[] events) {
+    public int enqueueWrite(int[] events) {
         onDevice = true;
-        return super.asyncWrite(events);
+        return super.enqueueWrite(events);
     }
 
     public int getReservedSlots() {
@@ -110,13 +97,12 @@ public class TornadoCallStack extends TornadoByteBuffer implements DeviceFrame {
 
     @Override
     public long getDeoptValue() {
-        return buffer.getLong(8);
+        return buffer.getLong(0);
     }
 
     @Override
     public long getReturnValue() {
-        syncRead();
-        return buffer.getLong(0);
+        return buffer.getLong(8);
     }
 
     @Override
@@ -127,10 +113,10 @@ public class TornadoCallStack extends TornadoByteBuffer implements DeviceFrame {
     @Override
     public String toString() {
         return String
-                .format("Call Stack: num args = %d, size = %s @ 0x%x (0x%x)",
-                        numArgs,
+                .format("Call Stack: num args = %d, device = %s, size = %s @ 0x%x (0x%x)",
+                        numArgs, deviceContext.getDevice().getName(),
                         humanReadableByteCount(bytes, true),
-                        baseAddress, offset);
+                        toAbsoluteAddress(), toRelativeAddress());
     }
 
     @Override
@@ -160,7 +146,7 @@ public class TornadoCallStack extends TornadoByteBuffer implements DeviceFrame {
     }
 
     @Override
-    public void push(Object arg, long address) {
+    public void push(Object arg, DeviceObjectState state) {
 
         if (arg == null) {
             if (DEBUG) {
@@ -169,14 +155,58 @@ public class TornadoCallStack extends TornadoByteBuffer implements DeviceFrame {
             buffer.putLong(0);
         } else {
             if (DEBUG) {
-                debug("arg : [0x%x] type=%s, value=%s, address=0x%x", arg.hashCode(), arg.getClass()
-                        .getSimpleName(), arg, address);
+                debug("arg : [0x%x] type=%s, value=%s, address=0x%x (0x%x)", arg.hashCode(), arg.getClass()
+                        .getSimpleName(), arg, state.getAddress(), state.getOffset());
             }
-
-            buffer.putLong(address);
-
+            if (OPENCL_USE_RELATIVE_ADDRESSES) {
+                buffer.putLong(state.getOffset());
+            } else {
+                buffer.putLong(state.getAddress());
+            }
         }
 
+    }
+
+    @Override
+    public void clearProfiling() {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public long getInvokeCount() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public double getTimeTotal() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public double getTimeMean() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public double getTimeMin() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public double getTimeMax() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public double getTimeSD() {
+        // TODO Auto-generated method stub
+        return 0;
     }
 
 }

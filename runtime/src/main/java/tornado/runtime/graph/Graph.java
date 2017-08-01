@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,8 +19,6 @@ import java.util.BitSet;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import tornado.runtime.graph.nodes.AbstractNode;
-import tornado.runtime.graph.nodes.BeginNode;
-import tornado.runtime.graph.nodes.EndNode;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
@@ -32,30 +30,17 @@ public class Graph {
     private BitSet valid;
     private int nextNode;
 
-    private BeginNode beginNode;
-
     public Graph() {
         nodes = new AbstractNode[INITIAL_SIZE];
         valid = new BitSet(INITIAL_SIZE);
         nextNode = 0;
-
-        // insert control flow nodes
-        beginNode = new BeginNode();
-        add(beginNode);
-        EndNode endNode = new EndNode();
-        endNode.insertAfter(beginNode);
-        add(endNode);
-    }
-
-    public BeginNode getBeginNode() {
-        return beginNode;
     }
 
     public AbstractNode getNode(int index) {
         return nodes[index];
     }
 
-    public final void add(AbstractNode node) {
+    public void add(AbstractNode node) {
         if (nextNode >= nodes.length) {
             resize();
         }

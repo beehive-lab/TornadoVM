@@ -18,12 +18,11 @@ package tornado.runtime.graph;
 import java.util.*;
 import java.util.function.Consumer;
 import tornado.api.meta.ScheduleMetaData;
+import tornado.common.RuntimeUtilities;
 import tornado.common.SchedulableTask;
+import tornado.common.Tornado;
 import tornado.common.TornadoDevice;
-
-import static tornado.common.Tornado.info;
-
-import tornado.common.DeviceFrame;
+import tornado.runtime.api.LocalObjectState;
 
 public class ExecutionContext {
 
@@ -33,16 +32,9 @@ public class ExecutionContext {
 
     private final List<SchedulableTask> tasks;
     private final List<Object> constants;
-    private final List<Object> objects;
-    private final List<Object> parameters;
-    private DeviceFrame[] stacks;
-
     private final Map<Integer, Integer> objectMap;
-//    private final List<LocalObjectState> objectState;
-
-    private final Set<Object> streamIn;
-    private final Set<Object> streamOut;
-
+    private final List<Object> objects;
+    private final List<LocalObjectState> objectState;
     private final List<TornadoDevice> devices;
     private final int[] taskToDevice;
     private int nextTask;
@@ -51,30 +43,33 @@ public class ExecutionContext {
         name = id;
         meta = new ScheduleMetaData(name);
         tasks = new ArrayList<>();
-
-        objectMap = new HashMap<>();
-        parameters = new ArrayList<>();
         constants = new ArrayList<>();
+        objectMap = new HashMap<>();
         objects = new ArrayList<>();
-        streamIn = new HashSet<>();
-        streamOut = new HashSet<>();
+        objectState = new ArrayList<>();
         devices = new ArrayList<>();
         taskToDevice = new int[MAX_TASKS];
         Arrays.fill(taskToDevice, -1);
         nextTask = 0;
     }
 
-    public DeviceFrame[] getStacks() {
-        return stacks;
-    }
-
-    public void setStacks(DeviceFrame[] value) {
-        stacks = value;
-    }
-
-    public int insertVariable(int taskId, Object var) {
-        int index = parameters.size();
-        parameters.add(var);
+    public int insertVariable(Object var) {
+        int index = -1;
+        if (var.getClass().isPrimitive()
+                || RuntimeUtilities.isBoxedPrimitiveClass(var.getClass())) {
+            index = constants.indexOf(var);
+            if (index == -1) {
+                index = constants.size();
+                constants.add(var);
+            }
+        } else if (objectMap.containsKey(var.hashCode())) {
+            index = objectMap.get(var.hashCode());
+        } else {
+            index = objects.size();
+            objects.add(var);
+            objectMap.put(var.hashCode(), index);
+            objectState.add(index, new LocalObjectState(var));
+        }
         return index;
     }
 
@@ -97,10 +92,6 @@ public class ExecutionContext {
             tasks.add(task);
         }
         return index;
-    }
-
-    public List<Object> getParameters() {
-        return parameters;
     }
 
     public List<Object> getConstants() {
@@ -134,15 +125,21 @@ public class ExecutionContext {
     }
 
     public void mapAllTo(TornadoDevice mapping) {
+        devices.clear();
+        devices.add(0, mapping);
         apply(task -> task.mapTo(mapping));
         Arrays.fill(taskToDevice, 0);
     }
 
     private void assignTask(int index, SchedulableTask task) {
+        if (taskToDevice[index] != -1) {
+            return;
+        }
+
         String id = task.getId();
         TornadoDevice target = task.getDevice();
 
-        info("assigning %s to %s", id, target.getDeviceName());
+        Tornado.info("assigning %s to %s\n", id, target.getDeviceName());
 
         int deviceIndex = devices.indexOf(target);
         if (deviceIndex == -1) {
@@ -153,26 +150,13 @@ public class ExecutionContext {
     }
 
     public void assignToDevices() {
-        devices.clear();
         for (int i = 0; i < tasks.size(); i++) {
             assignTask(i, tasks.get(i));
         }
     }
 
-    public Set<Object> getStreamInSet() {
-        return streamIn;
-    }
-
-    public Set<Object> getStreamOutSet() {
-        return streamOut;
-    }
-
-    public void setStreamIn(Object object) {
-        streamIn.add(object);
-    }
-
-    public void setStreamOut(Object object) {
-        streamOut.add(object);
+    public LocalObjectState getObjectState(Object object) {
+        return objectState.get(insertVariable(object));
     }
 
     public void print() {
@@ -192,29 +176,15 @@ public class ExecutionContext {
             System.out.printf("[%d]: 0x%x %s\n", i, obj.hashCode(), obj.toString());
         }
 
-        System.out.println("stream in set:");
-        int index = 0;
-        Iterator objIt = streamIn.iterator();
-        while (objIt.hasNext()) {
-            final Object obj = objIt.next();
-            System.out.printf("[%d]: 0x%x %s\n", index, obj.hashCode(), obj.toString());
-            index++;
-        }
-
-        System.out.println("stream out set:");
-        index = 0;
-        objIt = streamOut.iterator();
-        while (objIt.hasNext()) {
-            final Object obj = objIt.next();
-            System.out.printf("[%d]: 0x%x %s\n", index, obj.hashCode(), obj.toString());
-            index++;
-        }
-
         System.out.println("task table:");
         for (int i = 0; i < tasks.size(); i++) {
             final SchedulableTask task = tasks.get(i);
             System.out.printf("[%d]: %s\n", i, task.getName());
         }
+    }
+
+    public List<LocalObjectState> getObjectStates() {
+        return objectState;
     }
 
     public List<SchedulableTask> getTasks() {
@@ -229,30 +199,9 @@ public class ExecutionContext {
         return meta.getDevice();
     }
 
-    public DeviceFrame getStack(String id) {
-        for (int i = 0; i < tasks.size(); i++) {
-            final String canonicalisedId;
-            if (id.startsWith(getId())) {
-                canonicalisedId = id;
-            } else {
-                canonicalisedId = getId() + "." + id;
-            }
-            if (tasks.get(i).getId().equalsIgnoreCase(canonicalisedId)) {
-                return stacks[i];
-            }
-        }
-        return null;
-    }
-
     public SchedulableTask getTask(String id) {
         for (int i = 0; i < tasks.size(); i++) {
-            final String canonicalisedId;
-            if (id.startsWith(getId())) {
-                canonicalisedId = id;
-            } else {
-                canonicalisedId = getId() + "." + id;
-            }
-            if (tasks.get(i).getId().equalsIgnoreCase(canonicalisedId)) {
+            if (tasks.get(i).getId().equalsIgnoreCase(id)) {
                 return tasks.get(i);
             }
         }
@@ -270,19 +219,4 @@ public class ExecutionContext {
     public ScheduleMetaData meta() {
         return meta;
     }
-
-    public boolean shouldRecompile() {
-        for (int i = 0; i < tasks.size(); i++) {
-            if (tasks.get(i).meta().shouldRecompile()) {
-                return true;
-            }
-        }
-        return meta.shouldRecompile();
-    }
-
-    public void setRecompiled() {
-        apply((task) -> task.meta().setRecompiled());
-        meta.setRecompiled();
-    }
-
 }

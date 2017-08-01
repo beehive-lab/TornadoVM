@@ -22,8 +22,6 @@ import tornado.runtime.api.TaskSchedule;
 import static tornado.benchmarks.LinearAlgebraArrays.ladd;
 import static tornado.common.Tornado.getProperty;
 import static tornado.common.Tornado.getProperty;
-import static tornado.common.Tornado.getProperty;
-import static tornado.common.Tornado.getProperty;
 
 public class BandwidthTornado extends BenchmarkDriver {
 
@@ -65,7 +63,7 @@ public class BandwidthTornado extends BenchmarkDriver {
         b = null;
         c = null;
 
-        graph.getDefaultDevice().reset();
+        graph.getDevice().reset();
         super.tearDown();
     }
 

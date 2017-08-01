@@ -57,9 +57,9 @@ import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import tornado.drivers.opencl.graal.compiler.*;
 import tornado.drivers.opencl.graal.lir.OCLKind;
+import tornado.drivers.opencl.mm.OCLByteBuffer;
 import tornado.graal.backend.TornadoBackend;
 import tornado.lang.CompilerInternals;
-import tornado.runtime.cache.TornadoByteBuffer;
 
 import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.common.Tornado.DEBUG_KERNEL_ARGS;
@@ -160,7 +160,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     public long readHeapBaseAddress(TaskMetaData meta) {
-        final TornadoByteBuffer bb = deviceContext.getMemoryManager().getSubBuffer(0, 16);
+        final OCLByteBuffer bb = deviceContext.getMemoryManager().getSubBuffer(0, 16);
         bb.putLong(0);
         bb.putLong(0);
 
@@ -319,11 +319,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             asm.beginScope();
             emitVariableDefs(crb, asm, lir);
             asm.eol();
-            asm.emitStmt("%s ulong *%s = (%s ulong *) &%s[%s]",
+            asm.emitStmt("%s ulong *slots = (%s ulong *) &%s[%s]",
                     OCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
-                    OCLAssemblerConstants.FRAME_REF_NAME,
                     OCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
-                    OCLAssemblerConstants.HEAP_REF_NAME, OCLAssemblerConstants.FRAME_BASE_NAME);
+                    OCLAssemblerConstants.HEAP_REF_NAME, OCLAssemblerConstants.STACK_REF_NAME);
             asm.eol();
             if (DEBUG_KERNEL_ARGS && (method != null && !method.getDeclaringClass().getUnqualifiedName().equalsIgnoreCase(this.getClass().getSimpleName()))) {
                 asm.emitLine("if(get_global_id(0) == 0 && get_global_id(1) ==0){");

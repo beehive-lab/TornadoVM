@@ -18,7 +18,7 @@ package tornado.examples.memory;
 import tornado.api.Parallel;
 import tornado.drivers.opencl.OpenCL;
 import tornado.drivers.opencl.mm.OCLMemoryManager;
-import tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.runtime.api.TaskSchedule;
 
 import static tornado.common.RuntimeUtilities.humanReadableByteCount;
@@ -27,7 +27,7 @@ public class DeviceMemoryTest {
 
     public static void main(final String[] args) {
 
-        final OCLTornadoDevice device = OpenCL.defaultDevice();
+        final OCLDeviceMapping device = OpenCL.defaultDevice();
         final OCLMemoryManager mm = device.getDeviceContext().getMemoryManager();
 
         final long heapSize = mm.getHeapSize() - 1024;

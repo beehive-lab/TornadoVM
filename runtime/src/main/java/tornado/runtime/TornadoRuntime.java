@@ -16,7 +16,9 @@
 package tornado.runtime;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.WeakHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
@@ -33,7 +35,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.util.EconomicMap;
 import tornado.common.TornadoDevice;
 import tornado.common.TornadoLogger;
-import tornado.runtime.cache.TornadoObjectCache;
+import tornado.runtime.api.GlobalObjectState;
 
 import static tornado.common.Tornado.SHOULD_LOAD_RMI;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
@@ -66,7 +68,7 @@ public class TornadoRuntime extends TornadoLogger {
         return runtime.vmConfig;
     }
 
-    private final TornadoObjectCache objectCache;
+    private final Map<Object, GlobalObjectState> objectMappings;
     private TornadoDriver[] drivers;
     private int driverCount;
     private final JVMCIBackend vmBackend;
@@ -76,7 +78,7 @@ public class TornadoRuntime extends TornadoLogger {
     private final OptionValues options;
 
     public TornadoRuntime() {
-        objectCache = new TornadoObjectCache();
+        objectMappings = new WeakHashMap<>();
 
         EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
         opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
@@ -99,6 +101,13 @@ public class TornadoRuntime extends TornadoLogger {
         vmConfig = new TornadoVMConfig(vmRuntime.getConfigStore());
 
         drivers = loadDrivers();
+    }
+
+    public void clearObjectState() {
+        for (GlobalObjectState gs : objectMappings.values()) {
+            gs.clear();
+        }
+        objectMappings.clear();
     }
 
     private TornadoDriver[] loadDrivers() {

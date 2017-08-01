@@ -20,7 +20,6 @@ import tornado.collections.math.TornadoMath;
 import tornado.runtime.api.TaskSchedule;
 
 import static tornado.common.Tornado.getProperty;
-import static tornado.runtime.cache.TornadoObjectCache.sync;
 
 public class BlackScholes {
 
@@ -62,7 +61,7 @@ public class BlackScholes {
             for (int i = 0; i < iterations; i++) {
                 tasks.execute();
             }
-            sync(bs.put, bs.call);
+            tasks.syncObjects(bs.put, bs.call);
         }
         final long end = System.nanoTime();
 

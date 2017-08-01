@@ -34,8 +34,6 @@ import tornado.graal.TornadoSuites;
 import tornado.graal.compiler.TornadoSketchTier;
 import tornado.graal.compiler.TornadoSuitesProvider;
 
-import static tornado.common.Tornado.ENABLE_EXCEPTIONS;
-
 public class OCLSuitesProvider implements TornadoSuitesProvider {
 
     private final PhaseSuite<HighTierContext> graphBuilderSuite;
@@ -63,12 +61,9 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
         OCLGraphBuilderPlugins.registerParameterPlugins(plugins);
 
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
-        config = config.withEagerResolving(true);
-        if (ENABLE_EXCEPTIONS) {
-            config = config.withBytecodeExceptionMode(BytecodeExceptionMode.CheckAll);
-        }
-
+        config.withEagerResolving(true);
 //        config.setUseProfiling(false);
+
         suite.appendPhase(new GraphBuilderPhase(config));
 
         return suite;

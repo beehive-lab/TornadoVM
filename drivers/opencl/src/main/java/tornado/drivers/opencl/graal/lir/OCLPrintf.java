@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,13 +34,13 @@ public class OCLPrintf extends OCLLIROp {
 
     @Override
     public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-        asm.emit("printf( \"tornado> %s", asm.formatConstant((ConstantValue) inputs[0]));
+        asm.emit("printf( \"tornado[%%3d,%%3d,%%3d]> %s", asm.formatConstant((ConstantValue) inputs[0]));
 
-        asm.emit("\"");
-//        for (int i = 0; i < 2; i++) {
-//            asm.emit("get_global_id(%d), ", i);
-//        }
-//        asm.emit("get_global_id(%d) ", 2);
+        asm.emit("\", ");
+        for (int i = 0; i < 2; i++) {
+            asm.emit("get_global_id(%d), ", i);
+        }
+        asm.emit("get_global_id(%d) ", 2);
         if (inputs.length > 1) {
             asm.emit(", ");
         }

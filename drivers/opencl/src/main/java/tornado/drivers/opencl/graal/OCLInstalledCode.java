@@ -20,16 +20,15 @@ import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import tornado.api.Event;
 import tornado.api.meta.TaskMetaData;
+import tornado.common.CallStack;
 import tornado.common.TornadoInstalledCode;
 import tornado.drivers.opencl.*;
-import tornado.runtime.api.TornadoCallStack;
-import tornado.runtime.cache.TornadoByteBuffer;
+import tornado.drivers.opencl.mm.OCLByteBuffer;
+import tornado.drivers.opencl.mm.OCLCallStack;
 
 import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.common.Tornado.*;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
-
-import tornado.common.DeviceFrame;
 
 public class OCLInstalledCode extends InstalledCode implements TornadoInstalledCode {
 
@@ -75,14 +74,14 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return valid;
     }
 
-    public void execute(final TornadoByteBuffer stack, final TaskMetaData meta) {
+    public void execute(final OCLByteBuffer stack, final TaskMetaData meta) {
         debug("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(),
                 kernel.getName(), deviceContext.getDevice().getName());
-        debug("\tstack    : buffer id=0x%x, address=0x%x relative=0x%x", stack.getBufferId(),
-                deviceContext.toAbsoluteAddress(stack), deviceContext.toRelativeAddress(stack));
+        debug("\tstack    : buffer id=0x%x, address=0x%x relative=0x%x", stack.toBuffer(),
+                stack.toAbsoluteAddress(), stack.toRelativeAddress());
 
         setKernelArgs(stack, meta);
-        stack.syncWrite();
+        stack.write();
 
         int task;
         if (meta == null) {
@@ -109,7 +108,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         //NOTE stack needs to be read so that the return value
         //     is transfered back to the host
         //     - As this is blocking then no clFinish() is needed
-        stack.syncRead();
+        stack.read();
 
         Event event = deviceContext.resolveEvent(task);
 
@@ -126,7 +125,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
     }
 
-    public void execute(final TornadoCallStack stack) {
+    public void execute(final OCLCallStack stack) {
         execute(stack, null);
         debug("\tdeopt    : 0x%x", stack.getDeoptValue());
         debug("\treturn   : 0x%x", stack.getReturnValue());
@@ -162,7 +161,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return code;
     }
 
-    private void setKernelArgs(final TornadoByteBuffer stack, TaskMetaData meta) {
+    private void setKernelArgs(final OCLByteBuffer stack, TaskMetaData meta) {
         int index = 0;
 
         if (deviceContext.needsBump()) {
@@ -174,13 +173,13 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         // heap
         buffer.clear();
-        buffer.putLong(stack.getBufferId());
+        buffer.putLong(stack.toBuffer());
         kernel.setArg(index, buffer);
         index++;
 
         // stack pointer
         buffer.clear();
-        buffer.putLong(deviceContext.toRelativeAddress(stack));
+        buffer.putLong(stack.toRelativeAddress());
         kernel.setArg(index, buffer);
         index++;
 
@@ -205,14 +204,14 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         kernel.setArgUnused(index);
     }
 
-    public int submit(final TornadoCallStack stack, final TaskMetaData meta,
+    public int submit(final OCLCallStack stack, final TaskMetaData meta,
             final int[] events) {
 
         if (DEBUG) {
             info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(),
                     kernel.getName(), deviceContext.getDevice().getName());
             info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(),
-                    deviceContext.toAbsoluteAddress(stack), deviceContext.toRelativeAddress(stack));
+                    stack.toAbsoluteAddress(), stack.toRelativeAddress());
         }
 
         /*
@@ -222,7 +221,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         final int[] waitEvents;
         if (!stack.isOnDevice()) {
             setKernelArgs(stack, meta);
-            internalEvents[0] = stack.asyncWrite(events);
+            internalEvents[0] = stack.enqueueWrite(events);
             waitEvents = internalEvents;
         } else {
             waitEvents = events;
@@ -253,20 +252,20 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
             if (meta.enableExceptions()) {
                 internalEvents[0] = task;
-                task = stack.asyncRead(internalEvents);
+                task = stack.enqueueRead(internalEvents);
             }
         }
 
         return task;
     }
 
-    public void submit(final TornadoCallStack stack, final TaskMetaData meta) {
+    public void submit(final OCLCallStack stack, final TaskMetaData meta) {
 
         if (DEBUG) {
             info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(),
                     kernel.getName(), deviceContext.getDevice().getName());
             info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(),
-                    deviceContext.toAbsoluteAddress(stack), deviceContext.toRelativeAddress(stack));
+                    stack.toAbsoluteAddress(), stack.toRelativeAddress());
         }
 
         /*
@@ -275,7 +274,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
          */
         if (!stack.isOnDevice()) {
             setKernelArgs(stack, meta);
-            stack.asyncWrite();
+            stack.enqueueWrite();
         }
 
         guarantee(kernel != null, "kernel is null");
@@ -303,19 +302,19 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             }
 
             if (meta.enableExceptions()) {
-                stack.asyncRead(null);
+                stack.enqueueRead(null);
             }
         }
     }
 
     @Override
-    public int launchWithDeps(DeviceFrame stack, TaskMetaData meta, int[] waitEvents) {
-        return submit((TornadoCallStack) stack, meta, waitEvents);
+    public int launchWithDeps(CallStack stack, TaskMetaData meta, int[] waitEvents) {
+        return submit((OCLCallStack) stack, meta, waitEvents);
     }
 
     @Override
-    public int launchWithoutDeps(DeviceFrame stack, TaskMetaData meta) {
-        submit((TornadoCallStack) stack, meta);
+    public int launchWithoutDeps(CallStack stack, TaskMetaData meta) {
+        submit((OCLCallStack) stack, meta);
         return -1;
     }
 

@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,6 @@
  */
 package tornado.common;
 
-import tornado.runtime.cache.TornadoByteBuffer;
-
 public interface TornadoMemoryProvider {
 
     public long getCallStackSize();
@@ -32,15 +30,5 @@ public interface TornadoMemoryProvider {
     public long getHeapAllocated();
 
     public boolean isInitialised();
-
-    public void reset();
-
-    public long toAbsoluteAddress(TornadoByteBuffer buffer);
-
-    public long toRelativeAddress(TornadoByteBuffer buffer);
-
-    public long toAbsoluteAddress(CachedObject object);
-
-    public long toRelativeAddress(CachedObject object);
 
 }

@@ -19,8 +19,8 @@ import tornado.api.meta.TaskMetaData;
 
 public interface TornadoInstalledCode {
 
-    public int launchWithDeps(DeviceFrame stack, TaskMetaData meta, int[] waitEvents);
+    public int launchWithDeps(CallStack stack, TaskMetaData meta, int[] waitEvents);
 
-    public int launchWithoutDeps(DeviceFrame stack, TaskMetaData meta);
+    public int launchWithoutDeps(CallStack stack, TaskMetaData meta);
 
 }

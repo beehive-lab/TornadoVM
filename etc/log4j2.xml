@@ -15,6 +15,9 @@
 		<Logger name="tornado" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
     		</Logger>
+		<Logger name="tornado.runtime.ObjectReference" level="warn" additivity="false">
+			<AppenderRef ref="Console"/>
+    		</Logger>
 		<Logger name="tornado.graal.compiler.TornadoCodeGenerator" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
     		</Logger>
@@ -22,15 +25,6 @@
 			<AppenderRef ref="Console"/>
     		</Logger>
 		<Logger name="tornado.runtime.TornadoVM" level="warn" additivity="false">
-			<AppenderRef ref="Console"/>
-    		</Logger>
-		<Logger name="tornado.runtime.cache.LocalObjectCache" level="warn" additivity="false">
-			<AppenderRef ref="Console"/>
-    		</Logger>
-		<Logger name="tornado.drivers.opencl.mm.OCLDataMover" level="warn" additivity="false">
-			<AppenderRef ref="Console"/>
-    		</Logger>
-		<Logger name="tornado.drivers.opencl.mm.OCLObjectSerialiser" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
     		</Logger>
 	</Loggers>

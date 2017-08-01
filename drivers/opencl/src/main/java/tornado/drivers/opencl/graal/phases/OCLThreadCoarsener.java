@@ -41,7 +41,7 @@ import tornado.api.meta.Coarseness;
 import tornado.api.meta.TaskMetaData;
 import tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
-import tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.graal.nodes.ParallelOffsetNode;
 import tornado.graal.nodes.ParallelRangeNode;
 import tornado.graal.nodes.ParallelStrideNode;
@@ -225,7 +225,7 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
 
         Coarseness coarseness = meta.getCoarseness();
 
-        OCLTornadoDevice mapping = (OCLTornadoDevice) context.getDeviceMapping();
+        OCLDeviceMapping mapping = (OCLDeviceMapping) context.getDeviceMapping();
         if (meta.shouldCoarsenWithCpuConfig()) {
             int[] config = new int[3];
 

@@ -29,7 +29,7 @@ import tornado.api.enums.TornadoSchedulingStrategy;
 import tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
-import tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import tornado.drivers.opencl.runtime.OCLDeviceMapping;
 import tornado.graal.nodes.AbstractParallelNode;
 import tornado.graal.nodes.ParallelOffsetNode;
 import tornado.graal.nodes.ParallelRangeNode;
@@ -152,7 +152,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
             return;
         }
 
-        OCLTornadoDevice device = (OCLTornadoDevice) context.getDeviceMapping();
+        OCLDeviceMapping device = (OCLDeviceMapping) context.getDeviceMapping();
         final TornadoSchedulingStrategy strategy = device.getPreferedSchedule();
         long[] maxWorkItemSizes = device.getDevice().getMaxWorkItemSizes();
 

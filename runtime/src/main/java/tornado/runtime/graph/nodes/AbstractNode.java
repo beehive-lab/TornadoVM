@@ -18,7 +18,6 @@ package tornado.runtime.graph.nodes;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import tornado.runtime.graph.GraphCompilationResult;
 
 public abstract class AbstractNode implements Comparable<AbstractNode> {
 
@@ -74,9 +73,5 @@ public abstract class AbstractNode implements Comparable<AbstractNode> {
     @Override
     public String toString() {
         return String.format("[%d]: %s", id, this.getClass().getSimpleName());
-    }
-
-    public void emit(GraphCompilationResult compRes) {
-
     }
 }

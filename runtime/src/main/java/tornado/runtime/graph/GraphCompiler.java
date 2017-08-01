@@ -15,122 +15,148 @@
  */
 package tornado.runtime.graph;
 
+import java.util.Arrays;
 import java.util.BitSet;
+import tornado.common.SchedulableTask;
+import tornado.common.TornadoDevice;
 import tornado.runtime.graph.nodes.*;
+
+import static tornado.runtime.graph.GraphAssembler.STREAM_OUT;
+import static tornado.runtime.graph.GraphAssembler.STREAM_OUT_BLOCKING;
 
 public class GraphCompiler {
 
     public static GraphCompilationResult compile(Graph graph, ExecutionContext context) {
 
-        final BitSet deviceContexts = graph.filter(DeviceNode.class);
-//        if (deviceContexts.cardinality() == 1) {
-        return compileSingleContext(graph, context);
-//        } else {
+        final BitSet deviceContexts = graph.filter(ContextNode.class);
+        if (deviceContexts.cardinality() == 1) {
+            final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
+            return compileSingleContext(graph, context, context.getDevice(contextNode.getIndex()));
+        }
 
-//        }
-//        return null;
+        return null;
     }
 
     /*
      * Simplest case where all tasks are executed on the same device
      */
-    private static GraphCompilationResult compileSingleContext(Graph graph, ExecutionContext context) {
+    private static GraphCompilationResult compileSingleContext(Graph graph, ExecutionContext context,
+            TornadoDevice device) {
 
         final GraphCompilationResult result = new GraphCompilationResult();
 
-        final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof FixedDeviceOpNode || n instanceof FloatingDeviceOpNode);
-        final BitSet taskNodes = graph.filter(TaskNode.class);
-        final BitSet deviceNodes = graph.filter(DeviceNode.class);
-        final BitSet parameterNodes = graph.filter(ParameterNode.class);
+        final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
 //        System.out.printf("found: [%s]\n", toString(asyncNodes));
-//        final BitSet[] deps = new BitSet[asyncNodes.cardinality()];
-//        final BitSet tasks = new BitSet(asyncNodes.cardinality());
-//        final int[] nodeIds = new int[asyncNodes.cardinality()];
-//        int index = 0;
-//        int numDepLists = 0;
-//        for (int i = asyncNodes.nextSetBit(0); i != -1 && i < asyncNodes.length(); i = asyncNodes.nextSetBit(i + 1)) {
-//            deps[index] = calculateDeps(graph, context, i);
-//            nodeIds[index] = i;
-//
-//            if (graph.getNode(i) instanceof TaskNode) {
-//                tasks.set(index);
-//                final TaskNode taskNode = (TaskNode) graph.getNode(i);
-//                final SchedulableTask task = context.getTask(taskNode.getTaskIndex());
-////                System.out.printf("node: %s %s\n", task.getName(), taskNode);
-//            } else {
-////                System.out.printf("node: %s\n", graph.getNode(i));
-//            }
-//
-//            if (!deps[index].isEmpty()) {
-//                numDepLists++;
-//            }
-//            index++;
-//        }
+        final BitSet[] deps = new BitSet[asyncNodes.cardinality()];
+        final BitSet tasks = new BitSet(asyncNodes.cardinality());
+        final int[] nodeIds = new int[asyncNodes.cardinality()];
+        int index = 0;
+        int numDepLists = 0;
+        for (int i = asyncNodes.nextSetBit(0); i != -1 && i < asyncNodes.length(); i = asyncNodes.nextSetBit(i + 1)) {
+            deps[index] = calculateDeps(graph, context, i);
+            nodeIds[index] = i;
+
+            if (graph.getNode(i) instanceof TaskNode) {
+                tasks.set(index);
+                final TaskNode taskNode = (TaskNode) graph.getNode(i);
+                final SchedulableTask task = context.getTask(taskNode.getTaskIndex());
+//                System.out.printf("node: %s %s\n", task.getName(), taskNode);
+            } else {
+//                System.out.printf("node: %s\n", graph.getNode(i));
+            }
+
+            if (!deps[index].isEmpty()) {
+                numDepLists++;
+            }
+            index++;
+        }
+
 //        printMatrix(graph, nodeIds, deps, tasks);
-        result.setup(deviceNodes.cardinality(), taskNodes.cardinality(), asyncNodes.cardinality() + 1);
+        result.begin(1, tasks.cardinality(), numDepLists + 1);
 
-        schedule(result, graph, context);
+        schedule(result, graph, context, nodeIds, deps, tasks);
+        peephole(result, numDepLists);
 
-        emitPostfetches(result, graph, context, parameterNodes);
-        //        peephole(result, numDepLists);
         result.end();
 
 //        result.dump();
         return result;
     }
 
-    private static void emitPostfetches(GraphCompilationResult result, Graph graph, ExecutionContext context, BitSet parameterNodes) {
-        for (int i = parameterNodes.nextSetBit(0); i >= 0; i = parameterNodes.nextSetBit(i + 1)) {
-            final ParameterNode param = (ParameterNode) graph.getNode(i);
-            result.postfetch(param.getIndex());
+    private static void peephole(GraphCompilationResult result, int numDepLists) {
+        final byte[] code = result.getCode();
+        final int codeSize = result.getCodeSize();
+
+        if (code[codeSize - 13] == STREAM_OUT) {
+            code[codeSize - 13] = STREAM_OUT_BLOCKING;
+        } else {
+            result.barrier(numDepLists);
         }
     }
 
-    private static void peephole(GraphCompilationResult result, int numDepLists) {
-//        final byte[] code = result.getCode();
-//        final int codeSize = result.getCodeSize();
-//
-//        if (code[codeSize - 13] == WRITE_HOST) {
-//            code[codeSize - 13] = WRITE_HOST_BLOCKING;
-//        } else {
-//            result.barrier(numDepLists);
-//        }
-    }
+    private static void schedule(GraphCompilationResult result, Graph graph, ExecutionContext context,
+            int[] nodeIds, BitSet[] deps, BitSet tasks) {
 
-    private static void schedule(GraphCompilationResult result, Graph graph, ExecutionContext context) {
-        final BitSet valid = graph.getValid();
-        final BitSet toSchedule = new BitSet(valid.size());
-        toSchedule.or(valid);
+        final BitSet scheduled = new BitSet(deps.length);
+        scheduled.clear();
+        final BitSet nodes = new BitSet(graph.getValid().length());
 
-        // prune psuedo-nodes (parameters)
-        final BitSet parameterNodes = graph.filter(ParameterNode.class);
-        toSchedule.andNot(parameterNodes);
+//        System.out.println("----- event lists ------");
+        final int[] depLists = new int[deps.length];
+        Arrays.fill(depLists, -1);
 
-        FixedNode currentNode = graph.getBeginNode();
-        while (!toSchedule.isEmpty()) {
-            emitNode(result, toSchedule, currentNode);
+        int index = 0;
+        for (int i = 0; i < deps.length; i++) {
+            if (!deps[i].isEmpty()) {
 
-            if (currentNode instanceof FixedDeviceOpNode) {
-                final DeviceNode device = ((FixedDeviceOpNode) currentNode).getDevice();
-                if (toSchedule.get(device.getId())) {
-                    toSchedule.clear(device.getId());
+                final AbstractNode current = graph.getNode(nodeIds[i]);
+                if (current instanceof DependentReadNode) {
+                    continue;
+                }
+
+                depLists[i] = index;
+                index++;
+            }
+        }
+
+        while (scheduled.cardinality() < deps.length) {
+//            System.out.printf("nodes: %s\n", toString(nodes));
+//            System.out.printf("scheduled: %s\n", toString(scheduled));
+            for (int i = 0; i < deps.length; i++) {
+                if (!scheduled.get(i)) {
+
+                    final BitSet outstandingDeps = new BitSet(nodes.length());
+                    outstandingDeps.or(deps[i]);
+                    outstandingDeps.andNot(nodes);
+
+//                    System.out.printf("trying: %d - %s\n",nodeIds[i],toString(outstandingDeps));
+                    if (outstandingDeps.isEmpty()) {
+                        final ContextOpNode asyncNode = (ContextOpNode) graph.getNode(nodeIds[i]);
+
+                        result.emitAsyncNode(
+                                graph,
+                                context,
+                                asyncNode,
+                                asyncNode.getContext().getIndex(),
+                                (deps[i].isEmpty()) ? -1 : depLists[i]);
+
+                        for (int j = 0; j < deps.length; j++) {
+                            if (j == i) {
+                                continue;
+                            }
+//						System.out.printf("checking: %d - %s\n",nodeIds[j],toString(deps[j]));
+                            if (deps[j].get(nodeIds[i]) && depLists[j] != -1) {
+                                result.emitAddDep(depLists[j]);
+                            }
+                        }
+                        scheduled.set(i);
+                        nodes.set(nodeIds[i]);
+                    }
                 }
             }
-
-            currentNode = currentNode.getNext();
         }
 
-    }
-
-    private static void emitNode(GraphCompilationResult result, BitSet toSchedule, AbstractNode node) {
-        for (AbstractNode input : node.getInputs()) {
-            if (toSchedule.get(input.getId())) {
-                emitNode(result, toSchedule, input);
-            }
-        }
-        node.emit(result);
-        toSchedule.clear(node.getId());
     }
 
     private static String toString(BitSet set) {
@@ -140,7 +166,7 @@ public class GraphCompiler {
 
         StringBuilder sb = new StringBuilder();
         for (int i = set.nextSetBit(0); i != -1 && i < set.length(); i = set.nextSetBit(i + 1)) {
-            sb.append("").append(i).append(" ");
+            sb.append("" + i + " ");
         }
         return sb.toString();
     }
@@ -161,7 +187,7 @@ public class GraphCompiler {
 
         final AbstractNode node = graph.getNode(i);
         for (AbstractNode input : node.getInputs()) {
-            if (input instanceof FixedDeviceOpNode) {
+            if (input instanceof ContextOpNode) {
                 if (input instanceof DependentReadNode) {
                     deps.set(((DependentReadNode) input).getDependent().getId());
                 } else {

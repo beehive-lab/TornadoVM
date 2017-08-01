@@ -27,10 +27,6 @@ import static tornado.collections.types.FloatOps.findMaxULP;
 import static tornado.common.Tornado.getProperty;
 import static tornado.collections.types.FloatOps.findMaxULP;
 import static tornado.common.Tornado.getProperty;
-import static tornado.collections.types.FloatOps.findMaxULP;
-import static tornado.common.Tornado.getProperty;
-import static tornado.collections.types.FloatOps.findMaxULP;
-import static tornado.common.Tornado.getProperty;
 
 public class RotateTornado extends BenchmarkDriver {
 
@@ -75,7 +71,7 @@ public class RotateTornado extends BenchmarkDriver {
         output = null;
         m = null;
 
-        graph.getDefaultDevice().reset();
+        graph.getDevice().reset();
         super.tearDown();
     }
 

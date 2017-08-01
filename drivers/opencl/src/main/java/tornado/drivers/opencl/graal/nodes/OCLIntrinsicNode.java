@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +30,8 @@ import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.OCLStampFactory;
+import tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
+import tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import tornado.graal.nodes.Floatable;
@@ -102,20 +104,20 @@ public class OCLIntrinsicNode {
         }
 
         @Override
-        public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool gen) {
-//            OCLBuiltinTool gen = ((OCLArithmeticTool) builder).getGen().getOCLBuiltinTool();
+        public void generate(NodeLIRBuilderTool builder, ArithmeticLIRGeneratorTool arithmeticTool) {
+            OCLBuiltinTool gen = ((OCLArithmeticTool) builder).getGen().getOCLBuiltinTool();
             final Value x = builder.operand(getX());
             final Value y = builder.operand(getY());
             Value result = null;
             switch (operation) {
                 case CROSS:
-//                    result = gen.genGeometricCross(x, y);
-//                    break;
+                    result = gen.genGeometricCross(x, y);
+                    break;
                 case DISTANCE:
-//                    break;
+                    break;
                 case DOT:
-//                    result = gen.genGeometricDot(x, y);
-//                    break;
+                    result = gen.genGeometricDot(x, y);
+                    break;
                 case FAST_DISTANCE:
 
                 case FAST_LENGTH:

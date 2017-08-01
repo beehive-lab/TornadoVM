@@ -19,9 +19,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class BlockingCopyOutNode extends FixedDeviceOpNode {
+public class BlockingCopyOutNode extends ContextOpNode {
 
-    public BlockingCopyOutNode(DeviceNode context) {
+    public BlockingCopyOutNode(ContextNode context) {
         super(context);
     }
 

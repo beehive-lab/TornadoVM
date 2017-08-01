@@ -19,19 +19,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class StreamInNode extends FixedDeviceOpNode {
+public class StreamInNode extends ContextOpNode {
 	
-	public StreamInNode(DeviceNode context) {
+	public StreamInNode(ContextNode context) {
 		super(context);
 	}
 
-	private ParameterNode value;
+	private ObjectNode value;
 	
-	public void setValue(ParameterNode object){
+	public void setValue(ObjectNode object){
 		value = object;
 	}
 	
-	public ParameterNode getValue(){
+	public ObjectNode getValue(){
 		return value;
 	}
 	

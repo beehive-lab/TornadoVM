@@ -60,7 +60,7 @@ public class OCLCanonicalizer extends CustomCanonicalizer {
     public Node canonicalize(Node node) {
 
         if (node instanceof VectorElementOpNode) {
-//            return canonicalizeVectorElementOp((VectorElementOpNode) node);
+            return canonicalizeVectorElementOp((VectorElementOpNode) node);
         } else if (node instanceof WriteNode) {
 //			final WriteNode writeNode = (WriteNode) node;
 //			if(writeNode.object() instanceof AtomicAccessNode){
@@ -118,14 +118,20 @@ public class OCLCanonicalizer extends CustomCanonicalizer {
     @Override
     public void simplify(Node node, SimplifierTool tool) {
 //		sSystem.out.printf("simplify: node=%s\n",node);
-//        if (node instanceof VectorValueNode) {
+        if (node instanceof VectorValueNode) {
 //			System.out.printf("simplify: node=%s\n",node);
 //            simplfyVectorValueNode((VectorValueNode) node, tool);
-//        }
-
-//        if (node instanceof LoadIndexedVectorNode) {
-//            simplifyLoadIndexedVectorNode((LoadIndexedVectorNode) node);
-//        }
+        } else if (node instanceof ValuePhiNode) {
+//            final ValuePhiNode phi = (ValuePhiNode) node;
+//            if (phi.valueAt(0) instanceof VectorValueNode && phi.singleValue().equals(ValuePhiNode.MULTIPLE_VALUES) && phi.usages().count() > 1) {
+//                //System.out.printf("simplify: phi=%s\n",phi.toString());
+//                final VectorValueNode firstValue = (VectorValueNode) phi.valueAt(0);
+////                unimplemented();
+//                final VectorValueNode newVector = phi.graph().addOrUnique(new VectorValueNode(firstValue.getOCLKind(), phi));
+//                phi.replaceAtMatchingUsages(newVector, usage -> !usage.equals(newVector));
+//                //System.out.printf("simplify: inserted=%s\n",newVector.toString());
+//            }
+        }
     }
 
     private void simplfyVectorValueNode(VectorValueNode node, SimplifierTool tool) {
@@ -149,29 +155,6 @@ public class OCLCanonicalizer extends CustomCanonicalizer {
             }
         }
 
-    }
-
-    private void simplifyLoadIndexedVectorNode(LoadIndexedVectorNode load) {
-        int usageCount = load.getUsageCount();
-        if (usageCount > 1) {
-            List<Node> usages = load.usages().snapshot();
-            Node firstUsage = usages.get(0);
-            if (firstUsage instanceof VectorLoadElementNode) {
-                final VectorLoadElementNode loadElement = (VectorLoadElementNode) firstUsage;
-
-                if (loadElement.usages().first() instanceof VectorValueNode) {
-                    VectorValueNode vectorValue = (VectorValueNode) loadElement.usages().first();
-                    if (usageCount == vectorValue.getOCLKind().getVectorLength()) {
-                        usages.forEach((Node usage) -> {
-                            final VectorLoadElementNode loadEl = (VectorLoadElementNode) usage;
-                            loadEl.safeDelete();
-                        });
-                        vectorValue.set(load);
-                    }
-                }
-
-            }
-        }
     }
 
     private void simplifyVectorOp(VectorValueNode node, VectorOp op, List<Node> ops) {

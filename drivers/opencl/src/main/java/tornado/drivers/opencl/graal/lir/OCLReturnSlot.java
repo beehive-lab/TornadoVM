@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,8 +22,7 @@ import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryOp;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
-import static tornado.runtime.api.TornadoCallStack.RETURN_VALUE_INDEX;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
 
 @Opcode("RETURN VALUE")
 public class OCLReturnSlot extends AllocatableValue {
@@ -37,7 +36,7 @@ public class OCLReturnSlot extends AllocatableValue {
 
     public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
         OCLKind type = ((OCLKind) getPlatformKind());
-        asm.emit("%s[%d]", FRAME_REF_NAME, RETURN_VALUE_INDEX);
+        asm.emit("*((__global %s *) %s)", type, HEAP_REF_NAME);
     }
 
     @Override

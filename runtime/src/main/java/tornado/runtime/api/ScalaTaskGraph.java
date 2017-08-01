@@ -15,7 +15,7 @@
  */
 package tornado.runtime.api;
 
-public class ScalaTaskGraph extends TaskGraph {
+public class ScalaTaskGraph extends AbstractTaskGraph {
 
     public ScalaTaskGraph(String name) {
         super(name);

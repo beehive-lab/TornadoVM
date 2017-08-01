@@ -26,12 +26,6 @@ import static tornado.common.Tornado.getProperty;
 import static tornado.benchmarks.BenchmarkUtils.createFilter;
 import static tornado.benchmarks.BenchmarkUtils.createImage;
 import static tornado.common.Tornado.getProperty;
-import static tornado.benchmarks.BenchmarkUtils.createFilter;
-import static tornado.benchmarks.BenchmarkUtils.createImage;
-import static tornado.common.Tornado.getProperty;
-import static tornado.benchmarks.BenchmarkUtils.createFilter;
-import static tornado.benchmarks.BenchmarkUtils.createImage;
-import static tornado.common.Tornado.getProperty;
 
 public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
@@ -76,7 +70,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         output = null;
         filter = null;
 
-        graph.getDefaultDevice().reset();
+        graph.getDevice().reset();
         super.tearDown();
     }
 

@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,29 +15,37 @@
  */
 package tornado.runtime.graph.nodes;
 
-public class ParameterNode extends AbstractNode {
+public class ContextNode extends AbstractNode {
 
-    private int index;
+    private final int deviceIndex;
 
-    public ParameterNode(int index) {
-        this.index = index;
-    }
-
-    public int getIndex() {
-        return index;
+    public ContextNode(int index) {
+        deviceIndex = index;
     }
 
     @Override
     public int compareTo(AbstractNode o) {
-        if (!(o instanceof ParameterNode)) {
+        if (!(o instanceof ContextNode)) {
             return -1;
         }
-        return Integer.compare(index, ((ParameterNode) o).index);
+
+        return Integer.compare(deviceIndex, ((ContextNode) o).deviceIndex);
+    }
+
+    public int getIndex() {
+        return deviceIndex;
     }
 
     @Override
     public String toString() {
-        return String.format("[%d]: object %d", id, index);
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(String.format("[%d]: context device=%d, [ ", id, deviceIndex));
+        for (AbstractNode use : uses) {
+            sb.append("").append(use.getId()).append(" ");
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
 }

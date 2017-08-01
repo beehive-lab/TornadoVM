@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,17 +17,13 @@ package tornado.runtime.graph.nodes;
 
 import java.util.ArrayList;
 import java.util.List;
-import tornado.runtime.graph.GraphAssembler;
-import tornado.runtime.graph.GraphCompilationResult;
 
-import static tornado.runtime.graph.GraphAssembler.encodeBlockingMode;
-
-public class TaskNode extends FixedDeviceOpNode {
+public class TaskNode extends ContextOpNode {
 
     private AbstractNode[] arguments;
     private int taskIndex;
 
-    public TaskNode(DeviceNode context, int index, AbstractNode[] arguments) {
+    public TaskNode(ContextNode context, int index, AbstractNode[] arguments) {
         super(context);
         this.taskIndex = index;
         this.arguments = arguments;
@@ -53,11 +49,11 @@ public class TaskNode extends FixedDeviceOpNode {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("[").append(id).append("]: ");
-        sb.append("task=").append(taskIndex);
+        sb.append("[" + id + "]: ");
+        sb.append("task=" + taskIndex);
         sb.append(", args=[ ");
         for (AbstractNode arg : arguments) {
-            sb.append("").append(arg.getId()).append(" ");
+            sb.append("" + arg.getId() + " ");
         }
         sb.append("]");
         return sb.toString();
@@ -65,27 +61,6 @@ public class TaskNode extends FixedDeviceOpNode {
 
     public int getNumArgs() {
         return arguments.length;
-    }
-
-    @Override
-    public void emit(GraphCompilationResult compRes) {
-        final GraphAssembler asm = compRes.getAssembler();
-
-        final byte mode = encodeBlockingMode(getBlocking(), (byte) 0);
-
-        asm.launch(mode, taskIndex, getDevice().getIndex(), getTaskIndex(), getNumArgs(), compRes.nextEventQueue());
-
-        for (AbstractNode argNode : arguments) {
-            if (argNode instanceof ReadHostNode) {
-                asm.pushArg(((ReadHostNode) argNode).getValue().getIndex());
-            } else if (argNode instanceof ParameterNode) {
-                asm.pushArg(((ParameterNode) argNode).getIndex());
-            } else if (argNode instanceof WriteHostNode) {
-                asm.pushArg(((WriteHostNode) argNode).getValue().getIndex());
-            } else if (argNode instanceof AllocateNode) {
-                asm.pushArg(((AllocateNode) argNode).getValue().getIndex());
-            }
-        }
     }
 
 }

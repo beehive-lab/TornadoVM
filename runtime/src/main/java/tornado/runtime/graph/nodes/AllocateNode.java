@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,37 +19,37 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class AllocateNode extends FloatingDeviceOpNode {
+public class AllocateNode extends ContextOpNode {
+	
+	public AllocateNode(ContextNode context) {
+		super(context);
+	}
 
-    public AllocateNode(DeviceNode context) {
-        super(context);
-    }
-
-    private ParameterNode value;
-
-    public void setValue(ParameterNode object) {
-        value = object;
-    }
-
-    public ParameterNode getValue() {
-        return value;
-    }
-
-    public String toString() {
-        return String.format("[%d]: allocate object %d", id, value.getIndex());
-    }
-
-    public boolean hasInputs() {
-        return value != null;
-    }
-
-    public List<AbstractNode> getInputs() {
-        if (!hasInputs()) {
-            return Collections.emptyList();
-        }
-
-        final List<AbstractNode> result = new ArrayList<AbstractNode>();
-        result.add(value);
-        return result;
-    }
+	private ObjectNode value;
+	
+	public void setValue(ObjectNode object){
+		value = object;
+	}
+	
+	public ObjectNode getValue(){
+		return value;
+	}
+	
+	public String toString(){
+		return String.format("[%d]: allocate object %d", id,value.getIndex());
+	}
+	
+	public boolean hasInputs(){
+		return value != null;
+	}
+	
+	public List<AbstractNode> getInputs(){
+		if(!hasInputs()){
+			return Collections.emptyList();
+		}
+		
+		final List<AbstractNode> result = new ArrayList<AbstractNode>();
+		result.add(value);
+		return result;
+	}
 }

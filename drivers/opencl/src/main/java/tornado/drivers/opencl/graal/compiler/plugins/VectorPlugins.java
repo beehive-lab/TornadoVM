@@ -32,10 +32,9 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import tornado.api.Vector;
+import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-import tornado.drivers.opencl.graal.nodes.OCLIntrinsicNode;
-import tornado.drivers.opencl.graal.nodes.OCLIntrinsicNode.BinaryGeometricOp;
 import tornado.drivers.opencl.graal.nodes.vector.*;
 
 import static tornado.common.Tornado.ENABLE_VECTORS;
@@ -197,20 +196,11 @@ public final class VectorPlugins {
         r.register2("dot", declaringClass, declaringClass, new InvocationPlugin() {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode input1, ValueNode input2) {
-<<<<<<< Updated upstream
                 TornadoInternalError.unimplemented();
 //                final BinaryGeometricOp op = new BinaryGeometricOp(vectorKind,
 //                        OCLIntrinsicNode.GeometricOp.DOT, input1, input2);
 //                b.push(vectorKind.getElementKind(), b.append(op));
 //                b.append(b.append(new ValueAnchorNode(op)));
-=======
-//                TornadoInternalError.unimplemented();
-
-                final BinaryGeometricOp op = new BinaryGeometricOp(OCLStampFactory.getStampFor(vectorKind),
-                        OCLIntrinsicNode.GeometricOp.DOT, input1, input2);
-                b.push(vectorKind.getElementKind().asJavaKind(), b.recursiveAppend(op));
-                b.append(b.recursiveAppend(new ValueAnchorNode(op)));
->>>>>>> Stashed changes
 
                 return true;
             }
@@ -223,7 +213,7 @@ public final class VectorPlugins {
             //          System.out.printf("param: index=%d, stamp=%s\n",index,stamp);
             if (stampPair.getTrustedStamp() instanceof ObjectStamp) {
                 ObjectStamp objStamp = (ObjectStamp) stampPair.getTrustedStamp();
-                if (objStamp.isExactType() && objStamp.type().getAnnotation(Vector.class) != null) {
+                if (objStamp.type().getAnnotation(Vector.class) != null) {
                     OCLKind kind = OCLKind.fromResolvedJavaType(objStamp.type());
                     return new ParameterNode(index, StampPair.createSingle(OCLStampFactory.getStampFor(kind)));
 

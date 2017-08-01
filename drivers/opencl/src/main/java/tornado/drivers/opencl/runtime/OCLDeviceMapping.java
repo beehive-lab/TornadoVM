@@ -27,18 +27,17 @@ import tornado.api.enums.TornadoSchedulingStrategy;
 import tornado.api.meta.TaskMetaData;
 import tornado.common.*;
 import tornado.common.enums.Access;
+import tornado.common.exceptions.TornadoInternalError;
+import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDevice;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.OCLDriver;
 import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
-import tornado.drivers.opencl.mm.OCLDataMover;
-import tornado.drivers.opencl.mm.OCLMemoryManager;
+import tornado.drivers.opencl.mm.*;
 import tornado.runtime.api.CompilableTask;
 import tornado.runtime.api.PrebuiltTask;
-import tornado.runtime.cache.LocalObjectCache;
-import tornado.runtime.cache.TornadoByteBuffer;
 import tornado.runtime.sketcher.Sketch;
 import tornado.runtime.sketcher.TornadoSketcher;
 
@@ -48,17 +47,12 @@ import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.drivers.opencl.graal.compiler.OCLCompiler.compileSketchForDevice;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
-public class OCLTornadoDevice implements TornadoDevice {
+public class OCLDeviceMapping implements TornadoDevice {
 
-    private static final int LOCAL_CACHE_SIZE = 512;
     private final OCLDevice device;
     private final int deviceIndex;
     private final int platformIndex;
     private static OCLDriver driver = null;
-
-    private OCLMemoryManager memoryManager;
-    private OCLDataMover dataMover;
-    private LocalObjectCache localCache;
 
     private static OCLDriver findDriver() {
         if (driver == null) {
@@ -68,7 +62,7 @@ public class OCLTornadoDevice implements TornadoDevice {
         return driver;
     }
 
-    public OCLTornadoDevice(final int platformIndex, final int deviceIndex) {
+    public OCLDeviceMapping(final int platformIndex, final int deviceIndex) {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
 
@@ -80,11 +74,6 @@ public class OCLTornadoDevice implements TornadoDevice {
     @Override
     public void dumpEvents() {
         getDeviceContext().dumpEvents();
-    }
-
-    @Override
-    public int flushCache() {
-        return localCache.flush();
     }
 
     @Override
@@ -119,26 +108,6 @@ public class OCLTornadoDevice implements TornadoDevice {
     }
 
     @Override
-    public int read(BlockingMode blocking, SharingMode sharing, CacheMode caching, Object object, int[] waitList) {
-        return localCache.read(blocking, sharing, caching, object, waitList);
-    }
-
-    @Override
-    public long toAbsoluteDeviceAddress(Object object) {
-        return memoryManager.toAbsoluteAddress(localCache.lookup(object));
-    }
-
-    @Override
-    public long toRelativeDeviceAddress(Object object) {
-        return memoryManager.toRelativeAddress(localCache.lookup(object));
-    }
-
-    @Override
-    public int write(BlockingMode blocking, CacheMode caching, Object object, int[] waitList) {
-        return localCache.write(blocking, caching, object, waitList);
-    }
-
-    @Override
     public void reset() {
         getBackend().reset();
     }
@@ -170,23 +139,20 @@ public class OCLTornadoDevice implements TornadoDevice {
     }
 
     @Override
+    public boolean isDistibutedMemory() {
+        return true;
+    }
+
+    @Override
     public void ensureLoaded() {
         final OCLBackend backend = getBackend();
         if (!backend.isInitialised()) {
             backend.init();
         }
-
-        if (memoryManager == null) {
-            OCLDeviceContext context = getDeviceContext();
-            memoryManager = context.getMemoryManager();
-            dataMover = new OCLDataMover(context);
-            localCache = new LocalObjectCache(memoryManager, dataMover, LOCAL_CACHE_SIZE);
-            dataMover.setLocalCache(localCache);
-        }
     }
 
     @Override
-    public DeviceFrame createStack(int numArgs) {
+    public CallStack createStack(int numArgs) {
         return getDeviceContext().getMemoryManager().createCallStack(numArgs);
     }
 
@@ -220,13 +186,27 @@ public class OCLTornadoDevice implements TornadoDevice {
                 if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
                     return deviceContext.getCode(task.getId(), resolvedMethod.getName());
                 }
+
+//            if (SHOW_OPENCL) {
+//                String filename = getFile(executable.getMethodName());
+//                // Tornado.info("Generated code for device %s - %s\n",
+//                // deviceContext.getDevice().getName(), filename);
+//                try {
+//                    PrintWriter fileOut = new PrintWriter(filename);
+//                    String source = new String(result.getTargetCode(), "ASCII");
+//                    fileOut.println(source.trim());
+//                    fileOut.close();
+//                } catch (UnsupportedEncodingException | FileNotFoundException e) {
+//                    e.printStackTrace();
+//                }
+//            }
                 return deviceContext.installCode(result);
             } catch (Exception e) {
                 driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
                 driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
                 driver.fatal("exception: %s", e.toString());
+//                driver.fatal("cause: %s", e.getCause().toString());
                 e.printStackTrace();
-                System.exit(-1);
             }
             return null;
         } else if (task instanceof PrebuiltTask) {
@@ -254,44 +234,154 @@ public class OCLTornadoDevice implements TornadoDevice {
         return String.format("%s/%s-%s.cl", OCLBackend.OPENCL_PATH.trim(), name.trim(), getDeviceName());
     }
 
-//    private CachedObject createDeviceBuffer(Class<?> type, Object arg,
-//            OCLDeviceContext device) throws TornadoOutOfMemoryException {
-////		System.out.printf("creating buffer: type=%s, arg=%s, device=%s\n",type.getSimpleName(),arg,device);
-//        CachedObject result = null;
-//        if (type.isArray()) {
-//
-//            if (type == int[].class) {
-//                result = new OCLIntArrayWrapper(device);
-//            } else if (type == short[].class) {
-//                result = new OCLShortArrayWrapper(device);
-//            } else if (type == byte[].class) {
-//                result = new OCLByteArrayWrapper(device);
-//            } else if (type == float[].class) {
-//                result = new OCLFloatArrayWrapper(device);
-//            } else if (type == double[].class) {
-//                result = new OCLDoubleArrayWrapper(device);
-//            } else if (type == long[].class) {
-//                result = new OCLLongArrayWrapper(device);
-//            }
-//
-//        } else if (!type.isPrimitive() && !type.isArray()) {
-////			System.out.println("creating object wrapper...good");
-//            result = new OCLObjectWrapper(device, arg);
-//        }
-//
-//        TornadoInternalError.guarantee(result != null,
-//                "Unable to create buffer for object: " + type);
-//        return result;
-//    }
+    private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg,
+            OCLDeviceContext device) throws TornadoOutOfMemoryException {
+//		System.out.printf("creating buffer: type=%s, arg=%s, device=%s\n",type.getSimpleName(),arg,device);
+        ObjectBuffer result = null;
+        if (type.isArray()) {
+
+            if (type == int[].class) {
+                result = new OCLIntArrayWrapper(device);
+            } else if (type == short[].class) {
+                result = new OCLShortArrayWrapper(device);
+            } else if (type == byte[].class) {
+                result = new OCLByteArrayWrapper(device);
+            } else if (type == float[].class) {
+                result = new OCLFloatArrayWrapper(device);
+            } else if (type == double[].class) {
+                result = new OCLDoubleArrayWrapper(device);
+            } else if (type == long[].class) {
+                result = new OCLLongArrayWrapper(device);
+            }
+
+        } else if (!type.isPrimitive() && !type.isArray()) {
+//			System.out.println("creating object wrapper...good");
+            result = new OCLObjectWrapper(device, arg);
+        }
+
+        TornadoInternalError.guarantee(result != null,
+                "Unable to create buffer for object: " + type);
+        return result;
+    }
+
+    @Override
+    public int ensureAllocated(Object object, DeviceObjectState state) {
+        if (!state.hasBuffer()) {
+            try {
+                final ObjectBuffer buffer = createDeviceBuffer(
+                        object.getClass(), object, getDeviceContext());
+                buffer.allocate(object);
+                state.setBuffer(buffer);
+
+                final Class<?> type = object.getClass();
+                if (!type.isArray()) {
+                    buffer.write(object);
+                }
+
+                state.setValid(true);
+            } catch (TornadoOutOfMemoryException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (!state.isValid()) {
+            try {
+                state.getBuffer().allocate(object);
+                final Class<?> type = object.getClass();
+                if (!type.isArray()) {
+                    state.getBuffer().write(object);
+                }
+                state.setValid(true);
+            } catch (TornadoOutOfMemoryException e) {
+                e.printStackTrace();
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    public int ensurePresent(Object object, DeviceObjectState state) {
+        ensurePresent(object, state, null);
+        return -1;
+    }
+
+    @Override
+    public int ensurePresent(Object object, DeviceObjectState state, int[] events) {
+        if (!state.isValid()) {
+            ensureAllocated(object, state);
+        }
+
+        if (!state.hasContents()) {
+            state.setContents(true);
+            return state.getBuffer().enqueueWrite(object, events, events == null);
+        }
+        return -1;
+    }
+
+    @Override
+    public int streamIn(Object object, DeviceObjectState state) {
+        streamIn(object, state, null);
+        return -1;
+    }
+
+    @Override
+    public int streamIn(Object object, DeviceObjectState state, int[] events) {
+        if (!state.isValid()) {
+            ensureAllocated(object, state);
+        }
+
+        state.setContents(true);
+        return state.getBuffer().enqueueWrite(object, events, events == null);
+
+    }
+
+    @Override
+    public int streamOut(Object object, DeviceObjectState state) {
+        streamOut(object, state, null);
+        return -1;
+    }
+
+    @Override
+    public int streamOut(Object object, DeviceObjectState state,
+            int[] list) {
+        guarantee(state.isValid(), "invalid variable");
+
+        return state.getBuffer().enqueueRead(object, list, list == null);
+    }
+
+    @Override
+    public void streamOutBlocking(Object object, DeviceObjectState state) {
+        streamOutBlocking(object, state, null);
+    }
+
+    @Override
+    public void streamOutBlocking(Object object, DeviceObjectState state,
+            int[] events) {
+        guarantee(state.isValid(), "invalid variable");
+
+        state.getBuffer().read(object, events, events == null);
+    }
+
+    public void sync(Object... objects) {
+        for (Object obj : objects) {
+            sync(obj);
+        }
+    }
+
+    public void sync(Object object) {
+        final DeviceObjectState state = getTornadoRuntime().resolveObject(object).getDeviceState(this);
+        resolveEvent(streamOut(object, state)).waitOn();
+    }
+
     @Override
     public void flush() {
-        getDeviceContext().flush();
+        this.getDeviceContext().flush();
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof OCLTornadoDevice) {
-            final OCLTornadoDevice other = (OCLTornadoDevice) obj;
+        if (obj instanceof OCLDeviceMapping) {
+            final OCLDeviceMapping other = (OCLDeviceMapping) obj;
             return (other.deviceIndex == deviceIndex && other.platformIndex == platformIndex);
         }
         return false;
@@ -320,10 +410,20 @@ public class OCLTornadoDevice implements TornadoDevice {
         return getDeviceContext().enqueueBarrier(events);
     }
 
+    @Override
+    public int enqueueMarker() {
+        return getDeviceContext().enqueueMarker();
+    }
+
+    @Override
+    public int enqueueMarker(int[] events) {
+        return getDeviceContext().enqueueMarker(events);
+    }
+
     public void dumpMemory(String file) {
         final OCLMemoryManager mm = getDeviceContext().getMemoryManager();
-        final TornadoByteBuffer buffer = mm.getSubBuffer(0, (int) mm.getHeapSize());
-        buffer.syncRead();
+        final OCLByteBuffer buffer = mm.getSubBuffer(0, (int) mm.getHeapSize());
+        buffer.read();
 
         try (FileOutputStream fos = new FileOutputStream(file); FileChannel channel = fos.getChannel()) {
             channel.write(buffer.buffer());

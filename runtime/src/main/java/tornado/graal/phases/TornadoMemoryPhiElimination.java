@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,19 +23,20 @@ import org.graalvm.compiler.phases.BasePhase;
 
 public class TornadoMemoryPhiElimination extends BasePhase<TornadoMidTierContext> {
 
-    @Override
-    protected void run(StructuredGraph graph, TornadoMidTierContext context) {
 
-        graph.getNodes().filter(MemoryPhiNode.class)
-                .forEach(memoryPhi -> {
-                    memoryPhi.usages().forEach(usage -> {
-                        if (usage instanceof FloatingReadNode) {
-                            ((FloatingReadNode) usage).setLastLocationAccess(null);
-                        }
-                    });
-                    GraphUtil.tryKillUnused(memoryPhi);
-                });
 
-    }
+	@Override
+	protected void run(StructuredGraph graph, TornadoMidTierContext context) {
+		
+		graph.getNodes().filter(MemoryPhiNode.class)
+				.forEach(memoryPhi -> {
+					memoryPhi.usages().forEach(usage -> {
+						if(usage instanceof FloatingReadNode)
+							((FloatingReadNode) usage).setLastLocationAccess(null);
+					});
+					GraphUtil.tryKillUnused(memoryPhi);
+				});
+
+	}
 
 }

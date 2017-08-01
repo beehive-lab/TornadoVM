@@ -19,20 +19,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class DependentReadNode extends FixedDeviceOpNode {
+public class DependentReadNode extends ContextOpNode {
 	
-	public DependentReadNode(DeviceNode context) {
+	public DependentReadNode(ContextNode context) {
 		super(context);
 	}
 
-	private ParameterNode value;
+	private ObjectNode value;
 	private TaskNode dependent;
 	
-	public void setValue(ParameterNode object){
+	public void setValue(ObjectNode object){
 		value = object;
 	}
 	
-	public ParameterNode getValue(){
+	public ObjectNode getValue(){
 		return value;
 	}
 	
