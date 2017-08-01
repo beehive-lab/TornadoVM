@@ -17,8 +17,11 @@ package tornado.examples.arrays;
 
 import java.util.Arrays;
 import tornado.collections.math.SimpleMath;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.runtime.TornadoDriver;
 import tornado.runtime.api.TaskSchedule;
+import tornado.runtime.cache.TornadoObjectCache;
+
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class ArrayMultiplyAdd {
 
@@ -51,12 +54,18 @@ public class ArrayMultiplyAdd {
                 .task("t1", SimpleMath::vectorAdd, c, b, d)
                 .streamOut(d);
 
-        schedule.getTask("t0").mapTo(new OCLDeviceMapping(0, 0));
-        schedule.getTask("t1").mapTo(new OCLDeviceMapping(0, 2));
+        /*
+         * map tasks to devices
+         */
+        TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        schedule.getTask("t0").mapTo(driver.getDevice(0));
+        schedule.getTask("t1").mapTo(driver.getDevice(1));
 
         schedule.execute();
 
-        schedule.dumpTimes();
+        TornadoObjectCache.print();
+
+        schedule.dumpEvents();
 
         /*
          * Check to make sure result is correct

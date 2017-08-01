@@ -17,6 +17,7 @@ package tornado.drivers.opencl.graal;
 
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.*;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -58,6 +59,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private final ConstantReflectionProvider constantReflection;
     private final TornadoVMConfig vmConfig;
 
+    protected InstanceOfSnippets.Templates instanceofSnippets;
+
     public OCLLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, ConstantReflectionProvider constantReflection, TornadoVMConfig vmConfig, OCLTargetDescription target) {
         super(metaAccess, foreignCalls, target);
         this.vmConfig = vmConfig;
@@ -95,8 +98,35 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerStoreFieldNode((StoreFieldNode) n, tool);
         } else if (n instanceof ArrayLengthNode) {
             lowerArrayLengthNode((ArrayLengthNode) n, tool);
+        } else if (n instanceof IntegerDivRemNode) {
+            // Nothing to do for division nodes. The HotSpot signal handler catches divisions by
+            // zero and the MIN_VALUE / -1 cases.
+            lowerIntegerDivRemNode((IntegerDivRemNode) n, tool);
+        } else if (n instanceof InstanceOfNode) {
+            InstanceOfNode instanceOfNode = (InstanceOfNode) n;
+//            instanceOfNode.getAnchor()
+            final HotSpotResolvedObjectType type = (HotSpotResolvedObjectType) instanceOfNode.type().getType();
+            ConstantNode c1 = ConstantNode.forConstant(KlassPointerStamp.klassNonNull(), type.klass(), metaAccess, graph);
+
+            KlassPointer objectHub = null; //loadHubIntrinsic(PiNode.piCastNonNull(instanceOfNode.getValue(), (GuardingNode) instanceOfNode.getAnchor()));
+            System.out.printf("type=%s,c1=%s,objectHub = %s", type, c1, objectHub);
+
         } else {
             super.lower(n, tool);
+        }
+    }
+
+    private void lowerIntegerDivRemNode(IntegerDivRemNode integerDivRemNode, LoweringTool tool) {
+        StructuredGraph graph = integerDivRemNode.graph();
+        switch (integerDivRemNode.getOp()) {
+            case DIV:
+                DivNode div = graph.addOrUnique(new DivNode(integerDivRemNode.getX(), integerDivRemNode.getY()));
+                graph.replaceFixedWithFloating(integerDivRemNode, div);
+                break;
+            case REM:
+                RemNode rem = graph.addOrUnique(new RemNode(integerDivRemNode.getX(), integerDivRemNode.getY()));
+                graph.replaceFixedWithFloating(integerDivRemNode, rem);
+                break;
         }
     }
 

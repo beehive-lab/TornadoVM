@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,12 +16,11 @@
 package tornado.examples.memory;
 
 import java.util.Arrays;
-import tornado.common.DeviceObjectState;
+import tornado.common.TornadoDevice.BlockingMode;
+import tornado.common.TornadoDevice.CacheMode;
+import tornado.common.TornadoDevice.SharingMode;
 import tornado.drivers.opencl.OpenCL;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.GlobalObjectState;
-
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 public class DataMovementTest {
 
@@ -40,21 +39,15 @@ public class DataMovementTest {
         Arrays.setAll(array, (index) -> index);
         printArray(array);
 
-        OCLDeviceMapping device = OpenCL.defaultDevice();
+        OCLTornadoDevice device = OpenCL.defaultDevice();
+        device.ensureLoaded();
 
-        GlobalObjectState state = getTornadoRuntime().resolveObject(array);
-        DeviceObjectState deviceState = state.getDeviceState(device);
-
-        int writeEvent = device.ensurePresent(array, deviceState);
-        if (writeEvent != -1) {
-            device.resolveEvent(writeEvent).waitOn();
-        }
+        device.read(BlockingMode.BLOCKING, SharingMode.EXCLUSIVE, CacheMode.NON_CACHEABLE, array, null);
 
         Arrays.fill(array, -1);
         printArray(array);
 
-        int readEvent = device.streamOut(array, deviceState, null);
-        device.resolveEvent(readEvent).waitOn();
+        device.write(BlockingMode.BLOCKING, CacheMode.NON_CACHEABLE, array, null);
 
         printArray(array);
 

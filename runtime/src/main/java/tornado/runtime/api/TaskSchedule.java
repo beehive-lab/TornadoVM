@@ -31,7 +31,7 @@ import tornado.runtime.api.TornadoFunctions.Task7;
 import tornado.runtime.api.TornadoFunctions.Task8;
 import tornado.runtime.api.TornadoFunctions.Task9;
 
-public class TaskSchedule extends AbstractTaskGraph {
+public class TaskSchedule extends TaskGraph {
 
     private Event event;
 

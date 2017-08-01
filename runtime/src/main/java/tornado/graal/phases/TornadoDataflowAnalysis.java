@@ -92,7 +92,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         } else if (isRead) {
             result = Access.READ;
         } else if (isWritten) {
-            result = Access.WRITE;
+            result = Access.READ_WRITE;
         }
 
         return result;

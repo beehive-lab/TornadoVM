@@ -15,7 +15,6 @@ import tornado.runtime.EventSet;
 import static tornado.common.Tornado.EVENT_WINDOW;
 import static tornado.common.Tornado.getProperty;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.common.Tornado.getProperty;
 
 public class TaskMetaData extends AbstractMetaData {
 
@@ -56,6 +55,7 @@ public class TaskMetaData extends AbstractMetaData {
     private boolean localWorkDefined;
     private boolean globalWorkDefined;
     private boolean canAssumeExact;
+    private boolean canAssumeMonomorphic;
 
     public TaskMetaData(ScheduleMetaData scheduleMetaData, String id, int numParameters) {
         super(scheduleMetaData.getId() + "." + id);
@@ -89,6 +89,11 @@ public class TaskMetaData extends AbstractMetaData {
 
         this.schedule = !(globalWorkDefined && localWorkDefined);
         this.canAssumeExact = Boolean.parseBoolean(getDefault("coarsener.exact", getId(), "False"));
+        this.canAssumeMonomorphic = Boolean.parseBoolean(getProperty(getId() + ".monomorphic", "True"));
+    }
+
+    public boolean canAssumeMonomorphic() {
+        return canAssumeMonomorphic;
     }
 
     public boolean canAssumeExact() {
@@ -223,7 +228,7 @@ public class TaskMetaData extends AbstractMetaData {
 
     @Override
     public TornadoDevice getDevice() {
-        return isDeviceDefined() ? super.getDevice() : scheduleMetaData.getDevice();
+        return (isDeviceDefined() || super.getDevice() != null) ? super.getDevice() : scheduleMetaData.getDevice();
     }
 
     public int getDims() {
@@ -382,7 +387,7 @@ public class TaskMetaData extends AbstractMetaData {
 
     @Override
     public boolean enableThreadCoarsener() {
-        return super.enableThreadCoarsener() || scheduleMetaData.enableThreadCoarsener();
+        return (this.isThreadCoarsenerDefined()) ? super.enableThreadCoarsener() : scheduleMetaData.enableThreadCoarsener();
     }
 
     @Override

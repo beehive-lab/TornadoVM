@@ -42,10 +42,10 @@ public final class Tornado {
         return settings.getProperty(key, defaultValue);
     }
 
+    public static final boolean ENABLE_EXCEPTIONS = Boolean.parseBoolean(settings.getProperty("tornado.exceptions", "False"));
     /*
      * Forces the executing kernel to output its arguements before execution
-     */
-//    public static final boolean DUMP_TASK_SCHEDULE = Boolean.parseBoolean(settings.getProperty("tornado.schedule.dump", "False"));
+     */ //    public static final boolean DUMP_TASK_SCHEDULE = Boolean.parseBoolean(settings.getProperty("tornado.schedule.dump", "False"));
     public static final boolean VALIDATE_ARRAY_HEADERS = Boolean.parseBoolean(settings.getProperty("tornado.opencl.array.validate", "True"));
     public static final boolean TORNADO_LOOPS_REVERSE = Boolean.parseBoolean(settings.getProperty("tornado.loops.reverse", "True"));
     public static final boolean MARKER_USE_BARRIER = Boolean.parseBoolean(settings.getProperty("tornado.opencl.marker.asbarrier", "False"));

@@ -57,8 +57,7 @@ public class DgemmTornado extends BenchmarkDriver {
         }
 
         graph = new TaskSchedule("benchmark")
-                .task("dgemm", LinearAlgebraArrays::dgemm, m, n, n, a, b,
-                        c)
+                .task("dgemm", LinearAlgebraArrays::dgemm, m, n, n, a, b, c)
                 .streamOut(c);
 
         graph.warmup();
@@ -72,7 +71,7 @@ public class DgemmTornado extends BenchmarkDriver {
         b = null;
         c = null;
 
-        graph.getDevice().reset();
+        graph.getDefaultDevice().reset();
         super.tearDown();
     }
 
@@ -92,6 +91,7 @@ public class DgemmTornado extends BenchmarkDriver {
         dgemm(m, n, m, a, b, result);
 
         final double ulp = findULPDistance(c, result);
+        System.out.printf("ulp=%f\n", ulp);
         return ulp < MAX_ULP;
     }
 

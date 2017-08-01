@@ -24,7 +24,7 @@ import tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 public class OCLStack extends Value {
 
     // @formatter:off
-    public static final OCLStack STACK = new OCLStack(OCLAssemblerConstants.STACK_REF_NAME);
+    public static final OCLStack STACK = new OCLStack(OCLAssemblerConstants.FRAME_BASE_NAME);
     // @formatter:on
 
     private final String name;

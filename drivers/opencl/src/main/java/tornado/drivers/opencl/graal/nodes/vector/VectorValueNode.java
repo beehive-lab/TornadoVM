@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -165,7 +165,7 @@ public class VectorValueNode extends FloatingNode implements LIRLowerable {
             final int numValues = values.count();
             final ValueNode firstValue = values.first();
 
-            if (firstValue instanceof VectorValueNode || firstValue instanceof VectorOp) {
+            if (firstValue instanceof VectorValueNode || firstValue instanceof VectorOp || firstValue instanceof LoadIndexedVectorNode) {
                 tool.append(new OCLLIRStmt.AssignStmt(result, gen.operand(values.first())));
                 gen.setResult(this, result);
             } else if (numValues > 0 && gen.hasOperand(firstValue)) {

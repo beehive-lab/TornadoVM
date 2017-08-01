@@ -230,6 +230,10 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
 
+        if (!context.getMeta().canAssumeMonomorphic()) {
+            return;
+        }
+
         int iterations = 0;
 
         int lastNodeCount = graph.getNodeCount();
@@ -268,7 +272,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             Debug.dump(Debug.INFO_LEVEL, graph, "After Phase Pi Node Removal");
 
             loopUnroller.execute(graph, context);
-
             valueTypeReplacement.execute(graph, context);
 
             canonicalizer.apply(graph, context);

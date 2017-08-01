@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,10 +24,16 @@ import org.graalvm.compiler.phases.BasePhase;
 import java.util.HashSet;
 import java.util.Set;
 
+import static tornado.common.Tornado.ENABLE_EXCEPTIONS;
+
 public class ExceptionSuppression extends BasePhase<TornadoHighTierContext> {
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
+
+        if (ENABLE_EXCEPTIONS) {
+            return;
+        }
 
         Set<LogicNode> conditions = new HashSet<>();
         Set<GuardNode> guards = new HashSet<>();

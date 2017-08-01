@@ -34,8 +34,8 @@ public class TornadoVMConfig extends HotSpotVMConfigAccess {
     public final int hubOffset = getFieldOffset("oopDesc::_metadata._klass", Integer.class, "Klass*");
     public final int narrowKlassSize = getFieldValue("CompilerToVM::Data::sizeof_narrowKlass", Integer.class, "int");
     public final int instanceKlassFieldsOffset = getFieldOffset("InstanceKlass::_fields", Integer.class, "Array<u2>*");
+    public final int klassLayoutHelperOffset = getFieldOffset("Klass::_layout_helper", Integer.class, "jint");
 
-//    @HotSpotVMValue(expression = "arrayOopDesc::length_offset_in_bytes()") @Stable public int arrayLengthOffset;
     public final int arrayOopDescLengthOffset() {
         return useCompressedClassPointers ? hubOffset + narrowKlassSize : arrayOopDescSize;
     }

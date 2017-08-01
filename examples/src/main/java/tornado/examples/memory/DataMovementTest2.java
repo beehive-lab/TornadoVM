@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,12 +17,11 @@ package tornado.examples.memory;
 
 import java.util.Random;
 import tornado.collections.types.ImageFloat;
-import tornado.common.DeviceObjectState;
+import tornado.common.TornadoDevice.BlockingMode;
+import tornado.common.TornadoDevice.CacheMode;
+import tornado.common.TornadoDevice.SharingMode;
 import tornado.drivers.opencl.OpenCL;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
-import tornado.runtime.api.GlobalObjectState;
-
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 public class DataMovementTest2 {
 
@@ -51,22 +50,16 @@ public class DataMovementTest2 {
         System.out.println("Before: ");
         System.out.printf(image.toString());
 
-        OCLDeviceMapping device = OpenCL.defaultDevice();
+        OCLTornadoDevice device = OpenCL.defaultDevice();
+        device.ensureLoaded();
 
-        GlobalObjectState state = getTornadoRuntime().resolveObject(image);
-        DeviceObjectState deviceState = state.getDeviceState(device);
-
-        int writeEvent = device.ensurePresent(image, deviceState);
-        if (writeEvent != -1) {
-            device.resolveEvent(writeEvent).waitOn();
-        }
+        device.read(BlockingMode.BLOCKING, SharingMode.EXCLUSIVE, CacheMode.NON_CACHEABLE, image, null);
 
         image.fill(-1);
         System.out.println("Reset: ");
         System.out.printf(image.toString());
 
-        int readEvent = device.streamOut(image, deviceState, null);
-        device.resolveEvent(readEvent).waitOn();
+        device.write(BlockingMode.BLOCKING, CacheMode.NON_CACHEABLE, image, null);
 
         System.out.println("After: ");
         System.out.printf(image.toString());

@@ -13,27 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tornado.drivers.opencl.mm;
+package tornado.runtime.api;
 
-import tornado.common.CallStack;
-import tornado.common.DeviceObjectState;
-import tornado.drivers.opencl.OCLDeviceContext;
+import java.nio.ByteOrder;
+import tornado.common.DeviceFrame;
+import tornado.runtime.cache.PrimitiveSerialiser;
+import tornado.runtime.cache.TornadoByteBuffer;
+import tornado.runtime.cache.TornadoDataMover.AllocateOp;
+import tornado.runtime.cache.TornadoDataMover.AsyncOp;
+import tornado.runtime.cache.TornadoDataMover.BarrierOp;
+import tornado.runtime.cache.TornadoDataMover.SyncOp;
 
 import static tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static tornado.common.RuntimeUtilities.isBoxedPrimitive;
-import static tornado.common.Tornado.*;
+import static tornado.common.Tornado.DEBUG;
+import static tornado.common.Tornado.debug;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
-public class OCLCallStack extends OCLByteBuffer implements CallStack {
+public class TornadoCallStack extends TornadoByteBuffer implements DeviceFrame {
 
-    private final static int RESERVED_SLOTS = 6;
+    public final static int RETURN_VALUE_INDEX = 0;
+    public final static int DEOPT_VALUE_INDEX = 1;
+    public final static int RESERVED_SLOTS = 6;
 
     private final int numArgs;
 
     private boolean onDevice;
 
-    public OCLCallStack(long offset, int numArgs, OCLDeviceContext device) {
-        super(device, offset, (numArgs + RESERVED_SLOTS) << 3);
+    public TornadoCallStack(final int numArgs, final long bufferId, final long offset,
+            final long numBytes, final long baseAddress,
+            ByteOrder byteOrder, AllocateOp allocator,
+            BarrierOp barrier,
+            SyncOp<byte[]> write, AsyncOp<byte[]> enqueueWrite,
+            SyncOp<byte[]> read, AsyncOp<byte[]> enqueueRead) {
+        super(bufferId, offset, numBytes, baseAddress, byteOrder, allocator, barrier, write, enqueueWrite, read, enqueueRead);
         this.numArgs = numArgs;
 
         // clear the buffer and set the mark at the beginning of the arguments
@@ -42,7 +55,7 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
         buffer.putLong(0);
         buffer.putLong(0);
         buffer.putLong(0);
-        buffer.putLong(toAbsoluteAddress());
+        buffer.putLong(baseAddress + offset);
         buffer.putInt(0);
         buffer.putInt(numArgs);
         buffer.mark();
@@ -61,20 +74,20 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
     }
 
     @Override
-    public void write() {
-        super.write();
+    public void syncWrite() {
+        super.syncWrite();
         onDevice = true;
     }
 
     @Override
-    public int enqueueWrite() {
-        return enqueueWrite(null);
+    public int asyncWrite() {
+        return asyncWrite(null);
     }
 
     @Override
-    public int enqueueWrite(int[] events) {
+    public int asyncWrite(int[] events) {
         onDevice = true;
-        return super.enqueueWrite(events);
+        return super.asyncWrite(events);
     }
 
     public int getReservedSlots() {
@@ -97,12 +110,13 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
     @Override
     public long getDeoptValue() {
-        return buffer.getLong(0);
+        return buffer.getLong(8);
     }
 
     @Override
     public long getReturnValue() {
-        return buffer.getLong(8);
+        syncRead();
+        return buffer.getLong(0);
     }
 
     @Override
@@ -113,10 +127,10 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
     @Override
     public String toString() {
         return String
-                .format("Call Stack: num args = %d, device = %s, size = %s @ 0x%x (0x%x)",
-                        numArgs, deviceContext.getDevice().getName(),
+                .format("Call Stack: num args = %d, size = %s @ 0x%x (0x%x)",
+                        numArgs,
                         humanReadableByteCount(bytes, true),
-                        toAbsoluteAddress(), toRelativeAddress());
+                        baseAddress, offset);
     }
 
     @Override
@@ -146,7 +160,7 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
     }
 
     @Override
-    public void push(Object arg, DeviceObjectState state) {
+    public void push(Object arg, long address) {
 
         if (arg == null) {
             if (DEBUG) {
@@ -155,58 +169,14 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
             buffer.putLong(0);
         } else {
             if (DEBUG) {
-                debug("arg : [0x%x] type=%s, value=%s, address=0x%x (0x%x)", arg.hashCode(), arg.getClass()
-                        .getSimpleName(), arg, state.getAddress(), state.getOffset());
+                debug("arg : [0x%x] type=%s, value=%s, address=0x%x", arg.hashCode(), arg.getClass()
+                        .getSimpleName(), arg, address);
             }
-            if (OPENCL_USE_RELATIVE_ADDRESSES) {
-                buffer.putLong(state.getOffset());
-            } else {
-                buffer.putLong(state.getAddress());
-            }
+
+            buffer.putLong(address);
+
         }
 
-    }
-
-    @Override
-    public void clearProfiling() {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public long getInvokeCount() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public double getTimeTotal() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public double getTimeMean() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public double getTimeMin() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public double getTimeMax() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public double getTimeSD() {
-        // TODO Auto-generated method stub
-        return 0;
     }
 
 }

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,32 +20,27 @@ import org.graalvm.compiler.graph.iterators.NodePredicate;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.compiler.nodes.virtual.VirtualInstanceNode;
 import org.graalvm.compiler.phases.BasePhase;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
 
 public class TornadoValueTypeCleanup extends BasePhase<TornadoHighTierContext> {
 
-	
+    private static final NodePredicate valueTypeFilter = new NodePredicate() {
 
-	private static final NodePredicate	valueTypeFilter		= new NodePredicate() {
+        @Override
+        public boolean apply(Node node) {
+            return node.hasNoUsages();
+        }
 
-																@Override
-																public boolean apply(Node node) {
-																	return ((VirtualInstanceNode) node).hasNoUsages();
-																}
+    };
 
-															};
+    @Override
+    protected void run(StructuredGraph graph, TornadoHighTierContext context) {
 
+        graph.getNodes().filter(NewInstanceNode.class).filter(valueTypeFilter)
+                .forEach(instance -> {
+                    GraphUtil.tryKillUnused(instance);
+                });
 
-	@Override
-	protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-		
-		graph.getNodes().filter(NewInstanceNode.class).filter(valueTypeFilter)
-				.forEach(instance -> {
-					GraphUtil.tryKillUnused(instance);
-				});
-
-	}
+    }
 
 }

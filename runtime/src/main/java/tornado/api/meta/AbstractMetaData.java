@@ -3,8 +3,8 @@ package tornado.api.meta;
 import tornado.common.TornadoDevice;
 
 import static java.lang.Boolean.parseBoolean;
-import static tornado.api.meta.MetaDataUtils.resolveDevice;
 import static java.lang.Integer.parseInt;
+import static tornado.api.meta.MetaDataUtils.resolveDevice;
 import static tornado.common.Tornado.getProperty;
 
 public abstract class AbstractMetaData {
@@ -16,7 +16,9 @@ public abstract class AbstractMetaData {
     private boolean deviceLoaded = false;
 
     public TornadoDevice getDevice() {
-        if (device == null && !deviceLoaded) {
+        if (device != null) {
+            return device;
+        } else if (device == null && !deviceLoaded) {
             device = resolveDevice(getProperty(id + ".device", "0:0"));
             deviceLoaded = true;
         }
@@ -25,6 +27,7 @@ public abstract class AbstractMetaData {
 
     public void setDevice(TornadoDevice device) {
         this.device = device;
+        shouldRecompile = true;
     }
 
     public String getCpuConfig() {
@@ -177,6 +180,7 @@ public abstract class AbstractMetaData {
     private final boolean dumpTaskSchedule;
     private final boolean vmUseDeps;
     private final boolean coarsenWithCpuConfig;
+    private final boolean isThreadCoarsenerDefined;
 
     private final boolean isCpuConfigDefined;
     private final String cpuConfig;
@@ -213,6 +217,10 @@ public abstract class AbstractMetaData {
 
     public boolean shouldCoarsenWithCpuConfig() {
         return coarsenWithCpuConfig;
+    }
+
+    public boolean isThreadCoarsenerDefined() {
+        return isThreadCoarsenerDefined;
     }
 
     protected static String getDefault(String keySuffix, String id, String defaultValue) {
@@ -270,6 +278,7 @@ public abstract class AbstractMetaData {
         cpuConfig = getDefault("cpu.config", id, null);
         isCpuConfigDefined = getProperty(id + ".cpu.config") != null;
         useThreadCoarsener = Boolean.parseBoolean(getDefault("coarsener", id, "False"));
+        isThreadCoarsenerDefined = getProperty(id + ".coarsener") != null;
 
         vmUseDeps = Boolean.parseBoolean(getDefault("vm.deps", id, "False"));
     }

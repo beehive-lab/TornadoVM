@@ -1,10 +1,12 @@
 package tornado.benchmarks;
 
-import tornado.common.DeviceObjectState;
 import tornado.common.TornadoDevice;
+import tornado.common.TornadoDevice.BlockingMode;
+import tornado.common.TornadoDevice.CacheMode;
+import tornado.common.TornadoDevice.SharingMode;
 import tornado.runtime.TornadoDriver;
 import tornado.runtime.TornadoRuntime;
-import tornado.runtime.api.GlobalObjectState;
+import tornado.runtime.cache.TornadoObjectCache;
 
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
@@ -55,31 +57,24 @@ public class DataMovement {
                 for (int size = startSize; size <= endSize; size <<= 1) {
 
                     final Object array = createArray(type, size);
-                    final GlobalObjectState globalState = runtime.resolveObject(array);
-                    final DeviceObjectState deviceState = globalState.getDeviceState(device);
-
-                    device.ensureAllocated(array, deviceState);
-
                     final long t0 = System.nanoTime();
                     for (int i = 0; i < iterations; i++) {
-                        device.streamIn(array, deviceState);
+                        device.read(BlockingMode.BLOCKING, SharingMode.SHARED, CacheMode.NON_CACHEABLE, array, null);
                     }
-                    device.sync();
                     final long t1 = System.nanoTime();
                     final double streamInElapsed = (t1 - t0) * 1e-9;
 
                     final long t2 = System.nanoTime();
                     for (int i = 0; i < iterations; i++) {
-                        device.streamOut(array, deviceState, null);
+                        device.write(BlockingMode.BLOCKING, CacheMode.NON_CACHEABLE, array, null);
                     }
-                    device.sync();
                     final long t3 = System.nanoTime();
                     final double streamOutElapsed = (t3 - t2) * 1e-9;
 
                     final long numBytes = size * (Integer.parseInt(type.substring(1)) / 8);
 
                     System.out.printf("%s,%s,%d,%d,%d,%.9f,%.9f\n", device.getDeviceName(), type, size, numBytes, iterations, streamInElapsed, streamOutElapsed);
-                    runtime.clearObjectState();
+                    TornadoObjectCache.reset();
                     device.reset();
 
                     if (size == 0) {

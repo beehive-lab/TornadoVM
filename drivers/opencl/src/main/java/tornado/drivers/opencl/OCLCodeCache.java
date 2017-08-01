@@ -136,24 +136,25 @@ public class OCLCodeCache {
             }
         } else {
             warn("\tunable to compile %s", entryPoint);
+
             code.invalidate();
         }
 
         return code;
     }
 
-    public OCLInstalledCode installBinary(String entryPoint, byte[] binary) throws OCLException {
-        return installBinary(entryPoint, binary, false);
+    public OCLInstalledCode installBinary(String id, String entryPoint, byte[] binary) throws OCLException {
+        return installBinary(id, entryPoint, binary, false);
     }
 
-    private OCLInstalledCode installBinary(String entryPoint, byte[] binary, boolean alreadyCached) throws OCLException {
+    private OCLInstalledCode installBinary(String id, String entryPoint, byte[] binary, boolean alreadyCached) throws OCLException {
 
-        info("Installing binary for %s into code cache", entryPoint);
+        info("Installing binary for %s (%s) into code cache", id, entryPoint);
         final OCLProgram program = deviceContext.createProgramWithBinary(binary,
                 new long[]{binary.length});
 
         if (program == null) {
-            throw new OCLException("unable to load binary for " + entryPoint);
+            throw new OCLException("unable to load binary for " + id);
         }
 
         final long t0 = System.nanoTime();
@@ -182,7 +183,7 @@ public class OCLCodeCache {
 
             if ((OPENCL_CACHE_ENABLE || OPENCL_DUMP_BINS) && !alreadyCached) {
                 final Path outDir = resolveCacheDir();
-                writeToFile(outDir.toAbsolutePath().toString() + "/" + entryPoint, binary);
+                writeToFile(outDir.toAbsolutePath().toString() + "/" + id, binary);
             }
 
         } else {
@@ -209,10 +210,12 @@ public class OCLCodeCache {
         if (file.length() == 0) {
             return;
         }
-        info("loading %s into cache", file.getAbsoluteFile());
+
         try {
+            String[] values = file.getName().replace(OPENCL_SOURCE_SUFFIX, "").split("-");
+            info("loading %s into cache: task=%s entry point=%s", file.getAbsoluteFile(), values[0], values[1]);
             final byte[] binary = Files.readAllBytes(path);
-            installBinary(file.getName(), binary, true);
+            installBinary(values[0], values[1], binary, true);
         } catch (OCLException | IOException e) {
             error("unable to load binary: %s (%s)", file, e.getMessage());
         }

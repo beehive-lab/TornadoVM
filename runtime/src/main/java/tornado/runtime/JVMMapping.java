@@ -35,26 +35,14 @@ public class JVMMapping implements TornadoDevice {
     }
 
     @Override
-    public int enqueueMarker() {
-        unimplemented();
-        return -1;
-    }
-
-    @Override
-    public int enqueueMarker(int[] events) {
-        unimplemented();
-        return -1;
-    }
-
-    @Override
-    public int ensurePresent(Object object, DeviceObjectState objectState, int[] events) {
-        unimplemented();
-        return -1;
-    }
-
-    @Override
     public void flush() {
         unimplemented();
+    }
+
+    @Override
+    public int flushCache() {
+        unimplemented();
+        return -1;
     }
 
     @Override
@@ -74,30 +62,26 @@ public class JVMMapping implements TornadoDevice {
     }
 
     @Override
+    public int read(BlockingMode blocking, SharingMode sharing, CacheMode caching, Object object, int[] waitList) {
+        unimplemented();
+        return -1;
+    }
+
+    @Override
     public void reset() {
         unimplemented();
     }
 
     @Override
-    public int streamIn(Object object, DeviceObjectState objectState, int[] events) {
+    public long toAbsoluteDeviceAddress(Object object) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public int streamOut(Object object, DeviceObjectState objectState) {
+    public long toRelativeDeviceAddress(Object object) {
         unimplemented();
         return -1;
-    }
-
-    @Override
-    public void streamOutBlocking(Object object, DeviceObjectState objectState) {
-        unimplemented();
-    }
-
-    @Override
-    public void streamOutBlocking(Object object, DeviceObjectState objectState, int[] list) {
-        unimplemented();
     }
 
     @Override
@@ -106,17 +90,12 @@ public class JVMMapping implements TornadoDevice {
     }
 
     @Override
-    public boolean isDistibutedMemory() {
-        return false;
-    }
-
-    @Override
     public void ensureLoaded() {
 
     }
 
     @Override
-    public CallStack createStack(int numArgs) {
+    public DeviceFrame createStack(int numArgs) {
 
         return null;
     }
@@ -125,31 +104,6 @@ public class JVMMapping implements TornadoDevice {
     public TornadoInstalledCode installCode(SchedulableTask task) {
 
         return null;
-    }
-
-    @Override
-    public int ensureAllocated(Object object, DeviceObjectState state) {
-        // TODO Auto-generated method stub
-        return -1;
-    }
-
-    @Override
-    public int ensurePresent(Object object, DeviceObjectState objectState) {
-        // TODO Auto-generated method stub
-        return -1;
-    }
-
-    @Override
-    public int streamIn(Object object, DeviceObjectState objectState) {
-        // TODO Auto-generated method stub
-        return -1;
-    }
-
-    @Override
-    public int streamOut(Object object, DeviceObjectState objectState,
-            int[] list) {
-        // TODO Auto-generated method stub
-        return -1;
     }
 
     @Override
@@ -180,6 +134,12 @@ public class JVMMapping implements TornadoDevice {
     @Override
     public String getDeviceName() {
         return "jvm";
+    }
+
+    @Override
+    public int write(BlockingMode blocking, CacheMode caching, Object object, int[] waitList) {
+        unimplemented();
+        return -1;
     }
 
 }

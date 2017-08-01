@@ -23,6 +23,8 @@ import tornado.runtime.api.TaskSchedule;
 
 import static tornado.collections.math.TornadoMath.findULPDistance;
 import static tornado.common.Tornado.getProperty;
+import static tornado.collections.math.TornadoMath.findULPDistance;
+import static tornado.common.Tornado.getProperty;
 
 public class DotTornado extends BenchmarkDriver {
 
@@ -66,7 +68,7 @@ public class DotTornado extends BenchmarkDriver {
         b = null;
         c = null;
 
-        graph.getDevice().reset();
+        graph.getDefaultDevice().reset();
         super.tearDown();
     }
 

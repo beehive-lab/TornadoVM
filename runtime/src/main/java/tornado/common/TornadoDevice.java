@@ -20,33 +20,33 @@ import tornado.api.enums.TornadoSchedulingStrategy;
 
 public interface TornadoDevice {
 
-    public TornadoSchedulingStrategy getPreferedSchedule();
+    public enum CacheMode {
+        CACHABLE, NON_CACHEABLE;
+    }
 
-    public boolean isDistibutedMemory();
+    public enum BlockingMode {
+        BLOCKING, NON_BLOCKING;
+    }
+
+    public enum SharingMode {
+        EXCLUSIVE, SHARED;
+    }
+
+    public TornadoSchedulingStrategy getPreferedSchedule();
 
     public void ensureLoaded();
 
-    public CallStack createStack(int numArgs);
+    public DeviceFrame createStack(int numArgs);
 
-    public int ensureAllocated(Object object, DeviceObjectState state);
+    public int read(BlockingMode blocking, SharingMode sharing, CacheMode caching, Object object, int[] waitList);
 
-    public int ensurePresent(Object object, DeviceObjectState objectState);
+    public int write(BlockingMode blocking, CacheMode caching, Object object, int[] waitList);
 
-    public int ensurePresent(Object object, DeviceObjectState objectState, int[] events);
+    public long toAbsoluteDeviceAddress(Object object);
 
-    public int streamIn(Object object, DeviceObjectState objectState);
+    public long toRelativeDeviceAddress(Object object);
 
-    public int streamIn(Object object, DeviceObjectState objectState, int[] events);
-
-    public int streamOut(Object object, DeviceObjectState objectState);
-
-    public int streamOut(Object object, DeviceObjectState objectState,
-            int[] list);
-
-    public void streamOutBlocking(Object object, DeviceObjectState objectState);
-
-    public void streamOutBlocking(Object object, DeviceObjectState objectState,
-            int[] list);
+    public int flushCache();
 
     public TornadoInstalledCode installCode(SchedulableTask task);
 
@@ -59,10 +59,6 @@ public interface TornadoDevice {
     public int enqueueBarrier();
 
     public int enqueueBarrier(int[] events);
-
-    public int enqueueMarker();
-
-    public int enqueueMarker(int[] events);
 
     public void sync();
 

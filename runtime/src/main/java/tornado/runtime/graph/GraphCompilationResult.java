@@ -15,30 +15,47 @@
  */
 package tornado.runtime.graph;
 
+import tornado.common.TornadoDevice.CacheMode;
 import tornado.runtime.graph.nodes.*;
+
+import static tornado.runtime.graph.GraphAssembler.*;
 
 public class GraphCompilationResult {
 
     private byte[] code;
     private GraphAssembler asm;
     private int gtid;
+    private int nextEventQueue;
 
     public GraphCompilationResult() {
         code = new byte[1024];
         asm = new GraphAssembler(code);
         gtid = 0;
+        nextEventQueue = 0;
     }
 
-    public void begin(int numContexts, int numStacks, int numDeps) {
+    public int nextEventQueue() {
+        return nextEventQueue++;
+    }
+
+    public GraphAssembler getAssembler() {
+        return asm;
+    }
+
+    public void setup(int numContexts, int numStacks, int numDeps) {
         asm.setup(numContexts, numStacks, numDeps);
         for (int i = 0; i < numContexts; i++) {
             asm.context(i);
         }
-        asm.begin();
+//        asm.begin();
     }
 
     public void barrier(int dep) {
         asm.barrier(dep);
+    }
+
+    public void begin() {
+        asm.begin();
     }
 
     public void end() {
@@ -49,18 +66,29 @@ public class GraphCompilationResult {
             AbstractNode node, int ctx, int depIn) {
 
 //		System.out.printf("emit: %s\n",node);
-        if (node instanceof CopyInNode) {
-            asm.copyToContext(((CopyInNode) node).getValue().getIndex(), ctx, depIn);
+        if (node instanceof ReadHostNode) {
+            final ReadHostNode readHostNode = (ReadHostNode) node;
+
+            byte mode = encodeBlockingMode(readHostNode.getBlocking(), (byte) 0);
+            mode = encodeSharingMode(readHostNode.getSharingMode(), mode);
+            mode = encodeCacheMode(CacheMode.CACHABLE, mode);
+
+            asm.readHost(mode, readHostNode.getValue().getIndex(), ctx, depIn);
         } else if (node instanceof AllocateNode) {
             asm.allocate(((AllocateNode) node).getValue().getIndex(), ctx);
-        } else if (node instanceof CopyOutNode) {
-            asm.streamOutOfContext(((CopyOutNode) node).getValue().getValue().getIndex(), ctx, depIn);
-        } else if (node instanceof StreamInNode) {
-            asm.streamInToContext(((StreamInNode) node).getValue().getIndex(), ctx, depIn);
+        } else if (node instanceof WriteHostNode) {
+            final WriteHostNode writeHostNode = (WriteHostNode) node;
+
+            byte mode = encodeBlockingMode(writeHostNode.getBlocking(), (byte) 0);
+            mode = encodeCacheMode(CacheMode.CACHABLE, mode);
+
+            asm.writeHost(mode, writeHostNode.getValue().getIndex(), ctx, depIn);
         } else if (node instanceof TaskNode) {
             final TaskNode taskNode = (TaskNode) node;
 
-            asm.launch(gtid, taskNode.getContext().getIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), depIn);
+            final byte mode = encodeBlockingMode(taskNode.getBlocking(), (byte) 0);
+
+            asm.launch(mode, gtid, taskNode.getDevice().getIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), depIn);
             gtid++;
 
             emitArgList(graph, context, taskNode);
@@ -75,16 +103,14 @@ public class GraphCompilationResult {
             final AbstractNode argNode = taskNode.getArg(i);
             if (argNode instanceof ConstantNode) {
                 asm.constantArg(((ConstantNode) argNode).getIndex());
-            } else if (argNode instanceof CopyInNode) {
-                asm.referenceArg(((CopyInNode) argNode).getValue().getIndex());
-            } else if (argNode instanceof StreamInNode) {
-                asm.referenceArg(((StreamInNode) argNode).getValue().getIndex());
-            } else if (argNode instanceof CopyOutNode) {
-                asm.referenceArg(((CopyOutNode) argNode).getValue().getValue().getIndex());
+            } else if (argNode instanceof ReadHostNode) {
+                asm.referenceArg(((ReadHostNode) argNode).getValue().getIndex());
+            } else if (argNode instanceof ParameterNode) {
+                asm.referenceArg(((ParameterNode) argNode).getIndex());
+            } else if (argNode instanceof WriteHostNode) {
+                asm.referenceArg(((WriteHostNode) argNode).getValue().getIndex());
             } else if (argNode instanceof AllocateNode) {
                 asm.referenceArg(((AllocateNode) argNode).getValue().getIndex());
-            } else if (argNode instanceof DependentReadNode) {
-                asm.referenceArg(((DependentReadNode) argNode).getValue().getIndex());
             }
         }
 
@@ -104,6 +130,10 @@ public class GraphCompilationResult {
 
     public int getCodeSize() {
         return asm.position();
+    }
+
+    void postfetch(int index) {
+        asm.postfetch(index);
     }
 
 }

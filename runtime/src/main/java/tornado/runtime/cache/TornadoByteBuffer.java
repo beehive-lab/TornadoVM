@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,84 +13,99 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tornado.drivers.opencl.mm;
+package tornado.runtime.cache;
 
 import java.nio.ByteBuffer;
-import tornado.common.RuntimeUtilities;
-import tornado.common.Tornado;
-import tornado.common.exceptions.TornadoOutOfMemoryException;
-import tornado.drivers.opencl.OCLDeviceContext;
+import java.nio.ByteOrder;
+import tornado.runtime.cache.TornadoDataMover.AllocateOp;
+import tornado.runtime.cache.TornadoDataMover.AsyncOp;
+import tornado.runtime.cache.TornadoDataMover.BarrierOp;
+import tornado.runtime.cache.TornadoDataMover.SyncOp;
+
+import static tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static tornado.common.Tornado.warn;
 
 /**
  * A buffer for inspecting data within an OpenCL device. It is not backed by any
  * userspace object.
  */
-public class OCLByteBuffer {
+public class TornadoByteBuffer {
 
-    protected ByteBuffer buffer;
-    protected long bufferOffset;
-    protected long bytes;
+    protected final ByteBuffer buffer;
+    protected final long bufferId;
+//    protected final long bufferOffset;
+    protected final long bytes;
+    protected final long baseAddress;
 
-    protected final OCLDeviceContext deviceContext;
+    protected final long offset;
 
-    protected long offset;
+    private final BarrierOp barrierOp;
+    private final SyncOp<byte[]> syncWriter;
+    private final AsyncOp<byte[]> asyncWriter;
+    private final SyncOp<byte[]> syncReader;
+    private final AsyncOp<byte[]> asyncReader;
 
-    protected OCLByteBuffer(final OCLDeviceContext device) {
-        this.deviceContext = device;
-    }
-
-    public OCLByteBuffer(final OCLDeviceContext device, final long offset, final long numBytes) {
-        this(device);
+    public TornadoByteBuffer(final long bufferId, final long offset,
+            final long numBytes, final long baseAddress,
+            ByteOrder byteOrder, AllocateOp allocator,
+            BarrierOp barrier,
+            SyncOp<byte[]> write, AsyncOp<byte[]> enqueueWrite,
+            SyncOp<byte[]> read, AsyncOp<byte[]> enqueueRead) {
+        this.bufferId = bufferId;
         this.offset = offset;
         this.bytes = numBytes;
+        this.baseAddress = baseAddress;
+        this.barrierOp = barrier;
+        this.syncWriter = write;
+        this.asyncWriter = enqueueWrite;
+        this.syncReader = read;
+        this.asyncReader = enqueueRead;
         buffer = ByteBuffer.allocate((int) numBytes);
-        buffer.order(deviceContext.getByteOrder());
-    }
-
-    public void allocate(final long numBytes) throws TornadoOutOfMemoryException {
-        bytes = numBytes;
-
-        offset = deviceContext.getMemoryManager().tryAllocate(byte[].class, numBytes, 0, getAlignment());
-
-        buffer = ByteBuffer.allocate((int) numBytes);
-        buffer.order(deviceContext.getByteOrder());
-
+        buffer.order(byteOrder);
     }
 
     public ByteBuffer buffer() {
         return buffer;
     }
 
-    public void read() {
-        read(null);
+    public void syncRead() {
+        syncRead(null);
     }
 
-    public void read(final int[] events) {
-        deviceContext.readBuffer(toBuffer(), offset, bytes, buffer.array(), events);
+    public void syncRead(final int[] events) {
+        syncReader.apply(bufferId, offset, bytes, buffer.array(), events);
     }
 
-    public int enqueueRead() {
-        return enqueueRead(null);
+    public int asyncRead() {
+        return asyncRead(null);
     }
 
-    public int enqueueRead(final int[] events) {
-        return deviceContext.enqueueReadBuffer(toBuffer(), offset, bytes, buffer.array(), events);
+    public int asyncRead(final int[] events) {
+        return asyncReader.apply(bufferId, offset, bytes, buffer.array(), events);
     }
 
-    public void write() {
-        write(null);
+    public void syncWrite() {
+        syncWrite(null);
     }
 
-    public void write(final int[] events) {
-        deviceContext.writeBuffer(toBuffer(), offset, bytes, buffer.array(), events);
+    public void syncWrite(final int[] events) {
+        syncWriter.apply(bufferId, offset, bytes, buffer.array(), events);
     }
 
-    public int enqueueWrite() {
-        return enqueueWrite(null);
+    public int asyncWrite() {
+        return asyncWrite(null);
     }
 
-    public int enqueueWrite(final int[] events) {
-        return deviceContext.enqueueWriteBuffer(toBuffer(), offset, bytes, buffer.array(), events);
+    public int asyncWrite(final int[] events) {
+        return asyncWriter.apply(bufferId, offset, bytes, buffer.array(), events);
+    }
+
+    public int barrier() {
+        return barrier(null);
+    }
+
+    public int barrier(int[] waitList) {
+        return barrierOp.insert(null);
     }
 
     public void dump() {
@@ -99,11 +114,11 @@ public class OCLByteBuffer {
 
     public void dump(final int width) {
         buffer.position(buffer.capacity());
-        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities
-                .humanReadableByteCount(bytes, true), RuntimeUtilities.humanReadableByteCount(
-                buffer.position(), true), deviceContext.getDevice().getName());
+        System.out.printf("Buffer  : capacity = %s, in use = %s\n",
+                humanReadableByteCount(bytes, true),
+                humanReadableByteCount(buffer.position(), true));
         for (int i = 0; i < buffer.position(); i += width) {
-            System.out.printf("[0x%04x]: ", i + toAbsoluteAddress());
+            System.out.printf("[0x%04x]: ", i + baseAddress);
             for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {
                 if (j % 2 == 0) {
                     System.out.printf(" ");
@@ -136,6 +151,10 @@ public class OCLByteBuffer {
 
     public int getAlignment() {
         return 64;
+    }
+
+    public long getBufferId() {
+        return bufferId;
     }
 
     public long getBufferOffset() {
@@ -262,16 +281,8 @@ public class OCLByteBuffer {
         return buffer.putShort(value);
     }
 
-    public long toAbsoluteAddress() {
-        return deviceContext.getMemoryManager().toAbsoluteDeviceAddress(offset);
-    }
-
     public long toBuffer() {
-        return deviceContext.getMemoryManager().toBuffer();
-    }
-
-    public long toRelativeAddress() {
-        return deviceContext.getMemoryManager().toRelativeDeviceAddress(offset);
+        return bufferId;
     }
 
     public Object value() {
@@ -279,7 +290,6 @@ public class OCLByteBuffer {
     }
 
     public void zeroMemory() {
-        Tornado.warn("zero memory unimplemented");
-
+        warn("zero memory unimplemented");
     }
 }

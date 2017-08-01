@@ -46,35 +46,8 @@ public class InstanceOfTest {
 
         TaskSchedule s0 = new TaskSchedule("s0")
                 .task("t0", InstanceOfTest::instanceOf, foo);
-
+        s0.warmup();
         s0.execute();
-
-//        s0.getTask("t0").
-        /*
-         * First step is to create a reference to the method invocation This
-         * involves finding the methods called and the arguments used in each
-         * call.
-         */
-//        final CompilableTask instanceOfInvocation = TaskUtils.createTask("t0",
-//                InstanceOfTest::instanceOf, foo);
-
-        /*
-         * Next we map each invocation onto a specific compute device
-         */
-//        instanceOfInvocation.mapTo(new OCLDeviceMapping(0, 0));
-
-        /*
-         * schedule execution of a instanceof Foo
-         */
-//        instanceOfInvocation.execute();
-
-        /*
-         * wait for stack to be updated and retrive return value
-         */
-//        instanceOfInvocation.getStack().getEvent().waitOn();
-//        final long returnValue = instanceOfInvocation.getStack()
-//                .getReturnValue();
-//        System.out.printf("object 0x%x %s instanceof Foo\n", foo.hashCode(),
-//                (returnValue == 1) ? "is" : "is not");
+        System.out.printf("return value = 0x%x\n", s0.getReturnValue("t0"));
     }
 }
