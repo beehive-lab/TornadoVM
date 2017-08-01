@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -83,8 +83,8 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatCos(Value input) {
-        unimplemented();
-        return null;
+        trace("genCos: cos(%s)", input);
+        return new OCLUnary.Intrinsic(COS, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatCosh(Value input) {
@@ -188,8 +188,8 @@ public class OCLBuiltinTool {
     }
 
     public Value genFloatSin(Value input) {
-        unimplemented();
-        return null;
+        trace("genSin: sin(%s)", input);
+        return new OCLUnary.Intrinsic(SIN, LIRKind.value(input.getPlatformKind()), input);
     }
 
     public Value genFloatSinh(Value input) {
