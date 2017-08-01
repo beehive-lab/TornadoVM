@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -161,11 +161,17 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
         Value input = builder.operand(getValue());
         Value result;
         switch (operation()) {
+            case COS:
+                result = gen.genFloatCos(input);
+                break;
             case FABS:
                 result = gen.genFloatAbs(input);
                 break;
             case EXP:
                 result = gen.genFloatExp(input);
+                break;
+            case SIN:
+                result = gen.genFloatSin(input);
                 break;
             case SQRT:
                 result = gen.genFloatSqrt(input);
