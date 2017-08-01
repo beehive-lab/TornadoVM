@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,7 @@ public class OCLAssemblerConstants {
     public static final String CONSTANT_REGION_NAME = "_constant_region";
 
     public static final String HEAP_REF_NAME = "_heap_base";
-    public static final String STACK_REF_NAME = "_stack_base";
+    public static final String FRAME_BASE_NAME = "_frame_base";
     public static final String FRAME_REF_NAME = "_frame";
 
     public static final String STMT_DELIMITER = ";";
@@ -47,7 +47,7 @@ public class OCLAssemblerConstants {
     public static final String ASSIGN = " = ";
     public static final String CURLY_BRACKET_OPEN = "{";
     public static final String CURLY_BRACKET_CLOSE = "}";
-     public static final String ADDRESS_OF = "&";
+    public static final String ADDRESS_OF = "&";
 
     public static final String BRACKET_OPEN = "(";
     public static final String BRACKET_CLOSE = ")";

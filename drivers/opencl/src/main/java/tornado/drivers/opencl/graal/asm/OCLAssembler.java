@@ -37,6 +37,7 @@ import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 import static tornado.common.exceptions.TornadoInternalError.*;
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
 import static tornado.drivers.opencl.graal.lir.OCLKind.*;
+import static tornado.runtime.api.TornadoCallStack.RESERVED_SLOTS;
 
 public final class OCLAssembler extends Assembler {
 
@@ -157,6 +158,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryOp CAST_TO_ULONG = new OCLUnaryOp("(ulong) ", true);
         public static final OCLUnaryOp CAST_TO_FLOAT = new OCLUnaryOp("(float) ", true);
         public static final OCLUnaryOp CAST_TO_BYTE = new OCLUnaryOp("(char) ", true);
+        public static final OCLUnaryOp CAST_TO_DOUBLE = new OCLUnaryOp("(double) ", true);
 
         public static final OCLUnaryOp CAST_TO_INT_PTR = new OCLUnaryOp("(int *) ", true);
         public static final OCLUnaryOp CAST_TO_SHORT_PTR = new OCLUnaryOp("(short *) ", true);
@@ -218,6 +220,8 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic EXP = new OCLUnaryIntrinsic("exp");
         public static final OCLUnaryIntrinsic SQRT = new OCLUnaryIntrinsic("sqrt");
         public static final OCLUnaryIntrinsic LOG = new OCLUnaryIntrinsic("log");
+        public static final OCLUnaryIntrinsic SIN = new OCLUnaryIntrinsic("sin");
+        public static final OCLUnaryIntrinsic COS = new OCLUnaryIntrinsic("cos");
 
         public static final OCLUnaryIntrinsic FLOAT_ABS = new OCLUnaryIntrinsic("fabs");
         public static final OCLUnaryIntrinsic FLOAT_TRUNC = new OCLUnaryIntrinsic("trunc");
@@ -255,14 +259,14 @@ public final class OCLAssembler extends Assembler {
     public static class OCLUnaryTemplate extends OCLUnaryOp {
         // @formatter:off
 
-        public static final OCLUnaryTemplate LOAD_PARAM_INT = new OCLUnaryTemplate("param", "(int) slots[%s]");
-        public static final OCLUnaryTemplate LOAD_PARAM_LONG = new OCLUnaryTemplate("param", "(long) slots[%s]");
-        public static final OCLUnaryTemplate LOAD_PARAM_FLOAT = new OCLUnaryTemplate("param", "(float) slots[%s]");
-        public static final OCLUnaryTemplate LOAD_PARAM_DOUBLE = new OCLUnaryTemplate("param", "(double) slots[%s]");
-        public static final OCLUnaryTemplate LOAD_PARAM_ULONG = new OCLUnaryTemplate("param", "(ulong) slots[%s]");
-        public static final OCLUnaryTemplate LOAD_PARAM_UINT = new OCLUnaryTemplate("param", "(uint) slots[%s]");
+        public static final OCLUnaryTemplate LOAD_PARAM_INT = new OCLUnaryTemplate("param", "(int) " + FRAME_REF_NAME + "[%s]");
+        public static final OCLUnaryTemplate LOAD_PARAM_LONG = new OCLUnaryTemplate("param", "(long) " + FRAME_REF_NAME + "[%s]");
+        public static final OCLUnaryTemplate LOAD_PARAM_FLOAT = new OCLUnaryTemplate("param", "(float) " + FRAME_REF_NAME + "[%s]");
+        public static final OCLUnaryTemplate LOAD_PARAM_DOUBLE = new OCLUnaryTemplate("param", "(double) " + FRAME_REF_NAME + "[%s]");
+        public static final OCLUnaryTemplate LOAD_PARAM_ULONG = new OCLUnaryTemplate("param", "(ulong) " + FRAME_REF_NAME + "[%s]");
+        public static final OCLUnaryTemplate LOAD_PARAM_UINT = new OCLUnaryTemplate("param", "(uint) " + FRAME_REF_NAME + "[%s]");
 //        public static final OCLUnaryTemplate LOAD_PARAM_OBJECT_REL = new OCLUnaryTemplate("param", "(ulong) &"+OCLAssemblerConstants.HEAP_REF_NAME +" [slots[%s]]");
-        public static final OCLUnaryTemplate SLOT_ADDRESS = new OCLUnaryTemplate("param", "(ulong) &slots[%s]");
+        public static final OCLUnaryTemplate SLOT_ADDRESS = new OCLUnaryTemplate("param", "(ulong) &" + FRAME_REF_NAME + "[%s]");
 
         public static final OCLUnaryTemplate MEM_CHECK = new OCLUnaryTemplate("mem check", "MEM_CHECK(%s)");
         public static final OCLUnaryTemplate INDIRECTION = new OCLUnaryTemplate("deref", "*(%s)");
@@ -272,11 +276,11 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryTemplate ADDRESS_OF = new OCLUnaryTemplate("address of", "&(%s)");
 
         public static final OCLUnaryTemplate NEW_INT_ARRAY = new OCLUnaryTemplate("int[]", "int[%s]");
-        public static final OCLUnaryTemplate NEW_LONG_ARRAY = new OCLUnaryTemplate("int[]", "long[%s]");
-        public static final OCLUnaryTemplate NEW_FLOAT_ARRAY = new OCLUnaryTemplate("int[]", "float[%s]");
-        public static final OCLUnaryTemplate NEW_DOUBLE_ARRAY = new OCLUnaryTemplate("int[]", "double[%s]");
-        public static final OCLUnaryTemplate NEW_BYTE_ARRAY = new OCLUnaryTemplate("int[]", "char[%s]");
-        public static final OCLUnaryTemplate NEW_SHORT_ARRAY = new OCLUnaryTemplate("int[]", "short[%s]");
+        public static final OCLUnaryTemplate NEW_LONG_ARRAY = new OCLUnaryTemplate("long[]", "long[%s]");
+        public static final OCLUnaryTemplate NEW_FLOAT_ARRAY = new OCLUnaryTemplate("float[]", "float[%s]");
+        public static final OCLUnaryTemplate NEW_DOUBLE_ARRAY = new OCLUnaryTemplate("double[]", "double[%s]");
+        public static final OCLUnaryTemplate NEW_BYTE_ARRAY = new OCLUnaryTemplate("char[]", "char[%s]");
+        public static final OCLUnaryTemplate NEW_SHORT_ARRAY = new OCLUnaryTemplate("short[]", "short[%s]");
 
         // @formatter:on
         private final String template;
@@ -1061,7 +1065,7 @@ public final class OCLAssembler extends Assembler {
     }
 
     public void loadParam(Variable result, int index) {
-        emit("(%s) slots[%d]", result.getPlatformKind().name(), index + 6);
+        emit("(%s) %s[%d]", result.getPlatformKind().name(), FRAME_REF_NAME, RESERVED_SLOTS + 6);
     }
 
     @Deprecated
