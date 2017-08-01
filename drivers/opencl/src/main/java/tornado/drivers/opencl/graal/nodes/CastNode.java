@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,6 +50,8 @@ public class CastNode extends FloatingNode implements LIRLowerable {
 
     private OCLUnaryOp resolveOp() {
         switch (op) {
+            case I2D:
+                return OCLUnaryOp.CAST_TO_DOUBLE;
             case F2I:
                 return OCLUnaryOp.CAST_TO_INT;
             case I2F:
