@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +15,14 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
-import com.oracle.graal.graph.NodeClass;
-import com.oracle.graal.lir.Variable;
-import com.oracle.graal.nodeinfo.NodeInfo;
-import com.oracle.graal.nodes.ValueNode;
-import com.oracle.graal.nodes.memory.address.AddressNode;
-import com.oracle.graal.nodes.spi.LIRLowerable;
-import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.Value;
+import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.compiler.nodes.spi.LIRLowerable;
+import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
 import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
@@ -65,6 +65,21 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
 
         Variable addressValue = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
         gen.setResult(this, new MemoryAccess(memoryRegister, addressValue, false));
+    }
+
+    @Override
+    public ValueNode getBase() {
+        return base;
+    }
+
+    @Override
+    public ValueNode getIndex() {
+        return index;
+    }
+
+    @Override
+    public long getMaxConstantDisplacement() {
+        return 0;
     }
 
 }

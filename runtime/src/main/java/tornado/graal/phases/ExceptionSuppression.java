@@ -15,12 +15,12 @@
  */
 package tornado.graal.phases;
 
-import com.oracle.graal.nodes.GuardNode;
-import com.oracle.graal.nodes.LogicNode;
-import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.nodes.extended.GuardedNode;
-import com.oracle.graal.nodes.extended.ValueAnchorNode;
-import com.oracle.graal.phases.BasePhase;
+import org.graalvm.compiler.nodes.GuardNode;
+import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.extended.GuardedNode;
+import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
+import org.graalvm.compiler.phases.BasePhase;
 import java.util.HashSet;
 import java.util.Set;
 

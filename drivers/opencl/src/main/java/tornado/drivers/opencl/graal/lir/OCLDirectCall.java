@@ -15,11 +15,11 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
-import com.oracle.graal.compiler.common.LIRKind;
-import com.oracle.graal.lir.LIRFrameState;
-import com.oracle.graal.lir.LIRInstruction.Def;
-import com.oracle.graal.lir.LIRInstruction.Use;
-import com.oracle.graal.nodes.DirectCallTargetNode;
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.LIRFrameState;
+import org.graalvm.compiler.lir.LIRInstruction.Def;
+import org.graalvm.compiler.lir.LIRInstruction.Use;
+import org.graalvm.compiler.nodes.DirectCallTargetNode;
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.OCLArchitecture;
 import tornado.drivers.opencl.graal.OCLUtils;

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,42 +15,38 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.asm.Assembler;
-import com.oracle.graal.compiler.common.cfg.AbstractBlockBase;
-import com.oracle.graal.compiler.common.cfg.Loop;
-import com.oracle.graal.compiler.common.spi.ForeignCallsProvider;
-import com.oracle.graal.lir.InstructionValueProcedure;
-import com.oracle.graal.lir.LIR;
-import com.oracle.graal.lir.LIRInstruction;
-import com.oracle.graal.lir.LIRInstruction.OperandFlag;
-import com.oracle.graal.lir.LIRInstruction.OperandMode;
-import com.oracle.graal.lir.Variable;
-import com.oracle.graal.lir.asm.CompilationResultBuilder;
-import com.oracle.graal.lir.asm.DataBuilder;
-import com.oracle.graal.lir.asm.FrameContext;
-import com.oracle.graal.lir.framemap.FrameMap;
-import com.oracle.graal.nodes.AbstractMergeNode;
-import com.oracle.graal.nodes.FixedNode;
-import com.oracle.graal.nodes.IfNode;
-import com.oracle.graal.nodes.LoopBeginNode;
-import com.oracle.graal.nodes.cfg.Block;
-import com.oracle.graal.nodes.cfg.ControlFlowGraph;
-import com.oracle.graal.nodes.extended.SwitchNode;
 import java.util.*;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
+import org.graalvm.compiler.asm.Assembler;
+import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
+import org.graalvm.compiler.lir.InstructionValueProcedure;
+import org.graalvm.compiler.lir.LIR;
+import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.LIRInstruction.OperandFlag;
+import org.graalvm.compiler.lir.LIRInstruction.OperandMode;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+import org.graalvm.compiler.lir.asm.DataBuilder;
+import org.graalvm.compiler.lir.asm.FrameContext;
+import org.graalvm.compiler.lir.framemap.FrameMap;
+import org.graalvm.compiler.nodes.AbstractMergeNode;
+import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.nodes.extended.SwitchNode;
+import org.graalvm.compiler.options.OptionValues;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopConditionOp;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopInitOp;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopPostOp;
-import tornado.drivers.opencl.graal.lir.OCLControlFlow.SwitchOp;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.graal.TornadoLIRGenerator.trace;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
@@ -63,9 +59,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     public OCLCompilationResultBuilder(CodeCacheProvider codeCache,
             ForeignCallsProvider foreignCalls, FrameMap frameMap,
             Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
-            OCLCompilationResult compilationResult) {
+            OCLCompilationResult compilationResult, OptionValues options) {
         super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext,
-                compilationResult, new IdentityHashMap<>());
+                options, compilationResult);
         nonInlinedMethods = new HashSet<>();
     }
 
@@ -107,20 +103,10 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         this.currentBlockIndex = 0;
         frameContext.enter(this);
 
-        // info("CFG: class=%s",lir.getControlFlowGraph().getClass().getName());
-        ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
-
-        // Set<AbstractBlockBase<?>> blocks = new
-        // HashSet<AbstractBlockBase<?>>();
-        // Set<AbstractBlockBase<?>> pending = new
-        // HashSet<AbstractBlockBase<?>>();
-        // blocks.addAll(cfg.getBlocks());
+        final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
         trace("Traversing CFG: ", cfg.graph.name);
-
-        Set<Block> floating = new HashSet<>();
-
         cfg.computePostdominators();
-        traverseCFG(cfg, (OCLAssembler) asm, floating, cfg.getStartBlock());
+        traverseCfg(cfg, new OCLBlockVisitor(this));
 
         trace("Finished traversing CFG");
         this.lir = null;
@@ -140,7 +126,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         StringBuilder sb = new StringBuilder();
         sb.append("[ ");
         for (Block b : blocks) {
-            sb.append(b.getId() + " ");
+            sb.append(b.getId()).append(" ");
         }
         sb.append("]");
         return sb.toString();
@@ -150,7 +136,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         StringBuilder sb = new StringBuilder();
         sb.append("[ ");
         for (Block b : blocks) {
-            sb.append(b.getId() + " ");
+            sb.append(b.getId()).append(" ");
         }
         sb.append("]");
         return sb.toString();
@@ -162,170 +148,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             System.out.printf("  node: %s\n", node);
         }
         System.out.println();
-    }
-
-    private void traverseCFG(ControlFlowGraph cfg, OCLAssembler asm,
-            Set<Block> merges, Block b) {
-        final List<Block> dominates = b.getDominated();
-
-        final int numDominated = dominates.size();
-
-        // System.out.printf("schedule: block=%s, succs=%s, dominates=%s, floating=%s, pdom=%s\n",b.getId(),toString(b.getSuccessors()),toString(dominates),toString(merges),b.getPostdominator());
-        if (b.isLoopEnd()) {
-            patchLoopEnd(b);
-        }
-
-        if (!b.isLoopHeader()) {
-            emitBlock(b);
-        }
-
-        if (numDominated == 1) {
-            traverseCFG(cfg, asm, merges, dominates.get(0));
-        } else if (b.isLoopHeader()) {
-            // TornadoInternalError.guarantee(b.getLoop().getExits().size() ==
-            // 1,
-            // "Loop has multiple exits! block=%d", b.getId());
-            // TornadoInternalError.guarantee(dominates.size() == 2,
-            // "Loop header dominates multiple blocks! block=%d", b.getId());
-
-            final Loop<Block> loop = b.getLoop();
-
-            // more than one exit means that there are break statements inside
-            // the loopbody...
-            Block exit = null;
-            if (loop.getExits().size() > 1) {
-                // multiple exists should converge at a merge node
-                exit = loop.getExits().get(0);
-                Set<Block> successors = new HashSet<>();
-                successors.addAll(dominates);
-                successors.removeAll(loop.getExits());
-                successors.removeAll(loop.getBlocks());
-                // System.out.printf("exit: block=%s, succ=%d, pred=%d\n",exit,exit.getSuccessorCount(),exit.getPredecessorCount());
-                // System.out.printf("exit: dominates %s\n",toString(dominates));
-                // System.out.printf("exit: loop blocks %s\n",toString(loop.getBlocks()));
-                if (successors.size() == 1) {
-                    exit = successors.iterator().next();
-                }
-                guarantee(exit.getBeginNode() instanceof AbstractMergeNode,
-                        "loop exists do not converge: block=%d", b.getId());
-            } else {
-                exit = loop.getExits().get(0);
-            }
-
-            final boolean inverted = (dominates.get(0).equals(exit));
-            final Block body = (inverted) ? dominates.get(1) : dominates.get(0);
-
-            guarantee(loop.numBackedges() == 1,
-                    "loop at %s has %d backedges", b, loop.numBackedges());
-            final Block backedge = cfg.blockFor(((LoopBeginNode) b
-                    .getBeginNode()).loopEnds().first());
-
-            patchLoopStms(b, body, backedge);
-            emitBlock(b);
-
-            asm.beginScope();
-            traverseCFG(cfg, asm, merges, body);
-            asm.endScope();
-
-            // System.out.printf("backedge: %s\n",backedge);
-            // System.out.printf("loop exit: exit=%s, exit count=%d\n",exit,b.getLoop().getExits().size());
-            traverseCFG(cfg, asm, merges, exit);
-        } else if (isIfBlock(b)) {
-            // System.out.printf("branch: succ=%s, doms=%s\n",toString(b.getSuccessors()),toString(dominates));
-
-            Block trueBranch = dominates.get(0);
-            Block falseBranch = dominates.get(1);
-
-            boolean emitMerge = false;
-            Block mergeBlock = null;
-            if (dominates.size() == 3) {
-                mergeBlock = dominates.get(2);
-                if (!merges.contains(mergeBlock)) {
-                    merges.add(mergeBlock);
-                    emitMerge = true;
-                }
-            }
-
-            asm.beginScope();
-            traverseCFG(cfg, asm, merges, trueBranch);
-            asm.endScope();
-            asm.indent();
-            asm.elseStmt();
-            asm.eol();
-            asm.beginScope();
-            traverseCFG(cfg, asm, merges, falseBranch);
-            asm.endScope();
-
-            if (emitMerge) {
-                merges.remove(mergeBlock);
-                traverseCFG(cfg, asm, merges, mergeBlock);
-            }
-        } else if (b.getSuccessorCount() == 1
-                && !merges.contains(b.getSuccessors()[0])) {
-            final Block successor = b.getSuccessors()[0];
-            if (isMergeBlock(successor) && successor.isLoopEnd()) {
-                emitBlock(successor);
-            }
-            // System.out.println("fallthrough");
-            // TornadoInternalError.shouldNotReachHere();
-        } else if (isSwitchBlock(b)) {
-
-            final SwitchNode sw = (SwitchNode) b.getEndNode();
-
-            final List<LIRInstruction> insns = lir.getLIRforBlock(b);
-            final SwitchOp switchOp = (SwitchOp) insns.get(insns.size() - 1);
-
-            asm.beginScope();
-
-            Set<Block> targetBlocks = new HashSet<>();
-            for (int i = 0; i < switchOp.getKeyTargets().length; i++) {
-                Block targetBlock = cfg.blockFor(sw.blockSuccessor(i));
-//                shouldNotReachHere();
-                patchCaseBlock(lir, switchOp.getKeyConstants()[i], targetBlock);
-                emitBlock(targetBlock);
-                targetBlocks.add(targetBlock);
-                // System.out.printf("target: %s\n",targetBlock);
-            }
-
-            if (sw.defaultSuccessor() != null) {
-                Block targetBlock = cfg.blockFor(sw.defaultSuccessor());
-                patchDefaultCaseBlock(lir, targetBlock);
-                emitBlock(targetBlock);
-                targetBlocks.add(targetBlock);
-                // System.out.printf("target: %s\n",targetBlock);
-            }
-
-            asm.popIndent();
-
-            asm.endScope();
-
-            Block exit = b.getFirstSuccessor().getFirstSuccessor();
-//            if (targetBlocks.size() == 1) {
-//                exit = targetBlocks.iterator().next();
-//            } else {
-//                dominates.removeAll(targetBlocks);
-//                exit = dominates.iterator().next();
-//            }
-
-            traverseCFG(cfg, asm, merges, exit);
-
-        }
-
-    }
-
-    private void patchLoopEnd(Block b) {
-        // final List<LIRInstruction> insns = lir.getLIRforBlock(b);
-        // int index = insns.size() - 1;
-        // LIRInstruction current = insns.get(index);
-        // while(!(current instanceof LoopEndOp)){
-        // index --;
-        // current = insns.get(index);
-        // }
-        //
-        // if(index != insns.size() - 1){
-        // insns.add(insns.remove(index));
-        // }
-
     }
 
     private void patchDefaultCaseBlock(LIR lir, Block block) {
@@ -361,6 +183,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         return block.getBeginNode() instanceof AbstractMergeNode;
     }
 
+    @Deprecated
     private void patchLoopStms(Block header, Block body, Block backedge) {
 
         final List<LIRInstruction> headerInsns = lir.getLIRforBlock(header);
@@ -372,6 +195,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     }
 
+    @Deprecated
     private void migrateInsnToBody(List<LIRInstruction> header,
             List<LIRInstruction> body) {
 
@@ -419,6 +243,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         // }
     }
 
+    @Deprecated
     private static class DepFinder implements InstructionValueProcedure {
 
         private final Set<Value> dependencies;
@@ -444,7 +269,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     }
 
-    private static void formatLoopHeader(List<LIRInstruction> instructions) {
+    public static void formatLoopHeader(List<LIRInstruction> instructions) {
         int index = instructions.size() - 1;
 
         LIRInstruction condition = instructions.get(index);
@@ -490,15 +315,33 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     }
 
-    public void emitBlock(AbstractBlockBase<?> block) {
+    public void emitLoopHeader(Block block) {
+        final List<LIRInstruction> headerInsns = lir.getLIRforBlock(block);
+
+        formatLoopHeader(headerInsns);
+        emitBlock(block);
+    }
+
+    public void emitBlock(Block block) {
         if (block == null) {
             return;
         }
 
         trace("block: %d", block.getId());
-        ((OCLAssembler) asm).emitLine("// BLOCK %d", block.getId());
+        if (isMergeBlock(block)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("[");
+            for (Block pred : block.getPredecessors()) {
+                sb.append(pred.getId()).append(" ");
+            }
+            sb.append("]");
+            ((OCLAssembler) asm).emitLine("// BLOCK %d MERGES %s", block.getId(), sb.toString());
 
-        if (PrintLIRWithAssembly.getValue()) {
+        } else {
+            ((OCLAssembler) asm).emitLine("// BLOCK %d", block.getId());
+        }
+
+        if (PrintLIRWithAssembly.getValue(getOptions())) {
             blockComment(String.format("block B%d %s", block.getId(),
                     block.getLoop()));
         }
@@ -512,7 +355,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                 continue;
             }
 
-            if (PrintLIRWithAssembly.getValue()) {
+            if (PrintLIRWithAssembly.getValue(getOptions())) {
                 blockComment(String.format("%d %s", op.id(), op));
             }
 
@@ -547,6 +390,23 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         } catch (AssertionError | RuntimeException t) {
             throw new TornadoInternalError(t);
         }
+    }
+
+    private static void traverseCfg(ControlFlowGraph cfg, OCLBlockVisitor visitor) {
+        traverseCfg(cfg.getStartBlock(), visitor);
+    }
+
+    private static void traverseCfg(Block b, OCLBlockVisitor visitor) {
+        visitor.enter(b);
+        Block firstDominated = b.getFirstDominated();
+        while (firstDominated != null) {
+//            if (firstDominated.getDominator().getPostdominator() == firstDominated) {
+//                System.out.println("very very bad");
+//            }
+            traverseCfg(firstDominated, visitor);
+            firstDominated = firstDominated.getDominatedSibling();
+        }
+        visitor.exit(b, null);
     }
 
 }

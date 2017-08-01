@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,30 +15,27 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.loop.phases.ReassociateInvariantPhase;
-import com.oracle.graal.nodes.spi.LoweringTool;
-import com.oracle.graal.phases.common.*;
-import com.oracle.graal.virtual.phases.ea.EarlyReadEliminationPhase;
+import org.graalvm.compiler.loop.phases.ReassociateInvariantPhase;
+import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.common.*;
 import tornado.graal.compiler.TornadoMidTier;
 import tornado.graal.phases.ExceptionCheckingElimination;
 import tornado.graal.phases.TornadoMemoryPhiElimination;
 
-import static com.oracle.graal.compiler.common.GraalOptions.*;
+import static org.graalvm.compiler.core.common.GraalOptions.*;
 
 public class OCLMidTier extends TornadoMidTier {
 
-    public OCLMidTier() {
+    public OCLMidTier(OptionValues options) {
 
         appendPhase(new ExceptionCheckingElimination());
 
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
-        if (ImmutableCode.getValue()) {
+        if (ImmutableCode.getValue(options)) {
             canonicalizer.disableReadCanonicalization();
         }
 
-        if (OptPushThroughPi.getValue()) {
-            appendPhase(new PushThroughPiPhase());
-        }
 //        if (OptCanonicalizer.getValue()) {
         appendPhase(canonicalizer);
 //        }
@@ -46,16 +43,14 @@ public class OCLMidTier extends TornadoMidTier {
         //if(!OpenCLTornadoBackend.ENABLE_EXCEPTIONS)
         appendPhase(new ExceptionCheckingElimination());
 
-        appendPhase(new ValueAnchorCleanupPhase());
         // appendPhase(new LockEliminationPhase());
-
-        if (OptReadElimination.getValue()) {
-            appendPhase(new EarlyReadEliminationPhase(canonicalizer));
-        }
-
-        if (OptFloatingReads.getValue()) {
+        if (OptFloatingReads.getValue(options)) {
             appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new FloatingReadPhase()));
         }
+
+//        if (OptReadElimination.getValue(options)) {
+//            appendPhase(new EarlyReadEliminationPhase(canonicalizer));
+//        }
         appendPhase(new TornadoMemoryPhiElimination());
         appendPhase(new RemoveValueProxyPhase());
 
@@ -63,17 +58,11 @@ public class OCLMidTier extends TornadoMidTier {
         appendPhase(canonicalizer);
 //        }
 
-        if (OptEliminatePartiallyRedundantGuards.getValue()) {
-            appendPhase(new OptimizeGuardAnchorsPhase());
-        }
-
-        if (ConditionalElimination.getValue()) {
+        if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, true));
         }
 
-        if (OptEliminatePartiallyRedundantGuards.getValue()) {
-            appendPhase(new OptimizeGuardAnchorsPhase());
-        }
+        appendPhase(new GuardLoweringPhase());
 
 //        if (OptCanonicalizer.getValue()) {
         appendPhase(canonicalizer);
@@ -82,8 +71,7 @@ public class OCLMidTier extends TornadoMidTier {
 //TODO disable as it introduces loop limit checks
 //        appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new LoopSafepointEliminationPhase()));
         //appendPhase(new LoopSafepointInsertionPhase());
-        appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new GuardLoweringPhase()));
-
+//        appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new GuardLoweringPhase()));
         //if (VerifyHeapAtReturn.getValue()) {
         //    appendPhase(new VerifyHeapAtReturnPhase());
         //}
@@ -91,17 +79,11 @@ public class OCLMidTier extends TornadoMidTier {
 
         appendPhase(new FrameStateAssignmentPhase());
 
-        if (ReassociateInvariants.getValue()) {
+        if (ReassociateInvariants.getValue(options)) {
             appendPhase(new ReassociateInvariantPhase());
         }
 
         //appendPhase(new TornadoIfCanonicalization());
-        //appendPhase(canonicalizer);
-        //if (OptDeoptimizationGrouping.getValue()) {
-        //    appendPhase(new DeoptimizationGroupingPhase());
-        //}
-//        if (OptCanonicalizer.getValue()) {
         appendPhase(canonicalizer);
-//        }
     }
 }

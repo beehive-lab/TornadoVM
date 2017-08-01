@@ -17,9 +17,9 @@ package tornado.graal;
 
 import tornado.graal.phases.lir.TornadoAllocationStage;
 
-import com.oracle.graal.lir.phases.LIRPhaseSuite;
-import com.oracle.graal.lir.phases.PostAllocationOptimizationPhase.PostAllocationOptimizationContext;
-import com.oracle.graal.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
+import org.graalvm.compiler.lir.phases.LIRPhaseSuite;
+import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase.PostAllocationOptimizationContext;
+import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
 
 public class TornadoLIRSuites {
 

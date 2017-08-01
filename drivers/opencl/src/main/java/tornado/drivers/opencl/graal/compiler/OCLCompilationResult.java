@@ -15,7 +15,7 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.code.CompilationResult;
+import org.graalvm.compiler.code.CompilationResult;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Set;

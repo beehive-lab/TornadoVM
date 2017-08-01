@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,22 +15,22 @@
  */
 package tornado.drivers.opencl.graal.compiler.plugins;
 
-import com.oracle.graal.compiler.common.type.ObjectStamp;
-import com.oracle.graal.compiler.common.type.StampPair;
-import com.oracle.graal.nodes.ParameterNode;
-import com.oracle.graal.nodes.PiNode;
-import com.oracle.graal.nodes.ValueNode;
-import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderContext;
-import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderTool;
-import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugin;
-import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugin.Receiver;
-import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins;
-import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import com.oracle.graal.nodes.java.StoreIndexedNode;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import org.graalvm.compiler.core.common.type.ObjectStamp;
+import org.graalvm.compiler.core.common.type.StampPair;
+import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.PiNode;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderTool;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import tornado.api.Vector;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.OCLStampFactory;
@@ -127,7 +127,7 @@ public final class VectorPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode laneId) {
                 final VectorLoadElementNode loadElement = new VectorLoadElementNode(vectorKind.getElementKind(), receiver.get(), laneId);
-                b.push(javaElementKind, b.recursiveAppend(loadElement));
+                b.push(javaElementKind, b.append(loadElement));
                 return true;
             }
         });
@@ -138,7 +138,7 @@ public final class VectorPlugins {
                     Receiver receiver, ValueNode laneId, ValueNode value) {
                 final VectorStoreElementProxyNode store = new VectorStoreElementProxyNode(
                         vectorKind.getElementKind(), receiver.get(), laneId, value);
-                b.add(b.recursiveAppend(store));
+                b.add(b.append(store));
 
                 return true;
             }
@@ -151,7 +151,7 @@ public final class VectorPlugins {
 
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
                 VectorAddNode addNode = new VectorAddNode(kind, input1, input2);
-                b.push(JavaKind.Illegal, b.recursiveAppend(addNode));
+                b.push(JavaKind.Illegal, b.append(addNode));
                 return true;
             }
         });
@@ -166,7 +166,7 @@ public final class VectorPlugins {
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
                 // node needed to enforce the value of the nodes stamp
                 LoadIndexedVectorNode indexedLoad = new LoadIndexedVectorNode(kind, array, index, elementKind);
-                b.push(JavaKind.Object, b.recursiveAppend(indexedLoad));
+                b.push(JavaKind.Object, b.append(indexedLoad));
                 return true;
             }
         });
@@ -181,7 +181,7 @@ public final class VectorPlugins {
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
                 // No need to set stamp as it is inferred from the stamp of the incoming value
                 StoreIndexedNode indexedStore = new StoreIndexedNode(array, index, elementKind, value);
-                b.append(b.recursiveAppend(indexedStore));
+                b.append(b.append(indexedStore));
                 return true;
             }
         });
@@ -199,8 +199,8 @@ public final class VectorPlugins {
                 TornadoInternalError.unimplemented();
 //                final BinaryGeometricOp op = new BinaryGeometricOp(vectorKind,
 //                        OCLIntrinsicNode.GeometricOp.DOT, input1, input2);
-//                b.push(vectorKind.getElementKind(), b.recursiveAppend(op));
-//                b.append(b.recursiveAppend(new ValueAnchorNode(op)));
+//                b.push(vectorKind.getElementKind(), b.append(op));
+//                b.append(b.append(new ValueAnchorNode(op)));
 
                 return true;
             }

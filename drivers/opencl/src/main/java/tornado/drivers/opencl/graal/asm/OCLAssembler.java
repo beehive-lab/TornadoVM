@@ -15,11 +15,11 @@
  */
 package tornado.drivers.opencl.graal.asm;
 
-import com.oracle.graal.asm.AbstractAddress;
-import com.oracle.graal.asm.Assembler;
-import com.oracle.graal.asm.Label;
-import com.oracle.graal.lir.ConstantValue;
-import com.oracle.graal.lir.Variable;
+import org.graalvm.compiler.asm.AbstractAddress;
+import org.graalvm.compiler.asm.Assembler;
+import org.graalvm.compiler.asm.Label;
+import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.Variable;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.vm.ci.code.Register;

@@ -15,7 +15,7 @@
  */
 package tornado.graal.compiler;
 
-import com.oracle.graal.api.replacements.SnippetReflectionProvider;
+import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;

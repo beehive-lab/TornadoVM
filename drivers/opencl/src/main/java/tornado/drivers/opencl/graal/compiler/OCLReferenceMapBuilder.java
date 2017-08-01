@@ -15,8 +15,8 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.lir.LIRFrameState;
-import com.oracle.graal.lir.framemap.ReferenceMapBuilder;
+import org.graalvm.compiler.lir.LIRFrameState;
+import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
 import jdk.vm.ci.code.ReferenceMap;
 import jdk.vm.ci.meta.Value;
 

@@ -15,7 +15,7 @@
  */
 package tornado.runtime.api;
 
-import com.oracle.graal.phases.util.Providers;
+import org.graalvm.compiler.phases.util.Providers;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.function.Consumer;

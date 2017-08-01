@@ -15,7 +15,7 @@
  */
 package tornado.runtime.sketcher;
 
-import com.oracle.graal.graph.CachedGraph;
+import org.graalvm.compiler.graph.CachedGraph;
 import tornado.api.meta.TaskMetaData;
 
 public class Sketch {

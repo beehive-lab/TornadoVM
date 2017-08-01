@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,10 +15,11 @@
  */
 package tornado.drivers.opencl;
 
-import com.oracle.graal.phases.util.Providers;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.util.Providers;
 import tornado.common.TornadoDevice;
 import tornado.common.TornadoLogger;
 import tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
@@ -33,12 +34,12 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
     private final OCLBackend[][] backends;
     private final List<OCLContext> contexts;
 
-    public OCLDriver(final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
+    public OCLDriver(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
         final int numPlatforms = OpenCL.getNumPlatforms();
         backends = new OCLBackend[numPlatforms][];
         contexts = new ArrayList<>();
 
-        discoverDevices(vmRuntime, vmConfig);
+        discoverDevices(options, vmRuntime, vmConfig);
         flatBackends = new OCLBackend[getDeviceCount()];
         int index = 0;
         for (int i = 0; i < getNumPlatforms(); i++) {
@@ -77,15 +78,15 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
         return backend;
     }
 
-    private OCLBackend createOCLBackend(
+    private OCLBackend createOCLBackend(final OptionValues options,
             final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, final OCLContext context,
             final int deviceIndex) {
         final OCLDevice device = context.devices().get(deviceIndex);
         info("Creating backend for %s", device.getName());
-        return OCLHotSpotBackendFactory.createBackend(jvmciRuntime.getHostJVMCIBackend(), vmConfig, context, device);
+        return OCLHotSpotBackendFactory.createBackend(options, jvmciRuntime.getHostJVMCIBackend(), vmConfig, context, device);
     }
 
-    protected void discoverDevices(final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
+    protected void discoverDevices(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
         final int numPlatforms = OpenCL.getNumPlatforms();
         if (numPlatforms > 0) {
 
@@ -104,7 +105,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
                     final OCLDevice device = context.devices().get(j);
                     info("OpenCL[%d]: device=%s", i, device.getName());
 
-                    backends[i][j] = createOCLBackend(vmRuntime, vmConfig,
+                    backends[i][j] = createOCLBackend(options, vmRuntime, vmConfig,
                             context, j);
 
                 }

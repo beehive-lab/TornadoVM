@@ -15,7 +15,7 @@
  */
 package tornado.graal.nodes;
 
-import com.oracle.graal.nodes.calc.FloatingNode;
+import org.graalvm.compiler.nodes.calc.FloatingNode;
 
 public interface Floatable {
 	public FloatingNode asFloating();

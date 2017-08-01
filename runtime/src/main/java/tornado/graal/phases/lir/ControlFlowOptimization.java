@@ -15,8 +15,8 @@
  */
 package tornado.graal.phases.lir;
 
-import com.oracle.graal.lir.gen.LIRGenerationResult;
-import com.oracle.graal.lir.phases.AllocationPhase;
+import org.graalvm.compiler.lir.gen.LIRGenerationResult;
+import org.graalvm.compiler.lir.phases.AllocationPhase;
 import jdk.vm.ci.code.TargetDescription;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;

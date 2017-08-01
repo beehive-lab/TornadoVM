@@ -15,11 +15,11 @@
  */
 package tornado.drivers.opencl.graal;
 
-import com.oracle.graal.compiler.common.LIRKind;
-import com.oracle.graal.compiler.common.spi.LIRKindTool;
-import com.oracle.graal.compiler.common.type.AbstractObjectStamp;
-import com.oracle.graal.compiler.common.type.Stamp;
 import jdk.vm.ci.meta.*;
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.spi.LIRKindTool;
+import org.graalvm.compiler.core.common.type.AbstractObjectStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;

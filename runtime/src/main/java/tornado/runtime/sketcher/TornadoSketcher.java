@@ -15,37 +15,36 @@
  */
 package tornado.runtime.sketcher;
 
-import com.oracle.graal.compiler.common.GraalOptions;
-import com.oracle.graal.debug.Debug.Scope;
-import com.oracle.graal.debug.*;
-import com.oracle.graal.debug.internal.DebugScope;
-import com.oracle.graal.debug.internal.method.MethodMetricsRootScopeInfo;
-import com.oracle.graal.graph.CachedGraph;
-import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.nodes.StructuredGraph.AllowAssumptions;
-import com.oracle.graal.phases.OptimisticOptimizations;
-import com.oracle.graal.phases.PhaseSuite;
-import com.oracle.graal.phases.common.DeadCodeEliminationPhase;
-import com.oracle.graal.phases.tiers.HighTierContext;
-import com.oracle.graal.phases.util.Providers;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.*;
+import org.graalvm.compiler.debug.internal.method.MethodMetricsRootScopeInfo;
+import org.graalvm.compiler.graph.CachedGraph;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.nodes.StructuredGraph.Builder;
+import org.graalvm.compiler.phases.OptimisticOptimizations;
+import org.graalvm.compiler.phases.PhaseSuite;
+import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
+import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.graalvm.compiler.phases.util.Providers;
 import tornado.api.meta.TaskMetaData;
 import tornado.common.exceptions.TornadoInternalError;
-import tornado.graal.TornadoDebugEnvironment;
 import tornado.graal.compiler.TornadoCompilerIdentifier;
 import tornado.graal.compiler.TornadoSketchTier;
 import tornado.graal.phases.TornadoSketchTierContext;
 
-import static com.oracle.graal.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static tornado.common.Tornado.fatal;
 import static tornado.common.Tornado.info;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.runtime.TornadoRuntime.getTornadoExecutor;
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class TornadoSketcher {
 
@@ -57,12 +56,6 @@ public class TornadoSketcher {
 
     private static final OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
 
-    static {
-        GraalOptions.OmitHotExceptionStacktrace.setValue(false);
-        GraalOptions.MatchExpressions.setValue(true);
-        GraalOptions.RemoveNeverExecutedCode.setValue(false);
-    }
-
     public static Sketch lookup(ResolvedJavaMethod resolvedMethod) {
         guarantee(cache.containsKey(resolvedMethod), "cache miss for: %s", resolvedMethod.getName());
         try {
@@ -73,9 +66,8 @@ public class TornadoSketcher {
     }
 
     public static void buildSketch(SketchRequest request) {
-        if (Debug.isEnabled() && DebugScope.getConfig() == null) {
-            TornadoDebugEnvironment.initialize(TTY.out);
-        }
+        DebugEnvironment.ensureInitialized(getTornadoRuntime().getOptions());
+
         if (cache.containsKey(request.resolvedMethod)) {
             return;
         }
@@ -94,8 +86,11 @@ public class TornadoSketcher {
         info("Building sketch of %s", resolvedMethod.getName());
 
         TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("sketch-" + resolvedMethod.getName(), sketchId.getAndIncrement());
-        final StructuredGraph graph = new StructuredGraph(resolvedMethod,
-                AllowAssumptions.YES, id);
+        Builder builder = new Builder(getTornadoRuntime().getOptions(), AllowAssumptions.YES);
+        builder.method(resolvedMethod);
+        builder.compilationId(id);
+        builder.name("sketch-" + resolvedMethod.getName());
+        final StructuredGraph graph = builder.build();
 
 //        TaskMetaData meta = new TaskMetaData(resolvedMethod.isStatic() ? resolvedMethod.getParameters().length : resolvedMethod.getParameters().length + 1);
         // may need to deprecate this...?
@@ -110,7 +105,7 @@ public class TornadoSketcher {
                 graphBuilderSuite.apply(graph, highTierContext);
                 new DeadCodeEliminationPhase(Optional).apply(graph);
             } else {
-                Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "initial state");
+                Debug.dump(Debug.BASIC_LEVEL, graph, "initial state");
             }
 
             sketchTier.apply(graph, highTierContext);

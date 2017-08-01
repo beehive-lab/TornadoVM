@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,18 +15,19 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.compiler.common.LIRKind;
-import com.oracle.graal.compiler.common.calc.Condition;
-import com.oracle.graal.compiler.common.spi.CodeGenProviders;
-import com.oracle.graal.compiler.common.spi.ForeignCallLinkage;
-import com.oracle.graal.compiler.common.type.Stamp;
-import com.oracle.graal.lir.StandardOp.SaveRegistersOp;
-import com.oracle.graal.lir.*;
-import com.oracle.graal.lir.gen.LIRGenerationResult;
-import com.oracle.graal.lir.gen.LIRGenerator;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.meta.*;
+import org.graalvm.compiler.core.common.CompressEncoding;
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.calc.Condition;
+import org.graalvm.compiler.core.common.spi.CodeGenProviders;
+import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
+import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.lir.StandardOp.SaveRegistersOp;
+import org.graalvm.compiler.lir.*;
+import org.graalvm.compiler.lir.gen.LIRGenerationResult;
+import org.graalvm.compiler.lir.gen.LIRGenerator;
 import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.graal.OCLLIRKindTool;
 import tornado.drivers.opencl.graal.OCLStamp;
@@ -50,6 +51,48 @@ public class OCLLIRGenerator extends LIRGenerator {
         super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool(), new OCLMoveFactory(), providers, res);
         this.oclBuiltinTool = new OCLBuiltinTool();
         this.oclGenTool = new OCLGenTool(this);
+    }
+
+    @Override
+    public Value emitAtomicReadAndAdd(Value address, Value delta) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitAtomicReadAndWrite(Value address, Value newValue) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitCompress(Value pointer, CompressEncoding encoding, boolean nonNull) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Variable emitLogicCompareAndSwap(Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Variable emitStringIndexOf(Value sourcePointer, Value sourceCount, Value targetPointer, Value targetCount, int constantTargetCount) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitUncompress(Value pointer, CompressEncoding encoding, boolean nonNull) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitValueCompareAndSwap(Value address, Value expectedValue, Value newValue) {
+        unimplemented();
+        return null;
     }
 
     @Override
@@ -123,12 +166,6 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public Variable emitByteSwap(Value value) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Variable emitCompareAndSwap(Value value, Value value1, Value value2, Value value3, Value value4) {
         unimplemented();
         return null;
     }

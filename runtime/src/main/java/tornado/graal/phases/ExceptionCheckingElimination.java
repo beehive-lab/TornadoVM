@@ -15,12 +15,12 @@
  */
 package tornado.graal.phases;
 
-import com.oracle.graal.graph.Node;
-import com.oracle.graal.nodes.*;
-import com.oracle.graal.nodes.calc.IntegerBelowNode;
-import com.oracle.graal.nodes.calc.IsNullNode;
-import com.oracle.graal.nodes.extended.GuardedNode;
-import com.oracle.graal.phases.BasePhase;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.calc.IntegerBelowNode;
+import org.graalvm.compiler.nodes.calc.IsNullNode;
+import org.graalvm.compiler.nodes.extended.GuardedNode;
+import org.graalvm.compiler.phases.BasePhase;
 
 public class ExceptionCheckingElimination extends BasePhase<TornadoMidTierContext> {
 

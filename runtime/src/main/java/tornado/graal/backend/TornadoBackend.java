@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,8 @@
  */
 package tornado.graal.backend;
 
-import com.oracle.graal.compiler.target.Backend;
-import com.oracle.graal.phases.util.Providers;
+import org.graalvm.compiler.core.target.Backend;
+import org.graalvm.compiler.phases.util.Providers;
 import tornado.common.RuntimeUtilities;
 
 public abstract class TornadoBackend<P extends Providers> extends Backend {
@@ -40,7 +40,6 @@ public abstract class TornadoBackend<P extends Providers> extends Backend {
 
     public abstract String decodeDeopt(long value);
 
- 
     @Override
     public Providers getProviders() {
         return super.getProviders();

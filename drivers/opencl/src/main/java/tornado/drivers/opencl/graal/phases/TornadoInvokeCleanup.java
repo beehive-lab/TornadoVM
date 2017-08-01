@@ -15,8 +15,8 @@
  */
 package tornado.drivers.opencl.graal.phases;
 
-import com.oracle.graal.nodes.*;
-import com.oracle.graal.phases.BasePhase;
+import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.phases.BasePhase;
 import tornado.graal.phases.TornadoHighTierContext;
 
 @Deprecated

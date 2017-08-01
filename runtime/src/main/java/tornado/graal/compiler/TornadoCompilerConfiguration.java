@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,27 +15,28 @@
  */
 package tornado.graal.compiler;
 
-import com.oracle.graal.lir.phases.LIRPhaseSuite;
-import com.oracle.graal.lir.phases.PostAllocationOptimizationPhase.PostAllocationOptimizationContext;
-import com.oracle.graal.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
-import com.oracle.graal.phases.common.AddressLoweringPhase.AddressLowering;
-import com.oracle.graal.phases.common.CanonicalizerPhase.CustomCanonicalizer;
+import org.graalvm.compiler.lir.phases.LIRPhaseSuite;
+import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase.PostAllocationOptimizationContext;
+import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
 import tornado.graal.phases.lir.TornadoAllocationStage;
 
 public interface TornadoCompilerConfiguration {
 
-    public TornadoAllocationStage createAllocationStage();
+    public TornadoAllocationStage createAllocationStage(OptionValues options);
 
-    public TornadoSketchTier createSketchTier(CustomCanonicalizer canonicalizer);
+    public TornadoSketchTier createSketchTier(OptionValues options, CustomCanonicalizer canonicalizer);
 
-    public TornadoHighTier createHighTier(CustomCanonicalizer canonicalizer);
+    public TornadoHighTier createHighTier(OptionValues options, CustomCanonicalizer canonicalizer);
 
-    public TornadoLowTier createLowTier(AddressLowering addressLowering);
+    public TornadoLowTier createLowTier(OptionValues options, AddressLowering addressLowering);
 
-    public TornadoMidTier createMidTier();
+    public TornadoMidTier createMidTier(OptionValues options);
 
-    public LIRPhaseSuite<PostAllocationOptimizationContext> createPostAllocationOptimizationStage();
+    public LIRPhaseSuite<PostAllocationOptimizationContext> createPostAllocationOptimizationStage(OptionValues options);
 
-    public LIRPhaseSuite<PreAllocationOptimizationContext> createPreAllocationOptimizationStage();
+    public LIRPhaseSuite<PreAllocationOptimizationContext> createPreAllocationOptimizationStage(OptionValues options);
 
 }

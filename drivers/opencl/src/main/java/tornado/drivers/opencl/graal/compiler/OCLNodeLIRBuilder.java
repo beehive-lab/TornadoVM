@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,30 +15,31 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.compiler.common.LIRKind;
-import com.oracle.graal.compiler.common.calc.Condition;
-import com.oracle.graal.compiler.common.cfg.BlockMap;
-import com.oracle.graal.compiler.common.type.ObjectStamp;
-import com.oracle.graal.compiler.common.type.Stamp;
-import com.oracle.graal.compiler.gen.NodeLIRBuilder;
-import com.oracle.graal.compiler.gen.NodeMatchRules;
-import com.oracle.graal.compiler.match.ComplexMatchValue;
-import com.oracle.graal.debug.Debug;
-import com.oracle.graal.debug.TTY;
-import com.oracle.graal.graph.Node;
-import com.oracle.graal.lir.StandardOp.LabelOp;
-import com.oracle.graal.lir.*;
-import com.oracle.graal.lir.gen.LIRGenerator.Options;
-import com.oracle.graal.lir.gen.LIRGeneratorTool;
-import com.oracle.graal.lir.gen.LIRGeneratorTool.BlockScope;
-import com.oracle.graal.nodes.*;
-import com.oracle.graal.nodes.calc.*;
-import com.oracle.graal.nodes.cfg.Block;
-import com.oracle.graal.nodes.extended.SwitchNode;
 import java.util.Collection;
 import java.util.List;
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.meta.*;
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.calc.Condition;
+import org.graalvm.compiler.core.common.cfg.BlockMap;
+import org.graalvm.compiler.core.common.type.ObjectStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.core.gen.NodeLIRBuilder;
+import org.graalvm.compiler.core.gen.NodeMatchRules;
+import org.graalvm.compiler.core.match.ComplexMatchValue;
+import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.TTY;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.lir.StandardOp.LabelOp;
+import org.graalvm.compiler.lir.*;
+import org.graalvm.compiler.lir.gen.LIRGenerator.Options;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool.BlockScope;
+import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.calc.*;
+import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.extended.SwitchNode;
+import org.graalvm.compiler.options.OptionValues;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsicCmp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
@@ -163,6 +164,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     public void doBlock(final Block block, final StructuredGraph graph,
             final BlockMap<List<Node>> blockMap, boolean isKernel) {
+        OptionValues options = graph.getOptions();
         trace("%s - block %s", graph.method().getName(), block);
         // System.out.printf("emit: block=%s\n",block);
         try (BlockScope blockScope = gen.getBlockScope(block)) {
@@ -185,7 +187,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 if (node instanceof ValueNode) {
                     final ValueNode valueNode = (ValueNode) node;
                     // System.out.printf("do block: node=%s\n", valueNode);
-                    if (Options.TraceLIRGeneratorLevel.getValue() >= 3) {
+                    if (Options.TraceLIRGeneratorLevel.getValue(options) >= 3) {
                         TTY.println("LIRGen for " + valueNode);
                     }
 
@@ -488,7 +490,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final Value value = operand(phi.firstValue());
             // TODO check what has been changed here
 //            if (!(value instanceof PhiNode)) {
-            if (phi.singleBackValue() == PhiNode.MULTIPLE_VALUES
+            if (phi.singleBackValueOrThis() == phi
                     && value instanceof Variable) {
                 /*
                  * preserve loop-carried dependencies outside of loops
@@ -581,8 +583,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         for (ValuePhiNode phi : mergeNode.valuePhis()) {
             // System.out.printf("visitMerge: merge=%s, phi=%s, operand=%s\n",mergeNode,
             // phi,operandForPhi(phi));
-            final ValueNode value = phi.singleValue();
-            if (value != PhiNode.MULTIPLE_VALUES) {
+            final ValueNode value = phi.singleValueOrThis();
+            if (value != phi) {
                 // System.out.printf("emitting: phi=%s, value=%s\n",phi,value);
                 AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
                 Value src = operand(value);
@@ -743,9 +745,9 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         for (ValuePhiNode phi : merge.valuePhis()) {
             final ValueNode value = phi.valueAt(end);
             if (!phi.isLoopPhi()
-                    && phi.singleValue() == PhiNode.MULTIPLE_VALUES
+                    && phi.singleValueOrThis() == phi
                     || (value instanceof PhiNode && !((PhiNode) value)
-                    .isLoopPhi())) {
+                            .isLoopPhi())) {
                 final AllocatableValue result = gen
                         .asAllocatable(operandForPhi(phi));
                 append(new OCLLIRStmt.AssignStmt(result, operand(value)));

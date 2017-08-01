@@ -15,12 +15,12 @@
  */
 package tornado.drivers.opencl.graal.nodes;
 
-import com.oracle.graal.compiler.common.type.StampFactory;
-import com.oracle.graal.graph.NodeClass;
-import com.oracle.graal.nodeinfo.NodeInfo;
-import com.oracle.graal.nodes.ValueNode;
-import com.oracle.graal.nodes.java.AccessIndexedNode;
-import com.oracle.graal.nodes.spi.Lowerable;
+import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.java.AccessIndexedNode;
+import org.graalvm.compiler.nodes.spi.Lowerable;
 import jdk.vm.ci.meta.JavaKind;
 
 @NodeInfo(shortName = "Atomic Add")

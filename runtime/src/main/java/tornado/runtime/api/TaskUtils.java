@@ -15,7 +15,7 @@
  */
 package tornado.runtime.api;
 
-import com.oracle.graal.bytecode.Bytecodes;
+import org.graalvm.compiler.bytecode.Bytecodes;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

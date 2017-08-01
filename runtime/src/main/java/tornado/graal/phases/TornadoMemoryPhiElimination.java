@@ -15,11 +15,11 @@
  */
 package tornado.graal.phases;
 
-import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.nodes.memory.FloatingReadNode;
-import com.oracle.graal.nodes.memory.MemoryPhiNode;
-import com.oracle.graal.nodes.util.GraphUtil;
-import com.oracle.graal.phases.BasePhase;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.memory.FloatingReadNode;
+import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
+import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.phases.BasePhase;
 
 public class TornadoMemoryPhiElimination extends BasePhase<TornadoMidTierContext> {
 

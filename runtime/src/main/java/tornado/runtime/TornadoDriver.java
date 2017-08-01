@@ -15,7 +15,7 @@
  */
 package tornado.runtime;
 
-import com.oracle.graal.phases.util.Providers;
+import org.graalvm.compiler.phases.util.Providers;
 import tornado.graal.compiler.TornadoSuitesProvider;
 import tornado.common.TornadoDevice;
 

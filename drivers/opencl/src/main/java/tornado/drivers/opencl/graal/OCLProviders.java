@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,28 +15,34 @@
  */
 package tornado.drivers.opencl.graal;
 
-import com.oracle.graal.compiler.common.spi.ConstantFieldProvider;
-import com.oracle.graal.compiler.common.spi.ForeignCallsProvider;
-import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import com.oracle.graal.nodes.spi.LoweringProvider;
-import com.oracle.graal.nodes.spi.NodeCostProvider;
-import com.oracle.graal.nodes.spi.Replacements;
-import com.oracle.graal.nodes.spi.StampProvider;
-import com.oracle.graal.phases.util.Providers;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
+import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
+import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
+import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.nodes.spi.LoweringProvider;
+import org.graalvm.compiler.nodes.spi.Replacements;
+import org.graalvm.compiler.nodes.spi.StampProvider;
+import org.graalvm.compiler.phases.util.Providers;
 
 public class OCLProviders extends Providers {
 
     private final OCLSuitesProvider suites;
     private final Plugins graphBuilderPlugins;
+    private final SnippetReflectionProvider snippetReflection;
 
-    public OCLProviders(MetaAccessProvider metaAccess, CodeCacheProvider codeCache, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider, ForeignCallsProvider foreignCalls, LoweringProvider lowerer, Replacements replacements, StampProvider stampProvider, NodeCostProvider nodeCostProvider, Plugins plugins, OCLSuitesProvider suitesProvider) {
+    public OCLProviders(MetaAccessProvider metaAccess, CodeCacheProvider codeCache, ConstantReflectionProvider constantReflection, SnippetReflectionProvider snippetReflection, ConstantFieldProvider constantFieldProvider, ForeignCallsProvider foreignCalls, LoweringProvider lowerer, Replacements replacements, StampProvider stampProvider, Plugins plugins, OCLSuitesProvider suitesProvider) {
         super(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer,
-                replacements, stampProvider, nodeCostProvider);
+                replacements, stampProvider);
         this.suites = suitesProvider;
         this.graphBuilderPlugins = plugins;
+        this.snippetReflection = snippetReflection;
+    }
+
+    public SnippetReflectionProvider getSnippetReflection() {
+        return snippetReflection;
     }
 
     public OCLSuitesProvider getSuitesProvider() {

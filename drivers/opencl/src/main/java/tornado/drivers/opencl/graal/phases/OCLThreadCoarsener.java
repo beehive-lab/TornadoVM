@@ -15,24 +15,28 @@
  */
 package tornado.drivers.opencl.graal.phases;
 
-import com.oracle.graal.compiler.common.type.StampFactory;
-import com.oracle.graal.debug.Debug;
-import com.oracle.graal.graph.Graph.Mark;
-import com.oracle.graal.graph.Node;
-import com.oracle.graal.graph.NodeBitMap;
-import com.oracle.graal.loop.InductionVariable;
-import com.oracle.graal.loop.LoopEx;
-import com.oracle.graal.loop.LoopsData;
-import com.oracle.graal.loop.phases.LoopTransformations;
-import com.oracle.graal.nodes.*;
-import com.oracle.graal.nodes.calc.AddNode;
-import com.oracle.graal.nodes.calc.IntegerLessThanNode;
-import com.oracle.graal.nodes.calc.MulNode;
-import com.oracle.graal.nodes.util.GraphUtil;
-import com.oracle.graal.phases.BasePhase;
-import com.oracle.graal.phases.common.CanonicalizerPhase;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
 import jdk.vm.ci.meta.JavaKind;
+import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.graph.Graph.Mark;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.NodeBitMap;
+import org.graalvm.compiler.loop.InductionVariable;
+import org.graalvm.compiler.loop.LoopEx;
+import org.graalvm.compiler.loop.LoopsData;
+import org.graalvm.compiler.loop.phases.LoopTransformations;
+import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.calc.AddNode;
+import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
+import org.graalvm.compiler.nodes.calc.MulNode;
+import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.phases.BasePhase;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import org.graalvm.util.EconomicMap;
 import tornado.api.meta.Coarseness;
 import tornado.api.meta.TaskMetaData;
 import tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
@@ -61,7 +65,7 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
 
     private boolean checkPhis(StructuredGraph graph, LoopEx loop) {
         final LoopBeginNode loopBegin = loop.loopBegin();
-        final Map<Node, InductionVariable> ivs = loop.getInductionVariables();
+        final EconomicMap<Node, InductionVariable> ivs = loop.getInductionVariables();
         for (PhiNode phi : loopBegin.phis()) {
             if (!ivs.containsKey(phi)) {
                 warn("Unable to parallelize loop because of dependency: %s", GraphUtil.approxSourceLocation(phi));
@@ -202,7 +206,7 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
         loopExit.safeDelete();
 
 //        GraphUtil.killCFG(entryPoint);
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "after end swap");
+        Debug.dump(Debug.BASIC_LEVEL, graph, "after end swap");
         body.pushDim(ivNode, rangeNode, condition.trueSuccessor(), threadBodyEnds);
     }
 
@@ -284,7 +288,7 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
                 while (!toCanonicalize.isEmpty()) {
                     final LoopBeginNode loopBegin = toCanonicalize.pop();
                     canonicalizeLoop(graph, loopBegin);
-                    Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "canonicalize loop ends: " + loopBegin);
+                    Debug.dump(Debug.BASIC_LEVEL, graph, "canonicalize loop ends: " + loopBegin);
                 }
 
                 loopsData = new LoopsData(graph);
@@ -420,7 +424,7 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
         // replace useages of parallel placeholders
         offset.replaceAtUsages(x0);
         stride.replaceAtUsages(updatedStride1);
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "after re-writing=" + range.index());
+        Debug.dump(Debug.BASIC_LEVEL, graph, "after re-writing=" + range.index());
         System.out.printf("**** coarseness=%d,exact=%s\n", coarseness.getCoarseness(range.index()), exact);
 
         if (coarseness.getCoarseness(range.index()) > 1) {
@@ -442,14 +446,14 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
             final FixedWithNextNode preLoopEntry = (FixedWithNextNode) loop.entryPoint().predecessor();
             Mark mark = graph.getMark();
             LoopTransformations.peel(loop);
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "after peel=" + range.index());
+            Debug.dump(Debug.BASIC_LEVEL, graph, "after peel=" + range.index());
 
             FixedNode loopEntry = loop.entryPoint();
             loopEntry.replaceAtPredecessor(loopExit.next());
             loopExit.setNext(null);
 
             GraphUtil.killCFG(loopEntry);
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "after kill cfg=" + range.index());
+            Debug.dump(Debug.BASIC_LEVEL, graph, "after kill cfg=" + range.index());
 //            canonicalizer.apply(graph, context);
 //            canonicalizer.applyIncremental(graph, context, graph.getMark());
 
@@ -481,7 +485,7 @@ public class OCLThreadCoarsener extends BasePhase<TornadoHighTierContext> {
             range.replaceAndDelete(range.value());
         }
 
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "after coarsening index=" + range.index());
+        Debug.dump(Debug.BASIC_LEVEL, graph, "after coarsening index=" + range.index());
     }
 
 }

@@ -15,8 +15,8 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.code.DataSection.Data;
-import com.oracle.graal.lir.asm.DataBuilder;
+import org.graalvm.compiler.code.DataSection.Data;
+import org.graalvm.compiler.lir.asm.DataBuilder;
 import jdk.vm.ci.meta.Constant;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;

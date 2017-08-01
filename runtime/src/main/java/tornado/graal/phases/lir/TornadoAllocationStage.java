@@ -15,8 +15,8 @@
  */
 package tornado.graal.phases.lir;
 
-import com.oracle.graal.lir.phases.AllocationPhase.AllocationContext;
-import com.oracle.graal.lir.phases.LIRPhaseSuite;
+import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
+import org.graalvm.compiler.lir.phases.LIRPhaseSuite;
 
 public class TornadoAllocationStage extends LIRPhaseSuite<AllocationContext> {
 

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,12 @@
 package tornado.runtime;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import org.graalvm.compiler.options.OptionValues;
 
 public interface TornadoDriverProvider {
-    
+
     public String getName();
-    public TornadoDriver createDriver(HotSpotJVMCIRuntime hostRuntime, TornadoVMConfig config);
-    
+
+    public TornadoDriver createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfig config);
+
 }

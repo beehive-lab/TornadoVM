@@ -15,7 +15,7 @@
  */
 package tornado.graal.nodes.logic;
 
-import com.oracle.graal.nodes.spi.LIRLowerable;
+import org.graalvm.compiler.nodes.spi.LIRLowerable;
 
 public interface LogicalCompareNode extends LIRLowerable{
 

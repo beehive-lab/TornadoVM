@@ -15,30 +15,36 @@
  */
 package tornado.drivers.opencl.graal.backend;
 
-import com.oracle.graal.code.CompilationResult;
-import com.oracle.graal.compiler.common.CompilationIdentifier;
-import com.oracle.graal.compiler.common.alloc.RegisterAllocationConfig;
-import com.oracle.graal.compiler.common.cfg.AbstractBlockBase;
-import com.oracle.graal.lir.LIR;
-import com.oracle.graal.lir.LIRInstruction;
-import com.oracle.graal.lir.Variable;
-import com.oracle.graal.lir.asm.CompilationResultBuilder;
-import com.oracle.graal.lir.asm.CompilationResultBuilderFactory;
-import com.oracle.graal.lir.asm.DataBuilder;
-import com.oracle.graal.lir.framemap.FrameMap;
-import com.oracle.graal.lir.framemap.FrameMapBuilder;
-import com.oracle.graal.lir.framemap.ReferenceMapBuilder;
-import com.oracle.graal.lir.gen.LIRGenerationResult;
-import com.oracle.graal.lir.gen.LIRGeneratorTool;
-import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
-import com.oracle.graal.phases.tiers.SuitesProvider;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import jdk.vm.ci.code.*;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.*;
+import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
+import org.graalvm.compiler.code.CompilationResult;
+import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
+import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
+import org.graalvm.compiler.lir.LIR;
+import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
+import org.graalvm.compiler.lir.asm.DataBuilder;
+import org.graalvm.compiler.lir.framemap.FrameMap;
+import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
+import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
+import org.graalvm.compiler.lir.gen.LIRGenerationResult;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.tiers.SuitesProvider;
+import org.graalvm.util.EconomicSet;
 import tornado.api.Vector;
 import tornado.api.meta.ScheduleMetaData;
 import tornado.api.meta.TaskMetaData;
@@ -76,6 +82,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return target;
     }
 
+    final OptionValues options;
+
     final OCLTargetDescription target;
     final OCLArchitecture architecture;
     final OCLContext openclContext;
@@ -87,12 +95,14 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     final ScheduleMetaData scheduleMeta;
 
     public OCLBackend(
+            OptionValues options,
             OCLProviders providers,
             OCLTargetDescription target,
             OCLCodeProvider codeCache,
             OCLContext openclContext,
             OCLDeviceContext deviceContext) {
         super(providers);
+        this.options = options;
         this.target = target;
         this.codeCache = codeCache;
         this.openclContext = openclContext;
@@ -100,6 +110,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         architecture = (OCLArchitecture) target.arch;
         scheduleMeta = new ScheduleMetaData("oclbackend");
 
+    }
+
+    public SnippetReflectionProvider getSnippetReflection() {
+        return ((OCLProviders) this.getProviders()).getSnippetReflection();
     }
 
     @Override
@@ -125,14 +139,14 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     @Override
-    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig rc) {
-        return null;
+    public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo) {
+        return new RegisterAllocationConfig(registerConfig, allocationRestrictedTo);
     }
 
     @Override
-    public Set<Register> translateToCallerRegisters(Set<Register> set) {
+    public EconomicSet<Register> translateToCallerRegisters(EconomicSet<Register> calleeRegisters) {
         unimplemented();
-        return Collections.EMPTY_SET;
+        return null;
     }
 
     private Method getLookupMethod() {
@@ -421,7 +435,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         OCLAssembler asm = createAssembler(frameMap);
         OCLFrameContext frameContext = new OCLFrameContext();
         DataBuilder dataBuilder = new OCLDataBuilder();
-        OCLCompilationResultBuilder crb = new OCLCompilationResultBuilder(codeCache, getForeignCalls(), frameMap, asm, dataBuilder, frameContext, compilationResult);
+        OCLCompilationResultBuilder crb = new OCLCompilationResultBuilder(codeCache, getForeignCalls(), frameMap, asm, dataBuilder, frameContext, compilationResult, options);
         crb.setKernel(isKernel);
 
         return crb;

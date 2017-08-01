@@ -26,3 +26,7 @@ autom4te.cache
 /drivers/opencl/jni-bindings/m4/*
 *.dylib
 *.a
+/drivers/opencl/target/
+/collections/target/
+/benchmarks/target/
+/examples/target/

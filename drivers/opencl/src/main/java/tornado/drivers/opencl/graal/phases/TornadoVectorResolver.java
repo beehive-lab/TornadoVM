@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,16 +15,16 @@
  */
 package tornado.drivers.opencl.graal.phases;
 
-import com.oracle.graal.debug.Debug;
-import com.oracle.graal.graph.Node;
-import com.oracle.graal.graph.NodeWorkList;
-import com.oracle.graal.nodes.*;
-import com.oracle.graal.nodes.cfg.Block;
-import com.oracle.graal.nodes.cfg.ControlFlowGraph;
-import com.oracle.graal.nodes.extended.ValueAnchorNode;
-import com.oracle.graal.nodes.util.GraphUtil;
-import com.oracle.graal.phases.BasePhase;
 import java.util.*;
+import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.NodeWorkList;
+import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
+import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.phases.BasePhase;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.nodes.vector.*;
 import tornado.graal.phases.TornadoHighTierContext;
@@ -136,7 +136,7 @@ public class TornadoVectorResolver extends BasePhase<TornadoHighTierContext> {
                 final ValuePhiNode phi = graph.addOrUnique(new ValuePhiNode(vector
                         .stamp(), mergeNode, values));
                 //System.out.printf("resolver: renaming variables... phi=%s\n",phi.toString());
-                Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "before rename variables...");
+                Debug.dump(Debug.BASIC_LEVEL, graph, "before rename variables...");
                 renameVariables(cfg, useBlock, usages, vector, phi);
             } else if (useBlock != originBlock) {
 
@@ -150,7 +150,7 @@ public class TornadoVectorResolver extends BasePhase<TornadoHighTierContext> {
             }
         }
 
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "After renaming vector=%s", vector);
+        Debug.dump(Debug.BASIC_LEVEL, graph, "After renaming vector=%s", vector);
     }
 
     private ValueNode renameVariables(ControlFlowGraph cfg, Block block, List<Node> usages, VectorValueNode toReplace,
@@ -230,9 +230,9 @@ public class TornadoVectorResolver extends BasePhase<TornadoHighTierContext> {
                  * ensure all stores have been committed before outputting this
                  * op
                  */ if (dirty.isEmpty()) {
-                        //System.out.printf("resolver: moving vector use node=%s\n", node);
-                        ordered.add(node);
-                    }
+                    //System.out.printf("resolver: moving vector use node=%s\n", node);
+                    ordered.add(node);
+                }
             }
 
             /*
@@ -273,8 +273,8 @@ public class TornadoVectorResolver extends BasePhase<TornadoHighTierContext> {
                             (VectorValueNode) current, length);
                 } else if (current instanceof ValuePhiNode) {
                     final ValuePhiNode phi = (ValuePhiNode) current;
-                    final ValueNode value = phi.singleValue();
-                    if (!value.equals(PhiNode.MULTIPLE_VALUES) && value instanceof VectorValueNode) {
+                    final ValueNode value = phi.singleValueOrThis();
+                    if (value != phi && value instanceof VectorValueNode) {
                         processLoadElement(ordered, toReplace,
                                 (VectorValueNode) value, length);
                     }

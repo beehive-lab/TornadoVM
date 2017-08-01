@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,11 +15,12 @@
  */
 package tornado.graal;
 
-import com.oracle.graal.lir.phases.LIRPhaseSuite;
-import com.oracle.graal.lir.phases.PostAllocationOptimizationPhase.PostAllocationOptimizationContext;
-import com.oracle.graal.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
-import com.oracle.graal.phases.common.AddressLoweringPhase.AddressLowering;
-import com.oracle.graal.phases.common.CanonicalizerPhase.CustomCanonicalizer;
+import org.graalvm.compiler.lir.phases.LIRPhaseSuite;
+import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase.PostAllocationOptimizationContext;
+import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
 import tornado.graal.compiler.*;
 import tornado.graal.phases.lir.TornadoAllocationStage;
 
@@ -34,14 +35,14 @@ public class TornadoSuites {
     private final LIRPhaseSuite<PreAllocationOptimizationContext> preAllocStage;
     private final LIRPhaseSuite<PostAllocationOptimizationContext> postAllocStage;
 
-    public TornadoSuites(TornadoCompilerConfiguration config, CustomCanonicalizer canonicalizer, AddressLowering addressLowering) {
-        sketchTier = config.createSketchTier(canonicalizer);
-        highTier = config.createHighTier(canonicalizer);
-        midTier = config.createMidTier();
-        lowTier = config.createLowTier(addressLowering);
-        allocStage = config.createAllocationStage();
-        preAllocStage = config.createPreAllocationOptimizationStage();
-        postAllocStage = config.createPostAllocationOptimizationStage();
+    public TornadoSuites(OptionValues options, TornadoCompilerConfiguration config, CustomCanonicalizer canonicalizer, AddressLowering addressLowering) {
+        sketchTier = config.createSketchTier(options, canonicalizer);
+        highTier = config.createHighTier(options, canonicalizer);
+        midTier = config.createMidTier(options);
+        lowTier = config.createLowTier(options, addressLowering);
+        allocStage = config.createAllocationStage(options);
+        preAllocStage = config.createPreAllocationOptimizationStage(options);
+        postAllocStage = config.createPostAllocationOptimizationStage(options);
     }
 
     public TornadoSketchTier getSketchTier() {

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,7 @@
 package tornado.drivers.opencl;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import org.graalvm.compiler.options.OptionValues;
 import tornado.runtime.TornadoDriver;
 import tornado.runtime.TornadoDriverProvider;
 import tornado.runtime.TornadoVMConfig;
@@ -28,8 +29,8 @@ public class OCLTornadoDriverProvider implements TornadoDriverProvider {
     }
 
     @Override
-    public TornadoDriver createDriver(HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
-        return new OCLDriver(vmRuntime, vmConfig);
+    public TornadoDriver createDriver(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
+        return new OCLDriver(options, vmRuntime, vmConfig);
     }
-    
+
 }

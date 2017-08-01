@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,15 +15,17 @@
  */
 package tornado.graal.phases;
 
-import com.oracle.graal.graph.Node;
-import com.oracle.graal.graph.NodeBitMap;
-import com.oracle.graal.loop.InductionVariable;
-import com.oracle.graal.loop.LoopEx;
-import com.oracle.graal.loop.LoopsData;
-import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.phases.BasePhase;
 import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.List;
 import java.util.Queue;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.NodeBitMap;
+import org.graalvm.compiler.loop.InductionVariable;
+import org.graalvm.compiler.loop.LoopEx;
+import org.graalvm.compiler.loop.LoopsData;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.phases.BasePhase;
 
 public class TornadoParallelAnalysis extends BasePhase<TornadoHighTierContext> {
 
@@ -39,8 +41,10 @@ public class TornadoParallelAnalysis extends BasePhase<TornadoHighTierContext> {
             data.detectedCountedLoops();
 
             int loopIndex = 0;
-            for (LoopEx loop : data.innerFirst()) {
-                for (Node n : loop.getInductionVariables().keySet()) {
+            final List<LoopEx> loops = data.outerFirst();
+            Collections.reverse(loops);
+            for (LoopEx loop : loops) {
+                for (Node n : loop.getInductionVariables().getKeys()) {
                     NodeBitMap nodes = graph.createNodeBitMap();
                     nodes.clearAll();
                     InductionVariable iv = loop.getInductionVariables().get(n);

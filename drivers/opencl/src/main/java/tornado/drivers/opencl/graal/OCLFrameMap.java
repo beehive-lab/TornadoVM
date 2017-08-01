@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +15,12 @@
  */
 package tornado.drivers.opencl.graal;
 
-import com.oracle.graal.asm.NumUtil;
-import com.oracle.graal.compiler.common.LIRKind;
-import com.oracle.graal.lir.framemap.FrameMap;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.StackSlot;
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.NumUtil;
+import org.graalvm.compiler.lir.framemap.FrameMap;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 
 /**

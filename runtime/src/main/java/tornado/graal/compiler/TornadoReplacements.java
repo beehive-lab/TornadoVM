@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,16 +15,17 @@
  */
 package tornado.graal.compiler;
 
-import com.oracle.graal.api.replacements.SnippetReflectionProvider;
-import com.oracle.graal.bytecode.BytecodeProvider;
-import com.oracle.graal.phases.util.Providers;
-import com.oracle.graal.replacements.ReplacementsImpl;
 import jdk.vm.ci.code.TargetDescription;
+import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
+import org.graalvm.compiler.bytecode.BytecodeProvider;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.util.Providers;
+import org.graalvm.compiler.replacements.ReplacementsImpl;
 
 public class TornadoReplacements extends ReplacementsImpl {
 
-    public TornadoReplacements(Providers providers, SnippetReflectionProvider snippetReflection, BytecodeProvider bytecodeProvider, TargetDescription target) {
-        super(providers, snippetReflection, bytecodeProvider, target);
+    public TornadoReplacements(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, BytecodeProvider bytecodeProvider, TargetDescription target) {
+        super(options, providers, snippetReflection, bytecodeProvider, target);
     }
 
 }

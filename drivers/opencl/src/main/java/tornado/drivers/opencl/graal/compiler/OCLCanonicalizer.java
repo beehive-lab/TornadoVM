@@ -15,23 +15,23 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.compiler.common.type.ObjectStamp;
-import com.oracle.graal.graph.Node;
-import com.oracle.graal.graph.spi.SimplifierTool;
-import com.oracle.graal.nodes.ParameterNode;
-import com.oracle.graal.nodes.ValueNode;
-import com.oracle.graal.nodes.ValuePhiNode;
-import com.oracle.graal.nodes.calc.AddNode;
-import com.oracle.graal.nodes.calc.DivNode;
-import com.oracle.graal.nodes.calc.MulNode;
-import com.oracle.graal.nodes.calc.SubNode;
-import com.oracle.graal.nodes.memory.WriteNode;
-import com.oracle.graal.nodes.util.GraphUtil;
-import com.oracle.graal.phases.common.CanonicalizerPhase.CustomCanonicalizer;
 import java.util.BitSet;
 import java.util.List;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.compiler.core.common.type.ObjectStamp;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.spi.SimplifierTool;
+import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.graalvm.compiler.nodes.calc.AddNode;
+import org.graalvm.compiler.nodes.calc.DivNode;
+import org.graalvm.compiler.nodes.calc.MulNode;
+import org.graalvm.compiler.nodes.calc.SubNode;
+import org.graalvm.compiler.nodes.memory.WriteNode;
+import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
 import tornado.api.Vector;
 import tornado.api.meta.TaskMetaData;
 import tornado.common.exceptions.TornadoInternalError;

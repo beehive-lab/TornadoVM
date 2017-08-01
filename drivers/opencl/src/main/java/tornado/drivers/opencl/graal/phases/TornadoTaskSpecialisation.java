@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,23 +15,23 @@
  */
 package tornado.drivers.opencl.graal.phases;
 
-import com.oracle.graal.compiler.common.type.ObjectStamp;
-import com.oracle.graal.debug.Debug;
-import com.oracle.graal.graph.Graph.Mark;
-import com.oracle.graal.graph.Node;
-import com.oracle.graal.nodes.*;
-import com.oracle.graal.nodes.calc.IsNullNode;
-import com.oracle.graal.nodes.java.ArrayLengthNode;
-import com.oracle.graal.nodes.java.LoadFieldNode;
-import com.oracle.graal.nodes.util.GraphUtil;
-import com.oracle.graal.phases.BasePhase;
-import com.oracle.graal.phases.common.CanonicalizerPhase;
-import com.oracle.graal.phases.common.DeadCodeEliminationPhase;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
+import org.graalvm.compiler.core.common.type.ObjectStamp;
+import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.graph.Graph.Mark;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.calc.IsNullNode;
+import org.graalvm.compiler.nodes.java.ArrayLengthNode;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
+import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.phases.BasePhase;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import tornado.common.RuntimeUtilities;
 import tornado.common.Tornado;
 import tornado.graal.phases.TornadoHighTierContext;
@@ -241,12 +241,12 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                     propagateParameters(graph, param, context.getArgs());
                 }
-                Debug.dump(Debug.INFO_LOG_LEVEL, graph, "After Phase Propagate Parameters");
+                Debug.dump(Debug.INFO_LEVEL, graph, "After Phase Propagate Parameters");
             } else {
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                     assumeNonNull(graph, param);
                 }
-                Debug.dump(Debug.INFO_LOG_LEVEL, graph, "After Phase assume non null Parameters");
+                Debug.dump(Debug.INFO_LEVEL, graph, "After Phase assume non null Parameters");
             }
 
             canonicalizer.apply(graph, context);
@@ -265,7 +265,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                                 }
                             });
 
-            Debug.dump(Debug.INFO_LOG_LEVEL, graph, "After Phase Pi Node Removal");
+            Debug.dump(Debug.INFO_LEVEL, graph, "After Phase Pi Node Removal");
 
             loopUnroller.execute(graph, context);
 
@@ -275,7 +275,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             deadCodeElimination.run(graph);
 
-            Debug.dump(Debug.INFO_LOG_LEVEL, graph, "After TaskSpecialisation iteration=" + iterations);
+            Debug.dump(Debug.INFO_LEVEL, graph, "After TaskSpecialisation iteration=" + iterations);
 
 //            boolean hasGuardingPiNodes = graph.getNodes().filter(GuardingPiNode.class).isNotEmpty();
             hasWork = (lastNodeCount != graph.getNodeCount()

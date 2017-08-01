@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,16 +15,16 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.compiler.common.CompilationIdentifier;
-import com.oracle.graal.lir.LIR;
-import com.oracle.graal.lir.Variable;
-import com.oracle.graal.lir.framemap.FrameMapBuilder;
-import com.oracle.graal.lir.gen.LIRGenerationResult;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import jdk.vm.ci.code.CallingConvention;
+import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.lir.LIR;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
+import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 
 import static tornado.common.exceptions.TornadoInternalError.guarantee;

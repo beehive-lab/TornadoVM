@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,21 +15,22 @@
  */
 package tornado.graal.compiler;
 
-import com.oracle.graal.phases.PhaseSuite;
-import com.oracle.graal.phases.common.CanonicalizerPhase;
-import com.oracle.graal.phases.common.CanonicalizerPhase.CustomCanonicalizer;
-import com.oracle.graal.phases.common.DeadCodeEliminationPhase;
-import com.oracle.graal.phases.common.IterativeConditionalEliminationPhase;
-import com.oracle.graal.phases.common.inlining.InliningPhase;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.PhaseSuite;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
+import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
+import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
+import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import tornado.graal.phases.TornadoApiReplacement;
 import tornado.graal.phases.TornadoDataflowAnalysis;
 import tornado.graal.phases.TornadoInliningPolicy;
 import tornado.graal.phases.TornadoSketchTierContext;
 
-import static com.oracle.graal.compiler.common.GraalOptions.ConditionalElimination;
-import static com.oracle.graal.compiler.common.GraalOptions.ImmutableCode;
-import static com.oracle.graal.compiler.phases.HighTier.Options.Inline;
-import static com.oracle.graal.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
+import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
+import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
+import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 
 public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
 
@@ -39,21 +40,21 @@ public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
         return customCanonicalizer;
     }
 
-    public TornadoSketchTier(CustomCanonicalizer customCanonicalizer) {
+    public TornadoSketchTier(OptionValues options, CustomCanonicalizer customCanonicalizer) {
         this.customCanonicalizer = customCanonicalizer;
 
         final CanonicalizerPhase canonicalizer = new CanonicalizerPhase(customCanonicalizer);
 
-        if (ImmutableCode.getValue()) {
+        if (ImmutableCode.getValue(options)) {
             canonicalizer.disableReadCanonicalization();
         }
         appendPhase(canonicalizer);
 
-        if (Inline.getValue()) {
+        if (Inline.getValue(options)) {
             appendPhase(new InliningPhase(new TornadoInliningPolicy(), canonicalizer));
             appendPhase(new DeadCodeEliminationPhase(Optional));
 
-            if (ConditionalElimination.getValue()) {
+            if (ConditionalElimination.getValue(options)) {
                 appendPhase(canonicalizer);
                 appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
             }

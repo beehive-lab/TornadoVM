@@ -15,10 +15,10 @@
  */
 package tornado.drivers.opencl;
 
-import com.oracle.graal.compiler.common.LIRKind;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
+import org.graalvm.compiler.core.common.LIRKind;
 import tornado.drivers.opencl.graal.OCLArchitecture;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 

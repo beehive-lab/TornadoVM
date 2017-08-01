@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,22 +15,23 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.nodes.spi.LoweringTool;
-import com.oracle.graal.phases.common.AddressLoweringPhase.AddressLowering;
-import com.oracle.graal.phases.common.*;
-import com.oracle.graal.phases.schedule.SchedulePhase;
+import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
+import org.graalvm.compiler.phases.common.*;
+import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import tornado.graal.compiler.TornadoLowTier;
 import tornado.graal.phases.TornadoLoopCanonicalization;
 
-import static com.oracle.graal.compiler.common.GraalOptions.ConditionalElimination;
-import static com.oracle.graal.compiler.common.GraalOptions.ImmutableCode;
-import static com.oracle.graal.phases.common.DeadCodeEliminationPhase.Optionality.Required;
+import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
+import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
+import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
 public class OCLLowTier extends TornadoLowTier {
 
-    public OCLLowTier(AddressLowering addressLowering) {
+    public OCLLowTier(OptionValues options, AddressLowering addressLowering) {
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
-        if (ImmutableCode.getValue()) {
+        if (ImmutableCode.getValue(options)) {
             canonicalizer.disableReadCanonicalization();
         }
 
@@ -44,7 +45,7 @@ public class OCLLowTier extends TornadoLowTier {
          * Cleanup IsNull checks resulting from MID_TIER/LOW_TIER lowering and
          * ExpandLogic phase.
          */
-        if (ConditionalElimination.getValue()) {
+        if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
             /*
              * Canonicalizer may create some new ShortCircuitOrNodes so clean

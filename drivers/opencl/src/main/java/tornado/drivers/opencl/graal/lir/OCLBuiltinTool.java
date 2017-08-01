@@ -15,8 +15,8 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
-import com.oracle.graal.compiler.common.LIRKind;
-import com.oracle.graal.lir.Variable;
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.Variable;
 import jdk.vm.ci.meta.Value;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;

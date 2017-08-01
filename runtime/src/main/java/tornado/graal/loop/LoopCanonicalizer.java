@@ -5,7 +5,7 @@
  */
 package tornado.graal.loop;
 
-import com.oracle.graal.nodes.*;
+import org.graalvm.compiler.nodes.*;
 
 /**
  *

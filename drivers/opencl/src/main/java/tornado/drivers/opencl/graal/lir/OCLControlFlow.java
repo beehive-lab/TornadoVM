@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,20 +15,18 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
-import com.oracle.graal.lir.InstructionValueProcedure;
-import com.oracle.graal.lir.LIRInstruction.Use;
-import com.oracle.graal.lir.LIRInstructionClass;
-import com.oracle.graal.lir.LabelRef;
-import com.oracle.graal.lir.StandardOp.BlockEndOp;
-import com.oracle.graal.lir.Variable;
+import org.graalvm.compiler.lir.LIRInstruction.Use;
+import org.graalvm.compiler.lir.LIRInstructionClass;
+import org.graalvm.compiler.lir.LabelRef;
+import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
+import org.graalvm.compiler.lir.Variable;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AbstractInstruction;
 
-import static com.oracle.graal.lir.LIRInstruction.OperandFlag.CONST;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.CONST;
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
 
 public class OCLControlFlow {
@@ -37,45 +35,6 @@ public class OCLControlFlow {
 
         public AbstractBlockEndOp(LIRInstructionClass<? extends AbstractInstruction> type) {
             super(type);
-        }
-
-        @Override
-        public int addOutgoingValues(Value[] values) {
-            unimplemented();
-            return 0;
-        }
-
-        @Override
-        public void clearOutgoingValues() {
-            unimplemented();
-        }
-
-        @Override
-        public void forEachOutgoingValue(InstructionValueProcedure ivp) {
-            unimplemented();
-        }
-
-        @Override
-        public int getOutgoingSize() {
-            unimplemented();
-            return 0;
-        }
-
-        @Override
-        public Value getOutgoingValue(int i) {
-            unimplemented();
-            return null;
-        }
-
-        @Override
-        public void setOutgoingValues(Value[] values) {
-            unimplemented();
-        }
-
-        @Override
-        public int getPhiSize() {
-            unimplemented();
-            return 0;
         }
     }
 

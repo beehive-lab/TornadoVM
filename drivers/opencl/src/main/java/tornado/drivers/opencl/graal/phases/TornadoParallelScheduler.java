@@ -15,16 +15,16 @@
  */
 package tornado.drivers.opencl.graal.phases;
 
-import com.oracle.graal.debug.Debug;
-import com.oracle.graal.nodes.ConstantNode;
-import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.nodes.ValueNode;
-import com.oracle.graal.nodes.calc.AddNode;
-import com.oracle.graal.nodes.calc.DivNode;
-import com.oracle.graal.nodes.calc.MulNode;
-import com.oracle.graal.nodes.calc.SubNode;
-import com.oracle.graal.phases.BasePhase;
 import jdk.vm.ci.meta.JavaKind;
+import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.AddNode;
+import org.graalvm.compiler.nodes.calc.DivNode;
+import org.graalvm.compiler.nodes.calc.MulNode;
+import org.graalvm.compiler.nodes.calc.SubNode;
+import org.graalvm.compiler.phases.BasePhase;
 import tornado.api.enums.TornadoSchedulingStrategy;
 import tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
@@ -169,7 +169,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
                 serialiseLoop(node);
             }
 
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "after scheduling loop index=" + node.index());
+            Debug.dump(Debug.BASIC_LEVEL, graph, "after scheduling loop index=" + node.index());
         });
 
         graph.clearLastSchedule();

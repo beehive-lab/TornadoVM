@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,23 +15,23 @@
  */
 package tornado.drivers.opencl.graal.compiler.plugins;
 
-import com.oracle.graal.graph.Node;
-import com.oracle.graal.nodes.ConstantNode;
-import com.oracle.graal.nodes.FixedWithNextNode;
-import com.oracle.graal.nodes.ValueNode;
-import com.oracle.graal.nodes.extended.BoxNode;
-import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderContext;
-import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugin;
-import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugin.Receiver;
-import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins;
-import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import com.oracle.graal.nodes.java.NewArrayNode;
-import com.oracle.graal.nodes.java.StoreIndexedNode;
-import com.oracle.graal.nodes.util.GraphUtil;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.extended.BoxNode;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.graalvm.compiler.nodes.java.NewArrayNode;
+import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.nodes.util.GraphUtil;
 import tornado.drivers.opencl.graal.nodes.*;
 import tornado.lang.CompilerInternals;
 import tornado.lang.Debug;
@@ -120,7 +120,8 @@ public class OCLGraphBuilderPlugins {
                 }
 
                 TPrintfNode printfNode = new TPrintfNode(actualArgs);
-                b.add(b.recursiveAppend(printfNode));
+
+                b.add(b.append(printfNode));
                 while (newArrayNode.hasUsages()) {
                     Node n = newArrayNode.getUsageAt(0);
                     // need to remove all nodes from the graph that operate on the
@@ -180,7 +181,7 @@ public class OCLGraphBuilderPlugins {
                 }
 
                 PrintfNode printfNode = new PrintfNode(actualArgs);
-                b.add(b.recursiveAppend(printfNode));
+                b.add(b.append(printfNode));
 
                 while (newArrayNode.hasUsages()) {
                     Node n = newArrayNode.getUsageAt(0);
@@ -225,7 +226,7 @@ public class OCLGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode x, ValueNode y) {
-                b.push(kind, b.recursiveAppend(OCLFPBinaryIntrinsicNode.create(x, y, POW, kind)));
+                b.push(kind, b.append(OCLFPBinaryIntrinsicNode.create(x, y, POW, kind)));
                 return true;
             }
         });
@@ -237,9 +238,9 @@ public class OCLGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode x, ValueNode y) {
                 if (kind.isNumericFloat()) {
-                    b.push(kind, b.recursiveAppend(OCLFPBinaryIntrinsicNode.create(x, y, FMIN, kind)));
+                    b.push(kind, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMIN, kind)));
                 } else {
-                    b.push(kind, b.recursiveAppend(OCLIntBinaryIntrinsicNode.create(x, y, MIN, kind)));
+                    b.push(kind, b.append(OCLIntBinaryIntrinsicNode.create(x, y, MIN, kind)));
                 }
                 return true;
             }
@@ -250,9 +251,9 @@ public class OCLGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode x, ValueNode y) {
                 if (kind.isNumericFloat()) {
-                    b.push(kind, b.recursiveAppend(OCLFPBinaryIntrinsicNode.create(x, y, FMAX, kind)));
+                    b.push(kind, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMAX, kind)));
                 } else {
-                    b.push(kind, b.recursiveAppend(OCLIntBinaryIntrinsicNode.create(x, y, MAX, kind)));
+                    b.push(kind, b.append(OCLIntBinaryIntrinsicNode.create(x, y, MAX, kind)));
                 }
                 return true;
             }
@@ -263,7 +264,7 @@ public class OCLGraphBuilderPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode value) {
                 if (kind.isNumericFloat()) {
-                    b.push(kind, b.recursiveAppend(OCLFPUnaryIntrinsicNode.create(value, FABS, kind)));
+                    b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, FABS, kind)));
                 }
                 //else
                 //	b.push(kind, b.recursiveAppend(OCLIntUnaryIntrinsicNode.create(value, ABS , kind)));

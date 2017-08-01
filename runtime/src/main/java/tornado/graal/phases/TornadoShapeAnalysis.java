@@ -15,10 +15,10 @@
  */
 package tornado.graal.phases;
 
-import com.oracle.graal.nodes.ConstantNode;
-import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.nodes.ValueNode;
-import com.oracle.graal.phases.BasePhase;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.phases.BasePhase;
 import java.util.Collections;
 import java.util.List;
 import tornado.common.Tornado;

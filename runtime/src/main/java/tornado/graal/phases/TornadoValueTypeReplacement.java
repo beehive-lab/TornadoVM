@@ -15,14 +15,14 @@
  */
 package tornado.graal.phases;
 
-import com.oracle.graal.graph.Node;
-import com.oracle.graal.graph.iterators.NodePredicate;
-import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.nodes.ValueNode;
-import com.oracle.graal.nodes.java.LoadFieldNode;
-import com.oracle.graal.nodes.java.NewInstanceNode;
-import com.oracle.graal.nodes.java.StoreFieldNode;
-import com.oracle.graal.phases.BasePhase;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.iterators.NodePredicate;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
+import org.graalvm.compiler.nodes.java.NewInstanceNode;
+import org.graalvm.compiler.nodes.java.StoreFieldNode;
+import org.graalvm.compiler.phases.BasePhase;
 import java.util.HashMap;
 import java.util.Map;
 import jdk.vm.ci.meta.ResolvedJavaField;

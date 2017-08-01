@@ -15,15 +15,16 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.loop.DefaultLoopPolicies;
-import com.oracle.graal.loop.LoopPolicies;
-import com.oracle.graal.loop.phases.LoopFullUnrollPhase;
-import com.oracle.graal.nodes.spi.LoweringTool;
-import com.oracle.graal.phases.common.CanonicalizerPhase.CustomCanonicalizer;
-import com.oracle.graal.phases.common.*;
-import com.oracle.graal.phases.common.inlining.InliningPhase;
-import com.oracle.graal.phases.schedule.SchedulePhase;
-import com.oracle.graal.virtual.phases.ea.PartialEscapePhase;
+import org.graalvm.compiler.loop.DefaultLoopPolicies;
+import org.graalvm.compiler.loop.LoopPolicies;
+import org.graalvm.compiler.loop.phases.LoopFullUnrollPhase;
+import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
+import org.graalvm.compiler.phases.common.*;
+import org.graalvm.compiler.phases.common.inlining.InliningPhase;
+import org.graalvm.compiler.phases.schedule.SchedulePhase;
+import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 import tornado.drivers.opencl.graal.phases.OCLThreadCoarsener;
 import tornado.drivers.opencl.graal.phases.TornadoParallelScheduler;
 import tornado.drivers.opencl.graal.phases.TornadoTaskSpecialisation;
@@ -33,28 +34,28 @@ import tornado.graal.phases.TornadoInliningPolicy;
 import tornado.graal.phases.TornadoShapeAnalysis;
 import tornado.graal.phases.TornadoValueTypeCleanup;
 
-import static com.oracle.graal.compiler.common.GraalOptions.*;
-import static com.oracle.graal.compiler.phases.HighTier.Options.Inline;
-import static com.oracle.graal.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static org.graalvm.compiler.core.common.GraalOptions.*;
+import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
+import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 
 public class OCLHighTier extends TornadoHighTier {
 
-    public OCLHighTier(CustomCanonicalizer customCanonicalizer) {
+    public OCLHighTier(OptionValues options, CustomCanonicalizer customCanonicalizer) {
         super(customCanonicalizer);
 
         final CanonicalizerPhase canonicalizer = new CanonicalizerPhase(customCanonicalizer);
 
-        if (ImmutableCode.getValue()) {
+        if (ImmutableCode.getValue(options)) {
             canonicalizer.disableReadCanonicalization();
         }
         appendPhase(canonicalizer);
 
-        if (Inline.getValue()) {
+        if (Inline.getValue(options)) {
             appendPhase(new InliningPhase(new TornadoInliningPolicy(), canonicalizer));
 
             appendPhase(new DeadCodeEliminationPhase(Optional));
 
-            if (ConditionalElimination.getValue()) {
+            if (ConditionalElimination.getValue(options)) {
                 appendPhase(canonicalizer);
                 appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
             }
@@ -67,12 +68,12 @@ public class OCLHighTier extends TornadoHighTier {
 
         appendPhase(canonicalizer);
 
-        if (PartialEscapeAnalysis.getValue()) {
-            appendPhase(new PartialEscapePhase(true, canonicalizer));
+        if (PartialEscapeAnalysis.getValue(options)) {
+            appendPhase(new PartialEscapePhase(true, canonicalizer, options));
         }
         appendPhase(new TornadoValueTypeCleanup());
 
-        if (OptConvertDeoptsToGuards.getValue()) {
+        if (OptConvertDeoptsToGuards.getValue(options)) {
             appendPhase(new ConvertDeoptimizeToGuardPhase());
         }
 

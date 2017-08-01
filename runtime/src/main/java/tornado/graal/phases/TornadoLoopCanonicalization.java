@@ -15,11 +15,13 @@
  */
 package tornado.graal.phases;
 
-import com.oracle.graal.loop.LoopEx;
-import com.oracle.graal.loop.LoopsData;
-import com.oracle.graal.nodes.LoopBeginNode;
-import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.phases.Phase;
+import java.util.Collections;
+import java.util.List;
+import org.graalvm.compiler.loop.LoopEx;
+import org.graalvm.compiler.loop.LoopsData;
+import org.graalvm.compiler.nodes.LoopBeginNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.phases.Phase;
 
 import static tornado.graal.loop.LoopCanonicalizer.canonicalizeLoop;
 
@@ -31,7 +33,9 @@ public class TornadoLoopCanonicalization extends Phase {
         if (graph.hasLoops()) {
             final LoopsData data = new LoopsData(graph);
 
-            for (LoopEx loop : data.innerFirst()) {
+            final List<LoopEx> loops = data.outerFirst();
+            Collections.reverse(loops);
+            for (LoopEx loop : loops) {
                 int numBackedges = loop.loopBegin().loopEnds().count();
                 if (numBackedges > 1) {
                     final LoopBeginNode loopBegin = loop.loopBegin();

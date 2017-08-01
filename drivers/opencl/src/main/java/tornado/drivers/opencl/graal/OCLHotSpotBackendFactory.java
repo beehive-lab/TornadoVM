@@ -15,17 +15,18 @@
  */
 package tornado.drivers.opencl.graal;
 
-import com.oracle.graal.bytecode.BytecodeProvider;
-import com.oracle.graal.hotspot.meta.HotSpotStampProvider;
-import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins;
-import com.oracle.graal.phases.util.Providers;
-import com.oracle.graal.replacements.StandardGraphBuilderPlugins;
-import com.oracle.graal.replacements.classfile.ClassfileBytecodeProvider;
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.runtime.JVMCIBackend;
+import org.graalvm.compiler.bytecode.BytecodeProvider;
+import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.util.Providers;
+import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins;
+import org.graalvm.compiler.replacements.classfile.ClassfileBytecodeProvider;
 import tornado.drivers.opencl.OCLContext;
 import tornado.drivers.opencl.OCLDevice;
 import tornado.drivers.opencl.OCLDeviceContext;
@@ -35,7 +36,11 @@ import tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
 import tornado.drivers.opencl.graal.compiler.plugins.OCLGraphBuilderPlugins;
 import tornado.drivers.opencl.graal.lir.OCLAddressLowering;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-import tornado.graal.compiler.*;
+import tornado.graal.DummySnippetFactory;
+import tornado.graal.compiler.TornadoConstantFieldProvider;
+import tornado.graal.compiler.TornadoForeignCallsProvider;
+import tornado.graal.compiler.TornadoReplacements;
+import tornado.graal.compiler.TornadoSnippetReflectionProvider;
 import tornado.runtime.TornadoVMConfig;
 
 import static jdk.vm.ci.common.InitTimer.timer;
@@ -45,13 +50,12 @@ public class OCLHotSpotBackendFactory {
 
     private static final HotSpotStampProvider stampProvider = new HotSpotStampProvider();
     private static final TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();
-    private static final TornadoNodeCostProvider nodeCostProvider = new TornadoNodeCostProvider();
     private static final TornadoForeignCallsProvider foreignCalls = new TornadoForeignCallsProvider();
     private static final TornadoConstantFieldProvider constantFieldProvider = new TornadoConstantFieldProvider();
     private static final OCLCompilerConfiguration compilerConfiguration = new OCLCompilerConfiguration();
     private static final OCLAddressLowering addressLowering = new OCLAddressLowering();
 
-    public static OCLBackend createBackend(JVMCIBackend jvmci, TornadoVMConfig config, OCLContext openclContext, OCLDevice device) {
+    public static OCLBackend createBackend(OptionValues options, JVMCIBackend jvmci, TornadoVMConfig config, OCLContext openclContext, OCLDevice device) {
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmci.getMetaAccess();
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();
 
@@ -84,21 +88,21 @@ public class OCLHotSpotBackendFactory {
 
             lowerer = new OCLLoweringProvider(metaAccess, foreignCalls, constantReflection, config, target);
 
-            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, nodeCostProvider);
+            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider);
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
             plugins = createGraphBuilderPlugins(metaAccess, bytecodeProvider);
-            TornadoReplacements replacements = new TornadoReplacements(p, snippetReflection, bytecodeProvider, target);
+            TornadoReplacements replacements = new TornadoReplacements(options, p, snippetReflection, bytecodeProvider, target);
 
             replacements.setGraphBuilderPlugins(plugins);
 
-            suites = new OCLSuitesProvider(plugins, metaAccess, compilerConfiguration, addressLowering);
+            suites = new OCLSuitesProvider(options, plugins, metaAccess, compilerConfiguration, addressLowering);
 
-            providers = new OCLProviders(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, nodeCostProvider, plugins, suites);
+            providers = new OCLProviders(metaAccess, codeCache, constantReflection, snippetReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, plugins, suites);
 
-            lowerer.initialize(providers, snippetReflection);
+            lowerer.initialize(options, new DummySnippetFactory(), providers, snippetReflection);
         }
         try (InitTimer rt = timer("instantiate backend")) {
-            OCLBackend backend = new OCLBackend(providers, target, codeCache, openclContext, deviceContext);
+            OCLBackend backend = new OCLBackend(options, providers, target, codeCache, openclContext, deviceContext);
             return backend;
         }
     }
@@ -106,7 +110,7 @@ public class OCLHotSpotBackendFactory {
     protected static Plugins createGraphBuilderPlugins(
             HotSpotMetaAccessProvider metaAccess, BytecodeProvider bytecodeProvider) {
 
-        InvocationPlugins invocationPlugins = new InvocationPlugins(metaAccess);
+        InvocationPlugins invocationPlugins = new InvocationPlugins();
         Plugins plugins = new Plugins(invocationPlugins);
 
         OCLGraphBuilderPlugins.registerParameterPlugins(plugins);

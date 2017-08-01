@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
  */
 package tornado.graal.compiler;
 
-import com.oracle.graal.compiler.common.CompilationIdentifier;
+import org.graalvm.compiler.core.common.CompilationIdentifier;
 
 public class TornadoCompilerIdentifier implements CompilationIdentifier {
 

@@ -15,16 +15,16 @@
  */
 package tornado.drivers.opencl.graal;
 
-import com.oracle.graal.java.GraphBuilderPhase;
-import com.oracle.graal.lir.phases.PostAllocationOptimizationStage;
-import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderConfiguration;
-import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins;
-import com.oracle.graal.phases.PhaseSuite;
-import com.oracle.graal.phases.common.AddressLoweringPhase.AddressLowering;
-import com.oracle.graal.phases.tiers.HighTierContext;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.compiler.java.GraphBuilderPhase;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.PhaseSuite;
+import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
+import org.graalvm.compiler.phases.tiers.HighTierContext;
 import tornado.api.meta.TaskMetaData;
 import tornado.drivers.opencl.graal.compiler.OCLCanonicalizer;
 import tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
@@ -41,10 +41,10 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
     private final TornadoLIRSuites lirSuites;
     private final OCLCanonicalizer canonicalizer;
 
-    public OCLSuitesProvider(Plugins plugins, MetaAccessProvider metaAccessProvider, OCLCompilerConfiguration compilerConfig, AddressLowering addressLowering) {
+    public OCLSuitesProvider(OptionValues options, Plugins plugins, MetaAccessProvider metaAccessProvider, OCLCompilerConfiguration compilerConfig, AddressLowering addressLowering) {
         graphBuilderSuite = createGraphBuilderSuite(plugins);
         canonicalizer = new OCLCanonicalizer();
-        suites = new TornadoSuites(compilerConfig, canonicalizer, addressLowering);
+        suites = new TornadoSuites(options, compilerConfig, canonicalizer, addressLowering);
         lirSuites = createLIRSuites();
     }
 
@@ -69,9 +69,7 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
         return suite;
     }
 
-    private TornadoLIRSuites createLIRSuites() {
-        PostAllocationOptimizationStage.Options.LIROptRedundantMoveElimination.setValue(false);
-
+    public final TornadoLIRSuites createLIRSuites() {
         return new TornadoLIRSuites(suites.getPreAllocationOptimizationStage(),
                 suites.getAllocationStage(), suites.getPostAllocationOptimizationStage());
     }

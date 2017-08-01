@@ -15,7 +15,7 @@
  */
 package tornado.drivers.opencl.graal.meta;
 
-import com.oracle.graal.compiler.common.LIRKind;
+import org.graalvm.compiler.core.common.LIRKind;
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.OCLArchitecture;
 import tornado.drivers.opencl.graal.OCLArchitecture.OCLRegister;

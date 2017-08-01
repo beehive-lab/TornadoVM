@@ -15,40 +15,40 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.code.CompilationResult;
-import com.oracle.graal.compiler.common.alloc.ComputeBlockOrder;
-import com.oracle.graal.compiler.common.alloc.RegisterAllocationConfig;
-import com.oracle.graal.compiler.common.cfg.AbstractBlockBase;
-import com.oracle.graal.debug.Debug.Scope;
-import com.oracle.graal.debug.*;
-import com.oracle.graal.debug.internal.DebugScope;
-import com.oracle.graal.debug.internal.method.MethodMetricsRootScopeInfo;
-import com.oracle.graal.lir.LIR;
-import com.oracle.graal.lir.asm.CompilationResultBuilderFactory;
-import com.oracle.graal.lir.constopt.ConstantLoadOptimization;
-import com.oracle.graal.lir.framemap.FrameMap;
-import com.oracle.graal.lir.framemap.FrameMapBuilder;
-import com.oracle.graal.lir.gen.LIRGenerationResult;
-import com.oracle.graal.lir.gen.LIRGeneratorTool;
-import com.oracle.graal.lir.phases.AllocationPhase.AllocationContext;
-import com.oracle.graal.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
-import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.nodes.StructuredGraph.AllowAssumptions;
-import com.oracle.graal.nodes.StructuredGraph.ScheduleResult;
-import com.oracle.graal.nodes.cfg.Block;
-import com.oracle.graal.nodes.spi.NodeLIRBuilderTool;
-import com.oracle.graal.phases.OptimisticOptimizations;
-import com.oracle.graal.phases.PhaseSuite;
-import com.oracle.graal.phases.common.DeadCodeEliminationPhase;
-import com.oracle.graal.phases.tiers.HighTierContext;
-import com.oracle.graal.phases.tiers.LowTierContext;
-import com.oracle.graal.phases.util.Providers;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.*;
+import org.graalvm.compiler.code.CompilationResult;
+import org.graalvm.compiler.core.common.alloc.ComputeBlockOrder;
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
+import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
+import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.*;
+import org.graalvm.compiler.debug.internal.method.MethodMetricsRootScopeInfo;
+import org.graalvm.compiler.lir.LIR;
+import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
+import org.graalvm.compiler.lir.framemap.FrameMap;
+import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
+import org.graalvm.compiler.lir.gen.LIRGenerationResult;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
+import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.nodes.StructuredGraph.Builder;
+import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
+import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.OptimisticOptimizations;
+import org.graalvm.compiler.phases.PhaseSuite;
+import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
+import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.graalvm.compiler.phases.tiers.LowTierContext;
+import org.graalvm.compiler.phases.util.Providers;
 import tornado.api.meta.TaskMetaData;
 import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoInternalError;
@@ -59,7 +59,6 @@ import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.OCLSuitesProvider;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLLIRGenerationPhase.LIRGenerationContext;
-import tornado.graal.TornadoDebugEnvironment;
 import tornado.graal.TornadoLIRSuites;
 import tornado.graal.TornadoSuites;
 import tornado.graal.compiler.TornadoCompilerIdentifier;
@@ -69,9 +68,10 @@ import tornado.runtime.api.CompilableTask;
 import tornado.runtime.sketcher.Sketch;
 import tornado.runtime.sketcher.TornadoSketcher;
 
-import static com.oracle.graal.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static tornado.common.Tornado.info;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 /**
  * Static methods for orchestrating the compilation of a
@@ -210,9 +210,9 @@ public class OCLCompiler {
      * @return the result of the compilation
      */
     public static <T extends OCLCompilationResult> T compile(Request<T> r) {
-        if (Debug.isEnabled() && DebugScope.getConfig() == null) {
-            TornadoDebugEnvironment.initialize(TTY.out);
-        }
+
+        DebugEnvironment.ensureInitialized(getTornadoRuntime().getOptions());
+
         try (Scope s = MethodMetricsRootScopeInfo.createRootScopeIfAbsent(r.installedCodeOwner)) {
             assert !r.graph.isFrozen();
 
@@ -264,7 +264,7 @@ public class OCLCompiler {
                     graphBuilderSuite.apply(graph, highTierContext);
                     new DeadCodeEliminationPhase(Optional).apply(graph);
                 } else {
-                    Debug.dump(Debug.INFO_LOG_LEVEL, graph, "initial state");
+                    Debug.dump(Debug.INFO_LEVEL, graph, "initial state");
                 }
             }
 
@@ -280,7 +280,8 @@ public class OCLCompiler {
             final LowTierContext lowTierContext = new LowTierContext(providers, backend);
             suites.getLowTier().apply(graph, lowTierContext);
 
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph.getLastSchedule(), "Final HIR schedule");
+            Debug.dump(Debug.BASIC_LEVEL, graph.getLastSchedule(), "Final HIR schedule");
+            //Debug.forceDump(graph, "Test");
         } catch (Throwable e) {
             throw Debug.handle(e);
         }
@@ -333,6 +334,7 @@ public class OCLCompiler {
     private static <T extends CompilationResult> LIRGenerationResult emitLIR0(OCLBackend backend, StructuredGraph graph, Object stub, RegisterConfig registerConfig, TornadoLIRSuites lirSuites,
             T compilationResult, boolean isKernel) {
         try (Scope ds = Debug.scope("EmitLIR"); DebugCloseable a = EmitLIR.start()) {
+            OptionValues options = graph.getOptions();
             ScheduleResult schedule = graph.getLastSchedule();
             Block[] blocks = schedule.getCFG().getBlocks();
             Block startBlock = schedule.getCFG().getStartBlock();
@@ -346,8 +348,8 @@ public class OCLCompiler {
                 codeEmittingOrder = ComputeBlockOrder.computeCodeEmittingOrder(blocks.length, startBlock);
                 linearScanOrder = ComputeBlockOrder.computeLinearScanOrder(blocks.length, startBlock);
 
-                lir = new LIR(schedule.getCFG(), linearScanOrder, codeEmittingOrder);
-                Debug.dump(Debug.INFO_LOG_LEVEL, lir, "After linear scan order");
+                lir = new LIR(schedule.getCFG(), linearScanOrder, codeEmittingOrder, options);
+                Debug.dump(Debug.INFO_LEVEL, lir, "After linear scan order");
             } catch (Throwable e) {
                 throw Debug.handle(e);
             }
@@ -362,9 +364,9 @@ public class OCLCompiler {
             LIR_GENERATION_PHASE.apply(backend.getTarget(), lirGenRes, context);
 
             try (Scope s = Debug.scope("LIRStages", nodeLirGen, lir)) {
-                Debug.dump(Debug.BASIC_LOG_LEVEL, lir, "After LIR generation");
-                LIRGenerationResult result = emitLowLevel(backend.getTarget(), lirGenRes, lirGen, lirSuites, backend.newRegisterAllocationConfig(registerConfig));
-                Debug.dump(Debug.BASIC_LOG_LEVEL, lir, "Before code generation");
+                Debug.dump(Debug.BASIC_LEVEL, lir, "After LIR generation");
+                LIRGenerationResult result = emitLowLevel(backend.getTarget(), lirGenRes, lirGen, lirSuites, backend.newRegisterAllocationConfig(registerConfig, new String[]{}));
+                Debug.dump(Debug.BASIC_LEVEL, lir, "Before code generation");
                 return result;
             } catch (Throwable e) {
                 throw Debug.handle(e);
@@ -376,8 +378,6 @@ public class OCLCompiler {
 
     public static LIRGenerationResult emitLowLevel(
             OCLTargetDescription target, LIRGenerationResult lirGenRes, LIRGeneratorTool lirGen, TornadoLIRSuites lirSuites, RegisterAllocationConfig registerAllocationConfig) {
-        ConstantLoadOptimization.Options.LIROptConstantLoadOptimization.setValue(false);
-
         final PreAllocationOptimizationContext preAllocOptContext = new PreAllocationOptimizationContext(
                 lirGen);
         lirSuites.getPreAllocationStage().apply(target, lirGenRes, preAllocOptContext);
@@ -418,7 +418,7 @@ public class OCLCompiler {
                 Debug.counter("CodeBytesEmitted").add(compilationResult.getTargetCodeSize());
             }
 
-            Debug.dump(Debug.BASIC_LOG_LEVEL, compilationResult, "After code generation");
+            Debug.dump(Debug.BASIC_LEVEL, compilationResult, "After code generation");
         }
 
     }
@@ -486,9 +486,14 @@ public class OCLCompiler {
             Object[] args, TaskMetaData meta, OCLProviders providers, OCLBackend backend) {
         Tornado.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext()
                 .getDevice().getName());
-        TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
-        final StructuredGraph kernelGraph = new StructuredGraph(resolvedMethod,
-                AllowAssumptions.YES, id);
+        final TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
+
+        Builder builder = new Builder(getTornadoRuntime().getOptions(), AllowAssumptions.YES);
+        builder.method(resolvedMethod);
+        builder.compilationId(id);
+        builder.name("compile-kernel" + resolvedMethod.getName());
+
+        final StructuredGraph kernelGraph = builder.build();
         final OCLCodeProvider codeCache = backend.getCodeCache();
 
         CallingConvention cc = OCLCodeUtil.getCallingConvention(codeCache,
@@ -519,9 +524,14 @@ public class OCLCompiler {
             final ResolvedJavaMethod currentMethod = worklist.pop();
             if (!includedMethods.contains(currentMethod)) {
                 final OCLCompilationResult compResult = new OCLCompilationResult("internal", currentMethod.getName(), meta, backend);
-                TornadoCompilerIdentifier id1 = new TornadoCompilerIdentifier("compile-call" + currentMethod.getName(), compilationId.getAndIncrement());
-                final StructuredGraph graph = new StructuredGraph(currentMethod,
-                        AllowAssumptions.YES, id1);
+                final TornadoCompilerIdentifier id1 = new TornadoCompilerIdentifier("compile-call" + currentMethod.getName(), compilationId.getAndIncrement());
+
+                Builder builder1 = new Builder(getTornadoRuntime().getOptions(), AllowAssumptions.YES);
+                builder1.method(resolvedMethod);
+                builder1.compilationId(id);
+                builder1.name("internal" + currentMethod.getName());
+
+                final StructuredGraph graph = builder.build();
                 Request<OCLCompilationResult> methodcompilationRequest = new Request<>(
                         graph, currentMethod, null, null, providers, backend,
                         suitesProvider.getGraphBuilderSuite(),

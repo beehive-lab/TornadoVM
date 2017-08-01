@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,13 +15,13 @@
  */
 package tornado.drivers.opencl.graal.compiler.plugins;
 
-import com.oracle.graal.nodes.ValueNode;
-import com.oracle.graal.nodes.graphbuilderconf.GraphBuilderContext;
-import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugin;
-import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins;
-import com.oracle.graal.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import tornado.collections.math.TornadoMath;
 import tornado.drivers.opencl.graal.nodes.*;
 
@@ -68,7 +68,7 @@ public class TornadoMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode value) {
-                b.push(kind, b.recursiveAppend(OCLFPUnaryIntrinsicNode.create(value, SQRT, kind)));
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, SQRT, kind)));
                 return true;
             }
         });
@@ -77,7 +77,7 @@ public class TornadoMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode value) {
-                b.push(kind, b.recursiveAppend(OCLFPUnaryIntrinsicNode.create(value, EXP, kind)));
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, EXP, kind)));
                 return true;
             }
         });
@@ -86,7 +86,7 @@ public class TornadoMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode value) {
-                b.push(kind, b.recursiveAppend(OCLFPUnaryIntrinsicNode.create(value, FABS, kind)));
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, FABS, kind)));
                 return true;
             }
         });
@@ -95,7 +95,7 @@ public class TornadoMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode value) {
-                b.push(kind, b.recursiveAppend(OCLFPUnaryIntrinsicNode.create(value, FLOOR, kind)));
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, FLOOR, kind)));
                 return true;
             }
         });
@@ -104,7 +104,7 @@ public class TornadoMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode value) {
-                b.push(kind, b.recursiveAppend(OCLFPUnaryIntrinsicNode.create(value, LOG, kind)));
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, LOG, kind)));
                 return true;
             }
         });
@@ -116,7 +116,7 @@ public class TornadoMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode x, ValueNode y) {
-                b.push(kind, b.recursiveAppend(OCLFPBinaryIntrinsicNode.create(x, y, FMIN, kind)));
+                b.push(kind, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMIN, kind)));
                 return true;
             }
         });
@@ -125,7 +125,7 @@ public class TornadoMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode x, ValueNode y) {
-                b.push(kind, b.recursiveAppend(OCLFPBinaryIntrinsicNode.create(x, y, FMAX, kind)));
+                b.push(kind, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMAX, kind)));
                 return true;
             }
         });
@@ -141,7 +141,7 @@ public class TornadoMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode value) {
-                b.push(kind, b.recursiveAppend(OCLIntUnaryIntrinsicNode.create(value, ABS, kind)));
+                b.push(kind, b.append(OCLIntUnaryIntrinsicNode.create(value, ABS, kind)));
                 return true;
             }
         });
@@ -152,7 +152,7 @@ public class TornadoMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode x, ValueNode y) {
-                b.push(kind, b.recursiveAppend(OCLIntBinaryIntrinsicNode.create(x, y, MIN, kind)));
+                b.push(kind, b.append(OCLIntBinaryIntrinsicNode.create(x, y, MIN, kind)));
                 return true;
             }
         });
@@ -161,7 +161,7 @@ public class TornadoMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode x, ValueNode y) {
-                b.push(kind, b.recursiveAppend(OCLIntBinaryIntrinsicNode.create(x, y, MAX, kind)));
+                b.push(kind, b.append(OCLIntBinaryIntrinsicNode.create(x, y, MAX, kind)));
                 return true;
             }
         });
@@ -174,7 +174,7 @@ public class TornadoMathPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode x, ValueNode y, ValueNode z) {
                 b.push(kind,
-                        b.recursiveAppend(OCLIntTernaryIntrinsicNode.create(x, y, z, CLAMP, kind)));
+                        b.append(OCLIntTernaryIntrinsicNode.create(x, y, z, CLAMP, kind)));
                 return true;
             }
 

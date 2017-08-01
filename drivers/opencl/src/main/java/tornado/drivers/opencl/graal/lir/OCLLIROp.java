@@ -15,7 +15,7 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
-import com.oracle.graal.compiler.common.LIRKind;
+import org.graalvm.compiler.core.common.LIRKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;

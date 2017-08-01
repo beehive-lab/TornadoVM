@@ -15,8 +15,8 @@
  */
 package tornado.graal.compiler;
 
-import com.oracle.graal.phases.*;
-import com.oracle.graal.phases.tiers.*;
+import org.graalvm.compiler.phases.*;
+import org.graalvm.compiler.phases.tiers.*;
 
 public abstract class TornadoLowTier extends PhaseSuite<LowTierContext> {
 

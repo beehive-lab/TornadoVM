@@ -1,6 +1,6 @@
 package tornado.drivers.rmi;
 
-import com.oracle.graal.phases.util.Providers;
+import org.graalvm.compiler.phases.util.Providers;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;

@@ -15,20 +15,21 @@
  */
 package tornado.graal.phases;
 
-import com.oracle.graal.graph.Node;
-import com.oracle.graal.loop.InductionVariable;
-import com.oracle.graal.loop.LoopEx;
-import com.oracle.graal.loop.LoopsData;
-import com.oracle.graal.nodes.*;
-import com.oracle.graal.nodes.calc.IntegerLessThanNode;
-import com.oracle.graal.nodes.java.StoreIndexedNode;
-import com.oracle.graal.phases.BasePhase;
 import java.lang.annotation.Annotation;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import jdk.vm.ci.meta.LocalAnnotation;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.loop.InductionVariable;
+import org.graalvm.compiler.loop.LoopEx;
+import org.graalvm.compiler.loop.LoopsData;
+import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
+import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.phases.BasePhase;
 import tornado.api.Atomic;
 import tornado.common.Tornado;
 import tornado.graal.nodes.AtomicAccessNode;
@@ -102,11 +103,14 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
             data.detectedCountedLoops();
 
             int loopIndex = 0;
-
-            final List<LoopEx> loops = (TORNADO_LOOPS_REVERSE) ? data.innerFirst() : data.outerFirst();
+            final List<LoopEx> loops = data.outerFirst();
+            if (TORNADO_LOOPS_REVERSE) {
+                Collections.reverse(loops);
+            }
+//            final List<LoopEx> loops = (TORNADO_LOOPS_REVERSE) ? data.innerFirst() : data.outerFirst() Collections.reverse(loops);
             for (LoopEx loop : loops) {
 
-                for (InductionVariable iv : loop.getInductionVariables().values()) {
+                for (InductionVariable iv : loop.getInductionVariables().getValues()) {
                     if (!parallelNodes.containsKey(iv.valueNode())) {
                         continue;
                     }
@@ -140,7 +144,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                                         offset, stride));
 
                         final ValuePhiNode phi = (ValuePhiNode) iv.valueNode();
-                        final ValueNode oldStride = phi.singleBackValue();
+                        final ValueNode oldStride = phi.singleBackValueOrThis(); // was singleBackValue()
 
                         //System.out.printf("oldStride: %s\n",oldStride.toString());
                         if (oldStride.usages().count() > 1) {

@@ -15,11 +15,11 @@
  */
 package tornado.drivers.opencl.graal.nodes.logic;
 
-import com.oracle.graal.graph.NodeClass;
-import com.oracle.graal.lir.Variable;
-import com.oracle.graal.lir.gen.LIRGeneratorTool;
-import com.oracle.graal.nodeinfo.NodeInfo;
-import com.oracle.graal.nodes.LogicNode;
+import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.LogicNode;
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.lir.OCLBinary;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;

@@ -15,8 +15,8 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.compiler.gen.NodeMatchRules;
-import com.oracle.graal.lir.gen.LIRGeneratorTool;
+import org.graalvm.compiler.core.gen.NodeMatchRules;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 
 public class OCLNodeMatchRules extends NodeMatchRules {
 

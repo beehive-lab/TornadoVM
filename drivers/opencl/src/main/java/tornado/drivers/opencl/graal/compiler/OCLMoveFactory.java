@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,11 +15,10 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import com.oracle.graal.lir.LIRInstruction;
-import com.oracle.graal.lir.gen.LIRGeneratorTool.MoveFactory;
+import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
@@ -28,7 +27,7 @@ import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 public class OCLMoveFactory implements MoveFactory {
 
     @Override
-    public boolean canInlineConstant(JavaConstant jc) {
+    public boolean canInlineConstant(Constant jc) {
         return true;
     }
 

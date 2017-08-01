@@ -15,22 +15,21 @@
  */
 package tornado.graal.phases;
 
-import com.oracle.graal.compiler.common.type.ObjectStamp;
-import com.oracle.graal.graph.Node;
-import com.oracle.graal.nodes.ParameterNode;
-import com.oracle.graal.nodes.PiNode;
-import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.nodes.java.LoadFieldNode;
-import com.oracle.graal.nodes.java.LoadIndexedNode;
-import com.oracle.graal.nodes.java.StoreFieldNode;
-import com.oracle.graal.nodes.java.StoreIndexedNode;
-import com.oracle.graal.phases.BasePhase;
 import java.util.ArrayDeque;
 import java.util.Queue;
+import org.graalvm.compiler.core.common.type.ObjectStamp;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.PiNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
+import org.graalvm.compiler.nodes.java.LoadIndexedNode;
+import org.graalvm.compiler.nodes.java.StoreFieldNode;
+import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+import org.graalvm.compiler.phases.BasePhase;
 import tornado.api.meta.TaskMetaData;
 import tornado.common.enums.Access;
 
-import static tornado.common.Tornado.debug;
 import static tornado.common.Tornado.debug;
 
 public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext> {

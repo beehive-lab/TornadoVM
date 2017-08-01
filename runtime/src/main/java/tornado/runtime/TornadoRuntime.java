@@ -26,6 +26,13 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
+import org.graalvm.compiler.core.common.GraalOptions;
+import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
+import org.graalvm.compiler.lir.constopt.ConstantLoadOptimization;
+import org.graalvm.compiler.lir.phases.PostAllocationOptimizationStage;
+import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.util.EconomicMap;
 import tornado.common.TornadoDevice;
 import tornado.common.TornadoLogger;
 import tornado.runtime.api.GlobalObjectState;
@@ -68,9 +75,22 @@ public class TornadoRuntime extends TornadoLogger {
     private final HotSpotJVMCIRuntime vmRuntime;
     private final TornadoVMConfig vmConfig;
     private final int defaultDriver = 0;
+    private final OptionValues options;
 
     public TornadoRuntime() {
         objectMappings = new WeakHashMap<>();
+
+        EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
+        opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
+
+        opts.put(GraalOptions.OmitHotExceptionStacktrace, false);
+        opts.put(GraalOptions.OmitHotExceptionStacktrace, false);
+        opts.put(GraalOptions.MatchExpressions, true);
+        opts.put(GraalOptions.RemoveNeverExecutedCode, false);
+        opts.put(ConstantLoadOptimization.Options.LIROptConstantLoadOptimization, false);
+        opts.put(PostAllocationOptimizationStage.Options.LIROptRedundantMoveElimination, false);
+
+        options = new OptionValues(opts);
 
         if (!(JVMCI.getRuntime() instanceof HotSpotJVMCIRuntime)) {
             shouldNotReachHere("Unsupported JVMCIRuntime: ", JVMCI.getRuntime().getClass().getName());
@@ -97,7 +117,7 @@ public class TornadoRuntime extends TornadoLogger {
         for (TornadoDriverProvider provider : loader) {
             boolean isRMI = provider.getName().equalsIgnoreCase("RMI Driver");
             if ((!isRMI) || (isRMI && SHOULD_LOAD_RMI)) {
-                drivers[index] = provider.createDriver(vmRuntime, vmConfig);
+                drivers[index] = provider.createDriver(options, vmRuntime, vmConfig);
                 if (drivers[index] != null) {
                     index++;
                 }
@@ -107,6 +127,10 @@ public class TornadoRuntime extends TornadoLogger {
         driverCount = index;
 
         return drivers;
+    }
+
+    public OptionValues getOptions() {
+        return options;
     }
 
     public GlobalObjectState resolveObject(Object object) {

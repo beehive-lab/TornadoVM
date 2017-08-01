@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,46 +15,45 @@
  */
 package tornado.graal.phases;
 
-import static com.oracle.graal.compiler.common.GraalOptions.*;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.spi.Replacements;
+import org.graalvm.compiler.phases.common.inlining.InliningUtil;
+import org.graalvm.compiler.phases.common.inlining.info.InlineInfo;
+import org.graalvm.compiler.phases.common.inlining.policy.InliningPolicy;
+import org.graalvm.compiler.phases.common.inlining.walker.MethodInvocation;
 
-import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.nodes.spi.Replacements;
-import com.oracle.graal.phases.common.inlining.InliningUtil;
-import com.oracle.graal.phases.common.inlining.info.InlineInfo;
-import com.oracle.graal.phases.common.inlining.policy.InliningPolicy;
-import com.oracle.graal.phases.common.inlining.walker.MethodInvocation;
+import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
+import static org.graalvm.compiler.core.common.GraalOptions.MaximumInliningSize;
 
 public class TornadoInliningPolicy implements InliningPolicy {
 
-	@Override
-	public boolean continueInlining(StructuredGraph graph) {
-		if (graph.getNodeCount() >= MaximumDesiredSize.getValue()) {
+    @Override
+    public boolean continueInlining(StructuredGraph graph) {
+        if (graph.getNodeCount() >= MaximumDesiredSize.getValue(graph.getOptions())) {
             InliningUtil.logInliningDecision("inlining is cut off by MaximumDesiredSize");
             return false;
         }
         return true;
-	}
+    }
 
-	@Override
-	public boolean isWorthInlining(Replacements replacements, MethodInvocation invocation,
-			int inliningDepth, boolean fullyProcessed) {
-		boolean doInline = true;
-		
-		final InlineInfo info = invocation.callee();
-	    final double probability = invocation.probability();
-	    final double relevance = invocation.relevance();
+    @Override
+    public boolean isWorthInlining(Replacements replacements, MethodInvocation invocation,
+            int inliningDepth, boolean fullyProcessed) {
+        boolean doInline = true;
 
-		int nodes = info.determineNodeCount();
-		int methodCount = info.numberOfMethods();
-		
-		
-		if(nodes > MaximumInliningSize.getValue() && !invocation.isRoot())
-			doInline = false;
-		
-	//	System.out.printf("inliner: %s (%s) -> nodes=%d, count=%d\n",info.toString(),doInline, nodes,methodCount);
-		
-		
-		return doInline;
-	}
+        final InlineInfo info = invocation.callee();
+        final double probability = invocation.probability();
+        final double relevance = invocation.relevance();
+
+        int nodes = info.determineNodeCount();
+        int methodCount = info.numberOfMethods();
+
+        if (nodes > MaximumInliningSize.getValue(info.graph().getOptions()) && !invocation.isRoot()) {
+            doInline = false;
+        }
+
+        //	System.out.printf("inliner: %s (%s) -> nodes=%d, count=%d\n",info.toString(),doInline, nodes,methodCount);
+        return doInline;
+    }
 
 }

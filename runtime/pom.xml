@@ -27,6 +27,14 @@
         </dependency>
 
         <dependency>
+            <groupId>graal</groupId>
+            <artifactId>truffle-api</artifactId>
+            <scope>system</scope>
+            <systemPath>${graal.root}/../../../truffle/mxbuild/dists/truffle-api.jar</systemPath>
+            <version>${graal.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>jvmci</groupId>
             <artifactId>api</artifactId>
             <scope>system</scope>

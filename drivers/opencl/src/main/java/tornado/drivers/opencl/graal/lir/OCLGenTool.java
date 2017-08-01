@@ -15,10 +15,10 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
-import com.oracle.graal.compiler.common.LIRKind;
-import com.oracle.graal.lir.ConstantValue;
-import com.oracle.graal.lir.Variable;
-import com.oracle.graal.nodes.ParameterNode;
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.nodes.ParameterNode;
 import jdk.vm.ci.meta.*;
 import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.graal.OCLArchitecture;

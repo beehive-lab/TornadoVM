@@ -15,11 +15,11 @@
  */
 package tornado.drivers.opencl.graal.phases;
 
-import com.oracle.graal.compiler.common.type.Stamp;
-import com.oracle.graal.nodes.ParameterNode;
-import com.oracle.graal.nodes.StructuredGraph;
-import com.oracle.graal.nodes.java.MethodCallTargetNode;
-import com.oracle.graal.phases.BasePhase;
+import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
+import org.graalvm.compiler.phases.BasePhase;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementProxyNode;
