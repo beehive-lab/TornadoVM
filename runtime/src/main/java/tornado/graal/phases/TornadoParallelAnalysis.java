@@ -27,6 +27,7 @@ import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
 
+@Deprecated
 public class TornadoParallelAnalysis extends BasePhase<TornadoHighTierContext> {
 
     @Override

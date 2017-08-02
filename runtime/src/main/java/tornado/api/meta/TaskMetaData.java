@@ -15,7 +15,6 @@ import tornado.runtime.EventSet;
 import static tornado.common.Tornado.EVENT_WINDOW;
 import static tornado.common.Tornado.getProperty;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.common.Tornado.getProperty;
 
 public class TaskMetaData extends AbstractMetaData {
 
@@ -156,6 +155,11 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
+    public boolean enableAutoParallelisation() {
+        return super.enableAutoParallelisation() || scheduleMetaData.enableAutoParallelisation();
+    }
+
+    @Override
     public boolean enableExceptions() {
         return super.enableExceptions() || scheduleMetaData.enableExceptions();
     }
@@ -223,7 +227,7 @@ public class TaskMetaData extends AbstractMetaData {
 
     @Override
     public TornadoDevice getDevice() {
-        return isDeviceDefined() ? super.getDevice() : scheduleMetaData.getDevice();
+        return isDeviceDefined() || super.getDevice() != null ? super.getDevice() : scheduleMetaData.getDevice();
     }
 
     public int getDims() {

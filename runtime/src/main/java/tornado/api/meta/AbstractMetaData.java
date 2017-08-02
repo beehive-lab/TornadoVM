@@ -3,8 +3,8 @@ package tornado.api.meta;
 import tornado.common.TornadoDevice;
 
 import static java.lang.Boolean.parseBoolean;
-import static tornado.api.meta.MetaDataUtils.resolveDevice;
 import static java.lang.Integer.parseInt;
+import static tornado.api.meta.MetaDataUtils.resolveDevice;
 import static tornado.common.Tornado.getProperty;
 
 public abstract class AbstractMetaData {
@@ -135,6 +135,10 @@ public abstract class AbstractMetaData {
         return useThreadCoarsener;
     }
 
+    public boolean enableAutoParallelisation() {
+        return enableAutoParallelisation;
+    }
+
     public boolean shouldUseVMDeps() {
         return vmUseDeps;
     }
@@ -177,6 +181,7 @@ public abstract class AbstractMetaData {
     private final boolean dumpTaskSchedule;
     private final boolean vmUseDeps;
     private final boolean coarsenWithCpuConfig;
+    private final boolean enableAutoParallelisation;
 
     private final boolean isCpuConfigDefined;
     private final String cpuConfig;
@@ -270,7 +275,7 @@ public abstract class AbstractMetaData {
         cpuConfig = getDefault("cpu.config", id, null);
         isCpuConfigDefined = getProperty(id + ".cpu.config") != null;
         useThreadCoarsener = Boolean.parseBoolean(getDefault("coarsener", id, "False"));
-
+        enableAutoParallelisation = Boolean.parseBoolean(getDefault("parallelise.auto", id, "False"));
         vmUseDeps = Boolean.parseBoolean(getDefault("vm.deps", id, "False"));
     }
 

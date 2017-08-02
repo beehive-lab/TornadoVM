@@ -22,10 +22,7 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
-import tornado.graal.phases.TornadoApiReplacement;
-import tornado.graal.phases.TornadoDataflowAnalysis;
-import tornado.graal.phases.TornadoInliningPolicy;
-import tornado.graal.phases.TornadoSketchTierContext;
+import tornado.graal.phases.*;
 
 import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
 import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
@@ -61,6 +58,7 @@ public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
         }
 
         appendPhase(new TornadoApiReplacement());
+        appendPhase(new TornadoAutoParalleliser());
         appendPhase(new TornadoDataflowAnalysis());
     }
 }
