@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,7 @@ import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLRegisterConfig implements RegisterConfig {
 
+    private final static Register DUMMY = new Register(0, 0, "dummy", OCLArchitecture.OCL_ABI);
     private final static RegisterArray EMPTY = new RegisterArray(new Register[0]);
 
     @Override
@@ -46,8 +47,7 @@ public class OCLRegisterConfig implements RegisterConfig {
 
     @Override
     public Register getFrameRegister() {
-        unimplemented();
-        return null;
+        return DUMMY;
     }
 
     @Override

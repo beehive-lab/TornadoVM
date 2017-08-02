@@ -25,7 +25,6 @@ import static tornado.benchmarks.stencil.Stencil.copy;
 import static tornado.benchmarks.stencil.Stencil.stencil3d;
 import static tornado.collections.math.TornadoMath.findULPDistance;
 import static tornado.common.Tornado.getProperty;
-import static tornado.runtime.cache.TornadoObjectCache.sync;
 
 public class StencilTornado extends BenchmarkDriver {
 
@@ -82,7 +81,7 @@ public class StencilTornado extends BenchmarkDriver {
         a1 = null;
         ainit = null;
 
-        graph.getDefaultDevice().reset();
+//        graph.getDefaultDevice().reset();
         super.tearDown();
     }
 
@@ -114,7 +113,7 @@ public class StencilTornado extends BenchmarkDriver {
 
     @Override
     protected void barrier() {
-        sync(a0);
+        graph.syncObjects(a0);
     }
 
     public void printSummary() {

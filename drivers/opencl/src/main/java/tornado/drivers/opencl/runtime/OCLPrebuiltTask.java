@@ -28,7 +28,7 @@ public class OCLPrebuiltTask extends PrebuiltTask {
     private final OCLBackend backend;
 
     protected OCLPrebuiltTask(ScheduleMetaData meta, String id, String entryPoint, String filename, Object[] args,
-            Access[] access, OCLDeviceMapping device, DomainTree domain) {
+            Access[] access, OCLTornadoDevice device, DomainTree domain) {
         super(meta, id, entryPoint, filename, args, access, device, domain);
 
         backend = device.getBackend();

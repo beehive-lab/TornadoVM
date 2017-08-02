@@ -267,7 +267,7 @@ public class OCLCompiler {
                     Debug.dump(Debug.INFO_LEVEL, graph, "initial state");
                 }
             }
-
+            Debug.forceDump(graph, "Test");
             suites.getHighTier().apply(graph, highTierContext);
             graph.maybeCompress();
 
@@ -281,7 +281,7 @@ public class OCLCompiler {
             suites.getLowTier().apply(graph, lowTierContext);
 
             Debug.dump(Debug.BASIC_LEVEL, graph.getLastSchedule(), "Final HIR schedule");
-            //Debug.forceDump(graph, "Test");
+            Debug.forceDump(graph, "Test");
         } catch (Throwable e) {
             throw Debug.handle(e);
         }

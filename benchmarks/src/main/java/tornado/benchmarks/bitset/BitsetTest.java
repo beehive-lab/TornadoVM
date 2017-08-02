@@ -7,9 +7,7 @@ package tornado.benchmarks.bitset;
 
 import java.util.Random;
 import org.apache.lucene.util.LongBitSet;
-import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import tornado.runtime.api.TaskSchedule;
-import tornado.runtime.cache.TornadoObjectCache;
 
 public class BitsetTest {
 
@@ -18,7 +16,6 @@ public class BitsetTest {
         final long[] bBits = b.getBits();
         int sum = 0;
         for (int i = 0; i < numWords; i++) {
-//            Debug.printf("0x%d\n", aBits[i]);
             sum += Long.bitCount(aBits[i] & bBits[i]);
         }
         return sum;
@@ -43,10 +40,6 @@ public class BitsetTest {
                 .task("t0", BitsetTest::intersectionCount, numWords, a, b);
 
         s0.execute();
-
-        TornadoObjectCache.print();
-
-        ((OCLTornadoDevice) s0.getDeviceForTask("t0")).dumpMemory("mem.dump");
 
         final long value = s0.getReturnValue("t0");
         System.out.printf("value = 0x%x, %d\n", value, value);

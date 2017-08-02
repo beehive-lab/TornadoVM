@@ -15,9 +15,9 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Variable;
-import jdk.vm.ci.meta.Value;
 
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.*;
@@ -383,8 +383,8 @@ public class OCLBuiltinTool {
     }
 
     public Value genIntPopcount(Value value) {
-        unimplemented();
-        return null;
+        trace("genBitCount: bitcount(%s)", value);
+        return new OCLUnary.Intrinsic(POPCOUNT, LIRKind.value(value.getPlatformKind()), value);
     }
 
     public Value genIntClamp(Value x, Value y, Value z) {

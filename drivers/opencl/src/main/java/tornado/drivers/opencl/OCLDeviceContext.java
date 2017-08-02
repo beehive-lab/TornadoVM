@@ -25,7 +25,7 @@ import tornado.drivers.opencl.enums.OCLMemFlags;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import tornado.drivers.opencl.mm.OCLMemoryManager;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 import static tornado.common.Tornado.USE_SYNC_FLUSH;
 import static tornado.common.Tornado.getProperty;
@@ -315,8 +315,8 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         codeCache.reset();
     }
 
-    public OCLDeviceMapping asMapping() {
-        return new OCLDeviceMapping(context.getPlatformIndex(), device.getIndex());
+    public OCLTornadoDevice asMapping() {
+        return new OCLTornadoDevice(context.getPlatformIndex(), device.getIndex());
     }
 
     public String getId() {

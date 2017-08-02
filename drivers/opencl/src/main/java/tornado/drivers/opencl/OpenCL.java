@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoRuntimeException;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 public class OpenCL {
 
@@ -120,12 +120,12 @@ public class OpenCL {
         }
     }
 
-    public static OCLDeviceMapping defaultDevice() {
+    public static OCLTornadoDevice defaultDevice() {
         final int platformIndex = Integer.parseInt(Tornado.getProperty(
                 "tornado.platform", "0"));
         final int deviceIndex = Integer.parseInt(Tornado.getProperty(
                 "tornado.device", "0"));
-        return new OCLDeviceMapping(platformIndex, deviceIndex);
+        return new OCLTornadoDevice(platformIndex, deviceIndex);
     }
 
     public static List<OCLPlatform> platforms() {

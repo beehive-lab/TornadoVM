@@ -78,11 +78,12 @@ public class TornadoVM extends TornadoLogger {
         guarantee(buffer.get() == SETUP, "invalid code");
         contexts = graphContext.getDevices();
         buffer.getInt();
-        stacks = new CallStack[buffer.getInt()];
+        int taskCount = buffer.getInt();
+        stacks = graphContext.getFrames();
         events = new int[buffer.getInt()][MAX_EVENTS];
         eventsIndicies = new int[events.length];
 
-        installedCodes = new TornadoInstalledCode[stacks.length];
+        installedCodes = new TornadoInstalledCode[taskCount];
 
         for (int i = 0; i < events.length; i++) {
             Arrays.fill(events[i], -1);

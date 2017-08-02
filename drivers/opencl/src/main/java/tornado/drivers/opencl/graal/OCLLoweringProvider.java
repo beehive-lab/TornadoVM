@@ -26,7 +26,9 @@ import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.calc.DivNode;
 import org.graalvm.compiler.nodes.calc.FloatConvertNode;
+import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
 import org.graalvm.compiler.nodes.calc.RemNode;
 import org.graalvm.compiler.nodes.java.*;
 import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
@@ -95,13 +97,30 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerStoreFieldNode((StoreFieldNode) n, tool);
         } else if (n instanceof ArrayLengthNode) {
             lowerArrayLengthNode((ArrayLengthNode) n, tool);
+        } else if (n instanceof IntegerDivRemNode) {
+            lowerIntegerDivRemNode((IntegerDivRemNode) n, tool);
         } else {
             super.lower(n, tool);
         }
     }
 
+    private void lowerIntegerDivRemNode(IntegerDivRemNode integerDivRemNode, LoweringTool tool) {
+        StructuredGraph graph = integerDivRemNode.graph();
+        switch (integerDivRemNode.getOp()) {
+            case DIV:
+                DivNode div = graph.addOrUnique(new DivNode(integerDivRemNode.getX(), integerDivRemNode.getY()));
+                graph.replaceFixedWithFloating(integerDivRemNode, div);
+                break;
+            case REM:
+                RemNode rem = graph.addOrUnique(new RemNode(integerDivRemNode.getX(), integerDivRemNode.getY()));
+                graph.replaceFixedWithFloating(integerDivRemNode, rem);
+                break;
+        }
+    }
+
     @Override
-    protected void lowerArrayLengthNode(ArrayLengthNode arrayLengthNode, LoweringTool tool) {
+    protected void lowerArrayLengthNode(ArrayLengthNode arrayLengthNode, LoweringTool tool
+    ) {
         StructuredGraph graph = arrayLengthNode.graph();
         ValueNode array = arrayLengthNode.array();
 
@@ -112,7 +131,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    protected void lowerLoadIndexedNode(LoadIndexedNode loadIndexed, LoweringTool tool) {
+    protected void lowerLoadIndexedNode(LoadIndexedNode loadIndexed, LoweringTool tool
+    ) {
         StructuredGraph graph = loadIndexed.graph();
         JavaKind elementKind = loadIndexed.elementKind();
 
@@ -130,7 +150,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    protected void lowerStoreIndexedNode(StoreIndexedNode storeIndexed, LoweringTool tool) {
+    protected void lowerStoreIndexedNode(StoreIndexedNode storeIndexed, LoweringTool tool
+    ) {
         StructuredGraph graph = storeIndexed.graph();
 
 //        GuardingNode[] nullCheckReturn = new GuardingNode[1];
@@ -188,7 +209,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    protected void lowerLoadFieldNode(LoadFieldNode loadField, LoweringTool tool) {
+    protected void lowerLoadFieldNode(LoadFieldNode loadField, LoweringTool tool
+    ) {
         assert loadField.getStackKind() != JavaKind.Illegal;
         StructuredGraph graph = loadField.graph();
         ResolvedJavaField field = loadField.field();
@@ -214,7 +236,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    protected void lowerStoreFieldNode(StoreFieldNode storeField, LoweringTool tool) {
+    protected void lowerStoreFieldNode(StoreFieldNode storeField, LoweringTool tool
+    ) {
         StructuredGraph graph = storeField.graph();
         ResolvedJavaField field = storeField.field();
         ValueNode object = storeField.isStatic() ? staticFieldBase(graph, field) : storeField.object();

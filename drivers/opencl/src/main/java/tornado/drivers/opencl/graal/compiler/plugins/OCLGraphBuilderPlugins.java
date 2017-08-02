@@ -40,6 +40,7 @@ import static tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operat
 import static tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.*;
 import static tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MAX;
 import static tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
+import static tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
 
 public class OCLGraphBuilderPlugins {
 
@@ -219,25 +220,25 @@ public class OCLGraphBuilderPlugins {
 //        registerFPIntrinsics(r, Float.TYPE, JavaKind.Float);
         registerFPIntrinsics(r, Double.TYPE, JavaKind.Double);
 
-//        Registration longReg = new Registration(plugins, Long.class);
-//        longReg.register1("bitCount", Long.TYPE, new InvocationPlugin() {
-//            @Override
-//            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-//                    Receiver receiver, ValueNode value) {
-//                b.push(JavaKind.Long, b.recursiveAppend(OCLIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Long)));
-//                return true;
-//            }
-//        });
-//
-//        Registration intReg = new Registration(plugins, Integer.class);
-//        intReg.register1("bitCount", Integer.TYPE, new InvocationPlugin() {
-//            @Override
-//            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-//                    Receiver receiver, ValueNode value) {
-//                b.push(JavaKind.Int, b.recursiveAppend(OCLIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Int)));
-//                return true;
-//            }
-//        });
+        Registration longReg = new Registration(plugins, Long.class);
+        longReg.register1("bitCount", Long.TYPE, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                    Receiver receiver, ValueNode value) {
+                b.push(JavaKind.Int, b.append(OCLIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Long)));
+                return true;
+            }
+        });
+
+        Registration intReg = new Registration(plugins, Integer.class);
+        intReg.register1("bitCount", Integer.TYPE, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                    Receiver receiver, ValueNode value) {
+                b.push(JavaKind.Int, b.append(OCLIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Int)));
+                return true;
+            }
+        });
     }
 
     private static void registerFPIntrinsics(Registration r, Class<?> type, JavaKind kind) {
@@ -254,7 +255,7 @@ public class OCLGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode value) {
-                b.push(kind, b.recursiveAppend(OCLFPUnaryIntrinsicNode.create(value, SIN, kind)));
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, SIN, kind)));
                 return true;
             }
         });
@@ -263,7 +264,7 @@ public class OCLGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode value) {
-                b.push(kind, b.recursiveAppend(OCLFPUnaryIntrinsicNode.create(value, COS, kind)));
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, COS, kind)));
                 return true;
             }
         });
@@ -308,6 +309,10 @@ public class OCLGraphBuilderPlugins {
                 return true;
             }
         });
+
+    }
+
+    public static void registerClassInitializationPlugins(Plugins plugins) {
 
     }
 

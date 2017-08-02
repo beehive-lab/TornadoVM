@@ -26,7 +26,9 @@ import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
-    private final static int RESERVED_SLOTS = 6;
+    public final static int RESERVED_SLOTS = 6;
+    public final static int RETURN_VALUE_INDEX = 0;
+    public final static int DEOPT_VALUE_INDEX = 1;
 
     private final int numArgs;
 
@@ -97,12 +99,13 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
     @Override
     public long getDeoptValue() {
-        return buffer.getLong(0);
+        return buffer.getLong(8);
     }
 
     @Override
     public long getReturnValue() {
-        return buffer.getLong(8);
+        read();
+        return buffer.getLong(0);
     }
 
     @Override

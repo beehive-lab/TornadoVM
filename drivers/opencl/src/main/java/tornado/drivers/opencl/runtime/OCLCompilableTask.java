@@ -50,7 +50,7 @@ public class OCLCompilableTask extends CompilableTask {
     public CompilableTask mapTo(final TornadoDevice mapping) {
         super.mapTo(mapping);
 
-        activeBackend = ((OCLDeviceMapping) mapping).getBackend();
+        activeBackend = ((OCLTornadoDevice) mapping).getBackend();
         if (codeCache.containsKey(activeBackend)) {
             activeCode = codeCache.get(activeBackend);
         }
@@ -115,7 +115,7 @@ public class OCLCompilableTask extends CompilableTask {
 //                .getMetaAccess().lookupJavaMethod(method);
 //        try {
 //            final byte[] source = Files.readAllBytes(path);
-//            ((OCLDeviceMapping) mapping).i
+//            ((OCLTornadoDevice) mapping).i
 //            activeCode = activeBackend.getCodeCache().addMethod(resolvedMethod,
 //                    source);
 //

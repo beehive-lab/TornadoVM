@@ -15,15 +15,15 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
+import jdk.vm.ci.meta.AllocatableValue;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Opcode;
-import jdk.vm.ci.meta.AllocatableValue;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryOp;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
-import static tornado.runtime.api.TornadoCallStack.RETURN_VALUE_INDEX;
+import static tornado.drivers.opencl.mm.OCLCallStack.RETURN_VALUE_INDEX;
 
 @Opcode("RETURN VALUE")
 public class OCLReturnSlot extends AllocatableValue {

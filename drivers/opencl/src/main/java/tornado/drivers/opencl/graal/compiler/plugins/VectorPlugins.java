@@ -92,6 +92,8 @@ public final class VectorPlugins {
         final Class<?> declaringClass = vectorKind.getJavaClass();
         final JavaKind javaElementKind = vectorKind.getElementKind().asJavaKind();
 
+        System.out.printf("registering plugins for %s\n", vectorKind);
+
         final Registration r = new Registration(plugins, declaringClass);
 
         final Class<?>[] argumentTypes = new Class<?>[vectorKind.getVectorLength()];
@@ -104,6 +106,7 @@ public final class VectorPlugins {
             @Override
             public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                     Receiver receiver, ValueNode... args) {
+                System.out.printf("defaultHandler: %s\n", targetMethod.getName());
                 final VectorValueNode vector = resolveReceiver(b, vectorKind, receiver);
                 if (args.length > 0) {
                     int offset = (vector == args[0]) ? 1 : 0;

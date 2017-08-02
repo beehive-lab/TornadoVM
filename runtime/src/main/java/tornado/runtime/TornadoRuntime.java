@@ -37,6 +37,7 @@ import tornado.common.TornadoDevice;
 import tornado.common.TornadoLogger;
 import tornado.runtime.api.GlobalObjectState;
 
+import static org.graalvm.compiler.debug.GraalError.guarantee;
 import static tornado.common.Tornado.SHOULD_LOAD_RMI;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
@@ -84,13 +85,14 @@ public class TornadoRuntime extends TornadoLogger {
         opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
 
         opts.put(GraalOptions.OmitHotExceptionStacktrace, false);
-        opts.put(GraalOptions.OmitHotExceptionStacktrace, false);
+
         opts.put(GraalOptions.MatchExpressions, true);
         opts.put(GraalOptions.RemoveNeverExecutedCode, false);
         opts.put(ConstantLoadOptimization.Options.LIROptConstantLoadOptimization, false);
         opts.put(PostAllocationOptimizationStage.Options.LIROptRedundantMoveElimination, false);
 
         options = new OptionValues(opts);
+        guarantee(GraalOptions.OmitHotExceptionStacktrace.getValue(options) == false, "error");
 
         if (!(JVMCI.getRuntime() instanceof HotSpotJVMCIRuntime)) {
             shouldNotReachHere("Unsupported JVMCIRuntime: ", JVMCI.getRuntime().getClass().getName());

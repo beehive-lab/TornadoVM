@@ -47,7 +47,7 @@ import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.drivers.opencl.graal.compiler.OCLCompiler.compileSketchForDevice;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
-public class OCLDeviceMapping implements TornadoDevice {
+public class OCLTornadoDevice implements TornadoDevice {
 
     private final OCLDevice device;
     private final int deviceIndex;
@@ -62,7 +62,7 @@ public class OCLDeviceMapping implements TornadoDevice {
         return driver;
     }
 
-    public OCLDeviceMapping(final int platformIndex, final int deviceIndex) {
+    public OCLTornadoDevice(final int platformIndex, final int deviceIndex) {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
 
@@ -380,8 +380,8 @@ public class OCLDeviceMapping implements TornadoDevice {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof OCLDeviceMapping) {
-            final OCLDeviceMapping other = (OCLDeviceMapping) obj;
+        if (obj instanceof OCLTornadoDevice) {
+            final OCLTornadoDevice other = (OCLTornadoDevice) obj;
             return (other.deviceIndex == deviceIndex && other.platformIndex == platformIndex);
         }
         return false;

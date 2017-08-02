@@ -15,13 +15,14 @@
  */
 package tornado.runtime.api;
 
-import org.graalvm.compiler.phases.util.Providers;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.function.Consumer;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.compiler.phases.util.Providers;
 import tornado.api.Event;
 import tornado.api.meta.ScheduleMetaData;
+import tornado.common.CallStack;
 import tornado.common.DeviceObjectState;
 import tornado.common.SchedulableTask;
 import tornado.common.TornadoDevice;
@@ -36,7 +37,6 @@ import static tornado.common.Tornado.VM_USE_DEPS;
 import static tornado.common.Tornado.warn;
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
-import static tornado.common.Tornado.warn;
 
 public abstract class AbstractTaskGraph {
 
@@ -83,6 +83,11 @@ public abstract class AbstractTaskGraph {
 
     public TornadoDevice getDeviceForTask(String id) {
         return graphContext.getDeviceForTask(id);
+    }
+
+    public long getReturnValue(String id) {
+        CallStack stack = graphContext.getFrame(id);
+        return stack.getReturnValue();
     }
 
     protected void addInner(SchedulableTask task) {

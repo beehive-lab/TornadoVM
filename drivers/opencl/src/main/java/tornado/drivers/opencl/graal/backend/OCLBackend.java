@@ -319,10 +319,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             asm.beginScope();
             emitVariableDefs(crb, asm, lir);
             asm.eol();
-            asm.emitStmt("%s ulong *slots = (%s ulong *) &%s[%s]",
+            asm.emitStmt("%s ulong *%s = (%s ulong *) &%s[%s]",
                     OCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
+                    OCLAssemblerConstants.FRAME_REF_NAME,
                     OCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
-                    OCLAssemblerConstants.HEAP_REF_NAME, OCLAssemblerConstants.STACK_REF_NAME);
+                    OCLAssemblerConstants.HEAP_REF_NAME, OCLAssemblerConstants.FRAME_BASE_NAME);
             asm.eol();
             if (DEBUG_KERNEL_ARGS && (method != null && !method.getDeclaringClass().getUnqualifiedName().equalsIgnoreCase(this.getClass().getSimpleName()))) {
                 asm.emitLine("if(get_global_id(0) == 0 && get_global_id(1) ==0){");

@@ -18,10 +18,7 @@ package tornado.runtime.graph;
 import java.util.*;
 import java.util.function.Consumer;
 import tornado.api.meta.ScheduleMetaData;
-import tornado.common.RuntimeUtilities;
-import tornado.common.SchedulableTask;
-import tornado.common.Tornado;
-import tornado.common.TornadoDevice;
+import tornado.common.*;
 import tornado.runtime.api.LocalObjectState;
 
 public class ExecutionContext {
@@ -36,6 +33,7 @@ public class ExecutionContext {
     private final List<Object> objects;
     private final List<LocalObjectState> objectState;
     private final List<TornadoDevice> devices;
+    private CallStack[] stacks;
     private final int[] taskToDevice;
     private int nextTask;
 
@@ -48,9 +46,14 @@ public class ExecutionContext {
         objects = new ArrayList<>();
         objectState = new ArrayList<>();
         devices = new ArrayList<>();
+        stacks = new CallStack[MAX_TASKS];
         taskToDevice = new int[MAX_TASKS];
         Arrays.fill(taskToDevice, -1);
         nextTask = 0;
+    }
+
+    public CallStack[] getFrames() {
+        return stacks;
     }
 
     public int insertVariable(Object var) {
@@ -201,8 +204,29 @@ public class ExecutionContext {
 
     public SchedulableTask getTask(String id) {
         for (int i = 0; i < tasks.size(); i++) {
-            if (tasks.get(i).getId().equalsIgnoreCase(id)) {
+            final String canonicalisedId;
+            if (id.startsWith(getId())) {
+                canonicalisedId = id;
+            } else {
+                canonicalisedId = getId() + "." + id;
+            }
+            if (tasks.get(i).getId().equalsIgnoreCase(canonicalisedId)) {
                 return tasks.get(i);
+            }
+        }
+        return null;
+    }
+
+    public CallStack getFrame(String id) {
+        for (int i = 0; i < tasks.size(); i++) {
+            final String canonicalisedId;
+            if (id.startsWith(getId())) {
+                canonicalisedId = id;
+            } else {
+                canonicalisedId = getId() + "." + id;
+            }
+            if (tasks.get(i).getId().equalsIgnoreCase(canonicalisedId)) {
+                return stacks[i];
             }
         }
         return null;

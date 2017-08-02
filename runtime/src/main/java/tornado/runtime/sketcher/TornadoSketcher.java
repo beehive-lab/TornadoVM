@@ -97,7 +97,6 @@ public class TornadoSketcher {
         //providers.getSuitesProvider().setContext(null, resolvedMethod, null, meta);
         try (Scope s = Debug.scope("Sketcher", new DebugDumpScope("Sketcher"));
                 DebugCloseable a = Sketcher.start()) {
-
 //            PhaseSuite<HighTierContext> graphBuilderSuite = providers.g.getDefaultGraphBuilderSuite();
             final TornadoSketchTierContext highTierContext = new TornadoSketchTierContext(providers,
                     graphBuilderSuite, optimisticOpts, resolvedMethod, meta);

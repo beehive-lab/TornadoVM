@@ -15,11 +15,6 @@
  */
 package tornado.drivers.opencl.graal.asm;
 
-import org.graalvm.compiler.asm.AbstractAddress;
-import org.graalvm.compiler.asm.Assembler;
-import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.Variable;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.vm.ci.code.Register;
@@ -28,6 +23,11 @@ import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
+import org.graalvm.compiler.asm.AbstractAddress;
+import org.graalvm.compiler.asm.Assembler;
+import org.graalvm.compiler.asm.Label;
+import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.Variable;
 import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.lir.OCLKind;
@@ -37,7 +37,7 @@ import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 import static tornado.common.exceptions.TornadoInternalError.*;
 import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
 import static tornado.drivers.opencl.graal.lir.OCLKind.*;
-import static tornado.runtime.api.TornadoCallStack.RESERVED_SLOTS;
+import static tornado.drivers.opencl.mm.OCLCallStack.RESERVED_SLOTS;
 
 public final class OCLAssembler extends Assembler {
 
@@ -222,6 +222,8 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic LOG = new OCLUnaryIntrinsic("log");
         public static final OCLUnaryIntrinsic SIN = new OCLUnaryIntrinsic("sin");
         public static final OCLUnaryIntrinsic COS = new OCLUnaryIntrinsic("cos");
+
+        public static final OCLUnaryIntrinsic POPCOUNT = new OCLUnaryIntrinsic("popcount");
 
         public static final OCLUnaryIntrinsic FLOAT_ABS = new OCLUnaryIntrinsic("fabs");
         public static final OCLUnaryIntrinsic FLOAT_TRUNC = new OCLUnaryIntrinsic("trunc");
@@ -1065,7 +1067,7 @@ public final class OCLAssembler extends Assembler {
     }
 
     public void loadParam(Variable result, int index) {
-        emit("(%s) %s[%d]", result.getPlatformKind().name(), FRAME_REF_NAME, RESERVED_SLOTS + 6);
+        emit("(%s) %s[%d]", result.getPlatformKind().name(), FRAME_REF_NAME, RESERVED_SLOTS + index);
     }
 
     @Deprecated

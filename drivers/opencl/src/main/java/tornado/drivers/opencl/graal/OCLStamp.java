@@ -18,14 +18,14 @@ package tornado.drivers.opencl.graal;
 import jdk.vm.ci.meta.*;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.spi.LIRKindTool;
-import org.graalvm.compiler.core.common.type.AbstractObjectStamp;
+import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
-public class OCLStamp extends AbstractObjectStamp {
+public class OCLStamp extends ObjectStamp {
 
     private OCLKind oclKind;
 
@@ -154,7 +154,7 @@ public class OCLStamp extends AbstractObjectStamp {
     }
 
     @Override
-    protected AbstractObjectStamp copyWith(ResolvedJavaType rjt, boolean bln, boolean bln1, boolean bln2) {
+    protected ObjectStamp copyWith(ResolvedJavaType rjt, boolean bln, boolean bln1, boolean bln2) {
         return this;
     }
 }
