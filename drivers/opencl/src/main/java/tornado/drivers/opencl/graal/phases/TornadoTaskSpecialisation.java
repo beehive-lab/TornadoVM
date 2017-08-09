@@ -38,6 +38,8 @@ import tornado.graal.phases.TornadoHighTierContext;
 import tornado.graal.phases.TornadoLoopUnroller;
 import tornado.graal.phases.TornadoValueTypeReplacement;
 
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+
 public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext> {
 
     public static final int MAX_ITERATIONS = 10;
@@ -209,6 +211,10 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             result = ConstantNode.forFloat((float) obj);
         } else if (obj instanceof Integer) {
             result = ConstantNode.forInt((int) obj);
+        } else if (obj instanceof Double) {
+            result = ConstantNode.forDouble((double) obj);
+        } else {
+            unimplemented("createConstantFromObject: %s", obj);
         }
 
         return result;
@@ -218,6 +224,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             Object[] args) {
         if (args[parameterNode.index()] != null
                 && RuntimeUtilities.isBoxedPrimitiveClass(args[parameterNode.index()].getClass())) {
+            System.out.printf("error: index=%d, node=%s, arg=%s, class=%s\n", parameterNode.index(), parameterNode, args[parameterNode.index()], args[parameterNode.index()].getClass().getName());
             ConstantNode constant = createConstantFromObject(args[parameterNode.index()]);
             graph.addWithoutUnique(constant);
             parameterNode.replaceAtUsages(constant);
