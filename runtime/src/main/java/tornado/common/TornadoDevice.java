@@ -78,4 +78,6 @@ public interface TornadoDevice {
 
     public void dumpEvents();
 
+    public void dumpMemory(String file);
+
 }

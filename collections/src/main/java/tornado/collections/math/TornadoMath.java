@@ -255,4 +255,12 @@ public class TornadoMath {
         return Math.log(value);
     }
 
+    public static float log2(float value) {
+        return log(value) / log(2);
+    }
+
+    public static double log2(double value) {
+        return Math.log(value) / Math.log(2);
+    }
+
 }

@@ -17,11 +17,13 @@ package tornado.graal.phases;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
+import jdk.vm.ci.meta.MetaAccessProvider;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
@@ -49,7 +51,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
 
             // Only interested in objects
             if (param != null && param.stamp() instanceof ObjectStamp) {
-                accesses[i] = processUseages(param);
+                accesses[i] = processUseages(param, context.getMetaAccess());
             }
 
             debug("access: parameter %d -> %s\n", i, accesses[i]);
@@ -57,7 +59,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
 
     }
 
-    private Access processUseages(Node parameter) {
+    private Access processUseages(Node parameter, MetaAccessProvider metaAccess) {
 //        NodeBitMap nodes = graph.createNodeBitMap();
 //        nodes.clearAll();
 
@@ -71,6 +73,9 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             Node currentNode = nf.remove();
             if (currentNode instanceof LoadIndexedNode) {
                 isRead = true;
+                if (((ValueNode) currentNode).stamp().javaType(metaAccess).isArray()) {
+                    nf.addAll(currentNode.usages().snapshot());
+                }
             } else if (currentNode instanceof StoreIndexedNode) {
                 isWritten = true;
             } else if (currentNode instanceof LoadFieldNode) {

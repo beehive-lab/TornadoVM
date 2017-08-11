@@ -101,7 +101,7 @@ public class TornadoVM extends TornadoLogger {
             final Object object = objects.get(i);
             guarantee(object != null, "null object found in TornadoVM");
             globalStates[i] = getTornadoRuntime().resolveObject(object);
-            debug("\tobject[%d]: [0x%x] %s %s", i, object.hashCode(), object,
+            debug("\tobject[%d]: [0x%x] %s %s", i, object.hashCode(), object.getClass().getTypeName(),
                     globalStates[i]);
         }
 
@@ -330,7 +330,12 @@ public class TornadoVM extends TornadoLogger {
                 if (installedCodes[taskIndex] == null) {
                     final long compileStart = System.nanoTime();
                     task.mapTo(device);
-                    installedCodes[taskIndex] = device.installCode(task);
+                    try {
+                        installedCodes[taskIndex] = device.installCode(task);
+                    } catch (Error | Exception e) {
+                        fatal("unable to compile task %s", task.getName());
+                        debug(e.getMessage());
+                    }
                     final long compileEnd = System.nanoTime();
                     if (graphContext.meta().shouldPrintCompileTimes()) {
                         System.out.printf("compile: task %s tornado %.9f\n", task.getName(), (compileEnd - compileStart) * 1e-9);
@@ -518,7 +523,7 @@ public class TornadoVM extends TornadoLogger {
                     final Event profile = eventset.getDevice().resolveEvent(i);
 
                     if (profile.getStatus() == COMPLETE) {
-                        System.out.printf("task: %s %s %.9f %9d %9d %9d\n", task.getDevice().getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(), profile.getEndTime());
+                        System.out.printf("task: %s %s %.9f %9d %9d %9d\n", eventset.getDevice().getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(), profile.getEndTime());
                     }
                 }
 

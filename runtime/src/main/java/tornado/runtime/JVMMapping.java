@@ -29,6 +29,11 @@ public class JVMMapping implements TornadoDevice {
     }
 
     @Override
+    public void dumpMemory(String file) {
+        unimplemented();
+    }
+
+    @Override
     public int enqueueBarrier(int[] events) {
         unimplemented();
         return -1;

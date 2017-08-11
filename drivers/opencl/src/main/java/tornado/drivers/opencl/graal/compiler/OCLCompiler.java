@@ -15,6 +15,12 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import jdk.vm.ci.code.CallingConvention;
@@ -69,7 +75,8 @@ import tornado.runtime.sketcher.Sketch;
 import tornado.runtime.sketcher.TornadoSketcher;
 
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
-import static tornado.common.Tornado.info;
+import static tornado.common.Tornado.*;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
 import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
@@ -267,7 +274,6 @@ public class OCLCompiler {
                     Debug.dump(Debug.INFO_LEVEL, graph, "initial state");
                 }
             }
-            Debug.forceDump(graph, "Test");
             suites.getHighTier().apply(graph, highTierContext);
             graph.maybeCompress();
 
@@ -281,7 +287,6 @@ public class OCLCompiler {
             suites.getLowTier().apply(graph, lowTierContext);
 
             Debug.dump(Debug.BASIC_LEVEL, graph.getLastSchedule(), "Final HIR schedule");
-            Debug.forceDump(graph, "Test");
         } catch (Throwable e) {
             throw Debug.handle(e);
         }
@@ -574,6 +579,8 @@ public class OCLCompiler {
         OCLCompilationResult kernelCompResult = new OCLCompilationResult(task.getId(), resolvedMethod.getName(), taskMeta, backend);
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
+        Set<ResolvedJavaMethod> methods = new HashSet<>();
+
         final OCLSuitesProvider suitesProvider = providers.getSuitesProvider();
         Request<OCLCompilationResult> kernelCompilationRequest = new Request<>(
                 kernelGraph, resolvedMethod, args, taskMeta, providers, backend,
@@ -583,14 +590,21 @@ public class OCLCompiler {
 
         kernelCompilationRequest.execute();
 
-//        final Set<ResolvedJavaMethod> includedMethods = new HashSet<>();
+        if (DUMP_COMPILED_METHODS) {
+            methods.add(kernelGraph.method());
+            methods.addAll(kernelGraph.getMethods());
+            for (ResolvedJavaMethod m : kernelCompResult.getMethods()) {
+                methods.add(m);
+            }
+
+        }
+
         final Deque<ResolvedJavaMethod> worklist = new ArrayDeque<>();
         worklist.addAll(kernelCompResult.getNonInlinedMethods());
 
         while (!worklist.isEmpty()) {
             final ResolvedJavaMethod currentMethod = worklist.pop();
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod);
-//            if (!includedMethods.contains(currentMethod)) {
             final OCLCompilationResult compResult = new OCLCompilationResult(task.getId(), currentMethod.getName(), taskMeta, backend);
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
 
@@ -604,8 +618,35 @@ public class OCLCompiler {
             methodcompilationRequest.execute();
             worklist.addAll(compResult.getNonInlinedMethods());
 
+            if (DUMP_COMPILED_METHODS) {
+                methods.add(graph.method());
+                methods.addAll(graph.getMethods());
+            }
+
             kernelCompResult.addCompiledMethodCode(compResult.getTargetCode());
-//            }
+        }
+
+        if (DUMP_COMPILED_METHODS) {
+            final Path outDir = Paths.get("./opencl-compiled-methods");
+            if (!Files.exists(outDir)) {
+                try {
+                    Files.createDirectories(outDir);
+                } catch (IOException e) {
+                    error("unable to create cache dir: %s", outDir.toString());
+                    error(e.getMessage());
+                }
+            }
+
+            guarantee(Files.isDirectory(outDir), "cache directory is not a directory: %s", outDir.toAbsolutePath().toString());
+
+            File file = new File(outDir + "/" + task.getId() + "-" + resolvedMethod.getName());
+            try (PrintWriter pw = new PrintWriter(file);) {
+                for (ResolvedJavaMethod m : methods) {
+                    pw.printf("%s,%s\n", m.getDeclaringClass().getName(), m.getName());
+                }
+            } catch (IOException e) {
+                error("unable to dump source: ", e.getMessage());
+            }
         }
 
         return kernelCompResult;

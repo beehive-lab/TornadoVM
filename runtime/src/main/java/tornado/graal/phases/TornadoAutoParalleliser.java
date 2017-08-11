@@ -23,7 +23,8 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
 
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
-        if (!context.hasMeta() || context.meta.enableAutoParallelisation()) {
+        if (!context.hasMeta() || !context.meta.enableAutoParallelisation() || graph.getNodes().filter(ParallelRangeNode.class).isNotEmpty()) {
+            info("auto parallelisation disabled");
             return;
         }
 
@@ -35,9 +36,9 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
             // Collections.reverse(loops);
 
             // is single loop nest?
-            for (int i = loops.size() - 1; i > 1; i++) {
+            for (int i = loops.size() - 1; i > 1; i--) {
                 if (loops.get(i).parent() != loops.get(i - 1)) {
-                    debug("method %s does not have a single loop-nest", graph.method().getName());
+                    info("method %s does not have a single loop-nest", graph.method().getName());
                     return;
                 }
             }

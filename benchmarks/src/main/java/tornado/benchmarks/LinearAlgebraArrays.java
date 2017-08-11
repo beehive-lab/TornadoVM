@@ -69,7 +69,13 @@ public class LinearAlgebraArrays {
 
     public static void striad(float alpha, float[] a, float[] b, float[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = alpha * a[i] + b[i];
+            c[i] = (alpha * a[i]) + b[i];
+        }
+    }
+
+    public static void scopy(float[] x, float[] y) {
+        for (@Parallel int i = 0; i < x.length; i++) {
+            y[i] = x[i];
         }
     }
 
@@ -82,6 +88,20 @@ public class LinearAlgebraArrays {
     public static void saxpy(float alpha, float[] x, float[] y) {
         for (@Parallel int i = 0; i < y.length; i++) {
             y[i] += alpha * x[i];
+        }
+    }
+
+    public static void sgemv(
+            int M, int N, float[] A,
+            float[] X,
+            float[] Y) {
+
+        for (@Parallel int i = 0; i < M; i++) {
+            float y0 = 0f;
+            for (int j = 0; j < N; j++) {
+                y0 += A[j + (i * N)] * X[j];
+            }
+            Y[i] = y0;
         }
     }
 

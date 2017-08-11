@@ -90,6 +90,8 @@ public class TornadoRuntime extends TornadoLogger {
         opts.put(GraalOptions.RemoveNeverExecutedCode, false);
         opts.put(ConstantLoadOptimization.Options.LIROptConstantLoadOptimization, false);
         opts.put(PostAllocationOptimizationStage.Options.LIROptRedundantMoveElimination, false);
+//        opts.put(BytecodeParserOptions.TraceParserPlugins, true);
+//        opts.put(BytecodeParserOptions.InlineDuringParsing, false);
 
         options = new OptionValues(opts);
         guarantee(GraalOptions.OmitHotExceptionStacktrace.getValue(options) == false, "error");

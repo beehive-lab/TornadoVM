@@ -182,6 +182,7 @@ public abstract class AbstractMetaData {
     private final boolean vmUseDeps;
     private final boolean coarsenWithCpuConfig;
     private final boolean enableAutoParallelisation;
+    private final boolean isEnableParallelizationDefined;
 
     private final boolean isCpuConfigDefined;
     private final String cpuConfig;
@@ -189,6 +190,10 @@ public abstract class AbstractMetaData {
 //    private final boolean useThreadCoarsening;
     public boolean isDeviceDefined() {
         return isDeviceDefined;
+    }
+
+    boolean isEnableParallelizationDefined() {
+        return isEnableParallelizationDefined;
     }
 
     public boolean isOpenclCompilerFlagsDefined() {
@@ -250,14 +255,16 @@ public abstract class AbstractMetaData {
         enableOooExecution = parseBoolean(getDefault("ooo-execution.enable", id, "False"));
         openclUseBlockingApiCalls = parseBoolean(getDefault("opencl.blocking", id, "False"));
 
-        enableParallelization = parseBoolean(getDefault("parallelize", id, "True"));
+        enableParallelization = parseBoolean(getDefault("parallelise", id, "True"));
+        isEnableParallelizationDefined = getProperty(id + ".parallelise") != null;
+
         enableVectors = parseBoolean(getDefault("vectors.enable", id, "True"));
         openclEnableBifs = parseBoolean(getDefault("bifs.enable", id, "False"));
         debug = parseBoolean(getDefault("debug", id, "False"));
         enableMemChecks = parseBoolean(getDefault("memory.check", id, "False"));
         dumpEvents = parseBoolean(getDefault("events.dump", id, "False"));
-        dumpProfiles = parseBoolean(getDefault("profiles.print", id, "false"));
-        dumpTaskSchedule = parseBoolean(getDefault("schedule.dump", id, "false"));
+        dumpProfiles = parseBoolean(getDefault("profiles.print", id, "False"));
+        dumpTaskSchedule = parseBoolean(getDefault("schedule.dump", id, "False"));
 
         openclCompilerFlags = getDefault("opencl.cflags", id, "-w");
         isOpenclCompilerFlagsDefined = getProperty(id + ".opencl.cflags") != null;

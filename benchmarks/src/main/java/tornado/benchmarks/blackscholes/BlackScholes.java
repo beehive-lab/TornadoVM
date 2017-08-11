@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tornado.benchmarks;
+package tornado.benchmarks.blackscholes;
 
 import tornado.api.Parallel;
 import tornado.collections.math.TornadoMath;

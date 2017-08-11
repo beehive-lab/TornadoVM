@@ -17,10 +17,22 @@ package tornado.runtime.graph;
 
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.List;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.loop.BasicInductionVariable;
+import org.graalvm.compiler.loop.LoopEx;
+import org.graalvm.compiler.loop.LoopsData;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import tornado.common.SchedulableTask;
 import tornado.common.TornadoDevice;
+import tornado.graal.nodes.ParallelRangeNode;
+import tornado.runtime.api.CompilableTask;
 import tornado.runtime.graph.nodes.*;
+import tornado.runtime.sketcher.Sketch;
+import tornado.runtime.sketcher.TornadoSketcher;
 
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import static tornado.runtime.graph.GraphAssembler.STREAM_OUT;
 import static tornado.runtime.graph.GraphAssembler.STREAM_OUT_BLOCKING;
 
@@ -72,10 +84,10 @@ public class GraphCompiler {
             index++;
         }
 
-//        printMatrix(graph, nodeIds, deps, tasks);
         result.begin(1, tasks.cardinality(), numDepLists + 1);
 
         schedule(result, graph, context, nodeIds, deps, tasks);
+//        optimise(result, graph, context, nodeIds, deps, tasks);
         peephole(result, numDepLists);
 
         result.end();
@@ -92,6 +104,66 @@ public class GraphCompiler {
             code[codeSize - 13] = STREAM_OUT_BLOCKING;
         } else {
             result.barrier(numDepLists);
+        }
+    }
+
+    private static void optimise(GraphCompilationResult result, Graph graph, ExecutionContext context,
+            int[] nodeIds, BitSet[] deps, BitSet tasks) {
+        printMatrix(graph, nodeIds, deps, tasks);
+        for (int i = tasks.nextSetBit(0); i >= 0; i = tasks.nextSetBit(i + 1)) {
+            BitSet dependents = new BitSet(deps[i].length());
+            for (int j = deps[i].nextSetBit(0); j >= 0; j = deps[i].nextSetBit(j + 1)) {
+                if (graph.getNode(j) instanceof TaskNode) {
+                    dependents.set(j);
+
+                }
+            }
+            if (!dependents.isEmpty()) {
+                TaskNode dependentTask = (TaskNode) graph.getNode(nodeIds[i]);
+                int firstDepId = dependents.nextSetBit(0);
+                TaskNode firstTask = (TaskNode) graph.getNode(firstDepId);
+                int[] argMerges = new int[dependentTask.getNumArgs()];
+                Arrays.fill(argMerges, -1);
+                for (int arg = 0; arg < dependentTask.getInputs().size(); arg++) {
+                    AbstractNode n = dependentTask.getInputs().get(arg);
+                    if (n instanceof DependentReadNode && ((DependentReadNode) n).getDependent() == firstTask) {
+                        argMerges[arg] = 1;
+                    }
+                }
+
+                CompilableTask t1 = (CompilableTask) context.getTask(firstTask.getTaskIndex());
+                CompilableTask t2 = (CompilableTask) context.getTask(dependentTask.getTaskIndex());
+                ResolvedJavaMethod rm1 = getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
+                ResolvedJavaMethod rm2 = getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
+                Sketch sketch1 = TornadoSketcher.lookup(rm1);
+                Sketch sketch2 = TornadoSketcher.lookup(rm2);
+                StructuredGraph g1 = (StructuredGraph) sketch1.getGraph().getReadonlyCopy();
+                StructuredGraph g2 = (StructuredGraph) sketch2.getGraph().getReadonlyCopy();
+                System.out.printf("dependent task: %s on %s merges = %d\n", t1.getId(), t2.getId(), Arrays.toString(argMerges));
+                printIvs(g1);
+                printIvs(g2);
+                StructuredGraph g3 = TornadoTaskUtil.merge(t1, t2, g1, g2, argMerges);
+            }
+        }
+    }
+
+    private static void printIvs(StructuredGraph graph) {
+
+        final LoopsData data = new LoopsData(graph);
+        data.detectedCountedLoops();
+
+        final List<LoopEx> loops = data.outerFirst();
+
+        List<ParallelRangeNode> parRanges = graph.getNodes().filter(ParallelRangeNode.class).snapshot();
+        for (LoopEx loop : loops) {
+            for (ParallelRangeNode parRange : parRanges) {
+                for (Node n : parRange.offset().usages()) {
+                    if (loop.getInductionVariables().containsKey(n)) {
+                        BasicInductionVariable iv = (BasicInductionVariable) loop.getInductionVariables().get(n);
+                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(), parRange.stride(), iv.getOp());
+                    }
+                }
+            }
         }
     }
 

@@ -7,6 +7,7 @@ package tornado.benchmarks.bitset;
 
 import java.util.Random;
 import org.apache.lucene.util.LongBitSet;
+import tornado.api.Parallel;
 import tornado.runtime.api.TaskSchedule;
 
 public class BitsetTest {
@@ -15,7 +16,7 @@ public class BitsetTest {
         final long[] aBits = a.getBits();
         final long[] bBits = b.getBits();
         int sum = 0;
-        for (int i = 0; i < numWords; i++) {
+        for (@Parallel int i = 0; i < numWords; i++) {
             sum += Long.bitCount(aBits[i] & bBits[i]);
         }
         return sum;

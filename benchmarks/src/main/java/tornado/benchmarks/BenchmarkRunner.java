@@ -78,7 +78,7 @@ public abstract class BenchmarkRunner {
         final Set<Integer> blacklistedDevices = new HashSet<>();
 
         findBlacklisted(blacklistedDrivers, "tornado.blacklist.drivers");
-        findBlacklisted(blacklistedDevices, "tornado.blacklist.device");
+        findBlacklisted(blacklistedDevices, "tornado.blacklist.devices");
 
         final int numDrivers = getTornadoRuntime().getNumDrivers();
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {

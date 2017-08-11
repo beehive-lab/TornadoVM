@@ -18,7 +18,7 @@ package tornado.examples.memory;
 import java.util.Arrays;
 import tornado.common.DeviceObjectState;
 import tornado.drivers.opencl.OpenCL;
-import tornado.drivers.opencl.runtime.OCLDeviceMapping;
+import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import tornado.runtime.api.GlobalObjectState;
 
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
@@ -40,7 +40,7 @@ public class DataMovementTest {
         Arrays.setAll(array, (index) -> index);
         printArray(array);
 
-        OCLDeviceMapping device = OpenCL.defaultDevice();
+        OCLTornadoDevice device = OpenCL.defaultDevice();
 
         GlobalObjectState state = getTornadoRuntime().resolveObject(array);
         DeviceObjectState deviceState = state.getDeviceState(device);

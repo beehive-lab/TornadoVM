@@ -227,9 +227,9 @@ public class CorrMatrixHost {
         final long[] subMatrixB = new long[NUM_SUB_ROWS * matrixB_numLongs];
         final int[] subResultMatrix = new int[NUM_SUB_ROWS * NUM_SUB_ROWS];
 
-        final TaskSchedule s0 = new TaskSchedule("s0")
+        final TaskSchedule s0 = new TaskSchedule("benchmark")
                 .streamIn(subMatrixA, subMatrixB)
-                .task("t0", CorrMatrixKernel::run, subMatrixA, NUM_SUB_ROWS, subMatrixB,
+                .task("corrmatrix", CorrMatrixKernel::run, subMatrixA, NUM_SUB_ROWS, subMatrixB,
                         NUM_SUB_ROWS, matrixA_numLongs, subResultMatrix)
                 .streamOut(subResultMatrix);
 

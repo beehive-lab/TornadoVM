@@ -107,9 +107,11 @@ public class TornadoSketcher {
                 Debug.dump(Debug.BASIC_LEVEL, graph, "initial state");
             }
 
+//            graph.getMethods().forEach(System.out::println);
             sketchTier.apply(graph, highTierContext);
             graph.maybeCompress();
 
+//            graph.getMethods().forEach(System.out::println);
             // compile any non-inlined call targets
             graph.getInvokes().forEach(invoke -> getTornadoExecutor().execute(new SketchRequest(meta, invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier)));
 

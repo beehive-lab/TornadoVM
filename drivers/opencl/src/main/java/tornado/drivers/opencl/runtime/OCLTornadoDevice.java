@@ -27,7 +27,6 @@ import tornado.api.enums.TornadoSchedulingStrategy;
 import tornado.api.meta.TaskMetaData;
 import tornado.common.*;
 import tornado.common.enums.Access;
-import tornado.common.exceptions.TornadoInternalError;
 import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDevice;
 import tornado.drivers.opencl.OCLDeviceContext;
@@ -41,9 +40,9 @@ import tornado.runtime.api.PrebuiltTask;
 import tornado.runtime.sketcher.Sketch;
 import tornado.runtime.sketcher.TornadoSketcher;
 
+import static tornado.common.RuntimeUtilities.isPrimitiveArray;
 import static tornado.common.Tornado.FORCE_ALL_TO_GPU;
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.*;
 import static tornado.drivers.opencl.graal.compiler.OCLCompiler.compileSketchForDevice;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
@@ -240,32 +239,61 @@ public class OCLTornadoDevice implements TornadoDevice {
         ObjectBuffer result = null;
         if (type.isArray()) {
 
-            if (type == int[].class) {
-                result = new OCLIntArrayWrapper(device);
-            } else if (type == short[].class) {
-                result = new OCLShortArrayWrapper(device);
-            } else if (type == byte[].class) {
-                result = new OCLByteArrayWrapper(device);
-            } else if (type == float[].class) {
-                result = new OCLFloatArrayWrapper(device);
-            } else if (type == double[].class) {
-                result = new OCLDoubleArrayWrapper(device);
-            } else if (type == long[].class) {
-                result = new OCLLongArrayWrapper(device);
+            if (!type.getComponentType().isArray()) {
+                if (type == int[].class) {
+                    result = new OCLIntArrayWrapper(device);
+                } else if (type == short[].class) {
+                    result = new OCLShortArrayWrapper(device);
+                } else if (type == byte[].class) {
+                    result = new OCLByteArrayWrapper(device);
+                } else if (type == float[].class) {
+                    result = new OCLFloatArrayWrapper(device);
+                } else if (type == double[].class) {
+                    result = new OCLDoubleArrayWrapper(device);
+                } else if (type == long[].class) {
+                    result = new OCLLongArrayWrapper(device);
+                } else {
+                    unimplemented("array of type %s", type.getName());
+                }
+            } else {
+                final Class<?> componentType = type.getComponentType();
+                if (isPrimitiveArray(componentType)) {
+
+                    if (componentType == int[].class) {
+                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLIntArrayWrapper(context));
+                    } else if (componentType == short[].class) {
+                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLShortArrayWrapper(context));
+                    } else if (componentType == byte[].class) {
+                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLByteArrayWrapper(context));
+                    } else if (componentType == float[].class) {
+                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLFloatArrayWrapper(context));
+                    } else if (componentType == double[].class) {
+                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLDoubleArrayWrapper(context));
+                    } else if (componentType == long[].class) {
+                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLLongArrayWrapper(context));
+                    } else {
+                        unimplemented("array of type %s", type.getName());
+                    }
+                } else {
+                    unimplemented("multi-dimensional array of type %s", type.getName());
+                }
             }
 
-        } else if (!type.isPrimitive() && !type.isArray()) {
+        } else if (!type.isPrimitive()
+                && !type.isArray()) {
 //			System.out.println("creating object wrapper...good");
             result = new OCLObjectWrapper(device, arg);
         }
 
-        TornadoInternalError.guarantee(result != null,
+        guarantee(result
+                != null,
                 "Unable to create buffer for object: " + type);
         return result;
     }
 
     @Override
-    public int ensureAllocated(Object object, DeviceObjectState state) {
+    public int ensureAllocated(Object object, DeviceObjectState state
+    ) {
         if (!state.hasBuffer()) {
             try {
                 final ObjectBuffer buffer = createDeviceBuffer(
@@ -300,13 +328,16 @@ public class OCLTornadoDevice implements TornadoDevice {
     }
 
     @Override
-    public int ensurePresent(Object object, DeviceObjectState state) {
+    public int ensurePresent(Object object, DeviceObjectState state
+    ) {
         ensurePresent(object, state, null);
         return -1;
     }
 
     @Override
-    public int ensurePresent(Object object, DeviceObjectState state, int[] events) {
+    public int ensurePresent(Object object, DeviceObjectState state,
+            int[] events
+    ) {
         if (!state.isValid()) {
             ensureAllocated(object, state);
         }
@@ -319,13 +350,16 @@ public class OCLTornadoDevice implements TornadoDevice {
     }
 
     @Override
-    public int streamIn(Object object, DeviceObjectState state) {
+    public int streamIn(Object object, DeviceObjectState state
+    ) {
         streamIn(object, state, null);
         return -1;
     }
 
     @Override
-    public int streamIn(Object object, DeviceObjectState state, int[] events) {
+    public int streamIn(Object object, DeviceObjectState state,
+            int[] events
+    ) {
         if (!state.isValid()) {
             ensureAllocated(object, state);
         }
@@ -336,27 +370,31 @@ public class OCLTornadoDevice implements TornadoDevice {
     }
 
     @Override
-    public int streamOut(Object object, DeviceObjectState state) {
+    public int streamOut(Object object, DeviceObjectState state
+    ) {
         streamOut(object, state, null);
         return -1;
     }
 
     @Override
     public int streamOut(Object object, DeviceObjectState state,
-            int[] list) {
+            int[] list
+    ) {
         guarantee(state.isValid(), "invalid variable");
 
         return state.getBuffer().enqueueRead(object, list, list == null);
     }
 
     @Override
-    public void streamOutBlocking(Object object, DeviceObjectState state) {
+    public void streamOutBlocking(Object object, DeviceObjectState state
+    ) {
         streamOutBlocking(object, state, null);
     }
 
     @Override
     public void streamOutBlocking(Object object, DeviceObjectState state,
-            int[] events) {
+            int[] events
+    ) {
         guarantee(state.isValid(), "invalid variable");
 
         state.getBuffer().read(object, events, events == null);
@@ -420,6 +458,7 @@ public class OCLTornadoDevice implements TornadoDevice {
         return getDeviceContext().enqueueMarker(events);
     }
 
+    @Override
     public void dumpMemory(String file) {
         final OCLMemoryManager mm = getDeviceContext().getMemoryManager();
         final OCLByteBuffer buffer = mm.getSubBuffer(0, (int) mm.getHeapSize());

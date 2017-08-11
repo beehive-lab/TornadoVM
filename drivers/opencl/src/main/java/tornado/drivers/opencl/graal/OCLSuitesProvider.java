@@ -56,7 +56,7 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
         PhaseSuite<HighTierContext> suite = new PhaseSuite<>();
 
         InvocationPlugins invocationPlugins = plugins.getInvocationPlugins();
-        OCLGraphBuilderPlugins.registerInvocationPlugins(invocationPlugins);
+        OCLGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
         OCLGraphBuilderPlugins.registerNewInstancePlugins(plugins);
         OCLGraphBuilderPlugins.registerParameterPlugins(plugins);
 

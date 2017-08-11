@@ -44,13 +44,13 @@ import static tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operat
 
 public class OCLGraphBuilderPlugins {
 
-    public static void registerInvocationPlugins(final InvocationPlugins plugins) {
+    public static void registerInvocationPlugins(final Plugins ps, final InvocationPlugins plugins) {
         registerCompilerInstrinsicsPlugins(plugins);
         registerTornadoInstrinsicsPlugins(plugins);
         registerOpenCLBuiltinPlugins(plugins);
 
         TornadoMathPlugins.registerTornadoMathPlugins(plugins);
-        VectorPlugins.registerPlugins(plugins);
+        VectorPlugins.registerPlugins(ps, plugins);
 
 //		AtomicPlugins.registerPlugins(plugins);
     }

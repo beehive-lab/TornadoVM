@@ -139,6 +139,10 @@ public class TaskSchedule extends AbstractTaskGraph {
         return this;
     }
 
+//    public <T> TaskSchedule reduce(String id, ReduceOp op, T[] values) {
+//
+//        return this;
+//    }
     public TaskSchedule mapAllTo(TornadoDevice device) {
         setDevice(device);
         return this;

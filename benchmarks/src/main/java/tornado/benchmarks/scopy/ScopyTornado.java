@@ -13,55 +13,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tornado.benchmarks.sgemm;
+package tornado.benchmarks.scopy;
 
-import java.util.Random;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.LinearAlgebraArrays;
 import tornado.runtime.api.TaskSchedule;
 
-import static tornado.benchmarks.LinearAlgebraArrays.sgemm;
+import static tornado.benchmarks.LinearAlgebraArrays.scopy;
 import static tornado.collections.math.TornadoMath.findULPDistance;
 import static tornado.common.Tornado.getProperty;
 
-public class SgemmTornado extends BenchmarkDriver {
+public class ScopyTornado extends BenchmarkDriver {
 
-    private final int m, n;
+    private final int numElements;
 
-    private float[] a, b, c;
+    private float[] x, y;
 
     private TaskSchedule graph;
 
-    public SgemmTornado(int iterations, int m, int n) {
+    public ScopyTornado(int iterations, int numElements) {
         super(iterations);
-        this.m = m;
-        this.n = n;
+        this.numElements = numElements;
     }
 
     @Override
     public void setUp() {
-        a = new float[m * n];
-        b = new float[m * n];
-        c = new float[m * n];
+        x = new float[numElements];
+        y = new float[numElements];
 
-        final Random random = new Random();
-
-        for (int i = 0; i < m; i++) {
-            a[i * (m + 1)] = 1;
-        }
-
-        for (int i = 0; i < m * n; i++) {
-            b[i] = random.nextFloat();
+        for (int i = 0; i < numElements; i++) {
+            x[i] = i;
         }
 
         graph = new TaskSchedule("benchmark");
         if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
-            graph.streamIn(a, b);
+            graph.streamIn(x);
         }
-        graph.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
+        graph.task("scopy", LinearAlgebraArrays::scopy, x, y);
 
         if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
-            graph.streamOut(c);
+            graph.streamOut(y);
         }
 
         if (Boolean.parseBoolean(getProperty("benchmark.warmup", "True"))) {
@@ -73,9 +64,8 @@ public class SgemmTornado extends BenchmarkDriver {
     public void tearDown() {
         graph.dumpProfiles();
 
-        a = null;
-        b = null;
-        c = null;
+        x = null;
+        y = null;
 
         graph.getDevice().reset();
         super.tearDown();
@@ -89,15 +79,15 @@ public class SgemmTornado extends BenchmarkDriver {
     @Override
     public boolean validate() {
 
-        final float[] result = new float[m * n];
+        final float[] result = new float[numElements];
 
         code();
-        graph.syncObjects(c);
+        graph.syncObjects(y);
         graph.clearProfiles();
 
-        sgemm(m, n, m, a, b, result);
+        scopy(x, result);
 
-        final float ulp = findULPDistance(c, result);
+        final float ulp = findULPDistance(y, result);
         return ulp < MAX_ULP;
     }
 
@@ -112,5 +102,4 @@ public class SgemmTornado extends BenchmarkDriver {
                     getProperty("benchmark.device"));
         }
     }
-
 }

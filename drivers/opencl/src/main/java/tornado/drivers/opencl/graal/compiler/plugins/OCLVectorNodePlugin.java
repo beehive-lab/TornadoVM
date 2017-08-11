@@ -30,7 +30,6 @@ public class OCLVectorNodePlugin implements NodePlugin {
 
     @Override
     public boolean handleNewInstance(GraphBuilderContext b, ResolvedJavaType type) {
-        System.out.printf("handleNewInstance: type=%s\n", type.getName());
         if (!ENABLE_VECTORS) {
             return false;
         }
@@ -44,10 +43,8 @@ public class OCLVectorNodePlugin implements NodePlugin {
     }
 
     private boolean createVectorInstance(GraphBuilderContext b, ResolvedJavaType type) {
-        System.out.printf("createVectorInstance: type=%s\n", type.getName());
         OCLKind vectorKind = resolveOCLKind(type);
         if (vectorKind != OCLKind.ILLEGAL) {
-            System.out.printf("creating vector: type=%s kind=%s\n", type.getName(), vectorKind);
             b.push(JavaKind.Object, b.append(new VectorValueNode(vectorKind)));
             return true;
         }

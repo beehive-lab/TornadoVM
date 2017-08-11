@@ -224,7 +224,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             Object[] args) {
         if (args[parameterNode.index()] != null
                 && RuntimeUtilities.isBoxedPrimitiveClass(args[parameterNode.index()].getClass())) {
-            System.out.printf("error: index=%d, node=%s, arg=%s, class=%s\n", parameterNode.index(), parameterNode, args[parameterNode.index()], args[parameterNode.index()].getClass().getName());
             ConstantNode constant = createConstantFromObject(args[parameterNode.index()]);
             graph.addWithoutUnique(constant);
             parameterNode.replaceAtUsages(constant);

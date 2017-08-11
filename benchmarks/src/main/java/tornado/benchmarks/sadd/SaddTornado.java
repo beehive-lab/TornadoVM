@@ -22,8 +22,6 @@ import tornado.runtime.api.TaskSchedule;
 import static tornado.benchmarks.LinearAlgebraArrays.sadd;
 import static tornado.collections.math.TornadoMath.findULPDistance;
 import static tornado.common.Tornado.getProperty;
-import static tornado.collections.math.TornadoMath.findULPDistance;
-import static tornado.common.Tornado.getProperty;
 
 public class SaddTornado extends BenchmarkDriver {
 
@@ -50,16 +48,27 @@ public class SaddTornado extends BenchmarkDriver {
             c[i] = 0;
         }
 
-        graph = new TaskSchedule("benchmark")
-                .task("sadd", LinearAlgebraArrays::sadd, a, b, c)
-                .streamOut(c);
+        graph = new TaskSchedule("benchmark");
 
-        graph.warmup();
+        if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
+            graph.streamIn(a, b);
+        }
+
+        graph.task("sadd", LinearAlgebraArrays::sadd, a, b, c);
+
+        if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
+            graph.streamOut(c);
+        }
+
+        if (Boolean.parseBoolean(getProperty("benchmark.warmup", "True"))) {
+            graph.warmup();
+        }
     }
 
     @Override
     public void tearDown() {
         graph.dumpProfiles();
+        graph.dumpEvents();
 
         a = null;
         b = null;
@@ -80,6 +89,7 @@ public class SaddTornado extends BenchmarkDriver {
         final float[] result = new float[numElements];
 
         code();
+        graph.syncObjects(c);
         graph.clearProfiles();
 
         sadd(a, b, result);

@@ -181,7 +181,7 @@ public class TaskMetaData extends AbstractMetaData {
 
     @Override
     public boolean enableParallelization() {
-        return super.enableParallelization() || scheduleMetaData.enableParallelization();
+        return scheduleMetaData.isEnableParallelizationDefined() && !isEnableParallelizationDefined() ? scheduleMetaData.enableParallelization() : super.enableParallelization();
     }
 
     @Override
@@ -227,7 +227,7 @@ public class TaskMetaData extends AbstractMetaData {
 
     @Override
     public TornadoDevice getDevice() {
-        return isDeviceDefined() || super.getDevice() != null ? super.getDevice() : scheduleMetaData.getDevice();
+        return scheduleMetaData.isDeviceDefined() && !isDeviceDefined() ? scheduleMetaData.getDevice() : super.getDevice();
     }
 
     public int getDims() {
@@ -323,7 +323,7 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public boolean isParallel() {
-        return hasDomain() && domain.getDepth() > 0;
+        return enableParallelization() && hasDomain() && domain.getDepth() > 0;
     }
 
     public void printThreadDims() {
