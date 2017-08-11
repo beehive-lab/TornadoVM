@@ -140,7 +140,8 @@ public abstract class BenchmarkRunner {
 
     public static void main(String[] args) {
         try {
-            final BenchmarkRunner bm = (BenchmarkRunner) Class.forName(args[0]).newInstance();
+            final String canonicalName = String.format("%s.%s.Benchmark", BenchmarkRunner.class.getPackage().getName(), args[0]);
+            final BenchmarkRunner bm = (BenchmarkRunner) Class.forName(canonicalName).newInstance();
             final String[] bmArgs = Arrays.copyOfRange(args, 1, args.length);
 
             if (System.getProperty("config") != null) {
