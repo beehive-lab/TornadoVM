@@ -24,6 +24,12 @@ public abstract class BenchmarkDriver {
             .parseBoolean(System.getProperty(
                     "tornado.benchmarks.memusage",
                     "false"));
+
+    private static final boolean VALIDATE = Boolean
+            .parseBoolean(System.getProperty(
+                    "tornado.benchmarks.validate",
+                    "True"));
+
     public static final float MAX_ULP = Float.parseFloat(System.getProperty("tornado.benchmarks.maxulp", "5.0"));
 
     protected final long iterations;
@@ -60,17 +66,17 @@ public abstract class BenchmarkDriver {
 
         setUp();
 
-        validResult = validate();
+        validResult = (VALIDATE) ? validate() : true;
 
         if (validResult) {
 
-            long start = System.nanoTime();
+            final long start = System.nanoTime();
             for (long i = 0; i < iterations; i++) {
                 code();
             }
 
             barrier();
-            long end = System.nanoTime();
+            final long end = System.nanoTime();
 
             elapsed = elapsedTimeInSeconds(start, end);
 

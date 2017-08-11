@@ -103,6 +103,10 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public void setGlobalWork(long[] values) {
+        if (globalWorkDefined) {
+            return;
+        }
+
         for (int i = 0; i < values.length; i++) {
             globalWork[i] = values[i];
         }
@@ -249,7 +253,9 @@ public class TaskMetaData extends AbstractMetaData {
 
         final int dims = domain.getDepth();
         globalOffset = new long[dims];
-        globalWork = new long[dims];
+        if (!globalWorkDefined) {
+            globalWork = new long[dims];
+        }
         if (localWorkDefined) {
             guarantee(localWork.length == dims, "task %s has local work dims specified of wrong length", getId());
         } else {

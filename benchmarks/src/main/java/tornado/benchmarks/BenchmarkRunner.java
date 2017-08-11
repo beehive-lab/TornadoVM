@@ -25,6 +25,11 @@ import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public abstract class BenchmarkRunner {
 
+    private static final boolean SKIP_SERIAL = Boolean
+            .parseBoolean(System.getProperty(
+                    "tornado.benchmarks.skipserial",
+                    "False"));
+
     protected abstract String getName();
 
     protected abstract String getIdString();
@@ -47,19 +52,24 @@ public abstract class BenchmarkRunner {
         System.out.printf("benchmark=%s, iterations=%d, %s\n", id, iterations,
                 getConfigString());
 
-        final BenchmarkDriver referenceTest = getJavaDriver();
-        referenceTest.benchmark();
+        final double refElapsed;
+        if (!SKIP_SERIAL) {
+            final BenchmarkDriver referenceTest = getJavaDriver();
+            referenceTest.benchmark();
 
-        System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-reference",
-                referenceTest.getSummary());
+            System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-reference",
+                    referenceTest.getSummary());
 
-        final double refElapsed = referenceTest.getElapsed();
+            refElapsed = referenceTest.getElapsed();
 
-        final BenchmarkDriver streamsTest = getStreamsDriver();
-        if (streamsTest != null) {
-            streamsTest.benchmark();
-            System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-streams",
-                    streamsTest.getSummary());
+            final BenchmarkDriver streamsTest = getStreamsDriver();
+            if (streamsTest != null) {
+                streamsTest.benchmark();
+                System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-streams",
+                        streamsTest.getSummary());
+            }
+        } else {
+            refElapsed = -1;
         }
 
         final boolean tornadoEnabled = Boolean.parseBoolean(getProperty("tornado.enable", "True"));

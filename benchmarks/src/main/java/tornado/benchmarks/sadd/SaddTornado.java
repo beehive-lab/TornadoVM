@@ -98,6 +98,13 @@ public class SaddTornado extends BenchmarkDriver {
         return ulp < MAX_ULP;
     }
 
+    @Override
+    protected void barrier() {
+        if (Boolean.parseBoolean(getProperty("benchmark.copyout", "True"))) {
+            graph.syncObjects(c);
+        }
+    }
+
     public void printSummary() {
         if (isValid()) {
             System.out.printf(
