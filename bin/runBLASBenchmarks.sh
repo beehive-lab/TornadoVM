@@ -1,8 +1,6 @@
 #!/bin/bash
 
-PACKAGE="tornado.benchmarks"
 BENCHMARKS="scopy striad sadd saxpy sgemv sgemm spmv"
-MAIN_CLASS="Benchmark"
 
 TORNADO_CMD="tornado"
 
@@ -10,7 +8,7 @@ TORNADO_CMD="tornado"
 BASE_BM_FLAGS="-Dtornado.opencl.eventwindow=10240 -Dtornado.profiling.enable=True -Dbenchmark.profiles.print=True"
 
 if [ -z "${TORNADO_BM_FLAGS}" ]; then
-	TORNADO_BM_FLAGS="-Xms8G -Dtornado.kernels.coarsener=False -Dtornado.opencl.schedule=True"
+	TORNADO_BM_FLAGS="-Xms8G -Dbenchmark.streamin=False -Dbenchmark.streamout=False"
 fi
 
 TORNADO_FLAGS="${TORNADO_FLAGS} ${BASE_BM_FLAGS} ${TORNADO_BM_FLAGS}"
@@ -48,7 +46,7 @@ for bm in ${BENCHMARKS}; do
 	for (( i=0; i<${ITERATIONS}; i++ )); do
 		echo "running ${i} ${bm} ..."
 		OUTFILE="${LOGFILE}-${bm}-${i}.log"
-		${TORNADO_CMD} ${TORNADO_FLAGS} -Ddevices=${DEVICES} tornado.benchmarks.BenchmarkRunner ${PACKAGE}.${bm}.${MAIN_CLASS} >> "${OUTFILE}"
+		${TORNADO_CMD} ${TORNADO_FLAGS} -Ddevices=${DEVICES} tornado.benchmarks.BenchmarkRunner ${bm} >> "${OUTFILE}"
 		${TORNADO_ROOT}/bin/convert2csv.sh ${OUTFILE}
 	done
 done
