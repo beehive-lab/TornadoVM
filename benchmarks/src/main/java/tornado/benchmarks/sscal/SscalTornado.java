@@ -13,27 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tornado.benchmarks.striad;
+package tornado.benchmarks.sscal;
 
-import java.util.Arrays;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.LinearAlgebraArrays;
 import tornado.runtime.api.TaskSchedule;
 
-import static tornado.benchmarks.LinearAlgebraArrays.striad;
+import static tornado.benchmarks.LinearAlgebraArrays.sscal;
 import static tornado.collections.math.TornadoMath.findULPDistance;
 import static tornado.common.Tornado.getProperty;
 
-public class StriadTornado extends BenchmarkDriver {
+public class SscalTornado extends BenchmarkDriver {
 
     private final int numElements;
 
-    private float[] x, y, z;
-    private final float alpha = 2f;
+    private static final float alpha = 2f;
+    private float[] x;
 
     private TaskSchedule graph;
 
-    public StriadTornado(int iterations, int numElements) {
+    public SscalTornado(int iterations, int numElements) {
         super(iterations);
         this.numElements = numElements;
     }
@@ -41,21 +40,19 @@ public class StriadTornado extends BenchmarkDriver {
     @Override
     public void setUp() {
         x = new float[numElements];
-        y = new float[numElements];
-        z = new float[numElements];
 
-        Arrays.fill(x, 1);
-        Arrays.fill(y, 2);
+        for (int i = 0; i < numElements; i++) {
+            x[i] = i;
+        }
 
         graph = new TaskSchedule("benchmark");
         if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
-            graph.streamIn(x, y);
+            graph.streamIn(x);
         }
-
-        graph.task("striad", LinearAlgebraArrays::striad, alpha, x, y, z);
+        graph.task("sscal", LinearAlgebraArrays::sscal, alpha, x);
 
         if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
-            graph.streamOut(z);
+            graph.streamOut(x);
         }
 
         if (Boolean.parseBoolean(getProperty("benchmark.warmup", "True"))) {
@@ -68,8 +65,6 @@ public class StriadTornado extends BenchmarkDriver {
         graph.dumpProfiles();
 
         x = null;
-        y = null;
-        z = null;
 
         graph.getDevice().reset();
         super.tearDown();
@@ -86,12 +81,12 @@ public class StriadTornado extends BenchmarkDriver {
         final float[] result = new float[numElements];
 
         code();
-        graph.syncObjects(z);
+        graph.syncObjects(x);
         graph.clearProfiles();
 
-        striad(alpha, x, y, result);
+        sscal(alpha, result);
 
-        final float ulp = findULPDistance(z, result);
+        final float ulp = findULPDistance(x, result);
         return ulp < MAX_ULP;
     }
 

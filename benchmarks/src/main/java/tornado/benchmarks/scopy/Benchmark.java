@@ -37,7 +37,7 @@ public class Benchmark extends BenchmarkRunner {
 
     @Override
     protected String getName() {
-        return "saxpy";
+        return "scopy";
     }
 
     @Override

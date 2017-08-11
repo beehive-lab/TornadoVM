@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tornado.benchmarks.striad;
+package tornado.benchmarks.sscal;
 
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.BenchmarkRunner;
+import tornado.benchmarks.scopy.ScopyJava;
+import tornado.benchmarks.scopy.ScopyTornado;
 
 public class Benchmark extends BenchmarkRunner {
 
@@ -37,7 +39,7 @@ public class Benchmark extends BenchmarkRunner {
 
     @Override
     protected String getName() {
-        return "striad";
+        return "sscal";
     }
 
     @Override
@@ -52,12 +54,12 @@ public class Benchmark extends BenchmarkRunner {
 
     @Override
     protected BenchmarkDriver getJavaDriver() {
-        return new StriadJava(iterations, size);
+        return new ScopyJava(iterations, size);
     }
 
     @Override
     protected BenchmarkDriver getTornadoDriver() {
-        return new StriadTornado(iterations, size);
+        return new ScopyTornado(iterations, size);
     }
 
 }
