@@ -48,7 +48,7 @@ public class SaxpyTornado extends BenchmarkDriver {
 
         graph = new TaskSchedule("benchmark");
         if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
-            graph.streamIn(x, y);
+            graph.streamIn(x);
         }
 
         graph.task("saxpy", LinearAlgebraArrays::saxpy, alpha, x, y);
@@ -84,6 +84,7 @@ public class SaxpyTornado extends BenchmarkDriver {
         final float[] result = new float[numElements];
 
         code();
+        graph.syncObjects(y);
         graph.clearProfiles();
 
         saxpy(alpha, x, result);
