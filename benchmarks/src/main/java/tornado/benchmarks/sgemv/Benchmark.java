@@ -39,7 +39,7 @@ public class Benchmark extends BenchmarkRunner {
 
     @Override
     protected String getName() {
-        return "sgemm";
+        return "sgemv";
     }
 
     @Override
