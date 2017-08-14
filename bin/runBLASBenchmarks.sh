@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BENCHMARKS="scopy striad sadd saxpy sgemv sgemm spmv"
+BENCHMARKS="scopy sscal striad sadd saxpy sgemv sgemm spmv"
 
 TORNADO_CMD="tornado"
 
