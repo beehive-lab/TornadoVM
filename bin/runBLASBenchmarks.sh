@@ -40,7 +40,7 @@ if [ -e ${TORNADO_ROOT}/.git ]; then
 	echo $(git rev-parse HEAD) > "${BM_ROOT}/git.sha"
 fi
 
-${TORNADO_CMD} -Xms8G -Ddevices=${DEVICES} -Dstartsize=2 -Dendsize=16777216 tornado.benchmarks.DataMovement > "${BM_ROOT}/data-movement.csv"
+#${TORNADO_CMD} -Xms8G -Ddevices=${DEVICES} -Dstartsize=2 -Dendsize=16777216 tornado.benchmarks.DataMovement > "${BM_ROOT}/data-movement.csv"
 
 for bm in ${BENCHMARKS}; do
 	for (( i=0; i<${ITERATIONS}; i++ )); do
