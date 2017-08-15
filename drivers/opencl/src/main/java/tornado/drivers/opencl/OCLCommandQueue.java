@@ -238,7 +238,7 @@ public class OCLCommandQueue extends TornadoLogger {
     }
 
     private void findNextEventSlot() {
-        eventIndex = retain.nextClearBit(eventIndex);
+        eventIndex = retain.nextClearBit(eventIndex + 1);
         guarantee(eventIndex != -1, "event window is full (retained=%d, capacity=%d)", retain.cardinality(), EVENT_WINDOW);
     }
 
