@@ -17,6 +17,7 @@ package tornado.drivers.opencl;
 
 import static tornado.common.Tornado.FORCE_ALL_TO_GPU;
 import static tornado.common.Tornado.fatal;
+import static tornado.drivers.opencl.OpenCL.ACCELERATOR_IS_GPU;
 
 public class OCLScheduler {
 
@@ -31,6 +32,9 @@ public class OCLScheduler {
                 case CL_DEVICE_TYPE_GPU:
                     return new OCLGpuScheduler(context);
                 case CL_DEVICE_TYPE_CPU:
+                    return (ACCELERATOR_IS_GPU)
+                            ? new OCLGpuScheduler(context)
+                            : new OCLCpuScheduler(context);
                 case CL_DEVICE_TYPE_ACCELERATOR:
                     return new OCLCpuScheduler(context);
                 default:

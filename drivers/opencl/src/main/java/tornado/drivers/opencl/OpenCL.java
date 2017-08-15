@@ -22,6 +22,8 @@ import tornado.common.Tornado;
 import tornado.common.exceptions.TornadoRuntimeException;
 import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
+import static tornado.common.Tornado.getProperty;
+
 public class OpenCL {
 
     public static final String OPENCL_LIBRARY = "tornado-opencl";
@@ -30,8 +32,11 @@ public class OpenCL {
 
     private static final List<OCLPlatform> platforms = new ArrayList<>();
 
-    public final static boolean DUMP_OPENCL_EVENTS = Boolean.parseBoolean(Tornado
-            .getProperty("tornado.opencl.events.dump", "False"));
+    public final static boolean DUMP_OPENCL_EVENTS = Boolean.parseBoolean(
+            getProperty("tornado.opencl.events.dump", "False"));
+
+    public final static boolean ACCELERATOR_IS_GPU = Boolean.parseBoolean(
+            getProperty("tornado.opencl.accelerator.asgpu", "True"));
 
     public static final ByteOrder BYTE_ORDER = ByteOrder.LITTLE_ENDIAN;
 
@@ -147,7 +152,7 @@ public class OpenCL {
                     System.out.printf("[%d:%d] device: %s\n", platformIndex,
                             deviceIndex,
                             context.createDeviceContext(deviceIndex)
-                            .getDevice().getName());
+                                    .getDevice().getName());
                 }
             }
 
