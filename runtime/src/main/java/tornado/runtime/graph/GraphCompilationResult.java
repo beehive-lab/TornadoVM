@@ -17,14 +17,18 @@ package tornado.runtime.graph;
 
 import tornado.runtime.graph.nodes.*;
 
+import static tornado.common.Tornado.getProperty;
+
 public class GraphCompilationResult {
+
+    public static final int MAX_TVM_BYTECODE_SIZE = Integer.parseInt(getProperty("tornado.tvm.maxbytecodesize", "1024"));
 
     private byte[] code;
     private GraphAssembler asm;
     private int gtid;
 
     public GraphCompilationResult() {
-        code = new byte[1024];
+        code = new byte[MAX_TVM_BYTECODE_SIZE];
         asm = new GraphAssembler(code);
         gtid = 0;
     }

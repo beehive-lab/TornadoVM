@@ -32,6 +32,7 @@ import tornado.meta.domain.DomainTree;
 import tornado.meta.domain.IntDomain;
 
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
+import static tornado.drivers.opencl.OpenCL.OCL_CALL_STACK_LIMIT;
 
 public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 
@@ -58,7 +59,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     public OCLMemoryManager(final OCLDeviceContext device) {
 
         deviceContext = device;
-        callStackLimit = 8192;
+        callStackLimit = OCL_CALL_STACK_LIMIT;
         initialised = false;
 //        System.out.printf("device id %s\n", device.getId());
         scheduleMeta = new ScheduleMetaData("mm-" + device.getDeviceId());
