@@ -8,7 +8,7 @@ TORNADO_CMD="tornado"
 BASE_BM_FLAGS="-Dtornado.opencl.eventwindow=10240 -Dtornado.profiling.enable=True -Dbenchmark.profiles.print=True"
 
 if [ -z "${TORNADO_BM_FLAGS}" ]; then
-	TORNADO_BM_FLAGS="-Xms8G -Dbenchmark.streamin=False -Dbenchmark.streamout=False"
+	TORNADO_BM_FLAGS="-Xms8G -server -Dbenchmark.streamin=False -Dbenchmark.streamout=False"
 fi
 
 TORNADO_FLAGS="${TORNADO_FLAGS} ${BASE_BM_FLAGS} ${TORNADO_BM_FLAGS}"
