@@ -23,17 +23,18 @@ public class OOOTest {
 
     public static final void main(String[] args) {
 
+        int[] sizes = new int[]{4096, 8, 512, 64, 2048, 128, 8, 1024};
         int numArrays = Integer.parseInt(args[0]);
-        int n = Integer.parseInt(args[1]);
-        float[][] As = new float[numArrays][n * n];
-        float[][] Bs = new float[numArrays][n * n];
-        float[][] Cs = new float[numArrays][n * n];
+        float[][] As = new float[numArrays][];
+        float[][] Bs = new float[numArrays][];
+        float[][] Cs = new float[numArrays][];
 
-        System.out.printf("using %d arrays of %d x %d elements\n", numArrays, n, n);
+        System.out.printf("using %d maxtricies\n", numArrays);
 
         final Random random = new Random();
         TaskSchedule graph = new TaskSchedule("example");
         for (int ii = 0; ii < numArrays; ii++) {
+            int n = sizes[ii % sizes.length];
             float[] a = new float[n * n];
             float[] b = new float[n * n];
             float[] c = new float[n * n];
