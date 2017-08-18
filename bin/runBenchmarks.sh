@@ -45,7 +45,7 @@ for bm in ${BENCHMARKS}; do
 	for (( i=0; i<${ITERATIONS}; i++ )); do
 		echo "running ${i} ${bm} ..."
 		OUTFILE="${LOGFILE}-${bm}-${i}.log"
-		${TORNADO_CMD} ${TORNADO_FLAGS} -Ddevices=${DEVICES} ${bm} >> "${OUTFILE}"
+		${TORNADO_CMD} ${TORNADO_FLAGS} -Ddevices=${DEVICES} tornado.benchmarks.BenchmarkRunner ${bm} >> "${OUTFILE}"
 		${TORNADO_ROOT}/bin/convert2csv.sh ${OUTFILE}
 	done
 done
