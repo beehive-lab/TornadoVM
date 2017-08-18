@@ -31,11 +31,11 @@ public class OCLScheduler {
             switch (context.getDevice().getDeviceType()) {
                 case CL_DEVICE_TYPE_GPU:
                     return new OCLGpuScheduler(context);
-                case CL_DEVICE_TYPE_CPU:
+                case CL_DEVICE_TYPE_ACCELERATOR:
                     return (ACCELERATOR_IS_GPU)
                             ? new OCLGpuScheduler(context)
                             : new OCLCpuScheduler(context);
-                case CL_DEVICE_TYPE_ACCELERATOR:
+                case CL_DEVICE_TYPE_CPU:
                     return new OCLCpuScheduler(context);
                 default:
                     fatal("No scheduler available for device: %s", context);
