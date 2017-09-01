@@ -326,6 +326,8 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
     public void dumpEvents() {
         List<OCLEvent> events = queue.getEvents();
 
+        final String deviceName = "opencl-" + context.getPlatformIndex() + "-" + device.getIndex();
+        System.out.printf("Found %d events on device %s:\n", events.size(), deviceName);
         if (events.isEmpty()) {
             return;
         }
@@ -337,8 +339,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
             }
             return result;
         });
-        final String deviceName = "opencl-" + context.getPlatformIndex() + "-" + device.getIndex();
-        System.out.printf("Found %d events on device %s:\n", events.size(), deviceName);
 
         long base = events.get(0).getCLSubmitTime();
         System.out.println("event: device,type,info,submitted,start,end,status");
