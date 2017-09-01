@@ -105,7 +105,7 @@ public class RotateTornado extends BenchmarkDriver {
             }
         }
 
-        return maxULP < MAX_ULP;
+        return Float.compare(maxULP, MAX_ULP) <= 0;
     }
 
     public void printSummary() {

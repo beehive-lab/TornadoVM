@@ -93,7 +93,7 @@ public class DotTornado extends BenchmarkDriver {
         GraphicsKernels.dotVector(a, b, result);
 
         final float ulp = findULPDistance(result, c);
-        return ulp < MAX_ULP;
+        return Float.compare(ulp, MAX_ULP) <= 0;
     }
 
     public void printSummary() {
