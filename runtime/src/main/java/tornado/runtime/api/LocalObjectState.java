@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@ package tornado.runtime.api;
 import tornado.api.Event;
 import tornado.common.DeviceObjectState;
 import tornado.common.TornadoDevice;
+import tornado.runtime.EmptyEvent;
 
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
@@ -53,11 +54,11 @@ public class LocalObjectState {
     }
 
     public boolean isModified() {
-        return device.isModified();
+        return global.getDeviceState(getOwner()).isModified();
     }
 
     public void setModified(boolean modified) {
-        device.setModified(modified);
+        global.getDeviceState(getOwner()).setModified(modified);
     }
 
     public boolean isShared() {
@@ -89,12 +90,13 @@ public class LocalObjectState {
     }
 
     public Event sync(Object object) {
-//        if (isModified()) {
-        TornadoDevice owner = getOwner();
-        int eventId = owner.streamOut(object, device, null);
-        return owner.resolveEvent(eventId);
-//        }
-//        return null;
+        if (isModified()) {
+            TornadoDevice owner = getOwner();
+            int eventId = owner.streamOut(object, global.getDeviceState(owner), null);
+            setModified(false);
+            return owner.resolveEvent(eventId);
+        }
+        return new EmptyEvent();
     }
 
     @Override
