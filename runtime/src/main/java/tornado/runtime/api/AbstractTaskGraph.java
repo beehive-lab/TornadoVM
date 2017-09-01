@@ -149,6 +149,9 @@ public abstract class AbstractTaskGraph {
         final Graph graph = GraphBuilder.buildGraph(graphContext, buffer);
 //		final long t1 = System.nanoTime();
         result = GraphCompiler.compile(graph, graphContext);
+        graphContext.print();
+        graph.print();
+        result.dump();
 //		final long t2 = System.nanoTime();
         vm = new TornadoVM(graphContext, result.getCode(), result.getCodeSize());
 //		final long t3 = System.nanoTime();
@@ -270,6 +273,31 @@ public abstract class AbstractTaskGraph {
         }
     }
 
+    public void syncObject(Object object) {
+        if (vm == null) {
+            return;
+        }
+        graphContext.sync();
+//        syncObjectInner(object).waitOn();
+    }
+
+    private Event syncObjectInner(Object object) {
+        final LocalObjectState localState = graphContext.getObjectState(object);
+        final GlobalObjectState globalState = localState.getGlobalState();
+        final DeviceObjectState deviceState = globalState.getDeviceState();
+        final TornadoDevice device = globalState.getOwner();
+        final Event event = device.resolveEvent(device.streamOut(object, deviceState, null));
+        return event;
+    }
+
+    public void syncObjects() {
+        if (vm == null) {
+            return;
+        }
+
+        graphContext.sync();
+    }
+
     public void syncObjects(Object... objects) {
         if (vm == null) {
             return;
@@ -278,12 +306,7 @@ public abstract class AbstractTaskGraph {
         Event[] events = new Event[objects.length];
         for (int i = 0; i < objects.length; i++) {
             Object object = objects[i];
-            final LocalObjectState localState = graphContext.getObjectState(object);
-            final GlobalObjectState globalState = localState.getGlobalState();
-            final DeviceObjectState deviceState = globalState.getDeviceState();
-            final TornadoDevice device = globalState.getOwner();
-            events[i] = device.resolveEvent(device.streamOut(object, deviceState, null));
-//            events[i] = localState.sync(object);
+            events[i] = syncObjectInner(object);
         }
 
         for (Event event : events) {
