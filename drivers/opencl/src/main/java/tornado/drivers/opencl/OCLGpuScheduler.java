@@ -53,9 +53,14 @@ public class OCLGpuScheduler extends OCLKernelScheduler {
 
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (long) (meta.getDomain().get(i).cardinality()); /// utils[utilsIndex]);
+
             /*
-             * if( value % 32 != 0){ value = ((value / 32) + 1) * 32; }
+             * adjust for irregular problem sizes
              */
+            if (value % 32 != 0) {
+                value = ((value / 32) + 1) * 32;
+            }
+
             globalWork[i] = value;
         }
 
