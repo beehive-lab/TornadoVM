@@ -384,6 +384,8 @@ public class TornadoVM extends TornadoLogger {
                                 || accesses[i] == READ_WRITE) {
                             globalState.setOwner(device);
                             objectState.setContents(true);
+
+                            objectState.setModified(true);
                         }
                     } else {
                         shouldNotReachHere();
