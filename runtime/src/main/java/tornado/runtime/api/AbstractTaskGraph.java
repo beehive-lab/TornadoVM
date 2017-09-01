@@ -149,9 +149,6 @@ public abstract class AbstractTaskGraph {
         final Graph graph = GraphBuilder.buildGraph(graphContext, buffer);
 //		final long t1 = System.nanoTime();
         result = GraphCompiler.compile(graph, graphContext);
-        graphContext.print();
-        graph.print();
-        result.dump();
 //		final long t2 = System.nanoTime();
         vm = new TornadoVM(graphContext, result.getCode(), result.getCodeSize());
 //		final long t3 = System.nanoTime();
