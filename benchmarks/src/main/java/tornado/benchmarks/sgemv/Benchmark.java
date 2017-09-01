@@ -32,8 +32,8 @@ public class Benchmark extends BenchmarkRunner {
 
         } else {
             iterations = 20;
-            width = 512;
-            height = 512;
+            width = 4096;
+            height = 4096;
         }
     }
 

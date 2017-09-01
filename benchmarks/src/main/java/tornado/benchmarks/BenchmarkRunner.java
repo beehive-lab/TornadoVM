@@ -30,6 +30,11 @@ public abstract class BenchmarkRunner {
                     "tornado.benchmarks.skipserial",
                     "False"));
 
+    private static final boolean SKIP_STREAMS = Boolean
+            .parseBoolean(System.getProperty(
+                    "tornado.benchmarks.skipstreams",
+                    "True"));
+
     protected abstract String getName();
 
     protected abstract String getIdString();
@@ -63,7 +68,7 @@ public abstract class BenchmarkRunner {
             refElapsed = referenceTest.getElapsed();
 
             final BenchmarkDriver streamsTest = getStreamsDriver();
-            if (streamsTest != null) {
+            if (streamsTest != null && !SKIP_STREAMS) {
                 streamsTest.benchmark();
                 System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-streams",
                         streamsTest.getSummary());

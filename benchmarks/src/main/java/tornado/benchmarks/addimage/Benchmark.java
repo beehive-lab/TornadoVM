@@ -13,49 +13,53 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tornado.benchmarks.stencil;
+package tornado.benchmarks.addimage;
 
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.BenchmarkRunner;
 
 public class Benchmark extends BenchmarkRunner {
 
-    private int size;
-
-    @Override
-    public void parseArgs(String[] args) {
-        if (args.length == 2) {
-            iterations = Integer.parseInt(args[0]);
-            size = Integer.parseInt(args[1]);
-        } else {
-            iterations = 10;
-            size = 1048576;
-        }
-    }
+    private int width;
+    private int height;
 
     @Override
     protected String getName() {
-        return "stencil";
+        return "add-image";
     }
 
     @Override
     protected String getIdString() {
-        return String.format("%s-%d-%d", getName(), iterations, size);
+        return String.format("%s-%d-%d-%d", getName(), iterations, width, height);
     }
 
     @Override
     protected String getConfigString() {
-        return String.format("num elements=%d", size);
+        return String.format("width=%d, height=%d", width, height);
     }
 
     @Override
     protected BenchmarkDriver getJavaDriver() {
-        return new StencilJava(iterations, size);
+        return new AddJava(iterations, width, height);
     }
 
     @Override
     protected BenchmarkDriver getTornadoDriver() {
-        return new StencilTornado(iterations, size);
+        return new AddTornado(iterations, width, height);
+    }
+
+    @Override
+    public void parseArgs(String[] args) {
+        if (args.length == 3) {
+            iterations = Integer.parseInt(args[0]);
+            width = Integer.parseInt(args[1]);
+            height = Integer.parseInt(args[1]);
+
+        } else {
+            iterations = 100;
+            width = 2048;
+            height = 2048;
+        }
     }
 
 }

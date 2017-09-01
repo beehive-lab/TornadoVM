@@ -23,9 +23,6 @@ import tornado.runtime.api.TaskSchedule;
 import static tornado.benchmarks.BenchmarkUtils.createFilter;
 import static tornado.benchmarks.BenchmarkUtils.createImage;
 import static tornado.common.Tornado.getProperty;
-import static tornado.benchmarks.BenchmarkUtils.createFilter;
-import static tornado.benchmarks.BenchmarkUtils.createImage;
-import static tornado.common.Tornado.getProperty;
 
 public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
@@ -52,13 +49,20 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         createImage(input, imageSizeX, imageSizeY);
         createFilter(filter, filterSize, filterSize);
 
-        graph = new TaskSchedule("benchmark")
-                .task("convolveImageArray", GraphicsKernels::convolveImageArray,
-                        input, filter, output, imageSizeX, imageSizeY, filterSize,
-                        filterSize)
-                .streamOut(output);
+        graph = new TaskSchedule("benchmark");
+        if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
+            graph.streamIn(input);
+        }
+        graph.task("convolveImageArray", GraphicsKernels::convolveImageArray,
+                input, filter, output, imageSizeX, imageSizeY, filterSize,
+                filterSize);
+        if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
+            graph.streamOut(output);
+        }
 
-        graph.warmup();
+        if (Boolean.parseBoolean(getProperty("benchmark.warmup", "True"))) {
+            graph.warmup();
+        }
 
     }
 
@@ -85,6 +89,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         final float[] result = new float[imageSizeX * imageSizeY];
 
         code();
+        graph.syncObject(output);
         graph.clearProfiles();
 
         GraphicsKernels.convolveImageArray(input, filter, result, imageSizeX,

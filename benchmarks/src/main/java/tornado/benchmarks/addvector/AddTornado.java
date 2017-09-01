@@ -23,7 +23,6 @@ import tornado.collections.types.VectorFloat4;
 import tornado.runtime.api.TaskSchedule;
 
 import static tornado.common.Tornado.getProperty;
-import static tornado.common.Tornado.getProperty;
 
 public class AddTornado extends BenchmarkDriver {
 
@@ -51,11 +50,18 @@ public class AddTornado extends BenchmarkDriver {
             b.set(i, valueB);
         }
 
-        graph = new TaskSchedule("benchmark")
-                .task("addvector", GraphicsKernels::addVector, a, b, c)
-                .streamOut(c);
+        graph = new TaskSchedule("benchmark");
+        if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
+            graph.streamIn(a, b);
+        }
+        graph.task("addvector", GraphicsKernels::addVector, a, b, c);
+        if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
+            graph.streamOut(c);
+        }
 
-        graph.warmup();
+        if (Boolean.parseBoolean(getProperty("benchmark.warmup", "True"))) {
+            graph.warmup();
+        }
     }
 
     @Override
@@ -81,6 +87,7 @@ public class AddTornado extends BenchmarkDriver {
         final VectorFloat4 result = new VectorFloat4(numElements);
 
         code();
+        graph.syncObject(c);
         graph.clearProfiles();
 
         GraphicsKernels.addVector(a, b, result);

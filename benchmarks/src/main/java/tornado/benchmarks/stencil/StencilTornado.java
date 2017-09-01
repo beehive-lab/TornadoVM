@@ -49,24 +49,23 @@ public class StencilTornado extends BenchmarkDriver {
         a1 = new float[sz * sz * sz];
         ainit = new float[sz * sz * sz];
 
-        Arrays.fill(a0, 0);
         Arrays.fill(a1, 0);
-        Arrays.fill(ainit, 0);
 
         final Random rand = new Random(7);
         for (int i = 1; i < n + 1; i++) {
             for (int j = 1; j < n + 1; j++) {
                 for (int k = 1; k < n + 1; k++) {
-                    ainit[i * sz * sz + j * sz + k] = rand.nextFloat();
+                    ainit[(i * sz * sz) + (j * sz) + k] = rand.nextFloat();
                 }
             }
         }
 
-        System.arraycopy(ainit, 0, a0, 0, ainit.length);
+        copy(sz, ainit, a0);
 
         graph = new TaskSchedule("benchmark")
                 .task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC)
-                .task("copy", Stencil::copy, sz, a0, a1);
+                .task("copy", Stencil::copy, sz, a1, a0);
+//                .streamOut(a0);
 
         stencilTask = graph.getTask("stencil");
 
@@ -96,24 +95,28 @@ public class StencilTornado extends BenchmarkDriver {
         final float[] b0 = new float[ainit.length];
         final float[] b1 = new float[ainit.length];
 
-        System.arraycopy(ainit, 0, b0, 0, ainit.length);
+        copy(sz, ainit, b0);
         for (int i = 0; i < iterations; i++) {
             code();
         }
+        barrier();
         graph.clearProfiles();
 
         for (int i = 0; i < iterations; i++) {
             stencil3d(n, sz, b0, b1, FAC);
-            copy(sz, b0, b1);
+            copy(sz, b1, b0);
         }
 
+        System.out.println(Arrays.toString(a0));
+        System.out.println("----");
+        System.out.println(Arrays.toString(b0));
         final float ulp = findULPDistance(a0, b0);
         return ulp < MAX_ULP;
     }
 
     @Override
     protected void barrier() {
-        graph.syncObjects(a0);
+        graph.syncObjects();
     }
 
     public void printSummary() {

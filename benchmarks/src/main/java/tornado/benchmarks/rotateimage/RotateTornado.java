@@ -25,8 +25,6 @@ import tornado.runtime.api.TaskSchedule;
 import static tornado.benchmarks.GraphicsKernels.rotateImage;
 import static tornado.collections.types.FloatOps.findMaxULP;
 import static tornado.common.Tornado.getProperty;
-import static tornado.collections.types.FloatOps.findMaxULP;
-import static tornado.common.Tornado.getProperty;
 
 public class RotateTornado extends BenchmarkDriver {
 
@@ -58,12 +56,19 @@ public class RotateTornado extends BenchmarkDriver {
             }
         }
 
-        graph = new TaskSchedule("benchmark")
-                .task("rotateImage", GraphicsKernels::rotateImage, output, m,
-                        input)
-                .streamOut(output);
+        graph = new TaskSchedule("benchmark");
+        if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
+            graph.streamIn(input);
+        }
+        graph.task("rotateImage", GraphicsKernels::rotateImage, output, m,
+                input);
+        if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
+            graph.streamOut(output);
+        }
 
-        graph.warmup();
+        if (Boolean.parseBoolean(getProperty("benchmark.warmup", "True"))) {
+            graph.warmup();
+        }
     }
 
     @Override
@@ -89,6 +94,7 @@ public class RotateTornado extends BenchmarkDriver {
         final ImageFloat3 result = new ImageFloat3(numElementsX, numElementsY);
 
         code();
+        graph.syncObjects(output);
         graph.clearProfiles();
 
         rotateImage(result, m, input);

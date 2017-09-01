@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2012 James Clarkson.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +20,7 @@ import tornado.api.Parallel;
 import tornado.collections.types.*;
 
 import static tornado.collections.graphics.GraphicsMath.rotate;
-import static tornado.collections.types.Float3.add;
+import static tornado.collections.types.Float4.add;
 
 public final class GraphicsKernels {
 
@@ -95,8 +95,8 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void addImage(ImageFloat3 a, ImageFloat3 b,
-            ImageFloat3 c) {
+    public static void addImage(ImageFloat4 a, ImageFloat4 b,
+            ImageFloat4 c) {
 
         for (@Parallel int i = 0; i < c.Y(); i++) {
             for (@Parallel int j = 0; j < c.X(); j++) {

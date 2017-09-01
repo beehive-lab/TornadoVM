@@ -13,49 +13,53 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tornado.benchmarks.dotvector;
+package tornado.benchmarks.addimage;
 
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
-import tornado.collections.types.Float3;
-import tornado.collections.types.VectorFloat3;
+import tornado.collections.types.Float4;
+import tornado.collections.types.ImageFloat4;
 import tornado.runtime.api.TaskSchedule;
 
-import static tornado.collections.math.TornadoMath.findULPDistance;
+import static tornado.benchmarks.BenchmarkDriver.MAX_ULP;
+import static tornado.collections.types.FloatOps.findMaxULP;
 import static tornado.common.Tornado.getProperty;
 
-public class DotTornado extends BenchmarkDriver {
+public class AddTornado extends BenchmarkDriver {
 
-    private final int numElements;
+    private final int numElementsX;
+    private final int numElementsY;
 
-    private VectorFloat3 a, b;
-    private float[] c;
+    private ImageFloat4 a, b, c;
 
     private TaskSchedule graph;
 
-    public DotTornado(int iterations, int numElements) {
+    public AddTornado(int iterations, int numElementsX, int numElementsY) {
         super(iterations);
-        this.numElements = numElements;
+        this.numElementsX = numElementsX;
+        this.numElementsY = numElementsY;
     }
 
     @Override
     public void setUp() {
-        a = new VectorFloat3(numElements);
-        b = new VectorFloat3(numElements);
-        c = new float[numElements];
+        a = new ImageFloat4(numElementsX, numElementsY);
+        b = new ImageFloat4(numElementsX, numElementsY);
+        c = new ImageFloat4(numElementsX, numElementsY);
 
-        final Float3 valueA = new Float3(new float[]{1f, 1f, 1f});
-        final Float3 valueB = new Float3(new float[]{2f, 2f, 2f});
-        for (int i = 0; i < numElements; i++) {
-            a.set(i, valueA);
-            b.set(i, valueB);
+        final Float4 valueA = new Float4(new float[]{1f, 1f, 1f, 1f});
+        final Float4 valueB = new Float4(new float[]{2f, 2f, 2f, 2f});
+        for (int j = 0; j < numElementsY; j++) {
+            for (int i = 0; i < numElementsX; i++) {
+                a.set(i, j, valueA);
+                b.set(i, j, valueB);
+            }
         }
 
         graph = new TaskSchedule("benchmark");
         if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
             graph.streamIn(a, b);
         }
-        graph.task("dotVector", GraphicsKernels::dotVector, a, b, c);
+        graph.task("addvector", GraphicsKernels::addImage, a, b, c);
         if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
             graph.streamOut(c);
         }
@@ -85,15 +89,26 @@ public class DotTornado extends BenchmarkDriver {
     @Override
     public boolean validate() {
 
-        final float[] result = new float[numElements];
+        final ImageFloat4 result = new ImageFloat4(numElementsX, numElementsY);
 
         code();
+        graph.syncObject(c);
         graph.clearProfiles();
 
-        GraphicsKernels.dotVector(a, b, result);
+        GraphicsKernels.addImage(a, b, result);
 
-        final float ulp = findULPDistance(result, c);
-        return ulp < MAX_ULP;
+        float maxULP = 0f;
+        for (int i = 0; i < c.Y(); i++) {
+            for (int j = 0; j < c.X(); j++) {
+                final float ulp = findMaxULP(c.get(j, i),
+                        result.get(j, i));
+
+                if (ulp > maxULP) {
+                    maxULP = ulp;
+                }
+            }
+        }
+        return maxULP < MAX_ULP;
     }
 
     public void printSummary() {
@@ -107,4 +122,5 @@ public class DotTornado extends BenchmarkDriver {
                     getProperty("benchmark.device"));
         }
     }
+
 }
