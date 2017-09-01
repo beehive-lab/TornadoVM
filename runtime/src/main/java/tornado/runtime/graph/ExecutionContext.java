@@ -18,8 +18,13 @@ package tornado.runtime.graph;
 import java.util.*;
 import java.util.function.Consumer;
 import tornado.api.meta.ScheduleMetaData;
-import tornado.common.*;
+import tornado.common.CallStack;
+import tornado.common.RuntimeUtilities;
+import tornado.common.SchedulableTask;
+import tornado.common.TornadoDevice;
 import tornado.runtime.api.LocalObjectState;
+
+import static tornado.common.Tornado.info;
 
 public class ExecutionContext {
 
@@ -142,7 +147,7 @@ public class ExecutionContext {
         String id = task.getId();
         TornadoDevice target = task.getDevice();
 
-        Tornado.info("assigning %s to %s\n", id, target.getDeviceName());
+        info("assigning %s to %s", id, target.getDeviceName());
 
         int deviceIndex = devices.indexOf(target);
         if (deviceIndex == -1) {
@@ -242,5 +247,15 @@ public class ExecutionContext {
 
     public ScheduleMetaData meta() {
         return meta;
+    }
+
+    public void sync() {
+        for (int i = 0; i < objects.size(); i++) {
+            Object object = objects.get(i);
+            if (object != null) {
+                final LocalObjectState localState = objectState.get(i);
+                localState.sync(object);
+            }
+        }
     }
 }
