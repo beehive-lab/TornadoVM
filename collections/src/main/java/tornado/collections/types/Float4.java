@@ -323,4 +323,8 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         return TornadoMath.isEqual(a.asBuffer().array(), b.asBuffer().array());
     }
 
+    public static float findULPDistance(Float4 a, Float4 b) {
+        return TornadoMath.findULPDistance(a.asBuffer().array(), b.asBuffer().array());
+    }
+
 }
