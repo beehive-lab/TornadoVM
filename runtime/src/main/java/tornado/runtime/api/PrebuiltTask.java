@@ -82,6 +82,7 @@ public class PrebuiltTask implements SchedulableTask {
 
     @Override
     public SchedulableTask mapTo(TornadoDevice mapping) {
+        meta.setDevice(mapping);
         return this;
     }
 
