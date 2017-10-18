@@ -25,7 +25,6 @@ import org.graalvm.compiler.phases.common.*;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
-import tornado.drivers.opencl.graal.phases.OCLThreadCoarsener;
 import tornado.drivers.opencl.graal.phases.TornadoParallelScheduler;
 import tornado.drivers.opencl.graal.phases.TornadoTaskSpecialisation;
 import tornado.graal.compiler.TornadoHighTier;
@@ -78,7 +77,6 @@ public class OCLHighTier extends TornadoHighTier {
         }
 
         appendPhase(new TornadoShapeAnalysis());
-        appendPhase(new OCLThreadCoarsener(canonicalizer));
         appendPhase(canonicalizer);
         appendPhase(new TornadoParallelScheduler());
 
