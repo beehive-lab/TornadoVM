@@ -1,13 +1,27 @@
-/**
- * This material was prepared as an account of work sponsored by an agency of
- * the United States Government. Neither the United States Government nor the
- * United States Department of Energy, nor Battelle, nor any of their employees,
- * nor any jurisdiction or organization that has cooperated in the development
- * of these materials, makes any warranty, express or implied, or assumes any
- * legal liability or responsibility for the accuracy, completeness, or
- * usefulness or any information, apparatus, product, software, or process
- * disclosed, or represents that its use would not infringe privately owned
- * rights.
+/*
+ * This file is part of Tornado: A heterogeneous programming framework: 
+ * https://github.com/beehive-lab/tornado
+ *
+ * Copyright (c) 2013-2017 APT Group, School of Computer Science, 
+ * The University of Manchester
+ *
+ * This work is partially supported by EPSRC grants:
+ * Anyscale EP/L000725/1 and PAMELA EP/K008730/1.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Authors: James Clarkson
+ *
  */
 package tornado.benchmarks.corrmatrix;
 
