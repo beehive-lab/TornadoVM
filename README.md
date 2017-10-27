@@ -15,6 +15,9 @@ export JAVA_HOME=<path to jvmci 8 jdk with JVMCI>
 export GRAAL_ROOT=<path to graal.jar>
 export TORNADO_ROOT=<path to cloned git dir>
 
+export GRAAL_VERSION=0.22
+export JVMCI_VERSION=1.8.0_131
+
 if [ ! -z "${PATH}" ]; then
         export PATH="${PATH}:${TORNADO_ROOT}/bin"
 else
