@@ -13,16 +13,25 @@ def tornadoCommandsInstall():
 	""" Installation commands for Tornado """
 	commands = []
 	commands.append(__SOURCE_COMMAND__)
+	commands.append("python scripts/generatePom.py")
 	commands.append("mvn clean")
 	commands.append("mvn install")
 	commands.append("cd drivers/opencl/jni-bindings")
 	commands.append("autoreconf -f -i -s")
 	commands.append("./configure --prefix=${PWD} --with-jdk=${JAVA_HOME} ")
 	commands.append("make ")
+	commands.append("make install ")
 
 	return commands
 
 def compileTornado():
+	
+	try:
+		os.path.isfile(__TORNADO_ENV_FILE__)
+	except:
+		print "File " + __TORNADO_ENV_FILE__ + " does not exist. Please provide the config file"
+		sys.exit(-1)
+
 	tornadoConfigurationFile = open(__TORNADO_ENV_FILE__)
 
 	commands = tornadoCommandsInstall()	

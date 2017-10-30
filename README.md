@@ -42,6 +42,7 @@ And done!
 Alternative, you can compile each phase separately as follows:
 
 ```bash
+$ python scripts/generatePom.py
 $ . etc/tornado.env
 $ mvn -DskipTests package
 $ cd drivers/opencl/jni-bindings

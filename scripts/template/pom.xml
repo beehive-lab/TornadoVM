@@ -25,8 +25,8 @@
             </activation>
             <properties>
                 <tornado.version>0.0.2-SNAPSHOT</tornado.version>
-                <graal.root>${GRAAL_ROOT}</graal.root>
-                <jvmci.root>${JAVA_HOME}</jvmci.root>
+                <graal.root>%%%GRAAL_ROOT%%%</graal.root>
+                <jvmci.root>%%%JAVA_HOME%%%</jvmci.root>
                 <graal.version>${GRAAL_VERSION}</graal.version>
                 <jvmci.version>${JVMCI_VERSION}</jvmci.version>
             </properties>
