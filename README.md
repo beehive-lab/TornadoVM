@@ -25,7 +25,21 @@ else
 fi
 ```
 
-Then set the enviroment variables and compile as follows:
+## Installation Method 1
+
+Once the file etc/tornado.env has been created, there are currently two methods for compiling and installing tornado.
+Method 1 is fully automatic.
+
+```bash
+$ python easy_install.py
+```
+
+And done! 
+
+
+## Installation Method 2
+
+Alternative, you can compile each phase separately as follows:
 
 ```bash
 $ . etc/tornado.env
