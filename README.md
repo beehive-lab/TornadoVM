@@ -31,7 +31,7 @@ Once the file etc/tornado.env has been created, there are currently two methods 
 Method 1 is fully automatic.
 
 ```bash
-$ python easy_install.py
+$ python easy-install.py
 ```
 
 And done! 
