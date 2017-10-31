@@ -25,10 +25,10 @@
             </activation>
             <properties>
                 <tornado.version>0.0.2-SNAPSHOT</tornado.version>
-                <graal.root>/Users/jamesclarkson/git/graal-new/graal-core/mxbuild/dists</graal.root>
-                <graal.version>0.22</graal.version>
-                <jvmci.version>1.8.0_131</jvmci.version>
-                <jvmci.root>/Users/jamesclarkson/hg/graal-jvmci-8/jdk1.8.0_131/product</jvmci.root>
+                <graal.root>%%%GRAAL_ROOT%%%</graal.root>
+                <jvmci.root>%%%JAVA_HOME%%%</jvmci.root>
+                <graal.version>${GRAAL_VERSION}</graal.version>
+                <jvmci.version>${JVMCI_VERSION}</jvmci.version>
             </properties>
         </profile>
 

@@ -1,18 +1,22 @@
 
 # Installing Tornado #
 
-  - `$ git clone https://bitbucket.org/clarksoj/tornado_maven.git tornado`
-  - `$ cd tornado`
-  - `$ git checkout develop`
-  - `$ vi etc/tornado.env`
-  - `$ (copy and paste the following - but update paths)`
+```bash
+ $ git clone https://github.com/beehive-lab/tornado.git tornado
+ $ cd tornado
+ $ vim etc/tornado.env
+```
+
+Copy and paste the following - but update paths into the etc/tornado.env file:
 
 ```bash
 #!/bin/bash
-
-export JAVA_HOME=<path to jvmci 8 jdk>
+export JAVA_HOME=<path to jvmci 8 jdk with JVMCI>
 export GRAAL_ROOT=<path to graal.jar>
 export TORNADO_ROOT=<path to cloned git dir>
+
+export GRAAL_VERSION=0.22
+export JVMCI_VERSION=1.8.0_131
 
 if [ ! -z "${PATH}" ]; then
         export PATH="${PATH}:${TORNADO_ROOT}/bin"
@@ -21,26 +25,47 @@ else
 fi
 ```
 
-  - `$ . etc/tornado.env`
-  - `$ mvn -DskipTests package`
-  - `$ cd drivers/opencl/jni-bindings`
-  - `$ autoreconf -f -i -s`
-  - `$ ./configure --prefix=${PWD} --with-jdk=${JAVA_HOME}`
-  - `...`
-  - `$ make && make install`
+## Installation Method 1
 
-Complete
+Once the file etc/tornado.env has been created, there are currently two methods for compiling and installing tornado.
+Method 1 is fully automatic.
+
+```bash
+$ python easy-install.py
+```
+
+And done! 
+
+
+## Installation Method 2
+
+Alternative, you can compile each phase separately as follows:
+
+```bash
+$ python scripts/generatePom.py
+$ . etc/tornado.env
+$ mvn -DskipTests package
+$ cd drivers/opencl/jni-bindings
+$ autoreconf -f -i -s
+$ ./configure --prefix=${PWD} --with-jdk=${JAVA_HOME}
+$ make && make install
+```
+
+Complete!
 
 # Running Examples #
 
   [Optional]
-  - `$ . etc/tornado.env`
-  
-  - `$ tornado tornado.examples.HelloWorld`
 
+```bash
+$ . etc/tornado.env
+$ tornado tornado.examples.HelloWorld
+```
 
 # Running Benchmarks #
 
-  - `$ tornado tornado.benchmarks.BenchmarkRunner tornado.benchmarks.sadd.Benchmark`
+```bash
+$ tornado tornado.benchmarks.BenchmarkRunner tornado.benchmarks.sadd.Benchmark
+```
 
 
