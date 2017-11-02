@@ -25,6 +25,8 @@
  */
 package tornado.examples.functional;
 
+import java.util.stream.IntStream;
+
 public class MapExample {
 
     public static Integer inc(Integer value) {
@@ -35,6 +37,8 @@ public class MapExample {
         int numElements = 8;
         Integer[] a = new Integer[numElements];
         Integer[] b = new Integer[numElements];
+        
+        IntStream.range(0, numElements).forEach(idx -> a[idx] = idx);
 
         Operators.map(
                 MapExample::inc,
