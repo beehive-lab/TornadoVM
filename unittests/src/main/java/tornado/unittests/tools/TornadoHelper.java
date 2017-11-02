@@ -93,17 +93,23 @@ public class TornadoHelper {
 		buffer.append("Test: " + klass + "\n");
 
 		for (Method m : methodsToTest) {
-			buffer.append("\tRunning test :\t" + ColorsTerminal.BLUE + m.getName() + ColorsTerminal.RESET);
+			String s = String.format("%-50s",
+					"\tRunning test: " + ColorsTerminal.BLUE + m.getName() + ColorsTerminal.RESET);
+			buffer.append(s);
 			Request request = Request.method(klass, m.getName());
 			Result result = new JUnitCore().run(request);
 			if (result.wasSuccessful()) {
-				buffer.append("\t ................ " + ColorsTerminal.GREEN + " [PASS] " + ColorsTerminal.RESET + "\n");
+				s = String.format("%20s",
+						" ................ " + ColorsTerminal.GREEN + " [PASS] " + ColorsTerminal.RESET + "\n");
+				buffer.append(s);
 				successCounter++;
 			} else {
-				buffer.append("\t................. " + ColorsTerminal.RED + " [PASS] " + ColorsTerminal.RESET + "\n");
+				s = String.format("%20s",
+						" ................ " + ColorsTerminal.RED + " [FAILED] " + ColorsTerminal.RESET + "\n");
+				buffer.append(s);
 				failedCounter++;
 				for (Failure f : result.getFailures()) {
-					buffer.append("\t\t" + f.getMessage());
+					buffer.append("\t\t" + f.getMessage() + f.getTrace());
 				}
 			}
 		}

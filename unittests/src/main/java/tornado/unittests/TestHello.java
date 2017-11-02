@@ -84,7 +84,5 @@ public class TestHello {
 		for (int i = 0; i < c.length; i++) {
 			assertEquals(a[i] + b[i], c[i], 0.001);
 		}
-
 	}
-
 }
