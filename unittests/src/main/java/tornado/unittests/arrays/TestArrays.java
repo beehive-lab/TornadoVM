@@ -1,4 +1,4 @@
-package tornado.unitests.arrays;
+package tornado.unittests.arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
