@@ -7,6 +7,7 @@ import argparse
 __TEST_THE_WORLD__ = [
 	"tornado.unittests.TestHello",
 	"tornado.unittests.arrays.TestArrays",
+	"tornado.unittests.functional.TestFunctional",
 ]
 
 __MAIN_TORNADO_TEST_RUNNER__ = "tornado.unittests.tools.TornadoTestRunner "
