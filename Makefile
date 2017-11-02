@@ -1,6 +1,9 @@
-all: default_install
+all: build
 
-default_install:
+build:
+	mvn install
+
+install:
 	python easy-install.py
 
 clean:
