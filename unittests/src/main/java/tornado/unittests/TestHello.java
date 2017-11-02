@@ -25,8 +25,11 @@
  */
 package tornado.unittests;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import java.util.Arrays;
 
 import org.junit.Test;
 
@@ -53,6 +56,35 @@ public class TestHello {
 		} catch (Exception e) {
 			assertTrue("Task was not executed.", false);
 		}
+	}
+
+	public static void add(int[] a, int[] b, int[] c) {
+		for (@Parallel int i = 0; i < c.length; i++) {
+			c[i] = a[i] + b[i];
+		}
+	}
+
+	@Test
+	public void testVectorAddition() {
+		final int numElements = 8;
+		int[] a = new int[numElements];
+		int[] b = new int[numElements];
+		int[] c = new int[numElements];
+
+		Arrays.fill(a, 1);
+		Arrays.fill(b, 2);
+
+		//@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestHello::add, a, b, c)
+                .streamOut(c)
+                .execute();
+        //@formatter:on
+
+		for (int i = 0; i < c.length; i++) {
+			assertEquals(a[i] + b[i], c[i], 0.001);
+		}
+
 	}
 
 }
