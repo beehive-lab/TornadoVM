@@ -30,7 +30,6 @@ import static org.junit.Assert.assertNotNull;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import tornado.api.Parallel;
@@ -202,7 +201,6 @@ public class TestArrays {
 	}
 
 	@Test
-	@Ignore
 	public void testVectorAdditionShort() {
 		final int numElements = 4096;
 		short[] a = new short[numElements];
