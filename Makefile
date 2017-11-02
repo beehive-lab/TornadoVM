@@ -10,7 +10,7 @@ example:
 	tornado tornado.examples.HelloWorld
 
 tests:
-	tornado-tests tornado.unittests.TestHello
+	tornado-test.py --verbose
 
 eclipse:
 	mvn eclipse:eclipse
