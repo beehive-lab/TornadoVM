@@ -9,5 +9,8 @@ clean:
 example:
 	tornado tornado.examples.HelloWorld
 
+tests:
+	tornado-tests tornado.unittests.TestHello
+
 eclipse:
 	mvn eclipse:eclipse

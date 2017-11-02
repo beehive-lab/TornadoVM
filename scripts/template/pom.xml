@@ -157,6 +157,7 @@
         <module>drivers</module>
         <module>examples</module>
         <module>benchmarks</module>
+        <module>unittests</module>
     </modules>
     <reporting>
         <plugins>
