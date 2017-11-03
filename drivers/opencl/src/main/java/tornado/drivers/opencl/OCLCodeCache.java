@@ -25,6 +25,15 @@
  */
 package tornado.drivers.opencl;
 
+import static tornado.common.Tornado.PRINT_COMPILE_TIMES;
+import static tornado.common.Tornado.debug;
+import static tornado.common.Tornado.error;
+import static tornado.common.Tornado.getProperty;
+import static tornado.common.Tornado.info;
+import static tornado.common.Tornado.trace;
+import static tornado.common.Tornado.warn;
+import static tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -34,14 +43,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+
 import tornado.api.meta.TaskMetaData;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.enums.OCLBuildStatus;
 import tornado.drivers.opencl.exceptions.OCLException;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
-
-import static tornado.common.Tornado.*;
-import static tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
 
 public class OCLCodeCache {
 
@@ -50,6 +57,7 @@ public class OCLCodeCache {
     private final boolean OPENCL_LOAD_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.load", "False"));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", "False"));
     private final boolean OPENCL_DUMP_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.dump", "False"));
+    private final boolean OPENCL_PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.print", "False"));
     private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "opencl-cache");
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "opencl-src");
 
@@ -103,15 +111,20 @@ public class OCLCodeCache {
         info("Installing code for %s into code cache", entryPoint);
         final OCLProgram program = deviceContext.createProgramWithSource(source,
                 new long[]{source.length});
-
+        
         if (OPENCL_DUMP_SOURCE) {
             final Path outDir = resolveSourceDir();
             File file = new File(outDir + "/" + id + "-" + entryPoint + OPENCL_SOURCE_SUFFIX);
-            try (FileOutputStream fos = new FileOutputStream(file);) {
+            try (FileOutputStream fos = new FileOutputStream(file)) {
                 fos.write(source);
             } catch (IOException e) {
                 error("unable to dump source: ", e.getMessage());
             }
+        }
+        
+        if (OPENCL_PRINT_SOURCE) {
+        	String sourceCode = new String(source);
+        	System.out.println(sourceCode);
         }
 
         // TODO add support for passing compiler optimisation flags here
@@ -131,6 +144,7 @@ public class OCLCodeCache {
 
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, deviceContext, program,
                 kernel);
+        
 
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getId());

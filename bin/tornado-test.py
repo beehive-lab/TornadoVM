@@ -13,10 +13,12 @@ __TEST_THE_WORLD__ = [
 __MAIN_TORNADO_TEST_RUNNER__ = "tornado.unittests.tools.TornadoTestRunner "
 __MAIN_TORNADO_JUNIT__ = "org.junit.runner.JUnitCore "
 __IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintCFG=true "
+__PRINT_OPENCL_KERNEL__ = "-Dtornado.opencl.source.print=True "
 __VERSION__ = "0.1_02112017"
 
 def runTests(args):
 
+	## Compose all Tornado options
 	verbose = "-Dtornado.unittests.verbose="
 	igv = " "
 	if (args.verbose):
@@ -27,8 +29,12 @@ def runTests(args):
 	if (args.igv):
 		igv = igv + __IGV_OPTIONS__
 
-	cmd = "tornado " + verbose + igv + " " + __MAIN_TORNADO_TEST_RUNNER__ 
+	printKernelOption = " "
+	if (args.printKernel):
+		printKernelOption = " " + __PRINT_OPENCL_KERNEL__
 
+	## Run test
+	cmd = "tornado " + verbose + printKernelOption + igv + " " + __MAIN_TORNADO_TEST_RUNNER__ 
 	if (args.testClass != None):
 		cmd = cmd + " " + args.testClass 
 		print cmd
@@ -58,6 +64,7 @@ def parseArguments():
 	parser.add_argument('testClass', nargs="?", help='testClass#method')
 	parser.add_argument('--version', action="store_true", dest="version", default=False, help="Print version")
 	parser.add_argument('--verbose', action="store_true", dest="verbose", default=False, help="Run test in verbose mode")	
+	parser.add_argument('--printKernel', action="store_true", dest="printKernel", default=False, help="Print OpenCL kernel")	
 	parser.add_argument('--junit', action="store_true", dest="junit", default=False, help="Run within JUnitCore main class")	
 	parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")	
 	parser.add_argument('--testall', action="store_true", dest="verbose", default=False, help="Run all unittest in Tornado")	
