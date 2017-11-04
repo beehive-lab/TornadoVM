@@ -54,7 +54,11 @@ public class TornadoHelper {
 		return false;
 	}
 
-	public static ArrayList<Method> getMethodToTest(Class<?> klass) {
+	/**
+	 * It returns the list of methods with the {@link @Test} annotation.
+	 * 
+	 */
+	public static ArrayList<Method> getTestMethods(Class<?> klass) {
 		Method[] methods = klass.getMethods();
 		ArrayList<Method> methodsToTest = new ArrayList<>();
 		for (Method m : methods) {
@@ -80,10 +84,10 @@ public class TornadoHelper {
 		printResult(success, fails);
 	}
 
-	public static void runTestverbose(String klassName) throws ClassNotFoundException {
+	public static void runTestVerbose(String klassName) throws ClassNotFoundException {
 
 		Class<?> klass = Class.forName(klassName);
-		ArrayList<Method> methodsToTest = getMethodToTest(klass);
+		ArrayList<Method> methodsToTest = getTestMethods(klass);
 
 		StringBuffer buffer = new StringBuffer();
 

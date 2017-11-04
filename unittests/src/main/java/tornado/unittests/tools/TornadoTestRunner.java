@@ -39,7 +39,7 @@ public class TornadoTestRunner {
 				TornadoHelper.runTestClass(classAndMethod[0]);
 			}
 		} else {
-			TornadoHelper.runTestverbose(classAndMethod[0]);
+			TornadoHelper.runTestVerbose(classAndMethod[0]);
 		}
 	}
 }
