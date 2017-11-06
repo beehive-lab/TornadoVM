@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>tornado</groupId>
+    <artifactId>tornado</artifactId>
+    <version>0.0.2-SNAPSHOT</version>
+  </parent>
+  <groupId>tornado-unittests</groupId>
+  <artifactId>unittests</artifactId>
+  <version>0.0.2-SNAPSHOT</version>
+  <name>unittests</name>
+  <url>http://maven.apache.org</url>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+    </dependency>
+
+   <dependency>
+       <groupId>tornado</groupId>
+       <artifactId>tornado-collections</artifactId>
+       <version>0.0.2-SNAPSHOT</version>
+   </dependency>
+   <dependency>
+       <groupId>tornado</groupId>
+       <artifactId>tornado-runtime</artifactId>
+       <version>0.0.2-SNAPSHOT</version>
+   </dependency>
+   <dependency>
+       <groupId>tornado</groupId>
+       <artifactId>tornado-drivers-opencl</artifactId>
+       <version>0.0.2-SNAPSHOT</version>
+   </dependency>
+   <dependency>
+       <groupId>org.apache.lucene</groupId>
+       <artifactId>lucene-core</artifactId>
+       <version>4.10.4</version>
+       <type>jar</type>
+   </dependency>
+   <dependency>
+       <groupId>org.ejml</groupId>
+       <artifactId>ejml-all</artifactId>
+       <version>0.31</version>
+   </dependency>
+
+
+  </dependencies>
+</project>

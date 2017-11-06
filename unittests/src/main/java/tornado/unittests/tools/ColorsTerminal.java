@@ -20,31 +20,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Authors: James Clarkson
+ * Authors: Juan Fumero
  *
  */
-package tornado.examples.functional;
+package tornado.unittests.tools;
 
-import java.util.stream.IntStream;
+/**
+ * Link:
+ * https://stackoverflow.com/questions/5762491/how-to-print-color-in-console-using-system-out-println
+ * 
+ */
+public class ColorsTerminal {
 
-public class MapExample {
-
-    public static Integer inc(Integer value) {
-        return value + 1;
-    }
-
-    public static final void main(String[] args) {
-        int numElements = 8;
-        Integer[] a = new Integer[numElements];
-        Integer[] b = new Integer[numElements];
-        
-        IntStream.range(0, numElements).forEach(idx -> a[idx] = idx);
-
-        Operators.map(
-                MapExample::inc,
-                a, b
-        );
-
-    }
+	public static final String RESET = "\u001B[0m";
+	public static final String BLACK = "\u001B[30m";
+	public static final String RED = "\u001B[31m";
+	public static final String GREEN = "\u001B[32m";
+	public static final String YELLOW = "\u001B[33m";
+	public static final String BLUE = "\u001B[34m";
+	public static final String PURPLE = "\u001B[35m";
+	public static final String CYAN = "\u001B[36m";
+	public static final String WHITE = "\u001B[37m";
 
 }

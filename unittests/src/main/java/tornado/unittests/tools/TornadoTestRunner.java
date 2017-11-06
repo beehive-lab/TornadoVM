@@ -20,31 +20,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Authors: James Clarkson
+ * Authors: Juan Fumero
  *
  */
-package tornado.examples.functional;
+package tornado.unittests.tools;
 
-import java.util.stream.IntStream;
+public class TornadoTestRunner {
 
-public class MapExample {
+	public static void main(String[] args) throws ClassNotFoundException {
 
-    public static Integer inc(Integer value) {
-        return value + 1;
-    }
+		boolean verbose = TornadoHelper.getProperty("tornado.unittests.verbose");
 
-    public static final void main(String[] args) {
-        int numElements = 8;
-        Integer[] a = new Integer[numElements];
-        Integer[] b = new Integer[numElements];
-        
-        IntStream.range(0, numElements).forEach(idx -> a[idx] = idx);
-
-        Operators.map(
-                MapExample::inc,
-                a, b
-        );
-
-    }
-
+		String[] classAndMethod = args[0].split("#");
+		if (!verbose) {
+			if (classAndMethod.length > 1) {
+				TornadoHelper.runTestClassAndMethod(classAndMethod[0], classAndMethod[1]);
+			} else {
+				TornadoHelper.runTestClass(classAndMethod[0]);
+			}
+		} else {
+			TornadoHelper.runTestVerbose(classAndMethod[0]);
+		}
+	}
 }

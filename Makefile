@@ -1,6 +1,9 @@
-all: default_install
+all: build
 
-default_install:
+build:
+	mvn install
+
+install:
 	python easy-install.py
 
 clean:
@@ -8,6 +11,9 @@ clean:
 
 example:
 	tornado tornado.examples.HelloWorld
+
+tests:
+	tornado-test.py --verbose
 
 eclipse:
 	mvn eclipse:eclipse

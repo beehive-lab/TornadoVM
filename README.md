@@ -55,8 +55,6 @@ Complete!
 
 # Running Examples #
 
-  [Optional]
-
 ```bash
 $ . etc/tornado.env
 $ tornado tornado.examples.HelloWorld
@@ -68,4 +66,31 @@ $ tornado tornado.examples.HelloWorld
 $ tornado tornado.benchmarks.BenchmarkRunner tornado.benchmarks.sadd.Benchmark
 ```
 
+
+# Running Unittests
+
+To run all unittest in Tornado:
+
+```bash
+make tests 
+
+```
+
+To run a separated unittest class:
+
+```bash
+$  tornado-test.py tornado.unittests.TestHello
+```
+
+Also, it can be executed in verbose mode:
+
+```bash
+$ tornado-test.py --verbose tornado.unittests.TestHello
+```
+
+To test just a method of a unittest class:
+
+```bash
+$ tornado-test.py --verbose tornado.unittests.TestHello#helloWorld
+```
 
