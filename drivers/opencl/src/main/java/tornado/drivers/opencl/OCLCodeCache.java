@@ -122,7 +122,7 @@ public class OCLCodeCache {
             
             // Also print the source code in STDOUT
             String sourceCode = new String(source);
-        	System.out.println(sourceCode);
+            System.out.println(sourceCode);
         }
 
         // TODO add support for passing compiler optimisation flags here
