@@ -9,6 +9,8 @@ __TEST_THE_WORLD__ = [
 	"tornado.unittests.arrays.TestArrays",
 	"tornado.unittests.functional.TestFunctional",
 	"tornado.unittests.ocljit.TestOpenCLJIT",
+	"tornado.unittests.vectortypes.TestFloats",
+	"tornado.unittests.vectortypes.TestVectorAllocation",
 ]
 
 __MAIN_TORNADO_TEST_RUNNER__ = "tornado.unittests.tools.TornadoTestRunner "
