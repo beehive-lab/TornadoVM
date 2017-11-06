@@ -41,6 +41,34 @@ import tornado.runtime.api.TaskSchedule;
 public class TestFloats {
 	
 	
+	private static void dotMethod(Float3 a, Float3 b, float[] result) {
+		float dot = Float3.dot(a, b);
+        result[0] = dot;
+    }
+	
+	@Test
+	public void simpleDotProduct() {
+		Float3 a = new Float3(new float[] {1, 2, 3});
+		Float3 b = new Float3(new float[] {3, 2, 1});
+		float[] output = new float[1];
+		
+		//@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestFloats::dotMethod, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+        
+        assertEquals(10, output[0], 0.001);
+        
+        
+        // Another way to test simple dot product
+        TaskSchedule s1 = new TaskSchedule("s1").task("t1", Float3::dot, a, b);
+		s1.warmup();
+		s1.schedule();
+		assertEquals(10, s1.getReturnValue("t1"), 0.001);
+	}
+	
 	private static void test(Float3 a, Float3 b, VectorFloat3 results) {
         results.set(0, add(a, b));
     }
