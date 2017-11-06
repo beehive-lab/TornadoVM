@@ -60,7 +60,12 @@ public class TestFloats {
         //@formatter:on
         
         assertEquals(10, output[0], 0.001);
-        
+	}
+	
+	@Test
+	public void simpleDotProduct2() {
+		Float3 a = new Float3(new float[] {1, 2, 3});
+		Float3 b = new Float3(new float[] {3, 2, 1});
         
         // Another way to test simple dot product
         TaskSchedule s1 = new TaskSchedule("s1").task("t1", Float3::dot, a, b);
@@ -70,7 +75,7 @@ public class TestFloats {
 	}
 	
 	private static void test(Float3 a, Float3 b, VectorFloat3 results) {
-        results.set(0, add(a, b));
+        results.set(0, Float3.add(a, b));
     }
 	
 	@Test
@@ -307,4 +312,29 @@ public class TestFloats {
         
         assertEquals(seqReduce[0], outputReduce[0], 0.001);
 	}
+	
+	
+	private static void vectorPhiTest(VectorFloat3 input, VectorFloat3 output) {
+		Float3 sum = new Float3(new float[]{0, 0, 0});
+		for (int i = 0; i < input.getLength(); i++) {
+			sum = Float3.add(sum, input.get(i));
+		}
+		output.set(0, sum);
+	}
+
+	@Test
+	public void vectorPhiTest() {
+
+		final VectorFloat3 input = new VectorFloat3(8);
+		final VectorFloat3 output = new VectorFloat3(1);
+		
+		input.fill(1f);
+
+		//@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestFloats::vectorPhiTest, input, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+	}	
 }

@@ -29,7 +29,9 @@ import org.junit.Test;
 
 import tornado.api.Parallel;
 import tornado.collections.types.Float2;
+import tornado.collections.types.Float3;
 import tornado.collections.types.Float4;
+import tornado.collections.types.VectorFloat3;
 import tornado.collections.types.VectorFloat4;
 import tornado.runtime.api.TaskSchedule;
 
@@ -109,6 +111,45 @@ public class TestVectorAllocation {
         	assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
         	assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
         	assertEquals(sequential.getW(), output.get(i).getW(), 0.001);
+        }
+	}
+	
+	/** Test to check the kernel can create a float2 type
+	 * 
+	 * @param a
+	 * @param result
+	 */
+	private static void testVectorAlloc3(float[] a, VectorFloat3 result) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+        	Float3 x = new Float3(a.length,  10, a[i]); 
+            result.set(i, x);
+        }
+    }
+
+	@Test
+	public void testAllocation3() {
+
+		int size = 8;
+
+		float[] a = new float[size];
+		VectorFloat3 output = new VectorFloat3(size);
+
+		for (int i = 0; i < size; i++) {
+			a[i] = (float)i;
+		}
+		
+		//@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestVectorAllocation::testVectorAlloc3, a, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+        
+        for (int i = 0; i < size; i++) {
+        	Float3 sequential = new Float3(a.length,  10, a[i]);
+        	assertEquals(sequential.getX(), output.get(i).getX(), 0.001); 
+        	assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
+        	assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
         }
 	}
 }
