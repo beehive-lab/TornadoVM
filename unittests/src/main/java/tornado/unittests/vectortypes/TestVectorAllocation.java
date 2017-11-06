@@ -111,6 +111,4 @@ public class TestVectorAllocation {
         	assertEquals(sequential.getW(), output.get(i).getW(), 0.001);
         }
 	}
-	
-	
 }
