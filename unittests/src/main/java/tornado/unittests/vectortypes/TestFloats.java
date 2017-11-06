@@ -24,6 +24,9 @@
 package tornado.unittests.vectortypes;
 
 import static org.junit.Assert.assertEquals;
+import static tornado.collections.types.Float3.add;
+
+import java.util.Random;
 
 import org.junit.Test;
 
@@ -36,6 +39,33 @@ import tornado.collections.types.VectorFloat4;
 import tornado.runtime.api.TaskSchedule;
 
 public class TestFloats {
+	
+	
+	private static void test(Float3 a, Float3 b, VectorFloat3 results) {
+        results.set(0, add(a, b));
+    }
+	
+	@Test
+	public void simpleVectorAddition() {
+		int size = 1;
+		Float3 a = new Float3(new float[] {1, 2, 3});
+		Float3 b = new Float3(new float[] {3, 2, 1});
+		VectorFloat3 output = new VectorFloat3(size);
+		
+		//@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestFloats::test, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+        
+        for (int i = 0; i < size; i++) {
+        	assertEquals(4, output.get(i).getX(), 0.001); 
+        	assertEquals(4, output.get(i).getY(), 0.001);
+        	assertEquals(4, output.get(i).getZ(), 0.001);
+        }	
+	}
+	
 	
 	/**
 	 * Test using the {@link Float} Java Wrapper class 
@@ -198,5 +228,55 @@ public class TestFloats {
         	assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
         	assertEquals(sequential.getW(), output.get(i).getW(), 0.001);
         }
+	}
+	
+	
+	public static void dotProductFunctionMap(float[] a, float[] b, float[] results) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            results[i] = a[i] * b[i];
+        }
+    }
+	
+	public static void dotProductFunctionReduce(float[] input, float[] results) {
+		float sum = 0.0f;
+        for (int i = 0; i < input.length; i++) {
+            sum += input[i];
+        }
+        results[0] = sum;
+    }
+	
+	@Test
+	public void testDotProduct() {
+		
+		int size = 8;
+		
+		float[] a = new float[size];
+		float[] b = new float[size];
+		float[] outputMap = new float[size];
+		float[] outputReduce = new float[1];
+		
+		float[] seqMap = new float[size];
+		float[] seqReduce = new float[1];
+		
+		Random r = new Random();
+		for (int i = 0; i < size; i++) {
+            a[i] = r.nextFloat();
+            b[i] = r.nextFloat();
+        }
+
+		// Sequential computation
+		dotProductFunctionMap(a, b, seqMap);
+		dotProductFunctionReduce(seqMap, seqReduce);
+		
+		// Parallel computation with Tornado
+		//@formatter:off
+        new TaskSchedule("s0")
+                .task("t0-MAP", TestFloats::dotProductFunctionMap, a, b, outputMap)
+                .task("t1-REDUCE", TestFloats::dotProductFunctionReduce, outputMap, outputReduce)
+                .streamOut(outputReduce)
+                .execute();
+        //@formatter:on
+        
+        assertEquals(seqReduce[0], outputReduce[0], 0.001);
 	}
 }
