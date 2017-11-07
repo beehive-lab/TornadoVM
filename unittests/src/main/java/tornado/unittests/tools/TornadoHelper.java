@@ -63,6 +63,16 @@ public class TornadoHelper {
 		}
 		return false;
 	}
+	
+	public static Method getMethodForName(Class<?> klass, String nameMethod) {
+        Method method = null;
+        for (Method m : klass.getMethods()) {
+            if (m.getName().equals(nameMethod)) {
+                method = m;
+            }
+        }
+        return method;
+    }
 
 	/**
 	 * It returns the list of methods with the {@link @Test} annotation.
@@ -94,10 +104,16 @@ public class TornadoHelper {
 		printResult(success, fails);
 	}
 
-	public static void runTestVerbose(String klassName) throws ClassNotFoundException {
+	public static void runTestVerbose(String klassName, String methodName) throws ClassNotFoundException {
 
 		Class<?> klass = Class.forName(klassName);
-		ArrayList<Method> methodsToTest = getTestMethods(klass);
+		ArrayList<Method> methodsToTest = new ArrayList<>();
+		if (methodName == null) {
+			methodsToTest = getTestMethods(klass);
+		} else {
+			Method method = TornadoHelper.getMethodForName(klass, methodName);
+			methodsToTest.add(method);
+		}
 
 		StringBuffer bufferConsole = new StringBuffer();
 		StringBuffer bufferFile = new StringBuffer();
