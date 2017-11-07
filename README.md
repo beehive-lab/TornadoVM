@@ -12,7 +12,7 @@ Copy and paste the following - but update paths into the etc/tornado.env file:
 ```bash
 #!/bin/bash
 export JAVA_HOME=<path to jvmci 8 jdk with JVMCI>
-export GRAAL_ROOT=<path to graal.jar>
+export GRAAL_ROOT=<path to graal.jar and truffle-api.jar>
 export TORNADO_ROOT=<path to cloned git dir>
 
 export GRAAL_VERSION=0.22

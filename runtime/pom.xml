@@ -31,7 +31,7 @@
             <groupId>graal</groupId>
             <artifactId>truffle-api</artifactId>
             <scope>system</scope>
-            <systemPath>${graal.root}/../../../truffle/mxbuild/dists/truffle-api.jar</systemPath>
+            <systemPath>${graal.root}/truffle-api.jar</systemPath>
             <version>${graal.version}</version>
         </dependency>
 
