@@ -43,32 +43,6 @@ public class TestArrays {
 		}
 	}
 
-	@Test
-	public void testAdd() {
-
-		final int N = 128;
-		int numKernels = 8;
-
-		int[] data = new int[N];
-
-		IntStream.range(0, N).parallel().forEach(idx -> {
-			data[idx] = idx;
-		});
-
-		TaskSchedule s0 = new TaskSchedule("s0");
-		assertNotNull(s0);
-
-		for (int i = 0; i < numKernels; i++) {
-			s0.task("t" + i, TestArrays::addAccumulator, data, 1);
-		}
-
-		s0.streamOut(data).execute();
-
-		for (int i = 0; i < N; i++) {
-			assertEquals(i + numKernels, data[i], 0.0001);
-		}
-	}
-
 	public static void vectorAddDouble(double[] a, double[] b, double[] c) {
 		for (@Parallel int i = 0; i < c.length; i++) {
 			c[i] = a[i] + b[i];
@@ -96,6 +70,61 @@ public class TestArrays {
 	public static void vectorAddShort(short[] a, short[] b, short[] c) {
 		for (@Parallel int i = 0; i < c.length; i++) {
 			c[i] = (short) (a[i] + b[i]);
+		}
+	}
+	
+	@Test
+	public void testWarmUp() {
+
+		final int N = 128;
+		int numKernels = 8;
+
+		int[] data = new int[N];
+
+		IntStream.range(0, N).parallel().forEach(idx -> {
+			data[idx] = idx;
+		});
+
+		TaskSchedule s0 = new TaskSchedule("s0");
+		assertNotNull(s0);
+
+		for (int i = 0; i < numKernels; i++) {
+			s0.task("t" + i, TestArrays::addAccumulator, data, 1);
+		}
+
+		s0.streamOut(data).warmup();
+		
+		s0.execute();
+
+		for (int i = 0; i < N; i++) {
+			assertEquals(i + numKernels, data[i], 0.0001);
+		}
+	}
+
+	
+	@Test
+	public void testAdd() {
+
+		final int N = 128;
+		int numKernels = 8;
+
+		int[] data = new int[N];
+
+		IntStream.range(0, N).parallel().forEach(idx -> {
+			data[idx] = idx;
+		});
+
+		TaskSchedule s0 = new TaskSchedule("s0");
+		assertNotNull(s0);
+
+		for (int i = 0; i < numKernels; i++) {
+			s0.task("t" + i, TestArrays::addAccumulator, data, 1);
+		}
+
+		s0.streamOut(data).execute();
+
+		for (int i = 0; i < N; i++) {
+			assertEquals(i + numKernels, data[i], 0.0001);
 		}
 	}
 
