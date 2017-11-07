@@ -24,10 +24,10 @@
 package tornado.unittests.vectortypes;
 
 import static org.junit.Assert.assertEquals;
-import static tornado.collections.types.Float3.add;
 
 import java.util.Random;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import tornado.api.Parallel;
@@ -112,6 +112,7 @@ public class TestFloats {
         }
     }
 
+	@Ignore
 	@Test
 	public void testFloat1() {
 
@@ -150,6 +151,7 @@ public class TestFloats {
         }
     }
 
+	@Ignore
 	@Test
 	public void testFloat2() {
 
