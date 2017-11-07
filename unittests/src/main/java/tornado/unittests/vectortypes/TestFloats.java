@@ -34,6 +34,9 @@ import tornado.api.Parallel;
 import tornado.collections.types.Float2;
 import tornado.collections.types.Float3;
 import tornado.collections.types.Float4;
+import tornado.collections.types.Float6;
+import tornado.collections.types.Float8;
+import tornado.collections.types.VectorFloat;
 import tornado.collections.types.VectorFloat3;
 import tornado.collections.types.VectorFloat4;
 import tornado.runtime.api.TaskSchedule;
@@ -41,29 +44,114 @@ import tornado.runtime.api.TaskSchedule;
 public class TestFloats {
 	
 	
-	private static void dotMethod(Float3 a, Float3 b, float[] result) {
-		float dot = Float3.dot(a, b);
-        result[0] = dot;
+	private static void dotMethodFloat2(Float2 a, Float2 b, VectorFloat result) {
+		float dot = Float2.dot(a, b);
+        result.set(0, dot);
     }
 	
 	@Test
-	public void simpleDotProduct() {
-		Float3 a = new Float3(new float[] {1, 2, 3});
-		Float3 b = new Float3(new float[] {3, 2, 1});
-		float[] output = new float[1];
+	public void simpleDotProductFloat2() {
+		Float2 a = new Float2(new float[] {1, 2});
+		Float2 b = new Float2(new float[] {3, 2});
+		VectorFloat output = new VectorFloat(1);
 		
 		//@formatter:off
         new TaskSchedule("s0")
-                .task("t0", TestFloats::dotMethod, a, b, output)
+                .task("t0", TestFloats::dotMethodFloat2, a, b, output)
                 .streamOut(output)
                 .execute();
         //@formatter:on
         
-        assertEquals(10, output[0], 0.001);
+        assertEquals(7, output.get(0), 0.001);
 	}
 	
+	private static void dotMethodFloat3(Float3 a, Float3 b, VectorFloat result) {
+		float dot = Float3.dot(a, b);
+        result.set(0, dot);
+    }
+	
 	@Test
-	public void simpleDotProduct2() {
+	public void simpleDotProductFloat3() {
+		Float3 a = new Float3(new float[] {1, 2, 3});
+		Float3 b = new Float3(new float[] {3, 2, 1});
+		VectorFloat output = new VectorFloat(1);
+		
+        new TaskSchedule("s0")
+                .task("t0", TestFloats::dotMethodFloat3, a, b, output)
+                .streamOut(output)
+                .execute();
+        
+        assertEquals(10, output.get(0), 0.001f);
+	}
+	
+	
+	private static void dotMethodFloat4(Float4 a, Float4 b, VectorFloat result) {
+		float dot = Float4.dot(a, b);
+        result.set(0, dot);
+    }
+	
+	@Test
+	public void simpleDotProductFloat4() {
+		Float4 a = new Float4(new float[] {1, 2, 3, 4});
+		Float4 b = new Float4(new float[] {4, 3, 2, 1});
+		VectorFloat output = new VectorFloat(1);
+		
+		//@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestFloats::dotMethodFloat4, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+        
+        assertEquals(20, output.get(0), 0.001f);
+	}
+	
+	private static void dotMethodFloat6(Float6 a, Float6 b, VectorFloat result) {
+		float dot = Float6.dot(a, b);
+        result.set(0, dot);
+    }
+	
+	@Test
+	public void simpleDotProductFloat6() {
+		Float6 a = new Float6(new float[] {1, 2, 3, 4, 5, 6});
+		Float6 b = new Float6(new float[] {6, 5, 4, 3, 2, 1});
+		VectorFloat output = new VectorFloat(1);
+		
+		//@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestFloats::dotMethodFloat6, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+        
+        assertEquals(56, output.get(0), 0.001f);
+	}
+	
+	private static void dotMethodFloat8(Float8 a, Float8 b, VectorFloat result) {
+		float dot = Float8.dot(a, b);
+        result.set(0, dot);
+    }
+	
+	@Test
+	public void simpleDotProductFloat8() {
+		Float8 a = new Float8(new float[] {1, 2, 3, 4, 5, 6, 7, 8});
+		Float8 b = new Float8(new float[] {8, 7, 6, 5, 4, 3, 2, 1});
+		VectorFloat output = new VectorFloat(1);
+		
+		//@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestFloats::dotMethodFloat8, a, b, output)
+                .streamOut(output)
+                .execute();
+        //@formatter:on
+        
+        assertEquals(120, output.get(0), 0.001f);
+	}
+	
+	
+	
+	@Test
+	public void simpleDotProduct() {
 		Float3 a = new Float3(new float[] {1, 2, 3});
 		Float3 b = new Float3(new float[] {3, 2, 1});
         
