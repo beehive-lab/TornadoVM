@@ -62,13 +62,6 @@ public class TestDoubles {
         }	
 	}
 	
-	
-	/**
-	 * Test using the {@link Float} Java Wrapper class 
-	 * @param a
-	 * @param b
-	 * @param result
-	 */	
 	private static void addDouble(double[] a, double[] b, double[] result) {
         for (@Parallel int i = 0; i < a.length; i++) {
             result[i] = a[i] + b[i];

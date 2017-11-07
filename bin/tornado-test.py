@@ -10,6 +10,8 @@ __TEST_THE_WORLD__ = [
 	"tornado.unittests.functional.TestFunctional",
 	"tornado.unittests.ocljit.TestOpenCLJIT",
 	"tornado.unittests.vectortypes.TestFloats",
+	"tornado.unittests.vectortypes.TestDoubles",
+	"tornado.unittests.vectortypes.TestInts",
 	"tornado.unittests.vectortypes.TestVectorAllocation",
 	"tornado.unittests.prebuilt.PrebuiltTest",
 	"tornado.unittests.virtualization.TestsVirtualLayer",
