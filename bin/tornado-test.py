@@ -11,6 +11,7 @@ __TEST_THE_WORLD__ = [
 	"tornado.unittests.ocljit.TestOpenCLJIT",
 	"tornado.unittests.vectortypes.TestFloats",
 	"tornado.unittests.vectortypes.TestVectorAllocation",
+	"tornado.unittests.prebuilt.PrebuiltTest",
 ]
 
 __MAIN_TORNADO_TEST_RUNNER__ = "tornado.unittests.tools.TornadoTestRunner "
