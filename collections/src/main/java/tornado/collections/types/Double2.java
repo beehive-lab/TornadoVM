@@ -56,7 +56,7 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
      */
     final private static int numElements = 2;
 
-    protected Double2(double[] storage) {
+    public Double2(double[] storage) {
         this.storage = storage;
     }
 
