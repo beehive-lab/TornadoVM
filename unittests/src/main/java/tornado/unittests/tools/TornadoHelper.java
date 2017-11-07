@@ -25,9 +25,15 @@
  */
 package tornado.unittests.tools;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
@@ -42,6 +48,10 @@ public class TornadoHelper {
 
 	public static void printResult(int success, int failed) {
 		System.out.printf("Test ran: %s, Failed: %s%n", (success + failed), failed);
+	}
+	
+	public static void printResult(int success, int failed, StringBuffer buffer) {
+		buffer.append(String.format("Test ran: %s, Failed: %s%n", (success + failed), failed));
 	}
 
 	public static boolean getProperty(String property) {
@@ -89,37 +99,53 @@ public class TornadoHelper {
 		Class<?> klass = Class.forName(klassName);
 		ArrayList<Method> methodsToTest = getTestMethods(klass);
 
-		StringBuffer buffer = new StringBuffer();
+		StringBuffer bufferConsole = new StringBuffer();
+		StringBuffer bufferFile = new StringBuffer();
 
 		int successCounter = 0;
 		int failedCounter = 0;
 
-		buffer.append("Test: " + klass + "\n");
+		bufferConsole.append("Test: " + klass + "\n");
+		bufferFile.append("Test: " + klass + "\n");
 
 		for (Method m : methodsToTest) {
-			String s = String.format("%-50s",
-					"\tRunning test: " + ColorsTerminal.BLUE + m.getName() + ColorsTerminal.RESET);
-			buffer.append(s);
+			String message = String.format("%-50s", "\tRunning test: " + ColorsTerminal.BLUE + m.getName() + ColorsTerminal.RESET);
+			bufferConsole.append(message);
+			bufferFile.append(message);
+			
 			Request request = Request.method(klass, m.getName());
 			Result result = new JUnitCore().run(request);
+			
 			if (result.wasSuccessful()) {
-				s = String.format("%20s",
-						" ................ " + ColorsTerminal.GREEN + " [PASS] " + ColorsTerminal.RESET + "\n");
-				buffer.append(s);
+				message = String.format("%20s", " ................ " + ColorsTerminal.GREEN + " [PASS] " + ColorsTerminal.RESET + "\n");
+				bufferConsole.append(message);
+				bufferFile.append(message);
 				successCounter++;
 			} else {
-				s = String.format("%20s",
-						" ................ " + ColorsTerminal.RED + " [FAILED] " + ColorsTerminal.RESET + "\n");
-				buffer.append(s);
+				message = String.format("%20s", " ................ " + ColorsTerminal.RED + " [FAILED] " + ColorsTerminal.RESET + "\n");
+				bufferConsole.append(message);
+				bufferFile.append(message);
 				failedCounter++;
 				for (Failure f : result.getFailures()) {
-					buffer.append("\t\t" + f.getMessage() + f.getTrace());
+					bufferConsole.append("\t\t\\_[REASON] " + f.getMessage() + "\n");
+					bufferFile.append("\t\t\\_[REASON] " + f.getMessage() + "\n\t" + f.getTrace());
 				}
 			}
 		}
 
-		System.out.println(buffer);
-		printResult(successCounter, failedCounter);
+		printResult(successCounter, failedCounter, bufferConsole);
+		printResult(successCounter, failedCounter, bufferFile);
+		System.out.println(bufferConsole);
+		
+		// Print File
+		try (BufferedWriter w = new BufferedWriter(new FileWriter("tornado_unittests.log", true))) {
+			DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+			Date date = new Date();
+			w.write("\n" + dateFormat.format(date) + "\n");
+			w.write(bufferFile.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public static void runTestClassAndMethod(String klassName, String methodName) throws ClassNotFoundException {
