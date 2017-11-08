@@ -426,12 +426,14 @@ public class TestArrays {
 		}
 	}
 	
-	public static void matrixMultiplication(float[] A, float[] B, float[] C, final int size) {
+	public static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
 		for (@Parallel int i = 0; i < size; i++) {
-			for (int j = 0; j < size; j++) {
+			for (@Parallel int j = 0; j < size; j++) {
+				float sum = 0.0f;
 				for (int k = 0; k < size; k++) {
-					C[i * size + j] += A[i * size + k] * B[k * size + j];
+					 sum += A[(i * size) + k] * B[(k * size) + j];
 				}
+				C[(i * size) + j] = sum;
 			}
 		}
 	}
