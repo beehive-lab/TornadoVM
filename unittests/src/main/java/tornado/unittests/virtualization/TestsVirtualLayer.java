@@ -21,6 +21,12 @@ public class TestsVirtualLayer {
 		}
 	}
 	
+	public static void test(int[] a, int value) {
+		for (@Parallel int i = 0; i < a.length; i++) {
+			a[i] = a[i] + value;
+		}
+	}
+	
 	/**
 	 * Test there are at least two OpenCL devices available
 	 */
@@ -73,5 +79,56 @@ public class TestsVirtualLayer {
 			assertEquals((initValue + numKernels), data[i], 0.1);
 		}
 	}
+	
+	@Test
+	public void testVirtualLayer01() {
+		// This is illegal in Tornado
+		
+		final int N = 128;
+		
+		int[] data = new int[N];
+		Arrays.fill(data, 100);
+
+		TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        TaskSchedule s0 = new TaskSchedule("s0");
+        
+        // This test only is executed once (the first task)
+        
+        // Assign task to device 0
+        s0.setDevice(driver.getDevice(0));
+        s0.task("t0", TestsVirtualLayer::test, data, 1);
+        s0.streamOut(data);
+        s0.execute();
+        
+        // Assign another task to device 1
+        s0.setDevice(driver.getDevice(1));
+        s0.task("t1", TestsVirtualLayer::test, data, 10);
+        s0.streamOut(data);
+		s0.execute();
+		
+		System.out.println(Arrays.toString(data));
+	}
+	
+	@Test
+	public void testVirtualLayer02() {
+		final int N = 128;
+		int[] data = new int[N];
+		
+		Arrays.fill(data, 100);
+		TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        TaskSchedule s0 = new TaskSchedule("s0");
+        
+        // Assign task to device 0
+        s0.setDevice(driver.getDevice(0));
+        s0.task("t0", TestsVirtualLayer::test, data, 1);
+        s0.setDevice(driver.getDevice(1));
+        s0.task("t1", TestsVirtualLayer::test, data, 10);
+        s0.streamOut(data);
+        s0.execute();
+        
+		
+		System.out.println(Arrays.toString(data));
+	}
+
 
 }
