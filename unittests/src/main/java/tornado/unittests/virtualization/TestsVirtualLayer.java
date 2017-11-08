@@ -3,6 +3,7 @@ package tornado.unittests.virtualization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static tornado.common.Tornado.setProperty;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import java.util.Arrays;
@@ -171,6 +172,34 @@ public class TestsVirtualLayer {
         for (int i = 0; i < N; i++) {
         	assertEquals(101, dataA[i]);
         	assertEquals(210, dataB[i]);
+        }	
+	}
+	
+	@Test
+	public void testVirtualLayer04() {
+		final int N = 128;
+		int[] data = new int[N];
+		
+		Arrays.fill(data, 100);
+		
+		final int numDrivers = getTornadoRuntime().getNumDrivers();
+		for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
+	        TaskSchedule s0 = new TaskSchedule("s" + driverIndex);
+			final TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
+			driver.getDefaultDevice().reset();
+			final int numDevices = driver.getDeviceCount();
+			for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
+				//System.out.println("s" + driverIndex + ".device="+ driverIndex + ":" + deviceIndex);
+				setProperty("s" + driverIndex + ".device=", driverIndex + ":" + deviceIndex);
+				s0.setDevice(driver.getDevice(deviceIndex));
+		        s0.task("t" + deviceIndex, TestsVirtualLayer::testA, data, 1);
+			}
+			s0.streamOut(data);
+	        s0.execute();
+		}
+        
+        for (int i = 0; i < N; i++) {
+        	assertEquals(102, data[i]);
         }	
 	}
 
