@@ -63,7 +63,7 @@ $ tornado tornado.examples.HelloWorld
 # Running Benchmarks #
 
 ```bash
-$ tornado tornado.benchmarks.BenchmarkRunner tornado.benchmarks.sadd.Benchmark
+$ tornado tornado.benchmarks.BenchmarkRunner sadd
 ```
 
 
