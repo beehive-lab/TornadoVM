@@ -20,7 +20,7 @@ __TEST_THE_WORLD__ = [
 __MAIN_TORNADO_TEST_RUNNER__ = "tornado.unittests.tools.TornadoTestRunner "
 __MAIN_TORNADO_JUNIT__ = "org.junit.runner.JUnitCore "
 __IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintCFG=true "
-__PRINT_OPENCL_KERNEL__ = "-Dtornado.opencl.source.dump=True "
+__PRINT_OPENCL_KERNEL__ = "-Dtornado.opencl.source.print=True "
 __VERSION__ = "0.1_02112017"
 
 def runTests(args):

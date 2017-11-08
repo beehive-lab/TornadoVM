@@ -57,6 +57,7 @@ public class OCLCodeCache {
     private final boolean OPENCL_LOAD_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.load", "False"));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", "False"));
     private final boolean OPENCL_DUMP_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.dump", "False"));
+    private final boolean OPENCL_PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.print", "False"));
     private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "opencl-cache");
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "opencl-src");
 
@@ -119,10 +120,11 @@ public class OCLCodeCache {
             } catch (IOException e) {
                 error("unable to dump source: ", e.getMessage());
             }
-            
-            // Also print the source code in STDOUT
-            String sourceCode = new String(source);
-            System.out.println(sourceCode);
+        }
+        
+        if (OPENCL_PRINT_SOURCE) {
+        	String sourceCode = new String(source);
+        	System.out.println(sourceCode);
         }
 
         // TODO add support for passing compiler optimisation flags here
