@@ -27,6 +27,7 @@ package tornado.unittests.arrays;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -98,6 +99,52 @@ public class TestArrays {
 
 		for (int i = 0; i < N; i++) {
 			assertEquals(i + numKernels, data[i], 0.0001);
+		}
+	}
+	
+	public static void initializeSeqiential(int[] a) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = 1;
+        }
+    }
+	
+	@Test
+	public void testInitNotParallel() {
+		final int N = 128;
+		int[] data = new int[N];
+
+		TaskSchedule s0 = new TaskSchedule("s0");
+		assertNotNull(s0);
+		
+		s0.task("t0", TestArrays::initializeSeqiential, data);
+		s0.streamOut(data).warmup();
+		s0.execute();
+
+		for (int i = 0; i < N; i++) {
+			assertEquals(1, data[i], 0.0001);
+		}
+	}
+	
+	public static void initializeToOneParallel(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = 1;
+        }
+    }
+	
+	@Test
+	public void testInitParallel() {
+		final int N = 128;
+		int[] data = new int[N];
+
+		TaskSchedule s0 = new TaskSchedule("s0");
+		assertNotNull(s0);
+		
+		s0.task("t0", TestArrays::initializeToOneParallel, data);
+		s0.streamOut(data).warmup();
+		s0.execute();
+
+		for (int i = 0; i < N; i++) {
+			assertEquals(1, data[i], 0.0001);
 		}
 	}
 
@@ -253,5 +300,32 @@ public class TestArrays {
 			assertEquals(a[i] + b[i], c[i], 0.001);
 		}
 	}
+	
+	public static void fillMatrix(int[][] values) {
+        for (@Parallel int i = 0; i < values.length; i++) {
+            Arrays.fill(values[i], i);
+        }
+    }
+	
+	@Test
+	public void testFillMatrix() {
+		final int numElements = 16;
+		int[][] a = new int[numElements][numElements];
+		
+		//@formatter:off
+		TaskSchedule t = new TaskSchedule("s0")
+	             .task("t0", TestArrays::fillMatrix, a)
+	             .streamOut(new Object[]{a});
+	    //@formatter:on
+		t.warmup();
+		t.execute();
+
+		for (int i = 0; i < a.length; i++) {
+			for (int j = 0; j < a[i].length; j++) {
+				assertEquals(i, a[i][j]);
+			}
+		}
+	}
+
 
 }

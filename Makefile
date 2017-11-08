@@ -4,7 +4,7 @@ build:
 	mvn install
 
 install:
-	python easy-install.py
+	python bin/easy-install.py
 
 clean:
 	mvn clean
