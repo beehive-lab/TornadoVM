@@ -103,8 +103,6 @@ public class TestsVirtualLayer {
         s0.task("t1", TestsVirtualLayer::test, data, 10);
         s0.streamOut(data);
 		s0.execute();
-		
-		System.out.println(Arrays.toString(data));
 	}
 	
 	@Test
@@ -116,7 +114,6 @@ public class TestsVirtualLayer {
 		TornadoDriver driver = getTornadoRuntime().getDriver(0);
         TaskSchedule s0 = new TaskSchedule("s0");
         
-        // Assign task to device 0
         s0.setDevice(driver.getDevice(0));
         s0.task("t0", TestsVirtualLayer::test, data, 1);
         s0.setDevice(driver.getDevice(1));
