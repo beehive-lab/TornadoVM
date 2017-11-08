@@ -21,9 +21,15 @@ public class TestsVirtualLayer {
 		}
 	}
 	
-	public static void test(int[] a, int value) {
+	public static void testA(int[] a, int value) {
 		for (@Parallel int i = 0; i < a.length; i++) {
 			a[i] = a[i] + value;
+		}
+	}
+	
+	public static void testB(int[] a, int value) {
+		for (@Parallel int i = 0; i < a.length; i++) {
+			a[i] = a[i] * value;
 		}
 	}
 	
@@ -35,6 +41,20 @@ public class TestsVirtualLayer {
 		TornadoDriver driver = getTornadoRuntime().getDriver(0);
 		assertNotNull(driver.getDevice(0));
 		assertNotNull(driver.getDevice(1));
+	}
+	
+	
+	@Test
+	public void testDriverAndDevices() {
+		int numDrivers = getTornadoRuntime().getNumDrivers();
+		for (int i = 0; i < numDrivers; i++) {
+			TornadoDriver driver = getTornadoRuntime().getDriver(i);
+			assertNotNull(driver);
+			int numDevices = driver.getDeviceCount();
+			for (int j = 0; j < numDevices; j++) {
+				assertNotNull(driver.getDevice(j));
+			}
+		}
 	}
 	
 	/**
@@ -65,7 +85,7 @@ public class TestsVirtualLayer {
 		s0.execute();
 		
 		for (int i = 0; i < numElements; i++) {
-			assertEquals((initValue + numKernels), data[i], 0.1);
+			assertEquals((initValue + numKernels), data[i]);
 		}
 		
 		initValue += numKernels;
@@ -74,13 +94,16 @@ public class TestsVirtualLayer {
 		s0.execute();
 		
 		for (int i = 0; i < numElements; i++) {
-			assertEquals((initValue + numKernels), data[i], 0.1);
+			assertEquals((initValue + numKernels), data[i]);
 		}
 	}
 	
 	@Test
 	public void testVirtualLayer01() {
-		// This is illegal in Tornado
+		/*
+		 * The following expression is not correct for Tornado to
+		 * execute on different devices. 
+		 */
 		
 		final int N = 128;
 		
@@ -94,13 +117,13 @@ public class TestsVirtualLayer {
         
         // Assign task to device 0
         s0.setDevice(driver.getDevice(0));
-        s0.task("t0", TestsVirtualLayer::test, data, 1);
+        s0.task("t0", TestsVirtualLayer::testA, data, 1);
         s0.streamOut(data);
         s0.execute();
         
         // Assign another task to device 1
         s0.setDevice(driver.getDevice(1));
-        s0.task("t1", TestsVirtualLayer::test, data, 10);
+        s0.task("t1", TestsVirtualLayer::testA, data, 10);
         s0.streamOut(data);
 		s0.execute();
 	}
@@ -115,16 +138,40 @@ public class TestsVirtualLayer {
         TaskSchedule s0 = new TaskSchedule("s0");
         
         s0.setDevice(driver.getDevice(0));
-        s0.task("t0", TestsVirtualLayer::test, data, 1);
+        s0.task("t0", TestsVirtualLayer::testA, data, 1);
         s0.setDevice(driver.getDevice(1));
-        s0.task("t1", TestsVirtualLayer::test, data, 10);
+        s0.task("t1", TestsVirtualLayer::testA, data, 10);
         s0.streamOut(data);
         s0.execute();
         
         for (int i = 0; i < N; i++) {
         	assertEquals(111, data[i]);
-        }
+        }	
+	}
+	
+	@Test
+	public void testVirtualLayer03() {
+		final int N = 128;
+		int[] dataA = new int[N];
+		int[] dataB = new int[N];
 		
+		Arrays.fill(dataA, 100);
+		Arrays.fill(dataB, 200);
+		TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        TaskSchedule s0 = new TaskSchedule("s0");
+        
+        s0.setDevice(driver.getDevice(0));
+        s0.task("t0", TestsVirtualLayer::testA, dataA, 1);
+        s0.setDevice(driver.getDevice(1));
+        s0.task("t1", TestsVirtualLayer::testA, dataB, 10);
+        s0.streamOut(dataA);
+        s0.streamOut(dataB);
+        s0.execute();
+        
+        for (int i = 0; i < N; i++) {
+        	assertEquals(101, dataA[i]);
+        	assertEquals(210, dataB[i]);
+        }	
 	}
 
 
