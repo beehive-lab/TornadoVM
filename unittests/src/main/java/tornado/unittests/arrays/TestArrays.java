@@ -326,6 +326,62 @@ public class TestArrays {
 			}
 		}
 	}
+	
+	public static void fillMatrix2(int[][] values) {
+        for (@Parallel int i = 0; i < values.length; i++) {
+        	for (int j = 0; j < values.length; j++) {
+        		values[i][j] = i;
+        	}
+        }
+    }
+	
+	@Test
+	public void testFillMatrix2() {
+		final int numElements = 16;
+		int[][] a = new int[numElements][numElements];
+		
+		//@formatter:off
+		TaskSchedule t = new TaskSchedule("s0")
+	             .task("t0", TestArrays::fillMatrix2, a)
+	             .streamOut(new Object[]{a});
+	    //@formatter:on
+		t.warmup();
+		t.execute();
+
+		for (int i = 0; i < a.length; i++) {
+			for (int j = 0; j < a[i].length; j++) {
+				assertEquals(i, a[i][j]);
+			}
+		}
+	}
+	
+	public static void fillMatrix3(int[][] values) {
+        for (@Parallel int i = 0; i < values.length; i++) {
+        	for (@Parallel int j = 0; j < values.length; j++) {
+        		values[i][j] = i;
+        	}
+        }
+    }
+	
+	@Test
+	public void testFillMatrix3() {
+		final int numElements = 16;
+		int[][] a = new int[numElements][numElements];
+		
+		//@formatter:off
+		TaskSchedule t = new TaskSchedule("s0")
+	             .task("t0", TestArrays::fillMatrix3, a)
+	             .streamOut(new Object[]{a});
+	    //@formatter:on
+		t.warmup();
+		t.execute();
+
+		for (int i = 0; i < a.length; i++) {
+			for (int j = 0; j < a[i].length; j++) {
+				assertEquals(i, a[i][j]);
+			}
+		}
+	}
 
 
 }
