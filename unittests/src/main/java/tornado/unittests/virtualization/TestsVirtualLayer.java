@@ -49,8 +49,6 @@ public class TestsVirtualLayer {
 		int[] data = new int[numElements];
 		int initValue = 0;
 
-		Arrays.fill(data, 0);
-
         TaskSchedule s0 = new TaskSchedule("s0");
         for (int i = 0; i < numKernels; i++) {
             s0.task("t" + i, TestsVirtualLayer::acc, data, 1);
@@ -126,8 +124,10 @@ public class TestsVirtualLayer {
         s0.streamOut(data);
         s0.execute();
         
+        for (int i = 0; i < N; i++) {
+        	assertEquals(111, data[i]);
+        }
 		
-		System.out.println(Arrays.toString(data));
 	}
 
 
