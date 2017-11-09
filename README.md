@@ -60,6 +60,20 @@ $ . etc/tornado.env
 $ tornado tornado.examples.HelloWorld
 ```
 
+To run on a specific device, use the option: 
+
+```bash
+ -D<s>.<t>.device=<driverNumber>:<deviceNumber>
+```
+
+Where s is the schedule task name and t is the task name.
+
+For example:
+
+```bash
+$ tornado -Ds0.t0.device=0:1 tornado.examples.HelloWorld
+```
+
 # Running Benchmarks #
 
 ```bash
