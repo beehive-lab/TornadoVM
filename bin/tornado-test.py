@@ -16,6 +16,7 @@ __TEST_THE_WORLD__ = [
 	"tornado.unittests.vectortypes.TestVectorAllocation",
 	"tornado.unittests.prebuilt.PrebuiltTest",
 	"tornado.unittests.virtualization.TestsVirtualLayer",
+	"tornado.unittests.tasks.TestSingleTaskSingleDevice",
 ]
 
 ## Options
