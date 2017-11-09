@@ -17,6 +17,7 @@ __TEST_THE_WORLD__ = [
 	"tornado.unittests.prebuilt.PrebuiltTest",
 	"tornado.unittests.virtualization.TestsVirtualLayer",
 	"tornado.unittests.tasks.TestSingleTaskSingleDevice",
+	"tornado.unittests.tasks.TestMultipleTasksSingleDevice",
 ]
 
 ## Options
