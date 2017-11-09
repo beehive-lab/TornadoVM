@@ -44,7 +44,6 @@ public class TestsVirtualLayer {
 		assertNotNull(driver.getDevice(1));
 	}
 	
-	
 	@Test
 	public void testDriverAndDevices() {
 		int numDrivers = getTornadoRuntime().getNumDrivers();
@@ -105,7 +104,6 @@ public class TestsVirtualLayer {
 		 * The following expression is not correct for Tornado to
 		 * execute on different devices. 
 		 */
-		
 		final int N = 128;
 		
 		int[] data = new int[N];
@@ -202,6 +200,5 @@ public class TestsVirtualLayer {
         	assertEquals(102, data[i]);
         }	
 	}
-
 
 }

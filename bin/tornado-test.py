@@ -4,6 +4,7 @@ import os
 import sys
 import argparse
 
+## Include the new test class here
 __TEST_THE_WORLD__ = [
 	"tornado.unittests.TestHello",
 	"tornado.unittests.arrays.TestArrays",
@@ -17,43 +18,56 @@ __TEST_THE_WORLD__ = [
 	"tornado.unittests.virtualization.TestsVirtualLayer",
 ]
 
+## Options
 __MAIN_TORNADO_TEST_RUNNER__ = "tornado.unittests.tools.TornadoTestRunner "
 __MAIN_TORNADO_JUNIT__ = "org.junit.runner.JUnitCore "
 __IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintCFG=true "
 __PRINT_OPENCL_KERNEL__ = "-Dtornado.opencl.source.print=True "
-__VERSION__ = "0.1_02112017"
+__DEBUG_TORNADO__ = "-Dtornado.debug=True "
 
-def runTests(args):
+## 
+__VERSION__ = "0.2_09112017"
 
-	## Compose all Tornado options
+
+def composeAllOptions(args):
+
 	verbose = "-Dtornado.unittests.verbose="
-	igv = " "
+	options = verbose
+
 	if (args.verbose):
-		verbose = verbose + "True "
+		options = options + "True "
 	else:
-		verbose = verbose + "False "
+		options = options + "False "
 
 	if (args.igv):
-		igv = igv + __IGV_OPTIONS__
+		options = options + __IGV_OPTIONS__
 
-	printKernelOption = " "
+	if (args.debugTornado):
+		options = options + __DEBUG_TORNADO__
+
 	if (args.printKernel):
-		printKernelOption = " " + __PRINT_OPENCL_KERNEL__
+		options = options + __PRINT_OPENCL_KERNEL__
+
+	return options
+
+
+def runTests(args):
+	options = composeAllOptions(args)
 
 	## Run test
-	cmd = "tornado " + verbose + printKernelOption + igv + " " + __MAIN_TORNADO_TEST_RUNNER__ 
+	cmd = "tornado " + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
 	if (args.testClass != None):
 		cmd = cmd + " " + args.testClass 
-		#print cmd
+		print cmd
 		os.system(cmd)
 	else:
 		for t in __TEST_THE_WORLD__:
 			command = cmd + t
-			#print cmd
+			print cmd
 			os.system(command)
 
-def runWithJUnit(args):
 
+def runWithJUnit(args):
 	cmd = "tornado " + __MAIN_TORNADO_JUNIT__ 
 
 	if (args.testClass != None):
@@ -67,19 +81,19 @@ def runWithJUnit(args):
 
 def parseArguments():
 	""" Parse command line arguments """ 
-	parser = argparse.ArgumentParser(description='Tool to execute Tornado unit testing')
+	parser = argparse.ArgumentParser(description='Tool to execute tests in Tornado')
 	parser.add_argument('testClass', nargs="?", help='testClass#method')
 	parser.add_argument('--version', action="store_true", dest="version", default=False, help="Print version")
-	parser.add_argument('--verbose', action="store_true", dest="verbose", default=False, help="Run test in verbose mode")	
-	parser.add_argument('--printKernel', action="store_true", dest="printKernel", default=False, help="Print OpenCL kernel")	
+	parser.add_argument('--verbose', "-V", action="store_true", dest="verbose", default=False, help="Run test in verbose mode")	
+	parser.add_argument('--printKernel', "-pk", action="store_true", dest="printKernel", default=False, help="Print OpenCL kernel")	
 	parser.add_argument('--junit', action="store_true", dest="junit", default=False, help="Run within JUnitCore main class")	
 	parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")	
-	parser.add_argument('--testall', action="store_true", dest="verbose", default=False, help="Run all unittest in Tornado")	
+	parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False, help="Debug Tornado")	
 	args = parser.parse_args()
 	return args
 
-if __name__ == '__main__':
 
+def main():
 	args = parseArguments()
 
 	if (args.version):
@@ -90,3 +104,7 @@ if __name__ == '__main__':
 		runWithJUnit(args)
 	else:
 		runTests(args)	
+
+if __name__ == '__main__':
+	main()
+
