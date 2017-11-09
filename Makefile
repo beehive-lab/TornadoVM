@@ -1,7 +1,7 @@
 all: build
 
 build:
-	mvn install
+	mvn -T 1C install
 
 install:
 	python bin/easy-install.py

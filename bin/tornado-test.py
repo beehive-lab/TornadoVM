@@ -58,12 +58,12 @@ def runTests(args):
 	cmd = "tornado " + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
 	if (args.testClass != None):
 		cmd = cmd + " " + args.testClass 
-		print cmd
+		#print cmd
 		os.system(cmd)
 	else:
 		for t in __TEST_THE_WORLD__:
 			command = cmd + t
-			print cmd
+			#print cmd
 			os.system(command)
 
 
