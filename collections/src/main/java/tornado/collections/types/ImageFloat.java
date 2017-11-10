@@ -25,11 +25,6 @@
  */
 package tornado.collections.types;
 
-import java.nio.FloatBuffer;
-import tornado.api.Parallel;
-import tornado.collections.math.TornadoMath;
-import tornado.common.exceptions.TornadoInternalError;
-
 import static java.lang.Float.MAX_VALUE;
 import static java.lang.Float.MIN_VALUE;
 import static java.lang.String.format;
@@ -40,6 +35,10 @@ import static tornado.collections.types.FloatOps.findMaxULP;
 import static tornado.collections.types.FloatOps.fmt;
 import static tornado.collections.types.StorageFormats.toRowMajor;
 import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+
+import java.nio.FloatBuffer;
+
+import tornado.api.Parallel;
 
 
 public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
@@ -118,7 +117,7 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
      * @param value new value
      */
     public void set(int i, int j, float value){
-    	storage[toRowMajor(j, i, X)] = value;
+    	storage[toRowMajor(i, j, X)] = value;
     }
 
     public void put(float[] array){
@@ -157,9 +156,11 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
 //    }
 
     public void fill(float value){
-    	for(@Parallel int i=0;i<Y;i++)
-    		for(@Parallel int j=0;j<X;j++)
+    	for(@Parallel int i=0;i<Y;i++) {
+    		for(@Parallel int j=0;j<X;j++) {
     			set(i,j,value);
+    		}
+    	}
     }
 
     @Deprecated
@@ -275,50 +276,50 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
 		return format("ImageFloat<%dx%d>: min=%e, max=%e, mean=%e, sd=%e",X,Y,min(),max(),mean(),stdDev());
 	}
 
-	 @Override
-		public void loadFromBuffer(FloatBuffer buffer) {
-			asBuffer().put(buffer);
+	@Override
+	public void loadFromBuffer(FloatBuffer buffer) {
+		asBuffer().put(buffer);
+	}
+
+	@Override
+	public FloatBuffer asBuffer() {
+		return wrap(storage);
+	}
+
+	@Override
+	public int size() {
+		return numElements;
+	}
+
+	public FloatingPointError calculateULP(ImageFloat ref){
+		float maxULP = MIN_VALUE;
+		float minULP = MAX_VALUE;
+		float averageULP = 0f;
+
+		/*
+		 * check to make sure dimensions match
+		 */
+		if(ref.X != X && ref.Y != Y){
+			return new FloatingPointError(-1f,0f,0f,0f);
 		}
 
-		@Override
-		public FloatBuffer asBuffer() {
-			return wrap(storage);
-		}
+		for(int j=0;j<Y;j++){
+			for(int i=0;i<X;i++){
+				final float v = get(i, j);
+				final float r = ref.get(i, j);
 
-		@Override
-		public int size() {
-			return numElements;
-		}
+				final float ulpFactor = findMaxULP(v, r);
+				averageULP += ulpFactor;
+				minULP = Math.min(ulpFactor, minULP);
+				maxULP = Math.max(ulpFactor, maxULP);
 
-		public FloatingPointError calculateULP(ImageFloat ref){
-			float maxULP = MIN_VALUE;
-			float minULP = MAX_VALUE;
-			float averageULP = 0f;
-
-			/*
-			 * check to make sure dimensions match
-			 */
-			if(ref.X != X && ref.Y != Y){
-				return new FloatingPointError(-1f,0f,0f,0f);
 			}
-
-			for(int j=0;j<Y;j++){
-				for(int i=0;i<X;i++){
-					final float v = get(i, j);
-					final float r = ref.get(i, j);
-
-					final float ulpFactor = findMaxULP(v, r);
-					averageULP += ulpFactor;
-					minULP = Math.min(ulpFactor, minULP);
-					maxULP = Math.max(ulpFactor, maxULP);
-
-				}
-			}
-
-			averageULP /= (float) X * Y;
-
-			return new FloatingPointError(averageULP, minULP, maxULP, -1f);
 		}
+
+		averageULP /= (float) X * Y;
+
+		return new FloatingPointError(averageULP, minULP, maxULP, -1f);
+	}
 
 //	public void map(ImageFloat dest, FloatToFloatFunction function){
 //		for(@Parallel int i=0;i<Y;i++)
