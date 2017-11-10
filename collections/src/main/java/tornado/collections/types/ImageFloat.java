@@ -117,7 +117,7 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
      * @param value new value
      */
     public void set(int i, int j, float value){
-    	storage[toRowMajor(i, j, X)] = value;
+    	storage[toRowMajor(j, i, X)] = value;
     }
 
     public void put(float[] array){
@@ -158,7 +158,7 @@ public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {
     public void fill(float value){
     	for(@Parallel int i=0;i<Y;i++) {
     		for(@Parallel int j=0;j<X;j++) {
-    			set(i,j,value);
+    			set(j,i,value);
     		}
     	}
     }
