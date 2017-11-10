@@ -26,19 +26,29 @@ package tornado.unittests.arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import tornado.api.Parallel;
+import tornado.runtime.TornadoDriver;
 import tornado.runtime.api.TaskSchedule;
+import tornado.unittests.common.TestBase;
 
-public class TestArrays {
+public class TestArrays extends TestBase {
 
+	@Before
+	public void before() {
+		final TornadoDriver driver = getTornadoRuntime().getDriver(0);
+		driver.getDefaultDevice().reset();
+	}
+	
 	public static void addAccumulator(int[] a, int value) {
 		for (@Parallel int i = 0; i < a.length; i++) {
 			a[i] += value;

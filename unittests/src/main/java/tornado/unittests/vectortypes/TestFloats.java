@@ -40,8 +40,9 @@ import tornado.collections.types.VectorFloat;
 import tornado.collections.types.VectorFloat3;
 import tornado.collections.types.VectorFloat4;
 import tornado.runtime.api.TaskSchedule;
+import tornado.unittests.common.TestBase;
 
-public class TestFloats {
+public class TestFloats extends TestBase {
 	
 	
 	private static void dotMethodFloat2(Float2 a, Float2 b, VectorFloat result) {

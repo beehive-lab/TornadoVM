@@ -35,8 +35,9 @@ import tornado.collections.types.Int3;
 import tornado.collections.types.Int4;
 import tornado.collections.types.VectorInt;
 import tornado.runtime.api.TaskSchedule;
+import tornado.unittests.common.TestBase;
 
-public class TestInts {
+public class TestInts extends TestBase {
 	
 	private static void addInts2(Int2 a, Int2 b, VectorInt results) {
 		Int2 i2 = Int2.add(a, b);

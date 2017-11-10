@@ -35,8 +35,9 @@ import tornado.collections.types.Double3;
 import tornado.collections.types.Double4;
 import tornado.collections.types.VectorDouble;
 import tornado.runtime.api.TaskSchedule;
+import tornado.unittests.common.TestBase;
 
-public class TestDoubles {
+public class TestDoubles extends TestBase {
 	
 	private static void addDouble2(Double2 a, Double2 b, VectorDouble results) {
 		Double2 d2 = Double2.add(a, b);
