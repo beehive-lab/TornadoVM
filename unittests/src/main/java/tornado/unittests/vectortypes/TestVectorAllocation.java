@@ -34,9 +34,9 @@ import tornado.collections.types.Float4;
 import tornado.collections.types.VectorFloat3;
 import tornado.collections.types.VectorFloat4;
 import tornado.runtime.api.TaskSchedule;
-import tornado.unittests.common.TestBase;
+import tornado.unittests.common.TornadoTestBase;
 
-public class TestVectorAllocation extends TestBase {
+public class TestVectorAllocation extends TornadoTestBase {
 	
 	/** Test to check the kernel can create a float2 type
 	 * 

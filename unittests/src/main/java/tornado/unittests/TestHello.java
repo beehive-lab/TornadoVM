@@ -36,9 +36,9 @@ import org.junit.Test;
 import tornado.api.Parallel;
 import tornado.lang.Debug;
 import tornado.runtime.api.TaskSchedule;
-import tornado.unittests.common.TestBase;
+import tornado.unittests.common.TornadoTestBase;
 
-public class TestHello extends TestBase {
+public class TestHello extends TornadoTestBase {
 
 	private static void printHello(int n) {
 		for (@Parallel int i = 0; i < n; i++) {

@@ -30,7 +30,7 @@ import org.junit.Before;
 
 import tornado.runtime.TornadoDriver;
 
-public abstract class TestBase {
+public abstract class TornadoTestBase {
 	
 	@Before
 	public void before() {

@@ -39,9 +39,9 @@ import org.junit.Test;
 import tornado.api.Parallel;
 import tornado.runtime.TornadoDriver;
 import tornado.runtime.api.TaskSchedule;
-import tornado.unittests.common.TestBase;
+import tornado.unittests.common.TornadoTestBase;
 
-public class TestArrays extends TestBase {
+public class TestArrays extends TornadoTestBase {
 
 	@Before
 	public void before() {

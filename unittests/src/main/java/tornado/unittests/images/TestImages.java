@@ -41,13 +41,13 @@ import tornado.collections.types.ImageFloat3;
 import tornado.collections.types.ImageFloat4;
 import tornado.collections.types.ImageFloat8;
 import tornado.runtime.api.TaskSchedule;
-import tornado.unittests.common.TestBase;
+import tornado.unittests.common.TornadoTestBase;
 
 /**
  * Test for {@link ImageFloat} and {@link ImageByte3} data structures in Tornado.
  *
  */
-public class TestImages extends TestBase {
+public class TestImages extends TornadoTestBase {
 
 	/**
 	 * Test for image::fill kernel with square image.
