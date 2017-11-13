@@ -65,9 +65,9 @@ public class TestVectorAllocation extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0", TestVectorAllocation::testVectorAlloc, a, output)
-                .streamOut(output)
-                .execute();
+            .task("t0", TestVectorAllocation::testVectorAlloc, a, output)
+            .streamOut(output)
+            .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {

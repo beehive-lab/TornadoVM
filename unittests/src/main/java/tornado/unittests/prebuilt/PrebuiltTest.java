@@ -55,17 +55,17 @@ public class PrebuiltTest {
         Arrays.fill(b, 2);
 
         // @formatter:off
-		new TaskSchedule("s0")
-			.prebuiltTask("t0", 
-						  "add", 
-						  "opencl/add.cl", 
-						  new Object[] { a, b, c },
-						  new Access[] { Access.READ, Access.READ, Access.WRITE }, 
-						  OpenCL.defaultDevice(),
-						  new int[] { numElements })
-			.streamOut(c)
-			.execute();
-		// @formatter:on
+        new TaskSchedule("s0")
+            .prebuiltTask("t0", 
+                        "add", 
+                        "opencl/add.cl", 
+                        new Object[] { a, b, c },
+                        new Access[] { Access.READ, Access.READ, Access.WRITE }, 
+                        OpenCL.defaultDevice(),
+                        new int[] { numElements })
+            .streamOut(c)
+            .execute();
+        // @formatter:on
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);

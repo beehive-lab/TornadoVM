@@ -77,9 +77,9 @@ public class TestHello extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0", TestHello::add, a, b, c)
-                .streamOut(c)
-                .execute();
+            .task("t0", TestHello::add, a, b, c)
+            .streamOut(c)
+            .execute();
         //@formatter:on
 
         for (int i = 0; i < c.length; i++) {

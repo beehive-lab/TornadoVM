@@ -198,12 +198,12 @@ public class TestArrays extends TornadoTestBase {
         });
 
         //@formatter:off
-		new TaskSchedule("s0")
-				 .streamIn(a, b)
-	             .task("t0", TestArrays::vectorAddDouble, a, b, c)
-	             .streamOut(c)
-	             .execute();
-	    //@formatter:on
+        new TaskSchedule("s0")
+            .streamIn(a, b)
+            .task("t0", TestArrays::vectorAddDouble, a, b, c)
+            .streamOut(c)
+            .execute();
+        //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -223,12 +223,12 @@ public class TestArrays extends TornadoTestBase {
         });
 
         //@formatter:off
-		new TaskSchedule("s0")
-				 .streamIn(a, b)
-	             .task("t0", TestArrays::vectorAddFloat, a, b, c)
-	             .streamOut(c)
-	             .execute();
-	    //@formatter:on
+        new TaskSchedule("s0")
+            .streamIn(a, b)
+            .task("t0", TestArrays::vectorAddFloat, a, b, c)
+            .streamOut(c)
+            .execute();
+        //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -249,12 +249,12 @@ public class TestArrays extends TornadoTestBase {
         });
 
         //@formatter:off
-		new TaskSchedule("s0")
-				 .streamIn(a, b)
-	             .task("t0", TestArrays::vectorAddInteger, a, b, c)
-	             .streamOut(c)
-	             .execute();
-	    //@formatter:on
+        new TaskSchedule("s0")
+            .streamIn(a, b)
+            .task("t0", TestArrays::vectorAddInteger, a, b, c)
+            .streamOut(c)
+            .execute();
+        //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -274,12 +274,12 @@ public class TestArrays extends TornadoTestBase {
         });
 
         //@formatter:off
-		new TaskSchedule("s0")
-				 .streamIn(a, b)
-	             .task("t0", TestArrays::vectorAddLong, a, b, c)
-	             .streamOut(c)
-	             .execute();
-	    //@formatter:on
+        new TaskSchedule("s0")
+            .streamIn(a, b)
+            .task("t0", TestArrays::vectorAddLong, a, b, c)
+            .streamOut(c)
+            .execute();
+        //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -299,12 +299,12 @@ public class TestArrays extends TornadoTestBase {
         });
 
         //@formatter:off
-		new TaskSchedule("s0")
-				 .streamIn(a, b)
-	             .task("t0", TestArrays::vectorAddShort, a, b, c)
-	             .streamOut(c)
-	             .execute();
-	    //@formatter:on
+        new TaskSchedule("s0")
+            .streamIn(a, b)
+            .task("t0", TestArrays::vectorAddShort, a, b, c)
+            .streamOut(c)
+            .execute();
+        //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -324,9 +324,9 @@ public class TestArrays extends TornadoTestBase {
         int[][] a = new int[numElements][numElements];
 
         //@formatter:off
-		TaskSchedule t = new TaskSchedule("s0")
-	             .task("t0", TestArrays::fillMatrix, a)
-	             .streamOut(new Object[]{a});
+        TaskSchedule t = new TaskSchedule("s0")
+                .task("t0", TestArrays::fillMatrix, a)
+                .streamOut(new Object[]{a});
 	    //@formatter:on
         t.warmup();
         t.execute();
@@ -353,10 +353,11 @@ public class TestArrays extends TornadoTestBase {
         int[][] a = new int[numElements][numElements];
 
         //@formatter:off
-		TaskSchedule t = new TaskSchedule("s0")
-	             .task("t0", TestArrays::fillMatrix2, a)
-	             .streamOut(new Object[]{a});
+        TaskSchedule t = new TaskSchedule("s0")
+		        .task("t0", TestArrays::fillMatrix2, a)
+		        .streamOut(new Object[]{a});
 	    //@formatter:on
+
         t.warmup();
         t.execute();
 
@@ -382,10 +383,10 @@ public class TestArrays extends TornadoTestBase {
         int[][] a = new int[numElements][numElements];
 
         //@formatter:off
-		TaskSchedule t = new TaskSchedule("s0")
-	             .task("t0", TestArrays::fillMatrix3, a)
-	             .streamOut(new Object[]{a});
-	    //@formatter:on
+        TaskSchedule t = new TaskSchedule("s0")
+		        .task("t0", TestArrays::fillMatrix3, a)
+		        .streamOut(new Object[]{a});
+		//@formatter:on
         t.warmup();
         t.execute();
 
@@ -421,10 +422,10 @@ public class TestArrays extends TornadoTestBase {
         });
 
         //@formatter:off
-		TaskSchedule t = new TaskSchedule("s0")
-	             .task("t0", TestArrays::matrixVector, matrix, vector, result, N)
-	             .streamOut(result);
-	    //@formatter:on
+        TaskSchedule t = new TaskSchedule("s0")
+                .task("t0", TestArrays::matrixVector, matrix, vector, result, N)
+                .streamOut(result);
+        //@formatter:on
         t.warmup();
         t.execute();
 
@@ -462,10 +463,10 @@ public class TestArrays extends TornadoTestBase {
         });
 
         //@formatter:off
-		TaskSchedule t = new TaskSchedule("s0")
-	             .task("t0", TestArrays::matrixVector, matrixA, matrixB, matrixC, N)
-	             .streamOut(matrixC);
-	    //@formatter:on
+        TaskSchedule t = new TaskSchedule("s0")
+                .task("t0", TestArrays::matrixVector, matrixA, matrixB, matrixC, N)
+                .streamOut(matrixC);
+        //@formatter:on
         t.warmup();
         t.execute();
 

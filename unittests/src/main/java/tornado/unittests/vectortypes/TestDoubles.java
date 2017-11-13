@@ -54,9 +54,9 @@ public class TestDoubles extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0", TestDoubles::addDouble2, a, b, output)
-                .streamOut(output)
-                .execute();
+            .task("t0", TestDoubles::addDouble2, a, b, output)
+            .streamOut(output)
+            .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -79,9 +79,9 @@ public class TestDoubles extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0", TestDoubles::addDouble3, a, b, output)
-                .streamOut(output)
-                .execute();
+            .task("t0", TestDoubles::addDouble3, a, b, output)
+            .streamOut(output)
+            .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -104,9 +104,9 @@ public class TestDoubles extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0", TestDoubles::addDouble4, a, b, output)
-                .streamOut(output)
-                .execute();
+            .task("t0", TestDoubles::addDouble4, a, b, output)
+            .streamOut(output)
+            .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -136,9 +136,9 @@ public class TestDoubles extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0", TestDoubles::addDouble, a, b, output)
-                .streamOut(output)
-                .execute();
+            .task("t0", TestDoubles::addDouble, a, b, output)
+            .streamOut(output)
+            .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -186,10 +186,10 @@ public class TestDoubles extends TornadoTestBase {
         // Parallel computation with Tornado
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0-MAP", TestDoubles::dotProductFunctionMap, a, b, outputMap)
-                .task("t1-REDUCE", TestDoubles::dotProductFunctionReduce, outputMap, outputReduce)
-                .streamOut(outputReduce)
-                .execute();
+            .task("t0-MAP", TestDoubles::dotProductFunctionMap, a, b, outputMap)
+            .task("t1-REDUCE", TestDoubles::dotProductFunctionReduce, outputMap, outputReduce)
+            .streamOut(outputReduce)
+            .execute();
         //@formatter:on
 
         assertEquals(seqReduce[0], outputReduce[0], 0.001);

@@ -68,13 +68,13 @@ public class TestMultipleTasksSingleDevice {
         int[] b = new int[numElements];
 
         //@formatter:off
-		new TaskSchedule("s0")
-				 .streamIn(a, b)
-	             .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
-	             .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)
-	             .streamOut(a)
-	             .execute();
-	    //@formatter:on
+        new TaskSchedule("s0")
+		    .streamIn(a, b)
+		    .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
+		    .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)
+		    .streamOut(a)
+		    .execute();
+        //@formatter:on
 
         for (int i = 0; i < a.length; i++) {
             assertEquals(120, a[i]);
@@ -88,14 +88,14 @@ public class TestMultipleTasksSingleDevice {
         int[] b = new int[numElements];
 
         //@formatter:off
-		new TaskSchedule("s0")
-				 .streamIn(a, b)
-	             .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
-	             .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)
-	             .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, a, b, 12)
-	             .streamOut(b)
-	             .execute();
-	    //@formatter:on
+        new TaskSchedule("s0")
+            .streamIn(a, b)
+            .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
+            .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)
+            .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, a, b, 12)
+            .streamOut(b)
+            .execute();
+        //@formatter:on
 
         int val = (12 * 120) + 120;
         for (int i = 0; i < a.length; i++) {
@@ -111,15 +111,15 @@ public class TestMultipleTasksSingleDevice {
         int[] c = new int[numElements];
 
         //@formatter:off
-		new TaskSchedule("s0")
-				 .streamIn(a, b)
-	             .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
-	             .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)
-	             .task("t2", TestMultipleTasksSingleDevice::task0Initialization, b)
-	             .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, b, c, 12)
-	             .streamOut(c)
-	             .execute();
-	    //@formatter:on
+        new TaskSchedule("s0")
+            .streamIn(a, b)
+            .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
+            .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)
+            .task("t2", TestMultipleTasksSingleDevice::task0Initialization, b)
+            .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, b, c, 12)
+            .streamOut(c)
+            .execute();
+        //@formatter:on
 
         int val = (12 * 120) + 10;
         for (int i = 0; i < a.length; i++) {
@@ -135,16 +135,16 @@ public class TestMultipleTasksSingleDevice {
         int[] c = new int[numElements];
 
         //@formatter:off
-		new TaskSchedule("s0")
-				 .streamIn(a, b)
-	             .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
-	             .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)
-	             .task("t2", TestMultipleTasksSingleDevice::task0Initialization, b)
-	             .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, b, b, 12)
-	             .task("t4", TestMultipleTasksSingleDevice::task2Saxpy, b, a, c, 12)
-	             .streamOut(c)
-	             .execute();
-	    //@formatter:on
+        new TaskSchedule("s0")
+            .streamIn(a, b)
+            .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
+            .task("t1", TestMultipleTasksSingleDevice::task1Multiplication, a, 12)
+            .task("t2", TestMultipleTasksSingleDevice::task0Initialization, b)
+            .task("t3", TestMultipleTasksSingleDevice::task2Saxpy, a, b, b, 12)
+            .task("t4", TestMultipleTasksSingleDevice::task2Saxpy, b, a, c, 12)
+            .streamOut(c)
+            .execute();
+        //@formatter:on
 
         int val = (12 * 120) + 10;
         val = (12 * val) + (120);

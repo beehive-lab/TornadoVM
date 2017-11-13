@@ -61,12 +61,12 @@ public class TestSingleTaskSingleDevice {
         });
 
         //@formatter:off
-		new TaskSchedule("s0")
-				 .streamIn(a, b)
-	             .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)
-	             .streamOut(c)
-	             .execute();
-	    //@formatter:on
+        new TaskSchedule("s0")
+            .streamIn(a, b)
+            .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)
+            .streamOut(c)
+            .execute();
+        //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
@@ -92,11 +92,11 @@ public class TestSingleTaskSingleDevice {
         s0.setDevice(driver.getDevice(deviceNumber));
 
         //@formatter:off
-		s0.streamIn(a, b)
-		  .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)
-		  .streamOut(c)
-		  .execute();
-	    //@formatter:on
+        s0.streamIn(a, b)
+            .task("t0", TestSingleTaskSingleDevice::simpleTask, a, b, c)
+            .streamOut(c)
+            .execute();
+        //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);

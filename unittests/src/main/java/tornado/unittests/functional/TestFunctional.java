@@ -48,18 +48,16 @@ public class TestFunctional {
         });
 
         //@formatter:off
-		new TaskSchedule("s0")
-	             .task("t0", (x, y, z) -> {
-	            	 
-	            	 // Computation in a lambda expression
-	            	 for (@Parallel int i = 0; i < z.length; i++) {
-	            		 z[i] = x[i] + y[i];
-	            	 }
-	            	 
-	             }, a, b, c)
-	             .streamOut(c)
-	             .execute();
-	    //@formatter:on
+        new TaskSchedule("s0")
+            .task("t0", (x, y, z) -> {	 
+                // Computation in a lambda expression
+                for (@Parallel int i = 0; i < z.length; i++) {
+                    z[i] = x[i] + y[i];
+                }    	 
+            }, a, b, c)
+            .streamOut(c)
+            .execute();
+        //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);

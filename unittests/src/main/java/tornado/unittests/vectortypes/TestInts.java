@@ -54,9 +54,9 @@ public class TestInts extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0", TestInts::addInts2, a, b, output)
-                .streamOut(output)
-                .execute();
+            .task("t0", TestInts::addInts2, a, b, output)
+            .streamOut(output)
+            .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -79,9 +79,9 @@ public class TestInts extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0", TestInts::addInts3, a, b, output)
-                .streamOut(output)
-                .execute();
+            .task("t0", TestInts::addInts3, a, b, output)
+            .streamOut(output)
+            .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -104,9 +104,9 @@ public class TestInts extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0", TestInts::addInts4, a, b, output)
-                .streamOut(output)
-                .execute();
+            .task("t0", TestInts::addInts4, a, b, output)
+            .streamOut(output)
+            .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -136,9 +136,9 @@ public class TestInts extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0", TestInts::addIntVectors, a, b, output)
-                .streamOut(output)
-                .execute();
+            .task("t0", TestInts::addIntVectors, a, b, output)
+            .streamOut(output)
+            .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -185,10 +185,10 @@ public class TestInts extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0-MAP", TestInts::dotProductFunctionMap, a, b, outputMap)
-                .task("t1-REDUCE", TestInts::dotProductFunctionReduce, outputMap, outputReduce)
-                .streamOut(outputReduce)
-                .execute();
+            .task("t0-MAP", TestInts::dotProductFunctionMap, a, b, outputMap)
+            .task("t1-REDUCE", TestInts::dotProductFunctionReduce, outputMap, outputReduce)
+            .streamOut(outputReduce)
+            .execute();
         //@formatter:on
 
         assertEquals(seqReduce[0], outputReduce[0]);
