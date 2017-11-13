@@ -43,389 +43,381 @@ import tornado.runtime.api.TaskSchedule;
 import tornado.unittests.common.TornadoTestBase;
 
 public class TestFloats extends TornadoTestBase {
-	
-	
-	private static void dotMethodFloat2(Float2 a, Float2 b, VectorFloat result) {
-		float dot = Float2.dot(a, b);
+
+    private static void dotMethodFloat2(Float2 a, Float2 b, VectorFloat result) {
+        float dot = Float2.dot(a, b);
         result.set(0, dot);
     }
-	
-	@Test
-	public void simpleDotProductFloat2() {
-		Float2 a = new Float2(new float[] {1, 2});
-		Float2 b = new Float2(new float[] {3, 2});
-		VectorFloat output = new VectorFloat(1);
-		
-		//@formatter:off
+
+    @Test
+    public void simpleDotProductFloat2() {
+        Float2 a = new Float2(1f, 2f);
+        Float2 b = new Float2(3f, 2f);
+        VectorFloat output = new VectorFloat(1);
+
+        //@formatter:off
         new TaskSchedule("s0")
                 .task("t0", TestFloats::dotMethodFloat2, a, b, output)
                 .streamOut(output)
                 .execute();
         //@formatter:on
-        
+
         assertEquals(7, output.get(0), 0.001);
-	}
-	
-	private static void dotMethodFloat3(Float3 a, Float3 b, VectorFloat result) {
-		float dot = Float3.dot(a, b);
+    }
+
+    private static void dotMethodFloat3(Float3 a, Float3 b, VectorFloat result) {
+        float dot = Float3.dot(a, b);
         result.set(0, dot);
     }
-	
-	@Test
-	public void simpleDotProductFloat3() {
-		Float3 a = new Float3(new float[] {1, 2, 3});
-		Float3 b = new Float3(new float[] {3, 2, 1});
-		VectorFloat output = new VectorFloat(1);
-		
-        new TaskSchedule("s0")
-                .task("t0", TestFloats::dotMethodFloat3, a, b, output)
-                .streamOut(output)
-                .execute();
-        
+
+    @Test
+    public void simpleDotProductFloat3() {
+        Float3 a = new Float3(1f, 2f, 3f);
+        Float3 b = new Float3(3f, 2f, 1f);
+        VectorFloat output = new VectorFloat(1);
+
+        new TaskSchedule("s0").task("t0", TestFloats::dotMethodFloat3, a, b, output).streamOut(output).execute();
+
         assertEquals(10, output.get(0), 0.001f);
-	}
-	
-	
-	private static void dotMethodFloat4(Float4 a, Float4 b, VectorFloat result) {
-		float dot = Float4.dot(a, b);
+    }
+
+    private static void dotMethodFloat4(Float4 a, Float4 b, VectorFloat result) {
+        float dot = Float4.dot(a, b);
         result.set(0, dot);
     }
-	
-	@Test
-	public void simpleDotProductFloat4() {
-		Float4 a = new Float4(new float[] {1, 2, 3, 4});
-		Float4 b = new Float4(new float[] {4, 3, 2, 1});
-		VectorFloat output = new VectorFloat(1);
-		
-		//@formatter:off
+
+    @Test
+    public void simpleDotProductFloat4() {
+        Float4 a = new Float4(1f, 2f, 3f, 4f);
+        Float4 b = new Float4(4f, 3f, 2f, 1f);
+        VectorFloat output = new VectorFloat(1);
+
+        //@formatter:off
         new TaskSchedule("s0")
                 .task("t0", TestFloats::dotMethodFloat4, a, b, output)
                 .streamOut(output)
                 .execute();
         //@formatter:on
-        
+
         assertEquals(20, output.get(0), 0.001f);
-	}
-	
-	private static void dotMethodFloat6(Float6 a, Float6 b, VectorFloat result) {
-		float dot = Float6.dot(a, b);
+    }
+
+    private static void dotMethodFloat6(Float6 a, Float6 b, VectorFloat result) {
+        float dot = Float6.dot(a, b);
         result.set(0, dot);
     }
-	
-	@Test
-	public void simpleDotProductFloat6() {
-		Float6 a = new Float6(new float[] {1, 2, 3, 4, 5, 6});
-		Float6 b = new Float6(new float[] {6, 5, 4, 3, 2, 1});
-		VectorFloat output = new VectorFloat(1);
-		
-		//@formatter:off
+
+    @Test
+    public void simpleDotProductFloat6() {
+        Float6 a = new Float6(1f, 2f, 3f, 4f, 5f, 6f);
+        Float6 b = new Float6(6f, 5f, 4f, 3f, 2f, 1f);
+        VectorFloat output = new VectorFloat(1);
+
+        //@formatter:off
         new TaskSchedule("s0")
                 .task("t0", TestFloats::dotMethodFloat6, a, b, output)
                 .streamOut(output)
                 .execute();
         //@formatter:on
-        
+
         assertEquals(56, output.get(0), 0.001f);
-	}
-	
-	private static void dotMethodFloat8(Float8 a, Float8 b, VectorFloat result) {
-		float dot = Float8.dot(a, b);
+    }
+
+    private static void dotMethodFloat8(Float8 a, Float8 b, VectorFloat result) {
+        float dot = Float8.dot(a, b);
         result.set(0, dot);
     }
-	
-	@Test
-	public void simpleDotProductFloat8() {
-		Float8 a = new Float8(new float[] {1, 2, 3, 4, 5, 6, 7, 8});
-		Float8 b = new Float8(new float[] {8, 7, 6, 5, 4, 3, 2, 1});
-		VectorFloat output = new VectorFloat(1);
-		
-		//@formatter:off
+
+    @Test
+    public void simpleDotProductFloat8() {
+        Float8 a = new Float8(1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f);
+        Float8 b = new Float8(8f, 7f, 6f, 5f, 4f, 3f, 2f, 1f);
+        VectorFloat output = new VectorFloat(1);
+
+        //@formatter:off
         new TaskSchedule("s0")
                 .task("t0", TestFloats::dotMethodFloat8, a, b, output)
                 .streamOut(output)
                 .execute();
         //@formatter:on
-        
+
         assertEquals(120, output.get(0), 0.001f);
-	}
-	
-	
-	
-	@Test
-	public void simpleDotProduct() {
-		Float3 a = new Float3(new float[] {1, 2, 3});
-		Float3 b = new Float3(new float[] {3, 2, 1});
-        
+    }
+
+    @Test
+    public void simpleDotProduct() {
+        Float3 a = new Float3(1f, 2f, 3f);
+        Float3 b = new Float3(3f, 2f, 1f);
+
         // Another way to test simple dot product
         TaskSchedule s1 = new TaskSchedule("s1").task("t1", Float3::dot, a, b);
-		s1.warmup();
-		s1.schedule();
-		assertEquals(10, s1.getReturnValue("t1"), 0.001);
-	}
-	
-	private static void test(Float3 a, Float3 b, VectorFloat3 results) {
+        s1.warmup();
+        s1.schedule();
+        assertEquals(10, s1.getReturnValue("t1"), 0.001);
+    }
+
+    private static void test(Float3 a, Float3 b, VectorFloat3 results) {
         results.set(0, Float3.add(a, b));
     }
-	
-	@Test
-	public void simpleVectorAddition() {
-		int size = 1;
-		Float3 a = new Float3(new float[] {1, 2, 3});
-		Float3 b = new Float3(new float[] {3, 2, 1});
-		VectorFloat3 output = new VectorFloat3(size);
-		
-		//@formatter:off
+
+    @Test
+    public void simpleVectorAddition() {
+        int size = 1;
+        Float3 a = new Float3(1f, 2f, 3f);
+        Float3 b = new Float3(3f, 2f, 1f);
+        VectorFloat3 output = new VectorFloat3(size);
+
+        //@formatter:off
         new TaskSchedule("s0")
                 .task("t0", TestFloats::test, a, b, output)
                 .streamOut(output)
                 .execute();
         //@formatter:on
-        
+
         for (int i = 0; i < size; i++) {
-        	assertEquals(4, output.get(i).getX(), 0.001); 
-        	assertEquals(4, output.get(i).getY(), 0.001);
-        	assertEquals(4, output.get(i).getZ(), 0.001);
-        }	
-	}
-	
-	
-	/**
-	 * Test using the {@link Float} Java Wrapper class 
-	 * @param a
-	 * @param b
-	 * @param result
-	 */	
-	private static void addFloat(Float[] a, Float[] b, Float[] result) {
+            assertEquals(4, output.get(i).getX(), 0.001);
+            assertEquals(4, output.get(i).getY(), 0.001);
+            assertEquals(4, output.get(i).getZ(), 0.001);
+        }
+    }
+
+    /**
+     * Test using the {@link Float} Java Wrapper class
+     * 
+     * @param a
+     * @param b
+     * @param result
+     */
+    private static void addFloat(Float[] a, Float[] b, Float[] result) {
         for (@Parallel int i = 0; i < a.length; i++) {
             result[i] = a[i] + b[i];
         }
     }
 
-	@Ignore
-	@Test
-	public void testFloat1() {
+    @Ignore
+    @Test
+    public void testFloat1() {
 
-		int size = 8;
+        int size = 8;
 
-		Float[] a = new Float[size];
-		Float[] b = new Float[size];
-		Float[] output = new Float[size];
+        Float[] a = new Float[size];
+        Float[] b = new Float[size];
+        Float[] output = new Float[size];
 
-		for (int i = 0; i < size; i++) {
-			a[i] = (float)i;
-			b[i] = (float)i;
-		}
-		
-		//@formatter:off
+        for (int i = 0; i < size; i++) {
+            a[i] = (float) i;
+            b[i] = (float) i;
+        }
+
+        //@formatter:off
         new TaskSchedule("s0")
                 .task("t0", TestFloats::addFloat, a, b, output)
                 .streamOut(output)
                 .execute();
         //@formatter:on
-        
+
         for (int i = 0; i < size; i++) {
-        	assertEquals(i + i, output[i], 0.001); 
-        }	
-	}
-	
-	/**
-	 * Test using the {@link Float2} Tornado wrapper class 
-	 * @param a
-	 * @param b
-	 * @param result
-	 */
-	private static void addFloat2(Float2[] a, Float2[] b, Float2[] result) {
+            assertEquals(i + i, output[i], 0.001);
+        }
+    }
+
+    /**
+     * Test using the {@link Float2} Tornado wrapper class
+     * 
+     * @param a
+     * @param b
+     * @param result
+     */
+    private static void addFloat2(Float2[] a, Float2[] b, Float2[] result) {
         for (@Parallel int i = 0; i < a.length; i++) {
             result[i] = Float2.add(a[i], b[i]);
         }
     }
 
-	@Ignore
-	@Test
-	public void testFloat2() {
+    @Ignore
+    @Test
+    public void testFloat2() {
 
-		int size = 8;
+        int size = 8;
 
-		Float2[] a = new Float2[size];
-		Float2[] b = new Float2[size];
-		Float2[] output = new Float2[size];
+        Float2[] a = new Float2[size];
+        Float2[] b = new Float2[size];
+        Float2[] output = new Float2[size];
 
-		for (int i = 0; i < size; i++) {
-			a[i] = new Float2(i, i);
-			b[i] = new Float2(i, i);
-		}
-		
-		//@formatter:off
+        for (int i = 0; i < size; i++) {
+            a[i] = new Float2(i, i);
+            b[i] = new Float2(i, i);
+        }
+
+        //@formatter:off
         new TaskSchedule("s0")
                 .task("t0", TestFloats::addFloat2, a, b, output)
                 .streamOut(output)
                 .execute();
         //@formatter:on
-        
+
         for (int i = 0; i < size; i++) {
-        	Float2 sequential = new Float2(i + i, i + i);
-        	assertEquals(sequential.getX(), output[i].getX(), 0.001); 
-        	assertEquals(sequential.getY(), output[i].getY(), 0.001);
+            Float2 sequential = new Float2(i + i, i + i);
+            assertEquals(sequential.getX(), output[i].getX(), 0.001);
+            assertEquals(sequential.getY(), output[i].getY(), 0.001);
         }
-	}
-	
-	/**
-	 *  Test using Tornado {@link VectorFloat3} data type  
-	 * @param a 
-	 * @param b
-	 * @param results
-	 */
-	public static void addVectorFloat3(VectorFloat3 a, VectorFloat3 b, VectorFloat3 results) {
+    }
+
+    /**
+     * Test using Tornado {@link VectorFloat3} data type
+     * 
+     * @param a
+     * @param b
+     * @param results
+     */
+    public static void addVectorFloat3(VectorFloat3 a, VectorFloat3 b, VectorFloat3 results) {
         for (@Parallel int i = 0; i < a.getLength(); i++) {
             results.set(i, Float3.add(a.get(i), b.get(i)));
         }
     }
-	
-	@Test
-	public void testVectorFloat3() {
-		
-		int size = 8;
-		
-		VectorFloat3 a = new VectorFloat3(size);
-		VectorFloat3 b = new VectorFloat3(size);
-		VectorFloat3 output = new VectorFloat3(size);
-		
-		for (int i = 0; i < size; i++) {
+
+    @Test
+    public void testVectorFloat3() {
+
+        int size = 8;
+
+        VectorFloat3 a = new VectorFloat3(size);
+        VectorFloat3 b = new VectorFloat3(size);
+        VectorFloat3 output = new VectorFloat3(size);
+
+        for (int i = 0; i < size; i++) {
             a.set(i, new Float3(i, i, i));
             b.set(i, new Float3(size - i, size - i, size - i));
         }
-		
-		
-		 //@formatter:off
+
+        //@formatter:off
         new TaskSchedule("s0")
                 .task("t0", TestFloats::addVectorFloat3, a, b, output)
                 .streamOut(output)
                 .execute();
         //@formatter:on
-		
+
         for (int i = 0; i < size; i++) {
-        	Float3 sequential = new Float3(i + (size-i), i + (size-i), i + (size-i));
-        	assertEquals(sequential.getX(), output.get(i).getX(), 0.001); 
-        	assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
-        	assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
+            Float3 sequential = new Float3(i + (size - i), i + (size - i), i + (size - i));
+            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
+            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
+            assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
         }
-	}
-	
-	/**
-	 *  Test using Tornado {@link VectorFloat4} data type  
-	 * @param a 
-	 * @param b
-	 * @param results
-	 */
-	public static void addVectorFloat4(VectorFloat4 a, VectorFloat4 b, VectorFloat4 results) {
+    }
+
+    /**
+     * Test using Tornado {@link VectorFloat4} data type
+     * 
+     * @param a
+     * @param b
+     * @param results
+     */
+    public static void addVectorFloat4(VectorFloat4 a, VectorFloat4 b, VectorFloat4 results) {
         for (@Parallel int i = 0; i < a.getLength(); i++) {
             results.set(i, Float4.add(a.get(i), b.get(i)));
         }
     }
-	
-	@Test
-	public void testVectorFloat4() {
-		
-		int size = 8;
-		
-		VectorFloat4 a = new VectorFloat4(size);
-		VectorFloat4 b = new VectorFloat4(size);
-		VectorFloat4 output = new VectorFloat4(size);
-		
-		for (int i = 0; i < size; i++) {
+
+    @Test
+    public void testVectorFloat4() {
+
+        int size = 8;
+
+        VectorFloat4 a = new VectorFloat4(size);
+        VectorFloat4 b = new VectorFloat4(size);
+        VectorFloat4 output = new VectorFloat4(size);
+
+        for (int i = 0; i < size; i++) {
             a.set(i, new Float4(i, i, i, i));
             b.set(i, new Float4(size - i, size - i, size - i, size));
         }
-		
-		
-		 //@formatter:off
+
+        //@formatter:off
         new TaskSchedule("s0")
                 .task("t0", TestFloats::addVectorFloat4, a, b, output)
                 .streamOut(output)
                 .execute();
         //@formatter:on
-		
+
         for (int i = 0; i < size; i++) {
-        	Float4 sequential = new Float4(i + (size-i), i + (size-i), i + (size-i), i + size);
-        	assertEquals(sequential.getX(), output.get(i).getX(), 0.001); 
-        	assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
-        	assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
-        	assertEquals(sequential.getW(), output.get(i).getW(), 0.001);
+            Float4 sequential = new Float4(i + (size - i), i + (size - i), i + (size - i), i + size);
+            assertEquals(sequential.getX(), output.get(i).getX(), 0.001);
+            assertEquals(sequential.getY(), output.get(i).getY(), 0.001);
+            assertEquals(sequential.getZ(), output.get(i).getZ(), 0.001);
+            assertEquals(sequential.getW(), output.get(i).getW(), 0.001);
         }
-	}
-	
-	
-	public static void dotProductFunctionMap(float[] a, float[] b, float[] results) {
+    }
+
+    public static void dotProductFunctionMap(float[] a, float[] b, float[] results) {
         for (@Parallel int i = 0; i < a.length; i++) {
             results[i] = a[i] * b[i];
         }
     }
-	
-	public static void dotProductFunctionReduce(float[] input, float[] results) {
-		float sum = 0.0f;
+
+    public static void dotProductFunctionReduce(float[] input, float[] results) {
+        float sum = 0.0f;
         for (int i = 0; i < input.length; i++) {
             sum += input[i];
         }
         results[0] = sum;
     }
-	
-	@Test
-	public void testDotProduct() {
-		
-		int size = 8;
-		
-		float[] a = new float[size];
-		float[] b = new float[size];
-		float[] outputMap = new float[size];
-		float[] outputReduce = new float[1];
-		
-		float[] seqMap = new float[size];
-		float[] seqReduce = new float[1];
-		
-		Random r = new Random();
-		for (int i = 0; i < size; i++) {
+
+    @Test
+    public void testDotProduct() {
+
+        int size = 8;
+
+        float[] a = new float[size];
+        float[] b = new float[size];
+        float[] outputMap = new float[size];
+        float[] outputReduce = new float[1];
+
+        float[] seqMap = new float[size];
+        float[] seqReduce = new float[1];
+
+        Random r = new Random();
+        for (int i = 0; i < size; i++) {
             a[i] = r.nextFloat();
             b[i] = r.nextFloat();
         }
 
-		// Sequential computation
-		dotProductFunctionMap(a, b, seqMap);
-		dotProductFunctionReduce(seqMap, seqReduce);
-		
-		// Parallel computation with Tornado
-		//@formatter:off
+        // Sequential computation
+        dotProductFunctionMap(a, b, seqMap);
+        dotProductFunctionReduce(seqMap, seqReduce);
+
+        // Parallel computation with Tornado
+        //@formatter:off
         new TaskSchedule("s0")
                 .task("t0-MAP", TestFloats::dotProductFunctionMap, a, b, outputMap)
                 .task("t1-REDUCE", TestFloats::dotProductFunctionReduce, outputMap, outputReduce)
                 .streamOut(outputReduce)
                 .execute();
         //@formatter:on
-        
+
         assertEquals(seqReduce[0], outputReduce[0], 0.001);
-	}
-	
-	
-	private static void vectorPhiTest(VectorFloat3 input, VectorFloat3 output) {
-		Float3 sum = new Float3(new float[]{0, 0, 0});
-		for (int i = 0; i < input.getLength(); i++) {
-			sum = Float3.add(sum, input.get(i));
-		}
-		output.set(0, sum);
-	}
+    }
 
-	@Test
-	public void vectorPhiTest() {
+    private static void vectorPhiTest(VectorFloat3 input, VectorFloat3 output) {
+        Float3 sum = new Float3(new float[] { 0, 0, 0 });
+        for (int i = 0; i < input.getLength(); i++) {
+            sum = Float3.add(sum, input.get(i));
+        }
+        output.set(0, sum);
+    }
 
-		final VectorFloat3 input = new VectorFloat3(8);
-		final VectorFloat3 output = new VectorFloat3(1);
-		
-		input.fill(1f);
+    @Test
+    public void vectorPhiTest() {
 
-		//@formatter:off
+        final VectorFloat3 input = new VectorFloat3(8);
+        final VectorFloat3 output = new VectorFloat3(1);
+
+        input.fill(1f);
+
+        //@formatter:off
         new TaskSchedule("s0")
                 .task("t0", TestFloats::vectorPhiTest, input, output)
                 .streamOut(output)
                 .execute();
         //@formatter:on
-	}	
+    }
 }

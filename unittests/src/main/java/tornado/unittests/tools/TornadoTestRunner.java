@@ -27,23 +27,23 @@ package tornado.unittests.tools;
 
 public class TornadoTestRunner {
 
-	public static void main(String[] args) throws ClassNotFoundException {
+    public static void main(String[] args) throws ClassNotFoundException {
 
-		boolean verbose = TornadoHelper.getProperty("tornado.unittests.verbose");
+        boolean verbose = TornadoHelper.getProperty("tornado.unittests.verbose");
 
-		String[] classAndMethod = args[0].split("#");
-		if (!verbose) {
-			if (classAndMethod.length > 1) {
-				TornadoHelper.runTestClassAndMethod(classAndMethod[0], classAndMethod[1]);
-			} else {
-				TornadoHelper.runTestClass(classAndMethod[0]);
-			}
-		} else {
-			if (classAndMethod.length > 1) {
-				TornadoHelper.runTestVerbose(classAndMethod[0], classAndMethod[1]);
-			} else {
-				TornadoHelper.runTestVerbose(classAndMethod[0], null);
-			}
-		}
-	}
+        String[] classAndMethod = args[0].split("#");
+        if (!verbose) {
+            if (classAndMethod.length > 1) {
+                TornadoHelper.runTestClassAndMethod(classAndMethod[0], classAndMethod[1]);
+            } else {
+                TornadoHelper.runTestClass(classAndMethod[0]);
+            }
+        } else {
+            if (classAndMethod.length > 1) {
+                TornadoHelper.runTestVerbose(classAndMethod[0], classAndMethod[1]);
+            } else {
+                TornadoHelper.runTestVerbose(classAndMethod[0], null);
+            }
+        }
+    }
 }

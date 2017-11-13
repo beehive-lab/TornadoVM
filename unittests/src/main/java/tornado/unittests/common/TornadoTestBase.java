@@ -31,11 +31,11 @@ import org.junit.Before;
 import tornado.runtime.TornadoDriver;
 
 public abstract class TornadoTestBase {
-	
-	@Before
-	public void before() {
-		final TornadoDriver driver = getTornadoRuntime().getDriver(0);
-		driver.getDefaultDevice().reset();
-	}
+
+    @Before
+    public void before() {
+        final TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        driver.getDefaultDevice().reset();
+    }
 
 }

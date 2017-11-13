@@ -35,19 +35,19 @@ import tornado.runtime.api.TaskSchedule;
 
 public class TestFunctional {
 
-	@Test
-	public void testVectorFunctionLambda() {
-		final int numElements = 4096;
-		double[] a = new double[numElements];
-		double[] b = new double[numElements];
-		double[] c = new double[numElements];
+    @Test
+    public void testVectorFunctionLambda() {
+        final int numElements = 4096;
+        double[] a = new double[numElements];
+        double[] b = new double[numElements];
+        double[] c = new double[numElements];
 
-		IntStream.range(0, numElements).sequential().forEach(i -> {
-			a[i] = (float) Math.random();
-			b[i] = (float) Math.random();
-		});
+        IntStream.range(0, numElements).sequential().forEach(i -> {
+            a[i] = (float) Math.random();
+            b[i] = (float) Math.random();
+        });
 
-		//@formatter:off
+        //@formatter:off
 		new TaskSchedule("s0")
 	             .task("t0", (x, y, z) -> {
 	            	 
@@ -61,9 +61,9 @@ public class TestFunctional {
 	             .execute();
 	    //@formatter:on
 
-		for (int i = 0; i < c.length; i++) {
-			assertEquals(a[i] + b[i], c[i], 0.001);
-		}
-	}
+        for (int i = 0; i < c.length; i++) {
+            assertEquals(a[i] + b[i], c[i], 0.001);
+        }
+    }
 
 }

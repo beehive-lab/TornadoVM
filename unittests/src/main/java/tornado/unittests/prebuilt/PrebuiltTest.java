@@ -36,25 +36,25 @@ import tornado.drivers.opencl.OpenCL;
 import tornado.runtime.api.TaskSchedule;
 
 public class PrebuiltTest {
-	
-	public static void add(int[] a, int[] b, int[] c) {
-		for (@Parallel int i = 0; i < c.length; i++) {
-			c[i] = a[i] + b[i];
-		}
-	}
 
-	@Test
-	public void testPrebuild01() {
-		
-		final int numElements = 8;
-		int[] a = new int[numElements];
-		int[] b = new int[numElements];
-		int[] c = new int[numElements];
+    public static void add(int[] a, int[] b, int[] c) {
+        for (@Parallel int i = 0; i < c.length; i++) {
+            c[i] = a[i] + b[i];
+        }
+    }
 
-		Arrays.fill(a, 1);
-		Arrays.fill(b, 2);
+    @Test
+    public void testPrebuild01() {
 
-		// @formatter:off
+        final int numElements = 8;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] c = new int[numElements];
+
+        Arrays.fill(a, 1);
+        Arrays.fill(b, 2);
+
+        // @formatter:off
 		new TaskSchedule("s0")
 			.prebuiltTask("t0", 
 						  "add", 
@@ -67,9 +67,9 @@ public class PrebuiltTest {
 			.execute();
 		// @formatter:on
 
-		for (int i = 0; i < c.length; i++) {
-			assertEquals(a[i] + b[i], c[i], 0.001);
-		}
-	}
+        for (int i = 0; i < c.length; i++) {
+            assertEquals(a[i] + b[i], c[i], 0.001);
+        }
+    }
 
 }
