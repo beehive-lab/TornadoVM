@@ -19,6 +19,8 @@ __TEST_THE_WORLD__ = [
 	"tornado.unittests.tasks.TestSingleTaskSingleDevice",
 	"tornado.unittests.tasks.TestMultipleTasksSingleDevice",
 	"tornado.unittests.images.TestImages",
+	"tornado.unittests.branching.TestConditionals",
+	"tornado.unittests.loops.TestLoops",
 ]
 
 ## Options
