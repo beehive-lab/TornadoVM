@@ -113,7 +113,7 @@ public class TestArrays extends TornadoTestBase {
 		}
 	}
 	
-	public static void initializeSeqiential(int[] a) {
+	public static void initializeSequential(int[] a) {
         for (int i = 0; i < a.length; i++) {
             a[i] = 1;
         }
@@ -127,7 +127,7 @@ public class TestArrays extends TornadoTestBase {
 		TaskSchedule s0 = new TaskSchedule("s0");
 		assertNotNull(s0);
 		
-		s0.task("t0", TestArrays::initializeSeqiential, data);
+		s0.task("t0", TestArrays::initializeSequential, data);
 		s0.streamOut(data).warmup();
 		s0.execute();
 
