@@ -1,10 +1,10 @@
 all: build
 
 build:
-	mvn install
+	mvn -T 1C install
 
 install:
-	python easy-install.py
+	python bin/easy-install.py
 
 clean:
 	mvn clean

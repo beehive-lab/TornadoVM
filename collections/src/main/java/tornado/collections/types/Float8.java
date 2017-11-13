@@ -58,7 +58,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
      */
     final private static int numElements = 8;
 
-    protected Float8(float[] storage) {
+    public Float8(float[] storage) {
         this.storage = storage;
     }
 
@@ -318,6 +318,15 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         final Float8 result = new Float8();
         for (int i = 0; i < numElements; i++) {
             a.set(i, TornadoMath.sqrt(a.get(i)));
+        }
+        return result;
+    }
+    
+    public static float dot(Float8 a, Float8 b) {
+        float result = 0f;
+        final Float8 m = mult(a, b);
+        for (int i = 0; i < numElements; i++) {
+            result += m.get(i);
         }
         return result;
     }

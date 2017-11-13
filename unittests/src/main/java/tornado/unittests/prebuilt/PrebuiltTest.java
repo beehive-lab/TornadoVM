@@ -20,44 +20,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- *
  */
-package tornado.unittests.functional;
+
+package tornado.unittests.prebuilt;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.stream.IntStream;
+import java.util.Arrays;
 
 import org.junit.Test;
 
 import tornado.api.Parallel;
+import tornado.common.enums.Access;
+import tornado.drivers.opencl.OpenCL;
 import tornado.runtime.api.TaskSchedule;
 
-public class TestFunctional {
+public class PrebuiltTest {
+
+    public static void add(int[] a, int[] b, int[] c) {
+        for (@Parallel int i = 0; i < c.length; i++) {
+            c[i] = a[i] + b[i];
+        }
+    }
 
     @Test
-    public void testVectorFunctionLambda() {
-        final int numElements = 4096;
-        double[] a = new double[numElements];
-        double[] b = new double[numElements];
-        double[] c = new double[numElements];
+    public void testPrebuild01() {
 
-        IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = (float) Math.random();
-            b[i] = (float) Math.random();
-        });
+        final int numElements = 8;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] c = new int[numElements];
 
-        //@formatter:off
+        Arrays.fill(a, 1);
+        Arrays.fill(b, 2);
+
+        // @formatter:off
         new TaskSchedule("s0")
-            .task("t0", (x, y, z) -> {	 
-                // Computation in a lambda expression
-                for (@Parallel int i = 0; i < z.length; i++) {
-                    z[i] = x[i] + y[i];
-                }    	 
-            }, a, b, c)
+            .prebuiltTask("t0", 
+                        "add", 
+                        "opencl/add.cl", 
+                        new Object[] { a, b, c },
+                        new Access[] { Access.READ, Access.READ, Access.WRITE }, 
+                        OpenCL.defaultDevice(),
+                        new int[] { numElements })
             .streamOut(c)
             .execute();
-        //@formatter:on
+        // @formatter:on
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);

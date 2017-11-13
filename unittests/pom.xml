@@ -10,7 +10,7 @@
   <groupId>tornado-unittests</groupId>
   <artifactId>unittests</artifactId>
   <version>0.0.2-SNAPSHOT</version>
-  <name>unittests</name>
+  <name>tornado-unittests</name>
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
