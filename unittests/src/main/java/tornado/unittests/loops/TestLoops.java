@@ -287,7 +287,7 @@ public class TestLoops {
             if (i == 4) {
                 assertEquals(4, a[i]);
             } else {
-                assertEquals(10, a[i]);
+                assertEquals(1, a[i]);
             }
         }
     }
