@@ -120,8 +120,9 @@ public class TestLoops {
         for (@Parallel int i = 0; i < a.length; i++){
             if (i == 4) {
                 a[i] = 4;
+            } else {
+                a[i] = 10;
             }
-            a[i] = 10;
         }
     }
 
@@ -140,10 +141,12 @@ public class TestLoops {
                 .execute();
         //@formatter:on
 
-        for (int i = 0; i < a.length; i++){
+        for (int i = 0; i < a.length; i++) {
             if (i == 4) {
                 assertEquals(4, a[i]);
-            } else assertEquals(10, a[i]);
+            } else {
+                assertEquals(10, a[i]);
+            }
         }
     }
 
@@ -224,9 +227,9 @@ public class TestLoops {
         }
     }
 
-    public static void nestedForLoopTwoDArray(int[][] a, int size){
-        for (@Parallel int i = 0; i < size; i++){
-            for (int j = 0; j < size; j++){
+    public static void nestedForLoopTwoDArray(int[][] a, int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
                 a[i][j] = 10;
             }
         }
@@ -257,7 +260,7 @@ public class TestLoops {
     }
 
     public static void controlFlowBreak(int[] a,int size) {
-        for (int i = 0; i < a.length; i++){
+        for (int i = 0; i < a.length; i++) {
             if (i == 4) {
                 a[i] = 4;
                 break;
@@ -270,6 +273,7 @@ public class TestLoops {
         final int size = 10;
 
         int [] a = new int[size];
+
         Arrays.fill(a,1);
 
         //@formatter:off
@@ -280,7 +284,7 @@ public class TestLoops {
         //@formatter:on
 
         for (int i = 0; i < a.length; i++) {
-            if (i == 4){
+            if (i == 4) {
                 assertEquals(4, a[i]);
             } else {
                 assertEquals(10, a[i]);
