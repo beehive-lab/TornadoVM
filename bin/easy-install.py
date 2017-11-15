@@ -6,7 +6,7 @@ import os
 import sys
 
 __TORNADO_ENV_FILE__ = "etc/tornado.env"
-__SOURCE_COMMAND__ = "source " + __TORNADO_ENV_FILE__
+__SOURCE_COMMAND__ = ". " + __TORNADO_ENV_FILE__
 
 
 def tornadoCommandsInstall():
