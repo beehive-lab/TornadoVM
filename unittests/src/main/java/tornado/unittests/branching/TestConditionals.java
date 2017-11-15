@@ -25,17 +25,18 @@
 
 package tornado.unittests.branching;
 
-import org.junit.Test;
-import tornado.runtime.api.TaskSchedule;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
-public class TestConditionals {
+import tornado.runtime.api.TaskSchedule;
+import tornado.unittests.common.TornadoTestBase;
+
+public class TestConditionals extends TornadoTestBase {
 
     public static void ifStatement(int[] a) {
-
         if (a[0] > 1) {
             a[0] = 10;
         }
@@ -43,8 +44,7 @@ public class TestConditionals {
 
     @Test
     public void testIfStatement() {
-
-        final int  size = 10;
+        final int size = 10;
 
         int[] a = new int[size];
 

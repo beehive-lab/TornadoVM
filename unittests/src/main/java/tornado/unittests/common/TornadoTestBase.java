@@ -34,8 +34,10 @@ public abstract class TornadoTestBase {
 
     @Before
     public void before() {
-        final TornadoDriver driver = getTornadoRuntime().getDriver(0);
-        driver.getDefaultDevice().reset();
+        for (int i = 0; i < getTornadoRuntime().getNumDrivers(); i++) {
+            final TornadoDriver driver = getTornadoRuntime().getDriver(i);
+            driver.getDefaultDevice().reset();
+        }
     }
 
 }

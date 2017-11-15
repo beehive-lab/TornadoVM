@@ -84,21 +84,31 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     @Override
     public void exit(Block b, Block value) {
         if (b.isLoopEnd()) {
-//            asm.emitLine(String.format("// block %d exits loop %d", b.getId(), b.getLoop().getHeader().getId()));
+            //asm.emitLine(String.format("// block %d exits loop %d", b.getId(), b.getLoop().getHeader().getId()));
             asm.endScope();
-        }
+        } 
         if (b.getPostdominator() != null) {
             Block pdom = b.getPostdominator();
-            AbstractBeginNode beginNode = pdom.getBeginNode();
+            //AbstractBeginNode beginNode = pdom.getBeginNode();
             if (!merges.contains(pdom) && isMergeBlock(pdom)) {
                 //asm.eolOff();
-//                asm.emitLine(
-//                        String.format("// block %d merges control flow -> pdom = %d depth=%d",
-//                                b.getId(), pdom.getId(), pdom.getDominatorDepth()));
+                //asm.emitLine(
+                //String.format("// block %d merges control flow -> pdom = %d depth=%d",
+                //b.getId(), pdom.getId(), pdom.getDominatorDepth()));
                 asm.endScope();
             }
+        } else {
+            final Block dom = b.getDominator();
+            boolean isMerge = b.getBeginNode() instanceof MergeNode;
+            if (dom != null && !isMerge && !dom.isLoopHeader() && isIfBlock(dom)) {
+                final IfNode condition = (IfNode) dom.getEndNode();
+                if (condition.falseSuccessor() == b.getBeginNode()) {
+                    asm.endScope();
+                } else if (condition.trueSuccessor() == b.getBeginNode()) {
+                    asm.endScope();
+                }
+            }
         }
-
     }
 
     private static boolean isMergeBlock(Block block) {
