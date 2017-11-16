@@ -79,19 +79,30 @@ public final class VectorPlugins {
 
             });
 
+            // Adding floats
             registerVectorPlugins(ps, plugins, OCLKind.FLOAT2, float[].class, float.class);
             registerVectorPlugins(ps, plugins, OCLKind.FLOAT3, float[].class, float.class);
             registerVectorPlugins(ps, plugins, OCLKind.FLOAT4, float[].class, float.class);
             registerVectorPlugins(ps, plugins, OCLKind.FLOAT8, float[].class, float.class);
 
+            // Adding ints
             registerVectorPlugins(ps, plugins, OCLKind.INT2, int[].class, int.class);
             registerVectorPlugins(ps, plugins, OCLKind.INT3, int[].class, int.class);
+            registerVectorPlugins(ps, plugins, OCLKind.INT4, int[].class, int.class);
 
+            // Adding shorts
             registerVectorPlugins(ps, plugins, OCLKind.SHORT2, short[].class, short.class);
 
+            // Adding char
             registerVectorPlugins(ps, plugins, OCLKind.CHAR3, byte[].class, byte.class);
             registerVectorPlugins(ps, plugins, OCLKind.CHAR4, byte[].class, byte.class);
-
+            
+            // Adding double
+            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE2, double[].class, double.class);
+            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE3, double[].class, double.class);
+            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE4, double[].class, double.class);
+            registerVectorPlugins(ps, plugins, OCLKind.DOUBLE8, double[].class, double.class);
+            
             /*
              * Geometric BIFS for floating point vectors
              */
