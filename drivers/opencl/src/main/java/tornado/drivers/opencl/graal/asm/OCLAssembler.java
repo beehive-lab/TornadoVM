@@ -561,6 +561,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLOp2 VMOV_INT2 = new OCLOp2("(int2)");
         public static final OCLOp2 VMOV_FLOAT2 = new OCLOp2("(float2)");
         public static final OCLOp2 VMOV_BYTE2 = new OCLOp2("(char2)");
+        public static final OCLOp2 VMOV_DOUBLE2 = new OCLOp2("(double2)");
         // @formatter:on
 
         protected OCLOp2(String opcode) {
@@ -587,6 +588,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLOp3 VMOV_INT3 = new OCLOp3("(int3)");
         public static final OCLOp3 VMOV_FLOAT3 = new OCLOp3("(float3)");
         public static final OCLOp3 VMOV_BYTE3 = new OCLOp3("(char3)");
+        public static final OCLOp3 VMOV_DOUBLE3 = new OCLOp3("(double3)");
 
         // @formatter:on
         public OCLOp3(String opcode) {
@@ -616,6 +618,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLOp4 VMOV_INT4 = new OCLOp4("(int4)");
         public static final OCLOp4 VMOV_FLOAT4 = new OCLOp4("(float4)");
         public static final OCLOp4 VMOV_BYTE4 = new OCLOp4("(char4)");
+        public static final OCLOp4 VMOV_DOUBLE4 = new OCLOp4("(double4)");
         // @formatter:on
 
         protected OCLOp4(String opcode) {
@@ -648,6 +651,8 @@ public final class OCLAssembler extends Assembler {
         public static final OCLOp8 VMOV_INT8 = new OCLOp8("(int8)");
         public static final OCLOp8 VMOV_FLOAT8 = new OCLOp8("(float8)");
         public static final OCLOp8 VMOV_BYTE8 = new OCLOp8("(char8)");
+        public static final OCLOp8 VMOV_DOUBLE8 = new OCLOp8("(double8)");
+
         // @formatter:on
 
         protected OCLOp8(String opcode) {
