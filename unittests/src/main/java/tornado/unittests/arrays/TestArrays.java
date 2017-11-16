@@ -293,9 +293,9 @@ public class TestArrays extends TornadoTestBase {
         short[] b = new short[numElements];
         short[] c = new short[numElements];
 
-        IntStream.range(0, numElements).parallel().forEach(i -> {
-            a[i] = 10;
-            b[i] = 11;
+        IntStream.range(0, numElements).parallel().forEach(idx -> {
+            a[idx] = 20;
+            b[idx] = 34;
         });
 
         //@formatter:off
@@ -387,6 +387,7 @@ public class TestArrays extends TornadoTestBase {
 		        .task("t0", TestArrays::fillMatrix3, a)
 		        .streamOut(new Object[]{a});
 		//@formatter:on
+
         t.warmup();
         t.execute();
 

@@ -56,7 +56,7 @@ public enum OCLKind implements PlatformKind {
     LONG2(2, null, LONG),
     ULONG2(2, null, ULONG),
     FLOAT2(2, tornado.collections.types.Float2.TYPE, FLOAT),
-    DOUBLE2(2, null, DOUBLE),
+    DOUBLE2(2, tornado.collections.types.Double2.TYPE, DOUBLE),
     CHAR3(3, tornado.collections.types.Byte3.TYPE, CHAR),
     UCHAR3(3, null, UCHAR),
     SHORT3(3, tornado.collections.types.Short3.TYPE, SHORT),
@@ -66,7 +66,7 @@ public enum OCLKind implements PlatformKind {
     LONG3(3, null, LONG),
     ULONG3(3, null, ULONG),
     FLOAT3(3, tornado.collections.types.Float3.TYPE, FLOAT),
-    DOUBLE3(3, null, DOUBLE),
+    DOUBLE3(3, tornado.collections.types.Double3.TYPE, DOUBLE),
     CHAR4(4, tornado.collections.types.Byte4.TYPE, CHAR),
     UCHAR4(4, null, UCHAR),
     SHORT4(4, null, SHORT),
@@ -76,7 +76,7 @@ public enum OCLKind implements PlatformKind {
     LONG4(4, null, LONG),
     ULONG4(4, null, ULONG),
     FLOAT4(4, tornado.collections.types.Float4.TYPE, FLOAT),
-    DOUBLE4(4, null, DOUBLE),
+    DOUBLE4(4, tornado.collections.types.Double4.TYPE, DOUBLE),
     CHAR8(8, null, CHAR),
     UCHAR8(8, null, UCHAR),
     SHORT8(8, null, SHORT),
@@ -86,7 +86,7 @@ public enum OCLKind implements PlatformKind {
     LONG8(8, null, LONG),
     ULONG8(8, null, ULONG),
     FLOAT8(8, tornado.collections.types.Float8.TYPE, FLOAT),
-    DOUBLE8(8, null, DOUBLE),
+    DOUBLE8(8, tornado.collections.types.Double8.TYPE, DOUBLE),
     CHAR16(16, null, CHAR),
     UCHAR16(16, null, UCHAR),
     SHORT16(16, null, SHORT),
@@ -339,6 +339,8 @@ public enum OCLKind implements PlatformKind {
                 return 2;
             case CHAR:
                 return 3;
+            case DOUBLE:
+                return 4;
             default:
                 return -1;
         }
