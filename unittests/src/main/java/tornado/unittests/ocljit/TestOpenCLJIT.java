@@ -100,12 +100,10 @@ public class TestOpenCLJIT {
         assertNotNull(openCLBackend);
 
         // Create a new task for Tornado
-        TaskMetaData task = TaskMetaData.create(new ScheduleMetaData("ID0"), methodToCompile.getName(), methodToCompile,
-                false);
+        TaskMetaData task = TaskMetaData.create(new ScheduleMetaData("ID0"), methodToCompile.getName(), methodToCompile, false);
 
         // Compile the code for OpenCL
-        OCLCompilationResult compilationResult = OCLCompiler.compileCodeForDevice(resolvedJavaMethod,
-                new Object[] { a, b, c }, task, (OCLProviders) openCLBackend.getProviders(), openCLBackend);
+        OCLCompilationResult compilationResult = OCLCompiler.compileCodeForDevice(resolvedJavaMethod, new Object[] { a, b, c }, task, (OCLProviders) openCLBackend.getProviders(), openCLBackend);
 
         // Obtain the code
         OCLInstalledCode openCLCode = OpenCL.defaultDevice().getDeviceContext().installCode(compilationResult);
