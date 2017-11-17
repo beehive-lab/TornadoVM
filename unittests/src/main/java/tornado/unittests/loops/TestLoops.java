@@ -46,9 +46,9 @@ public class TestLoops {
     public void testForLoopOneD() {
         final int size = 10;
 
-        int [] a = new int[size];
+        int[] a = new int[size];
 
-        Arrays.fill(a,1);
+        Arrays.fill(a, 1);
 
         //@formatter:off
         new TaskSchedule("s0")
@@ -57,15 +57,15 @@ public class TestLoops {
                 .execute();
         //@formatter:on
 
-        for (int i = 0; i < a.length; i++){
+        for (int i = 0; i < a.length; i++) {
             assertEquals(10, a[i]);
         }
     }
 
     public static void reverseLoop(int[] a) {
-        for (@Parallel int i = a.length - 1; i >= 0; i--){
-            a[i] =  10;
-            //Debug.printf("hello\n");
+        for (@Parallel int i = a.length - 1; i >= 0; i--) {
+            a[i] = 10;
+            // Debug.printf("hello\n");
         }
     }
 
@@ -73,9 +73,9 @@ public class TestLoops {
     public void testReverseOneDLoop() {
         final int size = 10;
 
-        int [] a = new int[size];
+        int[] a = new int[size];
 
-        Arrays.fill(a,1);
+        Arrays.fill(a, 1);
 
         //@formatter:off
         new TaskSchedule("s0")
@@ -111,13 +111,13 @@ public class TestLoops {
                 .execute();
         //@formatter:on
 
-        for (int i = 0; i < size; i++){
+        for (int i = 0; i < size; i++) {
             assertEquals(10, a[i]);
         }
     }
 
     public static void conditionalInLoop(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++){
+        for (@Parallel int i = 0; i < a.length; i++) {
             if (i == 4) {
                 a[i] = 4;
             } else {
@@ -130,9 +130,9 @@ public class TestLoops {
     public void testIfInsideForLoop() {
         final int size = 10;
 
-        int [] a = new int[size];
+        int[] a = new int[size];
 
-        Arrays.fill(a,1);
+        Arrays.fill(a, 1);
 
         //@formatter:off
         new TaskSchedule("s0")
@@ -154,9 +154,9 @@ public class TestLoops {
     public void testIfElseElseInLoop() {
         final int size = 10;
 
-        int [] a = new int[size];
+        int[] a = new int[size];
 
-        Arrays.fill(a,0);
+        Arrays.fill(a, 0);
 
         //@formatter:off
         new TaskSchedule("s0")
@@ -165,14 +165,14 @@ public class TestLoops {
                 .execute();
         //@formatter:on
 
-        for (int i = 0; i < a.length; i++){
+        for (int i = 0; i < a.length; i++) {
             assertEquals(a[i], 1, 0);
         }
     }
 
     public static void twoDLoop(int[][] a) {
-        for (@Parallel int i = 0; i < a.length; i++){
-            for(int j = 0; j < a[i].length; j++) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            for (int j = 0; j < a[i].length; j++) {
                 a[i][j] = 10;
             }
         }
@@ -210,7 +210,7 @@ public class TestLoops {
     public void testNestedForLoopOneDArray() {
         final int size = 10;
 
-        int [] a = new int[size * size];
+        int[] a = new int[size * size];
         Arrays.fill(a, 1);
 
         //@formatter:off
@@ -239,9 +239,9 @@ public class TestLoops {
     public void testNestedForLoopTwoDArray() {
         final int size = 10;
 
-        int [][] a = new int[size][size];
+        int[][] a = new int[size][size];
 
-        for (int i = 0; i < size; i++){
+        for (int i = 0; i < size; i++) {
             Arrays.fill(a[i], 1);
         }
 
@@ -259,7 +259,7 @@ public class TestLoops {
         }
     }
 
-    public static void controlFlowBreak(int[] a,int size) {
+    public static void controlFlowBreak(int[] a, int size) {
         for (int i = 0; i < a.length; i++) {
             if (i == 4) {
                 a[i] = 4;
@@ -272,9 +272,9 @@ public class TestLoops {
     public void testLoopControlFlowBreak() {
         final int size = 10;
 
-        int [] a = new int[size];
+        int[] a = new int[size];
 
-        Arrays.fill(a,1);
+        Arrays.fill(a, 1);
 
         //@formatter:off
         new TaskSchedule("s0")
@@ -305,9 +305,9 @@ public class TestLoops {
     public void testLoopControlFlowContinue() {
         final int size = 10;
 
-        int [] a = new int[size];
+        int[] a = new int[size];
 
-        Arrays.fill(a,1);
+        Arrays.fill(a, 1);
 
         //@formatter:off
         new TaskSchedule("s0")
