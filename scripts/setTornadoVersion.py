@@ -10,7 +10,11 @@
 import subprocess
 
 ## Line to update with the last snapshot version (short)
-__CURRENT_VERSION__ = "0.0.2-SNAPSHOT"
+__MAJOR__ = "0.0.2"
+__LAST_REVISION__ = "74e80a5"
+
+## Do not change this line
+__CURRENT_VERSION__ = __MAJOR__ + "-" + __LAST_REVISION__
 
 def updateVersion():
 	""" It updates the version replacing SNAPSHOT
@@ -20,7 +24,7 @@ def updateVersion():
 	command = "git rev-parse --short HEAD"
 	referenceNumber = subprocess.check_output(command, shell=True)
 
-	newReference = __CURRENT_VERSION__.replace("SNAPSHOT", referenceNumber)
+	newReference = __CURRENT_VERSION__.replace(__LAST_REVISION__, referenceNumber)
 	newReference = newReference[:-1]
 	print "New reference number: " + str(newReference) 
 
