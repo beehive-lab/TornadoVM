@@ -125,8 +125,7 @@ public class TornadoHelper {
         bufferFile.append("Test: " + klass + "\n");
 
         for (Method m : methodsToTest) {
-            String message = String.format("%-50s",
-                    "\tRunning test: " + ColorsTerminal.BLUE + m.getName() + ColorsTerminal.RESET);
+            String message = String.format("%-50s", "\tRunning test: " + ColorsTerminal.BLUE + m.getName() + ColorsTerminal.RESET);
             bufferConsole.append(message);
             bufferFile.append(message);
 
@@ -134,14 +133,12 @@ public class TornadoHelper {
             Result result = new JUnitCore().run(request);
 
             if (result.wasSuccessful()) {
-                message = String.format("%20s",
-                        " ................ " + ColorsTerminal.GREEN + " [PASS] " + ColorsTerminal.RESET + "\n");
+                message = String.format("%20s", " ................ " + ColorsTerminal.GREEN + " [PASS] " + ColorsTerminal.RESET + "\n");
                 bufferConsole.append(message);
                 bufferFile.append(message);
                 successCounter++;
             } else {
-                message = String.format("%20s",
-                        " ................ " + ColorsTerminal.RED + " [FAILED] " + ColorsTerminal.RESET + "\n");
+                message = String.format("%20s", " ................ " + ColorsTerminal.RED + " [FAILED] " + ColorsTerminal.RESET + "\n");
                 bufferConsole.append(message);
                 bufferFile.append(message);
                 failedCounter++;

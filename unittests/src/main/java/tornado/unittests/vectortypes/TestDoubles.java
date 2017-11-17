@@ -117,8 +117,7 @@ public class TestDoubles extends TornadoTestBase {
 
     private static void addDouble8(Double8 a, Double8 b, VectorDouble results) {
         Double8 d8 = Double8.add(a, b);
-        double r = d8.getS0() + d8.getS1() + d8.getS2() + d8.getS3() + d8.getS4() + d8.getS5() + d8.getS6()
-                + d8.getS7();
+        double r = d8.getS0() + d8.getS1() + d8.getS2() + d8.getS3() + d8.getS4() + d8.getS5() + d8.getS6() + d8.getS7();
         results.set(0, r);
     }
 
