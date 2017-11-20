@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
- * Copyright (c) 2013-2017 APT Group, School of Computer Science, 
+ * Copyright (c) 2013-2017 APT Group, School of Computer Science,
  * The University of Manchester
  *
  * This work is partially supported by EPSRC grants:
@@ -26,28 +26,19 @@ package tornado.unittests.arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import tornado.api.Parallel;
-import tornado.runtime.TornadoDriver;
 import tornado.runtime.api.TaskSchedule;
 import tornado.unittests.common.TornadoTestBase;
 
 public class TestArrays extends TornadoTestBase {
-
-    @Before
-    public void before() {
-        final TornadoDriver driver = getTornadoRuntime().getDriver(0);
-        driver.getDefaultDevice().reset();
-    }
 
     public static void addAccumulator(int[] a, int value) {
         for (@Parallel int i = 0; i < a.length; i++) {
@@ -293,9 +284,9 @@ public class TestArrays extends TornadoTestBase {
         short[] b = new short[numElements];
         short[] c = new short[numElements];
 
-        IntStream.range(0, numElements).parallel().forEach(i -> {
-            a[i] = 10;
-            b[i] = 11;
+        IntStream.range(0, numElements).parallel().forEach(idx -> {
+            a[idx] = 20;
+            b[idx] = 34;
         });
 
         //@formatter:off
@@ -387,6 +378,7 @@ public class TestArrays extends TornadoTestBase {
 		        .task("t0", TestArrays::fillMatrix3, a)
 		        .streamOut(new Object[]{a});
 		//@formatter:on
+
         t.warmup();
         t.execute();
 

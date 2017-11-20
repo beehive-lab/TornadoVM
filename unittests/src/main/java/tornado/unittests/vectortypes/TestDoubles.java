@@ -33,6 +33,7 @@ import tornado.api.Parallel;
 import tornado.collections.types.Double2;
 import tornado.collections.types.Double3;
 import tornado.collections.types.Double4;
+import tornado.collections.types.Double8;
 import tornado.collections.types.VectorDouble;
 import tornado.runtime.api.TaskSchedule;
 import tornado.unittests.common.TornadoTestBase;
@@ -60,7 +61,7 @@ public class TestDoubles extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
-            assertEquals(4, output.get(i), 0.001);
+            assertEquals(8.0, output.get(i), 0.001);
         }
     }
 
@@ -85,7 +86,7 @@ public class TestDoubles extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
-            assertEquals(4, output.get(i), 0.001);
+            assertEquals(12.0, output.get(i), 0.001);
         }
     }
 
@@ -99,7 +100,7 @@ public class TestDoubles extends TornadoTestBase {
     public void doubleAdd4() {
         int size = 1;
         Double4 a = new Double4(1., 2., 3., 4.);
-        Double4 b = new Double4(5., 3., 2., 1.);
+        Double4 b = new Double4(4., 3., 2., 1.);
         VectorDouble output = new VectorDouble(size);
 
         //@formatter:off
@@ -110,7 +111,32 @@ public class TestDoubles extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
-            assertEquals(5, output.get(i), 0.001);
+            assertEquals(20.0, output.get(i), 0.001);
+        }
+    }
+
+    private static void addDouble8(Double8 a, Double8 b, VectorDouble results) {
+        Double8 d8 = Double8.add(a, b);
+        double r = d8.getS0() + d8.getS1() + d8.getS2() + d8.getS3() + d8.getS4() + d8.getS5() + d8.getS6() + d8.getS7();
+        results.set(0, r);
+    }
+
+    @Test
+    public void doubleAdd8() {
+        int size = 1;
+        Double8 a = new Double8(1., 2., 3., 4., 5., 6., 7., 8.);
+        Double8 b = new Double8(8., 7., 6., 5., 4., 3., 2., 1.);
+        VectorDouble output = new VectorDouble(size);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .task("t0", TestDoubles::addDouble8, a, b, output)
+            .streamOut(output)
+            .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(72., output.get(i), 0.001);
         }
     }
 

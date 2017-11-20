@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
- * Copyright (c) 2013-2017 APT Group, School of Computer Science, 
+ * Copyright (c) 2013-2017 APT Group, School of Computer Science,
  * The University of Manchester
  *
  * This work is partially supported by EPSRC grants:
@@ -23,6 +23,7 @@
  * Authors: Juan Fumero
  *
  */
+
 package tornado.unittests;
 
 import static org.junit.Assert.assertEquals;
@@ -40,9 +41,15 @@ import tornado.unittests.common.TornadoTestBase;
 
 public class TestHello extends TornadoTestBase {
 
-    private static void printHello(int n) {
+    private static void printHello(final int n) {
         for (@Parallel int i = 0; i < n; i++) {
             Debug.printf("hello\n");
+        }
+    }
+
+    public static void add(final int[] a, final int[] b, final int[] c) {
+        for (@Parallel int i = 0; i < c.length; i++) {
+            c[i] = a[i] + b[i];
         }
     }
 
@@ -57,17 +64,12 @@ public class TestHello extends TornadoTestBase {
         } catch (Exception e) {
             assertTrue("Task was not executed.", false);
         }
-    }
 
-    public static void add(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
-        }
     }
 
     @Test
     public void testVectorAddition() {
-        final int numElements = 8;
+        int numElements = 8;
         int[] a = new int[numElements];
         int[] b = new int[numElements];
         int[] c = new int[numElements];
@@ -75,15 +77,17 @@ public class TestHello extends TornadoTestBase {
         Arrays.fill(a, 1);
         Arrays.fill(b, 2);
 
-        //@formatter:off
-        new TaskSchedule("s0")
-            .task("t0", TestHello::add, a, b, c)
-            .streamOut(c)
-            .execute();
-        //@formatter:on
+        // @formatter:off
+		new TaskSchedule("s0").task("t0", TestHello::add, a, b, c).streamOut(c).execute();
+		// @formatter:on
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "";
     }
 }

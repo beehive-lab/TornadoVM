@@ -25,6 +25,8 @@
  */
 package tornado.drivers.opencl.graal.nodes;
 
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
@@ -38,6 +40,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.TernaryNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
 import tornado.collections.math.TornadoMath;
@@ -45,8 +48,6 @@ import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
-
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class OCLIntTernaryIntrinsicNode extends TernaryNode implements ArithmeticLIRLowerable {

@@ -365,9 +365,7 @@ public class TestLoops extends TornadoTestBase {
     @Test
     public void testLoopControlFlowContinue() {
         final int size = 10;
-
         int[] foo = new int[size];
-
         Arrays.fill(foo, 50);
 
         //@formatter:off

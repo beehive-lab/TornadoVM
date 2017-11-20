@@ -108,3 +108,28 @@ To test just a method of a unittest class:
 $ tornado-test.py --verbose tornado.unittests.TestHello#helloWorld
 ```
 
+
+# IDE Code Formatter
+
+## Using Eclipse and Netbeans
+
+The code formatter in Eclipse is automatic after generating the setting files.
+
+```bash
+$ python scripts/eclipseSetup.py
+```
+
+For Netbeans, the Eclipse Formatter Plugin is needed.
+
+## Using IntelliJ 
+
+Install plugins:
+ * Eclipse Code Formatter
+ * Save Actions 
+
+Then :
+ 1. Open File > Settings > Eclipse Code Formatter
+ 2. Check the Use the Eclipse code formatter radio button
+ 2. Set Eclipse Java Formatter config file to the XML file stored in /scripts/templates/eclise-settings/Tornado.xml
+ 3. Set Java formatter profile to Tornado
+
