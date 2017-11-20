@@ -24,6 +24,7 @@
 
 package tornado.unittests.images;
 
+import static org.junit.Assert.assertEquals;
 import static tornado.collections.math.TornadoMath.clamp;
 
 import java.util.Random;
@@ -57,7 +58,7 @@ public class TestResizeImage extends TornadoTestBase {
         final int numElementsX = 8;
         final int numElementsY = 8;
 
-        System.out.printf("image: x=%d, y=%d\n", numElementsX, numElementsY);
+        // System.out.printf("image: x=%d, y=%d\n", numElementsX, numElementsY);
         final ImageFloat image1 = new ImageFloat(numElementsX, numElementsY);
         final ImageFloat image2 = new ImageFloat(numElementsX / 2, numElementsY / 2);
 
@@ -73,22 +74,20 @@ public class TestResizeImage extends TornadoTestBase {
 
         schedule.warmup();
 
-        if (image1.X() < 16 && image1.Y() < 16) {
-            System.out.println("Before:");
-            System.out.println(image1.toString());
-        }
-
-        final long start = System.nanoTime();
         schedule.execute();
-        final long end = System.nanoTime();
-        System.out.printf("time: %.9f s\n", (end - start) * 1e-9);
 
-        /*
-         * Ouput result to console
-         */
-        if (image2.X() < 16 && image2.Y() < 16) {
-            System.out.println("Result:");
-            System.out.println(image2.toString());
+        final int scale = 2;
+
+        for (int i = 0; i < image2.X(); i++) {
+            for (int j = 0; j < image2.Y(); j++) {
+
+                int cx = clamp(scale * i, 0, image1.X() - 1);
+                int cy = clamp(scale * j, 0, image1.Y() - 1);
+
+                float center = image1.get(cx, cy);
+
+                assertEquals(image2.get(i, j), center, 0.1);
+            }
         }
     }
 }
