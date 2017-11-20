@@ -27,11 +27,12 @@ package tornado.drivers.opencl.graal.compiler;
 
 import java.util.HashSet;
 import java.util.Set;
-import org.graalvm.compiler.nodes.AbstractBeginNode;
+
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 
 public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block> {
@@ -65,8 +66,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                     && !isMerge
                     && !dom.isLoopHeader()
                     && isIfBlock(dom)) {
-                final IfNode condition = (IfNode) dom.getEndNode();
-                if (condition.falseSuccessor() == b.getBeginNode()) {
+                final IfNode ifNode = (IfNode) dom.getEndNode();
+                if (ifNode.falseSuccessor() == b.getBeginNode()) {
                     asm.indent();
                     asm.elseStmt();
                     asm.eol();
@@ -84,21 +85,33 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     @Override
     public void exit(Block b, Block value) {
         if (b.isLoopEnd()) {
-//            asm.emitLine(String.format("// block %d exits loop %d", b.getId(), b.getLoop().getHeader().getId()));
+            //asm.emitLine(String.format("// block %d exits loop %d", b.getId(), b.getLoop().getHeader().getId()));
             asm.endScope();
-        }
+        } 
         if (b.getPostdominator() != null) {
             Block pdom = b.getPostdominator();
-            AbstractBeginNode beginNode = pdom.getBeginNode();
+            //AbstractBeginNode beginNode = pdom.getBeginNode();
             if (!merges.contains(pdom) && isMergeBlock(pdom)) {
                 //asm.eolOff();
-//                asm.emitLine(
-//                        String.format("// block %d merges control flow -> pdom = %d depth=%d",
-//                                b.getId(), pdom.getId(), pdom.getDominatorDepth()));
+                //asm.emitLine(
+                //String.format("// block %d merges control flow -> pdom = %d depth=%d",
+                //b.getId(), pdom.getId(), pdom.getDominatorDepth()));
+                asm.endScope();
+            }
+        } else {
+            closeIfBlock(b);
+        }
+    }
+    
+    private void closeIfBlock(Block block) {
+        final Block dom = block.getDominator();
+        boolean isMerge = block.getBeginNode() instanceof MergeNode;
+        if (dom != null && !isMerge && !dom.isLoopHeader() && isIfBlock(dom)) {
+            final IfNode ifNode = (IfNode) dom.getEndNode();
+            if ((ifNode.falseSuccessor() == block.getBeginNode()) || (ifNode.trueSuccessor() == block.getBeginNode())) {
                 asm.endScope();
             }
         }
-
     }
 
     private static boolean isMergeBlock(Block block) {
