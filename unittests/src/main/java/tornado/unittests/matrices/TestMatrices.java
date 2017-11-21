@@ -193,13 +193,23 @@ public class TestMatrices extends TornadoTestBase {
 
         //@formatter:off
         TaskSchedule t = new TaskSchedule("s0")
-                .task("t0", TestMatrices::matrixVector, matrixA, matrixB, matrixC, N)
+                .task("t0", TestMatrices::matrixMultiplication, matrixA, matrixB, matrixC, N)
                 .streamOut(matrixC);
         //@formatter:on
         t.warmup();
         t.execute();
 
-        matrixMultiplication(matrixA, matrixB, resultSeq, N);
+        // matrixMultiplication(matrixA, matrixB, resultSeq, N);
+
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                float sum = 0.0f;
+                for (int k = 0; k < N; k++) {
+                    sum += matrixA[(i * N) + k] * matrixB[(k * N) + j];
+                }
+                resultSeq[(i * N) + j] = sum;
+            }
+        }
 
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
@@ -207,4 +217,5 @@ public class TestMatrices extends TornadoTestBase {
             }
         }
     }
+
 }
