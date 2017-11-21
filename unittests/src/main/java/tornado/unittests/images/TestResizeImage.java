@@ -28,10 +28,12 @@ import static org.junit.Assert.assertEquals;
 import static tornado.collections.math.TornadoMath.clamp;
 
 import java.util.Random;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 
 import tornado.api.Parallel;
+import tornado.collections.math.TornadoMath;
 import tornado.collections.types.ImageFloat;
 import tornado.runtime.api.TaskSchedule;
 import tornado.unittests.common.TornadoTestBase;
@@ -54,11 +56,10 @@ public class TestResizeImage extends TornadoTestBase {
     }
 
     @Test
-    public void testResize() {
+    public void testResizeImage() {
         final int numElementsX = 8;
         final int numElementsY = 8;
 
-        // System.out.printf("image: x=%d, y=%d\n", numElementsX, numElementsY);
         final ImageFloat image1 = new ImageFloat(numElementsX, numElementsY);
         final ImageFloat image2 = new ImageFloat(numElementsX / 2, numElementsY / 2);
 
@@ -75,6 +76,49 @@ public class TestResizeImage extends TornadoTestBase {
         schedule.warmup();
 
         schedule.execute();
+
+        final int scale = 2;
+
+        for (int i = 0; i < image2.X(); i++) {
+            for (int j = 0; j < image2.Y(); j++) {
+
+                int cx = clamp(scale * i, 0, image1.X() - 1);
+                int cy = clamp(scale * j, 0, image1.Y() - 1);
+
+                float center = image1.get(cx, cy);
+
+                assertEquals(image2.get(i, j), center, 0.1);
+            }
+        }
+    }
+
+    @Test
+    public void testResizeImageStreams() {
+        final int numElementsX = 8;
+        final int numElementsY = 8;
+
+        final ImageFloat image1 = new ImageFloat(numElementsX, numElementsY);
+        final ImageFloat image2 = new ImageFloat(numElementsX / 2, numElementsY / 2);
+
+        final Random rand = new Random();
+
+        for (int y = 0; y < numElementsY; y++) {
+            for (int x = 0; x < numElementsX; x++) {
+                image1.set(x, y, rand.nextFloat());
+            }
+        }
+
+        IntStream.range(0, image2.X() * image2.Y()).parallel().forEach((index) -> {
+            final int x = index % image2.X();
+            final int y = index / image2.X();
+
+            // co-ords of center pixel
+            int cx = TornadoMath.clamp(2 * x, 0, image1.X() - 1);
+            int cy = TornadoMath.clamp(2 * y, 0, image1.Y() - 1);
+
+            final float center = image1.get(cx, cy);
+            image2.set(x, y, center);
+        });
 
         final int scale = 2;
 
