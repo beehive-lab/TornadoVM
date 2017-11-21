@@ -199,8 +199,6 @@ public class TestMatrices extends TornadoTestBase {
         t.warmup();
         t.execute();
 
-        // matrixMultiplication(matrixA, matrixB, resultSeq, N);
-
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
                 float sum = 0.0f;
