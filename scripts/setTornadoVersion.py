@@ -11,7 +11,7 @@ import subprocess
 
 ## Line to update with the last snapshot version (short)
 __MAJOR__ = "0.0.2"
-__LAST_REVISION__ = "90b666f"
+__LAST_REVISION__ = "b7a57c8"
 
 ## Do not change this line
 __CURRENT_VERSION__ = __MAJOR__ + "-" + __LAST_REVISION__

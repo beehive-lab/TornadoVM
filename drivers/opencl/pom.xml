@@ -6,10 +6,10 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>0.0.2-b7a57c8</version>
+        <version>0.0.2-efaff9c</version>
     </parent>
     <artifactId>tornado-drivers-opencl</artifactId>
-    <version>0.0.2-b7a57c8</version>
+    <version>0.0.2-efaff9c</version>
     <name>tornado-drivers-opencl</name>
     <url>http://maven.apache.org</url>
     <properties>
@@ -24,12 +24,12 @@
         <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-collections</artifactId>
-            <version>0.0.2-b7a57c8</version>
+            <version>0.0.2-efaff9c</version>
         </dependency>
         <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-runtime</artifactId>
-            <version>0.0.2-b7a57c8</version>
+            <version>0.0.2-efaff9c</version>
         </dependency>
         <dependency>
             <groupId>graal</groupId>
