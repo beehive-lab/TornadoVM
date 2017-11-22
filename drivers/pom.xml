@@ -4,7 +4,7 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado</artifactId>
-        <version>0.0.2-90b666f</version>
+        <version>0.0.2-b7a57c8</version>
     </parent>
     <artifactId>tornado-drivers</artifactId>
     <packaging>pom</packaging>

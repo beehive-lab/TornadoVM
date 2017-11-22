@@ -5,11 +5,11 @@
   <parent>
     <groupId>tornado</groupId>
     <artifactId>tornado</artifactId>
-    <version>0.0.2-90b666f</version>
+    <version>0.0.2-b7a57c8</version>
   </parent>
   <groupId>tornado-unittests</groupId>
   <artifactId>tornado-unittests</artifactId>
-  <version>0.0.2-90b666f</version>
+  <version>0.0.2-b7a57c8</version>
   <name>tornado-unittests</name>
   <url>http://maven.apache.org</url>
   <properties>
@@ -25,17 +25,17 @@
    <dependency>
        <groupId>tornado</groupId>
        <artifactId>tornado-collections</artifactId>
-       <version>0.0.2-90b666f</version>
+       <version>0.0.2-b7a57c8</version>
    </dependency>
    <dependency>
        <groupId>tornado</groupId>
        <artifactId>tornado-runtime</artifactId>
-       <version>0.0.2-90b666f</version>
+       <version>0.0.2-b7a57c8</version>
    </dependency>
    <dependency>
        <groupId>tornado</groupId>
        <artifactId>tornado-drivers-opencl</artifactId>
-       <version>0.0.2-90b666f</version>
+       <version>0.0.2-b7a57c8</version>
    </dependency>
    <dependency>
        <groupId>org.apache.lucene</groupId>
