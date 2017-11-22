@@ -21,6 +21,8 @@ __TEST_THE_WORLD__ = [
 	"tornado.unittests.images.TestImages",
 	"tornado.unittests.branching.TestConditionals",
 	"tornado.unittests.loops.TestLoops",
+	"tornado.unittests.matrices.TestMatrices",
+	"tornado.unittests.images.TestResizeImage",
 ]
 
 ## Options
