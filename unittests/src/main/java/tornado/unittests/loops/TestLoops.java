@@ -25,16 +25,18 @@
  */
 package tornado.unittests.loops;
 
-import org.junit.Ignore;
-import org.junit.Test;
-import tornado.api.Parallel;
-import tornado.runtime.api.TaskSchedule;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Ignore;
+import org.junit.Test;
 
-public class TestLoops {
+import tornado.api.Parallel;
+import tornado.runtime.api.TaskSchedule;
+import tornado.unittests.common.TornadoTestBase;
+
+public class TestLoops extends TornadoTestBase {
 
     public static void forLoopOneD(int[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
@@ -91,8 +93,8 @@ public class TestLoops {
 
     public static void steppedLoop(int[] a, int size) {
         for (@Parallel int i = 0; i < size - 1; i += 2){
-            a[i] = 10;
-            a[i + 1] = 10;
+            a[i] = 200;
+            a[i + 1] = 200;
         }
     }
 
@@ -102,17 +104,17 @@ public class TestLoops {
 
         int [] a = new int[size];
 
-        Arrays.fill(a,1);
+        Arrays.fill(a, 75);
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0",TestLoops::steppedLoop, a, size)
-                .streamOut(a)
-                .execute();
+            .task("t0",TestLoops::steppedLoop, a, size)
+            .streamOut(a)
+            .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
-            assertEquals(10, a[i]);
+            assertEquals(200, a[i]);
         }
     }
 
@@ -150,7 +152,19 @@ public class TestLoops {
         }
     }
 
-    @Ignore
+    public static void conditionalIfElseLoop(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            if (i == 4) {
+                a[i] = 4;
+            } else if (i == 5) {
+                a[i] = 5;
+            } else {
+                a[i] = 10;
+            }
+        }
+    }
+
+    @Test
     public void testIfElseElseInLoop() {
         final int size = 10;
 
@@ -160,13 +174,19 @@ public class TestLoops {
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0", TestLoops::forLoopOneD, a)
+                .task("t0", TestLoops::conditionalIfElseLoop, a)
                 .streamOut(a)
                 .execute();
         //@formatter:on
 
         for (int i = 0; i < a.length; i++) {
-            assertEquals(a[i], 1, 0);
+            if (i == 4) {
+                assertEquals(4, a[i]);
+            } else if (i == 5) {
+                assertEquals(5, a[i]);
+            } else {
+                assertEquals(10, a[i]);
+            }
         }
     }
 
@@ -259,7 +279,7 @@ public class TestLoops {
         }
     }
 
-    public static void controlFlowBreak(int[] a, int size) {
+    public static void controlFlowBreak(int[] a) {
         for (int i = 0; i < a.length; i++) {
             if (i == 4) {
                 a[i] = 4;
@@ -268,6 +288,19 @@ public class TestLoops {
         }
     }
 
+    public static void controlFlowBreak2(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            if (a[i] == 2) {
+                a[i] = 10;
+                break;
+            }
+        }
+    }
+
+    /*
+     * This test is failing, the reason is that the runtime does not copy in the
+     * variable a, just copy out
+     */
     @Test
     public void testLoopControlFlowBreak() {
         final int size = 10;
@@ -278,7 +311,8 @@ public class TestLoops {
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0", TestLoops::controlFlowBreak, a, size)
+                .streamIn(a)
+                .task("t0", TestLoops::controlFlowBreak, a)
                 .streamOut(a)
                 .execute();
         //@formatter:on
@@ -292,35 +326,62 @@ public class TestLoops {
         }
     }
 
+    @Test
+    public void testLoopControlFlowBreak2() {
+        final int size = 10;
+
+        int[] a = new int[size];
+
+        Arrays.fill(a, 1000);
+        a[2] = 2;
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestLoops::controlFlowBreak2, a)
+                .streamOut(a)
+                .execute();
+        //@formatter:on
+
+        System.out.println(Arrays.toString(a));
+
+        for (int i = 0; i < a.length; i++) {
+            if (i == 2) {
+                assertEquals(10, a[i]);
+            } else {
+                assertEquals(1000, a[i]);
+            }
+        }
+    }
+
     public static void controlFlowContinue(int[] a) {
         for (int i = 0; i < a.length; i++) {
             if (i == 4) {
                 continue;
             }
-            a[i] = 10;
+            a[i] = 150;
         }
     }
 
     @Test
     public void testLoopControlFlowContinue() {
         final int size = 10;
-
-        int[] a = new int[size];
-
-        Arrays.fill(a, 1);
+        int[] foo = new int[size];
+        Arrays.fill(foo, 50);
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0", TestLoops::controlFlowContinue, a)
-                .streamOut(a)
+                .task("t0", TestLoops::controlFlowContinue, foo)
+                .streamOut(foo)
                 .execute();
         //@formatter:on
 
-        for (int i = 0; i < a.length; i++) {
+        System.out.println(Arrays.toString(foo));
+
+        for (int i = 0; i < foo.length; i++) {
             if (i == 4) {
-                assertEquals(1, a[i]);
+                assertEquals(50, foo[i]);
             } else {
-                assertEquals(10, a[i]);
+                assertEquals(150, foo[i]);
             }
         }
     }
