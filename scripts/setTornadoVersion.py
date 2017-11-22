@@ -11,7 +11,7 @@ import subprocess
 
 ## Line to update with the last snapshot version (short)
 __MAJOR__ = "0.0.2"
-__LAST_REVISION__ = "b7a57c8"
+__LAST_REVISION__ = "efaff9c"
 
 ## Do not change this line
 __CURRENT_VERSION__ = __MAJOR__ + "-" + __LAST_REVISION__
@@ -22,7 +22,8 @@ def updateVersion():
  	"""
 
 	command = "git rev-parse --short HEAD"
-	referenceNumber = subprocess.check_output(command, shell=True)
+	#referenceNumber = subprocess.check_output(command, shell=True)
+	referenceNumber = "${TORNADO_REVISION} "
 
 	newReference = __CURRENT_VERSION__.replace(__LAST_REVISION__, referenceNumber)
 	newReference = newReference[:-1]

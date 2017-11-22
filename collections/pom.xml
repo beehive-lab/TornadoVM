@@ -5,7 +5,7 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado</artifactId>
-        <version>0.0.2-efaff9c</version>
+        <version>0.0.2-${TORNADO_REVISION}</version>
     </parent>
     <artifactId>tornado-collections</artifactId>
     <name>tornado-collections</name>
@@ -36,7 +36,7 @@
         <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-runtime</artifactId>
-            <version>0.0.2-efaff9c</version>
+            <version>0.0.2-${TORNADO_REVISION}</version>
         </dependency>
     </dependencies>
 </project>

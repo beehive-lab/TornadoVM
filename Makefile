@@ -1,12 +1,15 @@
 all: build
 
-build:
+build: 
+	TORNADO_REVISION=$(shell echo `git rev-parse --short HEAD`) \
 	mvn -T 1C install
 
 install:
+	TORNADO_REVISION=$(shell echo `git rev-parse --short HEAD`) \
 	python bin/easy-install.py
 
-clean:
+clean: 
+	TORNADO_REVISION=$(shell echo `git rev-parse --short HEAD`) \
 	mvn clean
 
 example:
