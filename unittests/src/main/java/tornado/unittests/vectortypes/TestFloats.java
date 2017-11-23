@@ -403,7 +403,7 @@ public class TestFloats extends TornadoTestBase {
     }
 
     private static void vectorPhiTest(VectorFloat3 input, VectorFloat3 output) {
-        Float3 sum = new Float3(new float[] { 0, 0, 0 });
+        Float3 sum = new Float3(0f, 0f, 0f);
         for (int i = 0; i < input.getLength(); i++) {
             sum = Float3.add(sum, input.get(i));
         }
@@ -424,5 +424,10 @@ public class TestFloats extends TornadoTestBase {
             .streamOut(output)
             .execute();
         //@formatter:on
+
+        assertEquals(8.0f, output.get(0).getS0(), 0.001);
+        assertEquals(8.0f, output.get(0).getS1(), 0.001);
+        assertEquals(8.0f, output.get(0).getS2(), 0.001);
+
     }
 }

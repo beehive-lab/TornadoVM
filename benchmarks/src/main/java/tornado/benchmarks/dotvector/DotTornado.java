@@ -54,8 +54,8 @@ public class DotTornado extends BenchmarkDriver {
         b = new VectorFloat3(numElements);
         c = new float[numElements];
 
-        final Float3 valueA = new Float3(new float[]{1f, 1f, 1f});
-        final Float3 valueB = new Float3(new float[]{2f, 2f, 2f});
+        final Float3 valueA = new Float3(1f, 1f, 1f);
+        final Float3 valueB = new Float3(2f, 2f, 2f);
         for (int i = 0; i < numElements; i++) {
             a.set(i, valueA);
             b.set(i, valueB);
