@@ -26,8 +26,11 @@
 
 package tornado.unittests.slam.graphics;
 
+import static org.junit.Assert.assertEquals;
 import static tornado.collections.types.Float3.dot;
 import static tornado.collections.types.Float3.mult;
+
+import java.util.Random;
 
 import org.junit.Test;
 
@@ -56,14 +59,14 @@ public class GraphicsTests extends TornadoTestBase {
         }
     }
 
-    private static final Float3 rotate(Matrix4x4Float m, Float3 x) {
-        final Float3 result = new Float3(dot(m.row(0).asFloat3(), x), dot(m.row(1).asFloat3(), x), dot(m.row(2).asFloat3(), x));
+    private static final Float3 rotate(Matrix4x4Float m, Float3 v) {
+        final Float3 result = new Float3(dot(m.row(0).asFloat3(), v), dot(m.row(1).asFloat3(), v), dot(m.row(2).asFloat3(), v));
         return result;
     }
 
-    private static void testRotate(Matrix4x4Float m, VectorFloat3 x, VectorFloat3 result) {
-        for (int i = 0; i < x.size(); i++) {
-            Float3 r = rotate(m, x.get(i));
+    private static void testRotate(Matrix4x4Float m, VectorFloat3 v, VectorFloat3 result) {
+        for (@Parallel int i = 0; i < v.getLength(); i++) {
+            Float3 r = rotate(m, v.get(i));
             result.set(i, r);
         }
     }
@@ -71,30 +74,41 @@ public class GraphicsTests extends TornadoTestBase {
     @Test
     public void testRotate() {
 
-        final int size = 16;
-        Matrix4x4Float m = new Matrix4x4Float();
+        final int size = 4;
+        Random r = new Random();
+
+        Matrix4x4Float matrix4 = new Matrix4x4Float();
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                m.set(i, j, (float) j);
+                matrix4.set(i, j, j + r.nextFloat());
             }
         }
 
-        VectorFloat3 f3 = new VectorFloat3(size);
+        VectorFloat3 vector3 = new VectorFloat3(size);
         VectorFloat3 result = new VectorFloat3(size);
+        VectorFloat3 sequential = new VectorFloat3(size);
 
         for (int i = 0; i < size; i++) {
-            f3.set(i, new Float3(1f, 2f, 3f));
+            vector3.set(i, new Float3(1f, 2f, 3f));
         }
 
-        TaskSchedule t0 = new TaskSchedule("t0");
-        t0.task("s0", GraphicsTests::testRotate, m, f3, result);
-        t0.streamIn(result);
-        t0.execute();
+        // Sequential execution
+        testRotate(matrix4, vector3, sequential);
+
+        // @formatter:off
+        new TaskSchedule("t0")
+            .task("s0", GraphicsTests::testRotate, matrix4, vector3, result)
+            .streamOut(result)
+            .execute();        
+        // @formatter:on
 
         for (int i = 0; i < size; i++) {
-            System.out.println(result.get(i));
+            Float3 o = result.get(i);
+            Float3 s = sequential.get(i);
+            assertEquals(s.getS0(), o.getS0(), 0.001);
+            assertEquals(s.getS1(), o.getS1(), 0.001);
+            assertEquals(s.getS1(), o.getS1(), 0.001);
         }
-
     }
 
 }
