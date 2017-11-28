@@ -139,6 +139,9 @@ public class OCLCodeCache {
         if (!log.isEmpty()) {
             debug(log);
         }
+        if (status == OCLBuildStatus.CL_BUILD_ERROR) {
+            System.err.println(log);
+        }
 
         final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
 
