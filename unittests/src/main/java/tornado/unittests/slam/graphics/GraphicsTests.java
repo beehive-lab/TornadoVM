@@ -52,7 +52,13 @@ public class GraphicsTests extends TornadoTestBase {
                 final float depth = depths.get(x, y);
                 final Float3 pix = new Float3(x, y, 1f);
 
-                final Float3 vertex = (depth > 0) ? mult(rotate(invK, pix), depth) : new Float3();
+                final Float3 vertex = (depth > 0) ? mult(rotate(invK, pix), depth) : new Float3(0, 0, 0);
+                // Float3 vertex = null;
+                // if (depth > 0) {
+                // vertex = mult(rotate(invK, pix), depth);
+                // } else {
+                // vertex = new Float3(0f, 0f, 0f);
+                // }
 
                 verticies.set(x, y, vertex);
             }
@@ -73,7 +79,6 @@ public class GraphicsTests extends TornadoTestBase {
 
     @Test
     public void testRotate() {
-
         final int size = 4;
         Random r = new Random();
 
@@ -109,6 +114,38 @@ public class GraphicsTests extends TornadoTestBase {
             assertEquals(s.getS1(), o.getS1(), 0.001);
             assertEquals(s.getS1(), o.getS1(), 0.001);
         }
+    }
+
+    @Test
+    public void testDepth2Vertex() {
+
+        final int size = 4;
+        Random r = new Random();
+
+        Matrix4x4Float matrix4 = new Matrix4x4Float();
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                matrix4.set(i, j, j + r.nextFloat());
+            }
+        }
+
+        ImageFloat3 vertext = new ImageFloat3(size, size);
+        ImageFloat depth = new ImageFloat(size, size);
+
+        for (int i = 0; i < size; i++) {
+            depth.set(i, r.nextFloat());
+            for (int j = 0; j < size; j++) {
+                vertext.set(i, j, new Float3(1f, 2f, 3f));
+            }
+        }
+
+        // @formatter:off
+        new TaskSchedule("t0")
+            .task("s0", GraphicsTests::depth2vertex, vertext, depth, matrix4)
+            .streamOut(vertext)
+            .execute();        
+        // @formatter:on
+
     }
 
 }
