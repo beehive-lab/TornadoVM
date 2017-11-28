@@ -59,7 +59,7 @@ public class RotateTornado extends BenchmarkDriver {
         m = new Matrix4x4Float();
         m.identity();
 
-        final Float3 value = new Float3(new float[]{1f, 2f, 3f});
+        final Float3 value = new Float3(1f, 2f, 3f);
         for (int i = 0; i < input.Y(); i++) {
             for (int j = 0; j < input.X(); j++) {
                 input.set(j, i, value);

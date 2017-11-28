@@ -55,8 +55,8 @@ public class DotJava extends BenchmarkDriver {
         b = new ImageFloat3(numElementsX, numElementsY);
         c = new ImageFloat(numElementsX, numElementsY);
 
-        final Float3 valueA = new Float3(new float[]{1f, 1f, 1f});
-        final Float3 valueB = new Float3(new float[]{2f, 2f, 2f});
+        final Float3 valueA = new Float3(1f, 1f, 1f);
+        final Float3 valueB = new Float3(2f, 2f, 2f);
 
         for (int i = 0; i < numElementsX; i++) {
             for (int j = 0; j < numElementsY; j++) {
