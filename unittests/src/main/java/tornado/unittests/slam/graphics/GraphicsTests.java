@@ -28,7 +28,6 @@ package tornado.unittests.slam.graphics;
 
 import static org.junit.Assert.assertEquals;
 import static tornado.collections.types.Float3.dot;
-import static tornado.collections.types.Float3.mult;
 
 import java.util.Random;
 
@@ -52,10 +51,12 @@ public class GraphicsTests extends TornadoTestBase {
                 final float depth = depths.get(x, y);
                 final Float3 pix = new Float3(x, y, 1f);
 
-                final Float3 vertex = (depth > 0) ? mult(rotate(invK, pix), depth) : new Float3(0, 0, 0);
+                final Float3 vertex = (depth > 0) ? Float3.mult(rotate(invK, pix), depth) : new Float3(0f, 0f, 0f);
                 // Float3 vertex = null;
                 // if (depth > 0) {
-                // vertex = mult(rotate(invK, pix), depth);
+                // Float3 rotate = rotate(invK, pix);
+                // Float3 mult = Float3.mult(rotate, depth);
+                // vertex = mult;
                 // } else {
                 // vertex = new Float3(0f, 0f, 0f);
                 // }
@@ -63,6 +64,13 @@ public class GraphicsTests extends TornadoTestBase {
                 verticies.set(x, y, vertex);
             }
         }
+    }
+
+    private static void testPhiNode(ImageFloat3 verticies, ImageFloat depths, Matrix4x4Float invK) {
+        final float depth = depths.get(0, 0);
+        final Float3 pix = new Float3(0, 0, 1f);
+        final Float3 vertex = (depth > 0) ? Float3.mult(rotate(invK, pix), depth) : new Float3(0f, 0f, 0f);
+        verticies.set(0, 0, vertex);
     }
 
     private static final Float3 rotate(Matrix4x4Float m, Float3 v) {
@@ -142,6 +150,38 @@ public class GraphicsTests extends TornadoTestBase {
         // @formatter:off
         new TaskSchedule("t0")
             .task("s0", GraphicsTests::depth2vertex, vertext, depth, matrix4)
+            .streamOut(vertext)
+            .execute();        
+        // @formatter:on
+
+    }
+
+    @Test
+    public void testPhiNode() {
+
+        final int size = 4;
+        Random r = new Random();
+
+        Matrix4x4Float matrix4 = new Matrix4x4Float();
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                matrix4.set(i, j, j + r.nextFloat());
+            }
+        }
+
+        ImageFloat3 vertext = new ImageFloat3(size, size);
+        ImageFloat depth = new ImageFloat(size, size);
+
+        for (int i = 0; i < size; i++) {
+            depth.set(i, r.nextFloat());
+            for (int j = 0; j < size; j++) {
+                vertext.set(i, j, new Float3(1f, 2f, 3f));
+            }
+        }
+
+        // @formatter:off
+        new TaskSchedule("t0")
+            .task("s0", GraphicsTests::testPhiNode, vertext, depth, matrix4)
             .streamOut(vertext)
             .execute();        
         // @formatter:on
