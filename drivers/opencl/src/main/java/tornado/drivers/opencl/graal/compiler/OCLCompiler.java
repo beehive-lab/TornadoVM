@@ -250,6 +250,10 @@ public class OCLCompiler {
             return DefaultProfilingInfo.get(TriState.UNKNOWN);
         }
     }
+    
+    private static boolean isGraphEmpty(StructuredGraph graph) {
+        return graph.start().next() == null;
+    }
 
     /**
      * Builds the graph, optimizes it.
@@ -277,7 +281,7 @@ public class OCLCompiler {
                     graphBuilderSuite, optimisticOpts, method, args, meta, isKernel);
 
             if (buildGraph) {
-                if (graph.start().next() == null) {
+                if (isGraphEmpty(graph)) {
                     graphBuilderSuite.apply(graph, highTierContext);
                     new DeadCodeEliminationPhase(Optional).apply(graph);
                 } else {
