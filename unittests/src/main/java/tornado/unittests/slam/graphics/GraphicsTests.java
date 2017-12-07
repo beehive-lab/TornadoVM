@@ -47,20 +47,9 @@ public class GraphicsTests extends TornadoTestBase {
     private static void depth2vertex(ImageFloat3 verticies, ImageFloat depths, Matrix4x4Float invK) {
         for (@Parallel int y = 0; y < depths.Y(); y++) {
             for (@Parallel int x = 0; x < depths.X(); x++) {
-
                 final float depth = depths.get(x, y);
                 final Float3 pix = new Float3(x, y, 1f);
-
                 final Float3 vertex = (depth > 0) ? Float3.mult(rotate(invK, pix), depth) : new Float3(0f, 0f, 0f);
-                // Float3 vertex = null;
-                // if (depth > 0) {
-                // Float3 rotate = rotate(invK, pix);
-                // Float3 mult = Float3.mult(rotate, depth);
-                // vertex = mult;
-                // } else {
-                // vertex = new Float3(0f, 0f, 0f);
-                // }
-
                 verticies.set(x, y, vertex);
             }
         }
@@ -140,6 +129,8 @@ public class GraphicsTests extends TornadoTestBase {
         ImageFloat3 vertext = new ImageFloat3(size, size);
         ImageFloat depth = new ImageFloat(size, size);
 
+        ImageFloat3 sequential = new ImageFloat3(size, size);
+
         for (int i = 0; i < size; i++) {
             depth.set(i, r.nextFloat());
             for (int j = 0; j < size; j++) {
@@ -147,12 +138,23 @@ public class GraphicsTests extends TornadoTestBase {
             }
         }
 
+        // Sequential execution
+        depth2vertex(sequential, depth, matrix4);
+
         // @formatter:off
         new TaskSchedule("t0")
             .task("s0", GraphicsTests::depth2vertex, vertext, depth, matrix4)
             .streamOut(vertext)
             .execute();        
         // @formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Float3 o = vertext.get(i);
+            Float3 s = sequential.get(i);
+            assertEquals(s.getS0(), o.getS0(), 0.001);
+            assertEquals(s.getS1(), o.getS1(), 0.001);
+            assertEquals(s.getS1(), o.getS1(), 0.001);
+        }
 
     }
 
