@@ -785,7 +785,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 }
             }
             
-            // allocate a variable for this phi
+            // allocate a variable for this phi            
+            //Variable newOperand = gen.newVariable(getPhiKind(phi));
             Variable newOperand = null;
             LIRKind value = null;
             if (vectorPhiNode) {
@@ -795,8 +796,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 newOperand = gen.newVariable(getPhiKind(phi));
             }
             
-            // allocate a variable for this phi            
-            //Variable newOperand = gen.newVariable(getPhiKind(phi));
             setResult(phi, newOperand);
             return newOperand;
         } else {
