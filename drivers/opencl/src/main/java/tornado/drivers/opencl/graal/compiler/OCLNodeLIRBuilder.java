@@ -40,6 +40,7 @@ import org.graalvm.compiler.core.match.ComplexMatchValue;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.lir.StandardOp.LabelOp;
 import org.graalvm.compiler.lir.*;
 import org.graalvm.compiler.lir.gen.LIRGenerator.Options;
@@ -768,8 +769,34 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     public Value operandForPhi(ValuePhiNode phi) {
         Value result = operand(phi);
         if (result == null) {
+            
+            // Check first for vector types
+            NodeInputList<ValueNode> values = phi.values();
+            boolean vectorPhiNode = true;
+            LIRKind valuePhi = null;
+            for (ValueNode value: values) {
+                if (value instanceof VectorValueNode) {
+                    VectorValueNode vectorNode = (VectorValueNode) value;
+                    Stamp stamp = vectorNode.stamp();
+                    valuePhi = stamp.getLIRKind(null);
+                    vectorPhiNode &= true;
+                } else {
+                    vectorPhiNode &= false;
+                }
+            }
+            
             // allocate a variable for this phi
-            Variable newOperand = gen.newVariable(getPhiKind(phi));
+            Variable newOperand = null;
+            LIRKind value = null;
+            if (vectorPhiNode) {
+                newOperand = gen.newVariable(valuePhi);
+                System.out.println(newOperand);
+            } else {
+                newOperand = gen.newVariable(getPhiKind(phi));
+            }
+            
+            // allocate a variable for this phi            
+            //Variable newOperand = gen.newVariable(getPhiKind(phi));
             setResult(phi, newOperand);
             return newOperand;
         } else {
