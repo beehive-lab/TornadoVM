@@ -62,6 +62,13 @@ public class GraphicsTests extends TornadoTestBase {
         verticies.set(0, 0, vertex);
     }
 
+    private static void testPhiNode2(ImageFloat3 verticies, ImageFloat depths, Matrix4x4Float invK) {
+        final float depth = depths.get(0, 0);
+        final Float3 pix = new Float3(0, 0, 1f);
+        final Float3 vertex = (depth > 0) ? Float3.mult(rotate(invK, pix), depth) : new Float3();
+        verticies.set(0, 0, vertex);
+    }
+
     private static final Float3 rotate(Matrix4x4Float m, Float3 v) {
         final Float3 result = new Float3(dot(m.row(0).asFloat3(), v), dot(m.row(1).asFloat3(), v), dot(m.row(2).asFloat3(), v));
         return result;
@@ -184,6 +191,38 @@ public class GraphicsTests extends TornadoTestBase {
         // @formatter:off
         new TaskSchedule("t0")
             .task("s0", GraphicsTests::testPhiNode, vertext, depth, matrix4)
+            .streamOut(vertext)
+            .execute();        
+        // @formatter:on
+
+    }
+
+    @Test
+    public void testPhiNode2() {
+
+        final int size = 4;
+        Random r = new Random();
+
+        Matrix4x4Float matrix4 = new Matrix4x4Float();
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                matrix4.set(i, j, j + r.nextFloat());
+            }
+        }
+
+        ImageFloat3 vertext = new ImageFloat3(size, size);
+        ImageFloat depth = new ImageFloat(size, size);
+
+        for (int i = 0; i < size; i++) {
+            depth.set(i, r.nextFloat());
+            for (int j = 0; j < size; j++) {
+                vertext.set(i, j, new Float3(1f, 2f, 3f));
+            }
+        }
+
+        // @formatter:off
+        new TaskSchedule("t0")
+            .task("s0", GraphicsTests::testPhiNode2, vertext, depth, matrix4)
             .streamOut(vertext)
             .execute();        
         // @formatter:on
