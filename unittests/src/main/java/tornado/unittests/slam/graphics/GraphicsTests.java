@@ -28,7 +28,6 @@ package tornado.unittests.slam.graphics;
 
 import static org.junit.Assert.assertEquals;
 import static tornado.collections.graphics.GraphicsMath.rigidTransform;
-import static tornado.collections.graphics.GraphicsMath.rotate;
 import static tornado.collections.math.TornadoMath.max;
 import static tornado.collections.math.TornadoMath.min;
 import static tornado.collections.math.TornadoMath.sqrt;
@@ -48,12 +47,16 @@ import org.junit.Test;
 import tornado.api.Parallel;
 import tornado.collections.graphics.GraphicsMath;
 import tornado.collections.math.TornadoMath;
+import tornado.collections.types.Byte3;
 import tornado.collections.types.Float2;
 import tornado.collections.types.Float3;
 import tornado.collections.types.Float4;
+import tornado.collections.types.Float8;
 import tornado.collections.types.FloatOps;
+import tornado.collections.types.ImageByte3;
 import tornado.collections.types.ImageFloat;
 import tornado.collections.types.ImageFloat3;
+import tornado.collections.types.ImageFloat8;
 import tornado.collections.types.Int2;
 import tornado.collections.types.Int3;
 import tornado.collections.types.Matrix4x4Float;
@@ -613,7 +616,69 @@ public class GraphicsTests extends TornadoTestBase {
                 }
             }
         }
+    }
 
+    private static void renderTrack(ImageByte3 output, ImageFloat8 track) {
+        for (@Parallel int y = 0; y < track.Y(); y++) {
+            for (@Parallel int x = 0; x < track.X(); x++) {
+                Byte3 pixel = null;
+                final int result = (int) track.get(x, y).getS7();
+
+                if (result == 1) {
+                    pixel = new Byte3((byte) 128, (byte) 128, (byte) 128);
+                } else if (result == -1) {
+                    pixel = new Byte3((byte) 0, (byte) 0, (byte) 0);
+                } else if (result == -2) {
+                    pixel = new Byte3((byte) 255, (byte) 0, (byte) 0);
+                } else if (result == -3) {
+                    pixel = new Byte3((byte) 0, (byte) 255, (byte) 0);
+                } else if (result == -4) {
+                    pixel = new Byte3((byte) 0, (byte) 0, (byte) 255);
+                } else if (result == -5) {
+                    pixel = new Byte3((byte) 255, (byte) 255, (byte) 0);
+                } else {
+                    pixel = new Byte3((byte) 255, (byte) 128, (byte) 128);
+                }
+
+                output.set(x, y, pixel);
+            }
+        }
+
+    }
+
+    @Test
+    public void testRenderTrack() {
+        final int size = 4;
+        Random r = new Random();
+
+        ImageByte3 output = new ImageByte3(size, size);
+        ImageByte3 sequential = new ImageByte3(size, size);
+        ImageFloat8 track = new ImageFloat8(size, size);
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                track.set(i, j, new Float8(random(r), random(r), random(r), random(r), random(r), random(r), random(r), random(r)));
+            }
+        }
+
+        renderTrack(sequential, track);
+
+        // @formatter:off
+        new TaskSchedule("t0")
+            .task("s0", GraphicsTests::renderTrack, output, track)
+            .streamOut(output)
+            .execute();        
+        // @formatter:on
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                Byte3 o = output.get(i, j);
+                Byte3 expected = sequential.get(i, j);
+                assertEquals(expected.getX(), o.getX());
+                assertEquals(expected.getY(), o.getY());
+                assertEquals(expected.getZ(), o.getZ());
+            }
+        }
     }
 
 }
