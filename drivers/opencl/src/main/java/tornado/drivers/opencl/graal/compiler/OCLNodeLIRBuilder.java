@@ -785,10 +785,11 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 }
             }
             
-            // allocate a variable for this phi            
-            //Variable newOperand = gen.newVariable(getPhiKind(phi));
+            /* Allocate a variable for a PHI node. If the variable is a phi 
+             * node for VectorType, then the KIND is set to the vector type, 
+             * otherwise it inspects the stamp (JavaKind). 
+             */
             Variable newOperand = null;
-            LIRKind value = null;
             if (vectorPhiNode) {
                 newOperand = gen.newVariable(valuePhi);
                 System.out.println(newOperand);
