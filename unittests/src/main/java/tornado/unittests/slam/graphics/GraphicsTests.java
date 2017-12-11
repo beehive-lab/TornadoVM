@@ -27,13 +27,13 @@
 package tornado.unittests.slam.graphics;
 
 import static org.junit.Assert.assertEquals;
-import static tornado.collections.types.Float3.dot;
 
 import java.util.Random;
 
 import org.junit.Test;
 
 import tornado.api.Parallel;
+import tornado.collections.graphics.GraphicsMath;
 import tornado.collections.types.Float3;
 import tornado.collections.types.ImageFloat;
 import tornado.collections.types.ImageFloat3;
@@ -43,17 +43,6 @@ import tornado.runtime.api.TaskSchedule;
 import tornado.unittests.common.TornadoTestBase;
 
 public class GraphicsTests extends TornadoTestBase {
-
-    private static void depth2vertex(ImageFloat3 verticies, ImageFloat depths, Matrix4x4Float invK) {
-        for (@Parallel int y = 0; y < depths.Y(); y++) {
-            for (@Parallel int x = 0; x < depths.X(); x++) {
-                final float depth = depths.get(x, y);
-                final Float3 pix = new Float3(x, y, 1f);
-                final Float3 vertex = (depth > 0) ? Float3.mult(rotate(invK, pix), depth) : new Float3(0f, 0f, 0f);
-                verticies.set(x, y, vertex);
-            }
-        }
-    }
 
     private static void testPhiNode(ImageFloat3 verticies, ImageFloat depths, Matrix4x4Float invK) {
         final float depth = depths.get(0, 0);
@@ -70,7 +59,7 @@ public class GraphicsTests extends TornadoTestBase {
     }
 
     private static final Float3 rotate(Matrix4x4Float m, Float3 v) {
-        final Float3 result = new Float3(dot(m.row(0).asFloat3(), v), dot(m.row(1).asFloat3(), v), dot(m.row(2).asFloat3(), v));
+        final Float3 result = new Float3(Float3.dot(m.row(0).asFloat3(), v), Float3.dot(m.row(1).asFloat3(), v), Float3.dot(m.row(2).asFloat3(), v));
         return result;
     }
 
@@ -146,11 +135,11 @@ public class GraphicsTests extends TornadoTestBase {
         }
 
         // Sequential execution
-        depth2vertex(sequential, depth, matrix4);
+        GraphicsMath.depth2vertex(sequential, depth, matrix4);
 
         // @formatter:off
         new TaskSchedule("t0")
-            .task("s0", GraphicsTests::depth2vertex, vertext, depth, matrix4)
+            .task("s0", GraphicsMath::depth2vertex, vertext, depth, matrix4)
             .streamOut(vertext)
             .execute();        
         // @formatter:on
@@ -227,6 +216,53 @@ public class GraphicsTests extends TornadoTestBase {
             .execute();        
         // @formatter:on
 
+    }
+
+    public static void computeRigidTransform(Matrix4x4Float matrix, VectorFloat3 points, VectorFloat3 output) {
+        for (@Parallel int i = 0; i < points.getLength(); i++) {
+            Float3 p = GraphicsMath.rigidTransform(matrix, points.get(i));
+            output.set(i, p);
+        }
+    }
+
+    @Test
+    public void testRigidTrasform() {
+
+        final int size = 4;
+        Random r = new Random();
+
+        Matrix4x4Float matrix4 = new Matrix4x4Float();
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                matrix4.set(i, j, j + r.nextFloat());
+            }
+        }
+
+        VectorFloat3 point = new VectorFloat3(size);
+        for (int i = 0; i < 4; i++) {
+            point.set(i, new Float3(r.nextFloat(), r.nextFloat(), r.nextFloat()));
+        }
+
+        VectorFloat3 sequential = new VectorFloat3(size);
+        VectorFloat3 output = new VectorFloat3(size);
+
+        // Sequential execution
+        computeRigidTransform(matrix4, point, sequential);
+
+        // @formatter:off
+        new TaskSchedule("t0")
+            .task("s0", GraphicsTests::computeRigidTransform, matrix4, point, output)
+            .streamOut(output)
+            .execute();        
+        // @formatter:on
+
+        for (int i = 0; i < size; i++) {
+            Float3 o = output.get(i);
+            Float3 s = sequential.get(i);
+            assertEquals(s.getS0(), o.getS0(), 0.001);
+            assertEquals(s.getS1(), o.getS1(), 0.001);
+            assertEquals(s.getS1(), o.getS1(), 0.001);
+        }
     }
 
 }
