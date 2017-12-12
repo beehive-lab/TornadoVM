@@ -640,7 +640,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 double probability = x.probability(x.keySuccessor(0));
                 PlatformKind kind = gen.getLIRKind(x.value().stamp())
                         .getPlatformKind();
-                unimplemented();
+                unimplemented("Switch node has not been implemented yet.");
 //                gen.emitCompareBranch(kind, gen.load(operand(x.value())),
 //                        x.keyAt(0), Condition.EQ, false,
 //                        getLIRBlock(x.keySuccessor(0)), defaultTarget,

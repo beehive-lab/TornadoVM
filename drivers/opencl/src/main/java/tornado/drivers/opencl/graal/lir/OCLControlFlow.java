@@ -265,6 +265,8 @@ public class OCLControlFlow {
             asm.emitSymbol(BRACKET_OPEN);
             asm.emitValue(crb, value);
             asm.emitSymbol(BRACKET_CLOSE);
+            asm.emit(" ");
+            asm.beginScope();
         }
 
         public Constant[] getKeyConstants() {

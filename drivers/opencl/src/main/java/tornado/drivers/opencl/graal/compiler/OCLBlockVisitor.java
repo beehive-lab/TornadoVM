@@ -25,14 +25,20 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 
+import jdk.vm.ci.meta.JavaConstant;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 
 public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block> {
@@ -40,11 +46,15 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     OCLCompilationResultBuilder resBuilder;
     OCLAssembler asm;
     Set<Block> merges;
+    Set<Block> switches;
+    HashMap<Node, Boolean> switchClosed;
 
     public OCLBlockVisitor(OCLCompilationResultBuilder resBuilder) {
         this.resBuilder = resBuilder;
         this.asm = resBuilder.getAssembler();
         merges = new HashSet<>();
+        switches = new HashSet<>();
+        switchClosed = new HashMap<>();
     }
 
     @Override
@@ -62,10 +72,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         } else {
             final Block dom = b.getDominator();
 
-            if (dom != null
-                    && !isMerge
-                    && !dom.isLoopHeader()
-                    && isIfBlock(dom)) {
+            if (dom != null && !isMerge && !dom.isLoopHeader() && isIfBlock(dom)) {
                 final IfNode ifNode = (IfNode) dom.getEndNode();
                 if (ifNode.falseSuccessor() == b.getBeginNode()) {
                     asm.indent();
@@ -74,6 +81,36 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                 }
                 asm.beginScope();
                 asm.eolOn();
+            } else if (dom != null && !isMerge && !dom.isLoopHeader() && isSwitchBlock(dom)) {
+                final IntegerSwitchNode switchNode = (IntegerSwitchNode) dom.getEndNode();
+                asm.indent();
+                Node beginNode = b.getBeginNode();
+                switches.add(b);
+                
+                NodeIterable<Node> successors = switchNode.successors();
+                
+                int defaultSuccessorIndex = switchNode.defaultSuccessorIndex();
+                Iterator<Node> iterator = successors.iterator();
+                
+                int caseIndex = -1;
+                while (iterator.hasNext()) {
+                    Node n = iterator.next();
+                    caseIndex++;
+                    if (n.equals(beginNode)) {
+                        break;
+                    }
+                }
+                
+                if (defaultSuccessorIndex == caseIndex) {
+                    asm.emit("default: ");
+                } else {
+                    asm.emit("case ");
+                    JavaConstant keyAt = switchNode.keyAt(caseIndex);
+                    asm.emit(keyAt.toValueString());
+                    asm.emit(":");
+                }
+                
+                //asm.eol();
             }
 
             resBuilder.emitBlock(b);
@@ -91,26 +128,84 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         if (b.getPostdominator() != null) {
             Block pdom = b.getPostdominator();
             //AbstractBeginNode beginNode = pdom.getBeginNode();
-            if (!merges.contains(pdom) && isMergeBlock(pdom)) {
+            if (!merges.contains(pdom) && isMergeBlock(pdom) && !switches.contains(b)) {
                 //asm.eolOff();
-                //asm.emitLine(
-                //String.format("// block %d merges control flow -> pdom = %d depth=%d",
-                //b.getId(), pdom.getId(), pdom.getDominatorDepth()));
+                //asm.emitLine(String.format("// block %d merges control flow -> pdom = %d depth=%d",b.getId(), pdom.getId(), pdom.getDominatorDepth()));
                 asm.endScope();
+            } else if (!merges.contains(pdom) && isMergeBlock(pdom) && switches.contains(b) && isSwitchBlock(b.getDominator())) {
+                asm.emitLine("break;");
+                final IntegerSwitchNode switchNode = (IntegerSwitchNode) b.getDominator().getEndNode();                
+                Node beginNode = b.getBeginNode();
+                
+                NodeIterable<Node> successors = switchNode.successors();
+                
+                int defaultSuccessorIndex = switchNode.defaultSuccessorIndex();
+                Iterator<Node> iterator = successors.iterator();
+                int j = 0;
+                while (iterator.hasNext()) {
+                    Node n = iterator.next();
+                    if (n.equals(beginNode)) {
+                        break;
+                    }
+                    j++;
+                }
+                
+                int numCases = successors.count();
+                
+                if ((numCases-1) == j) {
+                    asm.endScope();
+                    switchClosed.put(switchNode, true);
+                }
+                
             }
         } else {
-            closeIfBlock(b);
+            closeBranchBlock(b);
         }
     }
     
-    private void closeIfBlock(Block block) {
+    private void closeIfBlock(Block block, Block dom) {
+        final IfNode ifNode = (IfNode) dom.getEndNode();
+        if ((ifNode.falseSuccessor() == block.getBeginNode()) || (ifNode.trueSuccessor() == block.getBeginNode())) {
+            asm.endScope();
+        } 
+    }
+    
+    private void closeSwitchBlock(Block block, Block dom) {
+        final IntegerSwitchNode switchNode = (IntegerSwitchNode) dom.getEndNode();
+        
+        Node beginNode = block.getBeginNode();
+        
+        
+        NodeIterable<Node> successors = switchNode.successors();
+        
+        int defaultSuccessorIndex = switchNode.defaultSuccessorIndex();
+        Iterator<Node> iterator = successors.iterator();
+        int j = 0;
+        while (iterator.hasNext()) {
+            Node n = iterator.next();
+            if (n.equals(beginNode)) {
+                break;
+            }
+            j++;
+        }
+        
+        int numCases = successors.count();
+        
+        if ((numCases-1) == j) {
+            if (!switchClosed.containsKey(switchNode)) {
+                asm.endScope();
+                switchClosed.put(switchNode, true);
+            }
+        }
+    }
+    
+    private void closeBranchBlock(Block block) {
         final Block dom = block.getDominator();
         boolean isMerge = block.getBeginNode() instanceof MergeNode;
         if (dom != null && !isMerge && !dom.isLoopHeader() && isIfBlock(dom)) {
-            final IfNode ifNode = (IfNode) dom.getEndNode();
-            if ((ifNode.falseSuccessor() == block.getBeginNode()) || (ifNode.trueSuccessor() == block.getBeginNode())) {
-                asm.endScope();
-            }
+            closeIfBlock(block, dom);
+        } else if (dom != null && !isMerge && !dom.isLoopHeader() && isSwitchBlock(dom)) {
+            closeSwitchBlock(block, dom);
         }
     }
 
@@ -120,6 +215,10 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
 
     private static boolean isIfBlock(Block block) {
         return block.getEndNode() instanceof IfNode;
+    }
+    
+    private static boolean isSwitchBlock(Block block) {
+        return block.getEndNode() instanceof IntegerSwitchNode;
     }
 
 }
