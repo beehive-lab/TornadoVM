@@ -56,66 +56,70 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         switches = new HashSet<>();
         switchClosed = new HashSet<>();
     }
+    
+    private void emitBeginBlockForElseStatement(Block dom, Block block) {
+        final IfNode ifNode = (IfNode) dom.getEndNode();
+        if (ifNode.falseSuccessor() == block.getBeginNode()) {
+            asm.indent();
+            asm.elseStmt();
+            asm.eol();
+        }
+        asm.beginScope();
+        asm.eolOn();
+    }
+    
+    private void emitBeginBlockForSwitchStatements(Block dom, Block b) {
+        final IntegerSwitchNode switchNode = (IntegerSwitchNode) dom.getEndNode();
+        asm.indent();
+        Node beginNode = b.getBeginNode();
+        switches.add(b);
+        
+        NodeIterable<Node> successors = switchNode.successors();
+        
+        int defaultSuccessorIndex = switchNode.defaultSuccessorIndex();
+        Iterator<Node> iterator = successors.iterator();
+        
+        int caseIndex = -1;
+        while (iterator.hasNext()) {
+            Node n = iterator.next();
+            caseIndex++;
+            if (n.equals(beginNode)) {
+                break;
+            }
+        }
+        
+        if (defaultSuccessorIndex == caseIndex) {
+            asm.emit(OCLAssemblerConstants.DEFAULT_CASE + OCLAssemblerConstants.COLON);
+        } else {
+            asm.emit(OCLAssemblerConstants.CASE +  " ");
+            JavaConstant keyAt = switchNode.keyAt(caseIndex);
+            asm.emit(keyAt.toValueString());
+            asm.emit(OCLAssemblerConstants.COLON);
+        }
+    }
 
     @Override
-    public Block enter(Block b) {
+    public Block enter(Block block) {
 
-        boolean isMerge = b.getBeginNode() instanceof MergeNode;
+        boolean isMerge = block.getBeginNode() instanceof MergeNode;
         if (isMerge) {
             asm.eolOn();
-            merges.add(b);
+            merges.add(block);
         }
 
-        if (b.isLoopHeader()) {
-            resBuilder.emitLoopHeader(b);
+        if (block.isLoopHeader()) {
+            resBuilder.emitLoopHeader(block);
             asm.beginScope();
         } else {
-            final Block dom = b.getDominator();
-
+            // Emit either a Else statement or a switch statement
+            final Block dom = block.getDominator();
             if (dom != null && !isMerge && !dom.isLoopHeader() && isIfBlock(dom)) {
-                final IfNode ifNode = (IfNode) dom.getEndNode();
-                if (ifNode.falseSuccessor() == b.getBeginNode()) {
-                    asm.indent();
-                    asm.elseStmt();
-                    asm.eol();
-                }
-                asm.beginScope();
-                asm.eolOn();
+                emitBeginBlockForElseStatement(dom, block);
             } else if (dom != null && !isMerge && !dom.isLoopHeader() && isSwitchBlock(dom)) {
-                final IntegerSwitchNode switchNode = (IntegerSwitchNode) dom.getEndNode();
-                asm.indent();
-                Node beginNode = b.getBeginNode();
-                switches.add(b);
-                
-                NodeIterable<Node> successors = switchNode.successors();
-                
-                int defaultSuccessorIndex = switchNode.defaultSuccessorIndex();
-                Iterator<Node> iterator = successors.iterator();
-                
-                int caseIndex = -1;
-                while (iterator.hasNext()) {
-                    Node n = iterator.next();
-                    caseIndex++;
-                    if (n.equals(beginNode)) {
-                        break;
-                    }
-                }
-                
-                if (defaultSuccessorIndex == caseIndex) {
-                    asm.emit(OCLAssemblerConstants.DEFAULT_CASE + OCLAssemblerConstants.COLON);
-                } else {
-                    asm.emit(OCLAssemblerConstants.CASE +  " ");
-                    JavaConstant keyAt = switchNode.keyAt(caseIndex);
-                    asm.emit(keyAt.toValueString());
-                    asm.emit(OCLAssemblerConstants.COLON);
-                }
-                
-                //asm.eol();
+                emitBeginBlockForSwitchStatements(dom, block);
             }
-
-            resBuilder.emitBlock(b);
+            resBuilder.emitBlock(block);
         }
-
         return null;
     }
 
@@ -127,9 +131,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         } 
         if (b.getPostdominator() != null) {
             Block pdom = b.getPostdominator();
-            //AbstractBeginNode beginNode = pdom.getBeginNode();
             if (!merges.contains(pdom) && isMergeBlock(pdom) && !switches.contains(b)) {
-                //asm.eolOff();
                 //asm.emitLine(String.format("// block %d merges control flow -> pdom = %d depth=%d",b.getId(), pdom.getId(), pdom.getDominatorDepth()));
                 asm.endScope();
             } else if (!merges.contains(pdom) && isMergeBlock(pdom) && switches.contains(b) && isSwitchBlock(b.getDominator())) {
