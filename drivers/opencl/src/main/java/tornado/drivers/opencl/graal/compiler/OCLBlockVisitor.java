@@ -25,7 +25,6 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -40,6 +39,7 @@ import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 
 import jdk.vm.ci.meta.JavaConstant;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
+import tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 
 public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block> {
 
@@ -47,14 +47,14 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     OCLAssembler asm;
     Set<Block> merges;
     Set<Block> switches;
-    HashMap<Node, Boolean> switchClosed;
+    Set<Node> switchClosed;
 
     public OCLBlockVisitor(OCLCompilationResultBuilder resBuilder) {
         this.resBuilder = resBuilder;
         this.asm = resBuilder.getAssembler();
         merges = new HashSet<>();
         switches = new HashSet<>();
-        switchClosed = new HashMap<>();
+        switchClosed = new HashSet<>();
     }
 
     @Override
@@ -102,12 +102,12 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                 }
                 
                 if (defaultSuccessorIndex == caseIndex) {
-                    asm.emit("default: ");
+                    asm.emit(OCLAssemblerConstants.DEFAULT_CASE + OCLAssemblerConstants.COLON);
                 } else {
-                    asm.emit("case ");
+                    asm.emit(OCLAssemblerConstants.CASE +  " ");
                     JavaConstant keyAt = switchNode.keyAt(caseIndex);
                     asm.emit(keyAt.toValueString());
-                    asm.emit(":");
+                    asm.emit(OCLAssemblerConstants.COLON);
                 }
                 
                 //asm.eol();
@@ -133,30 +133,17 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                 //asm.emitLine(String.format("// block %d merges control flow -> pdom = %d depth=%d",b.getId(), pdom.getId(), pdom.getDominatorDepth()));
                 asm.endScope();
             } else if (!merges.contains(pdom) && isMergeBlock(pdom) && switches.contains(b) && isSwitchBlock(b.getDominator())) {
-                asm.emitLine("break;");
-                final IntegerSwitchNode switchNode = (IntegerSwitchNode) b.getDominator().getEndNode();                
-                Node beginNode = b.getBeginNode();
                 
-                NodeIterable<Node> successors = switchNode.successors();
+                asm.emitLine(OCLAssemblerConstants.BREAK + OCLAssemblerConstants.STMT_DELIMITER);
                 
-                int defaultSuccessorIndex = switchNode.defaultSuccessorIndex();
-                Iterator<Node> iterator = successors.iterator();
-                int j = 0;
-                while (iterator.hasNext()) {
-                    Node n = iterator.next();
-                    if (n.equals(beginNode)) {
-                        break;
-                    }
-                    j++;
-                }
+                final IntegerSwitchNode switchNode = (IntegerSwitchNode) b.getDominator().getEndNode();
+                int blockNumber = getBlockIndexForSwitchStatement(b, switchNode);
+                int numCases = getNumberOfCasesForSwitch(switchNode);
                 
-                int numCases = successors.count();
-                
-                if ((numCases-1) == j) {
+                if ((numCases-1) == blockNumber) {
                     asm.endScope();
-                    switchClosed.put(switchNode, true);
+                    switchClosed.add(switchNode);
                 }
-                
             }
         } else {
             closeBranchBlock(b);
@@ -170,31 +157,34 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         } 
     }
     
-    private void closeSwitchBlock(Block block, Block dom) {
-        final IntegerSwitchNode switchNode = (IntegerSwitchNode) dom.getEndNode();
-        
+    private int getBlockIndexForSwitchStatement(Block block, IntegerSwitchNode switchNode) {
         Node beginNode = block.getBeginNode();
         
-        
-        NodeIterable<Node> successors = switchNode.successors();
-        
-        int defaultSuccessorIndex = switchNode.defaultSuccessorIndex();
+        NodeIterable<Node> successors = switchNode.successors();        
         Iterator<Node> iterator = successors.iterator();
-        int j = 0;
+        int blockIndex = 0;
         while (iterator.hasNext()) {
             Node n = iterator.next();
             if (n.equals(beginNode)) {
                 break;
             }
-            j++;
+            blockIndex++;
         }
-        
-        int numCases = successors.count();
-        
-        if ((numCases-1) == j) {
-            if (!switchClosed.containsKey(switchNode)) {
+        return blockIndex;
+    }
+    
+    private int getNumberOfCasesForSwitch(IntegerSwitchNode switchNode) {
+        return switchNode.successors().count(); 
+    }
+    
+    private void closeSwitchBlock(Block block, Block dom) {
+        final IntegerSwitchNode switchNode = (IntegerSwitchNode) dom.getEndNode();
+        int blockNumber = getBlockIndexForSwitchStatement(block, switchNode);
+        int numCases = getNumberOfCasesForSwitch(switchNode);
+        if ((numCases-1) == blockNumber) {
+            if (!switchClosed.contains(switchNode)) {
                 asm.endScope();
-                switchClosed.put(switchNode, true);
+                switchClosed.add(switchNode);
             }
         }
     }
