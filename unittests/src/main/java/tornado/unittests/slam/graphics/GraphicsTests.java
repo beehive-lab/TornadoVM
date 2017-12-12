@@ -46,6 +46,7 @@ import org.junit.Test;
 
 import tornado.api.Parallel;
 import tornado.collections.graphics.GraphicsMath;
+import tornado.collections.graphics.Renderer;
 import tornado.collections.math.TornadoMath;
 import tornado.collections.types.Byte3;
 import tornado.collections.types.Float2;
@@ -618,42 +619,6 @@ public class GraphicsTests extends TornadoTestBase {
         }
     }
 
-    private static void renderTrackOLD(ImageByte3 output, ImageFloat8 track) {
-
-        for (@Parallel int y = 0; y < track.Y(); y++) {
-            for (@Parallel int x = 0; x < track.X(); x++) {
-                Byte3 pixel = null;
-                final int result = (int) track.get(x, y).getS7();
-
-                switch (result) {
-                    case 1: // ok GREY
-                        pixel = new Byte3((byte) 128, (byte) 128, (byte) 128);
-                        break;
-                    case -1: // no input BLACK
-                        pixel = new Byte3((byte) 0, (byte) 0, (byte) 0);
-                        break;
-                    case -2: // not in image RED
-                        pixel = new Byte3((byte) 255, (byte) 0, (byte) 0);
-                        break;
-                    case -3: // no correspondence GREEN
-                        pixel = new Byte3((byte) 0, (byte) 255, (byte) 0);
-                        break;
-                    case -4: // too far away BLUE
-                        pixel = new Byte3((byte) 0, (byte) 0, (byte) 255);
-                        break;
-                    case -5: // wrong normal YELLOW
-                        pixel = new Byte3((byte) 255, (byte) 255, (byte) 0);
-                        break;
-                    default:
-                        pixel = new Byte3((byte) 255, (byte) 128, (byte) 128);
-                        break;
-                }
-
-                output.set(x, y, pixel);
-            }
-        }
-    }
-
     @Test
     public void testRenderTrack() {
         final int size = 4;
@@ -669,11 +634,11 @@ public class GraphicsTests extends TornadoTestBase {
             }
         }
 
-        renderTrackOLD(sequential, track);
+        Renderer.renderTrack(sequential, track);
 
         // @formatter:off
         new TaskSchedule("t0")
-            .task("s0", GraphicsTests::renderTrackOLD, output, track)
+            .task("s0", Renderer::renderTrack, output, track)
             .streamOut(output)
             .execute();        
         // @formatter:on
