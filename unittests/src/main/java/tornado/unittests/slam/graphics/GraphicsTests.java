@@ -34,16 +34,11 @@ import static tornado.collections.math.TornadoMath.sqrt;
 import static tornado.collections.types.Float2.mult;
 import static tornado.collections.types.Float3.add;
 import static tornado.collections.types.Float3.div;
-import static tornado.collections.types.Float3.floor;
-import static tornado.collections.types.Float3.fract;
 import static tornado.collections.types.Float3.length;
 import static tornado.collections.types.Float3.mult;
 import static tornado.collections.types.Float3.normalise;
 import static tornado.collections.types.Float3.sub;
-import static tornado.collections.types.Int3.add;
-import static tornado.collections.types.Int3.max;
-import static tornado.collections.types.Int3.min;
-import static tornado.collections.types.Int3.sub;
+import static tornado.collections.types.VolumeOps.grad;
 import static tornado.collections.types.VolumeOps.interp;
 
 import java.util.Random;
@@ -55,12 +50,14 @@ import tornado.collections.graphics.GraphicsMath;
 import tornado.collections.graphics.Renderer;
 import tornado.collections.math.TornadoMath;
 import tornado.collections.types.Byte3;
+import tornado.collections.types.Byte4;
 import tornado.collections.types.Float2;
 import tornado.collections.types.Float3;
 import tornado.collections.types.Float4;
 import tornado.collections.types.Float8;
 import tornado.collections.types.FloatOps;
 import tornado.collections.types.ImageByte3;
+import tornado.collections.types.ImageByte4;
 import tornado.collections.types.ImageFloat;
 import tornado.collections.types.ImageFloat3;
 import tornado.collections.types.ImageFloat8;
@@ -736,6 +733,89 @@ public class GraphicsTests extends TornadoTestBase {
             .execute();        
         // @formatter:on
 
+    }
+
+    public static void renderVolume(ImageByte4 output, VolumeShort2 volume, Float3 volumeDims, Matrix4x4Float view, float nearPlane, float farPlane, float smallStep, float largeStep, Float3 light,
+            Float3 ambient) {
+
+        for (@Parallel int y = 0; y < output.Y(); y++) {
+            for (@Parallel int x = 0; x < output.X(); x++) {
+
+                final Float4 hit = raycastPoint(volume, volumeDims, x, y, view, nearPlane, farPlane, smallStep, largeStep);
+
+                final Byte4 pixel;
+                if (hit.getW() > 0) {
+                    final Float3 test = hit.asFloat3();
+                    final Float3 surfNorm = grad(volume, volumeDims, test);
+
+                    if (Float3.length(surfNorm) > 0) {
+                        final Float3 diff = Float3.normalise(Float3.sub(light, test));
+
+                        final Float3 normalizedSurfNorm = Float3.normalise(surfNorm);
+
+                        final float dir = Math.max(Float3.dot(normalizedSurfNorm, diff), 0f);
+                        Float3 col = add(new Float3(dir, dir, dir), ambient);
+
+                        col = Float3.clamp(col, 0f, 1f);
+                        col = Float3.mult(col, 255f);
+
+                        pixel = new Byte4((byte) col.getX(), (byte) col.getY(), (byte) col.getZ(), (byte) 0);
+                    } else {
+                        pixel = new Byte4();
+                    }
+                } else {
+                    pixel = new Byte4();
+                }
+
+                output.set(x, y, pixel);
+
+            }
+        }
+    }
+
+    @Test
+    public void testRenderVolume() {
+        final int size = 4;
+        Random r = new Random();
+
+        Matrix4x4Float view = new Matrix4x4Float();
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                view.set(i, j, j + r.nextFloat());
+            }
+        }
+
+        ImageByte4 output = new ImageByte4(size, size);
+        VolumeShort2 volume = new VolumeShort2(size, size, size);
+        Float3 volumeDims = new Float3(r.nextFloat(), r.nextFloat(), r.nextFloat());
+
+        float nearPlane = r.nextFloat();
+        float farPlane = r.nextFloat();
+        float largeStep = r.nextFloat();
+        float smallStep = r.nextFloat();
+        Float3 light = new Float3(r.nextFloat(), r.nextFloat(), r.nextFloat());
+        Float3 ambient = new Float3(r.nextFloat(), r.nextFloat(), r.nextFloat());
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                output.set(i, j, new Byte4((byte) 1, (byte) 2, (byte) 3, (byte) 4));
+            }
+        }
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                for (int k = 0; k < size; k++) {
+                    volume.set(i, j, k, new Short2((short) 1, (short) 2));
+                }
+            }
+        }
+
+        // @formatter:off
+        new TaskSchedule("t0")
+            .task("s0", GraphicsTests::renderVolume, output, volume, volumeDims, view, nearPlane, farPlane, largeStep, smallStep, light, ambient)
+            .streamOut(output)
+            .execute();        
+        // @formatter:on
     }
 
 }
