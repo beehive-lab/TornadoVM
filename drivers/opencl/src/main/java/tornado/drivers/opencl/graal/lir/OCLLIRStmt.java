@@ -323,7 +323,8 @@ public class OCLLIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emitValue(crb, rhs);
+            //asm.emitValue(crb, rhs);
+            asm.emitValueOrOp(crb, rhs);
         }
         
         private void emitVectorStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
