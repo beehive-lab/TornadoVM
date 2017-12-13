@@ -792,7 +792,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             Variable newOperand = null;
             if (vectorPhiNode) {
                 newOperand = gen.newVariable(valuePhi);
-                System.out.println(newOperand);
             } else {
                 newOperand = gen.newVariable(getPhiKind(phi));
             }
