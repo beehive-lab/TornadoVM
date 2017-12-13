@@ -55,7 +55,7 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
      */
     final private static int numElements = 3;
 
-    public Float3(float[] storage) {
+    private Float3(float[] storage) {
         this.storage = storage;
     }
 

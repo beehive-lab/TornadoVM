@@ -51,7 +51,7 @@ public class RotateJava extends BenchmarkDriver {
 		m = new Matrix4x4Float();
 		m.identity();
 		
-		final Float3 value = new Float3(new float[]{1f,2f,3f});
+		final Float3 value = new Float3(1f,2f,3f);
 		for(int i=0;i<numElements;i++){
 			input.set(i,value);
 		}

@@ -424,6 +424,11 @@ public class TestFloats extends TornadoTestBase {
             .streamOut(output)
             .execute();
         //@formatter:on
+
+        assertEquals(8.0f, output.get(0).getS0(), 0.001);
+        assertEquals(8.0f, output.get(0).getS1(), 0.001);
+        assertEquals(8.0f, output.get(0).getS2(), 0.001);
+
     }
 
 }
