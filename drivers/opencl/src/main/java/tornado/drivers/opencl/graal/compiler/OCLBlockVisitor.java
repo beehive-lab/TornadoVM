@@ -122,6 +122,30 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         }
         return null;
     }
+    
+    private void checkClosingBlockInsideIf(Block b, Block pdom) {
+        if (pdom.isLoopHeader() && b.getDominator() != null && isIfBlock(b.getDominator())) {
+            if (b.getDominator().getDominator() != null) {
+                if (isIfBlock(b.getDominator().getDominator())) {
+                    asm.endScope();
+                }
+            }
+            // XXX: We might want also to check for switch-case. 
+        }
+    }
+    
+    private void closeWitchStatement(Block b) {
+        asm.emitLine(OCLAssemblerConstants.BREAK + OCLAssemblerConstants.STMT_DELIMITER);
+        
+        final IntegerSwitchNode switchNode = (IntegerSwitchNode) b.getDominator().getEndNode();
+        int blockNumber = getBlockIndexForSwitchStatement(b, switchNode);
+        int numCases = getNumberOfCasesForSwitch(switchNode);
+        
+        if ((numCases-1) == blockNumber) {
+            asm.endScope();
+            switchClosed.add(switchNode);
+        }
+    }
 
     @Override
     public void exit(Block b, Block value) {
@@ -131,21 +155,13 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         } 
         if (b.getPostdominator() != null) {
             Block pdom = b.getPostdominator();
-            if (!merges.contains(pdom) && isMergeBlock(pdom) && !switches.contains(b)) {
+            if (!merges.contains(pdom) && isMergeBlock(pdom) && !switches.contains(b)) { 
                 //asm.emitLine(String.format("// block %d merges control flow -> pdom = %d depth=%d",b.getId(), pdom.getId(), pdom.getDominatorDepth()));
                 asm.endScope();
             } else if (!merges.contains(pdom) && isMergeBlock(pdom) && switches.contains(b) && isSwitchBlock(b.getDominator())) {
-                
-                asm.emitLine(OCLAssemblerConstants.BREAK + OCLAssemblerConstants.STMT_DELIMITER);
-                
-                final IntegerSwitchNode switchNode = (IntegerSwitchNode) b.getDominator().getEndNode();
-                int blockNumber = getBlockIndexForSwitchStatement(b, switchNode);
-                int numCases = getNumberOfCasesForSwitch(switchNode);
-                
-                if ((numCases-1) == blockNumber) {
-                    asm.endScope();
-                    switchClosed.add(switchNode);
-                }
+                closeWitchStatement(b);
+            } else {
+                checkClosingBlockInsideIf(b, pdom);
             }
         } else {
             closeBranchBlock(b);
@@ -198,7 +214,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             closeIfBlock(block, dom);
         } else if (dom != null && !isMerge && !dom.isLoopHeader() && isSwitchBlock(dom)) {
             closeSwitchBlock(block, dom);
-        }
+        } 
     }
 
     private static boolean isMergeBlock(Block block) {

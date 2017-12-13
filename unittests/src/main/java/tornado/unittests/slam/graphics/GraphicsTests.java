@@ -694,4 +694,48 @@ public class GraphicsTests extends TornadoTestBase {
 
     }
 
+    /**
+     * * Creates a 4x4 matrix representing the intrinsic camera matrix
+     *
+     * @param k
+     *            - camera parameters {f_x,f_y,x_0,y_0} where {f_x,f_y}
+     *            specifies the focal length of the camera and {x_0,y_0} the
+     *            principle point
+     * @param m
+     *            - returned matrix
+     */
+    public static void getCameraMatrix(Float4 k, Matrix4x4Float m) {
+        m.fill(0f);
+
+        // focal length - f_x
+        m.set(0, 0, k.getX());
+        // focal length - f_y
+        m.set(1, 1, k.getY());
+
+        // principle point - x_0
+        m.set(0, 2, k.getZ());
+
+        // principle point - y_0
+        m.set(1, 2, k.getW());
+
+        m.set(2, 2, 1);
+        m.set(3, 3, 1);
+    }
+
+    @Test
+    public void testCameraMatrix() {
+
+        Float4 f = new Float4(1f, 2f, 3f, 4f);
+        Matrix4x4Float m = new Matrix4x4Float();
+        Matrix4x4Float seq = new Matrix4x4Float();
+
+        // @formatter:off
+        new TaskSchedule("t0")
+            .task("s0", GraphicsTests::getCameraMatrix, f, m)
+            .streamOut(m)
+            .execute();        
+        // @formatter:on
+
+    }
+
 }
