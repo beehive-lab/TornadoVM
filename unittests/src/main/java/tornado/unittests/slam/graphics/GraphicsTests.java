@@ -34,10 +34,16 @@ import static tornado.collections.math.TornadoMath.sqrt;
 import static tornado.collections.types.Float2.mult;
 import static tornado.collections.types.Float3.add;
 import static tornado.collections.types.Float3.div;
+import static tornado.collections.types.Float3.floor;
+import static tornado.collections.types.Float3.fract;
 import static tornado.collections.types.Float3.length;
 import static tornado.collections.types.Float3.mult;
 import static tornado.collections.types.Float3.normalise;
 import static tornado.collections.types.Float3.sub;
+import static tornado.collections.types.Int3.add;
+import static tornado.collections.types.Int3.max;
+import static tornado.collections.types.Int3.min;
+import static tornado.collections.types.Int3.sub;
 import static tornado.collections.types.VolumeOps.interp;
 
 import java.util.Random;
@@ -652,6 +658,40 @@ public class GraphicsTests extends TornadoTestBase {
                 assertEquals(expected.getZ(), o.getZ());
             }
         }
+    }
+
+    public static void volumeOps(VectorFloat3 output, VolumeShort2 volume, final Float3 dim, final Float3 point) {
+        for (@Parallel int i = 0; i < output.getLength(); i++) {
+            Float3 f = VolumeOps.grad(volume, dim, point);
+            output.set(i, f);
+        }
+    }
+
+    @Test
+    public void testVolumeGrad() {
+        final int size = 4;
+        Random r = new Random();
+
+        VolumeShort2 volume = new VolumeShort2(size, size, size);
+        VectorFloat3 output = new VectorFloat3(size * size);
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                for (int k = 0; k < size; k++) {
+                    volume.set(i, j, k, new Short2((short) 1, (short) 2));
+                }
+            }
+        }
+
+        Float3 dim = new Float3(random(r), random(r), random(r));
+        Float3 point = new Float3(random(r), random(r), random(r));
+        // @formatter:off
+        new TaskSchedule("t0")
+            .task("s0", GraphicsTests::volumeOps, output, volume, dim, point)
+            .streamOut(output)
+            .execute();        
+        // @formatter:on
+
     }
 
 }

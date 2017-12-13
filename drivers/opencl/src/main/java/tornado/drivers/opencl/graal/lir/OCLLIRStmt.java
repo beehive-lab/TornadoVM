@@ -48,11 +48,13 @@ public class OCLLIRStmt {
         
         protected static HashMap<Value, OCLKind> phiVectorTypes; 
         protected static HashMap<Value, String> phiVectorNames;
+        protected static HashMap<Value, OCLKind> vectorType;
 
         protected AbstractInstruction(LIRInstructionClass<? extends AbstractInstruction> c) {
             super(c);
             phiVectorNames = new HashMap<>();
             phiVectorTypes = new HashMap<>();
+            vectorType = new HashMap<>();
         }
 
         @Override
@@ -93,17 +95,25 @@ public class OCLLIRStmt {
                 phiVectorTypes.put(lhs, kind);
                 phiVectorNames.put(lhs, lhs.toString());
             }
-             
+            
             asm.emitValue(crb, lhs);
             asm.space();
             asm.assign();
             asm.space();
             if (rhs instanceof OCLLIROp) {
                 ((OCLLIROp) rhs).emit(crb, asm);
+                
+                /* Is the type to be assigned is Vector, then we save the left side into a hash table.
+                 * If the left side is used again for a store operation, the store has to be in vector format 
+                 * (vstore)  
+                 */
+                if (kind.isVector()) {
+                    vectorType.put(lhs, (OCLKind)lhs.getPlatformKind());
+                }
+                
             } else {
                 asm.emitValue(crb, rhs);
             }
-            // Put the type -> OCLLIR op to the left side
             asm.delimiter();
             asm.eol();
         }
@@ -288,7 +298,7 @@ public class OCLLIRStmt {
          * This is because, when having PhiNodes that update a vector value, the update has to be 
          * performed using vstores rather than pointer assignation.
          */
-        private void emitVectorStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+        private void emitVectorPhiStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             OCLKind kind = phiVectorTypes.get(rhs);
             int vlength = kind.getVectorLength();
             asm.emit("vstore");
@@ -305,7 +315,6 @@ public class OCLLIRStmt {
         }
         
         private void emitStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-           //asm.space();
             asm.emit("*(");
             cast.emit(crb, asm);
             asm.space();
@@ -317,11 +326,29 @@ public class OCLLIRStmt {
             asm.emitValue(crb, rhs);
         }
         
+        private void emitVectorStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit("vstore");
+            OCLKind kind = vectorType.get(rhs);
+            int vlength = kind.getVectorLength();
+            asm.emit(vlength + OCLAssemblerConstants.BRACKET_OPEN);
+            String vectorName =  rhs.toString();
+            asm.emit(vectorName);
+            asm.emit(", 0,");
+
+            String typeVector  = kind.name().substring(0, kind.name().length()-1).toLowerCase();
+            asm.emit("(" + OCLAssemblerConstants.GLOBAL_MEM_MODIFIER +  " " + typeVector + " *" + OCLAssemblerConstants.BRACKET_CLOSE);
+            asm.space();
+            address.emit(crb, asm);
+            asm.emit(OCLAssemblerConstants.BRACKET_CLOSE);
+        }
+        
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            if (phiVectorNames.containsKey(rhs)) {
+            if (vectorType.containsKey(rhs)) {
                 emitVectorStore(crb, asm);
+            } else if (phiVectorNames.containsKey(rhs)) {
+                emitVectorPhiStore(crb, asm);
             } else {
                 emitStore(crb, asm);
             }
