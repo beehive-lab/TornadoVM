@@ -818,4 +818,110 @@ public class GraphicsTests extends TornadoTestBase {
         // @formatter:on
     }
 
+    public static void reduceValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
+
+        final int jtj = startIndex + 7;
+        final int info = startIndex + 28;
+
+        final Float8 value = trackingResults.get(resultIndex);
+        final int result = (int) value.getS7();
+        final float error = value.getS6();
+
+        if (result < 1) {
+            sums[info + 1] += (result == -4) ? 1 : 0;
+            sums[info + 2] += (result == -5) ? 1 : 0;
+            sums[info + 3] += (result > -4) ? 1 : 0;
+            return;
+        }
+
+        // float base[0] += error^2
+        sums[startIndex] += (error * error);
+
+        // System.out.printf("row error: error=%.4e,
+        // acc=%.4e\n",error,base.get(0));
+        // Float6 base(+1) += row.scale(error)
+        for (int i = 0; i < 6; i++) {
+            sums[startIndex + i + 1] += error * value.get(i);
+        }
+
+        // is this jacobian transpose jacobian?
+        sums[jtj + 0] += (value.get(0) * value.get(0));
+        sums[jtj + 1] += (value.get(0) * value.get(1));
+        sums[jtj + 2] += (value.get(0) * value.get(2));
+        sums[jtj + 3] += (value.get(0) * value.get(3));
+
+        sums[jtj + 4] += (value.get(0) * value.get(4));
+        sums[jtj + 5] += (value.get(0) * value.get(5));
+
+        sums[jtj + 6] += (value.get(1) * value.get(1));
+        sums[jtj + 7] += (value.get(1) * value.get(2));
+        sums[jtj + 8] += (value.get(1) * value.get(3));
+        sums[jtj + 9] += (value.get(1) * value.get(4));
+
+        sums[jtj + 10] += (value.get(1) * value.get(5));
+
+        sums[jtj + 11] += (value.get(2) * value.get(2));
+        sums[jtj + 12] += (value.get(2) * value.get(3));
+        sums[jtj + 13] += (value.get(2) * value.get(4));
+        sums[jtj + 14] += (value.get(2) * value.get(5));
+
+        sums[jtj + 15] += (value.get(3) * value.get(3));
+        sums[jtj + 16] += (value.get(3) * value.get(4));
+        sums[jtj + 17] += (value.get(3) * value.get(5));
+
+        sums[jtj + 18] += (value.get(4) * value.get(4));
+        sums[jtj + 19] += (value.get(4) * value.get(5));
+
+        sums[jtj + 20] += (value.get(5) * value.get(5));
+
+        sums[info]++;
+    }
+
+    public static void mapReduce(final float[] output, final ImageFloat8 input) {
+        final int numThreads = output.length / 32;
+        final int numElements = input.X() * input.Y();
+
+        for (@Parallel int i = 0; i < numThreads; i++) {
+            final int startIndex = i * 32;
+            for (int j = 0; j < 32; j++) {
+                output[startIndex + j] = 0f;
+            }
+
+            for (int j = i; j < numElements; j += numThreads) {
+                reduceValues(output, startIndex, input, j);
+            }
+        }
+    }
+
+    private Float8 createFloat8() {
+        Random r = new Random();
+        Float8 f = new Float8(random(r), random(r), random(r), random(r), random(r), random(r), random(r), random(r));
+        return f;
+    }
+
+    @Test
+    public void testMapReduceSlam() {
+
+        final int size = 256;
+        float[] output = new float[size];
+
+        Random r = new Random();
+        ImageFloat8 image = new ImageFloat8(size, size);
+
+        for (int i = 0; i < image.X(); i++) {
+            for (int j = 0; j < image.X(); j++) {
+                Float8 f = createFloat8();
+                image.set(i, j, f);
+            }
+        }
+
+     // @formatter:off
+        new TaskSchedule("t0")
+            .task("s0", GraphicsTests::mapReduce, output, image)
+            .streamOut(output)
+            .execute();        
+        // @formatter:on
+
+    }
+
 }
