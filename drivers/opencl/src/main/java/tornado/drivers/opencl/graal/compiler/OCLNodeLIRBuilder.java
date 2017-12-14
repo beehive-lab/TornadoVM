@@ -815,53 +815,69 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             }
         }
     }
+    
+    private static class MetaPhiVectorType {
+        boolean vectorPhiNode = true;
+        LIRKind valuePhi = null;
+        public MetaPhiVectorType(boolean vectorPhiNode, LIRKind valuePhi) {
+            super();
+            this.vectorPhiNode = vectorPhiNode;
+            this.valuePhi = valuePhi;
+        }
+        
+    }
+    
+    private MetaPhiVectorType obtainVectorTypePhiNode(ValuePhiNode phi) {
+        
+      // Check first for vector types
+        NodeInputList<ValueNode> values = phi.values();
+        boolean vectorPhiNode = true;
+        LIRKind valuePhi = null;
+        
+        Set<ValueNode> visited = new HashSet<>();
+        ArrayDeque<ValueNode> queue = new ArrayDeque<>();
+        for (ValueNode value: values) {
+            queue.add(value);
+        }
+        
+        // BFS to explore reachable PhiNodes and obtain if they 
+        // come from VectorTypes
+        while (!queue.isEmpty()) {
+            ValueNode value = queue.poll();
+            visited.add(value);
+            if (value instanceof VectorValueNode) {
+                VectorValueNode vectorNode = (VectorValueNode) value;
+                Stamp stamp = vectorNode.stamp();
+                valuePhi = stamp.getLIRKind(null);
+                vectorPhiNode &= true;
+            }  else if (value instanceof ValuePhiNode) {
+                NodeInputList<ValueNode> valuesSubList = ((ValuePhiNode)value).values();
+                for (ValueNode subValue: valuesSubList) {
+                    if (!visited.contains(subValue)) {
+                        queue.add(subValue);
+                    }
+                }
+            }
+            else {
+                vectorPhiNode &= false;
+            }
+        }
+        return new MetaPhiVectorType(vectorPhiNode, valuePhi);
+    }
 
     public Value operandForPhi(ValuePhiNode phi) {
         Value result = operand(phi);
         if (result == null) {
             
-            // Check first for vector types
-            NodeInputList<ValueNode> values = phi.values();
-            boolean vectorPhiNode = true;
-            LIRKind valuePhi = null;
-            
-            
-            Set<ValueNode> visited = new HashSet<>();
-            ArrayDeque<ValueNode> queue = new ArrayDeque<>();
-            for (ValueNode value: values) {
-                queue.add(value);
-            }
-            
-            // BFS to explore reachable PhiNodes and obtain if they 
-            // come from VectorTypes
-            while (!queue.isEmpty()) {
-                ValueNode value = queue.poll();
-                visited.add(value);
-                if (value instanceof VectorValueNode) {
-                    VectorValueNode vectorNode = (VectorValueNode) value;
-                    Stamp stamp = vectorNode.stamp();
-                    valuePhi = stamp.getLIRKind(null);
-                    vectorPhiNode &= true;
-                }  else if (value instanceof ValuePhiNode) {
-                    NodeInputList<ValueNode> valuesSubList = ((ValuePhiNode)value).values();
-                    for (ValueNode subValue: valuesSubList) {
-                        if (!visited.contains(subValue)) {
-                            queue.add(subValue);
-                        }
-                    }
-                }
-                else {
-                    vectorPhiNode &= false;
-                }
-            }
+            MetaPhiVectorType meta = obtainVectorTypePhiNode(phi);
             
             /* Allocate a variable for a PHI node. If the variable is a phi 
              * node for VectorType, then the KIND is set to the vector type, 
              * otherwise it inspects the stamp (JavaKind). 
              */
             Variable newOperand = null;
-            if (vectorPhiNode) {
-                newOperand = gen.newVariable(valuePhi);
+            if (meta.vectorPhiNode) {
+                newOperand = gen.newVariable(meta.valuePhi);
             } else {
                 newOperand = gen.newVariable(getPhiKind(phi));
             }
