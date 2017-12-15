@@ -42,6 +42,7 @@ import static tornado.collections.types.VolumeOps.grad;
 import static tornado.collections.types.VolumeOps.interp;
 
 import java.util.Random;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 
@@ -922,6 +923,53 @@ public class GraphicsTests extends TornadoTestBase {
             .execute();        
         // @formatter:on
 
+    }
+
+    public static void testVSKernel(int[] x, int[] y, int[] z, VolumeShort2 v, float[] output) {
+        for (@Parallel int i = 0; i < x.length; i++) {
+            output[i] = VolumeOps.vs1(x[i], y[i], z[i], v);
+        }
+    }
+
+    @Test
+    public void testVS() {
+
+        int size = 256;
+        int[] x = new int[size];
+        int[] y = new int[size];
+        int[] z = new int[size];
+
+        float[] output = new float[size];
+        float[] seq = new float[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            x[i] = i;
+            y[i] = i;
+            z[i] = i;
+        });
+
+        VolumeShort2 volume = new VolumeShort2(size, size, size);
+
+        for (int i = 0; i < volume.X(); i++) {
+            for (int j = 0; j < volume.Y(); j++) {
+                for (int k = 0; k < volume.Z(); k++) {
+                    volume.set(i, j, k, new Short2((short) 1, (short) 2));
+                }
+            }
+        }
+
+        testVSKernel(x, y, z, volume, seq);
+
+        // @formatter:off
+        new TaskSchedule("t0")
+            .task("s0", GraphicsTests::testVSKernel, x, y, z, volume, output)
+            .streamOut(output)
+            .execute();        
+        // @formatter:on
+
+        for (int i = 0; i < output.length; i++) {
+            assertEquals(seq[i], output[i], 0.001f);
+        }
     }
 
 }
