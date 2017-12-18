@@ -44,6 +44,7 @@ import static tornado.collections.types.VolumeOps.interp;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import tornado.api.Parallel;
@@ -566,7 +567,7 @@ public class GraphicsTests extends TornadoTestBase {
     @Test
     public void testIntegrate() {
 
-        final int size = 4;
+        final int size = 400;
         Random r = new Random();
 
         Matrix4x4Float invTrack = new Matrix4x4Float();
@@ -604,11 +605,15 @@ public class GraphicsTests extends TornadoTestBase {
         integrate(filteredDepthImage, invTrack, m2, volumeDims, sequential, mu, maxW);
 
         // @formatter:off
-        new TaskSchedule("t0")
+        TaskSchedule task = new TaskSchedule("t0")
             .task("s0", GraphicsTests::integrate, filteredDepthImage, invTrack, m2, volumeDims, volume, mu, maxW)
-            .streamOut(volume)
-            .execute();        
+            .streamOut(volume);        
         // @formatter:on
+
+        int c = 0;
+        while (c++ < 10) {
+            task.execute();
+        }
 
         // Check result
         for (int i = 0; i < size; i++) {
@@ -894,19 +899,26 @@ public class GraphicsTests extends TornadoTestBase {
         }
     }
 
+    public static void mapReduce2(final float[] output, final ImageFloat8 input) {
+        final int numThreads = output.length / 32;
+        for (@Parallel int i = 0; i < numThreads; i++) {
+            final int startIndex = i * 32;
+            reduceValues(output, startIndex, input, i);
+        }
+    }
+
     private Float8 createFloat8() {
         Random r = new Random();
         Float8 f = new Float8(random(r), random(r), random(r), random(r), random(r), random(r), random(r), random(r));
         return f;
     }
 
-    @Test
+    @Ignore
     public void testMapReduceSlam() {
 
         final int size = 256;
         float[] output = new float[size];
 
-        Random r = new Random();
         ImageFloat8 image = new ImageFloat8(size, size);
 
         for (int i = 0; i < image.X(); i++) {
@@ -916,13 +928,35 @@ public class GraphicsTests extends TornadoTestBase {
             }
         }
 
-     // @formatter:off
+        // @formatter:off
         new TaskSchedule("t0")
             .task("s0", GraphicsTests::mapReduce, output, image)
             .streamOut(output)
             .execute();        
         // @formatter:on
+    }
 
+    @Ignore
+    public void testMapReduceSlam2() {
+
+        final int size = 128;
+        float[] output = new float[size];
+
+        ImageFloat8 image = new ImageFloat8(size, size);
+
+        for (int i = 0; i < image.X(); i++) {
+            for (int j = 0; j < image.X(); j++) {
+                Float8 f = createFloat8();
+                image.set(i, j, f);
+            }
+        }
+
+        // @formatter:off
+        new TaskSchedule("t0")
+            .task("s0", GraphicsTests::mapReduce2, output, image)
+            .streamOut(output)
+            .execute();        
+        // @formatter:on
     }
 
     public static void testVSKernel(int[] x, int[] y, int[] z, VolumeShort2 v, float[] output) {
