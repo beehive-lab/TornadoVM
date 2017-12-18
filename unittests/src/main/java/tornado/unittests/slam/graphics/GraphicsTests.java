@@ -44,7 +44,6 @@ import static tornado.collections.types.VolumeOps.interp;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import tornado.api.Parallel;
@@ -567,7 +566,7 @@ public class GraphicsTests extends TornadoTestBase {
     @Test
     public void testIntegrate() {
 
-        final int size = 400;
+        final int size = 100;
         Random r = new Random();
 
         Matrix4x4Float invTrack = new Matrix4x4Float();
@@ -913,10 +912,10 @@ public class GraphicsTests extends TornadoTestBase {
         return f;
     }
 
-    @Ignore
+    @Test
     public void testMapReduceSlam() {
 
-        final int size = 256;
+        final int size = 16;
         float[] output = new float[size];
 
         ImageFloat8 image = new ImageFloat8(size, size);
@@ -936,10 +935,10 @@ public class GraphicsTests extends TornadoTestBase {
         // @formatter:on
     }
 
-    @Ignore
+    @Test
     public void testMapReduceSlam2() {
 
-        final int size = 128;
+        final int size = 16;
         float[] output = new float[size];
 
         ImageFloat8 image = new ImageFloat8(size, size);
