@@ -33,6 +33,8 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.MergeNode;
+import org.graalvm.compiler.nodes.ReturnNode;
+import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
@@ -207,14 +209,41 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         }
     }
     
-    private void closeBranchBlock(Block block) {
+    private boolean isNestedIfNode(Block block) {
         final Block dom = block.getDominator();
         boolean isMerge = block.getBeginNode() instanceof MergeNode;
-        if (dom != null && !isMerge && !dom.isLoopHeader() && isIfBlock(dom)) {
+        boolean isReturn = block.getEndNode() instanceof ReturnNode;
+        return dom != null && isMerge && isReturn && !dom.isLoopHeader() && isIfBlock(dom);
+    }
+    
+    private boolean isIfBlockNode(Block block) {
+        final Block dom = block.getDominator();
+        boolean isMerge = block.getBeginNode() instanceof MergeNode;
+        return dom != null && !isMerge && !dom.isLoopHeader() && isIfBlock(dom);
+    }
+    
+    private boolean isSwitchBlockNode(Block block) {
+        final Block dom = block.getDominator();
+        boolean isMerge = block.getBeginNode() instanceof MergeNode;
+        return dom != null && !isMerge && !dom.isLoopHeader() && isSwitchBlock(dom);
+    }
+    
+    private boolean isStartNode(Block block) {
+        return block.getDominator().getBeginNode() instanceof StartNode;
+    }
+   
+    private void closeBranchBlock(Block block) {
+        final Block dom = block.getDominator();
+        
+        if (isIfBlockNode(block)) {
             closeIfBlock(block, dom);
-        } else if (dom != null && !isMerge && !dom.isLoopHeader() && isSwitchBlock(dom)) {
+        } else if (isSwitchBlockNode(block)) {
             closeSwitchBlock(block, dom);
-        } 
+        } else if (isNestedIfNode(block)) {
+            if (!isStartNode(block)) {
+                asm.endScope();
+            }
+        }
     }
 
     private static boolean isMergeBlock(Block block) {
