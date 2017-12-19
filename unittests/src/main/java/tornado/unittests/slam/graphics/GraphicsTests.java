@@ -844,7 +844,8 @@ public class GraphicsTests extends TornadoTestBase {
 
         // Float6 base(+1) += row.scale(error)
         // for (int i = 0; i < 6; i++) {
-        // sums[startIndex + i + 1] += error * value.get(i);
+        sums[startIndex + 0 + 1] += error * value.get(0);
+        // sums[startIndex + i + 1] = value.get(i);
         // }
 
         sums[startIndex + 0 + 1] += error * value.getS0();
@@ -869,7 +870,7 @@ public class GraphicsTests extends TornadoTestBase {
         sums[jtj + 9] += (value.getS1() * value.getS4());
         sums[jtj + 10] += (value.getS1() * value.getS5());
 
-        sums[jtj + 11] += (value.getS2() * value.getS1());
+        sums[jtj + 11] += (value.getS2() * value.getS2());
         sums[jtj + 12] += (value.getS2() * value.getS3());
         sums[jtj + 13] += (value.getS2() * value.getS4());
         sums[jtj + 14] += (value.getS2() * value.getS5());
@@ -902,9 +903,22 @@ public class GraphicsTests extends TornadoTestBase {
         }
     }
 
-    public static void mapReduce2(final float[] output, final ImageFloat8 input) {
+    public static void mapReduce2(float[] output, ImageFloat8 input) {
         int startIndex = 0 * 32;
         reduceValues(output, startIndex, input, 0);
+    }
+
+    public static void mapReduce3(ImageFloat8 output, final ImageFloat8 input) {
+
+        Float8 float8 = input.get(0, 0);
+
+        float ff = 0.0f;
+        for (int k = 0; k < 8; k++) {
+            ff += float8.get(k);
+        }
+
+        float8 = float8.add(float8, ff);
+        output.set(0, 0, float8);
     }
 
     private Float8 createFloat8() {
@@ -943,7 +957,6 @@ public class GraphicsTests extends TornadoTestBase {
         float[] output = new float[size];
 
         ImageFloat8 image = new ImageFloat8(size, size);
-
         for (int i = 0; i < image.X(); i++) {
             for (int j = 0; j < image.X(); j++) {
                 Float8 f = createFloat8();
@@ -954,6 +967,29 @@ public class GraphicsTests extends TornadoTestBase {
         // @formatter:off
         new TaskSchedule("t0")
             .task("s0", GraphicsTests::mapReduce2, output, image)
+            .streamOut(output)
+            .execute();        
+        // @formatter:on
+    }
+
+    @Test
+    public void testMapReduceSlam3() {
+
+        final int size = 16;
+
+        ImageFloat8 image = new ImageFloat8(size, size);
+        ImageFloat8 output = new ImageFloat8(size, size);
+
+        for (int i = 0; i < image.X(); i++) {
+            for (int j = 0; j < image.X(); j++) {
+                Float8 f = createFloat8();
+                image.set(i, j, f);
+            }
+        }
+
+        // @formatter:off
+        new TaskSchedule("t0")
+            .task("s0", GraphicsTests::mapReduce3, output, image)
             .streamOut(output)
             .execute();        
         // @formatter:on
