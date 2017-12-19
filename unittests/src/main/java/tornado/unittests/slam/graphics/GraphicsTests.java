@@ -844,7 +844,7 @@ public class GraphicsTests extends TornadoTestBase {
 
         // Float6 base(+1) += row.scale(error)
         // for (int i = 0; i < 6; i++) {
-        sums[startIndex + 0 + 1] += error * value.get(0);
+        // sums[startIndex + 0 + 1] += error * value.get(0);
         // sums[startIndex + i + 1] = value.get(i);
         // }
 
@@ -912,18 +912,30 @@ public class GraphicsTests extends TornadoTestBase {
 
         Float8 float8 = input.get(0, 0);
 
-        float ff = 0.0f;
-        for (int k = 0; k < 8; k++) {
-            ff += float8.get(k);
-        }
+        float ff = float8.get(0) + 100f;
 
-        float8 = float8.add(float8, ff);
+        float8.set(1, ff);
+
         output.set(0, 0, float8);
+    }
+
+    public static void mapReduce4(VectorFloat4 output, final VectorFloat4 input) {
+        for (@Parallel int i = 0; i < input.getLength(); i++) {
+            Float4 f = input.get(i);
+            Float4 ff = new Float4(f.get(3), f.get(2), f.get(1), f.get(0));
+            output.set(i, ff);
+        }
     }
 
     private Float8 createFloat8() {
         Random r = new Random();
         Float8 f = new Float8(random(r), random(r), random(r), random(r), random(r), random(r), random(r), random(r));
+        return f;
+    }
+
+    private Float4 createFloat4() {
+        Random r = new Random();
+        Float4 f = new Float4(random(r), random(r), random(r), random(r));
         return f;
     }
 
@@ -990,6 +1002,27 @@ public class GraphicsTests extends TornadoTestBase {
         // @formatter:off
         new TaskSchedule("t0")
             .task("s0", GraphicsTests::mapReduce3, output, image)
+            .streamOut(output)
+            .execute();        
+        // @formatter:on
+    }
+
+    @Test
+    public void testMapReduceSlam4() {
+
+        final int size = 16;
+
+        VectorFloat4 input = new VectorFloat4(size);
+        VectorFloat4 output = new VectorFloat4(size);
+
+        for (int i = 0; i < input.getLength(); i++) {
+            Float4 f = createFloat4();
+            input.set(i, f);
+        }
+
+    // @formatter:off
+        new TaskSchedule("t0")
+            .task("s0", GraphicsTests::mapReduce4, output, input)
             .streamOut(output)
             .execute();        
         // @formatter:on
