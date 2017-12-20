@@ -909,18 +909,7 @@ public class GraphicsTests extends TornadoTestBase {
         reduceValues(output, startIndex, input, 0);
     }
 
-    public static void mapReduce3(ImageFloat8 output, final ImageFloat8 input) {
-
-        Float8 float8 = input.get(0, 0);
-
-        float ff = float8.get(0) + 100f;
-
-        float8.set(1, ff);
-
-        output.set(0, 0, float8);
-    }
-
-    public static void mapReduce4(VectorFloat4 output, final VectorFloat4 input) {
+    public static void mapReduce3(VectorFloat4 output, final VectorFloat4 input) {
         for (@Parallel int i = 0; i < input.getLength(); i++) {
             Float4 f = input.get(i);
             Float4 ff = new Float4(f.get(3), f.get(2), f.get(1), f.get(0));
@@ -987,31 +976,8 @@ public class GraphicsTests extends TornadoTestBase {
         // @formatter:on
     }
 
-    @Test
-    public void testMapReduceSlam3() {
-
-        final int size = 16;
-
-        ImageFloat8 image = new ImageFloat8(size, size);
-        ImageFloat8 output = new ImageFloat8(size, size);
-
-        for (int i = 0; i < image.X(); i++) {
-            for (int j = 0; j < image.X(); j++) {
-                Float8 f = createFloat8();
-                image.set(i, j, f);
-            }
-        }
-
-        // @formatter:off
-        new TaskSchedule("t0")
-            .task("s0", GraphicsTests::mapReduce3, output, image)
-            .streamOut(output)
-            .execute();        
-        // @formatter:on
-    }
-
     @Ignore
-    public void testMapReduceSlam4() {
+    public void testMapReduceSlam3() {
 
         final int size = 16;
 
@@ -1025,7 +991,7 @@ public class GraphicsTests extends TornadoTestBase {
 
         // @formatter:off
         new TaskSchedule("t0")
-            .task("s0", GraphicsTests::mapReduce4, output, input)
+            .task("s0", GraphicsTests::mapReduce3, output, input)
             .streamOut(output)
             .execute();        
         // @formatter:on
