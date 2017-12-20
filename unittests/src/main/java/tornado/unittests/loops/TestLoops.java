@@ -67,7 +67,6 @@ public class TestLoops extends TornadoTestBase {
     public static void reverseLoop(int[] a) {
         for (@Parallel int i = a.length - 1; i >= 0; i--) {
             a[i] = 10;
-            // Debug.printf("hello\n");
         }
     }
 
@@ -138,6 +137,7 @@ public class TestLoops extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
+                .streamIn(a)
                 .task("t0", TestLoops::conditionalInLoop, a)
                 .streamOut(a)
                 .execute();
@@ -146,6 +146,39 @@ public class TestLoops extends TornadoTestBase {
         for (int i = 0; i < a.length; i++) {
             if (i == 4) {
                 assertEquals(4, a[i]);
+            } else {
+                assertEquals(10, a[i]);
+            }
+        }
+    }
+
+    public static void conditionalInLoop2(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            if (i != 4) {
+                a[i] = 10;
+            }
+        }
+    }
+
+    @Test
+    public void testIfInsideForLoop2() {
+        final int size = 10;
+
+        int[] a = new int[size];
+
+        Arrays.fill(a, 1);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(a)
+                .task("t0", TestLoops::conditionalInLoop2, a)
+                .streamOut(a)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < a.length; i++) {
+            if (i == 4) {
+                assertEquals(1, a[i]);
             } else {
                 assertEquals(10, a[i]);
             }
@@ -342,8 +375,6 @@ public class TestLoops extends TornadoTestBase {
                 .execute();
         //@formatter:on
 
-        System.out.println(Arrays.toString(a));
-
         for (int i = 0; i < a.length; i++) {
             if (i == 2) {
                 assertEquals(10, a[i]);
@@ -374,8 +405,6 @@ public class TestLoops extends TornadoTestBase {
                 .streamOut(foo)
                 .execute();
         //@formatter:on
-
-        System.out.println(Arrays.toString(foo));
 
         for (int i = 0; i < foo.length; i++) {
             if (i == 4) {
