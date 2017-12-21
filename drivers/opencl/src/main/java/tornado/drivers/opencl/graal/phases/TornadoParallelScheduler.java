@@ -40,7 +40,6 @@ import org.graalvm.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.JavaKind;
 import tornado.api.enums.TornadoSchedulingStrategy;
-import tornado.drivers.opencl.enums.OCLDeviceType;
 import tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
@@ -107,13 +106,9 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         stride.safeDelete();
     }
 
-    private void replaceRangeNode(TornadoSchedulingStrategy schedule, StructuredGraph graph, ParallelRangeNode range, OCLDeviceType deviceType) {
+    private void replaceRangeNode(TornadoSchedulingStrategy schedule, StructuredGraph graph, ParallelRangeNode range) {
         if (schedule == PER_BLOCK) {
-            if (deviceType == OCLDeviceType.CL_DEVICE_TYPE_CPU) {
-                replacePerBlockCPU(graph, range);
-            } else {
-                replacePerBlockAccelerator(graph, range);
-            }
+            replacePerBlockCPU(graph, range);
         } else if (schedule == PER_ITERATION) {
             replacePerIteration(graph, range);
         }
@@ -184,6 +179,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
     }
 
     // GPU-Scheduling 
+    @SuppressWarnings("unused")
     private void replacePerBlockAccelerator(StructuredGraph graph, ParallelRangeNode range) {
         buildBlockSizeAccelerator(graph, range);
 
@@ -210,13 +206,12 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         OCLTornadoDevice device = (OCLTornadoDevice) context.getDeviceMapping();
         final TornadoSchedulingStrategy strategy = device.getPreferedSchedule();
         long[] maxWorkItemSizes = device.getDevice().getMaxWorkItemSizes();
-        OCLDeviceType deviceType = device.getDevice().getDeviceType();
 
         graph.getNodes().filter(ParallelRangeNode.class).forEach(node -> {
             if (context.getMeta().enableParallelization() && maxWorkItemSizes[node.index()] > 1) {
                 ParallelOffsetNode offset = node.offset();
                 ParallelStrideNode stride = node.stride();
-                replaceRangeNode(strategy, graph, node, deviceType);
+                replaceRangeNode(strategy, graph, node);
                 replaceOffsetNode(strategy, graph, offset);
                 replaceStrideNode(strategy, graph, stride);
 
