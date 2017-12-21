@@ -54,15 +54,15 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
     private ValueNode blockSize;
 
-    private void replaceOffsetNode(TornadoSchedulingStrategy schedule, StructuredGraph graph, ParallelOffsetNode offset) {
+    private void replaceOffsetNode(TornadoSchedulingStrategy schedule, StructuredGraph graph, ParallelOffsetNode offset, ParallelRangeNode range) {
         if (schedule == PER_BLOCK) {
             replacePerBlock(graph, offset);
         } else if (schedule == PER_ITERATION) {
-            replacePerIteration(graph, offset);
+            replacePerIteration(graph, offset, range);
         }
     }
 
-    private void replacePerIteration(StructuredGraph graph, ParallelOffsetNode offset) {
+    private void replacePerIteration(StructuredGraph graph, ParallelOffsetNode offset, ParallelRangeNode range) {
 
         final ConstantNode index = graph.addOrUnique(ConstantNode.forInt(offset.index()));
 
@@ -70,7 +70,10 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
         final AddNode addNode = graph.addOrUnique(new AddNode(threadId, offset.value()));
 
-        offset.replaceAtUsages(addNode);
+        final MulNode mulNode = graph.addOrUnique(new MulNode(addNode, range.stride().value()));
+        
+        //offset.replaceAtUsages(addNode);
+        offset.replaceAtUsages(mulNode);
         offset.safeDelete();
     }
 
@@ -108,7 +111,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
     private void replaceRangeNode(TornadoSchedulingStrategy schedule, StructuredGraph graph, ParallelRangeNode range) {
         if (schedule == PER_BLOCK) {
-            replacePerBlockCPU(graph, range);
+            replacePerBlock(graph, range);
         } else if (schedule == PER_ITERATION) {
             replacePerIteration(graph, range);
         }
@@ -118,26 +121,8 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         range.replaceAtUsages(range.value());
     }
 
-    // @SuppressWarnings("unused")
-    // private ValueNode createCreateStrideNode(ValueNode threadCountM1,
-    // ParallelRangeNode range, StructuredGraph graph) {
-    // ValueNode newOffset = threadCountM1;
-    // if (range.stride().value() instanceof ConstantNode) {
-    // ConstantNode constant = (ConstantNode) range.stride().value();
-    // if (constant.stamp().getStackKind() == JavaKind.Int) {
-    // int value = constant.asJavaConstant().asInt();
-    // if (value > 4) {
-    // final AddNode add = graph.addOrUnique(new AddNode(threadCountM1,
-    // ConstantNode.forInt(1, graph)));
-    // newOffset = graph.addOrUnique(new MulNode(add, range.stride().value()));
-    // }
-    // }
-    // }
-    // return newOffset;
-    // }
-
     // CPU-Scheduling with Stride
-    private void buildBlockSizeCPU(StructuredGraph graph, ParallelRangeNode range) {
+    private void buildBlockSize(StructuredGraph graph, ParallelRangeNode range) {
         final DivNode rangeByStride = graph.addOrUnique(new DivNode(range.value(), range.stride().value()));
         final SubNode trueRange = graph.addOrUnique(new SubNode(rangeByStride, range.offset().value()));
         final ConstantNode index = ConstantNode.forInt(range.index(), graph);
@@ -149,8 +134,8 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
     }
 
     // CPU-Scheduling with Stride
-    private void replacePerBlockCPU(StructuredGraph graph, ParallelRangeNode range) {
-        buildBlockSizeCPU(graph, range);
+    private void replacePerBlock(StructuredGraph graph, ParallelRangeNode range) {
+        buildBlockSize(graph, range);
 
         final GlobalThreadIdNode threadId = graph.addOrUnique(new GlobalThreadIdNode(ConstantNode.forInt(range.index(), graph)));
         final MulNode newOffset = graph.addOrUnique(new MulNode(threadId, blockSize));
@@ -164,6 +149,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         range.safeDelete();
     }
     
+    // ================================== DEPRECATED ========================================
     // GPU-Scheduling 
     private void buildBlockSizeAccelerator(StructuredGraph graph, ParallelRangeNode range) {
         final DivNode rangeByStride = graph.addOrUnique(new DivNode(range.value(), range.stride()
@@ -195,6 +181,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         range.replaceAtUsages(adjustedRange);
         range.safeDelete();
     }
+    // ================================== END-DEPRECATED ========================================
 
 
     @Override
@@ -212,7 +199,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
                 ParallelOffsetNode offset = node.offset();
                 ParallelStrideNode stride = node.stride();
                 replaceRangeNode(strategy, graph, node);
-                replaceOffsetNode(strategy, graph, offset);
+                replaceOffsetNode(strategy, graph, offset, node);
                 replaceStrideNode(strategy, graph, stride);
 
             } else {
