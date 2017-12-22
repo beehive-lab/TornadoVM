@@ -2,7 +2,7 @@ all: build
 
 build: 
 	TORNADO_REVISION=$(shell echo `git rev-parse --short HEAD`) \
-	mvn -T 1C install
+	mvn install
 
 install:
 	TORNADO_REVISION=$(shell echo `git rev-parse --short HEAD`) \
