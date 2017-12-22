@@ -31,6 +31,7 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
+import tornado.api.Parallel;
 import tornado.runtime.api.TaskSchedule;
 import tornado.unittests.common.TornadoTestBase;
 
@@ -61,7 +62,6 @@ public class TestConditionals extends TornadoTestBase {
     }
 
     public static void ifElseStatement(int[] a) {
-
         if (a[0] == 1) {
             a[0] = 5;
         } else {
@@ -87,4 +87,130 @@ public class TestConditionals extends TornadoTestBase {
 
         assertEquals(10, a[0]);
     }
+    
+    
+    public static void switchStatement(int[] a) {
+        int value = a[0];
+        switch(value) {
+            case 10: a[0] = 5;
+                break;
+            case 20: a[0] = 10;
+                break;
+            default:
+                 a[0] = 20;
+        }
+    }
+
+    @Test
+    public void testSwitch() {
+
+        final int  size = 10;
+        int[] a = new int[size];
+
+        Arrays.fill(a, 20);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestConditionals::switchStatement, a)
+                .streamOut(a)
+                .execute();
+        //formatter:on
+
+        assertEquals(10, a[0]);
+    }
+    
+    public static void switchStatement2(int[] a) {
+        int value = a[0];
+        switch(value) {
+            case 10: a[0] = 5;
+                break;
+            case 20: a[0] = 10;
+                break;
+        }
+    }
+
+    @Test
+    public void testSwitch2() {
+
+        final int  size = 10;
+        int[] a = new int[size];
+
+        Arrays.fill(a, 20);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestConditionals::switchStatement2, a)
+                .streamOut(a)
+                .execute();
+        //formatter:on
+
+        assertEquals(10, a[0]);
+    }
+    
+    public static void switchStatement3(int[] a) {
+        for (int i = 0; i < a.length; i++) {
+            int value = a[i];
+            switch(value) {
+                case 10: a[i] = 5;
+                    break;
+                case 20: a[i] = 10;
+                    break;
+            }
+        }
+    }
+
+    @Test
+    public void testSwitch3() {
+
+        final int  size = 10;
+        int[] a = new int[size];
+
+        Arrays.fill(a, 20);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestConditionals::switchStatement3, a)
+                .streamOut(a)
+                .execute();
+        //formatter:on
+
+        for (int i = 0; i < a.length; i++) {
+            assertEquals(10, a[i]);   
+        }
+    }
+    
+
+    public static void switchStatement4(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            int value = a[i];
+            switch(value) {
+                case 10: a[i] = 5;
+                    break;
+                case 20: a[i] = 10;
+                    break;
+            }
+        }
+    }
+
+    @Test
+    public void testSwitch4() {
+
+        final int  size = 10;
+        int[] a = new int[size];
+
+        Arrays.fill(a, 20);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestConditionals::switchStatement4, a)
+                .streamOut(a)
+                .execute();
+        //formatter:on
+
+        for (int i = 0; i < a.length; i++) {
+            assertEquals(10, a[i]);   
+        }
+    }
+    
+    
 }

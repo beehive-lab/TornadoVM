@@ -103,8 +103,8 @@ public class OCLStamp extends ObjectStamp {
 
     @Override
     public Stamp improveWith(Stamp stamp) {
-        shouldNotReachHere();
-        return this;
+        Stamp newStamp = super.improveWith(stamp);
+        return newStamp;
     }
 
     @Override

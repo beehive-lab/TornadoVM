@@ -193,11 +193,9 @@ public final class OCLAssembler extends Assembler {
             final OCLAssembler asm = crb.getAssembler();
             if (prefix) {
                 emitOpcode(asm);
-                asm.emitValueOrOp(
-                        crb, x);
+                asm.emitValueOrOp(crb, x);
             } else {
-                asm.emitValueOrOp(
-                        crb, x);
+                asm.emitValueOrOp(crb, x);
                 emitOpcode(asm);
             }
         }
@@ -899,6 +897,11 @@ public final class OCLAssembler extends Assembler {
         for (int i = 0; i < indent; i++) {
             emitSymbol(OCLAssemblerConstants.TAB);
         }
+    }
+    
+    public void comment(String comment) {
+        emit(" /* " + comment + " */ ");
+        eol();
     }
 
     public void loopBreak() {

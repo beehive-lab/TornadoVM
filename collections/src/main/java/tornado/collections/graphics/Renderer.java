@@ -196,7 +196,7 @@ public class Renderer {
             }
         }
     }
-
+    
     public static void renderDepth(ImageByte4 output,
             ImageFloat depthMap, float nearPlane,
             float farPlane) {

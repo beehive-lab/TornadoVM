@@ -26,15 +26,16 @@
 package tornado.drivers.opencl.graal.lir;
 
 import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
+
+import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.OCLArchitecture;
 import tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import tornado.drivers.opencl.graal.nodes.FixedArrayNode;
-
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLAddressLowering extends AddressLowering {
 
@@ -45,16 +46,15 @@ public class OCLAddressLowering extends AddressLowering {
 
     @Override
     public AddressNode lower(ValueNode base, ValueNode offset) {
-
         OCLMemoryBase memoryRegister = OCLArchitecture.hp;
         if (base instanceof FixedArrayNode) {
             memoryRegister = ((FixedArrayNode) base).getMemoryRegister();
-        } else if (!((base instanceof ParameterNode) || (base instanceof FloatingReadNode))) {
-            unimplemented("address origin unimplemented: %s", base.getClass().getName());
+        } else if (!((base instanceof ParameterNode) || (base instanceof FloatingReadNode) || (base instanceof PiNode))) {
+            TornadoInternalError.unimplemented("address origin unimplemented: %s", base.getClass().getName());
         }
 
-        OCLAddressNode result = new OCLAddressNode(base, offset, memoryRegister);
-        return base.graph().unique(result);
+        OCLAddressNode result = new OCLAddressNode(base, offset, memoryRegister);        
+        OCLAddressNode unique = base.graph().unique(result);
+        return unique;
     }
-
 }

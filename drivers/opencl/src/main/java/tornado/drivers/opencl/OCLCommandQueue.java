@@ -98,6 +98,8 @@ public class OCLCommandQueue extends TornadoLogger {
     private int eventMark;
 
     private final OCLEvent internalEvent;
+    
+    private static final boolean CIRCULAR_EVENTS = false;
 
     public OCLCommandQueue(long id, long properties, int version) {
         this.id = id;
@@ -249,6 +251,13 @@ public class OCLCommandQueue extends TornadoLogger {
 
     private void findNextEventSlot() {
         eventIndex = retain.nextClearBit(eventIndex + 1);
+        
+        if (CIRCULAR_EVENTS) {
+            if (eventIndex >= events.length) {
+                eventIndex = 0;
+            }
+        }
+        
         guarantee(eventIndex != -1, "event window is full (retained=%d, capacity=%d)", retain.cardinality(), EVENT_WINDOW);
     }
 

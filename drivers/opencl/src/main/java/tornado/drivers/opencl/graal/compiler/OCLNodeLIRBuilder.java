@@ -25,10 +25,16 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+
+import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.meta.*;
+import java.util.Set;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
@@ -40,33 +46,78 @@ import org.graalvm.compiler.core.match.ComplexMatchValue;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.NodeInputList;
+import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.LIR;
+import org.graalvm.compiler.lir.LIRFrameState;
+import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.StandardOp.LabelOp;
-import org.graalvm.compiler.lir.*;
+import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerator.Options;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.BlockScope;
-import org.graalvm.compiler.nodes.*;
-import org.graalvm.compiler.nodes.calc.*;
+import org.graalvm.compiler.nodes.AbstractEndNode;
+import org.graalvm.compiler.nodes.AbstractMergeNode;
+import org.graalvm.compiler.nodes.BreakpointNode;
+import org.graalvm.compiler.nodes.DirectCallTargetNode;
+import org.graalvm.compiler.nodes.EndNode;
+import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.IndirectCallTargetNode;
+import org.graalvm.compiler.nodes.Invoke;
+import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.LoopBeginNode;
+import org.graalvm.compiler.nodes.LoopEndNode;
+import org.graalvm.compiler.nodes.LoopExitNode;
+import org.graalvm.compiler.nodes.LoweredCallTargetNode;
+import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.PhiNode;
+import org.graalvm.compiler.nodes.SafepointNode;
+import org.graalvm.compiler.nodes.ShortCircuitOrNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.graalvm.compiler.nodes.calc.FloatEqualsNode;
+import org.graalvm.compiler.nodes.calc.FloatLessThanNode;
+import org.graalvm.compiler.nodes.calc.IntegerBelowNode;
+import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
+import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
+import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
 import org.graalvm.compiler.options.OptionValues;
+
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.Local;
+import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Value;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsicCmp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
+import tornado.drivers.opencl.graal.lir.OCLBinary;
+import tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
+import tornado.drivers.opencl.graal.lir.OCLControlFlow;
+import tornado.drivers.opencl.graal.lir.OCLDirectCall;
+import tornado.drivers.opencl.graal.lir.OCLKind;
+import tornado.drivers.opencl.graal.lir.OCLLIROp;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.ExprStmt;
-import tornado.drivers.opencl.graal.lir.*;
+import tornado.drivers.opencl.graal.lir.OCLNullary;
+import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
+import tornado.drivers.opencl.graal.lir.OCLUnary;
 import tornado.drivers.opencl.graal.nodes.logic.LogicalAndNode;
 import tornado.drivers.opencl.graal.nodes.logic.LogicalEqualsNode;
 import tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
 import tornado.drivers.opencl.graal.nodes.logic.LogicalOrNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
-
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
@@ -639,7 +690,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 double probability = x.probability(x.keySuccessor(0));
                 PlatformKind kind = gen.getLIRKind(x.value().stamp())
                         .getPlatformKind();
-                unimplemented();
+                unimplemented("Switch node has not been implemented yet.");
 //                gen.emitCompareBranch(kind, gen.load(operand(x.value())),
 //                        x.keyAt(0), Condition.EQ, false,
 //                        getLIRBlock(x.keySuccessor(0)), defaultTarget,
@@ -764,12 +815,73 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             }
         }
     }
+    
+    private static class MetaPhiVectorType {
+        boolean vectorPhiNode = true;
+        LIRKind valuePhi = null;
+        public MetaPhiVectorType(boolean vectorPhiNode, LIRKind valuePhi) {
+            super();
+            this.vectorPhiNode = vectorPhiNode;
+            this.valuePhi = valuePhi;
+        }
+        
+    }
+    
+    private MetaPhiVectorType obtainVectorTypePhiNode(ValuePhiNode phi) {
+        
+      // Check first for vector types
+        NodeInputList<ValueNode> values = phi.values();
+        boolean vectorPhiNode = true;
+        LIRKind valuePhi = null;
+        
+        Set<ValueNode> visited = new HashSet<>();
+        ArrayDeque<ValueNode> queue = new ArrayDeque<>();
+        for (ValueNode value: values) {
+            queue.add(value);
+        }
+        
+        // BFS to explore reachable PhiNodes and obtain if they 
+        // come from VectorTypes
+        while (!queue.isEmpty()) {
+            ValueNode value = queue.poll();
+            visited.add(value);
+            if (value instanceof VectorValueNode) {
+                VectorValueNode vectorNode = (VectorValueNode) value;
+                Stamp stamp = vectorNode.stamp();
+                valuePhi = stamp.getLIRKind(null);
+                vectorPhiNode &= true;
+            }  else if (value instanceof ValuePhiNode) {
+                NodeInputList<ValueNode> valuesSubList = ((ValuePhiNode)value).values();
+                for (ValueNode subValue: valuesSubList) {
+                    if (!visited.contains(subValue)) {
+                        queue.add(subValue);
+                    }
+                }
+            }
+            else {
+                vectorPhiNode &= false;
+            }
+        }
+        return new MetaPhiVectorType(vectorPhiNode, valuePhi);
+    }
 
     public Value operandForPhi(ValuePhiNode phi) {
         Value result = operand(phi);
         if (result == null) {
-            // allocate a variable for this phi
-            Variable newOperand = gen.newVariable(getPhiKind(phi));
+            
+            MetaPhiVectorType meta = obtainVectorTypePhiNode(phi);
+            
+            /* Allocate a variable for a PHI node. If the variable is a phi 
+             * node for VectorType, then the KIND is set to the vector type, 
+             * otherwise it inspects the stamp (JavaKind). 
+             */
+            Variable newOperand = null;
+            if (meta.vectorPhiNode) {
+                newOperand = gen.newVariable(meta.valuePhi);
+            } else {
+                newOperand = gen.newVariable(getPhiKind(phi));
+            }
+                        
             setResult(phi, newOperand);
             return newOperand;
         } else {

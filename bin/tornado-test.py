@@ -23,6 +23,7 @@ __TEST_THE_WORLD__ = [
 	"tornado.unittests.loops.TestLoops",
 	"tornado.unittests.matrices.TestMatrices",
 	"tornado.unittests.images.TestResizeImage",
+	"tornado.unittests.slam.graphics.GraphicsTests",
 ]
 
 ## Options

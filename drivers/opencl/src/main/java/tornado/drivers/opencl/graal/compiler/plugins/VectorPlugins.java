@@ -25,28 +25,37 @@
  */
 package tornado.drivers.opencl.graal.compiler.plugins;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import static tornado.common.Tornado.ENABLE_VECTORS;
+import static tornado.common.Tornado.TORNADO_ENABLE_BIFS;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
+
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderTool;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import org.graalvm.compiler.nodes.graphbuilderconf.*;
+import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
+
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import tornado.api.Vector;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-import tornado.drivers.opencl.graal.nodes.vector.*;
-
-import static tornado.common.Tornado.ENABLE_VECTORS;
-import static tornado.common.Tornado.TORNADO_ENABLE_BIFS;
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
+import tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorAddNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorStoreElementProxyNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
 
 public final class VectorPlugins {
 
@@ -63,14 +72,16 @@ public final class VectorPlugins {
                     }
                     if (method.getName().equals("<init>")) {
                         final VectorValueNode vector = resolveReceiver(b, vectorKind, args[0]);
-                        if (args.length > 0) {
+                        if (args.length > 1) {
                             int offset = (vector == args[0]) ? 1 : 0;
-
+                            
                             for (int i = offset; i < args.length; i++) {
                                 vector.setElement(i - offset, args[i]);
                             }
                         } else {
-                            vector.initialiseToDefaultValues(vector.graph());
+                            if (vectorKind.getVectorLength() < 8) {
+                                vector.initialiseToDefaultValues(vector.graph());
+                            }
                         }
                         return true;
                     }
@@ -171,6 +182,7 @@ public final class VectorPlugins {
 //                    Receiver receiver, ValueNode... args) {
 //                final VectorValueNode vector = resolveReceiver(b, vectorKind, receiver);
 //                if (args.length > 0) {
+//
 //                    int offset = (vector == args[0]) ? 1 : 0;
 //
 //                    for (int i = offset; i < args.length; i++) {
