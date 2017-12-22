@@ -25,13 +25,17 @@
  */
 package tornado.graal.phases;
 
+import static tornado.common.Tornado.debug;
+
 import java.util.ArrayDeque;
 import java.util.Queue;
-import jdk.vm.ci.meta.MetaAccessProvider;
+
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
+import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
@@ -39,10 +43,10 @@ import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.phases.BasePhase;
+
+import jdk.vm.ci.meta.MetaAccessProvider;
 import tornado.api.meta.TaskMetaData;
 import tornado.common.enums.Access;
-
-import static tornado.common.Tornado.debug;
 
 public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext> {
 
@@ -61,23 +65,91 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
 
             // Only interested in objects
             if (param != null && param.stamp() instanceof ObjectStamp) {
-                accesses[i] = processUseages(param, context.getMetaAccess());
+                accesses[i] = processUsages(param, context.getMetaAccess());
             }
-
             debug("access: parameter %d -> %s\n", i, accesses[i]);
+        }
+    }
+
+    private static class MetaControlFlow {
+        private boolean isWrittenTrueCondition;
+        private boolean isWrittenFalseCondition;
+        private IfNode fatherNodeStore;
+
+        public MetaControlFlow(boolean isWrittenTrueCondition, boolean isWrittenFalseCondition, IfNode fatherNodeStore) {
+            super();
+            this.isWrittenTrueCondition = isWrittenTrueCondition;
+            this.isWrittenFalseCondition = isWrittenFalseCondition;
+            this.fatherNodeStore = fatherNodeStore;
+        }
+
+        public boolean isWrittenTrueCondition() {
+            return isWrittenTrueCondition;
+        }
+
+        public boolean isWrittenFalseCondition() {
+            return isWrittenFalseCondition;
+        }
+
+        public IfNode getFatherNodeStore() {
+            return fatherNodeStore;
         }
 
     }
 
-    private Access processUseages(Node parameter, MetaAccessProvider metaAccess) {
-//        NodeBitMap nodes = graph.createNodeBitMap();
-//        nodes.clearAll();
+    /*
+     * For a given node store in the IR, it checks whether the store is also
+     * performed in another branch of the code. If it that the case, the
+     * variable should be just WRITE, otherwise, it should be READ_WRITE.
+     */
+    private MetaControlFlow analyseControlFlowForWriting(final Node currentNode, IfNode fatherNodeStore, final boolean isWrittenTrueCondition, final boolean isWrittenFalseCondition) {
+        boolean trueCondition = isWrittenTrueCondition;
+        boolean falseCondition = isWrittenFalseCondition;
+        boolean exit = false;
+        Node predecessor = currentNode;
+        Node next = predecessor;
+        while (!exit && !(predecessor instanceof StartNode)) {
+            predecessor = predecessor.predecessor();
+            if (predecessor == null) {
+                break;
+            }
+            if (predecessor instanceof IfNode) {
+                IfNode ifNode = (IfNode) predecessor;
+                if (fatherNodeStore != null) {
+                    if (!fatherNodeStore.equals(ifNode)) {
+                        // We found different father IF node for each
+                        // branch.
+                        continue;
+                    }
+                }
+
+                if (ifNode.trueSuccessor() == next) {
+                    trueCondition = true;
+                } else if (ifNode.falseSuccessor() == next) {
+                    falseCondition = true;
+                }
+                fatherNodeStore = ifNode;
+                exit = true;
+            }
+            next = predecessor;
+        }
+        return new MetaControlFlow(trueCondition, falseCondition, fatherNodeStore);
+    }
+
+    private Access processUsages(Node parameter, MetaAccessProvider metaAccess) {
+        // NodeBitMap nodes = graph.createNodeBitMap();
+        // nodes.clearAll();
 
         boolean isRead = false;
         boolean isWritten = false;
 
         Queue<Node> nf = new ArrayDeque<>();
         parameter.usages().forEach(nf::add);
+
+        boolean isWrittenTrueCondition = false;
+        boolean isWrittenFalseCondition = false;
+        boolean isStored = false;
+        IfNode fatherNodeStore = null;
 
         while (!nf.isEmpty()) {
             Node currentNode = nf.remove();
@@ -87,7 +159,11 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                     nf.addAll(currentNode.usages().snapshot());
                 }
             } else if (currentNode instanceof StoreIndexedNode) {
-                isWritten = true;
+                MetaControlFlow meta = analyseControlFlowForWriting(currentNode, fatherNodeStore, isWrittenTrueCondition, isWrittenFalseCondition);
+                fatherNodeStore = meta.getFatherNodeStore();
+                isWrittenTrueCondition = meta.isWrittenTrueCondition();
+                isWrittenFalseCondition = meta.isWrittenFalseCondition();
+                isStored = true;
             } else if (currentNode instanceof LoadFieldNode) {
                 LoadFieldNode loadField = (LoadFieldNode) currentNode;
                 if (loadField.stamp() instanceof ObjectStamp) {
@@ -95,10 +171,21 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 }
                 isRead = true;
             } else if (currentNode instanceof StoreFieldNode) {
-                isWritten = true;
+                MetaControlFlow meta = analyseControlFlowForWriting(currentNode, fatherNodeStore, isWrittenTrueCondition, isWrittenFalseCondition);
+                fatherNodeStore = meta.getFatherNodeStore();
+                isWrittenTrueCondition = meta.isWrittenTrueCondition();
+                isWrittenFalseCondition = meta.isWrittenFalseCondition();
+                isStored = true;
             } else if (currentNode instanceof PiNode) {
                 currentNode.usages().forEach(nf::add);
             }
+        }
+
+        if (isStored) {
+            isWritten = true;
+        }
+        if (isWrittenTrueCondition ^ isWrittenFalseCondition) {
+            isRead = true;
         }
 
         Access result = Access.NONE;
