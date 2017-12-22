@@ -6,54 +6,21 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>0.0.2-${TORNADO_REVISION}</version>
+        <version>0.0.2-SNAPSHOT</version>
     </parent>
     <artifactId>tornado-drivers-opencl</artifactId>
-    <version>0.0.2-${TORNADO_REVISION}</version>
     <name>tornado-drivers-opencl</name>
-    <url>http://maven.apache.org</url>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <netbeans.hint.license>lic1</netbeans.hint.license>
-    </properties>
-    <build>
-        <plugins>
-        </plugins>
-    </build>
+   
     <dependencies>
         <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-collections</artifactId>
-            <version>0.0.2-${TORNADO_REVISION}</version>
+            <version>${tornado.version}</version>
         </dependency>
         <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-runtime</artifactId>
-            <version>0.0.2-${TORNADO_REVISION}</version>
-        </dependency>
-        <dependency>
-            <groupId>graal</groupId>
-            <artifactId>graal</artifactId>
-            <scope>system</scope>
-            <systemPath>${graal.root}/graal.jar</systemPath>
-            <version>${graal.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>jvmci</groupId>
-            <artifactId>api</artifactId>
-            <scope>system</scope>
-            <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-api.jar</systemPath>
-            <version>${jvmci.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>jvmci</groupId>
-            <artifactId>hotspot</artifactId>
-            <scope>system</scope>
-            <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
-            <version>${jvmci.version}</version>
+            <version>${tornado.version}</version>
         </dependency>
     </dependencies>
-
 </project>

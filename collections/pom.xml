@@ -5,15 +5,10 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado</artifactId>
-        <version>0.0.2-${TORNADO_REVISION}</version>
+        <version>0.0.2-SNAPSHOT</version>
     </parent>
     <artifactId>tornado-collections</artifactId>
     <name>tornado-collections</name>
-    <url>http://maven.apache.org</url>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <netbeans.hint.license>lic1</netbeans.hint.license>
-    </properties>
     <build>
         <plugins>
             <plugin>
@@ -34,9 +29,9 @@
             <version>0.28</version>
         </dependency>
         <dependency>
-            <groupId>tornado</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>tornado-runtime</artifactId>
-            <version>0.0.2-${TORNADO_REVISION}</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>

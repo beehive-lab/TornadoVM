@@ -1,0 +1,20 @@
+#!/bin/bash
+
+TORNADO_FLAGS="-XX:-UseCompressedOops -Djava.library.path=${TORNADO_ROOT}/lib"
+JAVA_CMD=${JAVA_HOME}/bin/java
+JAVA_FLAGS="-server -XX:-UseJVMCIClassLoader ${TORNADO_FLAGS} -Dlog4j.configurationFile=${TORNADO_ROOT}/etc/log4j2.xml"
+
+JAVA_FLAGS="${JAVA_FLAGS} -Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintCFG=true"
+
+DEPS=""
+for f in $(ls ${TORNADO_ROOT}/share/java/tornado/*.jar); do
+        DEPS="${DEPS}:${f}"
+done
+
+if [ -z "${CLASSPATH}" ]; then
+        CLASSPATH=${DEPS}
+else
+        CLASSPATH="${CLASSPATH}:${DEPS}"
+fi
+
+CLASSPATH=${CLASSPATH} ${JAVA_CMD} ${JAVA_FLAGS} $@
