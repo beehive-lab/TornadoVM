@@ -86,8 +86,4 @@ public class TestHello extends TornadoTestBase {
         }
     }
 
-    @Override
-    public String toString() {
-        return "";
-    }
 }
