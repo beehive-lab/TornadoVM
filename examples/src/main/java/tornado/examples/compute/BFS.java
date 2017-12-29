@@ -43,6 +43,8 @@ public class BFS {
     int[] modify;
     int[] currentDepth;
 
+    public static final boolean SAMPLE = false;
+    
     
     /**
      * Set to one the connection between node from and node to into the adjacency matrix.
@@ -54,6 +56,7 @@ public class BFS {
      */
     public static void connect(int from, int to, int[] graph, int N) {
         if (from != to && (graph[from * N + to] == 0)) {
+            //System.out.println("Connecting : " + from + " -> " + to);
             graph[from * N + to] = 1;
         }
     }
@@ -74,16 +77,31 @@ public class BFS {
         connect(3, 4, adjacencyMatrix, numNodes);
     }
     
-    public static void generateRandomGraph(int[] adjacencyMatrix, int numNodes) {
+    private static int[] generateIntRandomArray(int numNodes) {
         Random r = new Random();
-        for (int k = 0; k < numNodes; k++) {
-            //IntStream from = r.ints(numNodes, 0, numNodes);
-            int bound = r.nextInt(numNodes);
-            IntStream to = r.ints(bound, 0, numNodes);
-            //int[] f = from.toArray();
-            int[] t = to.toArray();
-            for (int i = 0; i < t.length; i++) {
-                connect(k, t[i], adjacencyMatrix, numNodes);
+        int bound = r.nextInt(numNodes);
+        IntStream streamArray = r.ints(bound, 0, numNodes);
+        int[] array = streamArray.toArray();
+        return array;
+    }
+    
+    
+    public static void generateRandomGraph(int[] adjacencyMatrix, int numNodes, int root) {
+        Random r = new Random();
+        int bound = r.nextInt(numNodes);
+        IntStream fromStream = r.ints(bound, 0, numNodes);
+        int[] f = fromStream.toArray();
+        for (int k = 0; k < f.length; k++) {
+            
+            int from = f[k];
+            if (k == 0) {
+                from = root;
+            }
+            
+            int[] toArray = generateIntRandomArray(numNodes);
+
+            for (int i = 0; i < toArray.length; i++) {
+                connect(from, toArray[i], adjacencyMatrix, numNodes);
             }
         }
     }
@@ -108,7 +126,7 @@ public class BFS {
                     int dsecond = vertices[to];
                     if ((currentDepth[0] == dfirst) && (dsecond == -1)) {
                         vertices[to] = dfirst + 1;
-                        h_true[to] = 0;
+                        h_true[0] = 0;
                     } 
                     //if ((currentDepth[0] == dsecond) && (dfirst == -1)) {
                     //    //System.out.println("B: " + Arrays.toString(vertices));
@@ -121,25 +139,27 @@ public class BFS {
         }
     }
     
-    public void tornadoBFS(int root, int numberOfNodes) throws IOException {
-        int numNodes = numberOfNodes;
+    public void tornadoBFS(int rootNode, int numNodes) throws IOException {
         
         vertices = new int[numNodes];
         adjacencyMatrix = new int[numNodes * numNodes];
 
-        initilizeAdjacencyMatrixSimpleGraph(adjacencyMatrix, numNodes);
-        //generateRandomGraph(adjacencyMatrix, numNodes);
+        if (SAMPLE) {
+            initilizeAdjacencyMatrixSimpleGraph(adjacencyMatrix, numNodes);
+        } else {
+            generateRandomGraph(adjacencyMatrix, numNodes, rootNode);
+        }
 
         // Step 1: vertices initialisation
-        initializeVertices(numNodes, vertices, root);
+        initializeVertices(numNodes, vertices, rootNode);
         TaskSchedule s0 = new TaskSchedule("s0");
-        s0.task("t0", BFS::initializeVertices, numNodes, vertices, root);
+        s0.task("t0", BFS::initializeVertices, numNodes, vertices, rootNode);
         s0.streamOut(vertices).execute();
         
-        modify = new int[numNodes];
+        modify = new int[] { 1 };
         Arrays.fill(modify, 1);
         
-        currentDepth = new int[] {0 };
+        currentDepth = new int[] { 0 };
         
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
         TaskSchedule s1 = new TaskSchedule("s1");
@@ -153,7 +173,7 @@ public class BFS {
             // 2. Parallel BFS
             boolean allDone = true;
             System.out.println("Current Depth: " + currentDepth[0]);
-            System.out.println("\tModify? Before: " + Arrays.toString(modify));
+            //System.out.println("\tModify? Before: " + Arrays.toString(modify));
             //runBFS(vertices, adjacencyMatrix, numNodes, modify, currentDepth);
             s1.execute();
             currentDepth[0]++;
@@ -163,19 +183,23 @@ public class BFS {
                     break;
                 }
             }
-            System.out.println("\tModify: " + Arrays.toString(modify));
+            //System.out.println("\tModify: " + Arrays.toString(modify));
 
             if (allDone) {
                 done = true;
             }
-            System.out.println("\tPartial Solution: " + Arrays.toString(vertices));
+            //System.out.println("\tPartial Solution: " + Arrays.toString(vertices));
             Arrays.fill(modify, 1);
         }
-        System.out.println("Solution: " + Arrays.toString(vertices));
+        //System.out.println("Solution: " + Arrays.toString(vertices));
     }
     
     public static void main(String[] args) throws IOException {
-        new BFS().tornadoBFS(0, 5);
+        int size = 10000;
+        if (SAMPLE) {
+            size = 5;
+        }
+        new BFS().tornadoBFS(0, size);
     }
-
+        
 }
