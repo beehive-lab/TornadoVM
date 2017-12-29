@@ -58,7 +58,8 @@
 
     <build>
         <!--<directory>${project.basedir}/../dist</directory>-->
-        <finalName>tornado-${project.version}-${buildNumber}</finalName>
+        <!--<finalName>tornado-${project.version}-${buildNumber}</finalName>-->
+
         <!--<outputDirectory>${project.basedir}/../dist</outputDirectory>-->
         <plugins>
             <plugin>
@@ -71,6 +72,8 @@
                             <goal>single</goal>
                         </goals>
                         <configuration>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <finalName>tornado-sdk</finalName>
                             <outputDirectory>${project.basedir}/../dist</outputDirectory>
                             <!--<ignorePermissions>true</ignorePermissions>-->
                             <updateOnly>true</updateOnly>

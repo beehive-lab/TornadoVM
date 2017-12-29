@@ -355,35 +355,50 @@
         </plugins>
     </build>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>graal</groupId>
+                <artifactId>graal</artifactId>
+                <version>${graal.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>graal</groupId>
+                <artifactId>truffle-api</artifactId>
+                <version>${graal.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>jvmci</groupId>
+                <artifactId>api</artifactId>
+                <scope>system</scope>
+                <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-api.jar</systemPath>
+                <version>${jvmci.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>jvmci</groupId>
+                <artifactId>hotspot</artifactId>
+                <scope>system</scope>
+                <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
+                <version>${jvmci.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.12</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-core</artifactId>
+                <version>4.10.4</version>
+                <type>jar</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
-        <dependency>
-            <groupId>graal</groupId>
-            <artifactId>graal</artifactId>
-            <version>${graal.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>graal</groupId>
-            <artifactId>truffle-api</artifactId>
-            <version>${graal.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>jvmci</groupId>
-            <artifactId>api</artifactId>
-            <scope>system</scope>
-            <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-api.jar</systemPath>
-            <version>${jvmci.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>jvmci</groupId>
-            <artifactId>hotspot</artifactId>
-            <scope>system</scope>
-            <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
-            <version>${jvmci.version}</version>
-        </dependency>
-
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
@@ -393,22 +408,6 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>2.5</version>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-core</artifactId>
-            <version>4.10.4</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.ejml</groupId>
-            <artifactId>ejml-all</artifactId>
-            <version>0.31</version>
         </dependency>
     </dependencies>
 

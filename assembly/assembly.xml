@@ -7,6 +7,7 @@
         <format>tar.gz</format>
     </formats>
     <includeBaseDirectory>true</includeBaseDirectory>
+    <baseDirectory>tornado-sdk-${project.version}-${buildNumber}/</baseDirectory>
 
     <fileSets>
         <fileSet>

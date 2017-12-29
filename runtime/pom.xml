@@ -9,4 +9,23 @@
     </parent>
     <artifactId>tornado-runtime</artifactId>
     <name>tornado-runtime</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>graal</groupId>
+            <artifactId>graal</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>graal</groupId>
+            <artifactId>truffle-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jvmci</groupId>
+            <artifactId>api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jvmci</groupId>
+            <artifactId>hotspot</artifactId>
+        </dependency>
+    </dependencies>
 </project>

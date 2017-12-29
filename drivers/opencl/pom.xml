@@ -10,7 +10,7 @@
     </parent>
     <artifactId>tornado-drivers-opencl</artifactId>
     <name>tornado-drivers-opencl</name>
-   
+
     <dependencies>
         <dependency>
             <groupId>tornado</groupId>
