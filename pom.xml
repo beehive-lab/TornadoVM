@@ -11,6 +11,7 @@
 
     <properties>
         <tornado.version>0.0.2-SNAPSHOT</tornado.version>
+        <graal.version>0.22</graal.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
         <download.cmake>false</download.cmake>
