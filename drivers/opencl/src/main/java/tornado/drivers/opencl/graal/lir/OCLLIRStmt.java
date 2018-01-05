@@ -25,17 +25,15 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
-import java.util.HashMap;
-
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.LIRInstruction.Def;
+import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
-import tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
@@ -45,16 +43,9 @@ import tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 public class OCLLIRStmt {
 
     protected static abstract class AbstractInstruction extends LIRInstruction {
-        
-        protected static HashMap<Value, OCLKind> phiVectorTypes; 
-        protected static HashMap<Value, String> phiVectorNames;
-        protected static HashMap<Value, OCLKind> vectorType;
 
         protected AbstractInstruction(LIRInstructionClass<? extends AbstractInstruction> c) {
             super(c);
-            phiVectorNames = new HashMap<>();
-            phiVectorTypes = new HashMap<>();
-            vectorType = new HashMap<>();
         }
 
         @Override
@@ -85,32 +76,12 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            
-            /*
-             * During the ASSIGN operation, we introduce the type and vector type in 
-             * a hash table if the left side is a phi value node of type vector.
-             */
-            OCLKind kind = (OCLKind) rhs.getPlatformKind();
-            if (!(rhs instanceof OCLLIROp) && kind.isVector()) {
-                phiVectorTypes.put(lhs, kind);
-                phiVectorNames.put(lhs, lhs.toString());
-            }
-            
             asm.emitValue(crb, lhs);
             asm.space();
             asm.assign();
             asm.space();
             if (rhs instanceof OCLLIROp) {
                 ((OCLLIROp) rhs).emit(crb, asm);
-                
-                /* Is the type to be assigned is Vector, then we save the left side into a hash table.
-                 * If the left side is used again for a store operation, the store has to be in vector format 
-                 * (vstore)  
-                 */
-                if (kind.isVector()) {
-                    vectorType.put(lhs, (OCLKind)lhs.getPlatformKind());
-                }
-                
             } else {
                 asm.emitValue(crb, rhs);
             }
@@ -292,29 +263,12 @@ public class OCLLIRStmt {
             this.cast = cast;
             this.address = address;
         }
-        
-        /*
-         * This method emit the OpenCL vstore of a vector given the input vector and the address.
-         * This is because, when having PhiNodes that update a vector value, the update has to be 
-         * performed using vstores rather than pointer assignation.
-         */
-        private void emitVectorPhiStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            OCLKind kind = phiVectorTypes.get(rhs);
-            int vlength = kind.getVectorLength();
-            asm.emit("vstore");
-            asm.emit(vlength + OCLAssemblerConstants.BRACKET_OPEN);
-            String namePhi=  phiVectorNames.get(rhs);
-            asm.emit(namePhi);
-            asm.emit(", 0,");
-            
-            String typeVector  = kind.name().substring(0, kind.name().length()-1).toLowerCase();
-            asm.emit("(" + OCLAssemblerConstants.GLOBAL_MEM_MODIFIER +  " " + typeVector + " *" + OCLAssemblerConstants.BRACKET_CLOSE);
-            asm.space();
-            address.emit(crb, asm);
-            asm.emit(OCLAssemblerConstants.BRACKET_CLOSE);
-        }
-        
-        private void emitStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+
+            //asm.space();
             asm.emit("*(");
             cast.emit(crb, asm);
             asm.space();
@@ -323,36 +277,7 @@ public class OCLLIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            //asm.emitValue(crb, rhs);
-            asm.emitValueOrOp(crb, rhs);
-        }
-        
-        private void emitVectorStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            asm.emit("vstore");
-            OCLKind kind = vectorType.get(rhs);
-            int vlength = kind.getVectorLength();
-            asm.emit(vlength + OCLAssemblerConstants.BRACKET_OPEN);
-            String vectorName =  rhs.toString();
-            asm.emit(vectorName);
-            asm.emit(", 0,");
-
-            String typeVector  = kind.name().substring(0, kind.name().length()-1).toLowerCase();
-            asm.emit("(" + OCLAssemblerConstants.GLOBAL_MEM_MODIFIER +  " " + typeVector + " *" + OCLAssemblerConstants.BRACKET_CLOSE);
-            asm.space();
-            address.emit(crb, asm);
-            asm.emit(OCLAssemblerConstants.BRACKET_CLOSE);
-        }
-        
-        @Override
-        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            asm.indent();
-            if (vectorType.containsKey(rhs)) {
-                emitVectorStore(crb, asm);
-            } else if (phiVectorNames.containsKey(rhs)) {
-                emitVectorPhiStore(crb, asm);
-            } else {
-                emitStore(crb, asm);
-            }
+            asm.emitValue(crb, rhs);
             asm.delimiter();
             asm.eol();
         }

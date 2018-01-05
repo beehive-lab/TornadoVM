@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
- * Copyright (c) 2013-2017 APT Group, School of Computer Science, 
+ * Copyright (c) 2013-2017 APT Group, School of Computer Science,
  * The University of Manchester
  *
  * This work is partially supported by EPSRC grants:
@@ -60,7 +60,7 @@ public final class VectorUtil {
     private static final OCLOp4[] assignOp4Table = new OCLOp4[]{VMOV_SHORT4, VMOV_INT4, VMOV_FLOAT4, VMOV_BYTE4, VMOV_DOUBLE4};
     private static final OCLOp8[] assignOp8Table = new OCLOp8[]{VMOV_SHORT8, VMOV_INT8, VMOV_FLOAT8, VMOV_BYTE8, VMOV_DOUBLE8};
 
-    private static final <T> T lookupValueByLength(T[] array, OCLKind vectorKind) {
+    private static <T> T lookupValueByLength(T[] array, OCLKind vectorKind) {
         final int index = vectorKind.lookupLengthIndex();
         if (index != -1) {
             return array[index];
@@ -70,7 +70,7 @@ public final class VectorUtil {
         }
     }
 
-    private static final <T> T lookupValueByType(T[] array, OCLKind vectorKind) {
+    private static <T> T lookupValueByType(T[] array, OCLKind vectorKind) {
         final int index = vectorKind.lookupTypeIndex();
         if (index != -1) {
             return array[index];

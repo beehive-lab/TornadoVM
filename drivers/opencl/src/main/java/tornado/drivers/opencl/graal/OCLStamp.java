@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
- * Copyright (c) 2013-2017 APT Group, School of Computer Science, 
+ * Copyright (c) 2013-2017 APT Group, School of Computer Science,
  * The University of Manchester
  *
  * This work is partially supported by EPSRC grants:
@@ -103,8 +103,7 @@ public class OCLStamp extends ObjectStamp {
 
     @Override
     public Stamp improveWith(Stamp stamp) {
-        Stamp newStamp = super.improveWith(stamp);
-        return newStamp;
+        return this;
     }
 
     @Override
