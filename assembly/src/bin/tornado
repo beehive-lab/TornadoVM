@@ -9,7 +9,72 @@ if [ -z "${JAVA_HOME}" ]; then
     echo "Please ensure the JAVA_HOME environment variable is set correctly"
 fi
 
-TORNADO_FLAGS="-Djava.ext.dirs=${TORNADO_SDK}/share/java/tornado -Djava.library.path=${TORNADO_SDK}/lib -Dlog4j.configurationFile=${TORNADO_SDK}/etc/log4j2.xml"
+function print_usage {
+    echo "usage:    tornado [options] class [arg0 ... argN]"
+    echo ""
+    echo "              -h|--help             This message"
+    echo "              -v|--verbose          Enable verbose output"
+    echo "              -d|--debug            Enable debug output"
+    echo ""
+    echo "              --igv                 Dump GRAAL IR into IGV"
+    echo "              --version             Print tornado version information"
+    echo "              --log4j <config>      Specifies log4j config file"
+    echo ""
+    exit 0
+}
+
+function print_version {
+    cat "${TORNADO_SDK}/etc/tornado.release"
+    exit 0
+}
+
+TORNADO_FLAGS="-Djava.ext.dirs=${TORNADO_SDK}/share/java/tornado -Djava.library.path=${TORNADO_SDK}/lib"
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    --version)
+    print_version
+    shift
+    ;;
+    -v|--verbose)
+    TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.verbose=True"
+    shift # past argument
+    ;;
+    -d|--debug)
+    TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.debug=True"
+    shift # past argument
+    ;;
+    --igv)
+    TORNADO_FLAGS="${TORNADO_FLAGS} -Dgraal.Dump=*:5 -Dgraal.PrintGraph=true -Dgraal.PrintCFG=false"
+    shift # past argument
+    ;;
+    --log4j)
+    LOG4J_CONFIG="$2"
+    shift
+    shift
+    ;;
+    -h|--help)
+    print_usage
+    shift
+    ;;
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+if [ -z "${LOG4J_CONFIG}" ]; then
+    LOG4J_CONFIG="${TORNADO_SDK}/etc/log4j2.xml"
+fi
+
+TORNADO_FLAGS="${TORNADO_FLAGS}  -Dlog4j.configurationFile=${LOG4J_CONFIG}"
+
 JAVA_CMD=${JAVA_HOME}/bin/java
 JAVA_FLAGS="-server -XX:-UseJVMCIClassLoader -XX:-UseCompressedOops ${TORNADO_FLAGS} "
 
