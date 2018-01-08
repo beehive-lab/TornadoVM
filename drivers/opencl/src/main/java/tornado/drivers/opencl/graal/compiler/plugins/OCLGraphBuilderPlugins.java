@@ -278,6 +278,24 @@ public class OCLGraphBuilderPlugins {
                 return true;
             }
         });
+        
+        r.register1("log", type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                    Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, LOG, kind)));
+                return true;
+            }
+        });
+        
+        r.register1("exp", type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                    Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, EXP, kind)));
+                return true;
+            }
+        });
     }
 
     private static void registerOpenCLOverridesForType(Registration r, Class<?> type, JavaKind kind) {
