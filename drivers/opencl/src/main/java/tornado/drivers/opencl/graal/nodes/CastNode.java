@@ -72,8 +72,16 @@ public class CastNode extends FloatingNode implements LIRLowerable {
                 return OCLUnaryOp.CAST_TO_FLOAT;
             case L2F:
                 return OCLUnaryOp.CAST_TO_FLOAT;
+            case D2I: 
+                return OCLUnaryOp.CAST_TO_INT;
+            case D2L: 
+                return OCLUnaryOp.CAST_TO_LONG;
+            case F2L:
+                return OCLUnaryOp.CAST_TO_LONG;
+            case L2D:
+                return OCLUnaryOp.CAST_TO_DOUBLE;    
             default:
-                unimplemented("float convert: " + op.toString());
+                unimplemented("Conversion unimplemented: " + op.toString());
                 break;
         }
         return null;
