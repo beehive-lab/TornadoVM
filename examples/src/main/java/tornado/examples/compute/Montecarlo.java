@@ -30,7 +30,7 @@ import tornado.api.Parallel;
 import tornado.runtime.api.TaskSchedule;
 
 /**
- * Montecarlo algorithm to solve PI value. This version has been adapted from Marawacc test suite. 
+ * Montecarlo algorithm to approximate the PI value. This version has been adapted from Marawacc test suite. 
  *
  */
 public class Montecarlo {

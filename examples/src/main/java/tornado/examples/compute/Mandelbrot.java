@@ -43,8 +43,8 @@ import tornado.runtime.api.TaskSchedule;
 
 public class Mandelbrot {
     
-    public final static int SIZE = 512;
-    public static final boolean USE_TORNADO = false;
+    public final static int SIZE = 256;
+    public static final boolean USE_TORNADO = true;
 
     @SuppressWarnings("serial")
     public static class MandelbrotImage extends Component {
