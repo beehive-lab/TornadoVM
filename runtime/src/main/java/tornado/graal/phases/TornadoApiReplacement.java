@@ -33,6 +33,7 @@ import java.util.Map;
 import jdk.vm.ci.meta.LocalAnnotation;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.loop.InductionVariable;
 import org.graalvm.compiler.loop.LoopEx;
 import org.graalvm.compiler.loop.LoopsData;
@@ -59,15 +60,29 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
     private void replaceParameterAnnotations(StructuredGraph graph, TornadoSketchTierContext context) {
         final Annotation[][] parameterAnnotations = graph.method().getParameterAnnotations();
-
+        
         for (int i = 0; i < parameterAnnotations.length; i++) {
+            
             for (Annotation an : parameterAnnotations[i]) {
-//			sSystem.out.printf("annotation: param[%d]: %s\n",i,an);
+                //System.out.printf("annotation: param[%d]: %s\n",i,an);
                 if (an instanceof Atomic) {
-
                     final ParameterNode param = graph.getParameter(i);
                     final AtomicAccessNode atomicAccess = graph.addOrUnique(new AtomicAccessNode(param));
-                    param.replaceAtMatchingUsages(atomicAccess, usage -> usage instanceof StoreIndexedNode);
+                    //param.replaceAtMatchingUsages(atomicAccess, usage -> usage instanceof StoreIndexedNode);
+                    
+                    // Partial solution to create an atomic node. 
+                    // TODO: replace for an ATOMIC_ADD node etc, depending on the operation.
+                    NodeIterable<Node> usages = param.usages();
+                    for (Node n: usages) {
+                        if (n instanceof ValuePhiNode) {
+                            param.replaceAtMatchingUsages(atomicAccess, usage -> usage instanceof ValuePhiNode);
+                            break;
+                        } else if (n instanceof StoreIndexedNode) {
+                            param.replaceAtMatchingUsages(atomicAccess, usage -> usage instanceof StoreIndexedNode);
+                            break;
+                        }
+                    }
+                    
                 }
             }
         }
