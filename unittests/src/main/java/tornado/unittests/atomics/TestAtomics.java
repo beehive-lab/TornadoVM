@@ -26,7 +26,7 @@ package tornado.unittests.atomics;
 
 import java.util.Arrays;
 
-import org.junit.Test;
+import org.junit.Ignore;
 
 import tornado.api.Atomic;
 import tornado.api.Parallel;
