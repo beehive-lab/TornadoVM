@@ -27,6 +27,7 @@ package tornado.examples.compute;
 import java.util.Random;
 
 import tornado.api.Parallel;
+import tornado.collections.math.TornadoMath;
 import tornado.runtime.api.TaskSchedule;
 
 /**
@@ -54,10 +55,10 @@ public class BlackScholes {
             final float r = R_LOWER_LIMIT * rand + R_UPPER_LIMIT * (1.0f - rand);
             final float v = SIGMA_LOWER_LIMIT * rand + SIGMA_UPPER_LIMIT * (1.0f - rand);
 
-            float d1 = (float) ((float)(Math.log(S / K) + ((r + (v * v / 2)) * T)) / v * Math.sqrt(T));
-            float d2 = (float) ((float) d1 - (v * Math.sqrt(T)));
-            callResult[idx] = (float) (S * cnd(d1) - K * Math.exp(T * (-1) * r) * cnd(d2));
-            putResult[idx] = (float) (K * Math.exp(T * -r) * cnd(-d2) - S * cnd(-d1));
+            float d1 = (float) ((float)(TornadoMath.log(S / K) + ((r + (v * v / 2)) * T)) / v * TornadoMath.sqrt(T));
+            float d2 = (float) ((float) d1 - (v * TornadoMath.sqrt(T)));
+            callResult[idx] = (float) (S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2));
+            putResult[idx] = (float) (K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1));
         }
     }
 
@@ -72,9 +73,9 @@ public class BlackScholes {
         final float two = 2.0f;
         final float temp4 = 0.2316419f;
         final float oneBySqrt2pi = 0.398942280f;
-        float absX = Math.abs(X);
+        float absX = TornadoMath.abs(X);
         float t = one / (one + temp4 * absX);
-        float y = (float) (one - oneBySqrt2pi * Math.exp(-X * X / two) * t
+        float y = (float) (one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t
                 * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5)))));
         float result = (X < zero) ? (one - y) : y;
         return result;
