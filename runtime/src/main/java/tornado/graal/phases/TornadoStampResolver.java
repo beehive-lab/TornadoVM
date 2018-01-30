@@ -23,33 +23,33 @@
  * Authors: James Clarkson
  *
  */
-package tornado.drivers.opencl.graal.nodes.vector;
+package tornado.graal.phases;
 
-import jdk.vm.ci.meta.JavaKind;
-import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.nodes.PhiNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.java.LoadIndexedNode;
-import tornado.drivers.opencl.graal.OCLStampFactory;
-import tornado.drivers.opencl.graal.lir.OCLKind;
+import org.graalvm.compiler.phases.BasePhase;
 
-@NodeInfo
-public class LoadIndexedVectorNode extends LoadIndexedNode {
-
-    public static final NodeClass<LoadIndexedVectorNode> TYPE = NodeClass.create(LoadIndexedVectorNode.class);
-    private final OCLKind oclKind;
-
-    public LoadIndexedVectorNode(OCLKind oclKind, ValueNode array, ValueNode index, JavaKind elementKind) {
-        super(TYPE, OCLStampFactory.getStampFor(oclKind), array, index, elementKind);
-        this.oclKind = oclKind;
-    }
+public class TornadoStampResolver extends BasePhase<TornadoSketchTierContext> {
 
     @Override
-    public boolean inferStamp() {
-        return updateStamp(OCLStampFactory.getStampFor(oclKind));
+    protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
+
+        graph.getNodes().filter(PhiNode.class).forEach((PhiNode phi) -> {
+            Stamp stamp = phi.stamp();
+            if (stamp.isEmpty()) {
+
+                for (ValueNode n : phi.values()) {
+                    if (stamp.isEmpty()) {
+                        stamp = n.stamp();
+                    } else {
+                        stamp = stamp.meet(n.stamp());
+                    }
+                }
+                phi.setStamp(stamp);
+            }
+        });
     }
 
-    public OCLKind getOCLKind() {
-        return oclKind;
-    }
 }

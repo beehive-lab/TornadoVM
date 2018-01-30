@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
- * Copyright (c) 2013-2017 APT Group, School of Computer Science, 
+ * Copyright (c) 2013-2017 APT Group, School of Computer Science,
  * The University of Manchester
  *
  * This work is partially supported by EPSRC grants:
@@ -25,7 +25,11 @@
  */
 package tornado.drivers.opencl.graal.nodes.vector;
 
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.type.ObjectStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.ConstantValue;
@@ -36,12 +40,12 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.Value;
+import tornado.drivers.opencl.graal.OCLStamp;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.lir.OCLVectorElementSelect;
 
 import static tornado.common.exceptions.TornadoInternalError.guarantee;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 /**
  * The {@code LoadIndexedNode} represents a read from an element of an array.
@@ -65,6 +69,27 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
         this.oclKind = kind;
         this.vector = vector;
         this.lane = lane;
+
+        Stamp vstamp = vector.stamp();
+        OCLKind vectorKind = OCLKind.ILLEGAL;
+        if (vstamp instanceof ObjectStamp) {
+            ObjectStamp ostamp = (ObjectStamp) vector.stamp();
+//            System.out.printf("ostamp: type=%s\n", ostamp.type());
+
+            if (ostamp.type() != null) {
+                vectorKind = OCLKind.fromResolvedJavaType(ostamp.type());
+                guarantee(vectorKind.isVector(), "Cannot apply vector operation to non-vector type: %s", vectorKind);
+                guarantee(vectorKind.getVectorLength() >= laneId(), "Invalid lane %d on type %s", laneId(), oclKind);
+            }
+        } else if (vstamp instanceof OCLStamp) {
+            final OCLStamp vectorStamp = (OCLStamp) vector.stamp();
+            vectorKind = vectorStamp.getOCLKind();
+            guarantee(vectorKind.isVector(), "Cannot apply vector operation to non-vector type: %s", vectorKind);
+            guarantee(vectorKind.getVectorLength() >= laneId(), "Invalid lane %d on type %s", laneId(), oclKind);
+        } else {
+            shouldNotReachHere("invalid type on vector operation: %s (stamp=%s (class=%s))", vector, vector.stamp(), vector.stamp().getClass().getName());
+        }
+
     }
 
     @Override
@@ -74,11 +99,12 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
 
     @Override
     public boolean inferStamp() {
-        return true;
-        //return updateStamp(createStamp(vector, kind.getElementKind()));
+//        return false;
+        return updateStamp(StampFactory.forKind(oclKind.asJavaKind()));
     }
 
-    public int laneId() {
+    final public int laneId() {
+        guarantee(lane instanceof ConstantNode, "Invalid lane: %s", lane);
         return (lane instanceof ConstantNode) ? lane.asJavaConstant().asInt() : -1;
     }
 

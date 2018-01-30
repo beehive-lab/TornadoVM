@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
- * Copyright (c) 2013-2017 APT Group, School of Computer Science, 
+ * Copyright (c) 2013-2017 APT Group, School of Computer Science,
  * The University of Manchester
  *
  * This work is partially supported by EPSRC grants:
@@ -168,6 +168,7 @@ public enum OCLKind implements PlatformKind {
         return (isVector()) ? elementKind : ILLEGAL;
     }
 
+    @Override
     public char getTypeChar() {
 
         switch (kind) {

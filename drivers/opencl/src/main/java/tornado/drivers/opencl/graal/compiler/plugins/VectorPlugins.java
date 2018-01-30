@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
- * Copyright (c) 2013-2017 APT Group, School of Computer Science, 
+ * Copyright (c) 2013-2017 APT Group, School of Computer Science,
  * The University of Manchester
  *
  * This work is partially supported by EPSRC grants:
@@ -25,37 +25,28 @@
  */
 package tornado.drivers.opencl.graal.compiler.plugins;
 
-import static tornado.common.Tornado.ENABLE_VECTORS;
-import static tornado.common.Tornado.TORNADO_ENABLE_BIFS;
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
-
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderTool;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.*;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
 import tornado.api.Vector;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-import tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorAddNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorStoreElementProxyNode;
-import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
+import tornado.drivers.opencl.graal.nodes.vector.*;
+
+import static tornado.common.Tornado.ENABLE_VECTORS;
+import static tornado.common.Tornado.TORNADO_ENABLE_BIFS;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
 
 public final class VectorPlugins {
 
@@ -74,11 +65,12 @@ public final class VectorPlugins {
                         final VectorValueNode vector = resolveReceiver(b, vectorKind, args[0]);
                         if (args.length > 1) {
                             int offset = (vector == args[0]) ? 1 : 0;
-                            
+
                             for (int i = offset; i < args.length; i++) {
                                 vector.setElement(i - offset, args[i]);
                             }
                         } else {
+                            //BUG check whether this should be <= 8
                             if (vectorKind.getVectorLength() < 8) {
                                 vector.initialiseToDefaultValues(vector.graph());
                             }
@@ -107,13 +99,13 @@ public final class VectorPlugins {
             // Adding char
             registerVectorPlugins(ps, plugins, OCLKind.CHAR3, byte[].class, byte.class);
             registerVectorPlugins(ps, plugins, OCLKind.CHAR4, byte[].class, byte.class);
-            
+
             // Adding double
             registerVectorPlugins(ps, plugins, OCLKind.DOUBLE2, double[].class, double.class);
             registerVectorPlugins(ps, plugins, OCLKind.DOUBLE3, double[].class, double.class);
             registerVectorPlugins(ps, plugins, OCLKind.DOUBLE4, double[].class, double.class);
             registerVectorPlugins(ps, plugins, OCLKind.DOUBLE8, double[].class, double.class);
-            
+
             /*
              * Geometric BIFS for floating point vectors
              */
