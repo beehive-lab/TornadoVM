@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
- * Copyright (c) 2013-2017 APT Group, School of Computer Science, 
+ * Copyright (c) 2013-2017 APT Group, School of Computer Science,
  * The University of Manchester
  *
  * This work is partially supported by EPSRC grants:
@@ -25,15 +25,6 @@
  */
 package tornado.drivers.opencl;
 
-import static tornado.common.Tornado.PRINT_COMPILE_TIMES;
-import static tornado.common.Tornado.debug;
-import static tornado.common.Tornado.error;
-import static tornado.common.Tornado.getProperty;
-import static tornado.common.Tornado.info;
-import static tornado.common.Tornado.trace;
-import static tornado.common.Tornado.warn;
-import static tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -43,12 +34,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-
 import tornado.api.meta.TaskMetaData;
-import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.enums.OCLBuildStatus;
 import tornado.drivers.opencl.exceptions.OCLException;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
+
+import static tornado.common.Tornado.*;
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
+import static tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
 
 public class OCLCodeCache {
 
@@ -58,8 +51,9 @@ public class OCLCodeCache {
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", "False"));
     private final boolean OPENCL_DUMP_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.dump", "False"));
     private final boolean OPENCL_PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.print", "False"));
-    private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "opencl-cache");
-    private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "opencl-src");
+    private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "/var/opencl-codecache");
+    private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
+    private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-logs");
 
     private final Map<String, OCLInstalledCode> cache;
     private final OCLDeviceContext deviceContext;
@@ -74,36 +68,33 @@ public class OCLCodeCache {
         }
     }
 
-    private Path resolveCacheDir() {
+    private Path resolveDir(String dir) {
+        final String tornadoRoot = System.getenv("TORNADO_SDK");
         final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
-        final Path outDir = Paths.get(OPENCL_CACHE_DIR + "/" + deviceDir);
+        final Path outDir = Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
         if (!Files.exists(outDir)) {
             try {
                 Files.createDirectories(outDir);
             } catch (IOException e) {
-                error("unable to create cache dir: %s", outDir.toString());
+                error("unable to create dir: %s", outDir.toString());
                 error(e.getMessage());
             }
         }
 
-        TornadoInternalError.guarantee(Files.isDirectory(outDir), "cache directory is not a directory: %s", outDir.toAbsolutePath().toString());
+        guarantee(Files.isDirectory(outDir), "target directory is not a directory: %s", outDir.toAbsolutePath().toString());
         return outDir;
     }
 
-    private Path resolveSourceDir() {
-        final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
-        final Path outDir = Paths.get(OPENCL_SOURCE_DIR + "/" + deviceDir);
-        if (!Files.exists(outDir)) {
-            try {
-                Files.createDirectories(outDir);
-            } catch (IOException e) {
-                error("unable to create cache dir: %s", outDir.toString());
-                error(e.getMessage());
-            }
-        }
+    private Path resolveCacheDir() {
+        return resolveDir(OPENCL_CACHE_DIR);
+    }
 
-        TornadoInternalError.guarantee(Files.isDirectory(outDir), "cache directory is not a directory: %s", outDir.toAbsolutePath().toString());
-        return outDir;
+    private Path resolveSourceDir() {
+        return resolveDir(OPENCL_SOURCE_DIR);
+    }
+
+    private Path resolveLogDir() {
+        return resolveDir(OPENCL_LOG_DIR);
     }
 
     public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
@@ -111,7 +102,7 @@ public class OCLCodeCache {
         info("Installing code for %s into code cache", entryPoint);
         final OCLProgram program = deviceContext.createProgramWithSource(source,
                 new long[]{source.length});
-        
+
         if (OPENCL_DUMP_SOURCE) {
             final Path outDir = resolveSourceDir();
             File file = new File(outDir + "/" + id + "-" + entryPoint + OPENCL_SOURCE_SUFFIX);
@@ -121,10 +112,10 @@ public class OCLCodeCache {
                 error("unable to dump source: ", e.getMessage());
             }
         }
-        
+
         if (OPENCL_PRINT_SOURCE) {
-        	String sourceCode = new String(source);
-        	System.out.println(sourceCode);
+            String sourceCode = new String(source);
+            System.out.println(sourceCode);
         }
 
         // TODO add support for passing compiler optimisation flags here
@@ -140,14 +131,28 @@ public class OCLCodeCache {
             debug(log);
         }
         if (status == OCLBuildStatus.CL_BUILD_ERROR) {
-            System.err.println(log);
+            final Path outDir = resolveLogDir();
+            final String identifier = id + "-" + entryPoint;
+            error("Unable to compile task %s: check logs at %s/%s.log", identifier, outDir.toAbsolutePath(), identifier);
+
+            File file = new File(outDir + "/" + identifier + ".log");
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                fos.write(log.getBytes());
+            } catch (IOException e) {
+                error("unable to write error log: ", e.getMessage());
+            }
+            file = new File(outDir + "/" + identifier + OPENCL_SOURCE_SUFFIX);
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                fos.write(source);
+            } catch (IOException e) {
+                error("unable to write error log: ", e.getMessage());
+            }
         }
 
         final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
 
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, deviceContext, program,
                 kernel);
-        
 
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getId());

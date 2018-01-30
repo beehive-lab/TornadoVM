@@ -1,3 +1,0 @@
-AUTOMAKE_OPTIONS=foreign
-SUBDIRS=libtornado-opencl
-ACLOCAL_AMFLAGS=-I m4

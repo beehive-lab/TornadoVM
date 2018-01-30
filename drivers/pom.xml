@@ -4,20 +4,19 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado</artifactId>
-        <version>0.0.2-${TORNADO_REVISION}</version>
+        <version>0.0.2-SNAPSHOT</version>
     </parent>
     <artifactId>tornado-drivers</artifactId>
     <packaging>pom</packaging>
     <modules>
         <module>opencl</module>
+        <module>opencl-jni</module>
     </modules>
 
     <dependencies>
         <dependency>
             <groupId>graal</groupId>
             <artifactId>graal</artifactId>
-            <scope>system</scope>
-            <systemPath>${graal.root}/graal.jar</systemPath>
             <version>${graal.version}</version>
         </dependency>
 
