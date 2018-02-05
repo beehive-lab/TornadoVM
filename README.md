@@ -44,7 +44,7 @@ $ . etc/tornado.env
 
 ### 1. Setting default maven configuration
 
-Modify the `jvmci.root` with your path to JDK 1.8.0_131
+Create (or update) the file in `~/.m2/settings.xml` with the following content. Modify the `jvmci.root` with your path to JDK 1.8.0_131.
 
 ```bash
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
@@ -124,7 +124,8 @@ and done!!
 
 ### 4. Update PATH and TORNADO_SDK
 
-The binaries are in dist/tornado-sdk/tornado-sdk-0.0.2-SNAPSHOT-commitID/ 
+The binaries are in `dist/tornado-sdk/tornado-sdk-0.0.2-SNAPSHOT-commitID/`. 
+For example:
 
 ```bash
 export PATH=dist/tornado-sdk/tornado-sdk-0.0.2-SNAPSHOT-ada5d03/bin:$PATH
