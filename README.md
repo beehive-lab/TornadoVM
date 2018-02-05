@@ -31,8 +31,12 @@ Copy and paste the following - but update paths into the etc/tornado.env file:
 ```bash
 #!/bin/bash
 export JAVA_HOME=<path to jvmci 8 jdk with JVMCI>
-export GRAAL_ROOT=<path to graal.jar and truffle-api.jar>
-export TORNADO_ROOT=<path to cloned git dir>
+export PATH=$PWD/bin/bin:$PATH    ## We will create this directory during Tornado compilation
+export TORNADO_SDK=$PWD/bin/sdk   ## We will create this directory during Tornado compilation
+
+## If CMAKE is needed (See step 2)
+export CMAKE_ROOT=<path/to/cmake/cmake-3.10.2>
+
 ```
 
 Then execute:
@@ -110,6 +114,14 @@ cmake version 3.10.1
 ```bash
 $ cd ~/tornado
 $ mvn package 
+$ bash bin/updatePATHS.sh
+```
+and done!! 
+
+Alternately, you can just execute `make`
+
+```bash
+$ make
 ```
 
 and done!! 
@@ -117,20 +129,14 @@ and done!!
 If you install a new version of Cmake (e.g in CentOS) you need to pass a variable to the mvn package:
 
 ```bash 
-mvn -Dcmake.root.dir=$HOME/opt/cmake-3.10.1/ package
+$ mvn -Dcmake.root.dir=$HOME/opt/cmake-3.10.1/ package
 ```
 
 and done!! 
 
-### 4. Update PATH and TORNADO_SDK
+NOTE: the Makefile autoamtically sets the `cmake.root.dir` based on the variable `CMAKE_ROOT` set in `etc/tornado.env`
 
-The binaries are in `dist/tornado-sdk/tornado-sdk-0.0.2-SNAPSHOT-commitID/`. 
-For example:
 
-```bash
-export PATH=dist/tornado-sdk/tornado-sdk-0.0.2-SNAPSHOT-ada5d03/bin:$PATH
-export SDK_TORNADO=dist/tornado-sdk/tornado-sdk-0.0.2-SNAPSHOT-ada5d03/
-```
 
 
 ## Running Examples #
