@@ -37,4 +37,5 @@ autom4te.cache
 /drivers/opencl-jni/target/mac-amd64-release/
 /assembly/target/
 /drivers/target/
-
+bin/bin
+bin/sdk
