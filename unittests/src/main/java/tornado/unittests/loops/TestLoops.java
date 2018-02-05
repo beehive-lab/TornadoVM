@@ -45,12 +45,6 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void forLoop2(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = (i + 1) + 1;
-        }
-    }
-
     @Test
     public void testForLoopOneD() {
         final int size = 10;
@@ -68,26 +62,6 @@ public class TestLoops extends TornadoTestBase {
 
         for (int i = 0; i < a.length; i++) {
             assertEquals(10, a[i]);
-        }
-    }
-
-    @Test
-    public void testForSymbolicSubstitution() {
-        final int size = 10;
-
-        int[] a = new int[size];
-
-        Arrays.fill(a, 1);
-
-        //@formatter:off
-        new TaskSchedule("s0")
-                .task("t0", TestLoops::forLoop2, a)
-                .streamOut(a)
-                .execute();
-        //@formatter:on
-
-        for (int i = 0; i < a.length; i++) {
-            assertEquals(i + 2, a[i]);
         }
     }
 
