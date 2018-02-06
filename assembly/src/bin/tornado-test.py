@@ -31,10 +31,10 @@ __MAIN_TORNADO_JUNIT__ = "org.junit.runner.JUnitCore "
 __IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintCFG=true "
 __PRINT_OPENCL_KERNEL__ = "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ = "-Dtornado.debug=True "
+__IGNORE_INTEL_PLATFORM__ = "-Dtornado.ignore.intel=True "  # Due to a bug when running with optirun
 
 ## 
-__VERSION__ = "0.2_09112017"
-
+__VERSION__ = "0.2_06022018"
 
 def composeAllOptions(args):
 
@@ -62,7 +62,11 @@ def runTests(args):
 	options = composeAllOptions(args)
 
 	## Run test
-	cmd = "tornado " + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
+	cmd = ""
+	if (args.useOptirun):
+		cmd = "optirun tornado " + __IGNORE_INTEL_PLATFORM__ + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
+	else:
+		cmd = "tornado " + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
 	if (args.testClass != None):
 		cmd = cmd + " " + args.testClass 
 		#print cmd
@@ -96,6 +100,7 @@ def parseArguments():
 	parser.add_argument('--junit', action="store_true", dest="junit", default=False, help="Run within JUnitCore main class")	
 	parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")	
 	parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False, help="Debug Tornado")	
+	parser.add_argument('--optirun', "-optirun", action="store_true", dest="useOptirun", default=False, help="Use optirun with Tornado")	
 	args = parser.parse_args()
 	return args
 
