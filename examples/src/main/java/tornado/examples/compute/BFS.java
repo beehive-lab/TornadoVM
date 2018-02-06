@@ -35,9 +35,17 @@ import tornado.common.TornadoDevice;
 import tornado.runtime.TornadoRuntime;
 import tornado.runtime.api.TaskSchedule;
 
-// Parallel Implementation of the BFS
+/**
+ * Parallel Implementation of the BFS: this is based on the Marawacc compiler framework.
+ * @author Juan Fumero
+ *
+ */
 public class BFS {
 
+	private static final boolean BIDIRECTIONAL = false;
+	private static final boolean PRINT_SOLUTION = false;
+
+	
     int[] vertices;
     int[] adjacencyMatrix;    
     int[] modify;
@@ -56,7 +64,6 @@ public class BFS {
      */
     public static void connect(int from, int to, int[] graph, int N) {
         if (from != to && (graph[from * N + to] == 0)) {
-            //System.out.println("Connecting : " + from + " -> " + to);
             graph[from * N + to] = 1;
         }
     }
@@ -127,13 +134,14 @@ public class BFS {
                     if ((currentDepth[0] == dfirst) && (dsecond == -1)) {
                         vertices[to] = dfirst + 1;
                         h_true[0] = 0;
-                    } 
-                    //if ((currentDepth[0] == dsecond) && (dfirst == -1)) {
-                    //    //System.out.println("B: " + Arrays.toString(vertices));
-                    //    vertices[from] = dsecond + 1;
-                    //    //System.out.println("\t updating b: " + from + " with: " + (dsecond + 1));
-                    //    h_true[0] = 0;
-                   // }
+                    }
+                    
+                    if (BIDIRECTIONAL) {
+                    	if ((currentDepth[0] == dsecond) && (dfirst == -1)) {
+                    		vertices[from] = dsecond + 1;
+                    		h_true[0] = 0;
+                    	}
+                    }
                 }
             }
         }
@@ -173,7 +181,6 @@ public class BFS {
             // 2. Parallel BFS
             boolean allDone = true;
             System.out.println("Current Depth: " + currentDepth[0]);
-            //System.out.println("\tModify? Before: " + Arrays.toString(modify));
             //runBFS(vertices, adjacencyMatrix, numNodes, modify, currentDepth);
             s1.execute();
             currentDepth[0]++;
@@ -183,15 +190,16 @@ public class BFS {
                     break;
                 }
             }
-            //System.out.println("\tModify: " + Arrays.toString(modify));
 
             if (allDone) {
                 done = true;
             }
-            //System.out.println("\tPartial Solution: " + Arrays.toString(vertices));
             Arrays.fill(modify, 1);
         }
-        //System.out.println("Solution: " + Arrays.toString(vertices));
+        
+        if (PRINT_SOLUTION) {
+        	System.out.println("Solution: " + Arrays.toString(vertices));
+        }
     }
     
     public static void main(String[] args) throws IOException {

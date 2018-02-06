@@ -29,7 +29,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 
-import org.graalvm.compiler.nodes.StructuredGraph;
 import org.junit.Ignore;
 import org.junit.Test;
 
