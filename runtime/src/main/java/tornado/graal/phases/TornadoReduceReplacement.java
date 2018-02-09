@@ -7,7 +7,6 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.phases.BasePhase;
@@ -21,8 +20,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 	protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
 		System.out.println(">> Reduction Phase Detection");
 		findParametersWithReduceAnnotations(graph, context);
-		
-		// Pending, it is local variable
+		// TODO: Pending, if it is local variable
 	}
 	
 	private void findParametersWithReduceAnnotations(StructuredGraph graph, TornadoSketchTierContext context) {
@@ -38,27 +36,16 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                     // For debugging
                     System.out.println("Reduction var: " + reduceParameter);
                     while (iterator.hasNext()) {
-                    	
                     	Node node = iterator.next();
-                    	
                     	System.out.println("\t" + node);
-                    	
                     	if (node instanceof StoreIndexedNode) {
                     		System.out.println("\t\t store index node");
-                    		
                     		StoreIndexedNode store = (StoreIndexedNode) node;
-                    		
-                    		// Idea: replace the store for StoreAtomicIndexNode
                     		Node pred = node.predecessor();
-                    		
                     		final StoreAtomicIndexedNode atomicStore = graph.addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), store.value()));
-
-                    		
                     		atomicStore.setNext(store.next()); 
                     		pred.replaceFirstSuccessor(store, atomicStore);
                     		store.replaceAndDelete(atomicStore);
-                   		
-                    		
                     	} else if (node instanceof StoreFieldNode) {
                     		System.out.println("\t\t store field");
                     	}

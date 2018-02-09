@@ -54,9 +54,11 @@ import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.nodes.AtomicAddNode;
 import tornado.drivers.opencl.graal.nodes.CastNode;
 import tornado.drivers.opencl.graal.nodes.FixedArrayNode;
+import tornado.drivers.opencl.graal.nodes.OCLAtomicAdd;
 import tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
+import tornado.graal.nodes.StoreAtomicIndexedNode;
 import tornado.graal.nodes.TornadoDirectCallTargetNode;
 import tornado.runtime.TornadoVMConfig;
 
@@ -101,6 +103,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerLoadIndexedNode((LoadIndexedNode) n, tool);
         } else if (n instanceof StoreIndexedNode) {
             lowerStoreIndexedNode((StoreIndexedNode) n, tool);
+        } else if (n instanceof StoreAtomicIndexedNode) {
+            lowerAtomicStoreIndexedNode((StoreAtomicIndexedNode) n, tool);
         } else if (n instanceof LoadFieldNode) {
             lowerLoadFieldNode((LoadFieldNode) n, tool);
         } else if (n instanceof StoreFieldNode) {
@@ -157,6 +161,21 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
         loadIndexed.replaceAtUsages(memoryRead);
         graph.replaceFixed(loadIndexed, memoryRead);
+    }
+    
+    protected void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
+        StructuredGraph graph = storeIndexed.graph();
+        
+        JavaKind elementKind = storeIndexed.elementKind();
+
+        ValueNode value = storeIndexed.value();
+        ValueNode array = storeIndexed.array();
+
+        AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
+        WriteNode memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind())));
+        //OCLAtomicAdd atomicADD = graph.add(new OCLAtomicAdd(address, null, value));
+        memoryWrite.setStateAfter(storeIndexed.stateAfter());
+        graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
     }
 
     @Override

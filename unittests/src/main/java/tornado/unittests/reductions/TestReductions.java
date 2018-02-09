@@ -45,7 +45,7 @@ public class TestReductions extends TornadoTestBase {
 	public static final int BIG_SIZE = 128;
 
 	public static void reductionAnnotation(float[] input, @Reduce float[] result) {
-		for (int i = 0; i < input.length; i++) {
+		for (@Parallel int i = 0; i < input.length; i++) {
 			result[0] += input[i];
 		}
 	}
