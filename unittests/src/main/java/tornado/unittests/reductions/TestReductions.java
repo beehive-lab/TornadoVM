@@ -34,12 +34,47 @@ import java.util.stream.IntStream;
 import org.junit.Test;
 
 import tornado.api.Parallel;
+import tornado.api.Reduce;
 import tornado.runtime.api.TaskSchedule;
 import tornado.unittests.common.TornadoTestBase;
 
 public class TestReductions extends TornadoTestBase {
 
 	public static final int SIZE = 64;
+
+	public static final int BIG_SIZE = 128;
+
+	public static void reductionAnnotation(float[] input, @Reduce float[] result) {
+		for (int i = 0; i < input.length; i++) {
+			result[0] += input[i];
+		}
+	}
+
+	@Test
+	public void testReductionAnnotation() {
+		float[] input = new float[BIG_SIZE];
+		float[] result = new float[1];
+
+		Random r = new Random();
+
+		IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
+			input[i] = r.nextFloat();
+		});
+
+		//@formatter:off
+		new TaskSchedule("s0")
+			.streamIn(input)
+			.task("t0", TestReductions::reductionAnnotation, input, result)
+			.streamOut(result)
+			.execute();
+		//@formatter:on
+
+		float[] sequential = new float[1];
+		reductionAnnotation(input, sequential);
+
+		// Check result
+		assertEquals(sequential[0], result[0], 0.001f);
+	}
 
 	public static void reductionSequentialSmall(float[] input, float[] result) {
 		for (int i = 0; i < input.length; i++) {
