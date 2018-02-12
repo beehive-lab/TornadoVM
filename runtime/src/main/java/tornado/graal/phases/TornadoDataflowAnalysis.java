@@ -32,6 +32,8 @@ import java.util.Queue;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.BinaryOpLogicNode;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
@@ -44,9 +46,11 @@ import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.phases.BasePhase;
 
+import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import tornado.api.meta.TaskMetaData;
 import tornado.common.enums.Access;
+import tornado.graal.nodes.ParallelRangeNode;
 
 public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext> {
 
@@ -94,7 +98,51 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         public IfNode getFatherNodeStore() {
             return fatherNodeStore;
         }
-
+    }
+    
+    private boolean checkIgnoreStride(ParallelRangeNode range) {
+        ValueNode value = range.stride().value();
+        if (value instanceof ConstantNode) {
+            ConstantNode c = (ConstantNode)value;
+            Constant value2 = c.getValue();
+            String v = value2.toValueString();
+            int stride = Integer.parseInt(v);
+            if (stride == 1) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
+    }
+    
+    private boolean shouldIgnoreNode(IfNode ifNode, IfNode fatherNodeStore) {
+       
+        // Check first if the IF node controls stride, in which case we should only ignore
+        // if the stride is 1.
+        boolean ignore = false;
+        if (ifNode.condition() instanceof BinaryOpLogicNode) {
+            BinaryOpLogicNode condition = (BinaryOpLogicNode) ifNode.condition();
+            if (condition.getX() instanceof ParallelRangeNode) {
+                ignore = checkIgnoreStride((ParallelRangeNode) condition.getX());
+            } else if (condition.getY() instanceof ParallelRangeNode) {
+                ignore = checkIgnoreStride((ParallelRangeNode) condition.getY());
+            }
+        }
+        
+        if (ignore) {
+            return true;
+        }
+        
+        // Check if the IF node found is different from the one previously recorded.
+        if (fatherNodeStore != null) {
+            if (!fatherNodeStore.equals(ifNode)) {
+                // We found different father IF node for each
+                // branch.
+                return true;
+            }
+        }
+        return false;
     }
 
     /*
@@ -115,12 +163,9 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             }
             if (predecessor instanceof IfNode) {
                 IfNode ifNode = (IfNode) predecessor;
-                if (fatherNodeStore != null) {
-                    if (!fatherNodeStore.equals(ifNode)) {
-                        // We found different father IF node for each
-                        // branch.
-                        continue;
-                    }
+                
+                if (shouldIgnoreNode(ifNode, fatherNodeStore)) {
+                    continue;
                 }
 
                 if (ifNode.trueSuccessor() == next) {
