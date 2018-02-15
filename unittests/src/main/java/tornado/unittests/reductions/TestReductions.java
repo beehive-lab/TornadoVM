@@ -62,11 +62,8 @@ public class TestReductions extends TornadoTestBase {
 		int[] input = new int[BIG_SIZE];
 		int[] result = new int[1];
 
-		Random r = new Random();
-
 		IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
 			input[i] = 1;
-			System.out.println(input[i]);
 		});
 
 		//@formatter:off
@@ -85,7 +82,7 @@ public class TestReductions extends TornadoTestBase {
 	}
 
 	public static void reductionSequentialSmall(float[] input, float[] result) {
-		for (int i = 0; i < input.length; i++) {
+		for (int i = 1; i < input.length; i++) {
 			result[0] += input[i];
 		}
 	}
@@ -117,8 +114,8 @@ public class TestReductions extends TornadoTestBase {
 	}
 
 	public static void reductionSequentialSmall2(int[] input, int[] result) {
-		int acc = 0;
-		for (int i = 0; i < input.length; i++) {
+		int acc = input[0];
+		for (int i = 1; i < input.length; i++) {
 			acc += input[i];
 		}
 		result[0] = acc;
@@ -151,7 +148,7 @@ public class TestReductions extends TornadoTestBase {
 	}
 
 	public static void reductionSequentialBig(int[] input, @Reduce int[] result) {
-		for (int i = 0; i < input.length; i++) {
+		for (int i = 1; i < input.length; i++) {
 			result[0] += input[i];
 		}
 	}
@@ -182,6 +179,8 @@ public class TestReductions extends TornadoTestBase {
 		assertEquals(sequential[0], result[0], 0.001f);
 	}
 
+	// XXX: Due to an issue in the thread-scheduler, we start in 0 until fix the
+	// scheduler.
 	public static void reduction01(int[] a, @Reduce int[] result) {
 		for (@Parallel int i = 0; i < a.length; i++) {
 			result[0] += a[i];
@@ -256,7 +255,7 @@ public class TestReductions extends TornadoTestBase {
 		assertEquals(sequential[0], result[0], 0.001f);
 	}
 
-	// Reusing result sequential
+	// Reusing result, sequential
 	public static void mapReduce02(int[] a, int[] b, @Reduce int[] result) {
 
 		// map
@@ -298,7 +297,7 @@ public class TestReductions extends TornadoTestBase {
 		assertEquals(sequential[0], result[0], 0.001f);
 	}
 
-	// Reusing result in Parallel
+	// Reusing result, in Parallel
 	public static void mapReduce03(int[] a, int[] b, @Reduce int[] result) {
 
 		// map
