@@ -82,6 +82,7 @@ public class TestsVirtualLayer {
 
     /**
      * Test to change execution from one device to another (migration).
+     * @throws Exception 
      */
     @Test
     public void testArrayMigration() {

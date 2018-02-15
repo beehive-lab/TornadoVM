@@ -35,6 +35,8 @@ import static tornado.common.exceptions.TornadoInternalError.*;
 
 public enum OCLKind implements PlatformKind {
 
+	ATOMIC_INT(4, null),
+	ATOMIC_LONG(8, null),
     BOOL(1, java.lang.Boolean.TYPE),
     CHAR(1, java.lang.Byte.TYPE),
     UCHAR(1, null),
@@ -182,9 +184,11 @@ public enum OCLKind implements PlatformKind {
                 return 's';
             case INT:
             case UINT:
+            case ATOMIC_INT:
                 return 'i';
             case LONG:
             case ULONG:
+            case ATOMIC_LONG:
                 return 'l';
             case HALF:
                 return 'h';
@@ -250,7 +254,13 @@ public enum OCLKind implements PlatformKind {
 
     @Override
     public String toString() {
-        return name().toLowerCase();
+    	if (this == OCLKind.ATOMIC_INT) {
+    		return "int";
+    	} else if (this == OCLKind.ATOMIC_LONG) {
+    		return "long";
+    	} else {
+    		return name().toLowerCase();
+    	}
     }
 
     public String getTypePrefix() {

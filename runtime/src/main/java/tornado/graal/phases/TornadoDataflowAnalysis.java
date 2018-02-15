@@ -51,6 +51,7 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import tornado.api.meta.TaskMetaData;
 import tornado.common.enums.Access;
 import tornado.graal.nodes.ParallelRangeNode;
+import tornado.graal.nodes.StoreAtomicIndexedNode;
 
 public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext> {
 
@@ -203,7 +204,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 if (((ValueNode) currentNode).stamp().javaType(metaAccess).isArray()) {
                     nf.addAll(currentNode.usages().snapshot());
                 }
-            } else if (currentNode instanceof StoreIndexedNode) {
+            } else if (currentNode instanceof StoreIndexedNode || currentNode instanceof StoreAtomicIndexedNode) {
                 MetaControlFlow meta = analyseControlFlowForWriting(currentNode, fatherNodeStore, isWrittenTrueCondition, isWrittenFalseCondition);
                 fatherNodeStore = meta.getFatherNodeStore();
                 isWrittenTrueCondition = meta.isWrittenTrueCondition();

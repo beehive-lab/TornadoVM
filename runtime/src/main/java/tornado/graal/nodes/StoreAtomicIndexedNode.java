@@ -24,31 +24,19 @@
 package tornado.graal.nodes;
 
 import static org.graalvm.compiler.nodeinfo.InputType.State;
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
-
-import javax.management.RuntimeErrorException;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.AccessIndexedNode;
-import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.Lowerable;
-import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.spi.Virtualizable;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
-import org.graalvm.compiler.nodes.type.StampTool;
-import org.graalvm.compiler.nodes.virtual.VirtualArrayNode;
-import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaType;
 
 @NodeInfo(nameTemplate = "AtomicIndexedStore")
 public final class StoreAtomicIndexedNode extends AccessIndexedNode implements StateSplit, Lowerable, Virtualizable { 
@@ -56,6 +44,7 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     public static final NodeClass<StoreAtomicIndexedNode> TYPE = NodeClass.create(StoreAtomicIndexedNode.class);
     @Input ValueNode value;
     @OptionalInput(State) FrameState stateAfter;
+    @Input ValueNode accumulator;
 
     @Override
     public FrameState stateAfter() {
@@ -78,9 +67,10 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
         return value;
     }
 
-    public StoreAtomicIndexedNode(ValueNode array, ValueNode index, JavaKind elementKind, ValueNode value) {
+    public StoreAtomicIndexedNode(ValueNode array, ValueNode index, JavaKind elementKind, ValueNode value, ValueNode accumulator) {
         super(TYPE, StampFactory.forVoid(), array, index, elementKind);
         this.value = value;
+        this.accumulator = accumulator;
     }
 
     @Override
@@ -90,6 +80,10 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
 
     public FrameState getState() {
         return stateAfter;
+    }
+    
+    public ValueNode getAccumulator() {
+    	return accumulator;
     }
 
 }

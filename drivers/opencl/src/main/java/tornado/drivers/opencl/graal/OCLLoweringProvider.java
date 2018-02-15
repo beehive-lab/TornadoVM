@@ -25,9 +25,11 @@
  */
 package tornado.drivers.opencl.graal;
 
-import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
-import jdk.vm.ci.meta.*;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
+import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -35,12 +37,26 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
-import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.AbstractDeoptimizeNode;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.Invoke;
+import org.graalvm.compiler.nodes.LoweredCallTargetNode;
+import org.graalvm.compiler.nodes.NamedLocationIdentity;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.UnwindNode;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.DivNode;
 import org.graalvm.compiler.nodes.calc.FloatConvertNode;
 import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
 import org.graalvm.compiler.nodes.calc.RemNode;
-import org.graalvm.compiler.nodes.java.*;
+import org.graalvm.compiler.nodes.java.ArrayLengthNode;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
+import org.graalvm.compiler.nodes.java.LoadIndexedNode;
+import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
+import org.graalvm.compiler.nodes.java.NewArrayNode;
+import org.graalvm.compiler.nodes.java.StoreFieldNode;
+import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
@@ -49,23 +65,30 @@ import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.replacements.DefaultJavaLoweringProvider;
+
+import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.graal.lir.OCLKind;
+import tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
 import tornado.drivers.opencl.graal.nodes.AtomicAddNode;
 import tornado.drivers.opencl.graal.nodes.CastNode;
 import tornado.drivers.opencl.graal.nodes.FixedArrayNode;
-import tornado.drivers.opencl.graal.nodes.OCLAtomicAdd;
 import tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
+import tornado.graal.nodes.OCLReduceAddNode;
 import tornado.graal.nodes.StoreAtomicIndexedNode;
 import tornado.graal.nodes.TornadoDirectCallTargetNode;
 import tornado.runtime.TornadoVMConfig;
-
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
-import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
@@ -80,41 +103,43 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     @Override
-    public void lower(Node n, LoweringTool tool) {
-        StructuredGraph graph = (StructuredGraph) n.graph();
+    public void lower(Node node, LoweringTool tool) {
+        StructuredGraph graph = (StructuredGraph) node.graph();
+        
+        //System.out.println("LOWERING: " + node);
 
-        if (n instanceof Invoke) {
-            lowerInvoke((Invoke) n, tool, graph);
-        } else if (n instanceof VectorLoadNode) {
-            lowerVectorLoadNode((VectorLoadNode) n, tool);
-        } else if (n instanceof VectorStoreNode) {
-            lowerVectorStoreNode((VectorStoreNode) n, tool);
-        } else if (n instanceof AbstractDeoptimizeNode || n instanceof UnwindNode || n instanceof RemNode) {
+        if (node instanceof Invoke) {
+            lowerInvoke((Invoke) node, tool, graph);
+        } else if (node instanceof VectorLoadNode) {
+            lowerVectorLoadNode((VectorLoadNode) node, tool);
+        } else if (node instanceof VectorStoreNode) {
+            lowerVectorStoreNode((VectorStoreNode) node, tool);
+        } else if (node instanceof AbstractDeoptimizeNode || node instanceof UnwindNode || node instanceof RemNode) {
             /*
              * No lowering, we generate LIR directly for these nodes.
              */
-        } else if (n instanceof FloatConvertNode) {
-            lowerFloatConvertNode((FloatConvertNode) n, tool);
-        } else if (n instanceof NewArrayNode) {
-            lowerNewArrayNode((NewArrayNode) n, tool);
-        } else if (n instanceof AtomicAddNode) {
-            lowerAtomicAddNode((AtomicAddNode) n, tool);
-        } else if (n instanceof LoadIndexedNode || n instanceof LoadIndexedVectorNode) {
-            lowerLoadIndexedNode((LoadIndexedNode) n, tool);
-        } else if (n instanceof StoreIndexedNode) {
-            lowerStoreIndexedNode((StoreIndexedNode) n, tool);
-        } else if (n instanceof StoreAtomicIndexedNode) {
-            lowerAtomicStoreIndexedNode((StoreAtomicIndexedNode) n, tool);
-        } else if (n instanceof LoadFieldNode) {
-            lowerLoadFieldNode((LoadFieldNode) n, tool);
-        } else if (n instanceof StoreFieldNode) {
-            lowerStoreFieldNode((StoreFieldNode) n, tool);
-        } else if (n instanceof ArrayLengthNode) {
-            lowerArrayLengthNode((ArrayLengthNode) n, tool);
-        } else if (n instanceof IntegerDivRemNode) {
-            lowerIntegerDivRemNode((IntegerDivRemNode) n, tool);
+        } else if (node instanceof FloatConvertNode) {
+            lowerFloatConvertNode((FloatConvertNode) node, tool);
+        } else if (node instanceof NewArrayNode) {
+            lowerNewArrayNode((NewArrayNode) node, tool);
+        } else if (node instanceof AtomicAddNode) {
+            lowerAtomicAddNode((AtomicAddNode) node, tool);
+        } else if (node instanceof LoadIndexedNode || node instanceof LoadIndexedVectorNode) {
+            lowerLoadIndexedNode((LoadIndexedNode) node, tool);
+        } else if (node instanceof StoreIndexedNode) {
+            lowerStoreIndexedNode((StoreIndexedNode) node, tool);
+        } else if (node instanceof StoreAtomicIndexedNode) {
+            lowerAtomicStoreIndexedNode((StoreAtomicIndexedNode) node, tool);
+        } else if (node instanceof LoadFieldNode) {
+            lowerLoadFieldNode((LoadFieldNode) node, tool);
+        } else if (node instanceof StoreFieldNode) {
+            lowerStoreFieldNode((StoreFieldNode) node, tool);
+        } else if (node instanceof ArrayLengthNode) {
+            lowerArrayLengthNode((ArrayLengthNode) node, tool);
+        } else if (node instanceof IntegerDivRemNode) {
+            lowerIntegerDivRemNode((IntegerDivRemNode) node, tool);
         } else {
-            super.lower(n, tool);
+            super.lower(node, tool);
         }
     }
 
@@ -164,18 +189,37 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
     
     protected void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
+    	
+    	//System.out.println("\nLOWER ATOMIC STORE \n");
+    	
         StructuredGraph graph = storeIndexed.graph();
         
         JavaKind elementKind = storeIndexed.elementKind();
 
         ValueNode value = storeIndexed.value();
         ValueNode array = storeIndexed.array();
+        ValueNode accumulator = storeIndexed.getAccumulator();
+        
+        if (value instanceof OCLReduceAddNode) {
+        	//System.out.println(" !!!!!!!! it should be atomic_add( );");
+        	
+        	AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
+        	
+        	// this should be Atomic Add write node
+        	OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), accumulator, accumulator.stamp()));
 
-        AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-        WriteNode memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind())));
-        //OCLAtomicAdd atomicADD = graph.add(new OCLAtomicAdd(address, null, value));
-        memoryWrite.setStateAfter(storeIndexed.stateAfter());
-        graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
+        	memoryWrite.setStateAfter(storeIndexed.stateAfter());
+        	graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
+
+        	
+        } else {
+        	AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
+        	OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), accumulator, accumulator.stamp()));
+
+        	memoryWrite.setStateAfter(storeIndexed.stateAfter());
+        	graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
+        
+        }
     }
 
     @Override

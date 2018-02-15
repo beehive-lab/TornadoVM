@@ -25,13 +25,24 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
+import static tornado.common.exceptions.TornadoInternalError.guarantee;
+import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
-import jdk.vm.ci.meta.*;
+import org.graalvm.compiler.nodes.ValueNode;
+
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
 import tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import tornado.drivers.opencl.graal.OCLLIRKindTool;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
@@ -42,15 +53,13 @@ import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
 import tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.LoadStmt;
+import tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreAtomicAddStmt;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreStmt;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorLoadStmt;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorStoreStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 import tornado.drivers.opencl.graal.nodes.vector.VectorUtil;
-
-import static tornado.common.exceptions.TornadoInternalError.*;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
@@ -309,20 +318,39 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public void emitStore(ValueKind<?> lirKind, Value address, Value input,
-            LIRFrameState state) {
+    public void emitStore(ValueKind<?> lirKind, Value address, Value input, LIRFrameState state) {
         trace("emitStore: kind=%s, address=%s, input=%s", lirKind, address, input);
         guarantee(lirKind.getPlatformKind() instanceof OCLKind, "invalid LIRKind: %s", lirKind);
         OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
-        final MemoryAccess memAccess = (MemoryAccess) address;
+        
+        MemoryAccess memAccess = null; 
+        Value accumulator = null;
+        if (address instanceof MemoryAccess) {
+        	memAccess = (MemoryAccess) address;
+        } else {
+        	accumulator = address;
+        }
 
         if (oclKind.isVector()) {
             OCLTernaryIntrinsic intrinsic = VectorUtil.resolveStoreIntrinsic(oclKind);
             OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind.getElementKind()));
             getGen().append(new VectorStoreStmt(intrinsic, new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0), cast, memAccess, input));
         } else {
-            OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
-            getGen().append(new StoreStmt(cast, memAccess, input));
+        	if (oclKind == OCLKind.ATOMIC_INT) {
+        		if (memAccess != null) {
+        			OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
+        			getGen().append(new StoreAtomicAddStmt(cast, memAccess, input));
+        		} else {
+        			getGen().append(new StoreAtomicAddStmt(accumulator, input));
+        		}
+        	} else {
+        		if (memAccess != null) {
+        			OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
+        			getGen().append(new StoreStmt(cast, memAccess, input));
+        		} else {
+        			getGen().append(new StoreAtomicAddStmt(accumulator, input));
+        		}
+        	}
         }
     }
 

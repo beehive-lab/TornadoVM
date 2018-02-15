@@ -44,7 +44,14 @@ public class TestReductions extends TornadoTestBase {
 
 	public static final int BIG_SIZE = 128;
 
-	public static void reductionAnnotation(float[] input, @Reduce float[] result) {
+	/**
+	 * First approach: use annotations in the user code to identify the
+	 * reduction variables. This is a similar approach to OpenMP and OpenACC.
+	 * 
+	 * @param input
+	 * @param result
+	 */
+	public static void reductionAnnotation(int[] input, @Reduce int[] result) {
 		for (@Parallel int i = 0; i < input.length; i++) {
 			result[0] += input[i];
 		}
@@ -52,13 +59,14 @@ public class TestReductions extends TornadoTestBase {
 
 	@Test
 	public void testReductionAnnotation() {
-		float[] input = new float[BIG_SIZE];
-		float[] result = new float[1];
+		int[] input = new int[BIG_SIZE];
+		int[] result = new int[1];
 
 		Random r = new Random();
 
 		IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
-			input[i] = r.nextFloat();
+			input[i] = 1;
+			System.out.println(input[i]);
 		});
 
 		//@formatter:off
@@ -69,7 +77,7 @@ public class TestReductions extends TornadoTestBase {
 			.execute();
 		//@formatter:on
 
-		float[] sequential = new float[1];
+		int[] sequential = new int[1];
 		reductionAnnotation(input, sequential);
 
 		// Check result
@@ -142,7 +150,7 @@ public class TestReductions extends TornadoTestBase {
 		assertEquals(sequential[0], result[0], 0.001f);
 	}
 
-	public static void reductionSequentialBig(int[] input, int[] result) {
+	public static void reductionSequentialBig(int[] input, @Reduce int[] result) {
 		for (int i = 0; i < input.length; i++) {
 			result[0] += input[i];
 		}
@@ -174,7 +182,7 @@ public class TestReductions extends TornadoTestBase {
 		assertEquals(sequential[0], result[0], 0.001f);
 	}
 
-	public static void reduction01(float[] a, float[] result) {
+	public static void reduction01(int[] a, @Reduce int[] result) {
 		for (@Parallel int i = 0; i < a.length; i++) {
 			result[0] += a[i];
 		}
@@ -182,13 +190,13 @@ public class TestReductions extends TornadoTestBase {
 
 	@Test
 	public void testReduction01() {
-		float[] input = new float[SIZE];
-		float[] result = new float[1];
+		int[] input = new int[SIZE];
+		int[] result = new int[1];
 
 		Random r = new Random();
 
 		IntStream.range(0, SIZE).parallel().forEach(i -> {
-			input[i] = r.nextFloat();
+			input[i] = r.nextInt();
 		});
 
 		//@formatter:off
@@ -199,9 +207,135 @@ public class TestReductions extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-		float[] sequential = new float[1];
+		int[] sequential = new int[1];
 
 		reduction01(input, sequential);
+
+		assertEquals(sequential[0], result[0], 0.001f);
+	}
+
+	public static void mapReduce01(int[] a, int[] b, int[] c, @Reduce int[] result) {
+
+		// map
+		for (@Parallel int i = 0; i < a.length; i++) {
+			c[i] = a[i] * b[i];
+		}
+
+		// reduction
+		for (@Parallel int i = 0; i < a.length; i++) {
+			result[0] += c[i];
+		}
+	}
+
+	@Test
+	public void testMapReduce() {
+		int[] a = new int[SIZE * 2];
+		int[] b = new int[SIZE * 2];
+		int[] c = new int[SIZE * 2];
+		int[] result = new int[SIZE * 2];
+
+		Random r = new Random();
+
+		IntStream.range(0, SIZE * 2).parallel().forEach(i -> {
+			a[i] = r.nextInt();
+			b[i] = r.nextInt();
+		});
+
+		//@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(a)
+            .task("t0", TestReductions::mapReduce01, a, b, c, result)
+            .streamOut(result)
+            .execute();
+        //@formatter:on
+
+		int[] sequential = new int[SIZE * 2];
+
+		mapReduce01(a, b, c, sequential);
+
+		assertEquals(sequential[0], result[0], 0.001f);
+	}
+
+	// Reusing result sequential
+	public static void mapReduce02(int[] a, int[] b, @Reduce int[] result) {
+
+		// map
+		for (int i = 0; i < a.length; i++) {
+			result[i] = a[i] * b[i];
+		}
+
+		// reduction
+		for (int i = 0; i < result.length; i++) {
+			result[0] += result[i];
+		}
+	}
+
+	@Test
+	public void testMapReduce2() {
+		int[] a = new int[SIZE * 2];
+		int[] b = new int[SIZE * 2];
+		int[] result = new int[SIZE * 2];
+
+		Random r = new Random();
+
+		IntStream.range(0, SIZE * 2).parallel().forEach(i -> {
+			a[i] = r.nextInt();
+			b[i] = r.nextInt();
+		});
+
+		//@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(a)
+            .task("t0", TestReductions::mapReduce02, a, b, result)
+            .streamOut(result)
+            .execute();
+        //@formatter:on
+
+		int[] sequential = new int[SIZE * 2];
+
+		mapReduce02(a, b, sequential);
+
+		assertEquals(sequential[0], result[0], 0.001f);
+	}
+
+	// Reusing result in Parallel
+	public static void mapReduce03(int[] a, int[] b, @Reduce int[] result) {
+
+		// map
+		for (@Parallel int i = 0; i < a.length; i++) {
+			result[i] = a[i] * b[i];
+		}
+
+		// reduction
+		for (@Parallel int i = 0; i < result.length; i++) {
+			result[0] += result[i];
+		}
+	}
+
+	@Test
+	public void testMapReduce3() {
+		int[] a = new int[SIZE * 2];
+		int[] b = new int[SIZE * 2];
+		int[] result = new int[SIZE * 2];
+
+		Random r = new Random();
+
+		IntStream.range(0, SIZE * 2).parallel().forEach(i -> {
+			a[i] = r.nextInt();
+			b[i] = r.nextInt();
+		});
+
+		//@formatter:off
+	        new TaskSchedule("s0")
+	            .streamIn(a)
+	            .task("t0", TestReductions::mapReduce03, a, b, result)
+	            .streamOut(result)
+	            .execute();
+	        //@formatter:on
+
+		int[] sequential = new int[SIZE * 2];
+
+		mapReduce03(a, b, sequential);
 
 		assertEquals(sequential[0], result[0], 0.001f);
 	}
