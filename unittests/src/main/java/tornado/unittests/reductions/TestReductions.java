@@ -52,7 +52,7 @@ public class TestReductions extends TornadoTestBase {
 	 * @param result
 	 */
 	public static void reductionAnnotation(int[] input, @Reduce int[] result) {
-		for (@Parallel int i = 0; i < input.length; i++) {
+		for (@Parallel int i = 1; i < input.length; i++) {
 			result[0] += input[i];
 		}
 	}
@@ -413,6 +413,42 @@ public class TestReductions extends TornadoTestBase {
 		testThreadSchuler2(a, b, sequential);
 
 		assertEquals(sequential[0], result[0], 0.001f);
+	}
+
+	public static void testThreadLoop(int[] a, int[] b, int[] result) {
+		for (@Parallel int i = 2; i < a.length; i++) {
+			result[i] = a[i] * b[i];
+		}
+	}
+
+	@Test
+	public void testThreadLoop() {
+		int[] a = new int[SIZE * 2];
+		int[] b = new int[SIZE * 2];
+		int[] result = new int[SIZE * 2];
+
+		Random r = new Random();
+
+		IntStream.range(0, SIZE * 2).parallel().forEach(i -> {
+			a[i] = r.nextInt();
+			b[i] = r.nextInt();
+		});
+
+		//@formatter:off
+		        new TaskSchedule("s0")
+		            .streamIn(a)
+		            .task("t0", TestReductions::testThreadLoop, a, b, result)
+		            .streamOut(result)
+		            .execute();
+		        //@formatter:on
+
+		int[] sequential = new int[SIZE * 2];
+
+		testThreadLoop(a, b, sequential);
+
+		for (int i = 2; i < SIZE * 2; i++) {
+			assertEquals(sequential[i], result[i]);
+		}
 	}
 
 }
