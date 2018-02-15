@@ -340,4 +340,47 @@ public class TestReductions extends TornadoTestBase {
 		assertEquals(sequential[0], result[0], 0.001f);
 	}
 
+	// Reusing result in Parallel
+	public static void testThreadSchuler(int[] a, int[] b, int[] result) {
+
+		// map
+		for (@Parallel int i = 0; i < a.length; i++) {
+			result[i] = a[i] * b[i];
+		}
+
+		// map
+		for (@Parallel int i = 0; i < a.length; i++) {
+			result[i] = result[i] * b[i];
+		}
+
+	}
+
+	@Test
+	public void testThreadSchuler() {
+		int[] a = new int[SIZE * 2];
+		int[] b = new int[SIZE * 2];
+		int[] result = new int[SIZE * 2];
+
+		Random r = new Random();
+
+		IntStream.range(0, SIZE * 2).parallel().forEach(i -> {
+			a[i] = r.nextInt();
+			b[i] = r.nextInt();
+		});
+
+		//@formatter:off
+		        new TaskSchedule("s0")
+		            .streamIn(a)
+		            .task("t0", TestReductions::testThreadSchuler, a, b, result)
+		            .streamOut(result)
+		            .execute();
+		        //@formatter:on
+
+		int[] sequential = new int[SIZE * 2];
+
+		testThreadSchuler(a, b, sequential);
+
+		assertEquals(sequential[0], result[0], 0.001f);
+	}
+
 }
