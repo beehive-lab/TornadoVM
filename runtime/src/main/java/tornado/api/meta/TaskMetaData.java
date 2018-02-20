@@ -146,6 +146,10 @@ public class TaskMetaData extends AbstractMetaData {
         localWorkDefined = true;
         schedule = !(globalWorkDefined && localWorkDefined);
     }
+    
+    public void setLocalWorkToNull() {
+    	localWork = null;
+    }
 
     public void setSchedule(boolean value) {
         schedule = value;
@@ -363,7 +367,7 @@ public class TaskMetaData extends AbstractMetaData {
         System.out.printf("\tdims              : %d\n", domain.getDepth());
         System.out.printf("\tglobal work offset: %s\n", formatArray(globalOffset));
         System.out.printf("\tglobal work size  : %s\n", formatArray(globalWork));
-        System.out.printf("\tlocal  work size  : %s\n", formatArray(localWork));
+        System.out.printf("\tlocal  work size  : %s\n", localWork == null? "null":formatArray(localWork));
     }
 
     public void setCoarseness(int index, int value) {

@@ -53,12 +53,14 @@ public class OCLCpuScheduler extends OCLKernelScheduler {
 
     @Override
     public void calculateLocalWork(final TaskMetaData meta) {
-        final long[] globalWork = meta.getGlobalWork();
         final long[] localWork = meta.getLocalWork();
+        
+        meta.setLocalWorkToNull();
 
-        for (int i = 0; i < globalWork.length; i++) {
-            localWork[i] = 1;
-        }
+        // Why this to 1? 
+        //for (int i = 0; i < globalWork.length; i++) {
+        //    localWork[i] = 1;
+        //}
     }
 
 }
