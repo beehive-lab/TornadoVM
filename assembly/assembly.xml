@@ -25,7 +25,6 @@
             <includes>
                 <include>*.sh</include>
                 <include>*.py</include>
-                <include>javac</include>
                 <include>tornado*</include>
             </includes>
             <lineEnding>unix</lineEnding>
@@ -46,6 +45,7 @@
             <outputDirectory>share/tornado/docs</outputDirectory>
             <includes>
                 <include>*.pdf</include>
+                <include>*.md</include>
             </includes>
             <fileMode>0444</fileMode>
         </fileSet>
