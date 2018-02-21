@@ -1,7 +1,7 @@
 # Examples in Tornado
 
 
-1. Run a simple example within Tornado
+## 1. Run a simple example within Tornado: Vector Addition
 
 
 Here a full example with Tornado. This will compile the `vectorAddDouble` method to OpenCL and execute the resulting code
@@ -70,9 +70,90 @@ $ tornado --printKernel TestArrays
 ```
 
 
+## 2. Vector Addition using Vector Types
+
+Tornado API exposes a set of data structures to developers to use specific vector operations such as addition, multiplication, etc. The simple algorithm of vector addition can be rewritten to use Tornado vector types. The Tornado JIT compiler will generate OpenCL vector types that match the Tornado vector types.
+
+The following snippet shows the vector addition example using Tornado vector types.
+
+
+```java
+public static void addVectorFloat4(VectorFloat4 a, VectorFloat4 b, VectorFloat4 results) {
+  for (@Parallel int i = 0; i < a.getLength(); i++) {
+    results.set(i, Float4.add(a.get(i), b.get(i)));
+  }
+}
+```
+
+The type `VectorFloat4` is collection in Tornado that contains a list of `Float4` element types. Then Tornado compiles this code to OpenCL, it will use the OpenCL type `float4`.
+Note that `Float4` provides a static method called `add`. 
+These are intrinsics to the compiler. 
+
+
+Tornado exposes `Float2`, `Float3`, `Float4`, `Float6` and `Float8` vector types.
+Vector operations are also exposed for int and double (e.g `Double8`, `Int4`).
+
+The following code shows a snippet of the generated OpenCL C code using the vector types. It loads the data from global memory to local memory for the two input arrays. Then it performs the addition and finally it stores the result in the new position in global memory.
+
+```java
+v4f_18 = vload4(0, (__global float *) ul_17);  // <- float4 load
+ul_19  =  ul_1 + 24L;
+ul_20  =  *((__global ulong *) ul_19);
+ul_21  =  ul_20 + l_16;
+v4f_22  =  vload4(0, (__global float *) ul_21);
+ul_23  =  ul_2 + 24L;
+ul_24  =  *((__global ulong *) ul_23);
+ul_25  =  ul_24 + l_16;
+f_26  =  v4f_18.s0 + v4f_22.s0;                // <- float4 computation
+f_27  =  v4f_18.s1 + v4f_22.s1;
+f_28  =  v4f_18.s2 + v4f_22.s2;
+f_29  =  v4f_18.s3 + v4f_22.s3;
+v4f_30  =  (float4)(f_26, f_27, f_28, f_29);   
+vstore4(v4f_30, 0, (__global float *) ul_25);  // <- float4 store
+```
 
 
 
+## 3. Mandelbrot
+
+Tornado allows nested `@Parallel` loops as follows:
+
+```java
+private static void mandelbrotTornado(int size, short[] output) {
+    final int iterations = 10000;
+    float space = 2.0f / size;
+
+    for (@Parallel int i = 0; i < size; i++) {
+        for (@Parallel int j = 0; j < size; j++) {
+            float Zr = 0.0f;
+            float Zi = 0.0f;
+            float Cr = (1 * j * space - 1.5f);
+            float Ci = (1 * i * space - 1.0f);
+
+            float ZrN = 0;
+            float ZiN = 0;
+            int y = 0;
+
+            for (y = 0; y < iterations; y++) {
+                float s = ZiN + ZrN;
+                if (s > 4.0f) {
+                    break;
+                } else {
+                Zi = 2.0f * Zr * Zi + Ci;
+                Zr = 1 * ZrN - ZiN + Cr;
+                ZiN = Zi * Zi;
+                ZrN = Zr * Zr;
+                
+                }
+                
+            }
+            short r = (short) ((y * 255) / iterations);
+            output[i * size + j] = r;
+        }
+    }
+}
+
+```
 
 
 

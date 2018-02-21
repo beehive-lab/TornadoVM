@@ -65,4 +65,17 @@ where options include:
 ...
 ```
 
+4. Testing 
+
+
+Tornado provides a sets of unittests. You can run them using as follows:
+
+
+```bash
+tornado-test.py -V
+```
+
+Note: not all of them are passing, but most of them. Currently 4 are not working. 
+
+
 
