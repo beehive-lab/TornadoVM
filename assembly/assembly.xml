@@ -49,6 +49,12 @@
             </includes>
             <fileMode>0444</fileMode>
         </fileSet>
+        <fileSet>
+            <directory>../unittests</directory>
+            <outputDirectory>examples</outputDirectory>
+            <fileMode>0444</fileMode>
+        </fileSet>
+ 
     </fileSets>
     <moduleSets>
         <moduleSet>
