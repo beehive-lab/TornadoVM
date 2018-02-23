@@ -3,7 +3,9 @@
 
 ### Prerequisites
 
-* [Java 8 with JVM Support](https://www.dropbox.com/s/nvtpsviqc6u8vnv/jdk1.8.0_131_x86.tgz?dl=0)
+* Java 8 with JVM Support:
+  * [For Linux x64_64](https://www.dropbox.com/s/nvtpsviqc6u8vnv/jdk1.8.0_131_x86.tgz?dl=0)
+  * [For OSx](https://www.dropbox.com/s/2aguj98jg5b5yh4/jdk1.8.0_131-osx-10.11.6.tgxz?dl=0)
 * OpenCL >= 1.2
 
 
