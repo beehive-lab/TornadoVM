@@ -44,7 +44,7 @@
             <directory>src/docs</directory>
             <outputDirectory>share/tornado/docs</outputDirectory>
             <includes>
-                <include>*.pdf</include>
+                <!-- <include>*.pdf</include> -->
                 <include>*.md</include>
             </includes>
             <fileMode>0444</fileMode>
