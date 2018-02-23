@@ -43,7 +43,7 @@ and done!
 
 
 
-3. Check 
+3. Check Installation 
 
 ```bash
 $ tornado
@@ -65,7 +65,7 @@ where options include:
 ...
 ```
 
-4. Testing 
+4. Testing (optional) 
 
 
 Tornado provides a sets of unittests. You can run them using as follows:
