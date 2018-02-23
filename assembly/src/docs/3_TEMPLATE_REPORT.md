@@ -11,7 +11,8 @@ It could be also missing features Tornado will need for E2Data.
 The test-case is a steck of Java code that can shows the error and can easely be integrated
 in our Tornado unittesting system. 
 
-*Generated code:* Using `tornado --printKernel <YourClass>` will print the generated OpenCL Kernel.
+*Generated code:* Using `tornado --printKernel --debug <YourClass>` will print the generated OpenCL Kernel 
+and internal debug information in Tornado, such as device info and number of threads.
 
 ---------------------------
 
