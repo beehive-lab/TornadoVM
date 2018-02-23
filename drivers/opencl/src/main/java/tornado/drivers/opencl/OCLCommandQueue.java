@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
- * Copyright (c) 2013-2017 APT Group, School of Computer Science,
+ * Copyright (c) 2013-2018 APT Group, School of Computer Science,
  * The University of Manchester
  *
  * This work is partially supported by EPSRC grants:
