@@ -42,7 +42,7 @@
         </fileSet>
         <fileSet>
             <directory>src/docs</directory>
-            <outputDirectory>share/tornado/docs</outputDirectory>
+            <outputDirectory>docs</outputDirectory>
             <includes>
                 <!-- <include>*.pdf</include> -->
                 <include>*.md</include>
