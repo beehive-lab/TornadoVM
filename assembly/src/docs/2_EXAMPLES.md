@@ -177,4 +177,104 @@ private static void mandelbrotTornado(int size, short[] output) {
 ```
 
 
+## 4. Parallel Breadth-First Search (BFS) within Tornado
+
+The following code shows the core method for the parallel BFS using Torando. 
+Note that the only two annotations needed are the loops to indicate 2D kernel on the GPU. 
+
+This algorithm receives an input adjacency matrix and and array with the current depth (depth per level in a graph)
+and updates the depth of the current node. 
+This is also an interative algorithm that should keep computing till the variable `h_true` does not change. 
+
+
+```java
+private static void runBFS(int[] vertices, int[] adjacencyMatrix, int numNodes, int[] h_true, int[] currentDepth) {
+
+  for (@Parallel int from = 0; from < numNodes; from++) {
+
+      for (@Parallel int to = 0; to < numNodes; to++) {
+          int elementAccess = from * numNodes + to;
+
+          if (adjacencyMatrix[elementAccess] == 1) {
+              int dfirst = vertices[from];
+              int dsecond = vertices[to];
+              if ((currentDepth[0] == dfirst) && (dsecond == -1)) {
+                  vertices[to] = dfirst + 1;
+                  h_true[0] = 0;
+              }
+              
+              if (BIDIRECTIONAL) {
+              	if ((currentDepth[0] == dsecond) && (dfirst == -1)) {
+              		vertices[from] = dsecond + 1;
+              		h_true[0] = 0;
+              	}
+              }
+          }
+      }
+  }
+}
+
+```
+
+The following Java snippet shows the data preparation, task definition and invokation with Tornado.
+
+
+```java
+   public void tornadoBFS(int rootNode, int numNodes) throws IOException {
+        
+        vertices = new int[numNodes];
+        adjacencyMatrix = new int[numNodes * numNodes];
+
+        if (SAMPLE) {
+            initilizeAdjacencyMatrixSimpleGraph(adjacencyMatrix, numNodes);
+        } else {
+            generateRandomGraph(adjacencyMatrix, numNodes, rootNode);
+        }
+
+        // Step 1: vertices initialisation
+        initializeVertices(numNodes, vertices, rootNode);
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", BFS::initializeVertices, numNodes, vertices, rootNode);
+        s0.streamOut(vertices).execute();
+        
+        modify = new int[] { 1 };
+        Arrays.fill(modify, 1);
+        
+        currentDepth = new int[] { 0 };
+        
+        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+        TaskSchedule s1 = new TaskSchedule("s1");
+        s1.streamIn(vertices, adjacencyMatrix, modify,currentDepth).mapAllTo(device);
+        s1.task("t1", BFS::runBFS, vertices, adjacencyMatrix, numNodes, modify, currentDepth);
+        s1.streamOut(vertices, modify);
+        
+        boolean done = false;
+        
+        while (!done) {
+            // 2. Parallel BFS
+            boolean allDone = true;
+            System.out.println("Current Depth: " + currentDepth[0]);
+            //runBFS(vertices, adjacencyMatrix, numNodes, modify, currentDepth);
+            s1.execute();
+            currentDepth[0]++;
+            for(int i = 0; i < modify.length; i++) {
+                if (modify[i] == 0) {
+                    allDone &= false;
+                    break;
+                }
+            }
+
+            if (allDone) {
+                done = true;
+            }
+            Arrays.fill(modify, 1);
+        }
+        
+        if (PRINT_SOLUTION) {
+        	System.out.println("Solution: " + Arrays.toString(vertices));
+        }
+    }
+```
+ 
+
 
