@@ -12,11 +12,11 @@
 ### Configuration
 
 
-<br>Obtain the Tornado SDK for:</br>
+__Obtain the Tornado SDK for:__
 * [For Linux x64_64](https://drive.google.com/file/d/10MjvCC3VmOecGtD1lwKd7Sp8HAV_i5AB/view?usp=sharing)
 * [For OSX](https://drive.google.com/file/d/1OV23CJqrYk64an-7gdIK7Uoh2ssJB-dp/view?usp=sharing)
 
-Set up the Tornado working directory:
+__Set up the Tornado working directory:__
 
 ```bash
 $ mkdir <your_work_dir>
@@ -26,7 +26,7 @@ $ tar xvzf tornado-sdk-<linux|osx>.tar.gz
 $ cd tornado-sdk-0.0.2-SNAPSHOT-*
 ```
 
-We need to set the following 3 env variables (JAVA_HOME, PATH, TORNADO_SDK). 
+__We need to set the following 3 env variables (JAVA_HOME, PATH, TORNADO_SDK):__
 
 1. Set `JAVA_HOME` to JDK
 
@@ -48,9 +48,7 @@ Note, the ID is the git-version in Tornado.
 
 and done!
 
-
-
-Check Installation 
+# Check Installation 
 
 ```bash
 $ tornado
