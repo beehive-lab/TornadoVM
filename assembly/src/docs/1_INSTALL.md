@@ -70,7 +70,7 @@ where options include:
 ...
 ```
 
-4. Testing (optional) 
+__Testing__
 
 
 Tornado provides a sets of unittests. You can run them using as follows:
@@ -80,7 +80,7 @@ Tornado provides a sets of unittests. You can run them using as follows:
 tornado-test.py -V
 ```
 
-Note: not all of them are passing, but most of them. Currently 4 are not working. 
+Note: Not all of them are currently passing; expect around 4 or 5 to fail. 
 
 
 
