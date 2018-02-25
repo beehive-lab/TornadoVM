@@ -24,7 +24,7 @@ Tornado `tasks` can not execute directly; instead they must be part of a `TaskSc
 This is a design choice allowing a number of optimizations, such as task pipelining and parallelism, to be performed.
 Furthermore, `TaskSchedules` define which parameters are copied in and out from the device.
 
-Once the method `execute` is invoked, Tornado builds the data dependency graph, the Tornado bytecode, compiles the referrenced Java method to OpenCL C, and executes the generated application on the available OpenCL device.
+Once the method `execute` is invoked, Tornado builds the data dependency graph, the Tornado bytecode, compiles the referenced Java method to OpenCL C, and executes the generated application on the available OpenCL device.
 
 
 
@@ -75,7 +75,7 @@ public class TestArrays {
 
 ## 2. Compiling and Running with Tornado SDK
 
-To compile with Tornado SDK, there is an utility command that sets all the `CLASSPATHs` to use Tornado.
+To compile with Tornado SDK, there is a utility command that sets all the `CLASSPATHs` to use Tornado.
 Alternatively, you can use the standard JDK 1.8 and define all jars in `share/java/tornado` into your `CLASSPATHs`.
 
 
@@ -91,9 +91,10 @@ $ tornado --printKernel TestArrays
 ```
 
 
-## 2. Vector Addition using Vector Types
+## 3. Vector Addition using Vector Types
 
-Tornado API exposes a set of data structures to developers to use specific vector operations such as addition, multiplication, etc. The simple algorithm of vector addition can be rewritten to use Tornado vector types. The Tornado JIT compiler will generate OpenCL vector types that match the Tornado vector types.
+Tornado API exposes a set of data structures to developers to use specific vector operations such as addition, multiplication, etc. 
+The simple algorithm of vector addition can be rewritten to use Tornado vector types. The Tornado JIT compiler will generate OpenCL vector types that match the Tornado vector types.
 
 The following snippet shows the vector addition example using Tornado vector types.
 
@@ -106,7 +107,8 @@ public static void addVectorFloat4(VectorFloat4 a, VectorFloat4 b, VectorFloat4 
 }
 ```
 
-The type `VectorFloat4` is collection in Tornado that contains a list of `Float4` element types. Then Tornado compiles this code to OpenCL, it will use the OpenCL type `float4`.
+The type `VectorFloat4` is collection, in Tornado, that contains a list of `Float4` element types. 
+When Tornado compiles this code to OpenCL, it will use the OpenCL type `float4`.
 Note that `Float4` provides a static method called `add`. 
 These are intrinsics to the compiler. 
 
@@ -116,7 +118,9 @@ Vector operations are also exposed for int and double (e.g `Double8`, `Int4`).
 More examples using vector types are provided in the `examples` directory.
 
 
-The following code shows a snippet of the generated OpenCL C code using the vector types. It loads the data from global memory to local memory for the two input arrays. Then it performs the addition and finally it stores the result in the new position in global memory.
+The following code shows a snippet of the generated OpenCL C code using the vector types. 
+First, it loads the data from global memory to local memory for the two input arrays. 
+Then it performs the addition and finally it stores the result in the new position in global memory.
 
 ```c
 v4f_18 = vload4(0, (__global float *) ul_17);  // <- float4 load
@@ -137,7 +141,7 @@ vstore4(v4f_30, 0, (__global float *) ul_25);  // <- float4 store
 
 
 
-## 3. Mandelbrot
+## 4. Mandelbrot
 
 Tornado allows nested `@Parallel` loops as follows:
 
@@ -180,14 +184,14 @@ private static void mandelbrotTornado(int size, short[] output) {
 ```
 
 
-## 4. Parallel Breadth-First Search (BFS) within Tornado
+## 5. Parallel Breadth-First Search (BFS) within Tornado
 
-The following code shows the core method for the parallel BFS using Torando. 
-Note that the only two annotations needed are the loops to indicate 2D kernel on the GPU. 
+The following code shows the core method for the parallel BFS using Tornado. 
+Note that the only two annotations needed are in the loops to indicate 2D kernel on the GPU. 
 
-This algorithm receives an input adjacency matrix and and array with the current depth (depth per level in a graph)
+This algorithm receives an input adjacency matrix and an array with the current depth (depth per level in a graph)
 and updates the depth of the current node. 
-This is also an interative algorithm that should keep computing till the variable `h_true` does not change. 
+This is also an iterative algorithm that will keep computing till the variable `h_true` does not change. 
 
 
 ```java
@@ -219,7 +223,7 @@ private static void runBFS(int[] vertices, int[] adjacencyMatrix, int numNodes, 
 
 ```
 
-The following Java snippet shows the data preparation, task definition and invokation with Tornado.
+The following Java snippet shows the data preparation, task definition, and invocation in Tornado.
 
 
 ```java
