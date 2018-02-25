@@ -12,7 +12,9 @@
 ### Configuration
 
 
-Obtain the Tornado SDK.
+Obtain the Tornado SDK for:
+* [For Linux x64_64](https://drive.google.com/file/d/10MjvCC3VmOecGtD1lwKd7Sp8HAV_i5AB/view?usp=sharing)
+* [For OSX](https://drive.google.com/file/d/1OV23CJqrYk64an-7gdIK7Uoh2ssJB-dp/view?usp=sharing)
 
 
 ```bash
