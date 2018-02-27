@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import java.nio.ByteBuffer;
 import java.util.List;

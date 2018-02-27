@@ -25,12 +25,12 @@
  */
 package uk.ac.manchester.tornado.examples.arrays;
 
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import java.util.Arrays;
 
-import tornado.runtime.TornadoDriver;
 import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.runtime.TornadoDriver;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class MigratingArrayAccInt {

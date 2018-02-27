@@ -31,7 +31,7 @@ import static uk.ac.manchester.tornado.common.Tornado.error;
 import static uk.ac.manchester.tornado.common.Tornado.info;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import java.io.File;
 import java.io.IOException;

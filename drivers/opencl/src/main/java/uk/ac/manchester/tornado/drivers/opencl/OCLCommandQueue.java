@@ -41,10 +41,10 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 
-import tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.api.Event;
 import uk.ac.manchester.tornado.common.TornadoLogger;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
+import uk.ac.manchester.tornado.runtime.EmptyEvent;
 
 public class OCLCommandQueue extends TornadoLogger {
 

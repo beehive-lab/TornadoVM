@@ -26,15 +26,15 @@ package uk.ac.manchester.tornado.unittests.virtualization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.common.Tornado.setProperty;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import java.util.Arrays;
 
 import org.junit.Test;
 
-import tornado.runtime.TornadoDriver;
 import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.runtime.TornadoDriver;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class TestsVirtualLayer {

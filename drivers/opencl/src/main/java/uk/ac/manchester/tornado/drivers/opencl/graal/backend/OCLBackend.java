@@ -31,7 +31,7 @@ import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.gu
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;

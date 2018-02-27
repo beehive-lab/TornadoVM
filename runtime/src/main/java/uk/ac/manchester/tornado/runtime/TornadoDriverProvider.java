@@ -23,7 +23,7 @@
  * Authors: James Clarkson
  *
  */
-package tornado.runtime;
+package uk.ac.manchester.tornado.runtime;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import org.graalvm.compiler.options.OptionValues;

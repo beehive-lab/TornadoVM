@@ -25,10 +25,10 @@
  */
 package uk.ac.manchester.tornado.api.meta;
 
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
-import tornado.runtime.TornadoDriver;
 import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.TornadoDriver;
 
 public final class MetaDataUtils {
 

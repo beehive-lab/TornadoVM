@@ -30,13 +30,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
-import tornado.runtime.EventSet;
 import uk.ac.manchester.tornado.api.Read;
 import uk.ac.manchester.tornado.api.ReadWrite;
 import uk.ac.manchester.tornado.api.Write;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.meta.domain.DomainTree;
+import uk.ac.manchester.tornado.runtime.EventSet;
 
 import static uk.ac.manchester.tornado.common.Tornado.EVENT_WINDOW;
 import static uk.ac.manchester.tornado.common.Tornado.getProperty;

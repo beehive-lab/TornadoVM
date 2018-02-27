@@ -41,7 +41,6 @@ import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.runtime.JVMCIBackend;
-import tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
@@ -56,6 +55,7 @@ import uk.ac.manchester.tornado.graal.compiler.TornadoConstantFieldProvider;
 import uk.ac.manchester.tornado.graal.compiler.TornadoForeignCallsProvider;
 import uk.ac.manchester.tornado.graal.compiler.TornadoReplacements;
 import uk.ac.manchester.tornado.graal.compiler.TornadoSnippetReflectionProvider;
+import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 
 public class OCLHotSpotBackendFactory {
 

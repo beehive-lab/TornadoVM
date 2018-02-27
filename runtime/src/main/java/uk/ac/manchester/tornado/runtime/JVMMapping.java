@@ -23,7 +23,7 @@
  * Authors: James Clarkson
  *
  */
-package tornado.runtime;
+package uk.ac.manchester.tornado.runtime;
 
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
 

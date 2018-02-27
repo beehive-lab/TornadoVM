@@ -29,7 +29,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.function.Consumer;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import tornado.runtime.TornadoVM;
 
 import org.graalvm.compiler.phases.util.Providers;
 
@@ -40,15 +39,16 @@ import uk.ac.manchester.tornado.common.DeviceObjectState;
 import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.graal.compiler.TornadoSuitesProvider;
+import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.graph.*;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
 
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.isBoxedPrimitiveClass;
 import static uk.ac.manchester.tornado.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.common.Tornado.warn;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public abstract class AbstractTaskGraph {
 

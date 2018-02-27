@@ -29,10 +29,10 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import tornado.runtime.TornadoDriver;
+import uk.ac.manchester.tornado.runtime.TornadoDriver;
 
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.common.Tornado.*;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public abstract class BenchmarkRunner {
 

@@ -51,11 +51,11 @@ import uk.ac.manchester.tornado.graal.compiler.TornadoSketchTier;
 import uk.ac.manchester.tornado.graal.phases.TornadoSketchTierContext;
 
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
-import static tornado.runtime.TornadoRuntime.getTornadoExecutor;
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.common.Tornado.info;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoExecutor;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public class TornadoSketcher {
 

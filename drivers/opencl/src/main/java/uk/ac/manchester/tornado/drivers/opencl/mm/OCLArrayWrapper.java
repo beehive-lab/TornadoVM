@@ -31,7 +31,7 @@ import static uk.ac.manchester.tornado.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.common.Tornado.info;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.runtime.TornadoRuntime.getVMConfig;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getVMConfig;
 
 import java.lang.reflect.Array;
 

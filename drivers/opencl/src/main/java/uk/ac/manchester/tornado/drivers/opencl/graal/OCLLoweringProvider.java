@@ -76,7 +76,6 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNode;
@@ -86,6 +85,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVec
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
 import uk.ac.manchester.tornado.graal.nodes.TornadoDirectCallTargetNode;
+import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 

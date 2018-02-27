@@ -25,12 +25,12 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
-import tornado.runtime.TornadoDriver;
-import tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.common.DeviceObjectState;
 import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.TornadoDriver;
+import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
 
 public class DataMovement {

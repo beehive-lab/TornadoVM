@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.*;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.STREAM_OUT;
 import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.STREAM_OUT_BLOCKING;
 

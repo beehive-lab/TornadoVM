@@ -23,7 +23,7 @@
  * Authors: James Clarkson
  *
  */
-package tornado.runtime;
+package uk.ac.manchester.tornado.runtime;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -38,12 +38,12 @@ import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
 
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
 import static uk.ac.manchester.tornado.common.Tornado.*;
 import static uk.ac.manchester.tornado.common.enums.Access.READ_WRITE;
 import static uk.ac.manchester.tornado.common.enums.Access.WRITE;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.*;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.*;
 
 public class TornadoVM extends TornadoLogger {

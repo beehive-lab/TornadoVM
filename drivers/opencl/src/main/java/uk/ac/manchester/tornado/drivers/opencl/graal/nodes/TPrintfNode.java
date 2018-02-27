@@ -35,8 +35,8 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLTPrintf;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.ExprStmt;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLTPrintf;
 
 @NodeInfo(shortName = "tprintf")
 public class TPrintfNode extends FixedWithNextNode implements LIRLowerable {

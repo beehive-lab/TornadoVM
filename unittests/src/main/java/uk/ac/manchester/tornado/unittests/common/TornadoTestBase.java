@@ -24,11 +24,11 @@
 
 package uk.ac.manchester.tornado.unittests.common;
 
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import org.junit.Before;
 
-import tornado.runtime.TornadoDriver;
+import uk.ac.manchester.tornado.runtime.TornadoDriver;
 
 public abstract class TornadoTestBase {
 

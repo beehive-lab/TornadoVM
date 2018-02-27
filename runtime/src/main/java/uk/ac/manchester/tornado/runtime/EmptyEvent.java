@@ -23,7 +23,7 @@
  * Authors: James Clarkson
  *
  */
-package tornado.runtime;
+package uk.ac.manchester.tornado.runtime;
 
 import uk.ac.manchester.tornado.api.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;

@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.examples.memory;
 
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import java.util.Arrays;
 
