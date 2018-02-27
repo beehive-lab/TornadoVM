@@ -23,7 +23,7 @@
  * Authors: Juan Fumero
  *
  */
-package tornado.unittests.tools;
+package uk.ac.manchester.tornado.unittests.tools;
 
 /**
  * Link:

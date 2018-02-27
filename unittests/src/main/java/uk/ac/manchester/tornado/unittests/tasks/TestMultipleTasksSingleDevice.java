@@ -21,7 +21,7 @@
  * limitations under the License.
  *
  */
-package tornado.unittests.tasks;
+package uk.ac.manchester.tornado.unittests.tasks;
 
 import static org.junit.Assert.assertEquals;
 

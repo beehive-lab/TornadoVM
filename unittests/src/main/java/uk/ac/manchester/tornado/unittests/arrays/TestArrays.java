@@ -22,7 +22,7 @@
  *
  */
 
-package tornado.unittests.arrays;
+package uk.ac.manchester.tornado.unittests.arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -34,7 +34,7 @@ import org.junit.Test;
 
 import tornado.api.Parallel;
 import tornado.runtime.api.TaskSchedule;
-import tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestArrays extends TornadoTestBase {
 

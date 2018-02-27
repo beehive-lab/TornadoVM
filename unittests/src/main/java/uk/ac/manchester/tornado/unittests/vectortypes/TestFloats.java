@@ -21,7 +21,7 @@
  * limitations under the License.
  *
  */
-package tornado.unittests.vectortypes;
+package uk.ac.manchester.tornado.unittests.vectortypes;
 
 import static org.junit.Assert.assertEquals;
 
@@ -40,7 +40,7 @@ import tornado.collections.types.VectorFloat;
 import tornado.collections.types.VectorFloat3;
 import tornado.collections.types.VectorFloat4;
 import tornado.runtime.api.TaskSchedule;
-import tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestFloats extends TornadoTestBase {
 

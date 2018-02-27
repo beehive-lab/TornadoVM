@@ -23,7 +23,7 @@
  * Authors: Michalis Papadimitriou
  *
  */
-package tornado.unittests.loops;
+package uk.ac.manchester.tornado.unittests.loops;
 
 import static org.junit.Assert.assertEquals;
 
@@ -34,7 +34,7 @@ import org.junit.Test;
 
 import tornado.api.Parallel;
 import tornado.runtime.api.TaskSchedule;
-import tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestLoops extends TornadoTestBase {
 

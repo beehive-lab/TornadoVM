@@ -21,7 +21,7 @@
  * limitations under the License.
  *
  */
-package tornado.unittests.vectortypes;
+package uk.ac.manchester.tornado.unittests.vectortypes;
 
 import static org.junit.Assert.assertEquals;
 
@@ -36,7 +36,7 @@ import tornado.collections.types.Double4;
 import tornado.collections.types.Double8;
 import tornado.collections.types.VectorDouble;
 import tornado.runtime.api.TaskSchedule;
-import tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestDoubles extends TornadoTestBase {
 

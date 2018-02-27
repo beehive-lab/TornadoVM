@@ -22,7 +22,7 @@
  *
  */
 
-package tornado.unittests.common;
+package uk.ac.manchester.tornado.unittests.common;
 
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 

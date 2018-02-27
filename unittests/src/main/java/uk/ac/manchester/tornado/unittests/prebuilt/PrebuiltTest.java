@@ -22,7 +22,7 @@
  *
  */
 
-package tornado.unittests.prebuilt;
+package uk.ac.manchester.tornado.unittests.prebuilt;
 
 import static org.junit.Assert.assertEquals;
 

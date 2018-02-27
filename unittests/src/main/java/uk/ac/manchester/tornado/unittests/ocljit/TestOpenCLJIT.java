@@ -21,7 +21,7 @@
  * limitations under the License.
  *
  */
-package tornado.unittests.ocljit;
+package uk.ac.manchester.tornado.unittests.ocljit;
 
 import static org.junit.Assert.assertNotNull;
 

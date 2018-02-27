@@ -24,7 +24,7 @@
  *
  */
 
-package tornado.unittests.slam.graphics;
+package uk.ac.manchester.tornado.unittests.slam.graphics;
 
 import static org.junit.Assert.assertEquals;
 import static tornado.collections.graphics.GraphicsMath.rigidTransform;
@@ -72,7 +72,7 @@ import tornado.collections.types.VectorFloat4;
 import tornado.collections.types.VolumeOps;
 import tornado.collections.types.VolumeShort2;
 import tornado.runtime.api.TaskSchedule;
-import tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class GraphicsTests extends TornadoTestBase {
 

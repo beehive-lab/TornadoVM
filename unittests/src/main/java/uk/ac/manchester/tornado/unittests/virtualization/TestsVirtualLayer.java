@@ -21,7 +21,7 @@
  * limitations under the License.
  *
  */
-package tornado.unittests.virtualization;
+package uk.ac.manchester.tornado.unittests.virtualization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

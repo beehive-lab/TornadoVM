@@ -24,7 +24,7 @@
  *
  */
 
-package tornado.unittests;
+package uk.ac.manchester.tornado.unittests;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -37,7 +37,7 @@ import org.junit.Test;
 import tornado.api.Parallel;
 import tornado.lang.Debug;
 import tornado.runtime.api.TaskSchedule;
-import tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestHello extends TornadoTestBase {
 

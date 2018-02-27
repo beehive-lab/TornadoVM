@@ -22,7 +22,7 @@
  *
  */
 
-package tornado.unittests.images;
+package uk.ac.manchester.tornado.unittests.images;
 
 import static org.junit.Assert.assertEquals;
 
@@ -41,7 +41,7 @@ import tornado.collections.types.ImageFloat3;
 import tornado.collections.types.ImageFloat4;
 import tornado.collections.types.ImageFloat8;
 import tornado.runtime.api.TaskSchedule;
-import tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
  * Test for {@link ImageFloat} and {@link ImageByte3} data structures in

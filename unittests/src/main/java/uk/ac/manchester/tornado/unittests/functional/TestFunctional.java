@@ -22,7 +22,7 @@
  *
  *
  */
-package tornado.unittests.functional;
+package uk.ac.manchester.tornado.unittests.functional;
 
 import static org.junit.Assert.assertEquals;
 

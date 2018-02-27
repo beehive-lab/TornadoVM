@@ -22,7 +22,7 @@
  *
  */
 
-package tornado.unittests.images;
+package uk.ac.manchester.tornado.unittests.images;
 
 import static org.junit.Assert.assertEquals;
 import static tornado.collections.math.TornadoMath.clamp;
@@ -36,7 +36,7 @@ import tornado.api.Parallel;
 import tornado.collections.math.TornadoMath;
 import tornado.collections.types.ImageFloat;
 import tornado.runtime.api.TaskSchedule;
-import tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestResizeImage extends TornadoTestBase {
 
