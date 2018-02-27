@@ -26,11 +26,11 @@
 package tornado.drivers.opencl;
 
 import static tornado.drivers.opencl.OpenCL.DUMP_OPENCL_EVENTS;
-import static tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
-import static tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
 import static uk.ac.manchester.tornado.common.Tornado.DEBUG;
 import static uk.ac.manchester.tornado.common.Tornado.ENABLE_OOO_EXECUTION;
 import static uk.ac.manchester.tornado.common.Tornado.ENABLE_PROFILING;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -38,11 +38,11 @@ import java.util.Arrays;
 import java.util.List;
 
 import sun.misc.Unsafe;
-import tornado.drivers.opencl.enums.OCLBufferCreateType;
-import tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.common.TornadoLogger;
 import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBufferCreateType;
+import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 
 @SuppressWarnings("restriction")
 public class OCLContext extends TornadoLogger {

@@ -25,12 +25,12 @@
  */
 package tornado.drivers.opencl;
 
-import static tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_UNKNOWN;
-import static tornado.drivers.opencl.enums.OCLProgramBuildInfo.CL_PROGRAM_BUILD_LOG;
-import static tornado.drivers.opencl.enums.OCLProgramBuildInfo.CL_PROGRAM_BUILD_STATUS;
-import static tornado.drivers.opencl.enums.OCLProgramInfo.CL_PROGRAM_BINARY_SIZES;
-import static tornado.drivers.opencl.enums.OCLProgramInfo.CL_PROGRAM_DEVICES;
-import static tornado.drivers.opencl.enums.OCLProgramInfo.CL_PROGRAM_NUM_DEVICES;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_UNKNOWN;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProgramBuildInfo.CL_PROGRAM_BUILD_LOG;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProgramBuildInfo.CL_PROGRAM_BUILD_STATUS;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProgramInfo.CL_PROGRAM_BINARY_SIZES;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProgramInfo.CL_PROGRAM_DEVICES;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProgramInfo.CL_PROGRAM_NUM_DEVICES;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -40,9 +40,9 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 
-import tornado.drivers.opencl.enums.OCLBuildStatus;
-import tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.common.TornadoLogger;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
+import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 
 public class OCLProgram extends TornadoLogger {
 

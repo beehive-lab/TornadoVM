@@ -32,8 +32,8 @@ import org.graalvm.compiler.core.common.LIRKind;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
-import tornado.drivers.opencl.graal.OCLArchitecture;
-import tornado.drivers.opencl.graal.lir.OCLKind;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 
 public class OCLTargetDescription extends TargetDescription {
 

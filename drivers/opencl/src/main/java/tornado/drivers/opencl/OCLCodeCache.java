@@ -25,7 +25,6 @@
  */
 package tornado.drivers.opencl;
 
-import static tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
 import static uk.ac.manchester.tornado.common.Tornado.PRINT_COMPILE_TIMES;
 import static uk.ac.manchester.tornado.common.Tornado.debug;
 import static uk.ac.manchester.tornado.common.Tornado.error;
@@ -33,6 +32,7 @@ import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.common.Tornado.info;
 import static uk.ac.manchester.tornado.common.Tornado.warn;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -44,10 +44,10 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
-import tornado.drivers.opencl.enums.OCLBuildStatus;
-import tornado.drivers.opencl.exceptions.OCLException;
-import tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
+import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 
 public class OCLCodeCache {
 

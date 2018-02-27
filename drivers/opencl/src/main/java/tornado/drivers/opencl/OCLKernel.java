@@ -31,9 +31,9 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import tornado.drivers.opencl.enums.OCLKernelInfo;
-import tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.common.TornadoLogger;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLKernelInfo;
+import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 
 public class OCLKernel extends TornadoLogger {
 

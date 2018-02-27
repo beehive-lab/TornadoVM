@@ -33,15 +33,15 @@ import org.junit.Test;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.drivers.opencl.OCLDriver;
 import tornado.drivers.opencl.OpenCL;
-import tornado.drivers.opencl.graal.OCLInstalledCode;
-import tornado.drivers.opencl.graal.OCLProviders;
-import tornado.drivers.opencl.graal.backend.OCLBackend;
-import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
-import tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
+import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
+import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
+import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 
 /**
  * Test the OpenCL JIT Compiler and connection with the Tornado Runtime

@@ -30,8 +30,8 @@ import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import java.util.Arrays;
 
 import tornado.drivers.opencl.OpenCL;
-import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.common.DeviceObjectState;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
 
 public class DataMovementTest {

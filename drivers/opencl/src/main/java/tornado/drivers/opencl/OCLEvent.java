@@ -26,23 +26,23 @@
 package tornado.drivers.opencl;
 
 import static tornado.drivers.opencl.OCLCommandQueue.EVENT_DESCRIPTIONS;
-import static tornado.drivers.opencl.enums.OCLCommandExecutionStatus.CL_COMPLETE;
-import static tornado.drivers.opencl.enums.OCLCommandExecutionStatus.toEnum;
-import static tornado.drivers.opencl.enums.OCLEventInfo.CL_EVENT_COMMAND_EXECUTION_STATUS;
-import static tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_END;
-import static tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_QUEUED;
-import static tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_START;
-import static tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_SUBMIT;
 import static uk.ac.manchester.tornado.common.Tornado.ENABLE_PROFILING;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus.CL_COMPLETE;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus.toEnum;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLEventInfo.CL_EVENT_COMMAND_EXECUTION_STATUS;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_END;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_QUEUED;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_START;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_SUBMIT;
 
 import java.nio.ByteBuffer;
 
-import tornado.drivers.opencl.enums.OCLCommandExecutionStatus;
-import tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.api.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.common.TornadoLogger;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus;
+import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 
 public class OCLEvent extends TornadoLogger implements Event {
 

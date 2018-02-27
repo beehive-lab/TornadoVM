@@ -34,11 +34,11 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-import tornado.drivers.opencl.enums.OCLDeviceInfo;
-import tornado.drivers.opencl.enums.OCLDeviceType;
-import tornado.drivers.opencl.enums.OCLLocalMemType;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.common.TornadoLogger;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceInfo;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLLocalMemType;
 
 public class OCLDevice extends TornadoLogger {
 

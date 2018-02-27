@@ -31,15 +31,15 @@ import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 import java.nio.ByteOrder;
 import java.util.List;
 
-import tornado.drivers.opencl.enums.OCLMemFlags;
-import tornado.drivers.opencl.graal.OCLInstalledCode;
-import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
-import tornado.drivers.opencl.mm.OCLMemoryManager;
-import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.api.Event;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.Initialisable;
 import uk.ac.manchester.tornado.common.TornadoLogger;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
+import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 public class OCLDeviceContext extends TornadoLogger implements Initialisable {
 

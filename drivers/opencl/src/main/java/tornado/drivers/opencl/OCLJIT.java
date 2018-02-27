@@ -30,13 +30,13 @@ import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import java.lang.reflect.Method;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import tornado.drivers.opencl.graal.OCLInstalledCode;
-import tornado.drivers.opencl.graal.OCLProviders;
-import tornado.drivers.opencl.graal.backend.OCLBackend;
-import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
-import tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
+import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
+import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
+import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 
 public class OCLJIT {
 

@@ -25,8 +25,6 @@
  */
 package tornado.drivers.opencl;
 
-import static tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_CONTEXT;
-import static tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_DEVICE;
 import static uk.ac.manchester.tornado.common.Tornado.ENABLE_OOO_EXECUTION;
 import static uk.ac.manchester.tornado.common.Tornado.EVENT_WINDOW;
 import static uk.ac.manchester.tornado.common.Tornado.FORCE_BLOCKING_API_CALLS;
@@ -34,6 +32,8 @@ import static uk.ac.manchester.tornado.common.Tornado.MARKER_USE_BARRIER;
 import static uk.ac.manchester.tornado.common.Tornado.MAX_WAIT_EVENTS;
 import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_CONTEXT;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_DEVICE;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -41,10 +41,10 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 
-import tornado.drivers.opencl.exceptions.OCLException;
 import tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.api.Event;
 import uk.ac.manchester.tornado.common.TornadoLogger;
+import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 
 public class OCLCommandQueue extends TornadoLogger {
 

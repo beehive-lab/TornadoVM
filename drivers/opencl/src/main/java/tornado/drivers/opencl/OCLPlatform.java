@@ -31,10 +31,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import tornado.drivers.opencl.enums.OCLDeviceType;
-import tornado.drivers.opencl.enums.OCLPlatformInfo;
-import tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.common.TornadoLogger;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLPlatformInfo;
+import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 
 public class OCLPlatform extends TornadoLogger {
 
