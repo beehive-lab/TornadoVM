@@ -32,8 +32,8 @@ Once the method `execute` is invoked, Tornado builds the data dependency graph, 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import tornado.api.Parallel;
-import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class TestArrays { 
 
