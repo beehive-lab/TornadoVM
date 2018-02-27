@@ -33,8 +33,8 @@ import tornado.runtime.api.TaskSchedule;
 
 import static tornado.benchmarks.stencil.Stencil.copy;
 import static tornado.benchmarks.stencil.Stencil.stencil3d;
-import static tornado.collections.math.TornadoMath.findULPDistance;
 import static tornado.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.collections.math.TornadoMath.findULPDistance;
 
 public class StencilTornado extends BenchmarkDriver {
 

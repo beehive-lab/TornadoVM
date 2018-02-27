@@ -30,12 +30,12 @@ import java.util.Random;
 import org.junit.Test;
 
 import tornado.api.Parallel;
-import tornado.collections.types.Double2;
-import tornado.collections.types.Double3;
-import tornado.collections.types.Double4;
-import tornado.collections.types.Double8;
-import tornado.collections.types.VectorDouble;
 import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.types.Double2;
+import uk.ac.manchester.tornado.collections.types.Double3;
+import uk.ac.manchester.tornado.collections.types.Double4;
+import uk.ac.manchester.tornado.collections.types.Double8;
+import uk.ac.manchester.tornado.collections.types.VectorDouble;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestDoubles extends TornadoTestBase {

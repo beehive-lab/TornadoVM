@@ -27,8 +27,8 @@ package tornado.benchmarks.convolvearray;
 
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
-import tornado.collections.types.FloatOps;
 import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.types.FloatOps;
 
 import static tornado.benchmarks.BenchmarkUtils.createFilter;
 import static tornado.benchmarks.BenchmarkUtils.createImage;

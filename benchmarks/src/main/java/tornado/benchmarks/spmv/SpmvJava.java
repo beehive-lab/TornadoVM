@@ -26,7 +26,8 @@
 package tornado.benchmarks.spmv;
 
 import tornado.benchmarks.BenchmarkDriver;
-import tornado.collections.matrix.SparseMatrixUtils.CSRMatrix;
+import uk.ac.manchester.tornado.collections.matrix.SparseMatrixUtils.CSRMatrix;
+
 import static tornado.benchmarks.LinearAlgebraArrays.*;
 
 public class SpmvJava extends BenchmarkDriver {

@@ -27,10 +27,10 @@ package tornado.benchmarks;
 
 import java.util.stream.IntStream;
 import tornado.api.Parallel;
-import tornado.collections.types.*;
+import uk.ac.manchester.tornado.collections.types.*;
 
-import static tornado.collections.graphics.GraphicsMath.rotate;
-import static tornado.collections.types.Float4.add;
+import static uk.ac.manchester.tornado.collections.graphics.GraphicsMath.rotate;
+import static uk.ac.manchester.tornado.collections.types.Float4.add;
 
 public final class GraphicsKernels {
 

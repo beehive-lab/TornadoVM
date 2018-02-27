@@ -27,10 +27,10 @@ package tornado.benchmarks.addvector;
 
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
-import tornado.collections.types.Float4;
-import tornado.collections.types.FloatOps;
-import tornado.collections.types.VectorFloat4;
 import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.types.Float4;
+import uk.ac.manchester.tornado.collections.types.FloatOps;
+import uk.ac.manchester.tornado.collections.types.VectorFloat4;
 
 import static tornado.common.Tornado.getProperty;
 

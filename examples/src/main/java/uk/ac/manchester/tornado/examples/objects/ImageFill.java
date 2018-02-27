@@ -25,8 +25,8 @@
  */
 package uk.ac.manchester.tornado.examples.objects;
 
-import tornado.collections.types.ImageFloat;
 import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.types.ImageFloat;
 
 public class ImageFill {
 

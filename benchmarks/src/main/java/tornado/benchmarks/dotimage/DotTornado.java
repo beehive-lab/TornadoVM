@@ -27,13 +27,13 @@ package tornado.benchmarks.dotimage;
 
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
-import tornado.collections.types.Float3;
-import tornado.collections.types.ImageFloat;
-import tornado.collections.types.ImageFloat3;
 import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.types.Float3;
+import uk.ac.manchester.tornado.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.collections.types.ImageFloat3;
 
-import static tornado.collections.types.FloatOps.findMaxULP;
 import static tornado.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.collections.types.FloatOps.findMaxULP;
 
 public class DotTornado extends BenchmarkDriver {
 

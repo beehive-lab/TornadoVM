@@ -30,11 +30,11 @@ import java.util.Random;
 import org.junit.Test;
 
 import tornado.api.Parallel;
-import tornado.collections.types.Int2;
-import tornado.collections.types.Int3;
-import tornado.collections.types.Int4;
-import tornado.collections.types.VectorInt;
 import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.types.Int2;
+import uk.ac.manchester.tornado.collections.types.Int3;
+import uk.ac.manchester.tornado.collections.types.Int4;
+import uk.ac.manchester.tornado.collections.types.VectorInt;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestInts extends TornadoTestBase {

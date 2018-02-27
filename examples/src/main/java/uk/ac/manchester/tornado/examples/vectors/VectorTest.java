@@ -25,12 +25,11 @@
  */
 package uk.ac.manchester.tornado.examples.vectors;
 
-import tornado.collections.types.Float3;
+import static uk.ac.manchester.tornado.collections.types.Float3.add;
 
-import tornado.collections.types.VectorFloat3;
 import tornado.runtime.api.TaskSchedule;
-
-import static tornado.collections.types.Float3.add;
+import uk.ac.manchester.tornado.collections.types.Float3;
+import uk.ac.manchester.tornado.collections.types.VectorFloat3;
 
 public class VectorTest {
 

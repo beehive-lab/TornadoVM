@@ -26,8 +26,9 @@
 package uk.ac.manchester.tornado.examples.arrays;
 
 import java.util.Arrays;
-import tornado.collections.math.SimpleMath;
+
 import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.math.SimpleMath;
 
 public class ArrayAddFloatOS {
 

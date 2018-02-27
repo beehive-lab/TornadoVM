@@ -25,8 +25,8 @@
  */
 package uk.ac.manchester.tornado.examples.lang;
 
-import tornado.collections.types.Float3;
 import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.types.Float3;
 
 public class DotProduct {
 

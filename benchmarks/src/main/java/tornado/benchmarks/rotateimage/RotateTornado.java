@@ -27,14 +27,14 @@ package tornado.benchmarks.rotateimage;
 
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
-import tornado.collections.types.Float3;
-import tornado.collections.types.ImageFloat3;
-import tornado.collections.types.Matrix4x4Float;
 import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.types.Float3;
+import uk.ac.manchester.tornado.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
 
 import static tornado.benchmarks.GraphicsKernels.rotateImage;
-import static tornado.collections.types.FloatOps.findMaxULP;
 import static tornado.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.collections.types.FloatOps.findMaxULP;
 
 public class RotateTornado extends BenchmarkDriver {
 

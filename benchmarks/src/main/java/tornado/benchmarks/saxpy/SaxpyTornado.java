@@ -30,8 +30,8 @@ import tornado.benchmarks.LinearAlgebraArrays;
 import tornado.runtime.api.TaskSchedule;
 
 import static tornado.benchmarks.LinearAlgebraArrays.saxpy;
-import static tornado.collections.math.TornadoMath.findULPDistance;
 import static tornado.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.collections.math.TornadoMath.findULPDistance;
 
 public class SaxpyTornado extends BenchmarkDriver {
 

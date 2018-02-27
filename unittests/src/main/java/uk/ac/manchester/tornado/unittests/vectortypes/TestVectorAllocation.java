@@ -28,12 +28,12 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import tornado.api.Parallel;
-import tornado.collections.types.Float2;
-import tornado.collections.types.Float3;
-import tornado.collections.types.Float4;
-import tornado.collections.types.VectorFloat3;
-import tornado.collections.types.VectorFloat4;
 import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.types.Float2;
+import uk.ac.manchester.tornado.collections.types.Float3;
+import uk.ac.manchester.tornado.collections.types.Float4;
+import uk.ac.manchester.tornado.collections.types.VectorFloat3;
+import uk.ac.manchester.tornado.collections.types.VectorFloat4;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestVectorAllocation extends TornadoTestBase {

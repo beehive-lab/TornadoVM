@@ -27,14 +27,13 @@ package tornado.benchmarks.spmv;
 
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.LinearAlgebraArrays;
-import tornado.collections.matrix.SparseMatrixUtils.CSRMatrix;
 import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.matrix.SparseMatrixUtils.CSRMatrix;
 
 import static tornado.benchmarks.LinearAlgebraArrays.spmv;
 import static tornado.benchmarks.spmv.Benchmark.populateVector;
-import static tornado.collections.math.TornadoMath.findULPDistance;
 import static tornado.common.Tornado.getProperty;
-import static tornado.collections.math.TornadoMath.findULPDistance;
+import static uk.ac.manchester.tornado.collections.math.TornadoMath.findULPDistance;
 import static tornado.common.Tornado.getProperty;
 
 public class SpmvTornado extends BenchmarkDriver {

@@ -29,18 +29,18 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import tornado.api.Parallel;
-import tornado.collections.types.Byte3;
-import tornado.collections.types.Byte4;
-import tornado.collections.types.Float3;
-import tornado.collections.types.Float4;
-import tornado.collections.types.Float8;
-import tornado.collections.types.ImageByte3;
-import tornado.collections.types.ImageByte4;
-import tornado.collections.types.ImageFloat;
-import tornado.collections.types.ImageFloat3;
-import tornado.collections.types.ImageFloat4;
-import tornado.collections.types.ImageFloat8;
 import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.types.Byte3;
+import uk.ac.manchester.tornado.collections.types.Byte4;
+import uk.ac.manchester.tornado.collections.types.Float3;
+import uk.ac.manchester.tornado.collections.types.Float4;
+import uk.ac.manchester.tornado.collections.types.Float8;
+import uk.ac.manchester.tornado.collections.types.ImageByte3;
+import uk.ac.manchester.tornado.collections.types.ImageByte4;
+import uk.ac.manchester.tornado.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.collections.types.ImageFloat4;
+import uk.ac.manchester.tornado.collections.types.ImageFloat8;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**

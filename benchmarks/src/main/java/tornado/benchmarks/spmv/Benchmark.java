@@ -28,8 +28,8 @@ package tornado.benchmarks.spmv;
 import java.util.Random;
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.BenchmarkRunner;
-import tornado.collections.matrix.SparseMatrixUtils;
-import tornado.collections.matrix.SparseMatrixUtils.CSRMatrix;
+import uk.ac.manchester.tornado.collections.matrix.SparseMatrixUtils;
+import uk.ac.manchester.tornado.collections.matrix.SparseMatrixUtils.CSRMatrix;
 
 public class Benchmark extends BenchmarkRunner {
 

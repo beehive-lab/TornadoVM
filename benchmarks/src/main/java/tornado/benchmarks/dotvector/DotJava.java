@@ -26,8 +26,9 @@
 package tornado.benchmarks.dotvector;
 
 import tornado.benchmarks.BenchmarkDriver;
-import tornado.collections.types.Float3;
-import tornado.collections.types.VectorFloat3;
+import uk.ac.manchester.tornado.collections.types.Float3;
+import uk.ac.manchester.tornado.collections.types.VectorFloat3;
+
 import static tornado.benchmarks.GraphicsKernels.*;
 
 public class DotJava extends BenchmarkDriver {

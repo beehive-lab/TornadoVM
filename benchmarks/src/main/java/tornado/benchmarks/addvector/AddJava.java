@@ -26,8 +26,9 @@
 package tornado.benchmarks.addvector;
 
 import tornado.benchmarks.BenchmarkDriver;
-import tornado.collections.types.Float4;
-import tornado.collections.types.VectorFloat4;
+import uk.ac.manchester.tornado.collections.types.Float4;
+import uk.ac.manchester.tornado.collections.types.VectorFloat4;
+
 import static tornado.benchmarks.GraphicsKernels.*;
 
 public class AddJava extends BenchmarkDriver {

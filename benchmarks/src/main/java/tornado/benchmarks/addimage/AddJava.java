@@ -26,8 +26,8 @@
 package tornado.benchmarks.addimage;
 
 import tornado.benchmarks.BenchmarkDriver;
-import tornado.collections.types.Float4;
-import tornado.collections.types.ImageFloat4;
+import uk.ac.manchester.tornado.collections.types.Float4;
+import uk.ac.manchester.tornado.collections.types.ImageFloat4;
 
 import static tornado.benchmarks.GraphicsKernels.addImage;
 

@@ -26,8 +26,8 @@
 package tornado.benchmarks.blackscholes;
 
 import tornado.api.Parallel;
-import tornado.collections.math.TornadoMath;
 import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.math.TornadoMath;
 
 import static tornado.common.Tornado.getProperty;
 

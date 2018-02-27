@@ -26,7 +26,7 @@
 package tornado.benchmarks.convolveimage;
 
 import tornado.benchmarks.BenchmarkDriver;
-import tornado.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.collections.types.ImageFloat;
 
 import static tornado.benchmarks.BenchmarkUtils.createFilter;
 import static tornado.benchmarks.BenchmarkUtils.createImage;

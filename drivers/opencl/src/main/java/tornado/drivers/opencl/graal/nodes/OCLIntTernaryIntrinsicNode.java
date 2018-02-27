@@ -43,11 +43,11 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
-import tornado.collections.math.TornadoMath;
 import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
+import uk.ac.manchester.tornado.collections.math.TornadoMath;
 
 @NodeInfo(nameTemplate = "{p#operation/s}")
 public class OCLIntTernaryIntrinsicNode extends TernaryNode implements ArithmeticLIRLowerable {

@@ -30,10 +30,11 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import tornado.collections.types.FloatOps;
 import tornado.drivers.opencl.graal.nodes.AtomicAddNode;
+import uk.ac.manchester.tornado.collections.types.FloatOps;
 
 public class AtomicPlugins {
 

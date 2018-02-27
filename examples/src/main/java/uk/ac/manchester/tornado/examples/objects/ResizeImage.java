@@ -26,9 +26,10 @@
 package uk.ac.manchester.tornado.examples.objects;
 
 import java.util.Random;
-import tornado.collections.graphics.ImagingOps;
-import tornado.collections.types.ImageFloat;
+
 import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.graphics.ImagingOps;
+import uk.ac.manchester.tornado.collections.types.ImageFloat;
 
 public class ResizeImage {
 

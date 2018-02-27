@@ -26,10 +26,10 @@
 package tornado.benchmarks.dotimage;
 
 import tornado.benchmarks.BenchmarkDriver;
-import tornado.collections.types.Float3;
-import tornado.collections.types.ImageFloat;
-import tornado.collections.types.ImageFloat3;
 import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.types.Float3;
+import uk.ac.manchester.tornado.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.collections.types.ImageFloat3;
 
 import static tornado.benchmarks.GraphicsKernels.dotImage;
 

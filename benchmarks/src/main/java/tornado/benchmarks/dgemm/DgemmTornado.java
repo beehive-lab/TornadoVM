@@ -31,9 +31,8 @@ import tornado.benchmarks.LinearAlgebraArrays;
 import tornado.runtime.api.TaskSchedule;
 
 import static tornado.benchmarks.LinearAlgebraArrays.dgemm;
-import static tornado.collections.math.TornadoMath.findULPDistance;
 import static tornado.common.Tornado.getProperty;
-import static tornado.collections.math.TornadoMath.findULPDistance;
+import static uk.ac.manchester.tornado.collections.math.TornadoMath.findULPDistance;
 import static tornado.common.Tornado.getProperty;
 
 public class DgemmTornado extends BenchmarkDriver {

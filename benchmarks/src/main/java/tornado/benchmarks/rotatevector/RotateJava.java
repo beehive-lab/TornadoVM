@@ -26,9 +26,10 @@
 package tornado.benchmarks.rotatevector;
 
 import tornado.benchmarks.BenchmarkDriver;
-import tornado.collections.types.Float3;
-import tornado.collections.types.Matrix4x4Float;
-import tornado.collections.types.VectorFloat3;
+import uk.ac.manchester.tornado.collections.types.Float3;
+import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.collections.types.VectorFloat3;
+
 import static tornado.benchmarks.GraphicsKernels.*;
 
 public class RotateJava extends BenchmarkDriver {

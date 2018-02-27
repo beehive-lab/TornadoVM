@@ -25,12 +25,15 @@
  */
 package tornado.drivers.opencl.builtins;
 
-import tornado.api.ReductionOp;
-import tornado.collections.types.Float2;
-import tornado.collections.types.Float4;
-import tornado.collections.types.VectorFloat4;
+import static tornado.drivers.opencl.builtins.Intrinsics.getGlobalId;
+import static tornado.drivers.opencl.builtins.Intrinsics.getGroupId;
+import static tornado.drivers.opencl.builtins.Intrinsics.getLocalId;
+import static tornado.drivers.opencl.builtins.Intrinsics.localBarrier;
 
-import static tornado.drivers.opencl.builtins.Intrinsics.*;
+import tornado.api.ReductionOp;
+import uk.ac.manchester.tornado.collections.types.Float2;
+import uk.ac.manchester.tornado.collections.types.Float4;
+import uk.ac.manchester.tornado.collections.types.VectorFloat4;
 
 public class ReductionIntrinsic {
 

@@ -27,12 +27,12 @@ package tornado.benchmarks.dotvector;
 
 import tornado.benchmarks.BenchmarkDriver;
 import tornado.benchmarks.GraphicsKernels;
-import tornado.collections.types.Float3;
-import tornado.collections.types.VectorFloat3;
 import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.collections.types.Float3;
+import uk.ac.manchester.tornado.collections.types.VectorFloat3;
 
-import static tornado.collections.math.TornadoMath.findULPDistance;
 import static tornado.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.collections.math.TornadoMath.findULPDistance;
 
 public class DotTornado extends BenchmarkDriver {
 

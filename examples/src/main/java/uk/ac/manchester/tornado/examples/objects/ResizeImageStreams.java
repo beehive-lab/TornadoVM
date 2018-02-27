@@ -27,8 +27,9 @@ package uk.ac.manchester.tornado.examples.objects;
 
 import java.util.Random;
 import java.util.stream.IntStream;
-import tornado.collections.math.TornadoMath;
-import tornado.collections.types.ImageFloat;
+
+import uk.ac.manchester.tornado.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.collections.types.ImageFloat;
 
 public class ResizeImageStreams {
 
