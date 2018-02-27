@@ -36,9 +36,9 @@ import static tornado.runtime.TornadoRuntime.getVMConfig;
 import java.lang.reflect.Array;
 
 import jdk.vm.ci.meta.JavaKind;
-import tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.common.ObjectBuffer;
 import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 
 public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 

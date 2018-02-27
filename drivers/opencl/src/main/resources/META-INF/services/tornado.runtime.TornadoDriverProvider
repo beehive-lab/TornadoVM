@@ -1,1 +1,1 @@
-tornado.drivers.opencl.OCLTornadoDriverProvider
+uk.ac.manchester.tornado.drivers.opencl.OCLTornadoDriverProvider

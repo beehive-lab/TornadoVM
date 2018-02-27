@@ -31,7 +31,7 @@ import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.un
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.spi.LIRKindTool;
 
-import tornado.drivers.opencl.OCLTargetDescription;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 
 public class OCLLIRKindTool implements LIRKindTool {

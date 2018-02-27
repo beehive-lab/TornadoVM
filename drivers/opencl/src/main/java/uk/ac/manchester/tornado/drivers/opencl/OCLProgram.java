@@ -23,7 +23,7 @@
  * Authors: James Clarkson
  *
  */
-package tornado.drivers.opencl;
+package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_UNKNOWN;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProgramBuildInfo.CL_PROGRAM_BUILD_LOG;

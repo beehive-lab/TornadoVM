@@ -23,11 +23,11 @@
  * Authors: James Clarkson
  *
  */
-package tornado.drivers.opencl;
+package uk.ac.manchester.tornado.drivers.opencl;
 
-import static tornado.drivers.opencl.OpenCL.ACCELERATOR_IS_GPU;
 import static uk.ac.manchester.tornado.common.Tornado.FORCE_ALL_TO_GPU;
 import static uk.ac.manchester.tornado.common.Tornado.fatal;
+import static uk.ac.manchester.tornado.drivers.opencl.OpenCL.ACCELERATOR_IS_GPU;
 
 public class OCLScheduler {
 

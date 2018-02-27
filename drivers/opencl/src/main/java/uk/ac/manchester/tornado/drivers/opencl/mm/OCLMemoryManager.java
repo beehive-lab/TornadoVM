@@ -25,12 +25,11 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import static tornado.drivers.opencl.OpenCL.OCL_CALL_STACK_LIMIT;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.drivers.opencl.OpenCL.OCL_CALL_STACK_LIMIT;
 
 import java.lang.reflect.Method;
 
-import tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
@@ -39,6 +38,7 @@ import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.common.TornadoLogger;
 import uk.ac.manchester.tornado.common.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;

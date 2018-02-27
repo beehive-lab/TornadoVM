@@ -23,11 +23,11 @@
  * Authors: James Clarkson
  *
  */
-package tornado.drivers.opencl;
+package uk.ac.manchester.tornado.drivers.opencl;
 
-import static tornado.drivers.opencl.OpenCL.CL_TRUE;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableFreq;
+import static uk.ac.manchester.tornado.drivers.opencl.OpenCL.CL_TRUE;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;

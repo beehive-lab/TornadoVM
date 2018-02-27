@@ -23,12 +23,12 @@
  * Authors: James Clarkson
  *
  */
-package tornado.drivers.opencl;
+package uk.ac.manchester.tornado.drivers.opencl;
 
-import static tornado.drivers.opencl.OpenCL.DUMP_OPENCL_EVENTS;
 import static uk.ac.manchester.tornado.common.Tornado.DEBUG;
 import static uk.ac.manchester.tornado.common.Tornado.ENABLE_OOO_EXECUTION;
 import static uk.ac.manchester.tornado.common.Tornado.ENABLE_PROFILING;
+import static uk.ac.manchester.tornado.drivers.opencl.OpenCL.DUMP_OPENCL_EVENTS;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
 

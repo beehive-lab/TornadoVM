@@ -27,7 +27,7 @@ package uk.ac.manchester.tornado.drivers.opencl.mm;
 
 
 import jdk.vm.ci.meta.JavaKind;
-import tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 
 public class OCLShortArrayWrapper extends OCLArrayWrapper<short[]> {
 

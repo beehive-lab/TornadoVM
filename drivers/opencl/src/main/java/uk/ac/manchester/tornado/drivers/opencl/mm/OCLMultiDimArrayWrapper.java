@@ -32,8 +32,8 @@ import java.lang.reflect.Array;
 import java.util.function.Function;
 
 import jdk.vm.ci.meta.JavaKind;
-import tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 
 /**
  *

@@ -45,11 +45,11 @@
             return (jlong) mem; \
         }
 
-CREATE_ARRAY(Java_tornado_drivers_opencl_OCLContext, B, byte)
-CREATE_ARRAY(Java_tornado_drivers_opencl_OCLContext, I, int)
-CREATE_ARRAY(Java_tornado_drivers_opencl_OCLContext, J, long)
-CREATE_ARRAY(Java_tornado_drivers_opencl_OCLContext, F, float)
-CREATE_ARRAY(Java_tornado_drivers_opencl_OCLContext, D, double)
+CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, B, byte)
+CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, I, int)
+CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, J, long)
+CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, F, float)
+CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, D, double)
 
 #define WRITE_ARRAY(CLASSNAME,SIG,TYPE) \
     JNIEXPORT jlong JNICALL CLASSNAME ## _writeArrayToDevice__J_3 ## SIG ## ZJJJ_3J \
@@ -59,7 +59,7 @@ CREATE_ARRAY(Java_tornado_drivers_opencl_OCLContext, D, double)
             jsize num_bytes = (cb != -1) ? cb : (*env)->GetArrayLength(env, array1) * sizeof ( j ## TYPE ); \
             OPENCL_DECODE_WAITLIST(array2, events, num_events) \
             JNI_ACQUIRE_ARRAY(jbyte,buffer,array1);\
-            debug("tornado.drivers.opencl> write array 0x%lx (%d bytes) from %p \n",offset, num_bytes, buffer);\
+            debug("uk.ac.manchester.tornado.drivers.opencl> write array 0x%lx (%d bytes) from %p \n",offset, num_bytes, buffer);\
             cl_event event; \
             OPENCL_SOFT_ERROR("clEnqueueWriteBuffer (" #TYPE  ")", clEnqueueWriteBuffer((cl_command_queue) queue_id, (cl_mem) device_ptr, blocking_write, (size_t) offset, (size_t) num_bytes, (void *) buffer,(cl_uint) num_events, (cl_event*) events, &event),-1); \
             JNI_RELEASE_ARRAY(array1,buffer); \
@@ -67,12 +67,12 @@ CREATE_ARRAY(Java_tornado_drivers_opencl_OCLContext, D, double)
             return (jlong) event; \
     }
 
-WRITE_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, B, byte)
-WRITE_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, S, short)
-WRITE_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, I, int)
-WRITE_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, J, long)
-WRITE_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, F, float)
-WRITE_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, D, double)
+WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, B, byte)
+WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, S, short)
+WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, I, int)
+WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, J, long)
+WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, F, float)
+WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, D, double)
 
 
 #define READ_ARRAY(CLASSNAME, SIG, TYPE) \
@@ -83,16 +83,16 @@ WRITE_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, D, double)
             jsize num_bytes = (cb != -1) ? cb : (*env)->GetArrayLength(env, array1) * sizeof ( j ## TYPE ); \
             OPENCL_DECODE_WAITLIST(array2, events, num_events) \
             JNI_ACQUIRE_ARRAY(jbyte,buffer,array1);\
-            debug("tornado.drivers.opencl> read array 0x%lx (%d bytes) to %p\n",offset, num_bytes, buffer);\
+            debug("uk.ac.manchester.tornado.drivers.opencl> read array 0x%lx (%d bytes) to %p\n",offset, num_bytes, buffer);\
             cl_event event; \
             OPENCL_SOFT_ERROR("clEnqueueReadBuffer (" #TYPE ")", clEnqueueReadBuffer((cl_command_queue) queue_id, (cl_mem) device_ptr, blocking, (size_t) offset, (size_t) num_bytes, (void *) buffer, (cl_uint) num_events, (cl_event*) events, &event), -1); \
             JNI_RELEASE_ARRAY(array1, buffer); \
             OPENCL_RELEASE_WAITLIST(array2); \
             return (jlong) event; \
     }
-READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, B, byte)
-READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, S, short)
-READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, I, int)
-READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, J, long)
-READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, F, float)
-READ_ARRAY(Java_tornado_drivers_opencl_OCLCommandQueue, D, double)
+READ_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, B, byte)
+READ_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, S, short)
+READ_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, I, int)
+READ_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, J, long)
+READ_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, F, float)
+READ_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, D, double)

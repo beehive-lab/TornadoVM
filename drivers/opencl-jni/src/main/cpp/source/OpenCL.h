@@ -24,39 +24,39 @@
  *
  */
 #include <jni.h>
-/* Header for class tornado_drivers_opencl_OpenCL */
+/* Header for class uk_ac_manchester_tornado_drivers_opencl_OpenCL */
 
-#ifndef _Included_tornado_drivers_opencl_OpenCL
-#define _Included_tornado_drivers_opencl_OpenCL
+#ifndef _Included_uk_ac_manchester_tornado_drivers_opencl_OpenCL
+#define _Included_uk_ac_manchester_tornado_drivers_opencl_OpenCL
 #ifdef __cplusplus
 extern "C" {
 #endif
-#undef tornado_drivers_opencl_OpenCL_CL_TRUE
-#define tornado_drivers_opencl_OpenCL_CL_TRUE 1L
-#undef tornado_drivers_opencl_OpenCL_CL_FALSE
-#define tornado_drivers_opencl_OpenCL_CL_FALSE 0L
+#undef uk_ac_manchester_tornado_drivers_opencl_OpenCL_CL_TRUE
+#define uk_ac_manchester_tornado_drivers_opencl_OpenCL_CL_TRUE 1L
+#undef uk_ac_manchester_tornado_drivers_opencl_OpenCL_CL_FALSE
+#define uk_ac_manchester_tornado_drivers_opencl_OpenCL_CL_FALSE 0L
     /*
-     * Class:     tornado_drivers_opencl_OpenCL
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL
      * Method:    registerCallback
      * Signature: ()Z
      */
-    JNIEXPORT jboolean JNICALL Java_tornado_drivers_opencl_OpenCL_registerCallback
+    JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_registerCallback
     (JNIEnv *, jclass);
 
     /*
-     * Class:     tornado_drivers_opencl_OpenCL
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL
      * Method:    clGetPlatformCount
      * Signature: ()I
      */
-    JNIEXPORT jint JNICALL Java_tornado_drivers_opencl_OpenCL_clGetPlatformCount
+    JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_clGetPlatformCount
     (JNIEnv *, jclass);
 
     /*
-     * Class:     tornado_drivers_opencl_OpenCL
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL
      * Method:    clGetPlatformIDs
      * Signature: ([J)I
      */
-    JNIEXPORT jint JNICALL Java_tornado_drivers_opencl_OpenCL_clGetPlatformIDs
+    JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_clGetPlatformIDs
     (JNIEnv *, jclass, jlongArray);
 
 #ifdef __cplusplus

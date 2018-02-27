@@ -23,7 +23,7 @@
  * Authors: James Clarkson
  *
  */
-package tornado.drivers.opencl;
+package uk.ac.manchester.tornado.drivers.opencl;
 
 import java.nio.LongBuffer;
 import java.util.ArrayList;

@@ -35,16 +35,16 @@ import java.nio.ByteBuffer;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
-import tornado.drivers.opencl.OCLDeviceContext;
-import tornado.drivers.opencl.OCLGpuScheduler;
-import tornado.drivers.opencl.OCLKernel;
-import tornado.drivers.opencl.OCLKernelScheduler;
-import tornado.drivers.opencl.OCLProgram;
-import tornado.drivers.opencl.OCLScheduler;
 import uk.ac.manchester.tornado.api.Event;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.CallStack;
 import uk.ac.manchester.tornado.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLGpuScheduler;
+import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
+import uk.ac.manchester.tornado.drivers.opencl.OCLKernelScheduler;
+import uk.ac.manchester.tornado.drivers.opencl.OCLProgram;
+import uk.ac.manchester.tornado.drivers.opencl.OCLScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCallStack;
 

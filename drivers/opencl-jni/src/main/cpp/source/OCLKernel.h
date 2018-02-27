@@ -24,35 +24,35 @@
  *
  */
 #include <jni.h>
-/* Header for class tornado_drivers_opencl_OCLKernel */
+/* Header for class uk_ac_manchester_tornado_drivers_opencl_OCLKernel */
 
-#ifndef _Included_tornado_drivers_opencl_OCLKernel
-#define _Included_tornado_drivers_opencl_OCLKernel
+#ifndef _Included_uk_ac_manchester_tornado_drivers_opencl_OCLKernel
+#define _Included_uk_ac_manchester_tornado_drivers_opencl_OCLKernel
 #ifdef __cplusplus
 extern "C" {
 #endif
     /*
-     * Class:     tornado_drivers_opencl_OCLKernel
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLKernel
      * Method:    clReleaseKernel
      * Signature: (J)V
      */
-    JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLKernel_clReleaseKernel
+    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_clReleaseKernel
     (JNIEnv *, jclass, jlong);
 
     /*
-     * Class:     tornado_drivers_opencl_OCLKernel
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLKernel
      * Method:    clSetKernelArg
      * Signature: (JIJ[B)V
      */
-    JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLKernel_clSetKernelArg
+    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_clSetKernelArg
     (JNIEnv *, jclass, jlong, jint, jlong, jbyteArray);
 
     /*
-     * Class:     tornado_drivers_opencl_OCLKernel
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLKernel
      * Method:    clGetKernelInfo
      * Signature: (JI[B)V
      */
-    JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLKernel_clGetKernelInfo
+    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_clGetKernelInfo
     (JNIEnv *, jclass, jlong, jint, jbyteArray);
 
 #ifdef __cplusplus

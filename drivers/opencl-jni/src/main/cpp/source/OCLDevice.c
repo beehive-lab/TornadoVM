@@ -38,7 +38,7 @@
  * Method:    clGetDeviceInfo
  * Signature: (JI[B)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLDevice_clGetDeviceInfo
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLDevice_clGetDeviceInfo
 (JNIEnv *env, jclass clazz, jlong device_id, jint device_info, jbyteArray array) {
 
     OPENCL_PROLOGUE;
@@ -48,7 +48,7 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLDevice_clGetDeviceInfo
 
     value = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
     len = (*env)->GetArrayLength(env, array);
-    debug("tornado.drivers.opencl> clGetDeviceInfo param=0x%x\n", device_info);
+    debug("uk.ac.manchester.tornado.drivers.opencl> clGetDeviceInfo param=0x%x\n", device_info);
     size_t return_size = 0;
     OPENCL_SOFT_ERROR("clGetDeviceInfo",
             clGetDeviceInfo((cl_device_id) device_id, (cl_device_info) device_info, len, (void *) value, &return_size),);

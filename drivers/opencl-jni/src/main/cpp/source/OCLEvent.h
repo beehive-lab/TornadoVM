@@ -24,43 +24,43 @@
  *
  */
 #include <jni.h>
-/* Header for class tornado_drivers_opencl_OCLEvent */
+/* Header for class uk_ac_manchester_tornado_drivers_opencl_OCLEvent */
 
-#ifndef _Included_tornado_drivers_opencl_OCLEvent
-#define _Included_tornado_drivers_opencl_OCLEvent
+#ifndef _Included_uk_ac_manchester_tornado_drivers_opencl_OCLEvent
+#define _Included_uk_ac_manchester_tornado_drivers_opencl_OCLEvent
 #ifdef __cplusplus
 extern "C" {
 #endif
     /*
-     * Class:     tornado_drivers_opencl_OCLEvent
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
      * Method:    clGetEventInfo
      * Signature: (JI[B)V
      */
-    JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLEvent_clGetEventInfo
+    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clGetEventInfo
     (JNIEnv *, jclass, jlong, jint, jbyteArray);
 
     /*
-     * Class:     tornado_drivers_opencl_OCLEvent
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
      * Method:    clGetEventProfilingInfo
      * Signature: (JI[B)V
      */
-    JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLEvent_clGetEventProfilingInfo
+    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clGetEventProfilingInfo
     (JNIEnv *, jclass, jlong, jint, jbyteArray);
 
     /*
-     * Class:     tornado_drivers_opencl_OCLEvent
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
      * Method:    clWaitForEvents
      * Signature: ([J)V
      */
-    JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLEvent_clWaitForEvents
+    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clWaitForEvents
     (JNIEnv *, jclass, jlongArray);
 
     /*
-     * Class:     tornado_drivers_opencl_OCLEvent
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
      * Method:    clReleaseEvent
      * Signature: (J)V
      */
-    JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLEvent_clReleaseEvent
+    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clReleaseEvent
     (JNIEnv *, jclass, jlong);
 
 #ifdef __cplusplus

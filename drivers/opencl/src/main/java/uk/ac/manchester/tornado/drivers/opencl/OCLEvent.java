@@ -23,10 +23,10 @@
  * Authors: James Clarkson
  *
  */
-package tornado.drivers.opencl;
+package uk.ac.manchester.tornado.drivers.opencl;
 
-import static tornado.drivers.opencl.OCLCommandQueue.EVENT_DESCRIPTIONS;
 import static uk.ac.manchester.tornado.common.Tornado.ENABLE_PROFILING;
+import static uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue.EVENT_DESCRIPTIONS;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus.CL_COMPLETE;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus.toEnum;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLEventInfo.CL_EVENT_COMMAND_EXECUTION_STATUS;

@@ -38,7 +38,7 @@
  * Method:    clReleaseKernel
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLKernel_clReleaseKernel
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_clReleaseKernel
 (JNIEnv *env, jclass clazz, jlong kernel_id) {
     OPENCL_PROLOGUE;
     OPENCL_SOFT_ERROR("clReleaseKernel", clReleaseKernel((cl_kernel) kernel_id),);
@@ -49,7 +49,7 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLKernel_clReleaseKernel
  * Method:    clSetKernelArg
  * Signature: (JIJ[B)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLKernel_clSetKernelArg
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_clSetKernelArg
 (JNIEnv *env, jclass clazz, jlong kernel_id, jint index, jlong size, jbyteArray array) {
     OPENCL_PROLOGUE;
 
@@ -62,11 +62,11 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLKernel_clSetKernelArg
 }
 
 /*
- * Class:     tornado_drivers_opencl_OCLKernel
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLKernel
  * Method:    clGetKernelInfo
  * Signature: (JI[B)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLKernel_clGetKernelInfo
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_clGetKernelInfo
 (JNIEnv *env, jclass clazz, jlong kernel_id, jint kernel_info, jbyteArray array) {
     OPENCL_PROLOGUE;
 

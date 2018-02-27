@@ -27,9 +27,9 @@ package uk.ac.manchester.tornado.examples.arrays;
 
 import java.util.Arrays;
 
-import tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.common.enums.Access;
+import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class ArrayAddIntPrebuilt {

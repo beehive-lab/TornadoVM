@@ -38,7 +38,7 @@
  * Method:    clGetPlatformCount
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_tornado_drivers_opencl_OpenCL_clGetPlatformCount
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_clGetPlatformCount
 (JNIEnv *env, jclass clazz) {
     OPENCL_PROLOGUE;
     cl_uint num_platforms = 0;
@@ -52,7 +52,7 @@ JNIEXPORT jint JNICALL Java_tornado_drivers_opencl_OpenCL_clGetPlatformCount
  * Method:    clGetPlatformIDs
  * Signature: ([J)I
  */
-JNIEXPORT jint JNICALL Java_tornado_drivers_opencl_OpenCL_clGetPlatformIDs
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_clGetPlatformIDs
 (JNIEnv *env, jclass clazz, jlongArray array) {
     OPENCL_PROLOGUE;
 
@@ -71,11 +71,11 @@ JNIEXPORT jint JNICALL Java_tornado_drivers_opencl_OpenCL_clGetPlatformIDs
 }
 
 ///*
-// * Class:     tornado_drivers_opencl_OpenCL
+// * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL
 // * Method:    registerCallback
 // * Signature: ()Z
 // */
-//JNIEXPORT jboolean JNICALL Java_tornado_drivers_opencl_OpenCL_registerCallback
+//JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_registerCallback
 //  (JNIEnv *env, jclass clazz){
 //	jboolean result = true;
 //
