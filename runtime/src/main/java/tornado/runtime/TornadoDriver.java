@@ -26,8 +26,9 @@
 package tornado.runtime;
 
 import org.graalvm.compiler.phases.util.Providers;
-import tornado.graal.compiler.TornadoSuitesProvider;
-import tornado.common.TornadoDevice;
+
+import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.graal.compiler.TornadoSuitesProvider;
 
 public interface TornadoDriver {
 

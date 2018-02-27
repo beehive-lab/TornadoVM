@@ -25,15 +25,26 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
+import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
+import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
+import static org.graalvm.compiler.core.common.GraalOptions.OptFloatingReads;
+import static org.graalvm.compiler.core.common.GraalOptions.ReassociateInvariants;
+
 import org.graalvm.compiler.loop.phases.ReassociateInvariantPhase;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.common.*;
-import tornado.graal.compiler.TornadoMidTier;
-import tornado.graal.phases.ExceptionCheckingElimination;
-import tornado.graal.phases.TornadoMemoryPhiElimination;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import org.graalvm.compiler.phases.common.FloatingReadPhase;
+import org.graalvm.compiler.phases.common.FrameStateAssignmentPhase;
+import org.graalvm.compiler.phases.common.GuardLoweringPhase;
+import org.graalvm.compiler.phases.common.IncrementalCanonicalizerPhase;
+import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
+import org.graalvm.compiler.phases.common.LoweringPhase;
+import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 
-import static org.graalvm.compiler.core.common.GraalOptions.*;
+import uk.ac.manchester.tornado.graal.compiler.TornadoMidTier;
+import uk.ac.manchester.tornado.graal.phases.ExceptionCheckingElimination;
+import uk.ac.manchester.tornado.graal.phases.TornadoMemoryPhiElimination;
 
 public class OCLMidTier extends TornadoMidTier {
 

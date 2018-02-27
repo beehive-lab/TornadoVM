@@ -25,12 +25,13 @@
  */
 package tornado.drivers.opencl.graal.meta;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+
 import org.graalvm.compiler.core.common.LIRKind;
+
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.OCLArchitecture;
 import tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
-
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLMemorySpace extends Value {
     // @formatter:off

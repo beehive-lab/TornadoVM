@@ -25,14 +25,15 @@
  */
 package tornado.drivers.opencl.mm;
 
+import static uk.ac.manchester.tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
+import static uk.ac.manchester.tornado.common.Tornado.fatal;
+
 import java.lang.reflect.Array;
 import java.util.function.Function;
-import jdk.vm.ci.meta.JavaKind;
-import tornado.common.exceptions.TornadoOutOfMemoryException;
-import tornado.drivers.opencl.OCLDeviceContext;
 
-import static tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
-import static tornado.common.Tornado.fatal;
+import jdk.vm.ci.meta.JavaKind;
+import tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
 
 /**
  *

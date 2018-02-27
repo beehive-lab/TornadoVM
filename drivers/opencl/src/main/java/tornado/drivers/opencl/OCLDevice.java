@@ -25,19 +25,20 @@
  */
 package tornado.drivers.opencl;
 
+import static tornado.drivers.opencl.OpenCL.CL_TRUE;
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableFreq;
+
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import tornado.common.RuntimeUtilities;
-import tornado.common.TornadoLogger;
+
 import tornado.drivers.opencl.enums.OCLDeviceInfo;
 import tornado.drivers.opencl.enums.OCLDeviceType;
 import tornado.drivers.opencl.enums.OCLLocalMemType;
-
-import static tornado.common.RuntimeUtilities.humanReadableByteCount;
-import static tornado.common.RuntimeUtilities.humanReadableFreq;
-import static tornado.drivers.opencl.OpenCL.CL_TRUE;
+import uk.ac.manchester.tornado.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.common.TornadoLogger;
 
 public class OCLDevice extends TornadoLogger {
 

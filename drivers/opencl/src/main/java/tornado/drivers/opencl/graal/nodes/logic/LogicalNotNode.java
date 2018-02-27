@@ -25,17 +25,18 @@
  */
 package tornado.drivers.opencl.graal.nodes.logic;
 
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp.LOGICAL_NOT;
+
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.LogicNode;
+
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
-import tornado.graal.nodes.logic.UnaryLogicalNode;
-
-import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp.LOGICAL_NOT;
+import uk.ac.manchester.tornado.graal.nodes.logic.UnaryLogicalNode;
 
 @NodeInfo(shortName = "!")
 public class LogicalNotNode extends UnaryLogicalNode {

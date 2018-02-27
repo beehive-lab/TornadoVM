@@ -28,9 +28,10 @@ package uk.ac.manchester.tornado.examples.paralleliser;
 import static uk.ac.manchester.tornado.collections.math.TornadoMath.clamp;
 
 import java.util.Random;
-import tornado.api.Parallel;
-import tornado.runtime.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class ResizeImage {
 

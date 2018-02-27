@@ -25,11 +25,20 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.STACK_BASE_OFFSET;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.trace;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodes.ParameterNode;
-import jdk.vm.ci.meta.*;
+
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.graal.OCLArchitecture;
 import tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
@@ -42,10 +51,6 @@ import tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorLoadStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 import tornado.drivers.opencl.graal.nodes.vector.VectorUtil;
-
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.STACK_BASE_OFFSET;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLGenTool {
 

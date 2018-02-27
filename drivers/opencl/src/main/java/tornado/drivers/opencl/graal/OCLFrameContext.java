@@ -27,7 +27,8 @@ package tornado.drivers.opencl.graal;
 
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.asm.FrameContext;
-import tornado.common.TornadoLogger;
+
+import uk.ac.manchester.tornado.common.TornadoLogger;
 
 public class OCLFrameContext extends TornadoLogger implements FrameContext {
 

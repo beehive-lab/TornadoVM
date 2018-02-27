@@ -25,14 +25,14 @@
  */
 package uk.ac.manchester.tornado.benchmarks.addvector;
 
-import tornado.runtime.api.TaskSchedule;
+import static uk.ac.manchester.tornado.common.Tornado.getProperty;
+
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 import uk.ac.manchester.tornado.collections.types.Float4;
 import uk.ac.manchester.tornado.collections.types.FloatOps;
 import uk.ac.manchester.tornado.collections.types.VectorFloat4;
-
-import static tornado.common.Tornado.getProperty;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class AddTornado extends BenchmarkDriver {
 

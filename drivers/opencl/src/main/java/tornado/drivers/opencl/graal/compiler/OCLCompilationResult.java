@@ -25,13 +25,15 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import org.graalvm.compiler.code.CompilationResult;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Set;
+
+import org.graalvm.compiler.code.CompilationResult;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import tornado.api.meta.TaskMetaData;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
+import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 
 public class OCLCompilationResult extends CompilationResult {
 

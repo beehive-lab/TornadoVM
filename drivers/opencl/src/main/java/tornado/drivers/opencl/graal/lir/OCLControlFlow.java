@@ -25,19 +25,28 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
-import org.graalvm.compiler.lir.LIRInstruction.Use;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.CONST;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BRACKET_CLOSE;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BRACKET_OPEN;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BREAK;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CASE;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.COLON;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.DEFAULT_CASE;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.EXPR_DELIMITER;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FOR_LOOP;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.STMT_DELIMITER;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SWITCH;
+
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
 import org.graalvm.compiler.lir.Variable;
+
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AbstractInstruction;
-
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.CONST;
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
 
 public class OCLControlFlow {
 

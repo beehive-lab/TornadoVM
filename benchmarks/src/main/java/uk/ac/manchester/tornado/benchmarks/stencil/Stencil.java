@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.stencil;
 
-import tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.Parallel;
 
 /**
  *

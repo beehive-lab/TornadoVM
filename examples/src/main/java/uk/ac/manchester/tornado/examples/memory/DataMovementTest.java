@@ -25,13 +25,14 @@
  */
 package uk.ac.manchester.tornado.examples.memory;
 
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+
 import java.util.Arrays;
-import tornado.common.DeviceObjectState;
+
 import tornado.drivers.opencl.OpenCL;
 import tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import tornado.runtime.api.GlobalObjectState;
-
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import uk.ac.manchester.tornado.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
 
 public class DataMovementTest {
 

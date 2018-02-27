@@ -25,13 +25,14 @@
  */
 package uk.ac.manchester.tornado.collections.matrix;
 
-import tornado.api.Parallel;
 import uk.ac.manchester.tornado.collections.types.*;
 
 import static java.lang.Math.abs;
 import static uk.ac.manchester.tornado.collections.types.Float6.dot;
 import static uk.ac.manchester.tornado.collections.types.MatrixFloat.scale;
 import static uk.ac.manchester.tornado.collections.types.MatrixFloat.transpose;
+
+import uk.ac.manchester.tornado.api.Parallel;
 
 public final class MatrixMath {
 

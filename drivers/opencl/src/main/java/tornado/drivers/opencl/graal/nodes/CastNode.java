@@ -25,6 +25,8 @@
  */
 package tornado.drivers.opencl.graal.nodes;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -35,12 +37,11 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary;
-
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 @NodeInfo
 public class CastNode extends FloatingNode implements LIRLowerable {

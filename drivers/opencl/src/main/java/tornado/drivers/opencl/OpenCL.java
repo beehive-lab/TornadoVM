@@ -25,14 +25,15 @@
  */
 package tornado.drivers.opencl;
 
+import static uk.ac.manchester.tornado.common.Tornado.getProperty;
+
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
-import tornado.common.Tornado;
-import tornado.common.exceptions.TornadoRuntimeException;
-import tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
-import static tornado.common.Tornado.getProperty;
+import tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.common.Tornado;
+import uk.ac.manchester.tornado.common.exceptions.TornadoRuntimeException;
 
 public class OpenCL {
 

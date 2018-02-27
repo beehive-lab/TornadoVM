@@ -25,7 +25,7 @@
  */
 package tornado.drivers.opencl;
 
-import tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 
 public abstract class OCLKernelScheduler {
 

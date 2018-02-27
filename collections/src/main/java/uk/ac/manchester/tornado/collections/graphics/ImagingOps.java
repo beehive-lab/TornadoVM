@@ -25,7 +25,6 @@
  */
 package uk.ac.manchester.tornado.collections.graphics;
 
-import tornado.api.Parallel;
 import uk.ac.manchester.tornado.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.collections.types.Byte3;
 import uk.ac.manchester.tornado.collections.types.FloatOps;
@@ -36,6 +35,8 @@ import static java.lang.Math.abs;
 import static uk.ac.manchester.tornado.collections.math.TornadoMath.clamp;
 import static uk.ac.manchester.tornado.collections.math.TornadoMath.exp;
 import static uk.ac.manchester.tornado.collections.types.FloatOps.sq;
+
+import uk.ac.manchester.tornado.api.Parallel;
 
 public class ImagingOps {
 

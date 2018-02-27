@@ -25,6 +25,8 @@
  */
 package tornado.drivers.opencl.graal.nodes;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+
 import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
@@ -34,9 +36,8 @@ import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
 
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
 
 @NodeInfo(shortName = "Atomic Write")
 public class AtomicWriteNode extends AbstractWriteNode implements LIRLowerable {

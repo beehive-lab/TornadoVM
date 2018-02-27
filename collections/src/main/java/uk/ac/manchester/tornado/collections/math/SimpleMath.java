@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.collections.math;
 
-import tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.Parallel;
 
 public class SimpleMath {
 

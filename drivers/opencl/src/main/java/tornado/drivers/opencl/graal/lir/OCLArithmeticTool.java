@@ -25,13 +25,23 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.trace;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
-import jdk.vm.ci.meta.*;
+
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
 import tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import tornado.drivers.opencl.graal.OCLLIRKindTool;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
@@ -48,9 +58,6 @@ import tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorStoreStmt;
 import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
 import tornado.drivers.opencl.graal.nodes.vector.VectorUtil;
-
-import static tornado.common.exceptions.TornadoInternalError.*;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 

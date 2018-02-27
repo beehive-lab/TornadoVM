@@ -25,12 +25,13 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
+
 import jdk.vm.ci.code.ReferenceMap;
 import jdk.vm.ci.meta.Value;
-
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLReferenceMapBuilder extends ReferenceMapBuilder {
 

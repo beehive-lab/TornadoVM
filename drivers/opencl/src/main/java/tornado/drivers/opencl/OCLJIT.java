@@ -25,17 +25,18 @@
  */
 package tornado.drivers.opencl;
 
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+
 import java.lang.reflect.Method;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import tornado.api.meta.ScheduleMetaData;
-import tornado.api.meta.TaskMetaData;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
 import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import tornado.drivers.opencl.graal.compiler.OCLCompiler;
-
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 
 public class OCLJIT {
 

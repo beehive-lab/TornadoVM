@@ -25,15 +25,15 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import tornado.api.Vector;
+import uk.ac.manchester.tornado.api.Vector;
 
 public enum OCLKind implements PlatformKind {
 

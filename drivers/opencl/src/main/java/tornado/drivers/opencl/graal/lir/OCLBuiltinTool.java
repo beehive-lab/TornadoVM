@@ -25,15 +25,31 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
-import jdk.vm.ci.meta.Value;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.CROSS;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.DOT;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.FLOAT_MAX;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.FLOAT_MIN;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.FLOAT_POW;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.INT_MAX;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.INT_MIN;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic.CLAMP;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.ABS;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.COS;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.EXP;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.FLOAT_ABS;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.FLOAT_FLOOR;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.FLOAT_TRUNC;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.LOG;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.POPCOUNT;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.SIN;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.SQRT;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.trace;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Variable;
 
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.*;
-import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic.CLAMP;
-import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic.*;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import jdk.vm.ci.meta.Value;
 
 public class OCLBuiltinTool {
 

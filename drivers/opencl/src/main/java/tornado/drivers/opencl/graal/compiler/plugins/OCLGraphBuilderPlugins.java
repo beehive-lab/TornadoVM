@@ -25,9 +25,18 @@
  */
 package tornado.drivers.opencl.graal.compiler.plugins;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+import static tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMAX;
+import static tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.FMIN;
+import static tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.POW;
+import static tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.COS;
+import static tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.EXP;
+import static tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.FABS;
+import static tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.LOG;
+import static tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.SIN;
+import static tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MAX;
+import static tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
+import static tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
+
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
@@ -36,21 +45,24 @@ import org.graalvm.compiler.nodes.extended.BoxNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
-import tornado.drivers.opencl.graal.nodes.*;
-import tornado.lang.CompilerInternals;
-import tornado.lang.Debug;
 
-import static tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode.Operation.*;
-import static tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.*;
-import static tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MAX;
-import static tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
-import static tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
+import tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode;
+import tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
+import tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode;
+import tornado.drivers.opencl.graal.nodes.PrintfNode;
+import tornado.drivers.opencl.graal.nodes.SlotsBaseAddressNode;
+import tornado.drivers.opencl.graal.nodes.TPrintfNode;
+import uk.ac.manchester.tornado.lang.CompilerInternals;
+import uk.ac.manchester.tornado.lang.Debug;
 
 public class OCLGraphBuilderPlugins {
 

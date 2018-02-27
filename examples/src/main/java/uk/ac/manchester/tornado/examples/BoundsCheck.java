@@ -26,8 +26,9 @@
 package uk.ac.manchester.tornado.examples;
 
 import java.util.Arrays;
-import tornado.common.exceptions.TornadoRuntimeException;
-import tornado.runtime.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.common.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class BoundsCheck {
 

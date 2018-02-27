@@ -26,8 +26,9 @@
 package uk.ac.manchester.tornado.collections.types;
 
 import java.nio.DoubleBuffer;
-import tornado.api.Payload;
-import tornado.api.Vector;
+
+import uk.ac.manchester.tornado.api.Payload;
+import uk.ac.manchester.tornado.api.Vector;
 import uk.ac.manchester.tornado.collections.math.TornadoMath;
 
 import static java.lang.String.format;

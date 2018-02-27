@@ -25,8 +25,8 @@
  */
 package tornado.drivers.opencl.graal.phases;
 
-import static tornado.api.enums.TornadoSchedulingStrategy.PER_BLOCK;
-import static tornado.api.enums.TornadoSchedulingStrategy.PER_ITERATION;
+import static uk.ac.manchester.tornado.api.enums.TornadoSchedulingStrategy.PER_BLOCK;
+import static uk.ac.manchester.tornado.api.enums.TornadoSchedulingStrategy.PER_ITERATION;
 
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -39,16 +39,16 @@ import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.JavaKind;
-import tornado.api.enums.TornadoSchedulingStrategy;
 import tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
 import tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import tornado.graal.nodes.AbstractParallelNode;
-import tornado.graal.nodes.ParallelOffsetNode;
-import tornado.graal.nodes.ParallelRangeNode;
-import tornado.graal.nodes.ParallelStrideNode;
-import tornado.graal.phases.TornadoHighTierContext;
+import uk.ac.manchester.tornado.api.enums.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.graal.nodes.AbstractParallelNode;
+import uk.ac.manchester.tornado.graal.nodes.ParallelOffsetNode;
+import uk.ac.manchester.tornado.graal.nodes.ParallelRangeNode;
+import uk.ac.manchester.tornado.graal.nodes.ParallelStrideNode;
+import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
 
 public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> {
 

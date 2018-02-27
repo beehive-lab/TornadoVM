@@ -26,8 +26,9 @@
 package tornado.runtime;
 
 import java.util.BitSet;
-import tornado.api.Event;
-import tornado.common.TornadoDevice;
+
+import uk.ac.manchester.tornado.api.Event;
+import uk.ac.manchester.tornado.common.TornadoDevice;
 
 /**
  *

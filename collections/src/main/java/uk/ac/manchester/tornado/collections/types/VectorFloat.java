@@ -28,8 +28,8 @@ package uk.ac.manchester.tornado.collections.types;
 import java.nio.FloatBuffer;
 import java.util.Arrays;
 
-import tornado.common.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 
 import static java.lang.Float.MAX_VALUE;
 import static java.lang.Float.MIN_VALUE;

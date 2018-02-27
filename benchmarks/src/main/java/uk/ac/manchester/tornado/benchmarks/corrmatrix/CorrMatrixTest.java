@@ -36,8 +36,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.lucene.util.OpenBitSet;
 import org.junit.Before;
 import org.junit.Test;
-import tornado.common.TimedEvent;
-import tornado.common.TornadoLogger;
+
+import uk.ac.manchester.tornado.common.TimedEvent;
+import uk.ac.manchester.tornado.common.TornadoLogger;
 
 /**
  * This test class performs the following functions:

@@ -25,15 +25,20 @@
  */
 package tornado.drivers.opencl.graal;
 
-import jdk.vm.ci.meta.*;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.spi.LIRKindTool;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
-import tornado.drivers.opencl.graal.lir.OCLKind;
 
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MemoryAccessProvider;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import tornado.drivers.opencl.graal.lir.OCLKind;
 
 public class OCLStamp extends ObjectStamp {
 

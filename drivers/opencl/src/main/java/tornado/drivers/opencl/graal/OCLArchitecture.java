@@ -25,7 +25,17 @@
  */
 package tornado.drivers.opencl.graal;
 
+import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
+import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CONSTANT_REGION_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_BASE_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.LOCAL_REGION_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.PRIVATE_REGION_NAME;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+
 import java.nio.ByteOrder;
+
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Register.RegisterCategory;
@@ -33,11 +43,6 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.meta.OCLMemorySpace;
-
-import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
-import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
 
 public class OCLArchitecture extends Architecture {
 

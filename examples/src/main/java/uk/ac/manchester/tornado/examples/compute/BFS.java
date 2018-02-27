@@ -30,10 +30,10 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import tornado.api.Parallel;
-import tornado.common.TornadoDevice;
 import tornado.runtime.TornadoRuntime;
-import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 /**
  * Parallel Implementation of the BFS: this is based on the Marawacc compiler framework.

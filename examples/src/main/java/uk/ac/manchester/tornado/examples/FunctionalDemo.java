@@ -26,7 +26,8 @@
 package uk.ac.manchester.tornado.examples;
 
 import java.util.function.IntUnaryOperator;
-import tornado.api.Parallel;
+
+import uk.ac.manchester.tornado.api.Parallel;
 
 public class FunctionalDemo {
 

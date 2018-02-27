@@ -25,10 +25,9 @@
  */
 package tornado.drivers.opencl.graal;
 
-import jdk.vm.ci.common.InitTimer;
-import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
-import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
-import jdk.vm.ci.runtime.JVMCIBackend;
+import static jdk.vm.ci.common.InitTimer.timer;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
@@ -37,6 +36,11 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins;
 import org.graalvm.compiler.replacements.classfile.ClassfileBytecodeProvider;
+
+import jdk.vm.ci.common.InitTimer;
+import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
+import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
+import jdk.vm.ci.runtime.JVMCIBackend;
 import tornado.drivers.opencl.OCLContext;
 import tornado.drivers.opencl.OCLDevice;
 import tornado.drivers.opencl.OCLDeviceContext;
@@ -46,15 +50,12 @@ import tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
 import tornado.drivers.opencl.graal.compiler.plugins.OCLGraphBuilderPlugins;
 import tornado.drivers.opencl.graal.lir.OCLAddressLowering;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-import tornado.graal.DummySnippetFactory;
-import tornado.graal.compiler.TornadoConstantFieldProvider;
-import tornado.graal.compiler.TornadoForeignCallsProvider;
-import tornado.graal.compiler.TornadoReplacements;
-import tornado.graal.compiler.TornadoSnippetReflectionProvider;
 import tornado.runtime.TornadoVMConfig;
-
-import static jdk.vm.ci.common.InitTimer.timer;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import uk.ac.manchester.tornado.graal.DummySnippetFactory;
+import uk.ac.manchester.tornado.graal.compiler.TornadoConstantFieldProvider;
+import uk.ac.manchester.tornado.graal.compiler.TornadoForeignCallsProvider;
+import uk.ac.manchester.tornado.graal.compiler.TornadoReplacements;
+import uk.ac.manchester.tornado.graal.compiler.TornadoSnippetReflectionProvider;
 
 public class OCLHotSpotBackendFactory {
 

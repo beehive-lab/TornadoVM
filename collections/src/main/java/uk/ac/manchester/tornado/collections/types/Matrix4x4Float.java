@@ -27,7 +27,7 @@ package uk.ac.manchester.tornado.collections.types;
 
 import java.nio.FloatBuffer;
 
-import tornado.common.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 
 import static java.lang.Float.MAX_VALUE;
 import static java.lang.Float.MIN_VALUE;
@@ -35,10 +35,10 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.String.format;
 import static java.nio.FloatBuffer.wrap;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.collections.types.Float4.loadFromArray;
 import static uk.ac.manchester.tornado.collections.types.FloatOps.findMaxULP;
 import static uk.ac.manchester.tornado.collections.types.FloatOps.fmt4m;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 
 public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {

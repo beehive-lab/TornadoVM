@@ -25,8 +25,9 @@
  */
 package tornado.drivers.opencl;
 
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import org.graalvm.compiler.options.OptionValues;
+
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import tornado.runtime.TornadoDriver;
 import tornado.runtime.TornadoDriverProvider;
 import tornado.runtime.TornadoVMConfig;

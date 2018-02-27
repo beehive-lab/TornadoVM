@@ -25,8 +25,8 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import tornado.api.Atomic;
-import tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.Atomic;
+import uk.ac.manchester.tornado.api.Parallel;
 
 public class LinearAlgebraArrays {
 

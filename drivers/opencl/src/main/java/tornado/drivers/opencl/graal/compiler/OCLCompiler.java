@@ -25,24 +25,38 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
+import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static uk.ac.manchester.tornado.common.Tornado.DUMP_COMPILED_METHODS;
+import static uk.ac.manchester.tornado.common.Tornado.error;
+import static uk.ac.manchester.tornado.common.Tornado.info;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import jdk.vm.ci.code.CallingConvention;
-import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
-import jdk.vm.ci.meta.*;
+
 import org.graalvm.compiler.code.CompilationResult;
+import org.graalvm.compiler.core.GraalCompiler;
 import org.graalvm.compiler.core.common.alloc.ComputeBlockOrder;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
+import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Debug.Scope;
-import org.graalvm.compiler.debug.*;
+import org.graalvm.compiler.debug.DebugCloseable;
+import org.graalvm.compiler.debug.DebugDumpScope;
+import org.graalvm.compiler.debug.DebugEnvironment;
+import org.graalvm.compiler.debug.DebugTimer;
 import org.graalvm.compiler.debug.internal.method.MethodMetricsRootScopeInfo;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
@@ -65,9 +79,16 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.LowTierContext;
 import org.graalvm.compiler.phases.util.Providers;
-import tornado.api.meta.TaskMetaData;
-import tornado.common.Tornado;
-import tornado.common.exceptions.TornadoInternalError;
+
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
+import jdk.vm.ci.meta.Assumptions;
+import jdk.vm.ci.meta.DefaultProfilingInfo;
+import jdk.vm.ci.meta.ProfilingInfo;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.SpeculationLog;
+import jdk.vm.ci.meta.TriState;
 import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.graal.OCLCodeProvider;
 import tornado.drivers.opencl.graal.OCLCodeUtil;
@@ -75,20 +96,17 @@ import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.OCLSuitesProvider;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLLIRGenerationPhase.LIRGenerationContext;
-import tornado.graal.TornadoLIRSuites;
-import tornado.graal.TornadoSuites;
-import tornado.graal.compiler.TornadoCompilerIdentifier;
-import tornado.graal.phases.TornadoHighTierContext;
-import tornado.graal.phases.TornadoMidTierContext;
-import tornado.runtime.api.CompilableTask;
-import tornado.runtime.sketcher.Sketch;
-import tornado.runtime.sketcher.TornadoSketcher;
-
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
-import static tornado.common.Tornado.*;
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.common.Tornado;
+import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.graal.TornadoLIRSuites;
+import uk.ac.manchester.tornado.graal.TornadoSuites;
+import uk.ac.manchester.tornado.graal.compiler.TornadoCompilerIdentifier;
+import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
+import uk.ac.manchester.tornado.graal.phases.TornadoMidTierContext;
+import uk.ac.manchester.tornado.runtime.api.CompilableTask;
+import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
+import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 
 /**
  * Static methods for orchestrating the compilation of a

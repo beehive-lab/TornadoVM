@@ -25,7 +25,41 @@
  */
 package tornado.drivers.opencl.graal.nodes.vector;
 
-import tornado.common.exceptions.TornadoInternalError;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.VLOAD16;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.VLOAD2;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.VLOAD3;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.VLOAD4;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.VLOAD8;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2.VMOV_BYTE2;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2.VMOV_DOUBLE2;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2.VMOV_FLOAT2;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2.VMOV_INT2;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2.VMOV_SHORT2;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3.VMOV_BYTE3;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3.VMOV_DOUBLE3;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3.VMOV_FLOAT3;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3.VMOV_INT3;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3.VMOV_SHORT3;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp4.VMOV_BYTE4;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp4.VMOV_DOUBLE4;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp4.VMOV_FLOAT4;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp4.VMOV_INT4;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp4.VMOV_SHORT4;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp8.VMOV_BYTE8;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp8.VMOV_DOUBLE8;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp8.VMOV_FLOAT8;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp8.VMOV_INT8;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp8.VMOV_SHORT8;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic.VSTORE16;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic.VSTORE2;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic.VSTORE3;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic.VSTORE4;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic.VSTORE8;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp.CAST_TO_BYTE_PTR;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp.CAST_TO_FLOAT_PTR;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp.CAST_TO_INT_PTR;
+import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp.CAST_TO_SHORT_PTR;
+
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3;
@@ -34,14 +68,7 @@ import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp8;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-
-import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic.*;
-import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp2.*;
-import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp3.*;
-import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp4.*;
-import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLOp8.*;
-import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic.*;
-import static tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp.*;
+import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 
 public final class VectorUtil {
 

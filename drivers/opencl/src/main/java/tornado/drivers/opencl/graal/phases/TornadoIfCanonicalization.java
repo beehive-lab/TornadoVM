@@ -30,11 +30,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import tornado.common.exceptions.TornadoInternalError;
-import tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
-import tornado.drivers.opencl.graal.nodes.logic.LogicalOrNode;
-import tornado.graal.phases.TornadoMidTierContext;
-
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
@@ -49,6 +44,11 @@ import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
+
+import tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
+import tornado.drivers.opencl.graal.nodes.logic.LogicalOrNode;
+import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.graal.phases.TornadoMidTierContext;
 
 public class TornadoIfCanonicalization extends BasePhase<TornadoMidTierContext> {
 

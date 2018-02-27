@@ -25,19 +25,40 @@
  */
 package tornado.drivers.opencl.graal.phases;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeWorkList;
-import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.AbstractEndNode;
+import org.graalvm.compiler.nodes.AbstractMergeNode;
+import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
-import tornado.common.exceptions.TornadoInternalError;
-import tornado.drivers.opencl.graal.nodes.vector.*;
-import tornado.graal.phases.TornadoHighTierContext;
+
+import tornado.drivers.opencl.graal.nodes.vector.NewVectorNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementProxyNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorStoreElementProxyNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
+import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
 
 public class TornadoVectorResolver extends BasePhase<TornadoHighTierContext> {
 

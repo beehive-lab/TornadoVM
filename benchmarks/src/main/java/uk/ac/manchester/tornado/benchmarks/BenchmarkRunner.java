@@ -28,10 +28,11 @@ package uk.ac.manchester.tornado.benchmarks;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
 import tornado.runtime.TornadoDriver;
 
-import static tornado.common.Tornado.*;
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.common.Tornado.*;
 
 public abstract class BenchmarkRunner {
 

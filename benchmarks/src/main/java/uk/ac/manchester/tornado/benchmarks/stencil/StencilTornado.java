@@ -28,14 +28,14 @@ package uk.ac.manchester.tornado.benchmarks.stencil;
 import java.util.Arrays;
 import java.util.Random;
 
-import tornado.common.SchedulableTask;
-import tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.common.SchedulableTask;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
-import static tornado.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.copy;
 import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.stencil3d;
 import static uk.ac.manchester.tornado.collections.math.TornadoMath.findULPDistance;
+import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
 public class StencilTornado extends BenchmarkDriver {
 

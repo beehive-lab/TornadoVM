@@ -29,10 +29,10 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import tornado.api.Parallel;
 import tornado.runtime.TornadoDriver;
 import tornado.runtime.TornadoRuntime;
-import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 /**
  * Testing Tornado with one task in the same device. The {@link TaskSchedule}

@@ -25,11 +25,12 @@
  */
 package tornado.drivers.opencl.graal.nodes.vector;
 
-import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
+
+import jdk.vm.ci.meta.JavaKind;
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 

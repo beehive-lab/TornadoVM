@@ -25,27 +25,36 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
+import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
+import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
+import static org.graalvm.compiler.core.common.GraalOptions.OptConvertDeoptsToGuards;
+import static org.graalvm.compiler.core.common.GraalOptions.PartialEscapeAnalysis;
+import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
+import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+
 import org.graalvm.compiler.loop.DefaultLoopPolicies;
 import org.graalvm.compiler.loop.LoopPolicies;
 import org.graalvm.compiler.loop.phases.LoopFullUnrollPhase;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
-import org.graalvm.compiler.phases.common.*;
+import org.graalvm.compiler.phases.common.ConvertDeoptimizeToGuardPhase;
+import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
+import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
+import org.graalvm.compiler.phases.common.LoweringPhase;
+import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
+
 import tornado.drivers.opencl.graal.phases.TornadoParallelScheduler;
 import tornado.drivers.opencl.graal.phases.TornadoTaskSpecialisation;
-import tornado.graal.compiler.TornadoHighTier;
-import tornado.graal.phases.ExceptionSuppression;
-import tornado.graal.phases.TornadoInliningPolicy;
-import tornado.graal.phases.TornadoShapeAnalysis;
-import tornado.graal.phases.TornadoValueTypeCleanup;
-
-import static org.graalvm.compiler.core.common.GraalOptions.*;
-import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import uk.ac.manchester.tornado.graal.compiler.TornadoHighTier;
+import uk.ac.manchester.tornado.graal.phases.ExceptionSuppression;
+import uk.ac.manchester.tornado.graal.phases.TornadoInliningPolicy;
+import uk.ac.manchester.tornado.graal.phases.TornadoShapeAnalysis;
+import uk.ac.manchester.tornado.graal.phases.TornadoValueTypeCleanup;
 
 public class OCLHighTier extends TornadoHighTier {
 

@@ -25,16 +25,21 @@
  */
 package tornado.drivers.opencl.graal.phases;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaField;
+
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.graph.Graph.Mark;
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.LogicConstantNode;
+import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.PiNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.java.ArrayLengthNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
@@ -42,13 +47,14 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
-import tornado.common.RuntimeUtilities;
-import tornado.common.Tornado;
-import tornado.graal.phases.TornadoHighTierContext;
-import tornado.graal.phases.TornadoLoopUnroller;
-import tornado.graal.phases.TornadoValueTypeReplacement;
 
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import uk.ac.manchester.tornado.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.common.Tornado;
+import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
+import uk.ac.manchester.tornado.graal.phases.TornadoLoopUnroller;
+import uk.ac.manchester.tornado.graal.phases.TornadoValueTypeReplacement;
 
 public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext> {
 

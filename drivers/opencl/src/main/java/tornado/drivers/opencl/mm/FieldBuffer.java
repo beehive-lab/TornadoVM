@@ -25,13 +25,17 @@
  */
 package tornado.drivers.opencl.mm;
 
+import static uk.ac.manchester.tornado.common.Tornado.DEBUG;
+import static uk.ac.manchester.tornado.common.Tornado.debug;
+import static uk.ac.manchester.tornado.common.Tornado.trace;
+import static uk.ac.manchester.tornado.common.Tornado.warn;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import tornado.common.ObjectBuffer;
-import tornado.common.RuntimeUtilities;
-import tornado.common.exceptions.TornadoOutOfMemoryException;
 
-import static tornado.common.Tornado.*;
+import uk.ac.manchester.tornado.common.ObjectBuffer;
+import uk.ac.manchester.tornado.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
 
 public class FieldBuffer {
 

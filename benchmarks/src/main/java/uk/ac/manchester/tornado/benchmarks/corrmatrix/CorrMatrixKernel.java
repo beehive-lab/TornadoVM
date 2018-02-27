@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.corrmatrix;
 
-import tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.Parallel;
 
 /**
  * This kernel attempts to re-implement the Lucene OpenBitSet functionality on a

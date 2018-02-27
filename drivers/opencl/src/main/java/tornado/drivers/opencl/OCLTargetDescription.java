@@ -25,14 +25,15 @@
  */
 package tornado.drivers.opencl;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+
+import org.graalvm.compiler.core.common.LIRKind;
+
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
-import org.graalvm.compiler.core.common.LIRKind;
 import tornado.drivers.opencl.graal.OCLArchitecture;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class OCLTargetDescription extends TargetDescription {
 

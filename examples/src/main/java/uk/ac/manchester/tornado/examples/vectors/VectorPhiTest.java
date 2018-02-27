@@ -25,9 +25,9 @@
  */
 package uk.ac.manchester.tornado.examples.vectors;
 
-import tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.collections.types.Float3;
 import uk.ac.manchester.tornado.collections.types.VectorFloat3;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class VectorPhiTest {
 

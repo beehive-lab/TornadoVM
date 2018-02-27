@@ -28,9 +28,9 @@ import java.util.Arrays;
 
 import org.junit.Ignore;
 
-import tornado.api.Atomic;
-import tornado.api.Parallel;
-import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.Atomic;
+import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestAtomics extends TornadoTestBase {

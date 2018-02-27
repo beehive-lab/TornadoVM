@@ -32,10 +32,10 @@ import org.graalvm.compiler.nodes.memory.FloatingReadNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
 
-import tornado.common.exceptions.TornadoInternalError;
 import tornado.drivers.opencl.graal.OCLArchitecture;
 import tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import tornado.drivers.opencl.graal.nodes.FixedArrayNode;
+import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 
 public class OCLAddressLowering extends AddressLowering {
 

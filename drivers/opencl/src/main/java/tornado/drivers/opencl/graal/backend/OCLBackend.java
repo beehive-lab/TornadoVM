@@ -25,15 +25,21 @@
  */
 package tornado.drivers.opencl.graal.backend;
 
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.common.Tornado.DEBUG_KERNEL_ARGS;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import jdk.vm.ci.code.*;
-import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
-import jdk.vm.ci.meta.*;
+
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
@@ -55,27 +61,54 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
 import org.graalvm.util.EconomicSet;
-import tornado.api.Vector;
-import tornado.api.meta.ScheduleMetaData;
-import tornado.api.meta.TaskMetaData;
-import tornado.common.Tornado;
+
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.CompilationRequest;
+import jdk.vm.ci.code.CompiledCode;
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.Local;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.OCLContext;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.OCLTargetDescription;
-import tornado.drivers.opencl.graal.*;
+import tornado.drivers.opencl.graal.OCLArchitecture;
+import tornado.drivers.opencl.graal.OCLCodeProvider;
+import tornado.drivers.opencl.graal.OCLCodeUtil;
+import tornado.drivers.opencl.graal.OCLFrameContext;
+import tornado.drivers.opencl.graal.OCLFrameMap;
+import tornado.drivers.opencl.graal.OCLFrameMapBuilder;
+import tornado.drivers.opencl.graal.OCLInstalledCode;
+import tornado.drivers.opencl.graal.OCLProviders;
+import tornado.drivers.opencl.graal.OCLSuitesProvider;
+import tornado.drivers.opencl.graal.OCLUtils;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
-import tornado.drivers.opencl.graal.compiler.*;
+import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
+import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
+import tornado.drivers.opencl.graal.compiler.OCLCompiler;
+import tornado.drivers.opencl.graal.compiler.OCLDataBuilder;
+import tornado.drivers.opencl.graal.compiler.OCLLIRGenerationResult;
+import tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
+import tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
+import tornado.drivers.opencl.graal.compiler.OCLNodeMatchRules;
+import tornado.drivers.opencl.graal.compiler.OCLReferenceMapBuilder;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.mm.OCLByteBuffer;
-import tornado.graal.backend.TornadoBackend;
-import tornado.lang.CompilerInternals;
-
-import static tornado.common.RuntimeUtilities.humanReadableByteCount;
-import static tornado.common.Tornado.DEBUG_KERNEL_ARGS;
-import static tornado.common.exceptions.TornadoInternalError.*;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import uk.ac.manchester.tornado.api.Vector;
+import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.common.Tornado;
+import uk.ac.manchester.tornado.graal.backend.TornadoBackend;
+import uk.ac.manchester.tornado.lang.CompilerInternals;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 

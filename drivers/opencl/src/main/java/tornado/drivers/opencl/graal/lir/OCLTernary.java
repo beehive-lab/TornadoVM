@@ -25,17 +25,18 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BRACKET_CLOSE;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BRACKET_OPEN;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
+
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryTemplate;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
-
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BRACKET_CLOSE;
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BRACKET_OPEN;
 
 public class OCLTernary {
 

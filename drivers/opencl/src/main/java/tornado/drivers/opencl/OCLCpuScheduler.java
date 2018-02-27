@@ -25,9 +25,9 @@
  */
 package tornado.drivers.opencl;
 
-import tornado.api.meta.TaskMetaData;
+import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
-import static tornado.common.Tornado.getProperty;
+import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 
 public class OCLCpuScheduler extends OCLKernelScheduler {
 

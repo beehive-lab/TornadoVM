@@ -25,13 +25,14 @@
  */
 package tornado.drivers.opencl.graal;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.spi.LIRKindTool;
+
 import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLLIRKindTool implements LIRKindTool {
 

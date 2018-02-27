@@ -25,19 +25,21 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import jdk.vm.ci.code.CallingConvention;
+
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import tornado.drivers.opencl.graal.lir.OCLKind;
 
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
+import jdk.vm.ci.code.CallingConvention;
+import tornado.drivers.opencl.graal.lir.OCLKind;
 
 public class OCLLIRGenerationResult extends LIRGenerationResult {
 

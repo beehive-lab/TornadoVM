@@ -25,17 +25,18 @@
  */
 package tornado.drivers.opencl.graal.nodes;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.meta.OCLMemorySpace;
 import tornado.drivers.opencl.graal.meta.OCLStack;
-
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
 
 @NodeInfo
 public class OCLMemoryRegion extends FloatingNode implements LIRLowerable {

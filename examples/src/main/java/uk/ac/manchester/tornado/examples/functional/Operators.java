@@ -26,7 +26,8 @@
 package uk.ac.manchester.tornado.examples.functional;
 
 import java.util.function.Function;
-import tornado.api.Parallel;
+
+import uk.ac.manchester.tornado.api.Parallel;
 
 public class Operators {
 

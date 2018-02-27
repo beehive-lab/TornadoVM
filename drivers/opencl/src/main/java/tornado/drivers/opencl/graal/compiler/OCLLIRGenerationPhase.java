@@ -26,7 +26,7 @@
 package tornado.drivers.opencl.graal.compiler;
 
 import java.util.List;
-import jdk.vm.ci.code.TargetDescription;
+
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.graph.Node;
@@ -38,6 +38,8 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
+import jdk.vm.ci.code.TargetDescription;
 
 public class OCLLIRGenerationPhase extends LIRPhase<OCLLIRGenerationPhase.LIRGenerationContext> {
 

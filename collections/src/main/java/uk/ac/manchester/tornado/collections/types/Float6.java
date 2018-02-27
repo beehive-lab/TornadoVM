@@ -26,7 +26,8 @@
 package uk.ac.manchester.tornado.collections.types;
 
 import java.nio.FloatBuffer;
-import tornado.api.Payload;
+
+import uk.ac.manchester.tornado.api.Payload;
 import uk.ac.manchester.tornado.collections.math.TornadoMath;
 
 import static java.lang.Float.MAX_VALUE;

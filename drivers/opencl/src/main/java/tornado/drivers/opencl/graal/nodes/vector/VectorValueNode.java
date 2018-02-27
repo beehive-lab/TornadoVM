@@ -25,6 +25,10 @@
  */
 package tornado.drivers.opencl.graal.nodes.vector;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+
+import java.util.List;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
@@ -33,11 +37,16 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.InvokeNode;
+import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import java.util.List;
+
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.OCLStampFactory;
@@ -50,8 +59,6 @@ import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.lir.OCLLIROp;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import tornado.drivers.opencl.graal.lir.OCLVectorAssign;
-
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 @NodeInfo(nameTemplate = "{p#kind/s}")
 public class VectorValueNode extends FloatingNode implements LIRLowerable {

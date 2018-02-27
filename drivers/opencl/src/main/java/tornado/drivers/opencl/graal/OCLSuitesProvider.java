@@ -25,8 +25,6 @@
  */
 package tornado.drivers.opencl.graal;
 
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
@@ -35,14 +33,17 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
-import tornado.api.meta.TaskMetaData;
+
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.drivers.opencl.graal.compiler.OCLCanonicalizer;
 import tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
 import tornado.drivers.opencl.graal.compiler.plugins.OCLGraphBuilderPlugins;
-import tornado.graal.TornadoLIRSuites;
-import tornado.graal.TornadoSuites;
-import tornado.graal.compiler.TornadoSketchTier;
-import tornado.graal.compiler.TornadoSuitesProvider;
+import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.graal.TornadoLIRSuites;
+import uk.ac.manchester.tornado.graal.TornadoSuites;
+import uk.ac.manchester.tornado.graal.compiler.TornadoSketchTier;
+import uk.ac.manchester.tornado.graal.compiler.TornadoSuitesProvider;
 
 public class OCLSuitesProvider implements TornadoSuitesProvider {
 

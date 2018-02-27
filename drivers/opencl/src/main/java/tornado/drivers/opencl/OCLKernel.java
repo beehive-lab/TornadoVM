@@ -25,14 +25,15 @@
  */
 package tornado.drivers.opencl;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import tornado.common.TornadoLogger;
+
 import tornado.drivers.opencl.enums.OCLKernelInfo;
 import tornado.drivers.opencl.exceptions.OCLException;
-
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
+import uk.ac.manchester.tornado.common.TornadoLogger;
 
 public class OCLKernel extends TornadoLogger {
 

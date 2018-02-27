@@ -30,11 +30,12 @@ import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.phases.BasePhase;
+
 import jdk.vm.ci.meta.ResolvedJavaType;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementProxyNode;
 import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
-import tornado.graal.phases.TornadoHighTierContext;
+import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
 
 @Deprecated
 public class TornadoParameterCleanup extends BasePhase<TornadoHighTierContext> {

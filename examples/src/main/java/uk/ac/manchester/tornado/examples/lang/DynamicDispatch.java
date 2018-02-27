@@ -27,7 +27,8 @@ package uk.ac.manchester.tornado.examples.lang;
 
 import java.util.Arrays;
 import java.util.function.BiFunction;
-import tornado.runtime.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class DynamicDispatch {
 

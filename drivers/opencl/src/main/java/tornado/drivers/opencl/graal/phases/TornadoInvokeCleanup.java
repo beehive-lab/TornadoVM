@@ -25,9 +25,11 @@
  */
 package tornado.drivers.opencl.graal.phases;
 
-import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
-import tornado.graal.phases.TornadoHighTierContext;
+
+import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
 
 @Deprecated
 public class TornadoInvokeCleanup extends BasePhase<TornadoHighTierContext> {

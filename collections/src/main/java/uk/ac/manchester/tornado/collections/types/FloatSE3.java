@@ -27,9 +27,9 @@ package uk.ac.manchester.tornado.collections.types;
 
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.collections.math.TornadoMath.sqrt;
 import static uk.ac.manchester.tornado.collections.types.Float3.*;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 import uk.ac.manchester.tornado.collections.math.TornadoMath;
 

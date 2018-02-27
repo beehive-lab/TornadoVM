@@ -27,8 +27,9 @@ package uk.ac.manchester.tornado.benchmarks.corrmatrix;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tornado.common.exceptions.TornadoRuntimeException;
-import tornado.runtime.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.common.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 /**
  * GPU calculations using OpenBitSet Intersection for OpenBitSets

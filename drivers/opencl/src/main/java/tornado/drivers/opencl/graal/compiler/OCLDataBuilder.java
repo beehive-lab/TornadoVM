@@ -25,11 +25,12 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+
 import org.graalvm.compiler.code.DataSection.Data;
 import org.graalvm.compiler.lir.asm.DataBuilder;
-import jdk.vm.ci.meta.Constant;
 
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import jdk.vm.ci.meta.Constant;
 
 public class OCLDataBuilder extends DataBuilder {
 

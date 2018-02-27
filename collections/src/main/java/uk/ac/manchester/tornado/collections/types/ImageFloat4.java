@@ -31,11 +31,11 @@ import static java.lang.Float.MAX_VALUE;
 import static java.lang.Float.MIN_VALUE;
 import static java.lang.String.format;
 import static java.nio.FloatBuffer.wrap;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.collections.types.Float4.findULPDistance;
 import static uk.ac.manchester.tornado.collections.types.Float4.sqrt;
 import static uk.ac.manchester.tornado.collections.types.FloatOps.fmt3;
 import static uk.ac.manchester.tornado.collections.types.StorageFormats.toRowMajor;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
 

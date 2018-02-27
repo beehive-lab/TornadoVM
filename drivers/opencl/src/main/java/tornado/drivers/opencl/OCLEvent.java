@@ -25,19 +25,24 @@
  */
 package tornado.drivers.opencl;
 
+import static tornado.drivers.opencl.OCLCommandQueue.EVENT_DESCRIPTIONS;
+import static tornado.drivers.opencl.enums.OCLCommandExecutionStatus.CL_COMPLETE;
+import static tornado.drivers.opencl.enums.OCLCommandExecutionStatus.toEnum;
+import static tornado.drivers.opencl.enums.OCLEventInfo.CL_EVENT_COMMAND_EXECUTION_STATUS;
+import static tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_END;
+import static tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_QUEUED;
+import static tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_START;
+import static tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_SUBMIT;
+import static uk.ac.manchester.tornado.common.Tornado.ENABLE_PROFILING;
+
 import java.nio.ByteBuffer;
-import tornado.api.Event;
-import tornado.api.enums.TornadoExecutionStatus;
-import tornado.common.RuntimeUtilities;
-import tornado.common.TornadoLogger;
+
 import tornado.drivers.opencl.enums.OCLCommandExecutionStatus;
 import tornado.drivers.opencl.exceptions.OCLException;
-
-import static tornado.common.Tornado.ENABLE_PROFILING;
-import static tornado.drivers.opencl.OCLCommandQueue.EVENT_DESCRIPTIONS;
-import static tornado.drivers.opencl.enums.OCLCommandExecutionStatus.*;
-import static tornado.drivers.opencl.enums.OCLEventInfo.CL_EVENT_COMMAND_EXECUTION_STATUS;
-import static tornado.drivers.opencl.enums.OCLProfilingInfo.*;
+import uk.ac.manchester.tornado.api.Event;
+import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
+import uk.ac.manchester.tornado.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.common.TornadoLogger;
 
 public class OCLEvent extends TornadoLogger implements Event {
 

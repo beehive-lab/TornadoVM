@@ -32,8 +32,9 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import tornado.api.Parallel;
-import tornado.runtime.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class NWTornado {
 

@@ -33,8 +33,8 @@ import java.util.stream.IntStream;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import tornado.api.Parallel;
-import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestMatrices extends TornadoTestBase {

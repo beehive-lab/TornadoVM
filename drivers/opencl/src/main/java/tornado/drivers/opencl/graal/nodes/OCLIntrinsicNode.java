@@ -25,6 +25,8 @@
  */
 package tornado.drivers.opencl.graal.nodes;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -38,15 +40,14 @@ import org.graalvm.compiler.nodes.calc.BinaryNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
-import tornado.graal.nodes.Floatable;
-
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import uk.ac.manchester.tornado.graal.nodes.Floatable;
 
 public class OCLIntrinsicNode {
 

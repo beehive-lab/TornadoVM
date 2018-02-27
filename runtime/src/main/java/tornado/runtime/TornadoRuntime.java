@@ -36,6 +36,7 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
+
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
 import org.graalvm.compiler.lir.constopt.ConstantLoadOptimization;
@@ -43,13 +44,14 @@ import org.graalvm.compiler.lir.phases.PostAllocationOptimizationStage;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.util.EconomicMap;
-import tornado.common.TornadoDevice;
-import tornado.common.TornadoLogger;
-import tornado.runtime.api.GlobalObjectState;
+
+import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
 
 import static org.graalvm.compiler.debug.GraalError.guarantee;
-import static tornado.common.Tornado.SHOULD_LOAD_RMI;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.common.Tornado.SHOULD_LOAD_RMI;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class TornadoRuntime extends TornadoLogger {
 

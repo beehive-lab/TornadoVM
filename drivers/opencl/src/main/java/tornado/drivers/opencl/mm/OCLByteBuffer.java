@@ -26,10 +26,11 @@
 package tornado.drivers.opencl.mm;
 
 import java.nio.ByteBuffer;
-import tornado.common.RuntimeUtilities;
-import tornado.common.Tornado;
-import tornado.common.exceptions.TornadoOutOfMemoryException;
+
 import tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.common.Tornado;
+import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
 
 /**
  * A buffer for inspecting data within an OpenCL device. It is not backed by any

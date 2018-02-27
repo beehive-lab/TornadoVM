@@ -31,6 +31,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.AccessIndexedNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
+
 import jdk.vm.ci.meta.JavaKind;
 
 @NodeInfo(shortName = "Atomic Add")

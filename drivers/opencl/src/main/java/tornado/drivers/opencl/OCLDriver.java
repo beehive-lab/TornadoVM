@@ -27,16 +27,18 @@ package tornado.drivers.opencl;
 
 import java.util.ArrayList;
 import java.util.List;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
-import tornado.common.TornadoDevice;
-import tornado.common.TornadoLogger;
+
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
 import tornado.drivers.opencl.graal.OCLSuitesProvider;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.runtime.TornadoDriver;
 import tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.common.TornadoLogger;
 
 public final class OCLDriver extends TornadoLogger implements TornadoDriver {
 

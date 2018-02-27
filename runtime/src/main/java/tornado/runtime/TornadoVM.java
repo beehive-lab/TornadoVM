@@ -30,20 +30,21 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
-import tornado.api.Event;
-import tornado.api.meta.TaskMetaData;
-import tornado.common.*;
-import tornado.common.enums.Access;
-import tornado.runtime.api.GlobalObjectState;
-import tornado.runtime.graph.ExecutionContext;
 
-import static tornado.api.enums.TornadoExecutionStatus.COMPLETE;
-import static tornado.common.Tornado.*;
-import static tornado.common.enums.Access.READ_WRITE;
-import static tornado.common.enums.Access.WRITE;
-import static tornado.common.exceptions.TornadoInternalError.*;
+import uk.ac.manchester.tornado.api.Event;
+import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.common.*;
+import uk.ac.manchester.tornado.common.enums.Access;
+import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
+
 import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
-import static tornado.runtime.graph.GraphAssembler.*;
+import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
+import static uk.ac.manchester.tornado.common.Tornado.*;
+import static uk.ac.manchester.tornado.common.enums.Access.READ_WRITE;
+import static uk.ac.manchester.tornado.common.enums.Access.WRITE;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.*;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.*;
 
 public class TornadoVM extends TornadoLogger {
 

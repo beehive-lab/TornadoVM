@@ -25,25 +25,30 @@
  */
 package tornado.drivers.opencl.mm;
 
+import static tornado.runtime.TornadoRuntime.getVMConfig;
+import static tornado.runtime.TornadoRuntime.getVMRuntime;
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.common.Tornado.DEBUG;
+import static uk.ac.manchester.tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
+import static uk.ac.manchester.tornado.common.Tornado.debug;
+import static uk.ac.manchester.tornado.common.Tornado.trace;
+import static uk.ac.manchester.tornado.common.Tornado.warn;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
-import tornado.api.Payload;
-import tornado.api.Vector;
-import tornado.common.ObjectBuffer;
-import tornado.common.RuntimeUtilities;
-import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDeviceContext;
-
-import static tornado.common.RuntimeUtilities.humanReadableByteCount;
-import static tornado.common.Tornado.*;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.runtime.TornadoRuntime.getVMConfig;
-import static tornado.runtime.TornadoRuntime.getVMRuntime;
+import uk.ac.manchester.tornado.api.Payload;
+import uk.ac.manchester.tornado.api.Vector;
+import uk.ac.manchester.tornado.common.ObjectBuffer;
+import uk.ac.manchester.tornado.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
 
 public class OCLObjectWrapper implements ObjectBuffer {
 

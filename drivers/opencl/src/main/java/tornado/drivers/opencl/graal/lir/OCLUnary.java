@@ -25,9 +25,15 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.ADDRESS_OF;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SQUARE_BRACKETS_CLOSE;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.SQUARE_BRACKETS_OPEN;
+import static uk.ac.manchester.tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
 import org.graalvm.compiler.lir.Opcode;
+
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
@@ -36,9 +42,6 @@ import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryTemplate;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.meta.OCLMemorySpace;
 import tornado.drivers.opencl.graal.nodes.OCLBarrierNode.OCLMemFenceFlags;
-
-import static tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
 
 public class OCLUnary {
 

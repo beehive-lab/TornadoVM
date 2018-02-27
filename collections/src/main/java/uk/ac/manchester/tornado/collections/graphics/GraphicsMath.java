@@ -25,13 +25,14 @@
  */
 package uk.ac.manchester.tornado.collections.graphics;
 
-import tornado.api.Parallel;
 import uk.ac.manchester.tornado.collections.types.*;
 
 import static uk.ac.manchester.tornado.collections.math.TornadoMath.max;
 import static uk.ac.manchester.tornado.collections.math.TornadoMath.min;
 import static uk.ac.manchester.tornado.collections.types.Float3.*;
 import static uk.ac.manchester.tornado.collections.types.VolumeOps.interp;
+
+import uk.ac.manchester.tornado.api.Parallel;
 
 public class GraphicsMath {
 

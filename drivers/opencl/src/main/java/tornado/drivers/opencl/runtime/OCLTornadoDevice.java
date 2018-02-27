@@ -25,36 +25,54 @@
  */
 package tornado.drivers.opencl.runtime;
 
+import static tornado.drivers.opencl.graal.compiler.OCLCompiler.compileSketchForDevice;
+import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.isPrimitiveArray;
+import static uk.ac.manchester.tornado.common.Tornado.FORCE_ALL_TO_GPU;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import tornado.api.Event;
-import tornado.api.enums.TornadoSchedulingStrategy;
-import tornado.api.meta.TaskMetaData;
-import tornado.common.*;
-import tornado.common.enums.Access;
-import tornado.common.exceptions.TornadoOutOfMemoryException;
 import tornado.drivers.opencl.OCLDevice;
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.OCLDriver;
 import tornado.drivers.opencl.graal.OCLProviders;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
-import tornado.drivers.opencl.mm.*;
-import tornado.runtime.api.CompilableTask;
-import tornado.runtime.api.PrebuiltTask;
-import tornado.runtime.sketcher.Sketch;
-import tornado.runtime.sketcher.TornadoSketcher;
-
-import static tornado.common.RuntimeUtilities.isPrimitiveArray;
-import static tornado.common.Tornado.FORCE_ALL_TO_GPU;
-import static tornado.common.exceptions.TornadoInternalError.*;
-import static tornado.drivers.opencl.graal.compiler.OCLCompiler.compileSketchForDevice;
-import static tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import tornado.drivers.opencl.mm.OCLByteArrayWrapper;
+import tornado.drivers.opencl.mm.OCLByteBuffer;
+import tornado.drivers.opencl.mm.OCLDoubleArrayWrapper;
+import tornado.drivers.opencl.mm.OCLFloatArrayWrapper;
+import tornado.drivers.opencl.mm.OCLIntArrayWrapper;
+import tornado.drivers.opencl.mm.OCLLongArrayWrapper;
+import tornado.drivers.opencl.mm.OCLMemoryManager;
+import tornado.drivers.opencl.mm.OCLMultiDimArrayWrapper;
+import tornado.drivers.opencl.mm.OCLObjectWrapper;
+import tornado.drivers.opencl.mm.OCLShortArrayWrapper;
+import uk.ac.manchester.tornado.api.Event;
+import uk.ac.manchester.tornado.api.enums.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.common.CallStack;
+import uk.ac.manchester.tornado.common.DeviceObjectState;
+import uk.ac.manchester.tornado.common.ObjectBuffer;
+import uk.ac.manchester.tornado.common.SchedulableTask;
+import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.common.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.common.enums.Access;
+import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.runtime.api.CompilableTask;
+import uk.ac.manchester.tornado.runtime.api.PrebuiltTask;
+import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
+import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 
 public class OCLTornadoDevice implements TornadoDevice {
 

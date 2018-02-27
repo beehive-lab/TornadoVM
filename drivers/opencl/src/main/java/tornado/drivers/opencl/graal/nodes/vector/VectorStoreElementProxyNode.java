@@ -25,12 +25,16 @@
  */
 package tornado.drivers.opencl.graal.nodes.vector;
 
-import org.graalvm.compiler.graph.*;
-import org.graalvm.compiler.graph.Node.OptionalInput;
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
-import org.graalvm.compiler.nodeinfo.*;
-import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodeinfo.InputType;
+import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.ValueNode;
+
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 

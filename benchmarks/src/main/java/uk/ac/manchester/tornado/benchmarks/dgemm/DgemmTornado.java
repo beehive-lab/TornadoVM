@@ -27,14 +27,13 @@ package uk.ac.manchester.tornado.benchmarks.dgemm;
 
 import java.util.Random;
 
-import tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
-import static tornado.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.dgemm;
 import static uk.ac.manchester.tornado.collections.math.TornadoMath.findULPDistance;
-import static tornado.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
 public class DgemmTornado extends BenchmarkDriver {
 

@@ -26,10 +26,11 @@
 package uk.ac.manchester.tornado.examples.arrays;
 
 import java.util.Arrays;
-import tornado.api.Parallel;
-import tornado.common.enums.Access;
+
 import tornado.drivers.opencl.OpenCL;
-import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.common.enums.Access;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class ArrayAddIntPrebuilt {
 

@@ -30,15 +30,15 @@ import static java.lang.Float.MIN_VALUE;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.nio.FloatBuffer.wrap;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.collections.math.TornadoMath.sqrt;
 import static uk.ac.manchester.tornado.collections.types.FloatOps.findMaxULP;
 import static uk.ac.manchester.tornado.collections.types.FloatOps.fmt;
 import static uk.ac.manchester.tornado.collections.types.StorageFormats.toRowMajor;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 import java.nio.FloatBuffer;
 
-import tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.Parallel;
 
 
 public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {

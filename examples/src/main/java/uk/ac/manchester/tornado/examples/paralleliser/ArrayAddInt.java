@@ -26,7 +26,8 @@
 package uk.ac.manchester.tornado.examples.paralleliser;
 
 import java.util.Arrays;
-import tornado.runtime.api.TaskSchedule;
+
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class ArrayAddInt {
 

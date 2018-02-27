@@ -25,8 +25,8 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import static tornado.common.RuntimeUtilities.elapsedTimeInSeconds;
-import static tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.elapsedTimeInSeconds;
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
 
 public abstract class BenchmarkDriver {
 

@@ -25,11 +25,15 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import java.util.*;
-import jdk.vm.ci.code.CodeCacheProvider;
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.Value;
+import static uk.ac.manchester.tornado.graal.TornadoLIRGenerator.trace;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.lir.InstructionValueProcedure;
@@ -49,15 +53,18 @@ import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
 import org.graalvm.compiler.options.OptionValues;
-import tornado.common.exceptions.TornadoInternalError;
+
+import jdk.vm.ci.code.CodeCacheProvider;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.asm.OCLAssembler;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopConditionOp;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopInitOp;
 import tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopPostOp;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
-
-import static tornado.graal.TornadoLIRGenerator.trace;
+import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 

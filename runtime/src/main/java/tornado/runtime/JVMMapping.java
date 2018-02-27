@@ -25,11 +25,11 @@
  */
 package tornado.runtime;
 
-import tornado.api.Event;
-import tornado.api.enums.TornadoSchedulingStrategy;
-import tornado.common.*;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
 
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import uk.ac.manchester.tornado.api.Event;
+import uk.ac.manchester.tornado.api.enums.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.common.*;
 
 public class JVMMapping implements TornadoDevice {
 

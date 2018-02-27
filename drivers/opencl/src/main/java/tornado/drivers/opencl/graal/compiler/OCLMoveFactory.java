@@ -25,14 +25,15 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
+
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
-
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLMoveFactory implements MoveFactory {
 

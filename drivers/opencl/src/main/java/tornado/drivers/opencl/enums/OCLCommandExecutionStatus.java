@@ -25,7 +25,7 @@
  */
 package tornado.drivers.opencl.enums;
 
-import tornado.api.enums.TornadoExecutionStatus;
+import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 
 public enum OCLCommandExecutionStatus {
 	CL_UNKNOWN									 (0x4),

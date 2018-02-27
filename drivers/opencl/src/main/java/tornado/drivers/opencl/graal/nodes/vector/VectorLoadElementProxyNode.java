@@ -25,16 +25,17 @@
  */
 package tornado.drivers.opencl.graal.nodes.vector;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
+
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 /**
  * The {@code StoreIndexedNode} represents a write to an array element.

@@ -27,8 +27,8 @@ package uk.ac.manchester.tornado.examples.arrays;
 
 import java.util.Arrays;
 
-import tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.collections.math.SimpleMath;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class ArrayMultiplyAdd {
 

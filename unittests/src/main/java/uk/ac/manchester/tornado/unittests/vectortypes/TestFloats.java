@@ -30,8 +30,7 @@ import java.util.Random;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import tornado.api.Parallel;
-import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.collections.types.Float2;
 import uk.ac.manchester.tornado.collections.types.Float3;
 import uk.ac.manchester.tornado.collections.types.Float4;
@@ -40,6 +39,7 @@ import uk.ac.manchester.tornado.collections.types.Float8;
 import uk.ac.manchester.tornado.collections.types.VectorFloat;
 import uk.ac.manchester.tornado.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.collections.types.VectorFloat4;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestFloats extends TornadoTestBase {

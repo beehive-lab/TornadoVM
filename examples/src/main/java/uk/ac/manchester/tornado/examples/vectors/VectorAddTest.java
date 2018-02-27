@@ -27,10 +27,10 @@ package uk.ac.manchester.tornado.examples.vectors;
 
 import static uk.ac.manchester.tornado.collections.types.Float3.add;
 
-import tornado.api.Parallel;
-import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.collections.types.Float3;
 import uk.ac.manchester.tornado.collections.types.VectorFloat3;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class VectorAddTest {
 

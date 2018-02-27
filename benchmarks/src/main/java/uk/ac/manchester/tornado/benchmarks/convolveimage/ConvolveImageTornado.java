@@ -25,15 +25,15 @@
  */
 package uk.ac.manchester.tornado.benchmarks.convolveimage;
 
-import tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 import uk.ac.manchester.tornado.collections.types.FloatOps;
 import uk.ac.manchester.tornado.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
-import static tornado.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createFilter;
 import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createImage;
+import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
 public class ConvolveImageTornado extends BenchmarkDriver {
 

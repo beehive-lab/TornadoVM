@@ -25,24 +25,25 @@
  */
 package tornado.drivers.opencl.mm;
 
+import static tornado.drivers.opencl.OpenCL.OCL_CALL_STACK_LIMIT;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+
 import java.lang.reflect.Method;
-import tornado.api.Parallel;
-import tornado.api.meta.ScheduleMetaData;
-import tornado.api.meta.TaskMetaData;
-import tornado.common.RuntimeUtilities;
-import tornado.common.Tornado;
-import tornado.common.TornadoLogger;
-import tornado.common.TornadoMemoryProvider;
-import tornado.common.exceptions.TornadoOutOfMemoryException;
+
 import tornado.drivers.opencl.OCLDeviceContext;
 import tornado.drivers.opencl.enums.OCLMemFlags;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
-import tornado.meta.domain.DomainTree;
-import tornado.meta.domain.IntDomain;
-
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
-import static tornado.drivers.opencl.OpenCL.OCL_CALL_STACK_LIMIT;
+import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.common.Tornado;
+import uk.ac.manchester.tornado.common.TornadoLogger;
+import uk.ac.manchester.tornado.common.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.meta.domain.DomainTree;
+import uk.ac.manchester.tornado.meta.domain.IntDomain;
 
 public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProvider {
 

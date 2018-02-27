@@ -27,13 +27,13 @@ package uk.ac.manchester.tornado.benchmarks.striad;
 
 import java.util.Arrays;
 
-import tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
-import static tornado.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.striad;
 import static uk.ac.manchester.tornado.collections.math.TornadoMath.findULPDistance;
+import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
 public class StriadTornado extends BenchmarkDriver {
 

@@ -25,9 +25,9 @@
  */
 package tornado.drivers.opencl;
 
-import static tornado.common.Tornado.FORCE_ALL_TO_GPU;
-import static tornado.common.Tornado.fatal;
 import static tornado.drivers.opencl.OpenCL.ACCELERATOR_IS_GPU;
+import static uk.ac.manchester.tornado.common.Tornado.FORCE_ALL_TO_GPU;
+import static uk.ac.manchester.tornado.common.Tornado.fatal;
 
 public class OCLScheduler {
 

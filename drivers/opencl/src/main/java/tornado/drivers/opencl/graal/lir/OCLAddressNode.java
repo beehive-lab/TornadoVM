@@ -25,7 +25,6 @@
  */
 package tornado.drivers.opencl.graal.lir;
 
-import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -33,6 +32,8 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
+import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
 import tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;

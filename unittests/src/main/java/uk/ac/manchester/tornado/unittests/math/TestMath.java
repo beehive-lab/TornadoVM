@@ -27,10 +27,11 @@ package uk.ac.manchester.tornado.unittests.math;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
+
 import static org.junit.Assert.assertArrayEquals;
 
-import tornado.api.Parallel;
-import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestMath extends TornadoTestBase {

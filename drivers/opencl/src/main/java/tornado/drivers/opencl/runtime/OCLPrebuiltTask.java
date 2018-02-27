@@ -25,12 +25,12 @@
  */
 package tornado.drivers.opencl.runtime;
 
-import tornado.api.meta.ScheduleMetaData;
-import tornado.common.enums.Access;
 import tornado.drivers.opencl.graal.OCLInstalledCode;
 import tornado.drivers.opencl.graal.backend.OCLBackend;
-import tornado.meta.domain.DomainTree;
-import tornado.runtime.api.PrebuiltTask;
+import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.common.enums.Access;
+import uk.ac.manchester.tornado.meta.domain.DomainTree;
+import uk.ac.manchester.tornado.runtime.api.PrebuiltTask;
 
 public class OCLPrebuiltTask extends PrebuiltTask {
 

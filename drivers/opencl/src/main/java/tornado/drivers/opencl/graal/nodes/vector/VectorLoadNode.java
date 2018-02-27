@@ -31,6 +31,7 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.AccessIndexedNode;
+
 import jdk.vm.ci.meta.JavaKind;
 import tornado.drivers.opencl.graal.OCLStamp;
 import tornado.drivers.opencl.graal.OCLStampFactory;

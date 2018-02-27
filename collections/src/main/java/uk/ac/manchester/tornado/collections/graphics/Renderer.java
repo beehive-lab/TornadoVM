@@ -25,13 +25,14 @@
  */
 package uk.ac.manchester.tornado.collections.graphics;
 
-import tornado.api.Parallel;
 import uk.ac.manchester.tornado.collections.types.*;
 
 import static uk.ac.manchester.tornado.collections.graphics.GraphicsMath.raycastPoint;
 import static uk.ac.manchester.tornado.collections.types.Float3.add;
 import static uk.ac.manchester.tornado.collections.types.Float3.mult;
 import static uk.ac.manchester.tornado.collections.types.VolumeOps.grad;
+
+import uk.ac.manchester.tornado.api.Parallel;
 
 public class Renderer {
 

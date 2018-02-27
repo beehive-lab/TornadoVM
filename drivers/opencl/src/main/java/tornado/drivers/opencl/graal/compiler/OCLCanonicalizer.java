@@ -25,10 +25,11 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+
 import java.util.BitSet;
 import java.util.List;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
@@ -42,15 +43,22 @@ import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
-import tornado.api.Vector;
-import tornado.api.meta.TaskMetaData;
-import tornado.common.exceptions.TornadoInternalError;
+
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import tornado.drivers.opencl.graal.OCLStamp;
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-import tornado.drivers.opencl.graal.nodes.vector.*;
-
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
+import tornado.drivers.opencl.graal.nodes.vector.VectorAddNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorDivNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorElementOpNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorMulNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorSubNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
+import uk.ac.manchester.tornado.api.Vector;
+import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 
 public class OCLCanonicalizer extends CustomCanonicalizer {
 

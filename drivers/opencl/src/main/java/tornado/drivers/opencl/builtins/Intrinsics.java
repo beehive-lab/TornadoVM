@@ -25,7 +25,7 @@
  */
 package tornado.drivers.opencl.builtins;
 
-import tornado.api.ReductionOp;
+import uk.ac.manchester.tornado.api.ReductionOp;
 
 public class Intrinsics {
 

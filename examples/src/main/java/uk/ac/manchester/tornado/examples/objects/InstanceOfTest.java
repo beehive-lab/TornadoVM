@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.examples.objects;
 
-import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class InstanceOfTest {
 

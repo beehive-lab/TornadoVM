@@ -25,11 +25,11 @@
  */
 package uk.ac.manchester.tornado.benchmarks.blackscholes;
 
-import tornado.api.Parallel;
-import tornado.runtime.api.TaskSchedule;
-import uk.ac.manchester.tornado.collections.math.TornadoMath;
+import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
-import static tornado.common.Tornado.getProperty;
+import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class BlackScholes {
 

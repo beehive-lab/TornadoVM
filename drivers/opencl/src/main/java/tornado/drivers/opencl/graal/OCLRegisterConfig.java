@@ -25,13 +25,18 @@
  */
 package tornado.drivers.opencl.graal;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+
+import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CallingConvention.Type;
-import jdk.vm.ci.code.*;
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.RegisterArray;
+import jdk.vm.ci.code.RegisterAttributes;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.code.ValueKindFactory;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.PlatformKind;
-
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 public class OCLRegisterConfig implements RegisterConfig {
 

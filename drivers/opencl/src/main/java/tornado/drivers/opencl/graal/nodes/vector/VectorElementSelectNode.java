@@ -25,6 +25,8 @@
  */
 package tornado.drivers.opencl.graal.nodes.vector;
 
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
@@ -33,12 +35,11 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
 import jdk.vm.ci.meta.Value;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
 import tornado.drivers.opencl.graal.lir.OCLBinary;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
 
 /**
  * The {@code LoadIndexedNode} represents a read from an element of an array.

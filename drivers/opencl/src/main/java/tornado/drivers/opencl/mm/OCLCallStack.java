@@ -25,14 +25,16 @@
  */
 package tornado.drivers.opencl.mm;
 
-import tornado.common.CallStack;
-import tornado.common.DeviceObjectState;
-import tornado.drivers.opencl.OCLDeviceContext;
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.isBoxedPrimitive;
+import static uk.ac.manchester.tornado.common.Tornado.DEBUG;
+import static uk.ac.manchester.tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
+import static uk.ac.manchester.tornado.common.Tornado.debug;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
-import static tornado.common.RuntimeUtilities.humanReadableByteCount;
-import static tornado.common.RuntimeUtilities.isBoxedPrimitive;
-import static tornado.common.Tornado.*;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.common.CallStack;
+import uk.ac.manchester.tornado.common.DeviceObjectState;
 
 public class OCLCallStack extends OCLByteBuffer implements CallStack {
 

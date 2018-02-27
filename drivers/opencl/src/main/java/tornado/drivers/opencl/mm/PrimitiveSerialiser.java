@@ -26,7 +26,8 @@
 package tornado.drivers.opencl.mm;
 
 import java.nio.ByteBuffer;
-import tornado.common.Tornado;
+
+import uk.ac.manchester.tornado.common.Tornado;
 
 public class PrimitiveSerialiser {
 

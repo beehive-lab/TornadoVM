@@ -25,32 +25,53 @@
  */
 package tornado.drivers.opencl.graal.compiler;
 
-import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.StackSlot;
-import jdk.vm.ci.meta.*;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.trace;
+
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.spi.CodeGenProviders;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.LIRFrameState;
+import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.StandardOp.SaveRegistersOp;
-import org.graalvm.compiler.lir.*;
+import org.graalvm.compiler.lir.SwitchStrategy;
+import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
+
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.StackSlot;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
 import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.graal.OCLLIRKindTool;
 import tornado.drivers.opencl.graal.OCLStamp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLNullaryOp;
 import tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
+import tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
+import tornado.drivers.opencl.graal.lir.OCLBinary;
+import tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
+import tornado.drivers.opencl.graal.lir.OCLControlFlow;
+import tornado.drivers.opencl.graal.lir.OCLGenTool;
+import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import tornado.drivers.opencl.graal.lir.OCLLIRStmt.ExprStmt;
-import tornado.drivers.opencl.graal.lir.*;
-
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static tornado.graal.compiler.TornadoCodeGenerator.trace;
+import tornado.drivers.opencl.graal.lir.OCLNullary;
+import tornado.drivers.opencl.graal.lir.OCLTernary;
+import tornado.drivers.opencl.graal.lir.OCLUnary;
 
 public class OCLLIRGenerator extends LIRGenerator {
 

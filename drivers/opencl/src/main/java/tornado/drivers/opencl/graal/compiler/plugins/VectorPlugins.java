@@ -25,28 +25,37 @@
  */
 package tornado.drivers.opencl.graal.compiler.plugins;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import static uk.ac.manchester.tornado.common.Tornado.ENABLE_VECTORS;
+import static uk.ac.manchester.tornado.common.Tornado.TORNADO_ENABLE_BIFS;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderTool;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
-import org.graalvm.compiler.nodes.graphbuilderconf.*;
+import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
-import tornado.api.Vector;
-import tornado.common.exceptions.TornadoInternalError;
+
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import tornado.drivers.opencl.graal.OCLStampFactory;
 import tornado.drivers.opencl.graal.lir.OCLKind;
-import tornado.drivers.opencl.graal.nodes.vector.*;
-
-import static tornado.common.Tornado.ENABLE_VECTORS;
-import static tornado.common.Tornado.TORNADO_ENABLE_BIFS;
-import static tornado.common.exceptions.TornadoInternalError.guarantee;
+import tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorAddNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorStoreElementProxyNode;
+import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
+import uk.ac.manchester.tornado.api.Vector;
+import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 
 public final class VectorPlugins {
 

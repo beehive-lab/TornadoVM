@@ -26,9 +26,9 @@ package uk.ac.manchester.tornado.examples.compute;
 
 import java.util.Random;
 
-import tornado.api.Parallel;
-import tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 /**
  * BlackScholes implementation adapted from AMD-OpenCL examples and Marawacc compiler framework.

@@ -25,29 +25,40 @@
  */
 package tornado.drivers.opencl.graal.asm;
 
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CONSTANT_REGION_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.GLOBAL_REGION_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.LOCAL_REGION_NAME;
+import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.PRIVATE_REGION_NAME;
+import static tornado.drivers.opencl.graal.lir.OCLKind.FLOAT;
+import static tornado.drivers.opencl.graal.lir.OCLKind.LONG;
+import static tornado.drivers.opencl.graal.lir.OCLKind.ULONG;
+import static tornado.drivers.opencl.mm.OCLCallStack.RESERVED_SLOTS;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import org.graalvm.compiler.asm.AbstractAddress;
+import org.graalvm.compiler.asm.Assembler;
+import org.graalvm.compiler.asm.Label;
+import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.Variable;
+
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.asm.AbstractAddress;
-import org.graalvm.compiler.asm.Assembler;
-import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.Variable;
 import tornado.drivers.opencl.OCLTargetDescription;
 import tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.lir.OCLLIROp;
 import tornado.drivers.opencl.graal.lir.OCLReturnSlot;
-
-import static tornado.common.exceptions.TornadoInternalError.*;
-import static tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.*;
-import static tornado.drivers.opencl.graal.lir.OCLKind.*;
-import static tornado.drivers.opencl.mm.OCLCallStack.RESERVED_SLOTS;
 
 public final class OCLAssembler extends Assembler {
 

@@ -25,16 +25,17 @@
  */
 package tornado.drivers.opencl.graal.compiler.plugins;
 
+import static uk.ac.manchester.tornado.common.Tornado.ENABLE_VECTORS;
+
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
+
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
-import tornado.api.Vector;
 import tornado.drivers.opencl.graal.lir.OCLKind;
 import tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
-
-import static tornado.common.Tornado.ENABLE_VECTORS;
+import uk.ac.manchester.tornado.api.Vector;
 
 public class OCLVectorNodePlugin implements NodePlugin {
 

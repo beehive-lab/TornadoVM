@@ -25,16 +25,20 @@
  */
 package tornado.drivers.opencl.mm;
 
-import java.lang.reflect.Array;
-import jdk.vm.ci.meta.JavaKind;
-import tornado.common.ObjectBuffer;
-import tornado.common.exceptions.TornadoOutOfMemoryException;
-import tornado.drivers.opencl.OCLDeviceContext;
-
-import static tornado.common.RuntimeUtilities.humanReadableByteCount;
-import static tornado.common.Tornado.*;
-import static tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.common.Tornado.VALIDATE_ARRAY_HEADERS;
+import static uk.ac.manchester.tornado.common.Tornado.fatal;
+import static uk.ac.manchester.tornado.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.common.Tornado.info;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static tornado.runtime.TornadoRuntime.getVMConfig;
+
+import java.lang.reflect.Array;
+
+import jdk.vm.ci.meta.JavaKind;
+import tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.common.ObjectBuffer;
+import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
 
 public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
