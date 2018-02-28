@@ -1,24 +1,24 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework:
+ * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornado
  *
- * Copyright (c) 2013-2018 APT Group, School of Computer Science,
- * The University of Manchester
+ * Copyright (c) 2013-2018, APT Group, School of Computer Science,
+ * The University of Manchester. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This work is partially supported by EPSRC grants:
- * Anyscale EP/L000725/1 and PAMELA EP/K008730/1.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
 
@@ -38,155 +38,155 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestArrays extends TornadoTestBase {
 
-    public static void addAccumulator(int[] a, int value) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] += value;
-        }
-    }
+	public static void addAccumulator(int[] a, int value) {
+		for (@Parallel int i = 0; i < a.length; i++) {
+			a[i] += value;
+		}
+	}
 
-    public static void vectorAddDouble(double[] a, double[] b, double[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
-        }
-    }
+	public static void vectorAddDouble(double[] a, double[] b, double[] c) {
+		for (@Parallel int i = 0; i < c.length; i++) {
+			c[i] = a[i] + b[i];
+		}
+	}
 
-    public static void vectorAddFloat(float[] a, float[] b, float[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
-        }
-    }
+	public static void vectorAddFloat(float[] a, float[] b, float[] c) {
+		for (@Parallel int i = 0; i < c.length; i++) {
+			c[i] = a[i] + b[i];
+		}
+	}
 
-    public static void vectorAddInteger(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
-        }
-    }
+	public static void vectorAddInteger(int[] a, int[] b, int[] c) {
+		for (@Parallel int i = 0; i < c.length; i++) {
+			c[i] = a[i] + b[i];
+		}
+	}
 
-    public static void vectorAddLong(long[] a, long[] b, long[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
-        }
-    }
+	public static void vectorAddLong(long[] a, long[] b, long[] c) {
+		for (@Parallel int i = 0; i < c.length; i++) {
+			c[i] = a[i] + b[i];
+		}
+	}
 
-    public static void vectorAddShort(short[] a, short[] b, short[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = (short) (a[i] + b[i]);
-        }
-    }
+	public static void vectorAddShort(short[] a, short[] b, short[] c) {
+		for (@Parallel int i = 0; i < c.length; i++) {
+			c[i] = (short) (a[i] + b[i]);
+		}
+	}
 
-    public static void initializeSequential(int[] a) {
-        for (int i = 0; i < a.length; i++) {
-            a[i] = 1;
-        }
-    }
+	public static void initializeSequential(int[] a) {
+		for (int i = 0; i < a.length; i++) {
+			a[i] = 1;
+		}
+	}
 
-    public static void initializeToOneParallel(int[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = 1;
-        }
-    }
+	public static void initializeToOneParallel(int[] a) {
+		for (@Parallel int i = 0; i < a.length; i++) {
+			a[i] = 1;
+		}
+	}
 
-    @Test
-    public void testWarmUp() {
+	@Test
+	public void testWarmUp() {
 
-        final int N = 128;
-        int numKernels = 8;
+		final int N = 128;
+		int numKernels = 8;
 
-        int[] data = new int[N];
+		int[] data = new int[N];
 
-        IntStream.range(0, N).parallel().forEach(idx -> {
-            data[idx] = idx;
-        });
+		IntStream.range(0, N).parallel().forEach(idx -> {
+			data[idx] = idx;
+		});
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+		TaskSchedule s0 = new TaskSchedule("s0");
+		assertNotNull(s0);
 
-        for (int i = 0; i < numKernels; i++) {
-            s0.task("t" + i, TestArrays::addAccumulator, data, 1);
-        }
+		for (int i = 0; i < numKernels; i++) {
+			s0.task("t" + i, TestArrays::addAccumulator, data, 1);
+		}
 
-        s0.streamOut(data).warmup();
+		s0.streamOut(data).warmup();
 
-        s0.execute();
+		s0.execute();
 
-        for (int i = 0; i < N; i++) {
-            assertEquals(i + numKernels, data[i], 0.0001);
-        }
-    }
+		for (int i = 0; i < N; i++) {
+			assertEquals(i + numKernels, data[i], 0.0001);
+		}
+	}
 
-    @Test
-    public void testInitNotParallel() {
-        final int N = 128;
-        int[] data = new int[N];
+	@Test
+	public void testInitNotParallel() {
+		final int N = 128;
+		int[] data = new int[N];
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+		TaskSchedule s0 = new TaskSchedule("s0");
+		assertNotNull(s0);
 
-        s0.task("t0", TestArrays::initializeSequential, data);
-        s0.streamOut(data).warmup();
-        s0.execute();
+		s0.task("t0", TestArrays::initializeSequential, data);
+		s0.streamOut(data).warmup();
+		s0.execute();
 
-        for (int i = 0; i < N; i++) {
-            assertEquals(1, data[i], 0.0001);
-        }
-    }
+		for (int i = 0; i < N; i++) {
+			assertEquals(1, data[i], 0.0001);
+		}
+	}
 
-    @Test
-    public void testInitParallel() {
-        final int N = 128;
-        int[] data = new int[N];
+	@Test
+	public void testInitParallel() {
+		final int N = 128;
+		int[] data = new int[N];
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+		TaskSchedule s0 = new TaskSchedule("s0");
+		assertNotNull(s0);
 
-        s0.task("t0", TestArrays::initializeToOneParallel, data);
-        s0.streamOut(data).warmup();
-        s0.execute();
+		s0.task("t0", TestArrays::initializeToOneParallel, data);
+		s0.streamOut(data).warmup();
+		s0.execute();
 
-        for (int i = 0; i < N; i++) {
-            assertEquals(1, data[i], 0.0001);
-        }
-    }
+		for (int i = 0; i < N; i++) {
+			assertEquals(1, data[i], 0.0001);
+		}
+	}
 
-    @Test
-    public void testAdd() {
+	@Test
+	public void testAdd() {
 
-        final int N = 128;
-        int numKernels = 8;
+		final int N = 128;
+		int numKernels = 8;
 
-        int[] data = new int[N];
+		int[] data = new int[N];
 
-        IntStream.range(0, N).parallel().forEach(idx -> {
-            data[idx] = idx;
-        });
+		IntStream.range(0, N).parallel().forEach(idx -> {
+			data[idx] = idx;
+		});
 
-        TaskSchedule s0 = new TaskSchedule("s0");
-        assertNotNull(s0);
+		TaskSchedule s0 = new TaskSchedule("s0");
+		assertNotNull(s0);
 
-        for (int i = 0; i < numKernels; i++) {
-            s0.task("t" + i, TestArrays::addAccumulator, data, 1);
-        }
+		for (int i = 0; i < numKernels; i++) {
+			s0.task("t" + i, TestArrays::addAccumulator, data, 1);
+		}
 
-        s0.streamOut(data).execute();
+		s0.streamOut(data).execute();
 
-        for (int i = 0; i < N; i++) {
-            assertEquals(i + numKernels, data[i], 0.0001);
-        }
-    }
+		for (int i = 0; i < N; i++) {
+			assertEquals(i + numKernels, data[i], 0.0001);
+		}
+	}
 
-    @Test
-    public void testVectorAdditionDouble() {
-        final int numElements = 4096;
-        double[] a = new double[numElements];
-        double[] b = new double[numElements];
-        double[] c = new double[numElements];
+	@Test
+	public void testVectorAdditionDouble() {
+		final int numElements = 4096;
+		double[] a = new double[numElements];
+		double[] b = new double[numElements];
+		double[] c = new double[numElements];
 
-        IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = (float) Math.random();
-            b[i] = (float) Math.random();
-        });
+		IntStream.range(0, numElements).sequential().forEach(i -> {
+			a[i] = (float) Math.random();
+			b[i] = (float) Math.random();
+		});
 
-        //@formatter:off
+		//@formatter:off
         new TaskSchedule("s0")
             .streamIn(a, b)
             .task("t0", TestArrays::vectorAddDouble, a, b, c)
@@ -194,24 +194,24 @@ public class TestArrays extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
-        }
-    }
+		for (int i = 0; i < c.length; i++) {
+			assertEquals(a[i] + b[i], c[i], 0.001);
+		}
+	}
 
-    @Test
-    public void testVectorAdditionFloat() {
-        final int numElements = 4096;
-        float[] a = new float[numElements];
-        float[] b = new float[numElements];
-        float[] c = new float[numElements];
+	@Test
+	public void testVectorAdditionFloat() {
+		final int numElements = 4096;
+		float[] a = new float[numElements];
+		float[] b = new float[numElements];
+		float[] c = new float[numElements];
 
-        IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = (float) Math.random();
-            b[i] = (float) Math.random();
-        });
+		IntStream.range(0, numElements).sequential().forEach(i -> {
+			a[i] = (float) Math.random();
+			b[i] = (float) Math.random();
+		});
 
-        //@formatter:off
+		//@formatter:off
         new TaskSchedule("s0")
             .streamIn(a, b)
             .task("t0", TestArrays::vectorAddFloat, a, b, c)
@@ -219,25 +219,25 @@ public class TestArrays extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
-        }
-    }
+		for (int i = 0; i < c.length; i++) {
+			assertEquals(a[i] + b[i], c[i], 0.001);
+		}
+	}
 
-    @Test
-    public void testVectorAdditionInteger() {
-        final int numElements = 4096;
-        int[] a = new int[numElements];
-        int[] b = new int[numElements];
-        int[] c = new int[numElements];
+	@Test
+	public void testVectorAdditionInteger() {
+		final int numElements = 4096;
+		int[] a = new int[numElements];
+		int[] b = new int[numElements];
+		int[] c = new int[numElements];
 
-        Random r = new Random();
-        IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = r.nextInt();
-            b[i] = r.nextInt();
-        });
+		Random r = new Random();
+		IntStream.range(0, numElements).sequential().forEach(i -> {
+			a[i] = r.nextInt();
+			b[i] = r.nextInt();
+		});
 
-        //@formatter:off
+		//@formatter:off
         new TaskSchedule("s0")
             .streamIn(a, b)
             .task("t0", TestArrays::vectorAddInteger, a, b, c)
@@ -245,24 +245,24 @@ public class TestArrays extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
-        }
-    }
+		for (int i = 0; i < c.length; i++) {
+			assertEquals(a[i] + b[i], c[i], 0.001);
+		}
+	}
 
-    @Test
-    public void testVectorAdditionLong() {
-        final int numElements = 4096;
-        long[] a = new long[numElements];
-        long[] b = new long[numElements];
-        long[] c = new long[numElements];
+	@Test
+	public void testVectorAdditionLong() {
+		final int numElements = 4096;
+		long[] a = new long[numElements];
+		long[] b = new long[numElements];
+		long[] c = new long[numElements];
 
-        IntStream.range(0, numElements).parallel().forEach(i -> {
-            a[i] = i;
-            b[i] = i;
-        });
+		IntStream.range(0, numElements).parallel().forEach(i -> {
+			a[i] = i;
+			b[i] = i;
+		});
 
-        //@formatter:off
+		//@formatter:off
         new TaskSchedule("s0")
             .streamIn(a, b)
             .task("t0", TestArrays::vectorAddLong, a, b, c)
@@ -270,24 +270,24 @@ public class TestArrays extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
-        }
-    }
+		for (int i = 0; i < c.length; i++) {
+			assertEquals(a[i] + b[i], c[i], 0.001);
+		}
+	}
 
-    @Test
-    public void testVectorAdditionShort() {
-        final int numElements = 4096;
-        short[] a = new short[numElements];
-        short[] b = new short[numElements];
-        short[] c = new short[numElements];
+	@Test
+	public void testVectorAdditionShort() {
+		final int numElements = 4096;
+		short[] a = new short[numElements];
+		short[] b = new short[numElements];
+		short[] c = new short[numElements];
 
-        IntStream.range(0, numElements).parallel().forEach(idx -> {
-            a[idx] = 20;
-            b[idx] = 34;
-        });
+		IntStream.range(0, numElements).parallel().forEach(idx -> {
+			a[idx] = 20;
+			b[idx] = 34;
+		});
 
-        //@formatter:off
+		//@formatter:off
         new TaskSchedule("s0")
             .streamIn(a, b)
             .task("t0", TestArrays::vectorAddShort, a, b, c)
@@ -295,9 +295,9 @@ public class TestArrays extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
-        }
-    }
+		for (int i = 0; i < c.length; i++) {
+			assertEquals(a[i] + b[i], c[i], 0.001);
+		}
+	}
 
 }
