@@ -259,7 +259,7 @@ public class TaskUtils {
 
         int count = 0;
         for (Field field : type.getDeclaredFields()) {
-            System.out.printf("cv: type=%s, name=%s\n", field.getType().getName(), field.getName());
+            //System.out.printf("cv: type=%s, name=%s\n", field.getType().getName(), field.getName());
             if (!field.getType().getName().contains("$$Lambda$")) {
                 count++;
             }

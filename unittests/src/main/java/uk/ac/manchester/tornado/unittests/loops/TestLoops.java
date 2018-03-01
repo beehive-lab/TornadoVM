@@ -109,8 +109,6 @@ public class TestLoops extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-		System.out.println(Arrays.toString(a));
-
 		for (int i = 0; i < size; i += 2) {
 			assertEquals(200, a[i]);
 			assertEquals(75, a[i + 1]);
