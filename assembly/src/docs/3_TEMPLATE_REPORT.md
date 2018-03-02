@@ -19,6 +19,6 @@ and internal debug information in Tornado, such as device info and number of thr
 
 Errors can be reported to:
 
-1) Github using Tornado Issues: [link](https://github.com/beehive-lab/tornado/issues)
+1) Via email to the Manchester Team (Juan Fumero: juan.fumero@manchester.ac.uk, Christos Kotselidis: christos.kotselidis@manchester.ac.uk, Michalis Papadimitriou: michail.papadimitriou@manchester.ac.uk, Maria Xekalaki: maria.xekalaki@manchester.ac.uk)
 
-2) Via email to Juan Fumero: juan.fumero@manchester.ac.uk
+2) Via our Slack Channel
