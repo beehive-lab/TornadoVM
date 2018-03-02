@@ -38,7 +38,7 @@
  * Method:    clGetPlatformInfo
  * Signature: (JI)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_tornado_drivers_opencl_OCLPlatform_clGetPlatformInfo
+JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_clGetPlatformInfo
 (JNIEnv *env, jclass clazz, jlong platform_id, jint platform_info) {
     OPENCL_PROLOGUE;
 
@@ -55,7 +55,7 @@ JNIEXPORT jstring JNICALL Java_tornado_drivers_opencl_OCLPlatform_clGetPlatformI
  * Method:    clGetDeviceCount
  * Signature: (JJ)I
  */
-JNIEXPORT jint JNICALL Java_tornado_drivers_opencl_OCLPlatform_clGetDeviceCount
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_clGetDeviceCount
 (JNIEnv *env, jclass clazz, jlong platform_id, jlong device_type) {
     OPENCL_PROLOGUE;
     cl_uint num_devices = 0;
@@ -69,7 +69,7 @@ JNIEXPORT jint JNICALL Java_tornado_drivers_opencl_OCLPlatform_clGetDeviceCount
  * Method:    clGetDeviceIDs
  * Signature: (JJ[J)I
  */
-JNIEXPORT jint JNICALL Java_tornado_drivers_opencl_OCLPlatform_clGetDeviceIDs
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_clGetDeviceIDs
 (JNIEnv *env, jclass clazz, jlong platform_id, jlong device_type, jlongArray array) {
     OPENCL_PROLOGUE;
 
@@ -89,8 +89,8 @@ JNIEXPORT jint JNICALL Java_tornado_drivers_opencl_OCLPlatform_clGetDeviceIDs
 }
 
 void context_notify(const char *errinfo, const void *private_info, size_t cb, void * user_data) {
-    printf("tornado.drivers.opencl> notify error:\n");
-    printf("tornado.drivers.opencl> %s\n", errinfo);
+    printf("uk.ac.manchester.tornado.drivers.opencl> notify error:\n");
+    printf("uk.ac.manchester.tornado.drivers.opencl> %s\n", errinfo);
 }
 
 /*
@@ -98,7 +98,7 @@ void context_notify(const char *errinfo, const void *private_info, size_t cb, vo
  * Method:    clCreateContext
  * Signature: (J[J)J
  */
-JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLPlatform_clCreateContext
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_clCreateContext
 (JNIEnv *env, jclass clazz, jlong platform_id, jlongArray array) {
     OPENCL_PROLOGUE;
 

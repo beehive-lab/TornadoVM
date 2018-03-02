@@ -40,7 +40,7 @@
  * Method:    clReleaseContext
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLContext_clReleaseContext
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clReleaseContext
 (JNIEnv *env, jclass clazz, jlong context_id) {
     OPENCL_PROLOGUE;
 
@@ -52,7 +52,7 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLContext_clReleaseContext
  * Method:    clGetContextInfo
  * Signature: (JI[B)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLContext_clGetContextInfo
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clGetContextInfo
 (JNIEnv *env, jclass clazz, jlong context_id, jint param_name, jbyteArray array) {
     OPENCL_PROLOGUE;
 
@@ -75,7 +75,7 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLContext_clGetContextInfo
  * Method:    clCreateCommandQueue
  * Signature: (JJJ)J
  */
-JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLContext_clCreateCommandQueue
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clCreateCommandQueue
 (JNIEnv *env, jclass clazz, jlong context_id, jlong device_id, jlong properties) {
     OPENCL_PROLOGUE;
 
@@ -87,11 +87,11 @@ JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLContext_clCreateCommandQu
 }
 
 /*
- * Class:     tornado_drivers_opencl_OCLContext
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
  * Method:    allocateOffHeapMemory
  * Signature: (J)JJ
  */
-JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLContext_allocateOffHeapMemory
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_allocateOffHeapMemory
 (JNIEnv *env, jclass clazz, jlong size, jlong alignment) {
 
     void *ptr;
@@ -109,35 +109,35 @@ JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLContext_allocateOffHeapMe
 }
 
 /*
- * Class:     tornado_drivers_opencl_OCLContext
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
  * Method:    freeOffHeapMemory
  * Signature: (J)J
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLContext_freeOffHeapMemory
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_freeOffHeapMemory
 (JNIEnv *env, jclass clazz, jlong address) {
     free((void *) address);
 }
 
 /*
- * Class:     tornado_drivers_opencl_OCLContext
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
  * Method:    asByteBuffer
  * Signature: (J)Ljava/nio/ByteBuffer;
  */
-JNIEXPORT jobject JNICALL Java_tornado_drivers_opencl_OCLContext_asByteBuffer
+JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_asByteBuffer
 (JNIEnv *env, jclass clazz, jlong address, jlong capacity) {
     return (*env)->NewDirectByteBuffer(env, (void *) address, capacity);
 }
 
 /*
- * Class:     tornado_drivers_opencl_OCLContext
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
  * Method:    createBuffer
- * Signature: (JJJJ)Ltornado/drivers/opencl/OCLContext/OCLBufferResult;
+ * Signature: (JJJJ)Luk/ac/manchester/tornado/drivers/opencl/OCLContext/OCLBufferResult;
  */
-JNIEXPORT jobject JNICALL Java_tornado_drivers_opencl_OCLContext_createBuffer
+JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_createBuffer
 (JNIEnv *env, jclass clazz, jlong context_id, jlong flags, jlong size, jlong host_ptr) {
     OPENCL_PROLOGUE;
 
-    jclass resultClass = (*env)->FindClass(env, "tornado/drivers/opencl/OCLContext$OCLBufferResult");
+    jclass resultClass = (*env)->FindClass(env, "uk/ac/manchester/tornado/drivers/opencl/OCLContext$OCLBufferResult");
     jmethodID constructorId = (*env)->GetMethodID(env, resultClass, "<init>", "(JJI)V");
 
     cl_mem mem;
@@ -152,7 +152,7 @@ JNIEXPORT jobject JNICALL Java_tornado_drivers_opencl_OCLContext_createBuffer
  * Method:    createSubBuffer
  * Signature: (JJI[B)J
  */
-JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLContext_createSubBuffer
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_createSubBuffer
 (JNIEnv *env, jclass clazz, jlong buffer, jlong flags, jint buffer_create_type, jbyteArray array) {
     OPENCL_PROLOGUE;
 
@@ -171,7 +171,7 @@ JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLContext_createSubBuffer
  * Method:    clReleaseMemObject
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLContext_clReleaseMemObject
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clReleaseMemObject
 (JNIEnv *env, jclass clazz, jlong memobj) {
     OPENCL_PROLOGUE;
     OPENCL_SOFT_ERROR("clReleaseMemObject", clReleaseMemObject((cl_mem) memobj),);
@@ -182,7 +182,7 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLContext_clReleaseMemObject
  * Method:    clCreateProgramWithSource
  * Signature: (J[B[J)J
  */
-JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLContext_clCreateProgramWithSource
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clCreateProgramWithSource
 (JNIEnv *env, jclass clazz, jlong context_id, jbyteArray array1, jlongArray array2) {
     OPENCL_PROLOGUE;
 
@@ -204,7 +204,7 @@ JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLContext_clCreateProgramWi
  * Method:    clCreateProgramWithBinary
  * Signature: (JJ[B[J)J
  */
-JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLContext_clCreateProgramWithBinary
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_clCreateProgramWithBinary
 (JNIEnv *env, jclass clazz, jlong context_id, jlong device_id, jbyteArray array1, jlongArray array2) {
     OPENCL_PROLOGUE;
 

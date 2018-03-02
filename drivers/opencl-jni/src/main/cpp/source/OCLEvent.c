@@ -34,11 +34,11 @@
 #include "utils.h"
 
 /*
- * Class:     tornado_drivers_opencl_OCLEvent
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
  * Method:    clGetEventInfo
  * Signature: (JI[B)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLEvent_clGetEventInfo
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clGetEventInfo
 (JNIEnv *env, jclass clazz, jlong event_id, jint param_name, jbyteArray array) {
     OPENCL_PROLOGUE;
 
@@ -60,7 +60,7 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLEvent_clGetEventInfo
  * Method:    clGetEventProfilingInfo
  * Signature: (JI[B)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLEvent_clGetEventProfilingInfo
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clGetEventProfilingInfo
 (JNIEnv *env, jclass clazz, jlong event_id, jint param_name, jbyteArray array) {
     OPENCL_PROLOGUE;
 
@@ -78,11 +78,11 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLEvent_clGetEventProfilingI
 }
 
 /*
- * Class:     tornado_drivers_opencl_OCLEvent
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
  * Method:    clWaitForEvents
  * Signature: ([J)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLEvent_clWaitForEvents
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clWaitForEvents
 (JNIEnv *env, jclass clazz, jlongArray array) {
     OPENCL_PROLOGUE;
 
@@ -96,11 +96,11 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLEvent_clWaitForEvents
 }
 
 /*
- * Class:     tornado_drivers_opencl_OCLEvent
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
  * Method:    clReleaseEvent
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLEvent_clReleaseEvent
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clReleaseEvent
 (JNIEnv *env, jclass clazz, jlong event) {
     OPENCL_PROLOGUE;
     OPENCL_SOFT_ERROR("clReleaseEvent",

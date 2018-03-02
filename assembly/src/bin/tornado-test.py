@@ -6,34 +6,34 @@ import argparse
 
 ## Include the new test class here
 __TEST_THE_WORLD__ = [
-	"tornado.unittests.TestHello",
-	"tornado.unittests.arrays.TestArrays",
-	"tornado.unittests.functional.TestFunctional",
-	"tornado.unittests.ocljit.TestOpenCLJIT",
-	"tornado.unittests.vectortypes.TestFloats",
-	"tornado.unittests.vectortypes.TestDoubles",
-	"tornado.unittests.vectortypes.TestInts",
-	"tornado.unittests.vectortypes.TestVectorAllocation",
-	"tornado.unittests.prebuilt.PrebuiltTest",
-	"tornado.unittests.virtualization.TestsVirtualLayer",
-	"tornado.unittests.tasks.TestSingleTaskSingleDevice",
-	"tornado.unittests.tasks.TestMultipleTasksSingleDevice",
-	"tornado.unittests.images.TestImages",
-	"tornado.unittests.branching.TestConditionals",
-	"tornado.unittests.loops.TestLoops",
-	"tornado.unittests.matrices.TestMatrices",
-	"tornado.unittests.images.TestResizeImage",
+	"uk.ac.manchester.tornado.unittests.TestHello",
+	"uk.ac.manchester.tornado.unittests.arrays.TestArrays",
+	"uk.ac.manchester.tornado.unittests.functional.TestFunctional",
+	"uk.ac.manchester.tornado.unittests.ocljit.TestOpenCLJIT",
+	"uk.ac.manchester.tornado.unittests.vectortypes.TestFloats",
+	"uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles",
+	"uk.ac.manchester.tornado.unittests.vectortypes.TestInts",
+	"uk.ac.manchester.tornado.unittests.vectortypes.TestVectorAllocation",
+	"uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest",
+	"uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer",
+	"uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice",
+	"uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice",
+	"uk.ac.manchester.tornado.unittests.images.TestImages",
+	"uk.ac.manchester.tornado.unittests.branching.TestConditionals",
+	"uk.ac.manchester.tornado.unittests.loops.TestLoops",
+	"uk.ac.manchester.tornado.unittests.matrices.TestMatrices",
+	"uk.ac.manchester.tornado.unittests.images.TestResizeImage",
 ]
 
 ## Options
-__MAIN_TORNADO_TEST_RUNNER__ = "tornado.unittests.tools.TornadoTestRunner "
+__MAIN_TORNADO_TEST_RUNNER__ = "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
 __MAIN_TORNADO_JUNIT__ = "org.junit.runner.JUnitCore "
 __IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintCFG=true "
 __PRINT_OPENCL_KERNEL__ = "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ = "-Dtornado.debug=True "
 
 ## 
-__VERSION__ = "0.2_09112017"
+__VERSION__ = "0.2_27022018"
 
 
 def composeAllOptions(args):

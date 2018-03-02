@@ -7,7 +7,7 @@ clean:
 	mvn clean
 
 example:
-	tornado tornado.examples.HelloWorld
+	tornado uk.ac.manchester.tornado.examples.HelloWorld
 
 tests:
 	tornado-test.py --verbose

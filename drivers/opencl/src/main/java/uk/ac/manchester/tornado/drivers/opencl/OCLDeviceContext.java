@@ -1,0 +1,413 @@
+/*
+ * This file is part of Tornado: A heterogeneous programming framework: 
+ * https://github.com/beehive-lab/tornado
+ *
+ * Copyright (c) 2013-2018 APT Group, School of Computer Science, 
+ * The University of Manchester
+ *
+ * This work is partially supported by EPSRC grants:
+ * Anyscale EP/L000725/1 and PAMELA EP/K008730/1.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Authors: James Clarkson
+ *
+ */
+package uk.ac.manchester.tornado.drivers.opencl;
+
+import static uk.ac.manchester.tornado.common.Tornado.USE_SYNC_FLUSH;
+import static uk.ac.manchester.tornado.common.Tornado.getProperty;
+
+import java.nio.ByteOrder;
+import java.util.List;
+
+import uk.ac.manchester.tornado.api.Event;
+import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.common.Initialisable;
+import uk.ac.manchester.tornado.common.TornadoLogger;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
+import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+
+public class OCLDeviceContext extends TornadoLogger implements Initialisable {
+
+    private static final long BUMP_BUFFER_SIZE = Long.decode(getProperty("tornado.opencl.bump.size", "0x100000"));
+    private static final String[] BUMP_DEVICES = parseDevices(getProperty("tornado.opencl.bump.devices", "Iris Pro"));
+
+    private final OCLDevice device;
+    private final OCLCommandQueue queue;
+    private final OCLContext context;
+    private final OCLMemoryManager memoryManager;
+    private boolean needsBump;
+    private final long bumpBuffer;
+
+    private final OCLCodeCache codeCache;
+
+    protected OCLDeviceContext(
+            OCLDevice device,
+            OCLCommandQueue queue,
+            OCLContext context) {
+        this.device = device;
+        this.queue = queue;
+        this.context = context;
+        this.memoryManager = new OCLMemoryManager(this);
+        this.codeCache = new OCLCodeCache(this);
+
+        needsBump = false;
+        for (String bumpDevice : BUMP_DEVICES) {
+            if (device.getName().equalsIgnoreCase(bumpDevice.trim())) {
+                needsBump = true;
+                break;
+            }
+        }
+
+        if (needsBump) {
+            bumpBuffer = context.createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, BUMP_BUFFER_SIZE);
+            info("device requires bump buffer: %s", device.getName());
+        } else {
+            bumpBuffer = -1;
+        }
+    }
+
+    private static String[] parseDevices(String str) {
+        return str.split(";");
+    }
+
+    public List<OCLEvent> events() {
+        return queue.getEvents();
+    }
+
+    public OCLDevice getDevice() {
+        return device;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("[%d] %s", getDevice().getIndex(), getDevice().getName());
+    }
+
+    public OCLContext getPlatformContext() {
+        return context;
+    }
+
+    public OCLMemoryManager getMemoryManager() {
+        return memoryManager;
+    }
+
+    public void sync() {
+        if (USE_SYNC_FLUSH) {
+            queue.flush();
+        }
+        queue.finish();
+    }
+
+    public long getDeviceId() {
+        return device.getId();
+    }
+
+    public int enqueueBarrier() {
+        return queue.enqueueBarrier();
+    }
+
+    public int enqueueMarker() {
+        return queue.enqueueMarker();
+    }
+
+    public OCLProgram createProgramWithSource(byte[] source, long[] lengths) {
+        return context.createProgramWithSource(source, lengths, this);
+    }
+
+    public OCLProgram createProgramWithBinary(byte[] binary, long[] lengths) {
+        return context.createProgramWithBinary(device.getId(), binary, lengths, this);
+    }
+
+    public void printEvents() {
+        queue.printEvents();
+    }
+
+    public int enqueueTask(OCLKernel kernel, int[] events) {
+        return queue.enqueueTask(kernel, events);
+    }
+
+    public int enqueueTask(OCLKernel kernel) {
+        return queue.enqueueTask(kernel, null);
+    }
+
+    public int enqueueNDRangeKernel(OCLKernel kernel, int dim,
+            long[] globalWorkOffset, long[] globalWorkSize,
+            long[] localWorkSize, int[] waitEvents) {
+        return queue.enqueueNDRangeKernel(kernel, dim, globalWorkOffset,
+                globalWorkSize, localWorkSize, waitEvents);
+    }
+
+    public ByteOrder getByteOrder() {
+        return device.isLittleEndian() ? ByteOrder.LITTLE_ENDIAN
+                : ByteOrder.BIG_ENDIAN;
+    }
+
+    /*
+     * Asynchronous writes to device
+     */
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
+            byte[] array, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array,
+                waitEvents);
+    }
+
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
+            int[] array, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array,
+                waitEvents);
+    }
+
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
+            long[] array, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array,
+                waitEvents);
+    }
+
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
+            short[] array, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array,
+                waitEvents);
+    }
+
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
+            float[] array, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array,
+                waitEvents);
+    }
+
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
+            double[] array, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array,
+                waitEvents);
+    }
+
+    /*
+     * Asynchronouse reads from device
+     */
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
+            byte[] array, int[] waitEvents) {
+        return queue.enqueueRead(bufferId, false, offset, bytes, array,
+                waitEvents);
+    }
+
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
+            int[] array, int[] waitEvents) {
+        return queue.enqueueRead(bufferId, false, offset, bytes, array,
+                waitEvents);
+    }
+
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
+            long[] array, int[] waitEvents) {
+        return queue.enqueueRead(bufferId, false, offset, bytes, array,
+                waitEvents);
+    }
+
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
+            float[] array, int[] waitEvents) {
+        return queue.enqueueRead(bufferId, false, offset, bytes, array,
+                waitEvents);
+
+    }
+
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
+            double[] array, int[] waitEvents) {
+        return queue.enqueueRead(bufferId, false, offset, bytes, array,
+                waitEvents);
+
+    }
+
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
+            short[] array, int[] waitEvents) {
+        return queue.enqueueRead(bufferId, false, offset, bytes, array,
+                waitEvents);
+
+    }
+
+    /*
+     * Synchronous writes to device
+     */
+    public void writeBuffer(long bufferId, long offset, long bytes,
+            byte[] array, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
+    }
+
+    public void writeBuffer(long bufferId, long offset, long bytes,
+            int[] array, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
+    }
+
+    public void writeBuffer(long bufferId, long offset, long bytes,
+            long[] array, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
+    }
+
+    public void writeBuffer(long bufferId, long offset, long bytes,
+            short[] array, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
+    }
+
+    public void writeBuffer(long bufferId, long offset, long bytes,
+            float[] array, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
+    }
+
+    public void writeBuffer(long bufferId, long offset, long bytes,
+            double[] array, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
+    }
+
+    /*
+     * Synchronous reads from device
+     */
+    public void readBuffer(long bufferId, long offset, long bytes,
+            byte[] array, int[] waitEvents) {
+        queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
+    }
+
+    public void readBuffer(long bufferId, long offset, long bytes, int[] array,
+            int[] waitEvents) {
+        queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
+    }
+
+    public void readBuffer(long bufferId, long offset, long bytes,
+            long[] array, int[] waitEvents) {
+        queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
+    }
+
+    public void readBuffer(long bufferId, long offset, long bytes,
+            float[] array, int[] waitEvents) {
+        queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
+
+    }
+
+    public void readBuffer(long bufferId, long offset, long bytes,
+            double[] array, int[] waitEvents) {
+        queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
+
+    }
+
+    public void readBuffer(long bufferId, long offset, long bytes,
+            short[] array, int[] waitEvents) {
+        queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
+
+    }
+
+    public int enqueueBarrier(int[] events) {
+        return queue.enqueueBarrier(events);
+    }
+
+    public int enqueueMarker(int[] events) {
+        return queue.enqueueMarker(events);
+    }
+
+    @Override
+    public boolean isInitialised() {
+        return memoryManager.isInitialised();
+    }
+
+    public void reset() {
+        queue.reset();
+        memoryManager.reset();
+        codeCache.reset();
+    }
+
+    public OCLTornadoDevice asMapping() {
+        return new OCLTornadoDevice(context.getPlatformIndex(), device.getIndex());
+    }
+
+    public String getId() {
+        return String.format("opencl-%d-%d", context.getPlatformIndex(), device.getIndex());
+    }
+
+    public void dumpEvents() {
+        List<OCLEvent> events = queue.getEvents();
+
+        final String deviceName = "opencl-" + context.getPlatformIndex() + "-" + device.getIndex();
+        System.out.printf("Found %d events on device %s:\n", events.size(), deviceName);
+        if (events.isEmpty()) {
+            return;
+        }
+
+        events.sort((OCLEvent o1, OCLEvent o2) -> {
+            int result = Long.compare(o1.getCLSubmitTime(), o2.getCLSubmitTime());
+            if (result == 0) {
+                result = Long.compare(o1.getCLStartTime(), o2.getCLStartTime());
+            }
+            return result;
+        });
+
+        long base = events.get(0).getCLSubmitTime();
+        System.out.println("event: device,type,info,submitted,start,end,status");
+        events.stream().forEach((e) -> {
+            System.out.printf("event: %s,%s,0x%x,%d,%d,%d,%s\n", deviceName, e.getName(), e.getId(), e.getCLSubmitTime() - base, e.getCLStartTime() - base, e.getCLEndTime() - base, e.getStatus());
+        });
+
+    }
+
+    public boolean needsBump() {
+        return needsBump;
+    }
+
+    public long getBumpBuffer() {
+        return bumpBuffer;
+    }
+
+    public void retainEvent(int event) {
+        queue.retainEvent(event);
+    }
+
+    public void releaseEvent(int event) {
+        queue.releaseEvent(event);
+    }
+
+    public Event resolveEvent(int event) {
+        return queue.resolveEvent(event);
+    }
+
+    public void markEvent() {
+        queue.markEvent();
+    }
+
+    public void flush() {
+        queue.flush();
+    }
+
+    public void finish() {
+        queue.finish();
+    }
+
+    public void flushEvents() {
+        queue.flushEvents();
+    }
+
+    public OCLInstalledCode installCode(OCLCompilationResult result) {
+        return installCode(result.getMeta(), result.getId(), result.getName(), result.getTargetCode());
+    }
+
+    public OCLInstalledCode installCode(TaskMetaData meta, String id, String entryPoint, byte[] code) {
+        return codeCache.installSource(meta, id, entryPoint, code);
+    }
+
+    public boolean isCached(String id, String entryPoint) {
+        return codeCache.isCached(id, entryPoint);
+    }
+
+    public OCLInstalledCode getCode(String id, String entryPoint) {
+        return codeCache.getCode(id, entryPoint);
+    }
+}

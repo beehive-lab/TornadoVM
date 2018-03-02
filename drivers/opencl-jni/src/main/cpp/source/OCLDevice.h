@@ -26,8 +26,8 @@
 #include <jni.h>
 /* Header for class jacc_runtime_drivers_opencl_OCLDevice */
 
-#ifndef _Included_tornado_drivers_opencl_OCLDevice
-#define _Included_tornado_drivers_opencl_OCLDevice
+#ifndef _Included_uk_ac_manchester_tornado_drivers_opencl_OCLDevice
+#define _Included_uk_ac_manchester_tornado_drivers_opencl_OCLDevice
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,7 +36,7 @@ extern "C" {
      * Method:    clGetDeviceInfo
      * Signature: (JI[B)V
      */
-    JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLDevice_clGetDeviceInfo
+    JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLDevice_clGetDeviceInfo
     (JNIEnv *, jclass, jlong, jint, jbyteArray);
 
 #ifdef __cplusplus
