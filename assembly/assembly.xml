@@ -11,16 +11,24 @@
 
     <fileSets>
         <fileSet>
-            <directory>src</directory>
+            <directory>src</directory> <!-- README file in share/tornado -->
             <includes>
                 <include>README.md</include>
-                <include>LICENSE</include>
+                <!-- <include>LICENSE</include> -->
             </includes>
             <outputDirectory>share/tornado</outputDirectory>
             <fileMode>0444</fileMode>
         </fileSet>
         <fileSet>
-            <directory>src/bin</directory>
+            <directory>src</directory> <!-- License file in root directory -->
+            <includes>
+                <include>LICENSE</include> 
+            </includes>
+            <outputDirectory>./</outputDirectory>
+            <fileMode>0444</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>src/bin</directory>  <!-- tornado binaries -->
             <outputDirectory>bin</outputDirectory>
             <includes>
                 <include>*.sh</include>
@@ -31,7 +39,7 @@
             <fileMode>0755</fileMode>
         </fileSet>
         <fileSet>
-            <directory>src/etc</directory>
+            <directory>src/etc</directory>  <!-- tornado etc configuration -->
             <outputDirectory>etc</outputDirectory>
             <includes>
                 <include>*</include>
@@ -41,7 +49,7 @@
             <fileMode>0666</fileMode>
         </fileSet>
         <fileSet>
-            <directory>src/docs</directory>
+            <directory>src/docs</directory>  <!-- Tornado documentation in docs/ -->
             <outputDirectory>docs</outputDirectory>
             <includes>
                 <!-- <include>*.pdf</include> -->
@@ -50,12 +58,12 @@
             <fileMode>0444</fileMode>
         </fileSet>
         <fileSet>
-            <directory>../unittests</directory>
+            <directory>../unittests</directory> <!-- Tornado unittests provided as examples -->
             <outputDirectory>examples</outputDirectory>
             <fileMode>0444</fileMode>
         </fileSet>
 	<fileSet>
-            <directory>src/examples</directory>
+            <directory>src/examples</directory> <!-- Tornado full examples copied into examples directory -->
             <outputDirectory>examples</outputDirectory>
 	    <includes>
 		<include>TestTornado.java</include>
