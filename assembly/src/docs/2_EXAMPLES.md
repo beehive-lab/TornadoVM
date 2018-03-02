@@ -68,8 +68,8 @@ public class TestTornado {
         .streamIn(a, b)        // copy in from the host to the device (a and b arrays)
         .task("t0", TestTornado::vectorAddDouble, a, b, c)   // task 0 
         .streamOut(c)          // copy out from the device to host
-        .execute();            // run the task (Tornado bytecode generation, Tornado tasks graph, 
-                               // OpenCL JIT compilation and execution)
+        .execute();            // run the task (Tornado bytecode generation, Tornado 
+                               // tasks graph, OpenCL JIT compilation and execution)
   }
 }
 
@@ -105,7 +105,8 @@ The following snippet shows the vector addition example using Tornado vector typ
 
 
 ```java
-public static void addVectorFloat4(VectorFloat4 a, VectorFloat4 b, VectorFloat4 results) {
+public static void addVectorFloat4(VectorFloat4 a, VectorFloat4 b,
+                                   VectorFloat4 results) {
   for (@Parallel int i = 0; i < a.getLength(); i++) {
     results.set(i, Float4.add(a.get(i), b.get(i)));
   }
@@ -200,7 +201,8 @@ This is also an iterative algorithm that will keep computing till the variable `
 
 
 ```java
-private static void runBFS(int[] vertices, int[] adjacencyMatrix, int numNodes, int[] h_true, int[] currentDepth) {
+private static void runBFS(int[] vertices, int[] adjacencyMatrix, int numNodes, 
+                           int[] h_true, int[] currentDepth) {
 
   for (@Parallel int from = 0; from < numNodes; from++) {
 
@@ -254,10 +256,13 @@ The following Java snippet shows the data preparation, task definition, and invo
         
         currentDepth = new int[] { 0 };
         
-        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+        TornadoDevice device = TornadoRuntime.getTornadoRuntime()
+					      .getDefaultDevice();
         TaskSchedule s1 = new TaskSchedule("s1");
-        s1.streamIn(vertices, adjacencyMatrix, modify,currentDepth).mapAllTo(device);
-        s1.task("t1", BFS::runBFS, vertices, adjacencyMatrix, numNodes, modify, currentDepth);
+        s1.streamIn(vertices, adjacencyMatrix, modify,currentDepth)
+					.mapAllTo(device);
+        s1.task("t1", BFS::runBFS, vertices, adjacencyMatrix, 
+			numNodes, modify, currentDepth);
         s1.streamOut(vertices, modify);
         
         boolean done = false;
