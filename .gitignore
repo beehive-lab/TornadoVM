@@ -1,6 +1,6 @@
-pom.xml
 /etc/tornado.env
 /target/
+/dist/
 .project
 .classpath
 Makefile
@@ -28,6 +28,14 @@ autom4te.cache
 *.dylib
 *.a
 /drivers/opencl/target/
+/drivers/opencl-jni/target/
+/assemly/target/
 /collections/target/
 /benchmarks/target/
 /examples/target/
+/runtime/target/
+/drivers/opencl-jni/target/mac-amd64-release/
+/assembly/target/
+/drivers/target/
+bin/bin
+bin/sdk
