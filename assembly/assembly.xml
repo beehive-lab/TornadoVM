@@ -54,6 +54,15 @@
             <outputDirectory>examples</outputDirectory>
             <fileMode>0444</fileMode>
         </fileSet>
+	<fileSet>
+            <directory>src/examples</directory>
+            <outputDirectory>examples</outputDirectory>
+	    <includes>
+		<include>TestTornado.java</include>
+	    </includes>
+            <fileMode>0666</fileMode>
+        </fileSet>
+
  
     </fileSets>
     <moduleSets>
