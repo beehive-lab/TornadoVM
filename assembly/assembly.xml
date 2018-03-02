@@ -52,7 +52,7 @@
             <directory>src/docs</directory>  <!-- Tornado documentation in docs/ -->
             <outputDirectory>docs</outputDirectory>
             <includes>
-                <!-- <include>*.pdf</include> -->
+                <include>*.pdf</include> 
                 <include>*.md</include>
             </includes>
             <fileMode>0444</fileMode>
