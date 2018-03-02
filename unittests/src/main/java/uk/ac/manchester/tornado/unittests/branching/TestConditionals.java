@@ -19,6 +19,8 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * 
+ * Authors: Michalis Papadimitriou
  *
  */
 
@@ -36,21 +38,21 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestConditionals extends TornadoTestBase {
 
-	public static void ifStatement(int[] a) {
-		if (a[0] > 1) {
-			a[0] = 10;
-		}
-	}
+    public static void ifStatement(int[] a) {
+        if (a[0] > 1) {
+            a[0] = 10;
+        }
+    }
 
-	@Test
-	public void testIfStatement() {
-		final int size = 10;
+    @Test
+    public void testIfStatement() {
+        final int size = 10;
 
-		int[] a = new int[size];
+        int[] a = new int[size];
 
-		Arrays.fill(a, 5);
+        Arrays.fill(a, 5);
 
-		//@formatter:off
+        //@formatter:off
         new TaskSchedule("s0")
                 .task("t0", TestConditionals::ifStatement, a)
                 .streamOut(a)

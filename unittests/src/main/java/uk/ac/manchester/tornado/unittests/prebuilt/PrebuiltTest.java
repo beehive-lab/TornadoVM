@@ -19,6 +19,8 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * 
+ * Authors: Juan Fumero
  *
  */
 
@@ -37,24 +39,24 @@ import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class PrebuiltTest {
 
-	public static void add(int[] a, int[] b, int[] c) {
-		for (@Parallel int i = 0; i < c.length; i++) {
-			c[i] = a[i] + b[i];
-		}
-	}
+    public static void add(int[] a, int[] b, int[] c) {
+        for (@Parallel int i = 0; i < c.length; i++) {
+            c[i] = a[i] + b[i];
+        }
+    }
 
-	@Test
-	public void testPrebuild01() {
+    @Test
+    public void testPrebuild01() {
 
-		final int numElements = 8;
-		int[] a = new int[numElements];
-		int[] b = new int[numElements];
-		int[] c = new int[numElements];
+        final int numElements = 8;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] c = new int[numElements];
 
-		Arrays.fill(a, 1);
-		Arrays.fill(b, 2);
+        Arrays.fill(a, 1);
+        Arrays.fill(b, 2);
 
-		// @formatter:off
+        // @formatter:off
         new TaskSchedule("s0")
             .prebuiltTask("t0", 
                         "add", 
@@ -67,9 +69,9 @@ public class PrebuiltTest {
             .execute();
         // @formatter:on
 
-		for (int i = 0; i < c.length; i++) {
-			assertEquals(a[i] + b[i], c[i], 0.001);
-		}
-	}
+        for (int i = 0; i < c.length; i++) {
+            assertEquals(a[i] + b[i], c[i], 0.001);
+        }
+    }
 
 }

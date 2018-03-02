@@ -19,6 +19,8 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * 
+ * Authors: Juan Fumero
  *
  */
 package uk.ac.manchester.tornado.unittests.ocljit;
@@ -50,69 +52,67 @@ import uk.ac.manchester.tornado.runtime.TornadoRuntime;
  */
 public class TestOpenCLJIT {
 
-	/**
-	 * Method to be compile by Tornado into OpenCL
-	 * 
-	 * @param a
-	 * @param b
-	 * @param c
-	 */
-	public static void testMethodToCompile(int[] a, int[] b, double[] c) {
-		for (@Parallel int i = 0; i < c.length; i++) {
-			c[i] = 0.12 * a[i] * b[i];
-		}
-	}
+    /**
+     * Method to be compile by Tornado into OpenCL
+     * 
+     * @param a
+     * @param b
+     * @param c
+     */
+    public static void testMethodToCompile(int[] a, int[] b, double[] c) {
+        for (@Parallel int i = 0; i < c.length; i++) {
+            c[i] = 0.12 * a[i] * b[i];
+        }
+    }
 
-	private Method getMethodForName(Class<?> klass, String nameMethod) {
-		Method method = null;
-		for (Method m : klass.getMethods()) {
-			if (m.getName().equals(nameMethod)) {
-				method = m;
-			}
-		}
-		return method;
-	}
+    private Method getMethodForName(Class<?> klass, String nameMethod) {
+        Method method = null;
+        for (Method m : klass.getMethods()) {
+            if (m.getName().equals(nameMethod)) {
+                method = m;
+            }
+        }
+        return method;
+    }
 
-	@Test
-	public void testJIT01() {
+    @Test
+    public void testJIT01() {
 
-		// input data
-		final int N = 128;
-		int[] a = new int[N];
-		int[] b = new int[N];
-		double[] c = new double[N];
+        // input data
+        final int N = 128;
+        int[] a = new int[N];
+        int[] b = new int[N];
+        double[] c = new double[N];
 
-		Arrays.fill(a, -10);
-		Arrays.fill(b, 10);
+        Arrays.fill(a, -10);
+        Arrays.fill(b, 10);
 
-		Method methodToCompile = getMethodForName(TestOpenCLJIT.class, "testMethodToCompile");
-		assertNotNull(methodToCompile);
+        Method methodToCompile = getMethodForName(TestOpenCLJIT.class, "testMethodToCompile");
+        assertNotNull(methodToCompile);
 
-		// Test Tornado Runtime
-		TornadoRuntime tornadoRuntime = TornadoRuntime.getTornadoRuntime();
-		assertNotNull(tornadoRuntime);
+        // Test Tornado Runtime
+        TornadoRuntime tornadoRuntime = TornadoRuntime.getTornadoRuntime();
+        assertNotNull(tornadoRuntime);
 
-		ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
-		assertNotNull(resolvedJavaMethod);
+        ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
+        assertNotNull(resolvedJavaMethod);
 
-		// Get the backend from Tornado
-		OCLBackend openCLBackend = tornadoRuntime.getDriver(OCLDriver.class).getDefaultBackend();
-		assertNotNull(openCLBackend);
+        // Get the backend from Tornado
+        OCLBackend openCLBackend = tornadoRuntime.getDriver(OCLDriver.class).getDefaultBackend();
+        assertNotNull(openCLBackend);
 
-		// Create a new task for Tornado
-		TaskMetaData task = TaskMetaData.create(new ScheduleMetaData("ID0"), methodToCompile.getName(), methodToCompile,
-				false);
+        // Create a new task for Tornado
+        TaskMetaData task = TaskMetaData.create(new ScheduleMetaData("ID0"), methodToCompile.getName(), methodToCompile, false);
 
-		// Compile the code for OpenCL
-		OCLCompilationResult compilationResult = OCLCompiler.compileCodeForDevice(resolvedJavaMethod,
-				new Object[] { a, b, c }, task, (OCLProviders) openCLBackend.getProviders(), openCLBackend);
+        // Compile the code for OpenCL
+        OCLCompilationResult compilationResult = OCLCompiler.compileCodeForDevice(resolvedJavaMethod, new Object[] { a, b, c }, task, (OCLProviders) openCLBackend.getProviders(), openCLBackend);
 
-		// Obtain the code
-		OCLInstalledCode openCLCode = OpenCL.defaultDevice().getDeviceContext().installCode(compilationResult);
+        // Obtain the code
+        OCLInstalledCode openCLCode = OpenCL.defaultDevice().getDeviceContext().installCode(compilationResult);
 
-		assertNotNull(openCLCode);
+        assertNotNull(openCLCode);
 
-		// XXX: Check the code is correct
+        // XXX: Check the code is correct
 
-	}
+    }
 }

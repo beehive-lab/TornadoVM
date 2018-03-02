@@ -19,6 +19,8 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * 
+ * Authors: Juan Fumero
  *
  */
 
@@ -35,28 +37,28 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestAtomics extends TornadoTestBase {
 
-	public static void atomic01(@Atomic int[] a, int sum) {
-		for (@Parallel int i = 0; i < a.length; i++) {
-			sum += a[i];
-		}
-		a[0] = sum;
-	}
+    public static void atomic01(@Atomic int[] a, int sum) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            sum += a[i];
+        }
+        a[0] = sum;
+    }
 
-	@Ignore
-	public void testAtomic() {
-		final int size = 10;
+    @Ignore
+    public void testAtomic() {
+        final int size = 10;
 
-		int[] a = new int[size];
-		int sum = 0;
+        int[] a = new int[size];
+        int sum = 0;
 
-		Arrays.fill(a, 1);
+        Arrays.fill(a, 1);
 
-		//@formatter:off
+        //@formatter:off
         new TaskSchedule("s0")
                 .task("t0", TestAtomics::atomic01, a, sum)
                 .streamOut(a)
                 .execute();
         //@formatter:on
-	}
+    }
 
 }

@@ -19,6 +19,8 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * 
+ * Authors: Juan Fumero
  *
  */
 package uk.ac.manchester.tornado.unittests.tasks;
@@ -37,37 +39,37 @@ import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
  */
 public class TestMultipleTasksSingleDevice {
 
-	public static void task0Initialization(int[] a) {
-		for (@Parallel int i = 0; i < a.length; i++) {
-			a[i] = 10;
-		}
-	}
+    public static void task0Initialization(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = 10;
+        }
+    }
 
-	public static void task1Multiplication(int[] a, int alpha) {
-		for (@Parallel int i = 0; i < a.length; i++) {
-			a[i] = a[i] * alpha;
-		}
-	}
+    public static void task1Multiplication(int[] a, int alpha) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = a[i] * alpha;
+        }
+    }
 
-	public static void task2Saxpy(int[] a, int[] b, int[] c, int alpha) {
-		for (@Parallel int i = 0; i < a.length; i++) {
-			c[i] = alpha * a[i] + b[i];
-		}
-	}
+    public static void task2Saxpy(int[] a, int[] b, int[] c, int alpha) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            c[i] = alpha * a[i] + b[i];
+        }
+    }
 
-	public static void task3Copy(int[] a, int[] b, int alpha) {
-		for (@Parallel int i = 0; i < a.length; i++) {
-			b[i] = a[i];
-		}
-	}
+    public static void task3Copy(int[] a, int[] b, int alpha) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            b[i] = a[i];
+        }
+    }
 
-	@Test
-	public void testTwoTasks() {
-		final int numElements = 1024;
-		int[] a = new int[numElements];
-		int[] b = new int[numElements];
+    @Test
+    public void testTwoTasks() {
+        final int numElements = 1024;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
 
-		//@formatter:off
+        //@formatter:off
         new TaskSchedule("s0")
 		    .streamIn(a, b)
 		    .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
@@ -76,18 +78,18 @@ public class TestMultipleTasksSingleDevice {
 		    .execute();
         //@formatter:on
 
-		for (int i = 0; i < a.length; i++) {
-			assertEquals(120, a[i]);
-		}
-	}
+        for (int i = 0; i < a.length; i++) {
+            assertEquals(120, a[i]);
+        }
+    }
 
-	@Test
-	public void testThreeTasks() {
-		final int numElements = 1024;
-		int[] a = new int[numElements];
-		int[] b = new int[numElements];
+    @Test
+    public void testThreeTasks() {
+        final int numElements = 1024;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
 
-		//@formatter:off
+        //@formatter:off
         new TaskSchedule("s0")
             .streamIn(a, b)
             .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
@@ -97,20 +99,20 @@ public class TestMultipleTasksSingleDevice {
             .execute();
         //@formatter:on
 
-		int val = (12 * 120) + 120;
-		for (int i = 0; i < a.length; i++) {
-			assertEquals(val, b[i]);
-		}
-	}
+        int val = (12 * 120) + 120;
+        for (int i = 0; i < a.length; i++) {
+            assertEquals(val, b[i]);
+        }
+    }
 
-	@Test
-	public void testFourTasks() {
-		final int numElements = 1024;
-		int[] a = new int[numElements];
-		int[] b = new int[numElements];
-		int[] c = new int[numElements];
+    @Test
+    public void testFourTasks() {
+        final int numElements = 1024;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] c = new int[numElements];
 
-		//@formatter:off
+        //@formatter:off
         new TaskSchedule("s0")
             .streamIn(a, b)
             .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
@@ -121,20 +123,20 @@ public class TestMultipleTasksSingleDevice {
             .execute();
         //@formatter:on
 
-		int val = (12 * 120) + 10;
-		for (int i = 0; i < a.length; i++) {
-			assertEquals(val, c[i]);
-		}
-	}
+        int val = (12 * 120) + 10;
+        for (int i = 0; i < a.length; i++) {
+            assertEquals(val, c[i]);
+        }
+    }
 
-	@Test
-	public void testFiveTasks() {
-		final int numElements = 1024;
-		int[] a = new int[numElements];
-		int[] b = new int[numElements];
-		int[] c = new int[numElements];
+    @Test
+    public void testFiveTasks() {
+        final int numElements = 1024;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] c = new int[numElements];
 
-		//@formatter:off
+        //@formatter:off
         new TaskSchedule("s0")
             .streamIn(a, b)
             .task("t0", TestMultipleTasksSingleDevice::task0Initialization, a)
@@ -146,11 +148,11 @@ public class TestMultipleTasksSingleDevice {
             .execute();
         //@formatter:on
 
-		int val = (12 * 120) + 10;
-		val = (12 * val) + (120);
-		for (int i = 0; i < a.length; i++) {
-			assertEquals(val, c[i]);
-		}
-	}
+        int val = (12 * 120) + 10;
+        val = (12 * val) + (120);
+        for (int i = 0; i < a.length; i++) {
+            assertEquals(val, c[i]);
+        }
+    }
 
 }

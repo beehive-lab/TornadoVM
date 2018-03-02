@@ -19,6 +19,8 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * 
+ * Authors: Juan Fumero
  *
  */
 
@@ -32,12 +34,12 @@ import uk.ac.manchester.tornado.runtime.TornadoDriver;
 
 public abstract class TornadoTestBase {
 
-	@Before
-	public void before() {
-		for (int i = 0; i < getTornadoRuntime().getNumDrivers(); i++) {
-			final TornadoDriver driver = getTornadoRuntime().getDriver(i);
-			driver.getDefaultDevice().reset();
-		}
-	}
+    @Before
+    public void before() {
+        for (int i = 0; i < getTornadoRuntime().getNumDrivers(); i++) {
+            final TornadoDriver driver = getTornadoRuntime().getDriver(i);
+            driver.getDefaultDevice().reset();
+        }
+    }
 
 }
