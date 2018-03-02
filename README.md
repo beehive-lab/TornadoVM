@@ -36,7 +36,6 @@ export TORNADO_SDK=$PWD/bin/sdk   ## We will create this directory during Tornad
 
 ## If CMAKE is needed (See step 2)
 export CMAKE_ROOT=<path/to/cmake/cmake-3.10.2>
-
 ```
 
 Then execute:

@@ -29,13 +29,15 @@ Once the method `execute` is invoked, Tornado builds the data dependency graph, 
 
 
 ```java
+package examples;
+
 import java.util.Random;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
-public class TestArrays { 
+public class TestTornado { 
 
   public static void main(String[] args) {
 	testVectorAdditionDouble(4096);
@@ -64,7 +66,7 @@ public class TestArrays {
     // Tornado Task API 
 	new TaskSchedule("s0") // new group of Tasks
         .streamIn(a, b)        // copy in from the host to the device (a and b arrays)
-        .task("t0", TestArrays::vectorAddDouble, a, b, c)   // task 0 
+        .task("t0", TestTornado::vectorAddDouble, a, b, c)   // task 0 
         .streamOut(c)          // copy out from the device to host
         .execute();            // run the task (Tornado bytecode generation, Tornado tasks graph, 
                                // OpenCL JIT compilation and execution)
@@ -75,20 +77,23 @@ public class TestArrays {
 
 ## 2. Compiling and Running with Tornado SDK
 
+The example above is already provided in the `examples` directory.
 To compile with Tornado SDK, there is a utility command that sets all the `CLASSPATHs` to use Tornado.
 Alternatively, you can use the standard JDK 1.8 and define all jars in `share/java/tornado` into your `CLASSPATHs`.
 
 
 ```bash
-$ javac.py TestArrays.java
+$ javac.py examples/TestTornado.java
 ```
 
 To run, just execute `tornado`. If you want to see the auto-generated OpenCL C code, you can run with the following option:
 
 
 ```bash
-$ tornado --printKernel TestArrays
+$ tornado --printKernel --debug examples/TestTornado
 ```
+
+The `--debug` option will print in which device the kernel was executed (e.g. GPU or CPU).
 
 
 ## 3. Vector Addition using Vector Types
