@@ -61,7 +61,7 @@ public class TestTornado {
     // Tornado Task API 
     new TaskSchedule("s0")     // new group of Tasks
         .streamIn(a, b)        // copy in from the host to the device (a and b arrays)
-        .task("t0", TestArrays::vectorAddDouble, a, b, c)   // task 0 
+        .task("t0", TestTornado::vectorAddDouble, a, b, c)   // task 0 
         .streamOut(c)          // copy out from the device to host
         .execute();            // run the task (Tornado bytecode generation, Tornado tasks graph, 
                                // OpenCL JIT compilation and execution)
