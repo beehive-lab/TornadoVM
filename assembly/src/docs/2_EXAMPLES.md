@@ -95,6 +95,32 @@ $ tornado --printKernel --debug examples/TestTornado
 
 The `--debug` option will print in which device the kernel was executed (e.g. GPU or CPU).
 
+In order to see the available devices on your system you can issue:
+
+```bash
+$ tornado uk.ac.manchester.tornado.drivers.opencl.OpenCL
+```
+
+and you will see an output similar to the one below (MacBook Pro 2018):
+
+```bash
+usage: OpenCL <platform> <device>
+
+[0] platform: Apple
+[0:0] device: Intel(R) Core(TM) i7-7920HQ CPU @ 3.10GHz
+[0:1] device: Intel(R) HD Graphics 630
+[0:2] device: AMD Radeon Pro 560 Compute Engine
+```
+
+In order to run your code on a device of choice you can issue, for example:
+
+```bash
+$ tornado -Ds0.device=0:1 --debug examples/TestTornado
+```
+
+This will run TaskSchedule (s0) on the device 1 (Intel Graphics 630).
+Similarly, you can execute the code on the rest of the devices.
+
 
 ## 3. Vector Addition using Vector Types
 
