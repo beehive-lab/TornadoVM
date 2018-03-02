@@ -2,23 +2,23 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
- * Copyright (c) 2013-2017 APT Group, School of Computer Science,
- * The University of Manchester
+ * Copyright (c) 2013-2018, APT Group, School of Computer Science,
+ * The University of Manchester. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This work is partially supported by EPSRC grants:
- * Anyscale EP/L000725/1 and PAMELA EP/K008730/1.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Authors: James Clarkson
  *
@@ -38,7 +38,7 @@
  * Method:    clReleaseCommandQueue
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clReleaseCommandQueue
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clReleaseCommandQueue
 (JNIEnv *env, jclass clazz, jlong queue_id) {
     OPENCL_PROLOGUE;
 
@@ -50,7 +50,7 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clReleaseComm
  * Method:    clGetCommandQueueInfo
  * Signature: (JI[B)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clGetCommandQueueInfo
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clGetCommandQueueInfo
 (JNIEnv *env, jclass clazz, jlong queue_id, jint param_name, jbyteArray array) {
     OPENCL_PROLOGUE;
 
@@ -74,7 +74,7 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clGetCommandQ
  * Method:    clSetCommandQueueProperty
  * Signature: (JJZ)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clSetCommandQueueProperty
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clSetCommandQueueProperty
 (JNIEnv *env, jclass clazz, jlong queue_id, jlong properties, jboolean value) {
     //OPENCL_PROLOGUE;
 
@@ -90,7 +90,7 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clSetCommandQ
  * Method:    clFlush
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clFlush
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clFlush
 (JNIEnv *env, jclass clazz, jlong queue_id) {
     OPENCL_PROLOGUE;
 
@@ -102,7 +102,7 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clFlush
  * Method:    clFinish
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clFinish
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clFinish
 (JNIEnv *env, jclass clazz, jlong queue_id) {
     OPENCL_PROLOGUE;
 
@@ -114,7 +114,7 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clFinish
  * Method:    clEnqueueNDRangeKernel
  * Signature: (JJI[J[J[J[J)J
  */
-JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueNDRangeKernel
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clEnqueueNDRangeKernel
 (JNIEnv *env, jclass clazz, jlong queue_id, jlong kernel_id, jint work_dim, jlongArray array1, jlongArray array2, jlongArray array3, jlongArray array4) {
     OPENCL_PROLOGUE;
 
@@ -141,7 +141,7 @@ JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueNDR
  * Method:    clEnqueueTask
  * Signature: (JJ[J)J
  */
-JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueTask
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clEnqueueTask
 (JNIEnv *env, jclass clazz, jlong queue_id, jlong kernel_id, jlongArray array) {
     OPENCL_PROLOGUE;
 
@@ -160,11 +160,11 @@ JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueTas
 }
 
 /*
- * Class:     tornado_drivers_opencl_OCLCommandQueue
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    clEnqueueMarker
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueMarker
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clEnqueueMarker
 (JNIEnv *env, jclass clazz, jlong queue_id) {
     OPENCL_PROLOGUE;
 
@@ -176,11 +176,11 @@ JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueMar
 }
 
 /*
- * Class:     tornado_drivers_opencl_OCLCommandQueue
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    clEnqueueBarrier
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueBarrier
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clEnqueueBarrier
 (JNIEnv *env, jclass clazz, jlong queue_id) {
     OPENCL_PROLOGUE;
 
@@ -191,11 +191,11 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueBarr
 }
 
 /*
- * Class:     tornado_drivers_opencl_OCLCommandQueue
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    clEnqueueWaitForEvents
  * Signature: (J[J)V
  */
-JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueWaitForEvents
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clEnqueueWaitForEvents
 (JNIEnv *env, jclass clazz, jlong queue_id, jlongArray array) {
     OPENCL_PROLOGUE;
 
@@ -209,11 +209,11 @@ JNIEXPORT void JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueWait
 }
 
 /*
- * Class:     tornado_drivers_opencl_OCLCommandQueue
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    clEnqueueMarkerWithWaitList
  * Signature: (J[J)J
  */
-JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueMarkerWithWaitList
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clEnqueueMarkerWithWaitList
 (JNIEnv *env, jclass clazz, jlong queue_id, jlongArray array) {
     OPENCL_PROLOGUE;
 
@@ -229,11 +229,11 @@ JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueMar
 }
 
 /*
- * Class:     tornado_drivers_opencl_OCLCommandQueue
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    clEnqueueBarrierWithWaitList
  * Signature: (J[J)J
  */
-JNIEXPORT jlong JNICALL Java_tornado_drivers_opencl_OCLCommandQueue_clEnqueueBarrierWithWaitList
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clEnqueueBarrierWithWaitList
 (JNIEnv *env, jclass clazz, jlong queue_id, jlongArray array) {
     OPENCL_PROLOGUE;
 
