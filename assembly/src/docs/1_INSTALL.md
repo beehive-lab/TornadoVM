@@ -13,8 +13,8 @@
 
 
 __1. Obtain the Tornado SDK for:__
-* [For Linux x64_64](https://drive.google.com/file/d/10MjvCC3VmOecGtD1lwKd7Sp8HAV_i5AB/view?usp=sharing)
-* [For OSX](https://drive.google.com/file/d/1OV23CJqrYk64an-7gdIK7Uoh2ssJB-dp/view?usp=sharing)
+* [For Linux x64_64](https://drive.google.com/open?id=1cHjtAOLwZH_ou9REK6O7vTiiYykbbQID)
+* [For OSX](https://drive.google.com/open?id=1RMKZqoVWhA5nJXyUcC6X28oeRHw0stzu)
 
 __2. Set up the Tornado working directory:__
 
