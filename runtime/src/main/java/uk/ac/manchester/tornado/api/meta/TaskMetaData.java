@@ -365,6 +365,7 @@ public class TaskMetaData extends AbstractMetaData {
 
     public void printThreadDims() {
         System.out.printf("task info: %s\n", getId());
+        System.out.printf("\tplatform          : %s\n", getDevice().getPlatformName());
         System.out.printf("\tdevice            : %s\n", getDevice().getDescription());
         System.out.printf("\tdims              : %d\n", domain.getDepth());
         System.out.printf("\tglobal work offset: %s\n", formatArray(globalOffset));
