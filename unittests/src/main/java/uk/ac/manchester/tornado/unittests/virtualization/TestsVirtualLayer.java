@@ -206,14 +206,15 @@ public class TestsVirtualLayer {
         Arrays.fill(data, 100);
 
         final int numDrivers = getTornadoRuntime().getNumDrivers();
+        System.out.println("Num Drivers: " + numDrivers);
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
             TaskSchedule s0 = new TaskSchedule("s" + driverIndex);
             final TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
             driver.getDefaultDevice().reset();
             final int numDevices = driver.getDeviceCount();
+            System.out.println("Num Devices: " + numDevices);
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
-                // System.out.println("s" + driverIndex + ".device="+
-                // driverIndex + ":" + deviceIndex);
+                System.out.println("\ts" + driverIndex + ".device=" + driverIndex + ":" + deviceIndex);
                 setProperty("s" + driverIndex + ".device=", driverIndex + ":" + deviceIndex);
                 s0.setDevice(driver.getDevice(deviceIndex));
                 s0.task("t" + deviceIndex, TestsVirtualLayer::testA, data, 1);
