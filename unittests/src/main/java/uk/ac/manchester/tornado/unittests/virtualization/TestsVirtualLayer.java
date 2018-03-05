@@ -204,6 +204,8 @@ public class TestsVirtualLayer {
         int[] data = new int[N];
 
         Arrays.fill(data, 100);
+        
+        int totalNumDevices = 0;
 
         final int numDrivers = getTornadoRuntime().getNumDrivers();
         System.out.println("Num Drivers: " + numDrivers);
@@ -212,19 +214,20 @@ public class TestsVirtualLayer {
             final TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
             driver.getDefaultDevice().reset();
             final int numDevices = driver.getDeviceCount();
+            totalNumDevices += numDevices;
             System.out.println("Num Devices: " + numDevices);
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
                 System.out.println("\ts" + driverIndex + ".device=" + driverIndex + ":" + deviceIndex);
                 setProperty("s" + driverIndex + ".device=", driverIndex + ":" + deviceIndex);
                 s0.setDevice(driver.getDevice(deviceIndex));
-                s0.task("t" + deviceIndex, TestsVirtualLayer::testA, data, 1);
+                s0.streamIn(data).task("t" + deviceIndex, TestsVirtualLayer::testA, data, 1);
             }
             s0.streamOut(data);
             s0.execute();
         }
 
         for (int i = 0; i < N; i++) {
-            assertEquals(102, data[i]);
+            assertEquals(100 + totalNumDevices, data[i]);
         }
     }
 
