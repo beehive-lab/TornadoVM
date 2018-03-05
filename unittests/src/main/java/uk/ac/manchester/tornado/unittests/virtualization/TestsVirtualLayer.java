@@ -210,20 +210,28 @@ public class TestsVirtualLayer {
         final int numDrivers = getTornadoRuntime().getNumDrivers();
         System.out.println("Num Drivers: " + numDrivers);
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
-            TaskSchedule s0 = new TaskSchedule("s" + driverIndex);
+        	
+        	String taskScheduleName = "s" + driverIndex;
+        	
+            TaskSchedule s0 = new TaskSchedule(taskScheduleName);
             final TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
             driver.getDefaultDevice().reset();
             final int numDevices = driver.getDeviceCount();
             totalNumDevices += numDevices;
             System.out.println("Num Devices: " + numDevices);
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
-                System.out.println("s" + driverIndex + ".t" + deviceIndex + ".device=" + driverIndex + ":" + deviceIndex);
+            	String taskName = "t" + deviceIndex;
+                System.out.println(taskScheduleName+ "." + taskName + ".device=" + driverIndex + ":" + deviceIndex);
                 setProperty("s" + driverIndex + ".t" + deviceIndex + ".device=", driverIndex + ":" + deviceIndex);
                 s0.setDevice(driver.getDevice(deviceIndex));
-                s0.streamIn(data).task("t" + deviceIndex, TestsVirtualLayer::testA, data, 1);
+                //@formatter:off
+                s0.streamIn(data)
+                  .task(taskName, TestsVirtualLayer::testA, data, 1);
+                //@formatter:on
+                s0.streamOut(data);
+                s0.execute();
             }
-            s0.streamOut(data);
-            s0.execute();
+            
         }
 
         for (int i = 0; i < N; i++) {
