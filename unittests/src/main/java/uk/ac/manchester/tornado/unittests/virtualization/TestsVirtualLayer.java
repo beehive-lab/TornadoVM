@@ -217,8 +217,8 @@ public class TestsVirtualLayer {
             totalNumDevices += numDevices;
             System.out.println("Num Devices: " + numDevices);
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
-                System.out.println("\ts" + driverIndex + ".device=" + driverIndex + ":" + deviceIndex);
-                setProperty("s" + driverIndex + ".device=", driverIndex + ":" + deviceIndex);
+                System.out.println("s" + driverIndex + ".t" + deviceIndex + ".device=" + driverIndex + ":" + deviceIndex);
+                setProperty("s" + driverIndex + ".t" + deviceIndex + ".device=", driverIndex + ":" + deviceIndex);
                 s0.setDevice(driver.getDevice(deviceIndex));
                 s0.streamIn(data).task("t" + deviceIndex, TestsVirtualLayer::testA, data, 1);
             }
