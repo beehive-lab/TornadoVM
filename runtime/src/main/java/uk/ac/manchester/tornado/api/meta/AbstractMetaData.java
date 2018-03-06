@@ -28,27 +28,33 @@ package uk.ac.manchester.tornado.api.meta;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static uk.ac.manchester.tornado.api.meta.MetaDataUtils.resolveDevice;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
+import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 
 public abstract class AbstractMetaData {
 
-    private final String id;
-    private TornadoDevice device;
-    private boolean shouldRecompile;
-    private final boolean isDeviceDefined;
-    private boolean deviceLoaded = false;
+	protected final String id;
+    protected TornadoDevice device;
+    protected boolean shouldRecompile;
+    protected final boolean isDeviceDefined;
+    protected int driverIndex;
+    protected int deviceIndex;
 
+    private static String getProperty(String key) {
+        return System.getProperty(key);
+    }
+    
     public TornadoDevice getDevice() {
-        if (device == null && !deviceLoaded) {
-            device = resolveDevice(getProperty(id + ".device", "0:0"));
-            deviceLoaded = true;
+        if (device == null) {
+            device = resolveDevice(Tornado.getProperty(id + ".device", driverIndex + ":" + deviceIndex));
+            System.out.println("!!!!!!!!!!!!!!!!!! CREATING DEVICE: [" + id + ".device" + driverIndex + ":" + deviceIndex + "] -->" + device);
         }
         return device;
     }
 
     public void setDevice(TornadoDevice device) {
+    	System.out.println("SETTING DEVICE: " + device);
         this.device = device;
     }
 
@@ -252,7 +258,7 @@ public abstract class AbstractMetaData {
 
     protected static String getDefault(String keySuffix, String id, String defaultValue) {
         if (getProperty(id + "." + keySuffix) == null) {
-            return getProperty("tornado" + "." + keySuffix, defaultValue);
+            return Tornado.getProperty("tornado" + "." + keySuffix, defaultValue);
         } else {
             return getProperty(id + "." + keySuffix);
         }
@@ -261,8 +267,19 @@ public abstract class AbstractMetaData {
     public AbstractMetaData(String id) {
         this.id = id;
         shouldRecompile = true;
-
+        
+        //System.out.println("New abstract metadada: " + this);
         isDeviceDefined = getProperty(id + ".device") != null;
+        if (isDeviceDefined) {
+        	int[] a = MetaDataUtils.resolveDriverDeviceIndexes(getProperty(id + ".device"));
+        	driverIndex = a[0];
+        	deviceIndex = a[1];
+        } else {
+        	driverIndex = 0;
+        	deviceIndex = 0;
+
+        }
+
 
         debugKernelArgs = parseBoolean(getDefault("debug.kernelargs", id, "False"));
         printCompileTimes = parseBoolean(getDefault("debug.compiletimes", id, "False"));

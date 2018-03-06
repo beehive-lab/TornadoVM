@@ -148,7 +148,7 @@ public class OCLTornadoDevice implements TornadoDevice {
 
     @Override
     public String toString() {
-        return String.format(device.getName());
+        return String.format(getPlatformName() + " -- " +  device.getName());
     }
 
     @Override
