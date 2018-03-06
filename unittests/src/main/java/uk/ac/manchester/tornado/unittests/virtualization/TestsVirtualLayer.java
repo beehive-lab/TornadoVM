@@ -219,20 +219,24 @@ public class TestsVirtualLayer {
             final int numDevices = driver.getDeviceCount();
             totalNumDevices += numDevices;
             System.out.println("Num Devices: " + numDevices);
+            
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
             	String taskName = "t" + deviceIndex;
                 System.out.println(taskScheduleName+ "." + taskName + ".device=" + driverIndex + ":" + deviceIndex);
                 setProperty("s" + driverIndex + ".t" + deviceIndex + ".device", driverIndex + ":" + deviceIndex);
                 
                 s0.setDevice(driver.getDevice(deviceIndex));
-                
+
                 //@formatter:off
                 s0.streamIn(data)
                   .task(taskName, TestsVirtualLayer::testA, data, 1);
                 //@formatter:on
+                
                 s0.streamOut(data);
                 s0.execute();
             }
+            
+            
             
         }
 

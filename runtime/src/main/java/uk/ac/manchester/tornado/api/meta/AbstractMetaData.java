@@ -48,14 +48,11 @@ public abstract class AbstractMetaData {
     public TornadoDevice getDevice() {
         if (device == null) {
             device = resolveDevice(Tornado.getProperty(id + ".device", driverIndex + ":" + deviceIndex));
-            //System.out.println("!!!!!!!!!!!!!!!!!! CREATING DEVICE: [" + id + ".device" + driverIndex + ":" + deviceIndex + "] -->" + device);
         }
-        //System.out.println("@@ GET DEVICE: " + device);
         return device;
     }
 
     public void setDevice(TornadoDevice device) {
-    	//System.out.println("SETTING DEVICE: " + device);
         this.device = device;
     }
 
@@ -271,7 +268,6 @@ public abstract class AbstractMetaData {
         
         device = null;
         
-        //System.out.println("\n\n ID: " + id + "\n\n");
         isDeviceDefined = getProperty(id + ".device") != null;
         if (isDeviceDefined) {
         	int[] a = MetaDataUtils.resolveDriverDeviceIndexes(getProperty(id + ".device"));
@@ -280,9 +276,7 @@ public abstract class AbstractMetaData {
         } else {
         	driverIndex = 0;
         	deviceIndex = 0;
-
         }
-
 
         debugKernelArgs = parseBoolean(getDefault("debug.kernelargs", id, "False"));
         printCompileTimes = parseBoolean(getDefault("debug.compiletimes", id, "False"));

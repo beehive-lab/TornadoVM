@@ -101,10 +101,9 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
     protected void discoverDevices(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
         final int numPlatforms = OpenCL.getNumPlatforms();
         if (numPlatforms > 0) {
-
             for (int i = 0; i < numPlatforms; i++) {
                 final OCLPlatform platform = OpenCL.getPlatform(i);
-
+                
                 info("OpenCL[%d]: Platform %s", i, platform.getName());
                 final OCLContext context = platform.createContext();
                 contexts.add(context);
@@ -116,12 +115,11 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
                 for (int j = 0; j < numDevices; j++) {
                     final OCLDevice device = context.devices().get(j);
                     info("OpenCL[%d]: device=%s", i, device.getName());
-
-                    backends[i][j] = createOCLBackend(options, vmRuntime, vmConfig,
-                            context, j);
-
+                    backends[i][j] = createOCLBackend(options, vmRuntime, vmConfig, context, j);
                 }
             }
+        } else {
+        	throw new RuntimeException("There is no OpenCL Platform available");
         }
     }
 
