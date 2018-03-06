@@ -89,10 +89,7 @@ public class TaskMetaData extends AbstractMetaData {
     private boolean canAssumeExact;
 
     public TaskMetaData(ScheduleMetaData scheduleMetaData, String id, int numParameters) {
-        super(scheduleMetaData.getId() + "." + id);
-        
-        System.out.println("CREATING METADATA: " + scheduleMetaData.getId() + "." + id +  " --" + this);
-        
+        super(scheduleMetaData.getId() + "." + id);        
         this.scheduleMetaData = scheduleMetaData;
         this.globalSize = 0;
         this.constantSize = 0;
@@ -124,17 +121,6 @@ public class TaskMetaData extends AbstractMetaData {
 
         this.schedule = !(globalWorkDefined && localWorkDefined);
         this.canAssumeExact = Boolean.parseBoolean(getDefault("coarsener.exact", getId(), "False"));
-        
-        
-//        String idTask = scheduleMetaData.getId() + "." + id;
-//        String s = getProperty(idTask + ".device=");
-//        
-//        for (String si : System.getProperties().stringPropertyNames()) {
-//        	System.out.println(si);
-//        }
-//        
-//        System.out.println("VALUE PROPOERTY:   " + s);
-        
     }
     
     private static String getProperty(String key) {
@@ -283,8 +269,6 @@ public class TaskMetaData extends AbstractMetaData {
     @Override
     public TornadoDevice getDevice() {
         TornadoDevice d = scheduleMetaData.isDeviceDefined() && !isDeviceDefined() ? scheduleMetaData.getDevice() : super.getDevice();
-    	//TornadoDevice d = scheduleMetaData.getDevice();
-        //System.out.println("[TASK META] DEVICE GETTING: " + d);
         return d;
     }
 
