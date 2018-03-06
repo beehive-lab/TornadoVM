@@ -34,12 +34,12 @@ import uk.ac.manchester.tornado.common.TornadoDevice;
 
 public abstract class AbstractMetaData {
 
-	protected final String id;
-    protected TornadoDevice device;
-    protected boolean shouldRecompile;
-    protected final boolean isDeviceDefined;
-    protected int driverIndex;
-    protected int deviceIndex;
+	private String id;
+	private TornadoDevice device;
+	private boolean shouldRecompile;
+	private final boolean isDeviceDefined;
+	private int driverIndex;
+	private int deviceIndex;
 
     private static String getProperty(String key) {
         return System.getProperty(key);
@@ -48,13 +48,14 @@ public abstract class AbstractMetaData {
     public TornadoDevice getDevice() {
         if (device == null) {
             device = resolveDevice(Tornado.getProperty(id + ".device", driverIndex + ":" + deviceIndex));
-            System.out.println("!!!!!!!!!!!!!!!!!! CREATING DEVICE: [" + id + ".device" + driverIndex + ":" + deviceIndex + "] -->" + device);
+            //System.out.println("!!!!!!!!!!!!!!!!!! CREATING DEVICE: [" + id + ".device" + driverIndex + ":" + deviceIndex + "] -->" + device);
         }
+        //System.out.println("@@ GET DEVICE: " + device);
         return device;
     }
 
     public void setDevice(TornadoDevice device) {
-    	System.out.println("SETTING DEVICE: " + device);
+    	//System.out.println("SETTING DEVICE: " + device);
         this.device = device;
     }
 
@@ -62,7 +63,7 @@ public abstract class AbstractMetaData {
         return cpuConfig;
     }
 
-    public final String getId() {
+    public String getId() {
         return id;
     }
 
@@ -268,7 +269,9 @@ public abstract class AbstractMetaData {
         this.id = id;
         shouldRecompile = true;
         
-        //System.out.println("New abstract metadada: " + this);
+        device = null;
+        
+        //System.out.println("\n\n ID: " + id + "\n\n");
         isDeviceDefined = getProperty(id + ".device") != null;
         if (isDeviceDefined) {
         	int[] a = MetaDataUtils.resolveDriverDeviceIndexes(getProperty(id + ".device"));

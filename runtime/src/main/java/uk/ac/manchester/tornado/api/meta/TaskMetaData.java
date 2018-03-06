@@ -69,6 +69,7 @@ public class TaskMetaData extends AbstractMetaData {
         return sb.toString();
     }
 
+    private String idTask;
     private Coarseness coarseness;
     private byte[] constantData;
     private int constantSize;
@@ -89,6 +90,9 @@ public class TaskMetaData extends AbstractMetaData {
 
     public TaskMetaData(ScheduleMetaData scheduleMetaData, String id, int numParameters) {
         super(scheduleMetaData.getId() + "." + id);
+        
+        System.out.println("CREATING METADATA: " + scheduleMetaData.getId() + "." + id +  " --" + this);
+        
         this.scheduleMetaData = scheduleMetaData;
         this.globalSize = 0;
         this.constantSize = 0;
@@ -98,6 +102,7 @@ public class TaskMetaData extends AbstractMetaData {
         profiles = new HashMap<>();
         argumentsAccess = new Access[numParameters];
         Arrays.fill(argumentsAccess, Access.NONE);
+        this.idTask = scheduleMetaData.getId() + "." + id;
 
         localWorkDefined = getProperty(getId() + ".local.dims") != null;
         if (localWorkDefined) {
@@ -119,6 +124,21 @@ public class TaskMetaData extends AbstractMetaData {
 
         this.schedule = !(globalWorkDefined && localWorkDefined);
         this.canAssumeExact = Boolean.parseBoolean(getDefault("coarsener.exact", getId(), "False"));
+        
+        
+//        String idTask = scheduleMetaData.getId() + "." + id;
+//        String s = getProperty(idTask + ".device=");
+//        
+//        for (String si : System.getProperties().stringPropertyNames()) {
+//        	System.out.println(si);
+//        }
+//        
+//        System.out.println("VALUE PROPOERTY:   " + s);
+        
+    }
+    
+    private static String getProperty(String key) {
+        return System.getProperty(key);
     }
 
     public boolean canAssumeExact() {
@@ -262,7 +282,10 @@ public class TaskMetaData extends AbstractMetaData {
 
     @Override
     public TornadoDevice getDevice() {
-        return scheduleMetaData.isDeviceDefined() && !isDeviceDefined() ? scheduleMetaData.getDevice() : super.getDevice();
+        TornadoDevice d = scheduleMetaData.isDeviceDefined() && !isDeviceDefined() ? scheduleMetaData.getDevice() : super.getDevice();
+    	//TornadoDevice d = scheduleMetaData.getDevice();
+        //System.out.println("[TASK META] DEVICE GETTING: " + d);
+        return d;
     }
 
     public int getDims() {
@@ -364,7 +387,7 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public void printThreadDims() {
-        System.out.printf("task info: %s\n", getId());
+        System.out.printf("task info: %s\n", idTask + " -- " + this);
         System.out.printf("\tplatform          : %s\n", getDevice().getPlatformName());
         System.out.printf("\tdevice            : %s\n", getDevice().getDescription());
         System.out.printf("\tdims              : %d\n", domain.getDepth());
@@ -512,9 +535,9 @@ public class TaskMetaData extends AbstractMetaData {
 
     }
 
-    @Override
-    public String toString() {
-        return String.format("task meta data: domain=%s, global dims=%s\n", domain, (getGlobalWork() == null) ? "null" : formatArray(getGlobalWork()));
-    }
+//    @Override
+//    public String toString() {
+//        return String.format("task meta data: domain=%s, global dims=%s\n", domain, (getGlobalWork() == null) ? "null" : formatArray(getGlobalWork()));
+//    }
 
 }
