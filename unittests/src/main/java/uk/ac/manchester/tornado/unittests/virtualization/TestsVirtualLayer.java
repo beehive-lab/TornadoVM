@@ -28,7 +28,6 @@ package uk.ac.manchester.tornado.unittests.virtualization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static uk.ac.manchester.tornado.common.Tornado.setProperty;
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import java.util.Arrays;
@@ -36,6 +35,7 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.runtime.TornadoDriver;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
@@ -198,46 +198,93 @@ public class TestsVirtualLayer {
         }
     }
 
+    /**
+     * It creates one task scheduler and one task. Then it executes the same
+     * task in different devices.
+     */
     @Test
-    public void testVirtualLayer04() {
+    public void testDynamicDeviceSwitch() {
         final int N = 128;
         int[] data = new int[N];
 
         Arrays.fill(data, 100);
-        
+
         int totalNumDevices = 0;
 
         final int numDrivers = getTornadoRuntime().getNumDrivers();
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
-        	
-        	String taskScheduleName = "s" + driverIndex;
-        	
+
+            String taskScheduleName = "s" + driverIndex;
+
             TaskSchedule s0 = new TaskSchedule(taskScheduleName);
             final TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
-            
+
             final int numDevices = driver.getDeviceCount();
             totalNumDevices += numDevices;
-            
+
+            String taskName = "t0";
+
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
-            	String taskName = "t" + deviceIndex;
-            	
-                //System.out.println(taskScheduleName+ "." + taskName + ".device=" + driverIndex + ":" + deviceIndex);
-            	
-                setProperty("s" + driverIndex + ".t" + deviceIndex + ".device", driverIndex + ":" + deviceIndex);
+
+                // String taskName = "t" + deviceIndex;
+
+                String propertyDevice = "s" + driverIndex + "." + taskName + ".device";
+                String value = driverIndex + ":" + deviceIndex;
+
+                System.out.println("Setting device to: " + propertyDevice + "=" + value);
+
+                Tornado.setProperty(propertyDevice, value);
                 s0.setDevice(driver.getDevice(deviceIndex));
 
                 //@formatter:off
                 s0.streamIn(data)
-                  .task(taskName, TestsVirtualLayer::testA, data, 1);
+                  .task(taskName, TestsVirtualLayer::testA, data, 1)
+                  .streamOut(data);
                 //@formatter:on
-                
-                s0.streamOut(data);
+
                 s0.execute();
             }
         }
 
         for (int i = 0; i < N; i++) {
             assertEquals(100 + totalNumDevices, data[i]);
+        }
+    }
+
+    /**
+     * It creates two task schedulers and two tasks and executes them on
+     * different devices.
+     */
+    @Test
+    public void testSchedulerDevices() {
+        final int N = 128;
+        int[] dataA = new int[N];
+        int[] dataB = new int[N];
+
+        Arrays.fill(dataA, 100);
+        Arrays.fill(dataB, 100);
+
+        TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(0);
+        if (tornadoDriver.getDeviceCount() < 2) {
+            assertFalse("The current driver has less than 2 devices", true);
+        }
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        Tornado.setProperty("s0.t0.device", "0:1");
+        // s0.setDevice(tornadoDriver.getDevice(1));
+        s0.task("t0", TestsVirtualLayer::testA, dataA, 1);
+        s0.streamOut(dataA);
+        s0.execute();
+
+        TaskSchedule s1 = new TaskSchedule("s1");
+        Tornado.setProperty("s1.t1.device", "0:0");
+        // s1.setDevice(tornadoDriver.getDevice(0));
+        s1.task("t1", TestsVirtualLayer::testA, dataB, 1);
+        s1.streamOut(dataB);
+        s1.execute();
+
+        for (int i = 0; i < N; i++) {
+            assertEquals(dataA[i], dataB[i]);
         }
     }
 
