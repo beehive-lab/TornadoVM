@@ -36,7 +36,6 @@ export TORNADO_SDK=$PWD/bin/sdk   ## We will create this directory during Tornad
 
 ## If CMAKE is needed (See step 2)
 export CMAKE_ROOT=<path/to/cmake/cmake-3.10.2>
-
 ```
 
 Then execute:
@@ -143,7 +142,7 @@ NOTE: the Makefile autoamtically sets the `cmake.root.dir` based on the variable
 
 ```bash
 $ . etc/tornado.env
-$ tornado tornado.examples.HelloWorld
+$ tornado uk.ac.manchester.tornado.examples.HelloWorld
 ```
 
 To run on a specific device, use the option: 
@@ -157,13 +156,13 @@ Where s is the schedule task name and t is the task name.
 For example:
 
 ```bash
-$ tornado -Ds0.t0.device=0:1 tornado.examples.HelloWorld
+$ tornado -Ds0.t0.device=0:1 uk.ac.manchester.tornado.examples.HelloWorld
 ```
 
 ## Running Benchmarks #
 
 ```bash
-$ tornado tornado.benchmarks.BenchmarkRunner sadd
+$ tornado uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sadd
 ```
 
 
@@ -179,19 +178,19 @@ make tests
 To run a separated unittest class:
 
 ```bash
-$  tornado-test.py tornado.unittests.TestHello
+$  tornado-test.py uk.ac.manchester.tornado.unittests.TestHello
 ```
 
 Also, it can be executed in verbose mode:
 
 ```bash
-$ tornado-test.py --verbose tornado.unittests.TestHello
+$ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello
 ```
 
 To test just a method of a unittest class:
 
 ```bash
-$ tornado-test.py --verbose tornado.unittests.TestHello#helloWorld
+$ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello#helloWorld
 ```
 
 
