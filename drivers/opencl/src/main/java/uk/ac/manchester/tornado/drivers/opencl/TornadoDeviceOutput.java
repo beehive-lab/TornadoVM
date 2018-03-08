@@ -33,17 +33,21 @@ import uk.ac.manchester.tornado.runtime.TornadoDriver;
 public class TornadoDeviceOutput {
 
     public static void main(String[] args) {
+        StringBuffer bufferDriversAndPlatforms = new StringBuffer().append("\n");
+        StringBuffer bufferDevices = new StringBuffer();
         final int numDrivers = getTornadoRuntime().getNumDrivers();
-        System.out.printf("Number of Tornado drivers: %d \n", numDrivers);
+        bufferDriversAndPlatforms.append("Number of Tornado drivers: " + numDrivers + "\n");
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
             final TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
             final int numDevices = driver.getDeviceCount();
-            System.out.printf("Number of devices: %d \n", numDevices);
+            bufferDriversAndPlatforms.append("Number of devices: " + numDevices + "\n");
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
-                System.out.println("Tornado device=" + driverIndex + ":" + deviceIndex);
-                System.out.println(driver.getDevice(deviceIndex));
-
+                bufferDevices.append("Tornado device=" + driverIndex + ":" + deviceIndex + "\n");
+                bufferDevices.append(driver.getDevice(deviceIndex)).append("\n");
             }
         }
+        System.out.println(bufferDriversAndPlatforms.toString());
+        bufferDevices.setLength(bufferDevices.length() - 1);
+        System.out.println(bufferDevices.toString());
     }
 }
