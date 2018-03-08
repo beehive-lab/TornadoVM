@@ -330,12 +330,13 @@ public abstract class AbstractTaskGraph {
     }
 
     public void warmup() {
-        if (result == null) {
-            graphContext.assignToDevices();
-            compile(false);
+    	CompileInfo shouldCompile = shouldCompile();
+        if (shouldCompile.compile) { 
+        	 graphContext.assignToDevices();
+             compile(shouldCompile.updateDevice);
+             lastExecutedDevice = meta().getDevice();
         }
-
-        vm.warmup();
+        vm.warmup(shouldCompile.updateDevice);
     }
 
     public void invalidateObjects() {

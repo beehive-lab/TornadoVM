@@ -159,8 +159,8 @@ public class TornadoVM extends TornadoLogger {
         }
     }
 
-    public void warmup() {
-        execute(true);
+    public void warmup(boolean updateDevice) {
+        execute(updateDevice, true);
     }
 
     public Event execute(boolean setNewDevice) {
