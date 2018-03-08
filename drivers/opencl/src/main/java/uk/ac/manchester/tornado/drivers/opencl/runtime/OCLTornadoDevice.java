@@ -80,6 +80,7 @@ public class OCLTornadoDevice implements TornadoDevice {
     private final int deviceIndex;
     private final int platformIndex;
     private static OCLDriver driver = null;
+    private String platformName;
 
     private static OCLDriver findDriver() {
         if (driver == null) {
@@ -92,7 +93,8 @@ public class OCLTornadoDevice implements TornadoDevice {
     public OCLTornadoDevice(final int platformIndex, final int deviceIndex) {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
-
+        
+        platformName = findDriver().getPlatformContext(platformIndex).getPlatform().getName();
         device = findDriver().getPlatformContext(platformIndex).devices()
                 .get(deviceIndex);
 
@@ -107,6 +109,11 @@ public class OCLTornadoDevice implements TornadoDevice {
     public String getDescription() {
         final String availability = (device.isAvailable()) ? "available" : "not available";
         return String.format("%s %s (%s)", device.getName(), device.getDeviceType(), availability);
+    }
+    
+    @Override
+    public String getPlatformName() {
+    	return platformName;
     }
 
     public OCLDevice getDevice() {
@@ -141,7 +148,7 @@ public class OCLTornadoDevice implements TornadoDevice {
 
     @Override
     public String toString() {
-        return String.format(device.getName());
+        return String.format(getPlatformName() + " -- " +  device.getName());
     }
 
     @Override

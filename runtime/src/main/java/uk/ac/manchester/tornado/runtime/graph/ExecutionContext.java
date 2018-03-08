@@ -214,6 +214,10 @@ public class ExecutionContext {
         return devices;
     }
 
+    /**
+     * Default device inspects the driver 0 and device 0 of the internal OpenCL list.
+     * @return
+     */
     public TornadoDevice getDefaultDevice() {
         return meta.getDevice();
     }

@@ -197,4 +197,9 @@ public class JVMMapping implements TornadoDevice {
         return "jvm";
     }
 
+	@Override
+	public String getPlatformName() {
+		return "jvm";
+	}
+
 }
