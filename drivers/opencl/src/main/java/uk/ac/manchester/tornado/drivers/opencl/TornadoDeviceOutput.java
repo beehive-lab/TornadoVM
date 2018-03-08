@@ -46,6 +46,7 @@ public class TornadoDeviceOutput {
                 bufferDevices.append(driver.getDevice(deviceIndex)).append("\n");
             }
         }
+
         System.out.println(bufferDriversAndPlatforms.toString());
         bufferDevices.setLength(bufferDevices.length() - 1);
         System.out.println(bufferDevices.toString());
