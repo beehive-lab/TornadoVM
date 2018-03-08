@@ -142,7 +142,10 @@ public class TornadoVM extends TornadoLogger {
         return globalStates[index].getDeviceState(contexts.get(device));
     }
 
-    private static CallStack resolveStack(int index, int numArgs, CallStack[] stacks, TornadoDevice device, boolean setNewDevice) {
+    private CallStack resolveStack(int index, int numArgs, CallStack[] stacks, TornadoDevice device, boolean setNewDevice) {
+    	if (graphContext.meta().isDebug() && setNewDevice) {
+            debug("Recompiling task on device " + device);
+    	}
         if (stacks[index] == null || setNewDevice) {
             stacks[index] = device.createStack(numArgs);
         } 

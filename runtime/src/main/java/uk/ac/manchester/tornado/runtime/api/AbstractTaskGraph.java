@@ -25,14 +25,21 @@
  */
 package uk.ac.manchester.tornado.runtime.api;
 
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.isBoxedPrimitiveClass;
+import static uk.ac.manchester.tornado.common.Tornado.VM_USE_DEPS;
+import static uk.ac.manchester.tornado.common.Tornado.warn;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.BitSet;
 import java.util.function.Consumer;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 import org.graalvm.compiler.phases.util.Providers;
 
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.Event;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.common.CallStack;
@@ -40,19 +47,14 @@ import uk.ac.manchester.tornado.common.DeviceObjectState;
 import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.graal.compiler.TornadoSuitesProvider;
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
-import uk.ac.manchester.tornado.runtime.graph.*;
+import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
+import uk.ac.manchester.tornado.runtime.graph.Graph;
+import uk.ac.manchester.tornado.runtime.graph.GraphBuilder;
+import uk.ac.manchester.tornado.runtime.graph.GraphCompilationResult;
+import uk.ac.manchester.tornado.runtime.graph.GraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
-
-import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.common.RuntimeUtilities.isBoxedPrimitiveClass;
-import static uk.ac.manchester.tornado.common.Tornado.VM_USE_DEPS;
-import static uk.ac.manchester.tornado.common.Tornado.warn;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public abstract class AbstractTaskGraph {
 
@@ -160,14 +162,9 @@ public abstract class AbstractTaskGraph {
     
     private void updateDeviceContext(Graph graph) {
         BitSet deviceContexts = graph.filter(ContextNode.class);
-
-    	System.out.println("RECOMPILING ................. ");
     	final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
     	contextNode.setDeviceIndex(meta().getDeviceIndex());
     	graphContext.addDevice(meta().getDevice());
-    	
-    	//System.out.println(" AFTER !!!!!!!!!!!!!!!!!!!!! " + meta().getDeviceIndex() + " -- " + meta().getDevice());
-        //graph.print();
     }
 
     private void compile(boolean setNewDevice) {
@@ -207,22 +204,48 @@ public abstract class AbstractTaskGraph {
     	}
     	return false;
     }
+    
+    private static class CompileInfo {
+    	private boolean compile;
+    	private boolean updateDevice;
+    	
+		public CompileInfo(boolean compile, boolean updateDevice) {
+			super();
+			this.compile = compile;
+			this.updateDevice = updateDevice;
+		}
+    	
+    	
+    }
+    
+    /**
+     * It queries if the task has to be recompiled. 
+     * It returns two values:
+     * <p>
+     * <li>compile: This indicates if it has to be compiled
+     * </li>
+     * <li>updateDevice:This indicates if there is a new device for the same task
+     * </li>
+     * </p>
+     * @return
+     */
+    private CompileInfo shouldCompile() {
+    	if ((result == null && lastExecutedDevice == null)) {
+    		return new CompileInfo(true, false);
+    	} else if (result != null && lastExecutedDevice != null && !(compareDevices(lastExecutedDevice, meta().getDevice()))) {
+            return new CompileInfo(true, true);
+        }
+    	return new CompileInfo(false, false);
+    }
 
     protected void scheduleInner() {
-    	
-    	boolean setNewDevice = false;
-        if ((result == null && lastExecutedDevice == null)) { 
+    	CompileInfo shouldCompile = shouldCompile();
+        if (shouldCompile.compile) { 
         	 graphContext.assignToDevices();
-             compile(setNewDevice);
+             compile(shouldCompile.updateDevice);
              lastExecutedDevice = meta().getDevice();
-        } else if (result != null && lastExecutedDevice != null && !(compareDevices(lastExecutedDevice, meta().getDevice()))) {
-            graphContext.assignToDevices();
-            setNewDevice = true;
-            compile(setNewDevice);
-            lastExecutedDevice = meta().getDevice();
         }
-        
-        event = vm.execute(setNewDevice);
+        event = vm.execute(shouldCompile.updateDevice);
     }
 
     public void apply(Consumer<SchedulableTask> consumer) {
