@@ -25,39 +25,51 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.STREAM_OUT;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.STREAM_OUT_BLOCKING;
+
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.loop.BasicInductionVariable;
 import org.graalvm.compiler.loop.LoopEx;
 import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.StructuredGraph;
 
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.api.CompilableTask;
-import uk.ac.manchester.tornado.runtime.graph.nodes.*;
+import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.ContextOpNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
+import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
-import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.STREAM_OUT;
-import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.STREAM_OUT_BLOCKING;
-
 public class GraphCompiler {
 
+	/**
+	 * Generate Tornado bytecode from a Torando Task Graph.
+	 * 
+	 * @param graph
+	 * @param context
+	 * @return {@link GraphCompilationResult}}
+	 */
     public static GraphCompilationResult compile(Graph graph, ExecutionContext context) {
-
         final BitSet deviceContexts = graph.filter(ContextNode.class);
         if (deviceContexts.cardinality() == 1) {
             final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
-            return compileSingleContext(graph, context, context.getDevice(contextNode.getIndex()));
+            int deviceIndex = contextNode.getDeviceIndex();
+            return compileSingleContext(graph, context, context.getDevice(deviceIndex));
+        } else {
+        	throw new RuntimeException("Multiple context not supported");
         }
-
-        return null;
     }
 
     /*
@@ -118,7 +130,8 @@ public class GraphCompiler {
         }
     }
 
-    private static void optimise(GraphCompilationResult result, Graph graph, ExecutionContext context,
+    @SuppressWarnings("unused")
+	private static void optimise(GraphCompilationResult result, Graph graph, ExecutionContext context,
             int[] nodeIds, BitSet[] deps, BitSet tasks) {
         printMatrix(graph, nodeIds, deps, tasks);
         for (int i = tasks.nextSetBit(0); i >= 0; i = tasks.nextSetBit(i + 1)) {
@@ -221,7 +234,7 @@ public class GraphCompiler {
                                 graph,
                                 context,
                                 asyncNode,
-                                asyncNode.getContext().getIndex(),
+                                asyncNode.getContext().getDeviceIndex(),
                                 (deps[i].isEmpty()) ? -1 : depLists[i]);
 
                         for (int j = 0; j < deps.length; j++) {

@@ -71,7 +71,6 @@ public class TornadoVM extends TornadoLogger {
     private double totalTime;
     private long invocations;
 
-    @SuppressWarnings("unchecked")
     public TornadoVM(ExecutionContext graphContext, byte[] code, int limit) {
         this.graphContext = graphContext;
         this.code = code;
@@ -143,11 +142,10 @@ public class TornadoVM extends TornadoLogger {
         return globalStates[index].getDeviceState(contexts.get(device));
     }
 
-    private static CallStack resolveStack(int index, int numArgs,
-            CallStack[] stacks, TornadoDevice device) {
-        if (stacks[index] == null) {
+    private static CallStack resolveStack(int index, int numArgs, CallStack[] stacks, TornadoDevice device, boolean setNewDevice) {
+        if (stacks[index] == null || setNewDevice) {
             stacks[index] = device.createStack(numArgs);
-        }
+        } 
 
         return stacks[index];
     }
@@ -162,11 +160,11 @@ public class TornadoVM extends TornadoLogger {
         execute(true);
     }
 
-    public Event execute() {
-        return execute(false);
+    public Event execute(boolean setNewDevice) {
+        return execute(setNewDevice, false);
     }
 
-    private Event execute(boolean isWarmup) {
+    private Event execute(boolean setNewDevice, boolean isWarmup) {
         final long t0 = System.nanoTime();
 
         int lastEvent = -1;
@@ -250,8 +248,8 @@ public class TornadoVM extends TornadoLogger {
                     debug("vm: STREAM_IN [0x%x] %s on %s [event list=%d]",
                             object.hashCode(), object, device, eventList);
                 }
-                final DeviceObjectState objectState = resolveObjectState(
-                        objectIndex, contextIndex);
+                final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
+                                
                 if (graphContext.meta().isDebug()) {
                     debug("vm: state=%s", objectState);
                 }
@@ -308,14 +306,14 @@ public class TornadoVM extends TornadoLogger {
                     debug("vm: STREAM_OUT_BLOCKING [0x%x] %s on %s [event list=%d]",
                             object.hashCode(), object, device, eventList);
                 }
-                final DeviceObjectState objectState = resolveObjectState(
-                        objectIndex, contextIndex);
+                final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
                 if (useDependencies) {
                     lastEvent = device.streamOut(object, objectState, waitList);
                 } else {
                     lastEvent = device.streamOut(object, objectState);
                 }
+
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
@@ -327,8 +325,8 @@ public class TornadoVM extends TornadoLogger {
                 final int eventList = buffer.getInt();
 
                 final TornadoDevice device = contexts.get(contextIndex);
-                final CallStack stack = resolveStack(gtid, numArgs, stacks,
-                        device);
+                final CallStack stack = resolveStack(gtid, numArgs, stacks, device, setNewDevice);
+                
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
                 final SchedulableTask task = tasks.get(taskIndex);
 
@@ -370,7 +368,8 @@ public class TornadoVM extends TornadoLogger {
                 final TornadoInstalledCode installedCode = installedCodes[taskIndex];
 
                 final Access[] accesses = task.getArgumentsAccess();
-                if (!stack.isOnDevice()) {
+
+                if (setNewDevice || !stack.isOnDevice()) {
                     stack.reset();
                 }
                 for (int i = 0; i < numArgs; i++) {
@@ -387,15 +386,12 @@ public class TornadoVM extends TornadoLogger {
                         final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
                         final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
 
-                        guarantee(objectState.isValid(),
-                                "object is not valid: %s %s",
-                                objects.get(argIndex), objectState);
+                        guarantee(objectState.isValid(), "object is not valid: %s %s", objects.get(argIndex), objectState);
+                        
                         stack.push(objects.get(argIndex), objectState);
-                        if (accesses[i] == WRITE
-                                || accesses[i] == READ_WRITE) {
+                        if (accesses[i] == WRITE || accesses[i] == READ_WRITE) {
                             globalState.setOwner(device);
                             objectState.setContents(true);
-
                             objectState.setModified(true);
                         }
                     } else {
@@ -479,7 +475,7 @@ public class TornadoVM extends TornadoLogger {
                     device.flush();
                 }
             } else if (contexts.size() > 1) {
-                unimplemented("multi-context applications");
+                //unimplemented("multi-context applications");
             }
         }
 

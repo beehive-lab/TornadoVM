@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.runtime.api;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.BitSet;
 import java.util.function.Consumer;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
@@ -39,8 +40,11 @@ import uk.ac.manchester.tornado.common.DeviceObjectState;
 import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.graal.compiler.TornadoSuitesProvider;
+import uk.ac.manchester.tornado.runtime.TornadoDriver;
+import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.graph.*;
+import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
 
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
@@ -70,6 +74,10 @@ public abstract class AbstractTaskGraph {
     private GraphCompilationResult result;
     private TornadoVM vm;
     private Event event;
+
+	private int globalContext;
+	
+	private TornadoDevice lastExecutedDevice;
 
     public AbstractTaskGraph(String name) {
         graphContext = new ExecutionContext(name);
@@ -149,8 +157,20 @@ public abstract class AbstractTaskGraph {
         // launch code
         hlBuffer.put(LAUNCH);
     }
+    
+    private void updateDeviceContext(Graph graph) {
+        BitSet deviceContexts = graph.filter(ContextNode.class);
 
-    private void compile() {
+    	System.out.println("RECOMPILING ................. ");
+    	final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
+    	contextNode.setDeviceIndex(meta().getDeviceIndex());
+    	graphContext.addDevice(meta().getDevice());
+    	
+    	//System.out.println(" AFTER !!!!!!!!!!!!!!!!!!!!! " + meta().getDeviceIndex() + " -- " + meta().getDevice());
+        //graph.print();
+    }
+
+    private void compile(boolean setNewDevice) {
 //		dump();
 
         final ByteBuffer buffer = ByteBuffer.wrap(hlcode);
@@ -160,6 +180,11 @@ public abstract class AbstractTaskGraph {
 //		final long t0 = System.nanoTime();
         final Graph graph = GraphBuilder.buildGraph(graphContext, buffer);
 //		final long t1 = System.nanoTime();
+        
+        if (setNewDevice) {
+        	updateDeviceContext(graph);
+        }
+        
         result = GraphCompiler.compile(graph, graphContext);
 //		final long t2 = System.nanoTime();
         vm = new TornadoVM(graphContext, result.getCode(), result.getCodeSize());
@@ -174,16 +199,30 @@ public abstract class AbstractTaskGraph {
 //            result.dump();
         }
     }
+    
+    private boolean compareDevices(TornadoDevice device1, TornadoDevice device2) {
+    	if (device1.getPlatformName().equals(device2.getPlatformName()) 
+    				&& (device1.getDeviceName().equals(device2.getDeviceName()))) {
+    		return true;
+    	}
+    	return false;
+    }
 
     protected void scheduleInner() {
-
-        if (result == null) {
+    	
+    	boolean setNewDevice = false;
+        if ((result == null && lastExecutedDevice == null)) { 
+        	 graphContext.assignToDevices();
+             compile(setNewDevice);
+             lastExecutedDevice = meta().getDevice();
+        } else if (result != null && lastExecutedDevice != null && !(compareDevices(lastExecutedDevice, meta().getDevice()))) {
             graphContext.assignToDevices();
-            compile();
+            setNewDevice = true;
+            compile(setNewDevice);
+            lastExecutedDevice = meta().getDevice();
         }
-
-        event = vm.execute();
-
+        
+        event = vm.execute(setNewDevice);
     }
 
     public void apply(Consumer<SchedulableTask> consumer) {
@@ -270,7 +309,7 @@ public abstract class AbstractTaskGraph {
     public void warmup() {
         if (result == null) {
             graphContext.assignToDevices();
-            compile();
+            compile(false);
         }
 
         vm.warmup();

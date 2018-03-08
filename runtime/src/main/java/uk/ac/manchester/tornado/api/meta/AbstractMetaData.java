@@ -31,6 +31,8 @@ import static uk.ac.manchester.tornado.api.meta.MetaDataUtils.resolveDevice;
 
 import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.TornadoDriver;
+import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 
 public abstract class AbstractMetaData {
 
@@ -51,9 +53,52 @@ public abstract class AbstractMetaData {
         }
         return device;
     }
+    
+    private int getIndexFromDefaultDriver(int driverIndex, TornadoDevice device) {
+    	TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex); 
+    	int devs = driver.getDeviceCount();
+    	int index = 0;
+    	for (int i = 0; i < devs; i++) {
+    		if (driver.getDevice(i).getPlatformName().equals(device.getPlatformName()) 
+    				&& (driver.getDevice(i).getDeviceName().equals(device.getDeviceName()))) {
+    			index = i;
+    			break;
+    		}
+    	}
+    	return index;
+    }
 
+    /**
+     * Set a device in the default driver in Tornado.
+     * 
+     * @param device
+     */
     public void setDevice(TornadoDevice device) {
+    	this.driverIndex = 0;
+    	int index = getIndexFromDefaultDriver(0, device);
+    	this.deviceIndex = index;
+    	this.device = device;
+    }
+
+    /**
+     * Set a device from a specific Tornado driver.
+     *  
+     * @param driverIndex
+     * @param device
+     */
+    public void setDriverDevice(int driverIndex, TornadoDevice device) {
+    	this.driverIndex = deviceIndex;
+    	int index = getIndexFromDefaultDriver(driverIndex, device);
+    	this.deviceIndex = index;
         this.device = device;
+    }
+    
+    public int getDriverIndex() {
+    	return driverIndex;
+    }
+    
+    public int getDeviceIndex() {
+    	return deviceIndex;
     }
 
     public String getCpuConfig() {

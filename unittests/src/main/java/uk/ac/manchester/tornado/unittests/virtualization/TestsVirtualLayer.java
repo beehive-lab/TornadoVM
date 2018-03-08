@@ -227,9 +227,11 @@ public class TestsVirtualLayer {
 
             String taskName = "t0";
 
+            // It creates one task scheduler with one task. This task is shared
+            // across devices.
+
             //@formatter:off
-            s0.streamIn(data)
-              .task(taskName, TestsVirtualLayer::testA, data, 1)
+            s0.task(taskName, TestsVirtualLayer::testA, data, 1)
               .streamOut(data);
             //@formatter:on
 
@@ -240,10 +242,11 @@ public class TestsVirtualLayer {
 
                 System.out.println("Setting device: " + propertyDevice + "=" + value);
 
-                Tornado.setProperty(propertyDevice, value);
+                // XXX: the set property should be optional.
+
+                // Tornado.setProperty(propertyDevice, value);
                 s0.setDevice(driver.getDevice(deviceIndex));
                 s0.execute();
-
             }
         }
 

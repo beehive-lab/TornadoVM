@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.common.CallStack;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.api.LocalObjectState;
 
 public class ExecutionContext {
@@ -149,6 +150,20 @@ public class ExecutionContext {
         apply(task -> task.mapTo(mapping));
         Arrays.fill(taskToDevice, 0);
     }
+    
+    public void addDevice(int deviceId) {
+    	devices.add(TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceId));
+    }
+    
+    public void addDevice(TornadoDevice device) {
+    	devices.add(device);
+    }
+    
+    public void setDevice(int index, TornadoDevice device) {
+    	devices.set(index, device);
+    	//devices.add(device);
+    }
+
 
     private void assignTask(int index, SchedulableTask task) {
         if (taskToDevice[index] != -1) {
