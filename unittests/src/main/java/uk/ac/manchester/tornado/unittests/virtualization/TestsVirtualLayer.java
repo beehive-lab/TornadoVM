@@ -201,6 +201,9 @@ public class TestsVirtualLayer {
     /**
      * It creates one task scheduler and one task. Then it executes the same
      * task in different devices.
+     * 
+     * The task is just one instance for all the devices. The loop iterates over
+     * the devices under the same Tornado Driver and executes the task.
      */
     @Test
     public void testDynamicDeviceSwitch() {
@@ -224,24 +227,25 @@ public class TestsVirtualLayer {
 
             String taskName = "t0";
 
-            for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
+            // It creates one task scheduler with one task. This task is shared
+            // across devices.
 
-                // String taskName = "t" + deviceIndex;
+            //@formatter:off
+            s0.task(taskName, TestsVirtualLayer::testA, data, 1)
+              .streamOut(data);
+            //@formatter:on
+
+            for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
 
                 String propertyDevice = "s" + driverIndex + "." + taskName + ".device";
                 String value = driverIndex + ":" + deviceIndex;
 
-                System.out.println("Setting device to: " + propertyDevice + "=" + value);
+                System.out.println("Setting device: " + propertyDevice + "=" + value);
 
-                Tornado.setProperty(propertyDevice, value);
+                // XXX: the set property should be optional.
+
+                // Tornado.setProperty(propertyDevice, value);
                 s0.setDevice(driver.getDevice(deviceIndex));
-
-                //@formatter:off
-                s0.streamIn(data)
-                  .task(taskName, TestsVirtualLayer::testA, data, 1)
-                  .streamOut(data);
-                //@formatter:on
-
                 s0.execute();
             }
         }
@@ -270,14 +274,14 @@ public class TestsVirtualLayer {
         }
 
         TaskSchedule s0 = new TaskSchedule("s0");
-        Tornado.setProperty("s0.t0.device", "0:1");
-        // s0.setDevice(tornadoDriver.getDevice(1));
+        Tornado.setProperty("s0.t0.device", "0:0");
+        // s0.setDevice(tornadoDriver.getDevice(1)); /// XXX: fix this call
         s0.task("t0", TestsVirtualLayer::testA, dataA, 1);
         s0.streamOut(dataA);
         s0.execute();
 
         TaskSchedule s1 = new TaskSchedule("s1");
-        Tornado.setProperty("s1.t1.device", "0:0");
+        Tornado.setProperty("s1.t1.device", "0:1");
         // s1.setDevice(tornadoDriver.getDevice(0));
         s1.task("t1", TestsVirtualLayer::testA, dataB, 1);
         s1.streamOut(dataB);

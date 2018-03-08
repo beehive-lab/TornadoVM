@@ -25,13 +25,23 @@
  */
 package uk.ac.manchester.tornado.runtime.api;
 
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.isBoxedPrimitiveClass;
+import static uk.ac.manchester.tornado.common.Tornado.VM_USE_DEPS;
+import static uk.ac.manchester.tornado.common.Tornado.warn;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.HashSet;
 import java.util.function.Consumer;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 import org.graalvm.compiler.phases.util.Providers;
 
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.Event;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.common.CallStack;
@@ -40,15 +50,13 @@ import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
-import uk.ac.manchester.tornado.runtime.graph.*;
+import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
+import uk.ac.manchester.tornado.runtime.graph.Graph;
+import uk.ac.manchester.tornado.runtime.graph.GraphBuilder;
+import uk.ac.manchester.tornado.runtime.graph.GraphCompilationResult;
+import uk.ac.manchester.tornado.runtime.graph.GraphCompiler;
+import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
-
-import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.common.RuntimeUtilities.isBoxedPrimitiveClass;
-import static uk.ac.manchester.tornado.common.Tornado.VM_USE_DEPS;
-import static uk.ac.manchester.tornado.common.Tornado.warn;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 public abstract class AbstractTaskGraph {
 
@@ -62,7 +70,8 @@ public abstract class AbstractTaskGraph {
     public final static byte LAUNCH = 10; // LAUNCH() (args [, events])
     public final static byte DSYNC = 22; // DSYNC(device)
     public final static byte ARG_LIST = 11; // ARG_LIST(size)
-    public final static byte CONTEXT = 12; // FRAME(tasktodevice_index, task_index)
+    public final static byte CONTEXT = 12; // FRAME(tasktodevice_index,
+                                           // task_index)
 
     private byte[] hlcode = new byte[2048];
     private ByteBuffer hlBuffer;
@@ -110,8 +119,7 @@ public abstract class AbstractTaskGraph {
 
         if (task instanceof CompilableTask) {
             CompilableTask compilableTask = (CompilableTask) task;
-            final ResolvedJavaMethod resolvedMethod = getTornadoRuntime()
-                    .resolveMethod(compilableTask.getMethod());
+            final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             new SketchRequest(compilableTask.meta(), resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
 
         }
@@ -121,23 +129,23 @@ public abstract class AbstractTaskGraph {
         hlBuffer.putInt(globalTaskId);
         graphContext.incrGlobalTaskCount();
         hlBuffer.putInt(index);
-//		System.out.printf("inserting: 0x%x 0x%x 0x%x\n", CONTEXT, globalTaskId,
-//				index);
+        // System.out.printf("inserting: 0x%x 0x%x 0x%x\n", CONTEXT,
+        // globalTaskId,
+        // index);
         // insert parameters into variable tables
 
         // create parameter list
         final Object[] args = task.getArguments();
-//		for(Object arg: args){
-//			System.out.println("- arg: " + arg);
-//		}
+        // for(Object arg: args){
+        // System.out.println("- arg: " + arg);
+        // }
         hlBuffer.put(ARG_LIST);
         hlBuffer.putInt(args.length);
 
         for (int i = 0; i < args.length; i++) {
             final Object arg = args[i];
             index = graphContext.insertVariable(arg);
-            if (arg.getClass().isPrimitive()
-                    || isBoxedPrimitiveClass(arg.getClass())) {
+            if (arg.getClass().isPrimitive() || isBoxedPrimitiveClass(arg.getClass())) {
                 hlBuffer.put(LOAD_PRIM);
             } else {
                 guarantee(arg != null, "null argument passed to task");
@@ -150,40 +158,94 @@ public abstract class AbstractTaskGraph {
         hlBuffer.put(LAUNCH);
     }
 
-    private void compile() {
-//		dump();
+    private void updateDeviceContext(Graph graph) {
+        BitSet deviceContexts = graph.filter(ContextNode.class);
+        final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
+        contextNode.setDeviceIndex(meta().getDeviceIndex());
+        graphContext.addDevice(meta().getDevice());
+    }
+
+    private void compile(boolean setNewDevice) {
+        // dump();
 
         final ByteBuffer buffer = ByteBuffer.wrap(hlcode);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.limit(hlBuffer.position());
 
-//		final long t0 = System.nanoTime();
+        // final long t0 = System.nanoTime();
         final Graph graph = GraphBuilder.buildGraph(graphContext, buffer);
-//		final long t1 = System.nanoTime();
-        result = GraphCompiler.compile(graph, graphContext);
-//		final long t2 = System.nanoTime();
-        vm = new TornadoVM(graphContext, result.getCode(), result.getCodeSize());
-//		final long t3 = System.nanoTime();
+        // final long t1 = System.nanoTime();
 
-//		System.out.printf("task graph: build graph %.9f s\n",(t1-t0)*1e-9);
-//		System.out.printf("task graph: compile     %.9f s\n",(t2-t1)*1e-9);
-//		System.out.printf("task graph: vm          %.9f s\n",(t3-t2)*1e-9);
+        if (setNewDevice) {
+            updateDeviceContext(graph);
+        }
+
+        result = GraphCompiler.compile(graph, graphContext);
+        // final long t2 = System.nanoTime();
+        vm = new TornadoVM(graphContext, result.getCode(), result.getCodeSize());
+        // final long t3 = System.nanoTime();
+
+        // System.out.printf("task graph: build graph %.9f s\n",(t1-t0)*1e-9);
+        // System.out.printf("task graph: compile %.9f s\n",(t2-t1)*1e-9);
+        // System.out.printf("task graph: vm %.9f s\n",(t3-t2)*1e-9);
         if (meta().shouldDumpSchedule()) {
             graphContext.print();
             graph.print();
-//            result.dump();
+            // result.dump();
         }
     }
 
-    protected void scheduleInner() {
+    private boolean compareDevices(HashSet<TornadoDevice> lastDevices, TornadoDevice device2) {
+        return lastDevices.contains(device2);
+    }
 
-        if (result == null) {
-            graphContext.assignToDevices();
-            compile();
+    private static class CompileInfo {
+        private boolean compile;
+        private boolean updateDevice;
+
+        public CompileInfo(boolean compile, boolean updateDevice) {
+            super();
+            this.compile = compile;
+            this.updateDevice = updateDevice;
         }
+    }
 
+    public boolean isLastDeviceListEmpty() {
+        return graphContext.getLastDevices().size() == 0;
+    }
+
+    /**
+     * It queries if the task has to be recompiled. It returns two values:
+     * <p>
+     * <li>compile: This indicates if it has to be compiled</li>
+     * <li>updateDevice:This indicates if there is a new device for the same
+     * task</li>
+     * </p>
+     * 
+     * @return
+     */
+    private CompileInfo extractCompileInfo() {
+        if (result == null && isLastDeviceListEmpty()) {
+            return new CompileInfo(true, false);
+        } else if (result != null && isLastDeviceListEmpty() == false && !(compareDevices(graphContext.getLastDevices(), meta().getDevice()))) {
+            return new CompileInfo(true, true);
+        }
+        return new CompileInfo(false, false);
+    }
+
+    private void compileTasks() {
+        CompileInfo compileInfo = extractCompileInfo();
+        if (compileInfo.compile) {
+            graphContext.assignToDevices();
+            compile(compileInfo.updateDevice);
+        }
+        graphContext.addLastDevice(meta().getDevice());
+        graphContext.newStack(compileInfo.updateDevice);
+    }
+
+    protected void scheduleInner() {
+        compileTasks();
         event = vm.execute();
-
     }
 
     public void apply(Consumer<SchedulableTask> consumer) {
@@ -195,12 +257,13 @@ public abstract class AbstractTaskGraph {
     }
 
     public void dumpTimes() {
-//		System.out.printf("Task Graph: %d tasks\n", events.size());
-//		apply(task -> System.out
-//				.printf("\t%s: status=%s, execute=%.8f s, total=%.8f s, queued=%.8f s\n",
-//						task.getName(), task.getStatus(),
-//						task.getExecutionTime(), task.getTotalTime(),
-//						task.getQueuedTime()));
+        // System.out.printf("Task Graph: %d tasks\n", events.size());
+        // apply(task -> System.out
+        // .printf("\t%s: status=%s, execute=%.8f s, total=%.8f s, queued=%.8f
+        // s\n",
+        // task.getName(), task.getStatus(),
+        // task.getExecutionTime(), task.getTotalTime(),
+        // task.getQueuedTime()));
         vm.printTimes();
     }
 
@@ -218,10 +281,11 @@ public abstract class AbstractTaskGraph {
 
     public void waitOn() {
         if (VM_USE_DEPS && event != null) {
-//        if (event != null) {
+            // if (event != null) {
             event.waitOn();
         } else {
-            // BUG waiting on an event seems unreliable, so we block on clFinish()
+            // BUG waiting on an event seems unreliable, so we block on
+            // clFinish()
             graphContext.getDevices().forEach((TornadoDevice device) -> device.sync());
         }
     }
@@ -248,9 +312,7 @@ public abstract class AbstractTaskGraph {
 
     public void dump() {
         final int width = 16;
-        System.out.printf("code  : capacity = %s, in use = %s \n",
-                humanReadableByteCount(hlBuffer.capacity(), true),
-                humanReadableByteCount(hlBuffer.position(), true));
+        System.out.printf("code  : capacity = %s, in use = %s \n", humanReadableByteCount(hlBuffer.capacity(), true), humanReadableByteCount(hlBuffer.position(), true));
         for (int i = 0; i < hlBuffer.position(); i += width) {
             System.out.printf("[0x%04x]: ", i);
             for (int j = 0; j < Math.min(hlBuffer.capacity() - i, width); j++) {
@@ -268,11 +330,7 @@ public abstract class AbstractTaskGraph {
     }
 
     public void warmup() {
-        if (result == null) {
-            graphContext.assignToDevices();
-            compile();
-        }
-
+        compileTasks();
         vm.warmup();
     }
 
@@ -287,7 +345,7 @@ public abstract class AbstractTaskGraph {
             return;
         }
         graphContext.sync();
-//        syncObjectInner(object).waitOn();
+        // syncObjectInner(object).waitOn();
     }
 
     private Event syncObjectInner(Object object) {

@@ -327,12 +327,11 @@ public class OCLTornadoDevice implements TornadoDevice {
     }
 
     @Override
-    public int ensureAllocated(Object object, DeviceObjectState state
-    ) {
+    public int ensureAllocated(Object object, DeviceObjectState state) {
+    	
         if (!state.hasBuffer()) {
             try {
-                final ObjectBuffer buffer = createDeviceBuffer(
-                        object.getClass(), object, getDeviceContext());
+                final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext());
                 buffer.allocate(object);
                 state.setBuffer(buffer);
 
@@ -385,38 +384,30 @@ public class OCLTornadoDevice implements TornadoDevice {
     }
 
     @Override
-    public int streamIn(Object object, DeviceObjectState state
-    ) {
+    public int streamIn(Object object, DeviceObjectState state) {
         streamIn(object, state, null);
         return -1;
     }
 
     @Override
-    public int streamIn(Object object, DeviceObjectState state,
-            int[] events
-    ) {
+    public int streamIn(Object object, DeviceObjectState state, int[] events) {
         if (!state.isValid()) {
             ensureAllocated(object, state);
         }
-
         state.setContents(true);
         return state.getBuffer().enqueueWrite(object, events, events == null);
 
     }
 
     @Override
-    public int streamOut(Object object, DeviceObjectState state
-    ) {
+    public int streamOut(Object object, DeviceObjectState state) {
         streamOut(object, state, null);
         return -1;
     }
 
     @Override
-    public int streamOut(Object object, DeviceObjectState state,
-            int[] list
-    ) {
+    public int streamOut(Object object, DeviceObjectState state, int[] list) {
         guarantee(state.isValid(), "invalid variable");
-
         return state.getBuffer().enqueueRead(object, list, list == null);
     }
 
@@ -526,5 +517,6 @@ public class OCLTornadoDevice implements TornadoDevice {
     public String getDeviceName() {
         return String.format("opencl-%d-%d", platformIndex, deviceIndex);
     }
+
 
 }
