@@ -54,13 +54,13 @@ import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 
 public class GraphCompiler {
 
-	/**
-	 * Generate Tornado bytecode from a Torando Task Graph.
-	 * 
-	 * @param graph
-	 * @param context
-	 * @return {@link GraphCompilationResult}}
-	 */
+    /**
+     * Generate Tornado bytecode from a Tornado Task Graph.
+     * 
+     * @param graph
+     * @param context
+     * @return {@link GraphCompilationResult}
+     */
     public static GraphCompilationResult compile(Graph graph, ExecutionContext context) {
         final BitSet deviceContexts = graph.filter(ContextNode.class);
         if (deviceContexts.cardinality() == 1) {
@@ -68,21 +68,20 @@ public class GraphCompiler {
             int deviceIndex = contextNode.getDeviceIndex();
             return compileSingleContext(graph, context, context.getDevice(deviceIndex));
         } else {
-        	throw new RuntimeException("Multiple context not supported");
+            throw new RuntimeException("Multiple-Contexts are not currently supported");
         }
     }
 
     /*
      * Simplest case where all tasks are executed on the same device
      */
-    private static GraphCompilationResult compileSingleContext(Graph graph, ExecutionContext context,
-            TornadoDevice device) {
+    private static GraphCompilationResult compileSingleContext(Graph graph, ExecutionContext context, TornadoDevice device) {
 
         final GraphCompilationResult result = new GraphCompilationResult();
 
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
-//        System.out.printf("found: [%s]\n", toString(asyncNodes));
+        // System.out.printf("found: [%s]\n", toString(asyncNodes));
         final BitSet[] deps = new BitSet[asyncNodes.cardinality()];
         final BitSet tasks = new BitSet(asyncNodes.cardinality());
         final int[] nodeIds = new int[asyncNodes.cardinality()];
@@ -96,9 +95,9 @@ public class GraphCompiler {
                 tasks.set(index);
                 final TaskNode taskNode = (TaskNode) graph.getNode(i);
                 final SchedulableTask task = context.getTask(taskNode.getTaskIndex());
-//                System.out.printf("node: %s %s\n", task.getName(), taskNode);
+                // System.out.printf("node: %s %s\n", task.getName(), taskNode);
             } else {
-//                System.out.printf("node: %s\n", graph.getNode(i));
+                // System.out.printf("node: %s\n", graph.getNode(i));
             }
 
             if (!deps[index].isEmpty()) {
@@ -110,12 +109,12 @@ public class GraphCompiler {
         result.begin(1, tasks.cardinality(), numDepLists + 1);
 
         schedule(result, graph, context, nodeIds, deps, tasks);
-//        optimise(result, graph, context, nodeIds, deps, tasks);
+        // optimise(result, graph, context, nodeIds, deps, tasks);
         peephole(result, numDepLists);
 
         result.end();
 
-//        result.dump();
+        // result.dump();
         return result;
     }
 
@@ -131,8 +130,7 @@ public class GraphCompiler {
     }
 
     @SuppressWarnings("unused")
-	private static void optimise(GraphCompilationResult result, Graph graph, ExecutionContext context,
-            int[] nodeIds, BitSet[] deps, BitSet tasks) {
+    private static void optimise(GraphCompilationResult result, Graph graph, ExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
         printMatrix(graph, nodeIds, deps, tasks);
         for (int i = tasks.nextSetBit(0); i >= 0; i = tasks.nextSetBit(i + 1)) {
             BitSet dependents = new BitSet(deps[i].length());
@@ -184,21 +182,21 @@ public class GraphCompiler {
                 for (Node n : parRange.offset().usages()) {
                     if (loop.getInductionVariables().containsKey(n)) {
                         BasicInductionVariable iv = (BasicInductionVariable) loop.getInductionVariables().get(n);
-                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(), parRange.stride(), iv.getOp());
+                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(),
+                                parRange.stride(), iv.getOp());
                     }
                 }
             }
         }
     }
 
-    private static void schedule(GraphCompilationResult result, Graph graph, ExecutionContext context,
-            int[] nodeIds, BitSet[] deps, BitSet tasks) {
+    private static void schedule(GraphCompilationResult result, Graph graph, ExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
 
         final BitSet scheduled = new BitSet(deps.length);
         scheduled.clear();
         final BitSet nodes = new BitSet(graph.getValid().length());
 
-//        System.out.println("----- event lists ------");
+        // System.out.println("----- event lists ------");
         final int[] depLists = new int[deps.length];
         Arrays.fill(depLists, -1);
 
@@ -217,8 +215,8 @@ public class GraphCompiler {
         }
 
         while (scheduled.cardinality() < deps.length) {
-//            System.out.printf("nodes: %s\n", toString(nodes));
-//            System.out.printf("scheduled: %s\n", toString(scheduled));
+            // System.out.printf("nodes: %s\n", toString(nodes));
+            // System.out.printf("scheduled: %s\n", toString(scheduled));
             for (int i = 0; i < deps.length; i++) {
                 if (!scheduled.get(i)) {
 
@@ -226,22 +224,19 @@ public class GraphCompiler {
                     outstandingDeps.or(deps[i]);
                     outstandingDeps.andNot(nodes);
 
-//                    System.out.printf("trying: %d - %s\n",nodeIds[i],toString(outstandingDeps));
+                    // System.out.printf("trying: %d -
+                    // %s\n",nodeIds[i],toString(outstandingDeps));
                     if (outstandingDeps.isEmpty()) {
                         final ContextOpNode asyncNode = (ContextOpNode) graph.getNode(nodeIds[i]);
 
-                        result.emitAsyncNode(
-                                graph,
-                                context,
-                                asyncNode,
-                                asyncNode.getContext().getDeviceIndex(),
-                                (deps[i].isEmpty()) ? -1 : depLists[i]);
+                        result.emitAsyncNode(graph, context, asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i]);
 
                         for (int j = 0; j < deps.length; j++) {
                             if (j == i) {
                                 continue;
                             }
-//						System.out.printf("checking: %d - %s\n",nodeIds[j],toString(deps[j]));
+                            // System.out.printf("checking: %d -
+                            // %s\n",nodeIds[j],toString(deps[j]));
                             if (deps[j].get(nodeIds[i]) && depLists[j] != -1) {
                                 result.emitAddDep(depLists[j]);
                             }
@@ -252,7 +247,6 @@ public class GraphCompiler {
                 }
             }
         }
-
     }
 
     private static String toString(BitSet set) {
@@ -267,8 +261,7 @@ public class GraphCompiler {
         return sb.toString();
     }
 
-    private static void printMatrix(Graph graph, int[] nodeIds, BitSet[] deps,
-            BitSet tasks) {
+    private static void printMatrix(Graph graph, int[] nodeIds, BitSet[] deps, BitSet tasks) {
 
         System.out.println("dependency matrix...");
         for (int i = 0; i < nodeIds.length; i++) {

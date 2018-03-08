@@ -27,7 +27,12 @@ package uk.ac.manchester.tornado.runtime.graph;
 
 import static uk.ac.manchester.tornado.common.Tornado.info;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
@@ -54,6 +59,10 @@ public class ExecutionContext {
     private final int[] taskToDevice;
     private int nextTask;
 
+    private HashSet<TornadoDevice> lastDevices;
+
+    private boolean newStack;
+
     public ExecutionContext(String id) {
         name = id;
         meta = new ScheduleMetaData(name);
@@ -67,6 +76,7 @@ public class ExecutionContext {
         taskToDevice = new int[MAX_TASKS];
         Arrays.fill(taskToDevice, -1);
         nextTask = 0;
+        lastDevices = new HashSet<>();
     }
 
     public CallStack[] getFrames() {
@@ -75,8 +85,7 @@ public class ExecutionContext {
 
     public int insertVariable(Object var) {
         int index = -1;
-        if (var.getClass().isPrimitive()
-                || RuntimeUtilities.isBoxedPrimitiveClass(var.getClass())) {
+        if (var.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(var.getClass())) {
             index = constants.indexOf(var);
             if (index == -1) {
                 index = constants.size();
@@ -150,20 +159,18 @@ public class ExecutionContext {
         apply(task -> task.mapTo(mapping));
         Arrays.fill(taskToDevice, 0);
     }
-    
+
     public void addDevice(int deviceId) {
-    	devices.add(TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceId));
-    }
-    
-    public void addDevice(TornadoDevice device) {
-    	devices.add(device);
-    }
-    
-    public void setDevice(int index, TornadoDevice device) {
-    	devices.set(index, device);
-    	//devices.add(device);
+        devices.add(TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceId));
     }
 
+    public void addDevice(TornadoDevice device) {
+        devices.add(device);
+    }
+
+    public void setDevice(int index, TornadoDevice device) {
+        devices.set(index, device);
+    }
 
     private void assignTask(int index, SchedulableTask task) {
         if (taskToDevice[index] != -1) {
@@ -230,8 +237,10 @@ public class ExecutionContext {
     }
 
     /**
-     * Default device inspects the driver 0 and device 0 of the internal OpenCL list.
-     * @return
+     * Default device inspects the driver 0 and device 0 of the internal OpenCL
+     * list.
+     * 
+     * @return {@link TornadoDevice}
      */
     public TornadoDevice getDefaultDevice() {
         return meta.getDevice();
@@ -287,5 +296,21 @@ public class ExecutionContext {
                 localState.sync(object);
             }
         }
+    }
+
+    public void addLastDevice(TornadoDevice device) {
+        lastDevices.add(device);
+    }
+
+    public HashSet<TornadoDevice> getLastDevices() {
+        return lastDevices;
+    }
+
+    public void newStack(boolean newStack) {
+        this.newStack = newStack;
+    }
+
+    public boolean newStack() {
+        return this.newStack;
     }
 }

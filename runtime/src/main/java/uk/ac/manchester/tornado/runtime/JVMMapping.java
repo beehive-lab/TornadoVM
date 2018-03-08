@@ -161,8 +161,7 @@ public class JVMMapping implements TornadoDevice {
     }
 
     @Override
-    public int streamOut(Object object, DeviceObjectState objectState,
-            int[] list) {
+    public int streamOut(Object object, DeviceObjectState objectState, int[] list) {
         // TODO Auto-generated method stub
         return -1;
     }
@@ -197,9 +196,9 @@ public class JVMMapping implements TornadoDevice {
         return "jvm";
     }
 
-	@Override
-	public String getPlatformName() {
-		return "jvm";
-	}
+    @Override
+    public String getPlatformName() {
+        return "jvm";
+    }
 
 }
