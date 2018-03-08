@@ -36,36 +36,35 @@ import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 
 public abstract class AbstractMetaData {
 
-	private String id;
-	private TornadoDevice device;
-	private boolean shouldRecompile;
-	private final boolean isDeviceDefined;
-	private int driverIndex;
-	private int deviceIndex;
+    private String id;
+    private TornadoDevice device;
+    private boolean shouldRecompile;
+    private final boolean isDeviceDefined;
+    private int driverIndex;
+    private int deviceIndex;
 
     private static String getProperty(String key) {
         return System.getProperty(key);
     }
-    
+
     public TornadoDevice getDevice() {
         if (device == null) {
             device = resolveDevice(Tornado.getProperty(id + ".device", driverIndex + ":" + deviceIndex));
         }
         return device;
     }
-    
+
     private int getIndexFromDefaultDriver(int driverIndex, TornadoDevice device) {
-    	TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex); 
-    	int devs = driver.getDeviceCount();
-    	int index = 0;
-    	for (int i = 0; i < devs; i++) {
-    		if (driver.getDevice(i).getPlatformName().equals(device.getPlatformName()) 
-    				&& (driver.getDevice(i).getDeviceName().equals(device.getDeviceName()))) {
-    			index = i;
-    			break;
-    		}
-    	}
-    	return index;
+        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
+        int devs = driver.getDeviceCount();
+        int index = 0;
+        for (int i = 0; i < devs; i++) {
+            if (driver.getDevice(i).getPlatformName().equals(device.getPlatformName()) && (driver.getDevice(i).getDeviceName().equals(device.getDeviceName()))) {
+                index = i;
+                break;
+            }
+        }
+        return index;
     }
 
     /**
@@ -74,31 +73,31 @@ public abstract class AbstractMetaData {
      * @param device
      */
     public void setDevice(TornadoDevice device) {
-    	this.driverIndex = 0;
-    	int index = getIndexFromDefaultDriver(0, device);
-    	this.deviceIndex = index;
-    	this.device = device;
+        this.driverIndex = 0;
+        int index = getIndexFromDefaultDriver(0, device);
+        this.deviceIndex = index;
+        this.device = device;
     }
 
     /**
      * Set a device from a specific Tornado driver.
-     *  
+     * 
      * @param driverIndex
      * @param device
      */
     public void setDriverDevice(int driverIndex, TornadoDevice device) {
-    	this.driverIndex = deviceIndex;
-    	int index = getIndexFromDefaultDriver(driverIndex, device);
-    	this.deviceIndex = index;
+        this.driverIndex = deviceIndex;
+        int index = getIndexFromDefaultDriver(driverIndex, device);
+        this.deviceIndex = index;
         this.device = device;
     }
-    
+
     public int getDriverIndex() {
-    	return driverIndex;
+        return driverIndex;
     }
-    
+
     public int getDeviceIndex() {
-    	return deviceIndex;
+        return deviceIndex;
     }
 
     public String getCpuConfig() {
@@ -225,7 +224,7 @@ public abstract class AbstractMetaData {
     private final boolean dumpProfiles;
     private final boolean debugKernelArgs;
     private final boolean printCompileTimes;
-//    private final boolean forceAllToGpu;
+    // private final boolean forceAllToGpu;
     private boolean isOpenclCompilerFlagsDefined;
     private String openclCompilerFlags;
     private final boolean isOpenclGpuBlockXDefined;
@@ -236,7 +235,6 @@ public abstract class AbstractMetaData {
     private final int openclGpuBlock2DY;
     private final boolean openclUseRelativeAddresses;
     private final boolean openclEnableBifs;
-
 
     /*
      * Allows the OpenCL driver to select the size of local work groups
@@ -261,7 +259,7 @@ public abstract class AbstractMetaData {
     private final boolean isCpuConfigDefined;
     private final String cpuConfig;
 
-//    private final boolean useThreadCoarsening;
+    // private final boolean useThreadCoarsening;
     public boolean isDeviceDefined() {
         return isDeviceDefined;
     }
@@ -310,17 +308,17 @@ public abstract class AbstractMetaData {
     public AbstractMetaData(String id) {
         this.id = id;
         shouldRecompile = true;
-        
+
         device = null;
-        
+
         isDeviceDefined = getProperty(id + ".device") != null;
         if (isDeviceDefined) {
-        	int[] a = MetaDataUtils.resolveDriverDeviceIndexes(getProperty(id + ".device"));
-        	driverIndex = a[0];
-        	deviceIndex = a[1];
+            int[] a = MetaDataUtils.resolveDriverDeviceIndexes(getProperty(id + ".device"));
+            driverIndex = a[0];
+            deviceIndex = a[1];
         } else {
-        	driverIndex = 0;
-        	deviceIndex = 0;
+            driverIndex = 0;
+            deviceIndex = 0;
         }
 
         debugKernelArgs = parseBoolean(getDefault("debug.kernelargs", id, "False"));
@@ -359,8 +357,7 @@ public abstract class AbstractMetaData {
         openclGpuBlock2DX = parseInt(getDefault("opencl.gpu.block2d.x", id, "4"));
         isOpenclGpuBlock2DXDefined = getProperty(id + ".opencl.gpu.block2d.x") != null;
 
-        openclGpuBlock2DY = parseInt(
-                getDefault("opencl.gpu.block2d.y", id, "4"));
+        openclGpuBlock2DY = parseInt(getDefault("opencl.gpu.block2d.y", id, "4"));
         isOpenclGpuBlock2DYDefined = getProperty(id + ".opencl.gpu.block2d.y") != null;
 
         cpuConfig = getDefault("cpu.config", id, null);
