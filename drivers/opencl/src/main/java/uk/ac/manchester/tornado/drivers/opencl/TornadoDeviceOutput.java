@@ -26,7 +26,6 @@
 
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.common.Tornado.setProperty;
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
@@ -41,14 +40,16 @@ public class TornadoDeviceOutput {
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
             TaskSchedule s0 = new TaskSchedule("s" + driverIndex);
             final TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
-            driver.getDefaultDevice().reset();
             final int numDevices = driver.getDeviceCount();
+            System.out.println(numDevices);
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
                 System.out.println("s" + driverIndex + ".device=" + driverIndex + ":" + deviceIndex);
-                setProperty("s" + driverIndex + ".device=", driverIndex + ":" + deviceIndex);
-                s0.setDevice(driver.getDevice(deviceIndex));
+                // setProperty("s" + driverIndex + ".device=", driverIndex + ":" + deviceIndex);
+                // s0.setDevice(driver.getDevice(deviceIndex));
                 OCLTornadoDevice oclDevice = new OCLTornadoDevice(driverIndex, deviceIndex);
-                System.out.println(oclDevice);
+                // System.out.println(setDevice(driver.getDevice(deviceIndex));
+                System.out.println(driver.getDevice(deviceIndex));
+
             }
         }
     }
