@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.api.Reduce;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-public class TestReductions extends TornadoTestBase {
+public class TestReductionsIntegers extends TornadoTestBase {
 
     public static final int SIZE = 64;
     public static final int BIG_SIZE = 128;
@@ -68,7 +68,7 @@ public class TestReductions extends TornadoTestBase {
         //@formatter:off
 		new TaskSchedule("s0")
 			.streamIn(input)
-			.task("t0", TestReductions::reductionAnnotation, input, result)
+			.task("t0", TestReductionsIntegers::reductionAnnotation, input, result)
 			.streamOut(result)
 			.execute();
 		//@formatter:on
@@ -101,7 +101,7 @@ public class TestReductions extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductions::reductionSequentialSmall, input, result)
+            .task("t0", TestReductionsIntegers::reductionSequentialSmall, input, result)
             .streamOut(result)
             .execute();
         //@formatter:on
@@ -135,7 +135,7 @@ public class TestReductions extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductions::reductionSequentialSmall2, input, result)
+            .task("t0", TestReductionsIntegers::reductionSequentialSmall2, input, result)
             .streamOut(result)
             .execute();
         //@formatter:on
@@ -167,7 +167,7 @@ public class TestReductions extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductions::reductionSequentialBig, input, result)
+            .task("t0", TestReductionsIntegers::reductionSequentialBig, input, result)
             .streamOut(result)
             .execute();
         //@formatter:on
@@ -199,7 +199,7 @@ public class TestReductions extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductions::reduction01, input, result)
+            .task("t0", TestReductionsIntegers::reduction01, input, result)
             .streamOut(result)
             .execute();
         //@formatter:on
@@ -241,7 +241,7 @@ public class TestReductions extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(a)
-            .task("t0", TestReductions::mapReduce01, a, b, c, result)
+            .task("t0", TestReductionsIntegers::mapReduce01, a, b, c, result)
             .streamOut(result)
             .execute();
         //@formatter:on
@@ -283,7 +283,7 @@ public class TestReductions extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(a)
-            .task("t0", TestReductions::mapReduce02, a, b, result)
+            .task("t0", TestReductionsIntegers::mapReduce02, a, b, result)
             .streamOut(result)
             .execute();
         //@formatter:on
@@ -325,7 +325,7 @@ public class TestReductions extends TornadoTestBase {
         //@formatter:off
 	        new TaskSchedule("s0")
 	            .streamIn(a)
-	            .task("t0", TestReductions::mapReduce03, a, b, result)
+	            .task("t0", TestReductionsIntegers::mapReduce03, a, b, result)
 	            .streamOut(result)
 	            .execute();
 	        //@formatter:on
@@ -367,7 +367,7 @@ public class TestReductions extends TornadoTestBase {
         //@formatter:off
 		        new TaskSchedule("s0")
 		            .streamIn(a)
-		            .task("t0", TestReductions::testThreadSchuler, a, b, result)
+		            .task("t0", TestReductionsIntegers::testThreadSchuler, a, b, result)
 		            .streamOut(result)
 		            .execute();
 		        //@formatter:on
@@ -401,7 +401,7 @@ public class TestReductions extends TornadoTestBase {
         //@formatter:off
 		        new TaskSchedule("s0")
 		            .streamIn(a)
-		            .task("t0", TestReductions::testThreadSchuler2, a, b, result)
+		            .task("t0", TestReductionsIntegers::testThreadSchuler2, a, b, result)
 		            .streamOut(result)
 		            .execute();
 		        //@formatter:on
@@ -435,7 +435,7 @@ public class TestReductions extends TornadoTestBase {
         //@formatter:off
 		        new TaskSchedule("s0")
 		            .streamIn(a)
-		            .task("t0", TestReductions::testThreadLoop, a, result)
+		            .task("t0", TestReductionsIntegers::testThreadLoop, a, result)
 		            .streamOut(result)
 		            .execute();
 		        //@formatter:on

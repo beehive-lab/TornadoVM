@@ -48,6 +48,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.loops.TestLoops",
 	"uk.ac.manchester.tornado.unittests.matrices.TestMatrices",
 	"uk.ac.manchester.tornado.unittests.images.TestResizeImage",
+	"uk.ac.manchester.tornado.unittests.images.TestReductinsIntegers",
 ]
 
 ## Options
@@ -58,7 +59,7 @@ __PRINT_OPENCL_KERNEL__ = "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ = "-Dtornado.debug=True "
 
 ## 
-__VERSION__ = "0.2_27022018"
+__VERSION__ = "0.2_09032018"
 
 
 def composeAllOptions(args):
