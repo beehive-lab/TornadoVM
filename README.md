@@ -145,7 +145,27 @@ $ . etc/tornado.env
 $ tornado uk.ac.manchester.tornado.examples.HelloWorld
 ```
 
-To run on a specific device, use the option: 
+Use the following option to identify id for Tornado devices: 
+
+```bas
+tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput
+```
+Tornado device output corresponds to:
+```bash
+Tornado device=<driverNumber>:<deviceNumber>
+```
+Example output:
+```bash
+Number of Tornado drivers: 1
+Number of devices: 2
+
+Tornado device=0:0
+Intel(R) OpenCL -- Intel(R) HD Graphics
+Tornado device=0:1
+Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
+```
+
+To run on a specific device user the following option:
 
 ```bash
  -D<s>.<t>.device=<driverNumber>:<deviceNumber>
