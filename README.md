@@ -157,11 +157,13 @@ Tornado device=<driverNumber>:<deviceNumber>
 Example output:
 ```bash
 Number of Tornado drivers: 1
-Number of devices: 2
+Number of devices: 3
 
 Tornado device=0:0
-Intel(R) OpenCL -- Intel(R) HD Graphics
+NVIDIA CUDA -- GeForce GTX 1050
 Tornado device=0:1
+Intel(R) OpenCL -- Intel(R) HD Graphics
+Tornado device=0:2
 Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
 ```
 
@@ -173,7 +175,7 @@ To run on a specific device user the following option:
 
 Where s is the schedule task name and t is the task name.
 
-For example:
+For example running on device [1] will look like this:
 
 ```bash
 $ tornado -Ds0.t0.device=0:1 uk.ac.manchester.tornado.examples.HelloWorld
