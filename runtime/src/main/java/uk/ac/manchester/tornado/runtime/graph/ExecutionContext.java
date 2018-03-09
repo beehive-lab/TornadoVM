@@ -310,7 +310,7 @@ public class ExecutionContext {
         this.newStack = newStack;
     }
 
-    public boolean newStack() {
+    public boolean isNewStack() {
         return this.newStack;
     }
 }

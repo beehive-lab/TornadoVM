@@ -34,7 +34,6 @@ import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.function.Consumer;
@@ -129,16 +128,9 @@ public abstract class AbstractTaskGraph {
         hlBuffer.putInt(globalTaskId);
         graphContext.incrGlobalTaskCount();
         hlBuffer.putInt(index);
-        // System.out.printf("inserting: 0x%x 0x%x 0x%x\n", CONTEXT,
-        // globalTaskId,
-        // index);
-        // insert parameters into variable tables
 
         // create parameter list
         final Object[] args = task.getArguments();
-        // for(Object arg: args){
-        // System.out.println("- arg: " + arg);
-        // }
         hlBuffer.put(ARG_LIST);
         hlBuffer.putInt(args.length);
 
