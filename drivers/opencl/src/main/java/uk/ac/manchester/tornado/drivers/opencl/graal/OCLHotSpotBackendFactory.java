@@ -82,18 +82,18 @@ public class OCLHotSpotBackendFactory {
         }
 
         OCLArchitecture arch = new OCLArchitecture(wordKind, device.getByteOrder());
-        OCLTargetDescription target = new OCLTargetDescription(arch, device.getDoubleFPConfig() != 0);
+        OCLTargetDescription target = new OCLTargetDescription(arch, device.getDoubleFPConfig() != 0, device.getExtensions());
         OCLCodeProvider codeCache = new OCLCodeProvider(target);
         OCLDeviceContext deviceContext = openclContext.createDeviceContext(device.getIndex());
 
         OCLProviders providers;
-//        HotSpotRegistersProvider registers;
+        // HotSpotRegistersProvider registers;
         OCLLoweringProvider lowerer;
         OCLSuitesProvider suites;
         Plugins plugins;
 
         try (InitTimer t = timer("create providers")) {
-//            registers = createRegisters();
+            // registers = createRegisters();
 
             lowerer = new OCLLoweringProvider(metaAccess, foreignCalls, constantReflection, config, target);
 
@@ -116,8 +116,7 @@ public class OCLHotSpotBackendFactory {
         }
     }
 
-    protected static Plugins createGraphBuilderPlugins(
-            HotSpotMetaAccessProvider metaAccess, BytecodeProvider bytecodeProvider) {
+    protected static Plugins createGraphBuilderPlugins(HotSpotMetaAccessProvider metaAccess, BytecodeProvider bytecodeProvider) {
 
         InvocationPlugins invocationPlugins = new InvocationPlugins();
         Plugins plugins = new Plugins(invocationPlugins);

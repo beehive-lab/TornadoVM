@@ -204,7 +204,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         	AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
         	
         	// this should be Atomic Add write node
-        	OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), accumulator, accumulator.stamp()));
+        	OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), accumulator, accumulator.stamp(), storeIndexed.elementKind()));
 
         	memoryWrite.setStateAfter(storeIndexed.stateAfter());
         	graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
@@ -212,8 +212,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         	
         } else {
         	AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-        	OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), accumulator, accumulator.stamp()));
-
+        	OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), accumulator, accumulator.stamp(), storeIndexed.elementKind()));
         	memoryWrite.setStateAfter(storeIndexed.stateAfter());
         	graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
         
