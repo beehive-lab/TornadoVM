@@ -338,9 +338,9 @@ public class TornadoVM extends TornadoLogger {
                 final int eventList = buffer.getInt();
 
                 final TornadoDevice device = contexts.get(contextIndex);
-                boolean newStack = graphContext.isNewStack();
+                boolean redeployOnDevice = graphContext.redeployOnDevice();
 
-                final CallStack stack = resolveStack(gtid, numArgs, stacks, device, newStack);
+                final CallStack stack = resolveStack(gtid, numArgs, stacks, device, redeployOnDevice);
 
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
                 final SchedulableTask task = tasks.get(taskIndex);
@@ -381,7 +381,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final Access[] accesses = task.getArgumentsAccess();
 
-                if (newStack || !stack.isOnDevice()) {
+                if (redeployOnDevice || !stack.isOnDevice()) {
                     stack.reset();
                 }
                 for (int i = 0; i < numArgs; i++) {

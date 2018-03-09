@@ -312,8 +312,6 @@ public abstract class AbstractMetaData {
         this.id = id;
         shouldRecompile = true;
 
-        // device = null;
-
         isDeviceDefined = getProperty(id + ".device") != null;
         if (isDeviceDefined) {
             int[] a = MetaDataUtils.resolveDriverDeviceIndexes(getProperty(id + ".device"));

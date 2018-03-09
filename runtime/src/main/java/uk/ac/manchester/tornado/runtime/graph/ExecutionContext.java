@@ -61,7 +61,7 @@ public class ExecutionContext {
 
     private HashSet<TornadoDevice> lastDevices;
 
-    private boolean newStack;
+    private boolean redeployOnDevice;
 
     public ExecutionContext(String id) {
         name = id;
@@ -307,10 +307,10 @@ public class ExecutionContext {
     }
 
     public void newStack(boolean newStack) {
-        this.newStack = newStack;
+        this.redeployOnDevice = newStack;
     }
 
-    public boolean isNewStack() {
-        return this.newStack;
+    public boolean redeployOnDevice() {
+        return this.redeployOnDevice;
     }
 }
