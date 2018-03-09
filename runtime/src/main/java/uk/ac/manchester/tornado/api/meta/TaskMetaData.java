@@ -268,8 +268,7 @@ public class TaskMetaData extends AbstractMetaData {
 
     @Override
     public TornadoDevice getDevice() {
-        TornadoDevice d = scheduleMetaData.isDeviceDefined() && !isDeviceDefined() ? scheduleMetaData.getDevice() : super.getDevice();
-        return d;
+        return scheduleMetaData.isDeviceDefined() && !isDeviceDefined() ? scheduleMetaData.getDevice() : super.getDevice();
     }
 
     public int getDims() {

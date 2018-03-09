@@ -95,8 +95,7 @@ public class OCLTornadoDevice implements TornadoDevice {
         this.deviceIndex = deviceIndex;
         
         platformName = findDriver().getPlatformContext(platformIndex).getPlatform().getName();
-        device = findDriver().getPlatformContext(platformIndex).devices()
-                .get(deviceIndex);
+        device = findDriver().getPlatformContext(platformIndex).devices().get(deviceIndex);
 
     }
 

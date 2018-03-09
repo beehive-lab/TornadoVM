@@ -43,6 +43,9 @@ public abstract class AbstractMetaData {
     private int driverIndex;
     private int deviceIndex;
 
+    public static final int DEFAULT_DRIVER_INDEX = 0;
+    public static final int DEFAULT_DEVICE_INDEX = 0;
+
     private static String getProperty(String key) {
         return System.getProperty(key);
     }
@@ -54,7 +57,7 @@ public abstract class AbstractMetaData {
         return device;
     }
 
-    private int getIndexFromDefaultDriver(int driverIndex, TornadoDevice device) {
+    private int getDeviceIndex(int driverIndex, TornadoDevice device) {
         TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
         int devs = driver.getDeviceCount();
         int index = 0;
@@ -73,8 +76,8 @@ public abstract class AbstractMetaData {
      * @param device
      */
     public void setDevice(TornadoDevice device) {
-        this.driverIndex = 0;
-        int index = getIndexFromDefaultDriver(0, device);
+        this.driverIndex = DEFAULT_DRIVER_INDEX;
+        int index = getDeviceIndex(0, device);
         this.deviceIndex = index;
         this.device = device;
     }
@@ -87,7 +90,7 @@ public abstract class AbstractMetaData {
      */
     public void setDriverDevice(int driverIndex, TornadoDevice device) {
         this.driverIndex = deviceIndex;
-        int index = getIndexFromDefaultDriver(driverIndex, device);
+        int index = getDeviceIndex(driverIndex, device);
         this.deviceIndex = index;
         this.device = device;
     }
@@ -309,7 +312,7 @@ public abstract class AbstractMetaData {
         this.id = id;
         shouldRecompile = true;
 
-        device = null;
+        // device = null;
 
         isDeviceDefined = getProperty(id + ".device") != null;
         if (isDeviceDefined) {
@@ -317,8 +320,8 @@ public abstract class AbstractMetaData {
             driverIndex = a[0];
             deviceIndex = a[1];
         } else {
-            driverIndex = 0;
-            deviceIndex = 0;
+            driverIndex = DEFAULT_DRIVER_INDEX;
+            deviceIndex = DEFAULT_DEVICE_INDEX;
         }
 
         debugKernelArgs = parseBoolean(getDefault("debug.kernelargs", id, "False"));
