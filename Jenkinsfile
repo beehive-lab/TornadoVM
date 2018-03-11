@@ -19,7 +19,7 @@ pipeline {
 	stages {
 		stage('checkout-branch') {
 			steps {
-                checkout([$class: 'GitSCM', branches: [[name: '*/develop']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/tornado.git']]])
+                checkout([$class: 'GitSCM', branches: [[name: '*/feature/jenkinsfile/michalis']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/tornado.git']]])
 			}
 		}
 		stage('build') {
