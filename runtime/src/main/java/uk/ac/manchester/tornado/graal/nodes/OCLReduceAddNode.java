@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.graal.nodes;
 
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -16,6 +17,11 @@ public class OCLReduceAddNode extends AddNode {
 
     public OCLReduceAddNode(ValueNode x, ValueNode y) {
         super(TYPE, x, y);
+    }
+
+    @Override
+    public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
+        return this;
     }
 
     @Override

@@ -191,6 +191,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     protected void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
 
+        System.out.println("PROCESSING: " + storeIndexed);
+
         StructuredGraph graph = storeIndexed.graph();
 
         JavaKind elementKind = storeIndexed.elementKind();
@@ -218,7 +220,14 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             memoryWrite.setStateAfter(storeIndexed.stateAfter());
             graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
         } else if (value instanceof OCLReduceMulNode) {
-            throw new RuntimeException("[NOT SUPPORTED] atomic mult not supported yet");
+            System.out.println("REDUCE MUL NODE: " + value);
+            AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
+            // this should be Atomic Add write node
+            OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()),
+                    accumulator, accumulator.stamp(), storeIndexed.elementKind(), ATOMIC_OPERATION.MUL));
+            memoryWrite.setStateAfter(storeIndexed.stateAfter());
+            graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
+
         } else {
             AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
             OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()),

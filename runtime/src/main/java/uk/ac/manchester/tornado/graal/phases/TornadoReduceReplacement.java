@@ -53,6 +53,11 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                             ValueNode value = null;
                             ValueNode accumulator = null;
 
+                            // Check if this store is candidate for reduction
+                            if (store.value() instanceof ConstantNode || store.value() instanceof ParameterNode) {
+                                continue;
+                            }
+
                             if (!(store.index() instanceof ConstantNode)) {
                                 // XXX: get induction variables -
                                 continue;
@@ -72,7 +77,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                                 value = atomicMultiplication;
                                 mulNode.safeDelete();
                             } else if (store.value() instanceof SubNode) {
-                                System.out.println("SUB REDUCTION!!!!!!");
                                 SubNode subNode = (SubNode) store.value();
                                 final OCLReduceSubNode atomicSub = graph.addOrUnique(new OCLReduceSubNode(subNode.getX(), subNode.getY()));
                                 accumulator = subNode.getX();
@@ -89,7 +93,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                             store.replaceAndDelete(atomicStore);
 
                         } else if (node instanceof StoreFieldNode) {
-                            System.out.println("\t\t store field");
+                            throw new RuntimeException("\n\n[NOT SUPPORTED] Node StoreFieldNode: not suported yet.");
                         }
 
                     }

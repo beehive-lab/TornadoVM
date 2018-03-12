@@ -449,10 +449,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
         }
     }
 
-    // XXX: Pass neutral elements
-    public static void reductionMultiplication(int[] input, @Reduce int[] result) {
+    public static void reductionMultiplication(int[] input, @Reduce int[] result, int neutral) {
+        // neutral
+        result[0] = neutral;
         for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] *= input[i];
+            result[0] = result[0] * input[i];
         }
     }
 
@@ -461,26 +462,30 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] input = new int[BIG_SIZE];
         int[] result = new int[1];
 
-        IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
-            input[i] = 2;
-        });
+        input[0] = 5;
+        input[1] = 2;
+        for (int i = 2; i < input.length; i++) {
+            input[i] = 1;
+        }
 
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsIntegers::reductionMultiplication, input, result)
+            .task("t0", TestReductionsIntegers::reductionMultiplication, input, result, 1)
             .streamOut(result)
             .execute();
         //@formatter:on
 
         int[] sequential = new int[1];
-        reductionMultiplication(input, sequential);
+        reductionMultiplication(input, sequential, 1);
+        System.out.println("[I] " + sequential[0]);
 
         // Check result
         assertEquals(sequential[0], result[0]);
     }
 
-    public static void reductionSub(int[] input, @Reduce int[] result) {
+    public static void reductionSub(int[] input, @Reduce int[] result, int[] neutral) {
+        result[0] = neutral[0];
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] -= input[i];
         }
@@ -498,13 +503,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsIntegers::reductionSub, input, result)
+            .task("t0", TestReductionsIntegers::reductionSub, input, result, new int[] {0})
             .streamOut(result)
             .execute();
         //@formatter:on
 
         int[] sequential = new int[1];
-        reductionSub(input, sequential);
+        reductionSub(input, sequential, new int[] { 0 });
 
         // Check result
         assertEquals(sequential[0], result[0]);

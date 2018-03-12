@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.LoadStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreAtomicAddStmt;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreAtomicMulStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreAtomicSubStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorLoadStmt;
@@ -335,10 +336,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
             getGen().append(new VectorStoreStmt(intrinsic, new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0), cast, memAccess, input));
         } else {
 
-            System.out.println("OCLKIND -> " + oclKind);
-
             if (oclKind == OCLKind.ATOMIC_ADD_INT || oclKind == OCLKind.ATOMIC_ADD_LONG) {
-                System.out.println("A-> " + oclKind);
 
                 if (memAccess != null) {
                     OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
@@ -347,15 +345,20 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
                     getGen().append(new StoreAtomicAddStmt(accumulator, input));
                 }
             } else if (oclKind == OCLKind.ATOMIC_SUB_INT) {
-                System.out.println("B-> " + oclKind);
                 if (memAccess != null) {
                     OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
                     getGen().append(new StoreAtomicSubStmt(cast, memAccess, input));
                 } else {
                     getGen().append(new StoreAtomicSubStmt(accumulator, input));
                 }
+            } else if (oclKind == OCLKind.ATOMIC_MUL_INT) {
+                if (memAccess != null) {
+                    OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
+                    getGen().append(new StoreAtomicMulStmt(cast, memAccess, input));
+                } else {
+                    getGen().append(new StoreAtomicMulStmt(accumulator, input));
+                }
             } else {
-                System.out.println("c-> " + oclKind);
                 // XXX: I think I dont need this part any more: Check with the
                 // unittests.
                 if (memAccess != null) {

@@ -62,8 +62,11 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
             case SUB:
                 oclStamp = new OCLStamp(OCLKind.ATOMIC_SUB_INT);
                 break;
-            default:
+            case MUL:
+                oclStamp = new OCLStamp(OCLKind.ATOMIC_MUL_INT);
                 break;
+            default:
+                throw new RuntimeException("Operation for reduction not supported yet: " + operation);
         }
         return oclStamp;
     }
@@ -96,8 +99,11 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
         // System.out.println("EMIT: OCLWRITEATOMIC: " +
         // gen.operand(accumulator));
 
-        gen.getLIRGeneratorTool().getArithmetic().emitStore(writeKind, gen.operand(address), gen.operand(value()), gen.state(this));
+        // Update the accumulator
         gen.getLIRGeneratorTool().getArithmetic().emitStore(accKind, gen.operand(accumulator), gen.operand(value()), gen.state(this));
+
+        // Atomic Store
+        gen.getLIRGeneratorTool().getArithmetic().emitStore(writeKind, gen.operand(address), gen.operand(value()), gen.state(this));
 
         // ==========
     }
