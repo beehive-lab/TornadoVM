@@ -10,12 +10,16 @@ import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
+import org.graalvm.compiler.nodes.calc.MulNode;
+import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.api.Reduce;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceAddNode;
+import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
+import uk.ac.manchester.tornado.graal.nodes.OCLReduceSubNode;
 import uk.ac.manchester.tornado.graal.nodes.StoreAtomicIndexedNode;
 
 public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext> {
@@ -54,16 +58,28 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                                 continue;
                             }
 
-                            // Proof of concept - Reduction with Addition
-                            // (atomic ADD in OpenCL)
                             if (store.value() instanceof AddNode) {
                                 AddNode addNode = (AddNode) store.value();
                                 final OCLReduceAddNode atomicAdd = graph.addOrUnique(new OCLReduceAddNode(addNode.getX(), addNode.getY()));
                                 accumulator = addNode.getX();
                                 value = atomicAdd;
                                 addNode.safeDelete();
+                            } else if (store.value() instanceof MulNode) {
+                                System.out.println("MULTIPLICATION REDUCTION!!!!!!");
+                                MulNode mulNode = (MulNode) store.value();
+                                final OCLReduceMulNode atomicMultiplication = graph.addOrUnique(new OCLReduceMulNode(mulNode.getX(), mulNode.getY()));
+                                accumulator = mulNode.getX();
+                                value = atomicMultiplication;
+                                mulNode.safeDelete();
+                            } else if (store.value() instanceof SubNode) {
+                                System.out.println("SUB REDUCTION!!!!!!");
+                                SubNode subNode = (SubNode) store.value();
+                                final OCLReduceSubNode atomicSub = graph.addOrUnique(new OCLReduceSubNode(subNode.getX(), subNode.getY()));
+                                accumulator = subNode.getX();
+                                value = atomicSub;
+                                subNode.safeDelete();
                             } else {
-                                throw new RuntimeException("Node : " + store.value() + " not suported yet.");
+                                throw new RuntimeException("\n\n[NOT SUPPORTED] Node : " + store.value() + " not suported yet.");
                             }
 
                             // Final Replacement

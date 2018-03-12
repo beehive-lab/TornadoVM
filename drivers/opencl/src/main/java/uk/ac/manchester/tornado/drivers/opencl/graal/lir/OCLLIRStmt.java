@@ -264,7 +264,7 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            //asm.space();
+            // asm.space();
             asm.emit("*(");
             cast.emit(crb, asm);
             asm.space();
@@ -290,12 +290,12 @@ public class OCLLIRStmt {
             return address;
         }
     }
-    
+
     @Opcode("ATOMIC_ADD_STORE")
     public static class StoreAtomicAddStmt extends AbstractInstruction {
 
         public static final LIRInstructionClass<StoreStmt> TYPE = LIRInstructionClass.create(StoreStmt.class);
-        
+
         public static final boolean GENERATE_ATOMIC = true;
 
         @Use
@@ -313,18 +313,18 @@ public class OCLLIRStmt {
             this.cast = cast;
             this.address = address;
         }
-        
+
         public StoreAtomicAddStmt(Value left, Value rhs) {
             super(TYPE);
             this.rhs = rhs;
             this.left = left;
         }
-        
+
         private void emitAtomicAddStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-        	
-        	asm.indent();
-        	asm.emit("// new atomic store?? \n");
-        	asm.indent();
+
+            asm.indent();
+            asm.emit("// new atomic store?? \n");
+            asm.indent();
             asm.emit("atomic_add( & (");
             asm.emit("*(");
             cast.emit(crb, asm);
@@ -338,9 +338,9 @@ public class OCLLIRStmt {
             asm.eol();
 
         }
-        
+
         private void emitStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-        	asm.indent();  
+            asm.indent();
             asm.emit("*(");
             cast.emit(crb, asm);
             asm.space();
@@ -353,16 +353,16 @@ public class OCLLIRStmt {
             asm.delimiter();
             asm.eol();
         }
-        
+
         private void emitScalarStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-        	asm.emit("// NEW ASSIGN!!!!!!!!!?? \n");
-        	asm.indent();
-			asm.emitValue(crb, left);
-		    asm.space();
-	        asm.assign();
-	        asm.space();
-	        asm.emitValue(crb, rhs);
-	        asm.delimiter();
+            asm.emit("// NEW ASSIGN!!!!!!!!!?? \n");
+            asm.indent();
+            asm.emitValue(crb, left);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emitValue(crb, rhs);
+            asm.delimiter();
             asm.eol();
         }
 
@@ -370,20 +370,124 @@ public class OCLLIRStmt {
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
             if (left == null) {
-            	if (GENERATE_ATOMIC) {
-            		emitAtomicAddStore(crb, asm);
-            	} else {
-            		emitStore(crb, asm);
-            	}
-            } else {            	
-            	//emitScalarStore(crb, asm);
+                if (GENERATE_ATOMIC) {
+                    emitAtomicAddStore(crb, asm);
+                } else {
+                    emitStore(crb, asm);
+                }
+            } else {
+                // emitScalarStore(crb, asm);
             }
         }
 
         public Value getRhs() {
             return rhs;
         }
-        
+
+        public Value getLeft() {
+            return left;
+        }
+
+        public OCLAddressCast getCast() {
+            return cast;
+        }
+
+        public MemoryAccess getAddress() {
+            return address;
+        }
+    }
+
+    @Opcode("ATOMIC_SUB_STORE")
+    public static class StoreAtomicSubStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<StoreStmt> TYPE = LIRInstructionClass.create(StoreStmt.class);
+
+        public static final boolean GENERATE_ATOMIC = true;
+
+        @Use
+        protected Value rhs;
+        @Use
+        protected OCLAddressCast cast;
+        @Use
+        protected Value left;
+        @Use
+        protected MemoryAccess address;
+
+        public StoreAtomicSubStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
+            super(TYPE);
+            this.rhs = rhs;
+            this.cast = cast;
+            this.address = address;
+        }
+
+        public StoreAtomicSubStmt(Value left, Value rhs) {
+            super(TYPE);
+            this.rhs = rhs;
+            this.left = left;
+        }
+
+        private void emitAtomicSubStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+
+            asm.indent();
+            asm.emit("atomic_add( & (");
+            asm.emit("*(");
+            cast.emit(crb, asm);
+            asm.space();
+            address.emit(crb, asm);
+            asm.emit(")), ");
+            asm.space();
+            asm.emitValue(crb, rhs);
+            asm.emit(")");
+            asm.delimiter();
+            asm.eol();
+
+        }
+
+        private void emitStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            asm.emit("*(");
+            cast.emit(crb, asm);
+            asm.space();
+            address.emit(crb, asm);
+            asm.emit(")");
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emitValue(crb, rhs);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        private void emitScalarStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit("// NEW ASSIGN!!!!!!!!!?? \n");
+            asm.indent();
+            asm.emitValue(crb, left);
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emitValue(crb, rhs);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            if (left == null) {
+                if (GENERATE_ATOMIC) {
+                    emitAtomicSubStore(crb, asm);
+                } else {
+                    emitStore(crb, asm);
+                }
+            } else {
+                // emitScalarStore(crb, asm);
+            }
+        }
+
+        public Value getRhs() {
+            return rhs;
+        }
+
         public Value getLeft() {
             return left;
         }
@@ -426,7 +530,7 @@ public class OCLLIRStmt {
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
 
-            //asm.space();
+            // asm.space();
             asm.emit(op.toString());
             asm.emit("(");
             asm.emitValue(crb, rhs);
@@ -436,11 +540,11 @@ public class OCLLIRStmt {
             cast.emit(crb, asm);
             asm.space();
             address.emit(crb, asm);
-//            if (address instanceof MemoryAccess) {
-//                ((MemoryAccess) address).emit(crb);
-//            } else if (address instanceof Variable) {
-//                asm.emitValue(crb, address);
-//            }
+            // if (address instanceof MemoryAccess) {
+            // ((MemoryAccess) address).emit(crb);
+            // } else if (address instanceof Variable) {
+            // asm.emitValue(crb, address);
+            // }
             asm.emit(")");
             asm.delimiter();
             asm.eol();

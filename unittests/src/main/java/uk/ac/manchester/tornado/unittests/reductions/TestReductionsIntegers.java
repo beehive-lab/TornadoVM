@@ -449,4 +449,65 @@ public class TestReductionsIntegers extends TornadoTestBase {
         }
     }
 
+    // XXX: Pass neutral elements
+    public static void reductionMultiplication(int[] input, @Reduce int[] result) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] *= input[i];
+        }
+    }
+
+    @Test
+    public void testReductionMultiplication() {
+        int[] input = new int[BIG_SIZE];
+        int[] result = new int[1];
+
+        IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
+            input[i] = 2;
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t0", TestReductionsIntegers::reductionMultiplication, input, result)
+            .streamOut(result)
+            .execute();
+        //@formatter:on
+
+        int[] sequential = new int[1];
+        reductionMultiplication(input, sequential);
+
+        // Check result
+        assertEquals(sequential[0], result[0]);
+    }
+
+    public static void reductionSub(int[] input, @Reduce int[] result) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] -= input[i];
+        }
+    }
+
+    @Test
+    public void testReductionSub() {
+        int[] input = new int[BIG_SIZE];
+        int[] result = new int[1];
+
+        IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
+            input[i] = 1;
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t0", TestReductionsIntegers::reductionSub, input, result)
+            .streamOut(result)
+            .execute();
+        //@formatter:on
+
+        int[] sequential = new int[1];
+        reductionSub(input, sequential);
+
+        // Check result
+        assertEquals(sequential[0], result[0]);
+    }
+
 }

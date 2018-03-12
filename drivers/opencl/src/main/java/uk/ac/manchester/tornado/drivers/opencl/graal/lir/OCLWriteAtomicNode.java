@@ -29,16 +29,23 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
     private ValueNode accumulator;
     private Stamp accStamp;
     private JavaKind elementKind;
+    private ATOMIC_OPERATION operation;
+
+    public enum ATOMIC_OPERATION {
+        ADD, SUB, MUL, DIV, CUSTOM;
+    }
 
     public static final NodeClass<OCLWriteAtomicNode> TYPE = NodeClass.create(OCLWriteAtomicNode.class);
 
-    public OCLWriteAtomicNode(AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType, ValueNode acc, Stamp accStamp, JavaKind elementKind) {
+    public OCLWriteAtomicNode(AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType, ValueNode acc, Stamp accStamp, JavaKind elementKind,
+            ATOMIC_OPERATION operation) {
         super(TYPE, address, location, value, barrierType);
 
         this.address = address;
         this.accumulator = acc;
         this.accStamp = accStamp;
         this.elementKind = elementKind;
+        this.operation = operation;
     }
 
     protected OCLWriteAtomicNode(NodeClass<? extends OCLWriteAtomicNode> c, AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType) {
@@ -46,20 +53,33 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
         this.address = address;
     }
 
+    public OCLStamp getStampInt() {
+        OCLStamp oclStamp = null;
+        switch (operation) {
+            case ADD:
+                oclStamp = new OCLStamp(OCLKind.ATOMIC_ADD_INT);
+                break;
+            case SUB:
+                oclStamp = new OCLStamp(OCLKind.ATOMIC_SUB_INT);
+                break;
+            default:
+                break;
+        }
+        return oclStamp;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool gen) {
 
         // New OpenCL nodes for atomic add
         OCLStamp oclStamp = null;
-
         switch (elementKind) {
             case Int:
-                oclStamp = new OCLStamp(OCLKind.ATOMIC_INT);
+                oclStamp = getStampInt();
                 break;
             case Long:
-                oclStamp = new OCLStamp(OCLKind.ATOMIC_INT); // DUE TO
-                                                             // UNSUPPORTED
-                                                             // FEATURE IN INTEL
+                // DUE TO UNSUPPORTED FEATURE IN INTEL OpenCL PLATFORM
+                oclStamp = new OCLStamp(OCLKind.ATOMIC_ADD_INT);
                 break;
             default:
                 throw new RuntimeException("Data type for reduction not supported yet: " + elementKind);

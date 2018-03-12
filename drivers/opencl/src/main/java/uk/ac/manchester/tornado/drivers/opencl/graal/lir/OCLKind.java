@@ -35,8 +35,11 @@ import uk.ac.manchester.tornado.api.Vector;
 
 public enum OCLKind implements PlatformKind {
 
-	ATOMIC_INT(4, null),
-	ATOMIC_LONG(8, null),
+    // @formatter:off
+    ATOMIC_ADD_INT(4, java.lang.Integer.TYPE),
+    ATOMIC_SUB_INT(4, java.lang.Integer.TYPE),
+    ATOMIC_MUL_INT(4, java.lang.Integer.TYPE),
+	ATOMIC_ADD_LONG(8, java.lang.Long.TYPE),
     BOOL(1, java.lang.Boolean.TYPE),
     CHAR(1, java.lang.Byte.TYPE),
     UCHAR(1, null),
@@ -100,6 +103,7 @@ public enum OCLKind implements PlatformKind {
     FLOAT16(16, null, FLOAT),
     DOUBLE16(16, null, DOUBLE),
     ILLEGAL(0, null);
+    // @formatter:on
 
     public static OCLKind fromResolvedJavaType(ResolvedJavaType type) {
         if (!type.isArray()) {
@@ -129,6 +133,8 @@ public enum OCLKind implements PlatformKind {
     private final OCLKind kind;
     private final OCLKind elementKind;
     private final Class<?> javaClass;
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private final EnumKey key = new EnumKey(this);
 
     OCLKind(int size, Class<?> javaClass) {
@@ -184,11 +190,13 @@ public enum OCLKind implements PlatformKind {
                 return 's';
             case INT:
             case UINT:
-            case ATOMIC_INT:
+            case ATOMIC_ADD_INT:
+            case ATOMIC_SUB_INT:
+            case ATOMIC_MUL_INT:
                 return 'i';
             case LONG:
             case ULONG:
-            case ATOMIC_LONG:
+            case ATOMIC_ADD_LONG:
                 return 'l';
             case HALF:
                 return 'h';
@@ -254,13 +262,17 @@ public enum OCLKind implements PlatformKind {
 
     @Override
     public String toString() {
-    	if (this == OCLKind.ATOMIC_INT) {
-    		return "int";
-    	} else if (this == OCLKind.ATOMIC_LONG) {
-    		return "long";
-    	} else {
-    		return name().toLowerCase();
-    	}
+        if (this == OCLKind.ATOMIC_ADD_INT) {
+            return "int";
+        } else if (this == OCLKind.ATOMIC_SUB_INT) {
+            return "int";
+        } else if (this == OCLKind.ATOMIC_MUL_INT) {
+            return "int";
+        } else if (this == OCLKind.ATOMIC_ADD_LONG) {
+            return "long";
+        } else {
+            return name().toLowerCase();
+        }
     }
 
     public String getTypePrefix() {
