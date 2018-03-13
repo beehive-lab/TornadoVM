@@ -27,12 +27,13 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
-        // System.out.println(">> Reduction Phase Detection");
         findParametersWithReduceAnnotations(graph, context);
+
         // TODO: Pending, if it is local variable
     }
 
-    // XXX: Cover all the cases here
+    // XXX: Cover all the cases here as soon as we discover more reductions
+    // use-cases
     private boolean recursiveCheck(ValueNode arrayToStore, ValueNode indexToStore, ValueNode currentNode) {
         boolean isReduction = false;
         if (currentNode instanceof BinaryArithmeticNode) {
@@ -98,53 +99,52 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         return new ReductionNodes(value, accumulator);
     }
 
-    private void performNodeReplacement(StructuredGraph graph, StoreIndexedNode store, Node pred, ValueNode value, ValueNode accumulator) {
+    private void performNodeReplacement(StructuredGraph graph, StoreIndexedNode store, Node pred, ReductionNodes reductionNode) {
         // Final Replacement
+        ValueNode value = reductionNode.value;
+        ValueNode accumulator = reductionNode.accumulator;
         final StoreAtomicIndexedNode atomicStore = graph.addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), value, accumulator));
         atomicStore.setNext(store.next());
         pred.replaceFirstSuccessor(store, atomicStore);
         store.replaceAndDelete(atomicStore);
     }
 
-    private void findParametersWithReduceAnnotations(StructuredGraph graph, TornadoSketchTierContext context) {
-        final Annotation[][] parameterAnnotations = graph.method().getParameterAnnotations();
-        for (int i = 0; i < parameterAnnotations.length; i++) {
-            for (Annotation annotation : parameterAnnotations[i]) {
-                if (annotation instanceof Reduce) {
-                    final ParameterNode reduceParameter = graph.getParameter(i);
+    private void processReduceAnnotation(StructuredGraph graph, int index) {
+        final ParameterNode reduceParameter = graph.getParameter(index);
 
-                    NodeIterable<Node> usages = reduceParameter.usages();
+        NodeIterable<Node> usages = reduceParameter.usages();
+        Iterator<Node> iterator = usages.iterator();
 
-                    Iterator<Node> iterator = usages.iterator();
+        while (iterator.hasNext()) {
+            Node node = iterator.next();
 
-                    while (iterator.hasNext()) {
-                        Node node = iterator.next();
-                        // System.out.println("\t" + node);
-                        if (node instanceof StoreIndexedNode) {
-                            // System.out.println("\t\t store index node");
-                            StoreIndexedNode store = (StoreIndexedNode) node;
-                            Node pred = node.predecessor();
+            if (node instanceof StoreIndexedNode) {
+                StoreIndexedNode store = (StoreIndexedNode) node;
 
-                            boolean isReductionValue = checkIfReduction(store);
-                            if (!isReductionValue) {
-                                continue;
-                            }
-
-                            ReductionNodes reductionNode = createReductionNode(graph, store);
-                            ValueNode value = reductionNode.value;
-                            ValueNode accumulator = reductionNode.accumulator;
-
-                            performNodeReplacement(graph, store, pred, value, accumulator);
-
-                        } else if (node instanceof StoreFieldNode) {
-                            throw new RuntimeException("\n\n[NOT SUPPORTED] Node StoreFieldNode: not suported yet.");
-                        }
-
-                    }
-
+                boolean isReductionValue = checkIfReduction(store);
+                if (!isReductionValue) {
+                    continue;
                 }
+
+                ReductionNodes reductionNode = createReductionNode(graph, store);
+                Node pred = node.predecessor();
+                performNodeReplacement(graph, store, pred, reductionNode);
+
+            } else if (node instanceof StoreFieldNode) {
+                throw new RuntimeException("\n\n[NOT SUPPORTED] Node StoreFieldNode: not suported yet.");
             }
         }
     }
 
+    private void findParametersWithReduceAnnotations(StructuredGraph graph, TornadoSketchTierContext context) {
+        final Annotation[][] parameterAnnotations = graph.method().getParameterAnnotations();
+        for (int index = 0; index < parameterAnnotations.length; index++) {
+            for (Annotation annotation : parameterAnnotations[index]) {
+                // Get the reduce annotations
+                if (annotation instanceof Reduce) {
+                    processReduceAnnotation(graph, index);
+                }
+            }
+        }
+    }
 }
