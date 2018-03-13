@@ -59,10 +59,8 @@ public class OCLLIRStmt {
 
         public static final LIRInstructionClass<AssignStmt> TYPE = LIRInstructionClass.create(AssignStmt.class);
 
-        @Def
-        protected AllocatableValue lhs;
-        @Use
-        protected Value rhs;
+        @Def protected AllocatableValue lhs;
+        @Use protected Value rhs;
 
         public AssignStmt(AllocatableValue lhs, Value rhs) {
             super(TYPE);
@@ -100,10 +98,8 @@ public class OCLLIRStmt {
 
         public static final LIRInstructionClass<MoveStmt> TYPE = LIRInstructionClass.create(MoveStmt.class);
 
-        @Def
-        protected AllocatableValue lhs;
-        @Use
-        protected Value rhs;
+        @Def protected AllocatableValue lhs;
+        @Use protected Value rhs;
 
         public MoveStmt(AllocatableValue lhs, Value rhs) {
             super(TYPE);
@@ -137,12 +133,9 @@ public class OCLLIRStmt {
 
         public static final LIRInstructionClass<LoadStmt> TYPE = LIRInstructionClass.create(LoadStmt.class);
 
-        @Def
-        protected AllocatableValue lhs;
-        @Use
-        protected OCLAddressCast cast;
-        @Use
-        protected MemoryAccess address;
+        @Def protected AllocatableValue lhs;
+        @Use protected OCLAddressCast cast;
+        @Use protected MemoryAccess address;
 
         public LoadStmt(AllocatableValue lhs, OCLAddressCast cast, MemoryAccess address) {
             super(TYPE);
@@ -185,15 +178,11 @@ public class OCLLIRStmt {
 
         public static final LIRInstructionClass<VectorLoadStmt> TYPE = LIRInstructionClass.create(VectorLoadStmt.class);
 
-        @Def
-        protected AllocatableValue lhs;
-        @Use
-        protected OCLAddressCast cast;
-        @Use
-        protected MemoryAccess address;
+        @Def protected AllocatableValue lhs;
+        @Use protected OCLAddressCast cast;
+        @Use protected MemoryAccess address;
 
-        @Use
-        protected Value index;
+        @Use protected Value index;
 
         protected OCLBinaryIntrinsic op;
 
@@ -247,12 +236,9 @@ public class OCLLIRStmt {
 
         public static final LIRInstructionClass<StoreStmt> TYPE = LIRInstructionClass.create(StoreStmt.class);
 
-        @Use
-        protected Value rhs;
-        @Use
-        protected OCLAddressCast cast;
-        @Use
-        protected MemoryAccess address;
+        @Use protected Value rhs;
+        @Use protected OCLAddressCast cast;
+        @Use protected MemoryAccess address;
 
         public StoreStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
             super(TYPE);
@@ -298,14 +284,10 @@ public class OCLLIRStmt {
 
         public static final boolean GENERATE_ATOMIC = true;
 
-        @Use
-        protected Value rhs;
-        @Use
-        protected OCLAddressCast cast;
-        @Use
-        protected Value left;
-        @Use
-        protected MemoryAccess address;
+        @Use protected Value rhs;
+        @Use protected OCLAddressCast cast;
+        @Use protected Value left;
+        @Use protected MemoryAccess address;
 
         public StoreAtomicAddStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
             super(TYPE);
@@ -405,14 +387,10 @@ public class OCLLIRStmt {
 
         public static final boolean GENERATE_ATOMIC = true;
 
-        @Use
-        protected Value rhs;
-        @Use
-        protected OCLAddressCast cast;
-        @Use
-        protected Value left;
-        @Use
-        protected MemoryAccess address;
+        @Use protected Value rhs;
+        @Use protected OCLAddressCast cast;
+        @Use protected Value left;
+        @Use protected MemoryAccess address;
 
         public StoreAtomicAddFloatStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
             super(TYPE);
@@ -511,14 +489,10 @@ public class OCLLIRStmt {
 
         public static final boolean GENERATE_ATOMIC = true;
 
-        @Use
-        protected Value rhs;
-        @Use
-        protected OCLAddressCast cast;
-        @Use
-        protected Value left;
-        @Use
-        protected MemoryAccess address;
+        @Use protected Value rhs;
+        @Use protected OCLAddressCast cast;
+        @Use protected Value left;
+        @Use protected MemoryAccess address;
 
         public StoreAtomicSubStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
             super(TYPE);
@@ -614,14 +588,10 @@ public class OCLLIRStmt {
 
         public static final boolean GENERATE_ATOMIC = true;
 
-        @Use
-        protected Value rhs;
-        @Use
-        protected OCLAddressCast cast;
-        @Use
-        protected Value left;
-        @Use
-        protected MemoryAccess address;
+        @Use protected Value rhs;
+        @Use protected OCLAddressCast cast;
+        @Use protected Value left;
+        @Use protected MemoryAccess address;
 
         public StoreAtomicMulStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
             super(TYPE);
@@ -638,7 +608,6 @@ public class OCLLIRStmt {
 
         private void emitAtomicMulStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             // asm.indent();
-            // asm.emit("atomic_xchg( &(");
             asm.emit("atomicMul_Tornado_Int( &(");
             asm.emit("*(");
             cast.emit(crb, asm);
@@ -715,14 +684,10 @@ public class OCLLIRStmt {
 
         public static final LIRInstructionClass<VectorStoreStmt> TYPE = LIRInstructionClass.create(VectorStoreStmt.class);
 
-        @Use
-        protected Value rhs;
-        @Use
-        protected OCLAddressCast cast;
-        @Use
-        protected MemoryAccess address;
-        @Use
-        protected Value index;
+        @Use protected Value rhs;
+        @Use protected OCLAddressCast cast;
+        @Use protected MemoryAccess address;
+        @Use protected Value index;
 
         protected OCLTernaryIntrinsic op;
 
@@ -785,8 +750,7 @@ public class OCLLIRStmt {
 
         public static final LIRInstructionClass<ExprStmt> TYPE = LIRInstructionClass.create(ExprStmt.class);
 
-        @Use
-        protected Value expr;
+        @Use protected Value expr;
 
         public ExprStmt(OCLLIROp expr) {
             super(TYPE);
