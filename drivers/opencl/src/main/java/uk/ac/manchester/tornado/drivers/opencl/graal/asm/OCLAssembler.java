@@ -744,7 +744,45 @@ public final class OCLAssembler extends Assembler {
 
         if (((OCLTargetDescription) target).supportsFP64()) {
             emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable");
+            // emitLine("#pragma OPENCL EXTENSION cl_intel_printf :enable");
+            // emitLine("#pragma OPENCL EXTENSION cl_amd_printf :enable");
         }
+
+        //@formatter:off
+        emitLine("inline void atomicAdd_Tornado_Floats(volatile __global float *source, const float operand) {\n" + 
+                "   union {\n" + 
+                "       unsigned int intVal;\n" + 
+                "       float floatVal;\n" + 
+                "   } newVal;\n" + 
+                "   union {\n" + 
+                "       unsigned int intVal;\n" + 
+                "       float floatVal;\n" + 
+                "   } prevVal;\n" +
+                "   barrier(CLK_GLOBAL_MEM_FENCE);\n" +
+                "   do {\n" + 
+                "       prevVal.floatVal = *source;\n" + 
+                "       newVal.floatVal = prevVal.floatVal + operand;\n" + 
+                "   } while (atomic_cmpxchg((volatile __global unsigned int *)source, prevVal.intVal,\n" + 
+                "   newVal.intVal) != prevVal.intVal);" +
+                "}");
+        
+        
+        emitLine("inline void atomicAdd_Tornado_Floats2(volatile __global float *addr, float val)\n" + 
+                "{\n" + 
+                "    union {\n" + 
+                "        unsigned int u32;\n" + 
+                "        float f32;\n" + 
+                "    } next, expected, current;\n" + 
+                "    current.f32 = *addr;\n" + 
+                "barrier(CLK_GLOBAL_MEM_FENCE);\n" +
+                "    do {\n" + 
+                "       expected.f32 = current.f32;\n" + 
+                "       next.f32 = expected.f32 + val;\n" + 
+                "       current.u32 = atomic_cmpxchg( (volatile __global unsigned int *)addr,\n" + 
+                "       expected.u32, next.u32);\n" + 
+                "    } while( current.u32 != expected.u32 );\n" + 
+                "}");
+        //@formatter:on
 
         // String extensions = ((OCLTargetDescription) target).getExtensions();
         // emitLine("// " + extensions);

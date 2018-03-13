@@ -50,6 +50,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.LoadStmt;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreAtomicAddFloatStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreAtomicAddStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreAtomicMulStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreAtomicSubStmt;
@@ -322,6 +323,8 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         guarantee(lirKind.getPlatformKind() instanceof OCLKind, "invalid LIRKind: %s", lirKind);
         OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
 
+        System.out.println(" @@@@@@@@@@@@@@@@@@@@@@@@@@' EMIT STORE");
+
         MemoryAccess memAccess = null;
         Value accumulator = null;
         if (address instanceof MemoryAccess) {
@@ -337,7 +340,6 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         } else {
 
             if (oclKind == OCLKind.ATOMIC_ADD_INT || oclKind == OCLKind.ATOMIC_ADD_LONG) {
-
                 if (memAccess != null) {
                     OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
                     getGen().append(new StoreAtomicAddStmt(cast, memAccess, input));
@@ -357,6 +359,14 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
                     getGen().append(new StoreAtomicMulStmt(cast, memAccess, input));
                 } else {
                     getGen().append(new StoreAtomicMulStmt(accumulator, input));
+                }
+            } else if (oclKind == OCLKind.ATOMIC_ADD_FLOAT) {
+                if (memAccess != null) {
+                    OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
+                    System.out.println("ATMOMIC ADD FLOAT !!!!!!!!!!!!");
+                    getGen().append(new StoreAtomicAddFloatStmt(cast, memAccess, input));
+                } else {
+                    getGen().append(new StoreAtomicAddFloatStmt(accumulator, input));
                 }
             } else {
                 // XXX: I think I dont need this part any more: Check with the

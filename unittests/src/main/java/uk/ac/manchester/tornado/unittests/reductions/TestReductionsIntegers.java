@@ -449,9 +449,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
         }
     }
 
-    public static void reductionMultiplication(int[] input, @Reduce int[] result, int neutral) {
+    public static void reductionMultiplication(int[] input, @Reduce int[] result, int[] neutral) {
         // neutral
-        result[0] = neutral;
+        result[0] = neutral[0];
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] = result[0] * input[i];
         }
@@ -471,13 +471,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsIntegers::reductionMultiplication, input, result, 1)
+            .task("t0", TestReductionsIntegers::reductionMultiplication, input, result, new int[] {1})
             .streamOut(result)
             .execute();
         //@formatter:on
 
         int[] sequential = new int[1];
-        reductionMultiplication(input, sequential, 1);
+        reductionMultiplication(input, sequential, new int[] { 1 });
         System.out.println("[I] " + sequential[0]);
 
         // Check result

@@ -71,6 +71,19 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
         return oclStamp;
     }
 
+    public OCLStamp getStampFloat() {
+        OCLStamp oclStamp = null;
+        switch (operation) {
+            case ADD:
+                System.out.println("ADD OPERATION");
+                oclStamp = new OCLStamp(OCLKind.ATOMIC_ADD_FLOAT);
+                break;
+            default:
+                throw new RuntimeException("Operation for reduction not supported yet: " + operation);
+        }
+        return oclStamp;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool gen) {
 
@@ -84,18 +97,24 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
                 // DUE TO UNSUPPORTED FEATURE IN INTEL OpenCL PLATFORM
                 oclStamp = new OCLStamp(OCLKind.ATOMIC_ADD_INT);
                 break;
+            case Float:
+                System.out.print("FLOAT VERSION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                oclStamp = getStampFloat();
+                break;
             default:
                 throw new RuntimeException("Data type for reduction not supported yet: " + elementKind);
         }
 
+        System.out.println("Generating");
+
         LIRKind writeKind = gen.getLIRGeneratorTool().getLIRKind(oclStamp);
         LIRKind accKind = gen.getLIRGeneratorTool().getLIRKind(accStamp);
 
-        // Update the accumulator
-        gen.getLIRGeneratorTool().getArithmetic().emitStore(accKind, gen.operand(accumulator), gen.operand(value()), gen.state(this));
-
         // Atomic Store
         gen.getLIRGeneratorTool().getArithmetic().emitStore(writeKind, gen.operand(address), gen.operand(value()), gen.state(this));
+
+        // Update the accumulator
+        gen.getLIRGeneratorTool().getArithmetic().emitStore(accKind, gen.operand(accumulator), gen.operand(value()), gen.state(this));
     }
 
     @Override

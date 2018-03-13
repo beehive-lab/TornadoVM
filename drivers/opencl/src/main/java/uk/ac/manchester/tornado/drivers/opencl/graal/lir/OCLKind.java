@@ -37,6 +37,7 @@ public enum OCLKind implements PlatformKind {
 
     // @formatter:off
     ATOMIC_ADD_INT(4, java.lang.Integer.TYPE),
+    ATOMIC_ADD_FLOAT(4, java.lang.Float.TYPE),
     ATOMIC_SUB_INT(4, java.lang.Integer.TYPE),
     ATOMIC_MUL_INT(4, java.lang.Integer.TYPE),
 	ATOMIC_ADD_LONG(8, java.lang.Long.TYPE),
@@ -201,6 +202,7 @@ public enum OCLKind implements PlatformKind {
             case HALF:
                 return 'h';
             case FLOAT:
+            case ATOMIC_ADD_FLOAT:
                 return 'f';
             case DOUBLE:
                 return 'd';
@@ -270,6 +272,8 @@ public enum OCLKind implements PlatformKind {
             return "int";
         } else if (this == OCLKind.ATOMIC_ADD_LONG) {
             return "long";
+        } else if (this == OCLKind.ATOMIC_ADD_FLOAT) {
+            return "float";
         } else {
             return name().toLowerCase();
         }
