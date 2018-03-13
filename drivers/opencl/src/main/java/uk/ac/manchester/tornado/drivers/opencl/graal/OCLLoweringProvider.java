@@ -191,51 +191,27 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     protected void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
 
-        System.out.println("PROCESSING: " + storeIndexed);
-
         StructuredGraph graph = storeIndexed.graph();
-
         JavaKind elementKind = storeIndexed.elementKind();
 
         ValueNode value = storeIndexed.value();
         ValueNode array = storeIndexed.array();
         ValueNode accumulator = storeIndexed.getAccumulator();
 
+        ATOMIC_OPERATION operation = ATOMIC_OPERATION.CUSTOM;
         if (value instanceof OCLReduceAddNode) {
-            AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-
-            // this should be Atomic Add write node
-            OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()),
-                    accumulator, accumulator.stamp(), storeIndexed.elementKind(), ATOMIC_OPERATION.ADD));
-
-            memoryWrite.setStateAfter(storeIndexed.stateAfter());
-            graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
+            operation = ATOMIC_OPERATION.ADD;
         } else if (value instanceof OCLReduceSubNode) {
-            System.out.println("ATOMIC SUB NODE");
-            AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-            // this should be Atomic Add write node
-            OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()),
-                    accumulator, accumulator.stamp(), storeIndexed.elementKind(), ATOMIC_OPERATION.SUB));
-
-            memoryWrite.setStateAfter(storeIndexed.stateAfter());
-            graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
+            operation = ATOMIC_OPERATION.SUB;
         } else if (value instanceof OCLReduceMulNode) {
-            System.out.println("REDUCE MUL NODE: " + value);
-            AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-            // this should be Atomic Add write node
-            OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()),
-                    accumulator, accumulator.stamp(), storeIndexed.elementKind(), ATOMIC_OPERATION.MUL));
-            memoryWrite.setStateAfter(storeIndexed.stateAfter());
-            graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
-
-        } else {
-            AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-            OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()),
-                    accumulator, accumulator.stamp(), storeIndexed.elementKind(), ATOMIC_OPERATION.CUSTOM));
-            memoryWrite.setStateAfter(storeIndexed.stateAfter());
-            graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
-
+            operation = ATOMIC_OPERATION.MUL;
         }
+
+        AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
+        OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()),
+                accumulator, accumulator.stamp(), storeIndexed.elementKind(), operation));
+        memoryWrite.setStateAfter(storeIndexed.stateAfter());
+        graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
     }
 
     @Override
