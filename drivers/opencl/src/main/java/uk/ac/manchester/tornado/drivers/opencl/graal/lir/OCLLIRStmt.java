@@ -638,7 +638,8 @@ public class OCLLIRStmt {
 
         private void emitAtomicMulStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             // asm.indent();
-            asm.emit("atomic_xchg( &(");
+            // asm.emit("atomic_xchg( &(");
+            asm.emit("atomicMul_Tornado_Int( &(");
             asm.emit("*(");
             cast.emit(crb, asm);
             asm.space();

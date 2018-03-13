@@ -766,7 +766,6 @@ public final class OCLAssembler extends Assembler {
                 "   newVal.intVal) != prevVal.intVal);" +
                 "}");
         
-        
         emitLine("inline void atomicAdd_Tornado_Floats2(volatile __global float *addr, float val)\n" + 
                 "{\n" + 
                 "    union {\n" + 
@@ -782,6 +781,25 @@ public final class OCLAssembler extends Assembler {
                 "       expected.u32, next.u32);\n" + 
                 "    } while( current.u32 != expected.u32 );\n" + 
                 "}");
+        
+        emitLine("inline void atomicMul_Tornado_Int(volatile __global int *source, const float operand) {\n" + 
+                "   union {\n" + 
+                "       unsigned int intVal;\n" + 
+                "       int value;\n" + 
+                "   } newVal;\n" + 
+                "   union {\n" + 
+                "       unsigned int intVal;\n" + 
+                "       int value;\n" + 
+                "   } prevVal;\n" +
+                "   barrier(CLK_GLOBAL_MEM_FENCE);\n" +
+                "   do {\n" + 
+                "       prevVal.value = *source;\n" + 
+                "       newVal.value = prevVal.value * operand;\n" + 
+                "   } while (atomic_cmpxchg((volatile __global unsigned int *)source, prevVal.intVal,\n" + 
+                "   newVal.intVal) != prevVal.intVal);" +
+                "}");
+        
+        
         //@formatter:on
 
         // String extensions = ((OCLTargetDescription) target).getExtensions();
