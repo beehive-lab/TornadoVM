@@ -428,7 +428,7 @@ public class OCLLIRStmt {
 
         private void emitAtomicSubStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             // asm.indent();
-            asm.emit("atomic_sub( & (");
+            asm.emit("atomic_add( & (");
             // asm.emit("atomic_xchg( &(");
             asm.emit("*(");
             cast.emit(crb, asm);

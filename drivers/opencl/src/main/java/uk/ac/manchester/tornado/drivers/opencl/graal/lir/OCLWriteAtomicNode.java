@@ -88,24 +88,14 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
                 throw new RuntimeException("Data type for reduction not supported yet: " + elementKind);
         }
 
-        // System.out.println("OCL STAMP? " + value().stamp());
-
         LIRKind writeKind = gen.getLIRGeneratorTool().getLIRKind(oclStamp);
         LIRKind accKind = gen.getLIRGeneratorTool().getLIRKind(accStamp);
-
-        // System.out.println("EMIT: OCLWRITEATOMIC: " + writeKind);
-        // System.out.println("EMIT: OCLWRITEATOMIC: " + gen.operand(address));
-        // System.out.println("EMIT: OCLWRITEATOMIC: " + gen.operand(value()));
-        // System.out.println("EMIT: OCLWRITEATOMIC: " +
-        // gen.operand(accumulator));
 
         // Update the accumulator
         gen.getLIRGeneratorTool().getArithmetic().emitStore(accKind, gen.operand(accumulator), gen.operand(value()), gen.state(this));
 
         // Atomic Store
         gen.getLIRGeneratorTool().getArithmetic().emitStore(writeKind, gen.operand(address), gen.operand(value()), gen.state(this));
-
-        // ==========
     }
 
     @Override

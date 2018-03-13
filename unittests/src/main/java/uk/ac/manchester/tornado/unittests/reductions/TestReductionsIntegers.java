@@ -515,4 +515,39 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
+    public static void reductionSubRandom(int[] input, @Reduce int[] result, int[] neutral) {
+        result[0] = neutral[0];
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] -= input[i];
+        }
+    }
+
+    @Test
+    public void testReductionSubRandom() {
+        int[] input = new int[BIG_SIZE];
+        int[] result = new int[1];
+
+        Random r = new Random();
+
+        IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
+            input[i] = r.nextInt(100);
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t0", TestReductionsIntegers::reductionSubRandom, input, result, new int[] {0})
+            .streamOut(result)
+            .execute();
+        //@formatter:on
+
+        int[] sequential = new int[1];
+        reductionSubRandom(input, sequential, new int[] { 0 });
+
+        System.out.println("VALUE: " + sequential[0]);
+
+        // Check result
+        assertEquals(sequential[0], result[0]);
+    }
+
 }
