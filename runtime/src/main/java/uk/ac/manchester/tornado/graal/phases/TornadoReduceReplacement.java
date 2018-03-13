@@ -5,7 +5,6 @@ import java.util.Iterator;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -60,6 +59,53 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         return recursiveCheck(arrayToStore, indexToStore, valueToStore);
     }
 
+    private static class ReductionNodes {
+        private ValueNode value;
+        private ValueNode accumulator;
+
+        public ReductionNodes(ValueNode value, ValueNode accumulator) {
+            super();
+            this.value = value;
+            this.accumulator = accumulator;
+        }
+
+    }
+
+    private ReductionNodes createReductionNode(StructuredGraph graph, StoreIndexedNode store) {
+        ValueNode value = null;
+        ValueNode accumulator = null;
+        if (store.value() instanceof AddNode) {
+            AddNode addNode = (AddNode) store.value();
+            final OCLReduceAddNode atomicAdd = graph.addOrUnique(new OCLReduceAddNode(addNode.getX(), addNode.getY()));
+            accumulator = addNode.getX();
+            value = atomicAdd;
+            addNode.safeDelete();
+        } else if (store.value() instanceof MulNode) {
+            MulNode mulNode = (MulNode) store.value();
+            final OCLReduceMulNode atomicMultiplication = graph.addOrUnique(new OCLReduceMulNode(mulNode.getX(), mulNode.getY()));
+            accumulator = mulNode.getX();
+            value = atomicMultiplication;
+            mulNode.safeDelete();
+        } else if (store.value() instanceof SubNode) {
+            SubNode subNode = (SubNode) store.value();
+            final OCLReduceSubNode atomicSub = graph.addOrUnique(new OCLReduceSubNode(subNode.getX(), subNode.getY()));
+            accumulator = subNode.getX();
+            value = atomicSub;
+            subNode.safeDelete();
+        } else {
+            throw new RuntimeException("\n\n[NOT SUPPORTED] Node : " + store.value() + " not suported yet.");
+        }
+        return new ReductionNodes(value, accumulator);
+    }
+
+    private void performNodeReplacement(StructuredGraph graph, StoreIndexedNode store, Node pred, ValueNode value, ValueNode accumulator) {
+        // Final Replacement
+        final StoreAtomicIndexedNode atomicStore = graph.addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), value, accumulator));
+        atomicStore.setNext(store.next());
+        pred.replaceFirstSuccessor(store, atomicStore);
+        store.replaceAndDelete(atomicStore);
+    }
+
     private void findParametersWithReduceAnnotations(StructuredGraph graph, TornadoSketchTierContext context) {
         final Annotation[][] parameterAnnotations = graph.method().getParameterAnnotations();
         for (int i = 0; i < parameterAnnotations.length; i++) {
@@ -79,56 +125,16 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                             StoreIndexedNode store = (StoreIndexedNode) node;
                             Node pred = node.predecessor();
 
-                            ValueNode value = null;
-                            ValueNode accumulator = null;
-
-                            // if (!reduction) { continue }
-
                             boolean isReductionValue = checkIfReduction(store);
                             if (!isReductionValue) {
                                 continue;
                             }
 
-                            // // Check if this store is candidate for reduction
-                            // if (store.value() instanceof ConstantNode ||
-                            // store.value() instanceof ParameterNode) {
-                            // continue;
-                            // }
-                            //
-                            // if (!(store.index() instanceof ConstantNode)) {
-                            // // XXX: get induction variables -
-                            // continue;
-                            // }
+                            ReductionNodes reductionNode = createReductionNode(graph, store);
+                            ValueNode value = reductionNode.value;
+                            ValueNode accumulator = reductionNode.accumulator;
 
-                            if (store.value() instanceof AddNode) {
-                                System.out.println("ADDITION REDUCTION!!!!!!");
-                                AddNode addNode = (AddNode) store.value();
-                                final OCLReduceAddNode atomicAdd = graph.addOrUnique(new OCLReduceAddNode(addNode.getX(), addNode.getY()));
-                                accumulator = addNode.getX();
-                                value = atomicAdd;
-                                addNode.safeDelete();
-                            } else if (store.value() instanceof MulNode) {
-                                System.out.println("MULTIPLICATION REDUCTION!!!!!!");
-                                MulNode mulNode = (MulNode) store.value();
-                                final OCLReduceMulNode atomicMultiplication = graph.addOrUnique(new OCLReduceMulNode(mulNode.getX(), mulNode.getY()));
-                                accumulator = mulNode.getX();
-                                value = atomicMultiplication;
-                                mulNode.safeDelete();
-                            } else if (store.value() instanceof SubNode) {
-                                SubNode subNode = (SubNode) store.value();
-                                final OCLReduceSubNode atomicSub = graph.addOrUnique(new OCLReduceSubNode(subNode.getX(), subNode.getY()));
-                                accumulator = subNode.getX();
-                                value = atomicSub;
-                                subNode.safeDelete();
-                            } else {
-                                throw new RuntimeException("\n\n[NOT SUPPORTED] Node : " + store.value() + " not suported yet.");
-                            }
-
-                            // Final Replacement
-                            final StoreAtomicIndexedNode atomicStore = graph.addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), value, accumulator));
-                            atomicStore.setNext(store.next());
-                            pred.replaceFirstSuccessor(store, atomicStore);
-                            store.replaceAndDelete(atomicStore);
+                            performNodeReplacement(graph, store, pred, value, accumulator);
 
                         } else if (node instanceof StoreFieldNode) {
                             throw new RuntimeException("\n\n[NOT SUPPORTED] Node StoreFieldNode: not suported yet.");
