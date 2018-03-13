@@ -10,8 +10,10 @@ import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
+import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.calc.SubNode;
+import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.phases.BasePhase;
@@ -29,6 +31,33 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         // System.out.println(">> Reduction Phase Detection");
         findParametersWithReduceAnnotations(graph, context);
         // TODO: Pending, if it is local variable
+    }
+
+    // XXX: Cover all the cases here
+    private boolean recursiveCheck(ValueNode arrayToStore, ValueNode indexToStore, ValueNode currentNode) {
+        boolean isReduction = false;
+        if (currentNode instanceof BinaryArithmeticNode) {
+            @SuppressWarnings("rawtypes") BinaryArithmeticNode value = (BinaryArithmeticNode) currentNode;
+            ValueNode x = value.getX();
+            isReduction = recursiveCheck(arrayToStore, indexToStore, x);
+            if (isReduction == false) {
+                ValueNode y = value.getY();
+                return recursiveCheck(arrayToStore, indexToStore, y);
+            }
+        } else if (currentNode instanceof LoadIndexedNode) {
+            LoadIndexedNode loadNode = (LoadIndexedNode) currentNode;
+            if (loadNode.array() == arrayToStore && loadNode.index() == indexToStore) {
+                isReduction = true;
+            }
+        }
+        return isReduction;
+    }
+
+    private boolean checkIfReduction(StoreIndexedNode store) {
+        ValueNode arrayToStore = store.array();
+        ValueNode indexToStore = store.index();
+        ValueNode valueToStore = store.value();
+        return recursiveCheck(arrayToStore, indexToStore, valueToStore);
     }
 
     private void findParametersWithReduceAnnotations(StructuredGraph graph, TornadoSketchTierContext context) {
@@ -53,17 +82,26 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                             ValueNode value = null;
                             ValueNode accumulator = null;
 
-                            // Check if this store is candidate for reduction
-                            if (store.value() instanceof ConstantNode || store.value() instanceof ParameterNode) {
+                            // if (!reduction) { continue }
+
+                            boolean isReductionValue = checkIfReduction(store);
+                            if (!isReductionValue) {
                                 continue;
                             }
 
-                            if (!(store.index() instanceof ConstantNode)) {
-                                // XXX: get induction variables -
-                                continue;
-                            }
+                            // // Check if this store is candidate for reduction
+                            // if (store.value() instanceof ConstantNode ||
+                            // store.value() instanceof ParameterNode) {
+                            // continue;
+                            // }
+                            //
+                            // if (!(store.index() instanceof ConstantNode)) {
+                            // // XXX: get induction variables -
+                            // continue;
+                            // }
 
                             if (store.value() instanceof AddNode) {
+                                System.out.println("ADDITION REDUCTION!!!!!!");
                                 AddNode addNode = (AddNode) store.value();
                                 final OCLReduceAddNode atomicAdd = graph.addOrUnique(new OCLReduceAddNode(addNode.getX(), addNode.getY()));
                                 accumulator = addNode.getX();

@@ -497,7 +497,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] result = new int[1];
 
         IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
-            input[i] = 1;
+            input[i] = 2;
         });
 
         //@formatter:off
