@@ -58,6 +58,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
+import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.code.CallingConvention;
@@ -110,13 +111,8 @@ import uk.ac.manchester.tornado.lang.CompilerInternals;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
-    public final static boolean SHOW_OPENCL = Boolean.parseBoolean(System
-            .getProperty(
-                    "tornado.opencl.print",
-                    "False"));
-    public final static String OPENCL_PATH = System.getProperty(
-            "tornado.opencl.path",
-            "./opencl");
+    public final static boolean SHOW_OPENCL = Boolean.parseBoolean(System.getProperty("tornado.opencl.print", "False"));
+    public final static String OPENCL_PATH = System.getProperty("tornado.opencl.path", "./opencl");
 
     @Override
     public OCLTargetDescription getTarget() {
@@ -135,13 +131,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     final ScheduleMetaData scheduleMeta;
 
-    public OCLBackend(
-            OptionValues options,
-            OCLProviders providers,
-            OCLTargetDescription target,
-            OCLCodeProvider codeCache,
-            OCLContext openclContext,
-            OCLDeviceContext deviceContext) {
+    public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLContext openclContext, OCLDeviceContext deviceContext) {
         super(providers);
         this.options = options;
         this.target = target;
@@ -207,7 +197,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         lookupCode.execute(bb, meta);
 
-//        bb.dump();
+        // bb.dump();
         final long address = bb.getLong(0);
         Tornado.info("Heap address @ 0x%x on %s", address, deviceContext.getDevice().getName());
         return address;
@@ -219,16 +209,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
          * Allocate the smallest of the requested heap size or the max global
          * memory size.
          */
-        final long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice()
-                .getMaxAllocationSize());
+        final long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getMaxAllocationSize());
         if (memorySize < DEFAULT_HEAP_ALLOCATION) {
-            Tornado.info(
-                    "Unable to allocate %s of heap space - resized to %s",
-                    humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false),
-                    humanReadableByteCount(memorySize, false));
+            Tornado.info("Unable to allocate %s of heap space - resized to %s", humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false), humanReadableByteCount(memorySize, false));
         }
-        Tornado.info("%s: allocating %s of heap space", deviceContext.getDevice().getName(),
-                humanReadableByteCount(memorySize, false));
+        Tornado.info("%s: allocating %s of heap space", deviceContext.getDevice().getName(), humanReadableByteCount(memorySize, false));
         deviceContext.getMemoryManager().allocateRegion(memorySize);
 
         /*
@@ -239,8 +224,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             lookupCode = deviceContext.getCode("internal", "lookupBufferAddress");
         } else {
 
-            OCLCompilationResult result = OCLCompiler.compileCodeForDevice(
-                    getTornadoRuntime().resolveMethod(getLookupMethod()), null, meta, (OCLProviders) getProviders(), this);
+            OCLCompilationResult result = OCLCompiler.compileCodeForDevice(getTornadoRuntime().resolveMethod(getLookupMethod()), null, meta, (OCLProviders) getProviders(), this);
             lookupCode = deviceContext.installCode(result);
         }
 
@@ -286,10 +270,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             OCLKind oclKind = (OCLKind) var.getPlatformKind();
             if (oclKind == OCLKind.ILLEGAL) {
                 shouldNotReachHere();
-//                return;
+                // return;
             }
-//            guarantee(oclKind != OCLKind.ILLEGAL,"invalid type for %s",var.getKind().name());
-//            final String type = oclKind.toString(); //toOpenCLType(var.getKind(), var.getPlatformKind());
+            // guarantee(oclKind != OCLKind.ILLEGAL,"invalid type for
+            // %s",var.getKind().name());
+            // final String type = oclKind.toString();
+            // //toOpenCLType(var.getKind(), var.getPlatformKind());
 
             if (!kindToVariable.containsKey(oclKind)) {
                 kindToVariable.put(oclKind, new HashSet<>());
@@ -337,8 +323,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     }
 
-    private void emitPrologue(OCLCompilationResultBuilder crb, OCLAssembler asm,
-            ResolvedJavaMethod method, LIR lir) {
+    private void emitPrologue(OCLCompilationResultBuilder crb, OCLAssembler asm, ResolvedJavaMethod method, LIR lir) {
 
         String methodName = crb.compilationResult.getName();
 
@@ -353,17 +338,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
              */
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
 
-            asm.emitLine("%s void %s(%s%s)",
-                    OCLAssemblerConstants.KERNEL_MODIFIER, methodName,
-                    bumpBuffer,
-                    architecture.getABI());
+            asm.emitLine("%s void %s(%s%s)", OCLAssemblerConstants.KERNEL_MODIFIER, methodName, bumpBuffer, architecture.getABI());
             asm.beginScope();
             emitVariableDefs(crb, asm, lir);
             asm.eol();
-            asm.emitStmt("%s ulong *%s = (%s ulong *) &%s[%s]",
-                    OCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
-                    OCLAssemblerConstants.FRAME_REF_NAME,
-                    OCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
+            asm.emitStmt("%s ulong *%s = (%s ulong *) &%s[%s]", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER, OCLAssemblerConstants.FRAME_REF_NAME, OCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
                     OCLAssemblerConstants.HEAP_REF_NAME, OCLAssemblerConstants.FRAME_BASE_NAME);
             asm.eol();
             if (DEBUG_KERNEL_ARGS && (method != null && !method.getDeclaringClass().getUnqualifiedName().equalsIgnoreCase(this.getClass().getSimpleName()))) {
@@ -386,8 +365,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             asm.eol();
         } else {
 
-            final CallingConvention incomingArguments = OCLCodeUtil.getCallingConvention(
-                    codeCache, HotSpotCallingConventionType.JavaCallee, method, false);
+            final CallingConvention incomingArguments = OCLCodeUtil.getCallingConvention(codeCache, HotSpotCallingConventionType.JavaCallee, method, false);
             methodName = OCLUtils.makeMethodName(method);
 
             final JavaKind returnKind = method.getSignature().getReturnKind();
@@ -395,24 +373,21 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             if (returnKind == JavaKind.Void) {
                 returnStr = "void";
             } else {
-                final ResolvedJavaType returnType = method.getSignature().getReturnType(null)
-                        .resolve(method.getDeclaringClass());
-                OCLKind returnOclKind = (returnType.getAnnotation(Vector.class) == null)
-                        ? getTarget().getOCLKind(returnKind)
-                        : OCLKind.fromResolvedJavaType(returnType);
+                final ResolvedJavaType returnType = method.getSignature().getReturnType(null).resolve(method.getDeclaringClass());
+                OCLKind returnOclKind = (returnType.getAnnotation(Vector.class) == null) ? getTarget().getOCLKind(returnKind) : OCLKind.fromResolvedJavaType(returnType);
                 returnStr = returnOclKind.toString();
             }
-            //getTarget().getLIRKind(returnKind);
-            asm.emit("%s %s(%s", returnStr,
-                    methodName, architecture.getABI());
+            // getTarget().getLIRKind(returnKind);
+            asm.emit("%s %s(%s", returnStr, methodName, architecture.getABI());
 
             final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
             final Value[] params = new Value[incomingArguments.getArgumentCount()];
 
-//            for (int i = 0; i < locals.length; i++) {
-//                Local local = locals[i];
-//		System.out.printf("local: slot=%d, name=%s, type=%s\n",local.getSlot(),local.getName(),local.getType().resolve(method.getDeclaringClass()));
-//            }
+            // for (int i = 0; i < locals.length; i++) {
+            // Local local = locals[i];
+            // System.out.printf("local: slot=%d, name=%s,
+            // type=%s\n",local.getSlot(),local.getName(),local.getType().resolve(method.getDeclaringClass()));
+            // }
             if (params.length > 0) {
                 asm.emit(", ");
             }
@@ -420,20 +395,21 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             for (int i = 0; i < params.length; i++) {
                 final AllocatableValue param = incomingArguments.getArgument(i);
 
-//                OCLKind oclKind = OCLKind.ILLEGAL;
-//                if (param.getPlatformKind().isObject()) {
-//
-//                    oclKind = OCLKind.resolveToVectorKind(locals[i].getType().resolve(method.getDeclaringClass()));
-//                    if (oclKind == OCLKind.ILLEGAL) {
-//                        oclKind = target.getOCLKind(param.getKind());
-//                    }
-//
-//                    asm.emit("%s %s", oclKind.toString(),
-//                            locals[i].getName());
-//                } else {
-//                    oclKind = target.getOCLKind(param.getKind());
-//
-//                }
+                // OCLKind oclKind = OCLKind.ILLEGAL;
+                // if (param.getPlatformKind().isObject()) {
+                //
+                // oclKind =
+                // OCLKind.resolveToVectorKind(locals[i].getType().resolve(method.getDeclaringClass()));
+                // if (oclKind == OCLKind.ILLEGAL) {
+                // oclKind = target.getOCLKind(param.getKind());
+                // }
+                //
+                // asm.emit("%s %s", oclKind.toString(),
+                // locals[i].getName());
+                // } else {
+                // oclKind = target.getOCLKind(param.getKind());
+                //
+                // }
                 OCLKind oclKind = (OCLKind) param.getPlatformKind();
                 if (locals[i].getType().getJavaKind().isObject()) {
                     OCLKind tmpKind = OCLKind.resolveToVectorKind(locals[i].getType().resolve(method.getDeclaringClass()));
@@ -442,8 +418,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
                     }
                 }
                 guarantee(oclKind != OCLKind.ILLEGAL, "illegal type for %s", param.getPlatformKind());
-                asm.emit("%s %s", oclKind.toString(),
-                        locals[i].getName());
+                asm.emit("%s %s", oclKind.toString(), locals[i].getName());
                 if (i < params.length - 1) {
                     asm.emit(", ");
                 }
@@ -461,17 +436,14 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     @Override
-    public CompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes,
-            FrameMap frameMap, CompilationResult compilationResult,
-            CompilationResultBuilderFactory factory) {
-        return newCompilationResultBuilder(lirGenRes, frameMap,
-                (OCLCompilationResult) compilationResult, factory, false);
+    public CompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, CompilationResult compilationResult, CompilationResultBuilderFactory factory) {
+        return newCompilationResultBuilder(lirGenRes, frameMap, (OCLCompilationResult) compilationResult, factory, false);
     }
 
-    public OCLCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes,
-            FrameMap frameMap, OCLCompilationResult compilationResult,
-            CompilationResultBuilderFactory factory, boolean isKernel) {
-        // final OCLLIRGenerationResult gen = (OCLLIRGenerationResult) lirGenRes;
+    public OCLCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, OCLCompilationResult compilationResult, CompilationResultBuilderFactory factory,
+            boolean isKernel) {
+        // final OCLLIRGenerationResult gen = (OCLLIRGenerationResult)
+        // lirGenRes;
         // LIR lir = gen.getLIR();
 
         OCLAssembler asm = createAssembler(frameMap);
@@ -490,15 +462,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     @Override
     public FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig) {
-        RegisterConfig registerConfigNonNull = registerConfig == null ? getCodeCache()
-                .getRegisterConfig() : registerConfig;
-        return new OCLFrameMapBuilder(newFrameMap(registerConfigNonNull), getCodeCache(),
-                registerConfig);
+        RegisterConfig registerConfigNonNull = registerConfig == null ? getCodeCache().getRegisterConfig() : registerConfig;
+        return new OCLFrameMapBuilder(newFrameMap(registerConfigNonNull), getCodeCache(), registerConfig);
     }
 
     @Override
-    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir,
-            FrameMapBuilder frameMapBuilder, StructuredGraph graph, Object stub) {
+    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, StructuredGraph graph, Object stub) {
         return new OCLLIRGenerationResult(identifier, lir, frameMapBuilder, new CallingConvention(0, null, (AllocatableValue[]) null));
     }
 
@@ -512,44 +481,45 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new OCLNodeLIRBuilder(graph, lirGen, new OCLNodeMatchRules(lirGen));
     }
 
-//    public OCLInstalledCode compile(final Method method, final Object[] parameters,
-//            final Access[] access, final Meta meta) {
-//        info("invoke: %s", method.getName());
-//        info("args: %s", RuntimeUtilities.formatArray(parameters));
-//        info("access: %s", RuntimeUtilities.formatArray(access));
-//        info("meta: ");
-//        for (Object provider : meta.providers()) {
-//            Tornado.info("\t%s", provider.toString().trim());
-//        }
-//
-//        final ResolvedJavaMethod resolvedMethod = getProviders().getMetaAccess().lookupJavaMethod(
-//                method);
-//        final OCLInstalledCode methodCode = compileCodeForDevice(resolvedMethod,
-//                parameters, meta, (OCLProviders) getProviders(), this);
-//
-//        if (SHOW_OPENCL) {
-//            String filename = getFile(method.getName() + "-" + meta.hashCode());
-//            Tornado.info("Generated code for device %s - %s\n",
-//                    deviceContext.getDevice().getName(), filename);
-//
-//            try (PrintWriter fileOut = new PrintWriter(filename)) {
-//                String source = new String(methodCode.getCode(), "ASCII");
-//                fileOut.println(source.trim());
-//            } catch (UnsupportedEncodingException | FileNotFoundException e) {
-//                Tornado.warn("Unable to write source to file: %s", e.getMessage());
-//            }
-//        }
-//
-//        return methodCode;
-//    }
+    // public OCLInstalledCode compile(final Method method, final Object[]
+    // parameters,
+    // final Access[] access, final Meta meta) {
+    // info("invoke: %s", method.getName());
+    // info("args: %s", RuntimeUtilities.formatArray(parameters));
+    // info("access: %s", RuntimeUtilities.formatArray(access));
+    // info("meta: ");
+    // for (Object provider : meta.providers()) {
+    // Tornado.info("\t%s", provider.toString().trim());
+    // }
+    //
+    // final ResolvedJavaMethod resolvedMethod =
+    // getProviders().getMetaAccess().lookupJavaMethod(
+    // method);
+    // final OCLInstalledCode methodCode = compileCodeForDevice(resolvedMethod,
+    // parameters, meta, (OCLProviders) getProviders(), this);
+    //
+    // if (SHOW_OPENCL) {
+    // String filename = getFile(method.getName() + "-" + meta.hashCode());
+    // Tornado.info("Generated code for device %s - %s\n",
+    // deviceContext.getDevice().getName(), filename);
+    //
+    // try (PrintWriter fileOut = new PrintWriter(filename)) {
+    // String source = new String(methodCode.getCode(), "ASCII");
+    // fileOut.println(source.trim());
+    // } catch (UnsupportedEncodingException | FileNotFoundException e) {
+    // Tornado.warn("Unable to write source to file: %s", e.getMessage());
+    // }
+    // }
+    //
+    // return methodCode;
+    // }
     private static String getFile(String name) {
         return String.format("%s/%s.cl", OPENCL_PATH.trim(), name.trim());
     }
 
     @Override
     public String toString() {
-        return String.format("Backend: arch=%s, device=%s", architecture.getName(), deviceContext
-                .getDevice().getName());
+        return String.format("Backend: arch=%s, device=%s", architecture.getName(), deviceContext.getDevice().getName());
     }
 
     @Override
