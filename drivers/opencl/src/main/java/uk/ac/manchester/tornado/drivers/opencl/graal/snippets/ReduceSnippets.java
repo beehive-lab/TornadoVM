@@ -1,8 +1,5 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.snippets;
 
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayBaseOffset;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayIndexScale;
-
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.core.common.LocationIdentity;
@@ -24,10 +21,10 @@ public class ReduceSnippets implements Snippets {
      * 
      */
     @Snippet
-    public static void hello(int n, Object data) {
-        JavaKind kind = JavaKind.Int;
-        final int scale = arrayIndexScale(kind);
-        int arrayBaseOffset = arrayBaseOffset(kind);
+    public static void hello(int n, int[] data) {
+        // JavaKind kind = JavaKind.Int;
+        // final int scale = arrayIndexScale(kind);
+        // int arrayBaseOffset = arrayBaseOffset(kind);
         // LocationIdentity arrayLocation = getArrayLocation(kind);
         for (int i = 0; i < n; i++) {
             // data[i] = 10;

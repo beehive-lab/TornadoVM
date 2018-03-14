@@ -123,12 +123,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     public void lower(Node node, LoweringTool tool) {
-        StructuredGraph graph = (StructuredGraph) node.graph();
-
-        // System.out.println("LOWERING: " + node);
 
         if (node instanceof Invoke) {
-            lowerInvoke((Invoke) node, tool, graph);
+            lowerInvoke((Invoke) node, tool, (StructuredGraph) node.graph());
         } else if (node instanceof VectorLoadNode) {
             lowerVectorLoadNode((VectorLoadNode) node, tool);
         } else if (node instanceof VectorStoreNode) {
@@ -150,7 +147,11 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else if (node instanceof StoreAtomicIndexedNode) {
             // SNIPPET LOWERING!!!!!
             System.out.println("SNIPPET LOWERING!!!!!!!!!!!!");
-            reduceSnippets.lower((StoreAtomicIndexedNode) node, tool);
+            try {
+                reduceSnippets.lower((StoreAtomicIndexedNode) node, tool);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
             // lowerAtomicStoreIndexedNode((StoreAtomicIndexedNode) node, tool);
         } else if (node instanceof LoadFieldNode) {

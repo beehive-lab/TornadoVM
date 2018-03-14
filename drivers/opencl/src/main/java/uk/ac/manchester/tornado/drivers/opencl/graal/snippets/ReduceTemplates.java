@@ -45,8 +45,8 @@ public class ReduceTemplates extends AbstractTemplates {
         super(options, providers, snippetReflection, target);
     }
 
-    public void lower(StoreAtomicIndexedNode storeAtomic, LoweringTool tool) {
-        StructuredGraph graph = storeAtomic.graph();
+    public void lower(StoreAtomicIndexedNode storeAtomicIndexed, LoweringTool tool) {
+        StructuredGraph graph = storeAtomicIndexed.graph();
 
         // OptionValues localOptions = graph.getOptions();
         // int rank = writeAtomic.dimensionCount();
@@ -67,7 +67,8 @@ public class ReduceTemplates extends AbstractTemplates {
         args.add("n", 100);
         args.add("data", data);
 
-        template(args).instantiate(providers.getMetaAccess(), storeAtomic, DEFAULT_REPLACER, args);
+        template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, DEFAULT_REPLACER, args);
+
     }
 
 }
