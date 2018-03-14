@@ -36,9 +36,6 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
-import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
-import org.graalvm.compiler.hotspot.meta.HotSpotLoweringProvider;
-import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.replacements.NewObjectSnippets;
 import org.graalvm.compiler.nodes.AbstractDeoptimizeNode;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -98,11 +95,11 @@ import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceSubNode;
 import uk.ac.manchester.tornado.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.graal.nodes.TornadoDirectCallTargetNode;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
+    private static final boolean USE_ATOMICS = false;
     private final ConstantReflectionProvider constantReflection;
     private final TornadoVMConfig vmConfig;
 
@@ -145,15 +142,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else if (node instanceof StoreIndexedNode) {
             lowerStoreIndexedNode((StoreIndexedNode) node, tool);
         } else if (node instanceof StoreAtomicIndexedNode) {
-            // SNIPPET LOWERING!!!!!
-            System.out.println("SNIPPET LOWERING!!!!!!!!!!!!");
-            try {
-                reduceSnippets.lower((StoreAtomicIndexedNode) node, tool);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            // lowerAtomicStoreIndexedNode((StoreAtomicIndexedNode) node, tool);
+            // Reduction
+            lowerStoreAtomicsReduction(node, tool);
         } else if (node instanceof LoadFieldNode) {
             lowerLoadFieldNode((LoadFieldNode) node, tool);
         } else if (node instanceof StoreFieldNode) {
@@ -164,6 +154,18 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerIntegerDivRemNode((IntegerDivRemNode) node, tool);
         } else {
             super.lower(node, tool);
+        }
+    }
+
+    private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
+        if (!USE_ATOMICS) {
+            try {
+                reduceSnippets.lower((StoreAtomicIndexedNode) node, tool);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            lowerAtomicStoreIndexedNode((StoreAtomicIndexedNode) node, tool);
         }
     }
 
