@@ -60,13 +60,13 @@ public class ReduceTemplates extends AbstractTemplates {
         // ConstantNode.forConstant(KlassPointerStamp.klassNonNull(),
         // type.klass(), providers.getMetaAccess(), graph);
 
-        // int[] data = new int[100];
-        // Arrays.fill(data, 2);
+        int[] data = new int[100];
 
         SnippetInfo snippet = helloSnippet;
         Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
         args.add("n", 100);
-        // args.addConst("data", data);
+        args.add("data", data);
+
         template(args).instantiate(providers.getMetaAccess(), storeAtomic, DEFAULT_REPLACER, args);
     }
 
