@@ -50,8 +50,7 @@ public class ReduceSnippets implements Snippets {
         // LocationIdentity arrayLocation = getArrayLocation(kind);
         int val = 0;
         for (int i = 0; i < n; i++) {
-            // val += value;
-            data[i] = value;
+            data[i] += value;
             // OCLWriteAtomicNode.store();
         }
         return val;
