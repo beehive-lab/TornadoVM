@@ -43,22 +43,17 @@ public class ReduceSnippets implements Snippets {
      * 
      */
     @Snippet
-    public static int hello(int n, int[] data, int value) {
-        JavaKind kind = JavaKind.Int;
-        // final int scale = arrayIndexScale(kind);
-        // int arrayBaseOffset = arrayBaseOffset(kind);
-        // LocationIdentity arrayLocation = getArrayLocation(kind);
-        int val = 0;
+    public static void testReduceLoop(int n, int[] data, int value) {
+        int acc = 0;
         for (int i = 0; i < n; i++) {
-            data[i] += value;
-            // OCLWriteAtomicNode.store();
+            acc += value;
         }
-        return val;
+        data[0] = acc;
     }
 
     public static class Templates extends AbstractTemplates {
 
-        private final SnippetInfo helloSnippet = snippet(ReduceSnippets.class, "hello");
+        private final SnippetInfo helloSnippet = snippet(ReduceSnippets.class, "testReduceLoop");
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);
@@ -83,12 +78,9 @@ public class ReduceSnippets implements Snippets {
                 operation = ATOMIC_OPERATION.MUL;
             }
 
-            int[] data = new int[10];
-            Arrays.fill(data, 1);
-
             SnippetInfo snippet = helloSnippet;
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
-            args.add("n", 10);
+            args.add("n", 128);
             args.add("data", storeAtomicIndexed.array());
             args.addConst("index", memoryWrite.value());
 
