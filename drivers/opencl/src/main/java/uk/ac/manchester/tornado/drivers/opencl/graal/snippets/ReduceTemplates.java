@@ -27,6 +27,8 @@ import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
@@ -35,6 +37,12 @@ import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode.ATOMIC_OPERATION;
+import uk.ac.manchester.tornado.graal.nodes.OCLReduceAddNode;
+import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
+import uk.ac.manchester.tornado.graal.nodes.OCLReduceSubNode;
 import uk.ac.manchester.tornado.graal.nodes.StoreAtomicIndexedNode;
 
 public class ReduceTemplates extends AbstractTemplates {
@@ -45,27 +53,31 @@ public class ReduceTemplates extends AbstractTemplates {
         super(options, providers, snippetReflection, target);
     }
 
-    public void lower(StoreAtomicIndexedNode storeAtomicIndexed, LoweringTool tool) {
+    public void lower(StoreAtomicIndexedNode storeAtomicIndexed, AddressNode address, OCLWriteAtomicNode memoryWrite, LoweringTool tool) {
+
         StructuredGraph graph = storeAtomicIndexed.graph();
 
-        // OptionValues localOptions = graph.getOptions();
-        // int rank = writeAtomic.dimensionCount();
-        // ValueNode[] dims = new ValueNode[rank];
-        // for (int i = 0; i < writeAtomic.dimensionCount(); i++) {
-        // dims[i] = writeAtomic.dimension(i);
-        // }
-        // HotSpotResolvedObjectType type = (HotSpotResolvedObjectType)
-        // writeAtomic.type();
-        // ConstantNode hub =
-        // ConstantNode.forConstant(KlassPointerStamp.klassNonNull(),
-        // type.klass(), providers.getMetaAccess(), graph);
+        JavaKind elementKind = storeAtomicIndexed.elementKind();
+
+        ValueNode value = storeAtomicIndexed.value();
+        ValueNode array = storeAtomicIndexed.array();
+        ValueNode accumulator = storeAtomicIndexed.getAccumulator();
+
+        ATOMIC_OPERATION operation = ATOMIC_OPERATION.CUSTOM;
+        if (value instanceof OCLReduceAddNode) {
+            operation = ATOMIC_OPERATION.ADD;
+        } else if (value instanceof OCLReduceSubNode) {
+            operation = ATOMIC_OPERATION.SUB;
+        } else if (value instanceof OCLReduceMulNode) {
+            operation = ATOMIC_OPERATION.MUL;
+        }
 
         int[] data = new int[100];
 
         SnippetInfo snippet = helloSnippet;
         Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
         args.add("n", 100);
-        args.add("data", data);
+        args.add("data", address);
 
         template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, DEFAULT_REPLACER, args);
 

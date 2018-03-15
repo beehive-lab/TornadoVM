@@ -23,10 +23,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
 @NodeInfo(nameTemplate = "OCLAtomicWrite#{p#location/s}")
 public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerableAccess {
 
-    @Input(InputType.Association)
-    private AddressNode address;
-    @Input
-    private ValueNode accumulator;
+    @Input(InputType.Association) private AddressNode address;
+    @Input private ValueNode accumulator;
     private Stamp accStamp;
     private JavaKind elementKind;
     private ATOMIC_OPERATION operation;
@@ -82,6 +80,10 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
                 throw new RuntimeException("Operation for reduction not supported yet: " + operation);
         }
         return oclStamp;
+    }
+
+    public static void store() {
+
     }
 
     @Override

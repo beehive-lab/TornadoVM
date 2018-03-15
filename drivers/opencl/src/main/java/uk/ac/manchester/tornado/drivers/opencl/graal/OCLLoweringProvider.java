@@ -157,13 +157,35 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
     }
 
+    private void lowerReduceSnippet(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
+
+        StructuredGraph graph = storeIndexed.graph();
+        JavaKind elementKind = storeIndexed.elementKind();
+
+        ValueNode value = storeIndexed.value();
+        ValueNode array = storeIndexed.array();
+        ValueNode accumulator = storeIndexed.getAccumulator();
+
+        ATOMIC_OPERATION operation = ATOMIC_OPERATION.CUSTOM;
+        if (value instanceof OCLReduceAddNode) {
+            operation = ATOMIC_OPERATION.ADD;
+        } else if (value instanceof OCLReduceSubNode) {
+            operation = ATOMIC_OPERATION.SUB;
+        } else if (value instanceof OCLReduceMulNode) {
+            operation = ATOMIC_OPERATION.MUL;
+        }
+
+        AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
+        OCLWriteAtomicNode memoryWrite = new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), accumulator,
+                accumulator.stamp(), storeIndexed.elementKind(), operation);
+
+        reduceSnippets.lower(storeIndexed, address, memoryWrite, tool);
+    }
+
     private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
         if (!USE_ATOMICS) {
-            try {
-                reduceSnippets.lower((StoreAtomicIndexedNode) node, tool);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            lowerReduceSnippet((StoreAtomicIndexedNode) node, tool);
+            // reduceSnippets.lower((StoreAtomicIndexedNode) node, tool);
         } else {
             lowerAtomicStoreIndexedNode((StoreAtomicIndexedNode) node, tool);
         }
