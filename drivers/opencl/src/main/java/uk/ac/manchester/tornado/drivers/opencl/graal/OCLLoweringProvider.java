@@ -89,7 +89,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceTemplates;
+import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceSnippets;
+import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceSnippets.Templates;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceAddNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceSubNode;
@@ -104,7 +105,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private final TornadoVMConfig vmConfig;
 
     protected NewObjectSnippets.Templates newObjectSnippets;
-    protected ReduceTemplates reduceSnippets;
+    protected ReduceSnippets.Templates reduceSnippets;
 
     public OCLLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, ConstantReflectionProvider constantReflection, TornadoVMConfig vmConfig, OCLTargetDescription target) {
         super(metaAccess, foreignCalls, target);
@@ -115,7 +116,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     @Override
     public void initialize(OptionValues options, SnippetCounter.Group.Factory factory, Providers providers, SnippetReflectionProvider snippetReflection) {
         super.initialize(options, factory, providers, snippetReflection);
-        this.reduceSnippets = new ReduceTemplates(options, providers, snippetReflection, target);
+        this.reduceSnippets = new Templates(options, providers, snippetReflection, target);
     }
 
     @Override
