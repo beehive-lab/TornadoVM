@@ -25,10 +25,10 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.builtins;
 
-import static uk.ac.manchester.tornado.drivers.opencl.builtins.Intrinsics.getGlobalId;
-import static uk.ac.manchester.tornado.drivers.opencl.builtins.Intrinsics.getGroupId;
-import static uk.ac.manchester.tornado.drivers.opencl.builtins.Intrinsics.getLocalId;
-import static uk.ac.manchester.tornado.drivers.opencl.builtins.Intrinsics.localBarrier;
+import static uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics.getGlobalId;
+import static uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics.getGroupId;
+import static uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics.getLocalId;
+import static uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics.localBarrier;
 
 import uk.ac.manchester.tornado.api.ReductionOp;
 import uk.ac.manchester.tornado.collections.types.Float2;
@@ -70,14 +70,14 @@ public class ReductionIntrinsic {
         for (int i = values.getLength() >> 1; i > 0; i >>= 1) {
             if (index < i) {
                 Float4 b = values.get(index + i);
-                a = Intrinsics.op(op, a, b);
+                a = OpenCLIntrinsics.op(op, a, b);
                 values.set(index, a);
             }
             localBarrier();
         }
 
-        Float2 x = Intrinsics.op(op, a.getHi(), a.getLo());
-        return Intrinsics.op(op, x.getX(), x.getY());
+        Float2 x = OpenCLIntrinsics.op(op, a.getHi(), a.getLo());
+        return OpenCLIntrinsics.op(op, x.getX(), x.getY());
     }
 
 }

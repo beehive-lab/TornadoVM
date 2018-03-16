@@ -27,7 +27,7 @@ package uk.ac.manchester.tornado.drivers.opencl.builtins;
 
 import uk.ac.manchester.tornado.api.ReductionOp;
 
-public class Intrinsics {
+public class OpenCLIntrinsics {
 
     public static int getGlobalId(int value) {
         return 0;
