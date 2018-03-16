@@ -323,8 +323,6 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         guarantee(lirKind.getPlatformKind() instanceof OCLKind, "invalid LIRKind: %s", lirKind);
         OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
 
-        System.out.println(" @@@@@@@@@@@@@@@@@@@@@@@@@@' EMIT STORE");
-
         MemoryAccess memAccess = null;
         Value accumulator = null;
         if (address instanceof MemoryAccess) {

@@ -34,6 +34,7 @@ import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.sh
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getVMConfig;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
 
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.common.ObjectBuffer;
@@ -127,15 +128,13 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         final T array = cast(value);
         final int returnEvent;
         if (isFinal) {
-            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
-                    - arrayHeaderSize, array, (useDeps) ? events : null);
+            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
         } else {
 //            int index = 0;
             internalEvents[1] = -1;
 //            internalEvents[0] = prepareArrayHeader().enqueueRead(null);
-            internalEvents[0] = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
-                    - arrayHeaderSize, array, (useDeps) ? events : null);
-            returnEvent = internalEvents[0];//(index == 0) ? internalEvents[0] : deviceContext.enqueueMarker(internalEvents);
+            internalEvents[0] = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
+            returnEvent = internalEvents[0]; //(index == 0) ? internalEvents[0] : deviceContext.enqueueMarker(internalEvents);
         }
         return useDeps ? returnEvent : -1;
     }
@@ -148,8 +147,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         final T array = cast(value);
         final int returnEvent;
         if (isFinal && onDevice) {
-            returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
-                    - arrayHeaderSize, array, (useDeps) ? events : null);
+            returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
         } else {
             int index = 0;
             internalEvents[0] = -1;
@@ -158,8 +156,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
                         (useDeps) ? events : null);
                 index++;
             }
-            internalEvents[index] = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes
-                    - arrayHeaderSize, array, (useDeps) ? events : null);
+            internalEvents[index] = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
             onDevice = true;
             returnEvent = (index == 0) ? internalEvents[0] : deviceContext.enqueueMarker(internalEvents);
 

@@ -27,12 +27,12 @@ package uk.ac.manchester.tornado.runtime.graph.nodes;
 
 public class ContextNode extends AbstractNode {
 
-    private final int deviceIndex;
+    private int deviceIndex;
 
     public ContextNode(int index) {
         deviceIndex = index;
     }
-
+    
     @Override
     public int compareTo(AbstractNode o) {
         if (!(o instanceof ContextNode)) {
@@ -42,8 +42,12 @@ public class ContextNode extends AbstractNode {
         return Integer.compare(deviceIndex, ((ContextNode) o).deviceIndex);
     }
 
-    public int getIndex() {
+    public int getDeviceIndex() {
         return deviceIndex;
+    }
+    
+    public void setDeviceIndex(int deviceIndex) {
+    	this.deviceIndex = deviceIndex;
     }
 
     @Override
