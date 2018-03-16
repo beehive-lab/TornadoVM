@@ -82,7 +82,7 @@ public class ReduceSnippets implements Snippets {
     public static class Templates extends AbstractTemplates {
 
         private final SnippetInfo helloSnippet = snippet(ReduceSnippets.class, "testReduceLoop");
-        private final SnippetInfo reduceIntSnippet = snippet(ReduceSnippets.class, "reduceInt");
+        private final SnippetInfo reduceIntSnippet = snippet(ReduceSnippets.class, "reduceIntAdd");
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);

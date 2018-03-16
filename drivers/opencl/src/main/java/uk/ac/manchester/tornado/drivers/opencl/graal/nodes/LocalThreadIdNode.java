@@ -42,11 +42,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 @NodeInfo
 public class LocalThreadIdNode extends FloatingNode implements LIRLowerable {
 
-    public static final NodeClass<LocalThreadIdNode> TYPE = NodeClass
-            .create(LocalThreadIdNode.class);
+    public static final NodeClass<LocalThreadIdNode> TYPE = NodeClass.create(LocalThreadIdNode.class);
 
-    @Node.Input
-    protected ConstantNode index;
+    @Node.Input protected ConstantNode index;
 
     public LocalThreadIdNode(ConstantNode value) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));

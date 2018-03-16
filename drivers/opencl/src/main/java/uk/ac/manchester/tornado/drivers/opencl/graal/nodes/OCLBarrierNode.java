@@ -37,32 +37,24 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIn
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 
-public class OCLBarrierNode {
+@NodeInfo
+public class OCLBarrierNode extends FixedWithNextNode implements LIRLowerable, MemoryNode {
+
+    public static final NodeClass<OCLBarrierNode> TYPE = NodeClass.create(OCLBarrierNode.class);
 
     public static enum OCLMemFenceFlags {
         GLOBAL, LOCAL;
     }
 
-    public final static OCLMemFenceNode LOCAL_MEM_FENCE = new OCLMemFenceNode(OCLMemFenceFlags.LOCAL);
-    public final static OCLMemFenceNode GLOBAL_MEM_FENCE = new OCLMemFenceNode(OCLMemFenceFlags.GLOBAL);
+    private final OCLMemFenceFlags flags;
 
-    @NodeInfo
-    public static class OCLMemFenceNode extends FixedWithNextNode implements LIRLowerable,MemoryNode {
-
-        public static final NodeClass<OCLMemFenceNode> TYPE = NodeClass.create(OCLMemFenceNode.class);
-
-        private final OCLMemFenceFlags flags;
-
-        public OCLMemFenceNode(OCLMemFenceFlags flags) {
-            super(TYPE, StampFactory.forVoid());
-            this.flags = flags;
-        }
-
-        @Override
-        public void generate(NodeLIRBuilderTool gen) {
-           gen.getLIRGeneratorTool().append(new OCLLIRStmt.ExprStmt(new OCLUnary.Barrier(OCLUnaryIntrinsic.MEM_FENCE, flags)));
-        }
-
+    public OCLBarrierNode(OCLMemFenceFlags flags) {
+        super(TYPE, StampFactory.forVoid());
+        this.flags = flags;
     }
 
+    @Override
+    public void generate(NodeLIRBuilderTool gen) {
+        gen.getLIRGeneratorTool().append(new OCLLIRStmt.ExprStmt(new OCLUnary.Barrier(OCLUnaryIntrinsic.BARRIER, flags)));
+    }
 }
