@@ -2,11 +2,8 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.snippets;
 
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
 
-import java.util.Arrays;
-
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
-import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
@@ -23,6 +20,7 @@ import org.graalvm.compiler.replacements.Snippets;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode.ATOMIC_OPERATION;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceAddNode;
@@ -51,9 +49,40 @@ public class ReduceSnippets implements Snippets {
         data[0] = acc;
     }
 
+    @Snippet
+    public static void reduceIntAdd(int[] inputArray, int[] outputArray, int[] localMemory, int gidx, int localIdx, int groupSize) {
+
+        //@formatter:off
+        /*
+         * int idx = OpenCLIntrinsics.get_global_id(0); 
+         * int localIdx =OpenCLIntrinsics.get_local_id(0); 
+         * int groupSize = OpenCLIntrinsics.get_group_size(0);
+         */
+        //@formatter:on
+
+        // Copy input data to local memory
+        localMemory[localIdx] = inputArray[gidx];
+
+        // Reduction in local memory
+        for (int stride = 1; stride < (groupSize / 2); stride *= 2) {
+            // Node substitution for this barrier
+            OpenCLIntrinsics.localBarrier();
+            if (stride > localIdx) {
+                localMemory[localIdx] += localMemory[localIdx + stride];
+            }
+        }
+
+        // Final copy to global memory
+        if (localIdx == 0) {
+            OpenCLIntrinsics.globalBarrier();
+            outputArray[0] += localMemory[0];
+        }
+    }
+
     public static class Templates extends AbstractTemplates {
 
         private final SnippetInfo helloSnippet = snippet(ReduceSnippets.class, "testReduceLoop");
+        private final SnippetInfo reduceIntSnippet = snippet(ReduceSnippets.class, "reduceInt");
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);
@@ -78,11 +107,16 @@ public class ReduceSnippets implements Snippets {
                 operation = ATOMIC_OPERATION.MUL;
             }
 
-            SnippetInfo snippet = helloSnippet;
+            SnippetInfo snippet = reduceIntSnippet;
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
-            args.add("n", 128);
-            args.add("data", storeAtomicIndexed.array());
-            args.addConst("index", memoryWrite.value());
+
+            // TODO: pass the corresponding nodes to the snippet.
+            args.add("inputData", storeAtomicIndexed.array());
+            args.add("outputArray", storeAtomicIndexed.array());
+            args.add("localMemory", storeAtomicIndexed.array());
+            args.add("gidx", storeAtomicIndexed.index());
+            args.add("localIdx", storeAtomicIndexed.index());
+            args.add("groupSize", storeAtomicIndexed.index());
 
             template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, DEFAULT_REPLACER, args);
 

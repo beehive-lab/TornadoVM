@@ -29,34 +29,48 @@ import uk.ac.manchester.tornado.api.ReductionOp;
 
 public class OpenCLIntrinsics {
 
-    public static int getGlobalId(int value) {
+    public static int get_global_id(int value) {
         return 0;
     }
 
-    public static int getLocalId(int value) {
+    public static int get_local_id(int value) {
         return 0;
     }
 
-    public static int getGlobalSize(int value) {
+    public static int get_global_size(int value) {
         return 1;
     }
 
-    public static int getLocalSize(int value) {
+    public static int get_local_size(int value) {
         return 1;
     }
 
-    public static int getGroupId(int value) {
+    public static int get_group_id(int value) {
         return 0;
     }
 
-    public static int getGroupSize(int value) {
+    public static int get_group_size(int value) {
         return 1;
     }
 
+    /**
+     * <p>
+     * <code> 
+     *  barrier(CLK_LOCAL_MEM_FENCE);
+     * </code>
+     * </p>
+     */
     public static void localBarrier() {
 
     }
 
+    /**
+     * <p>
+     * <code> 
+     *  barrier(CLK_GLOBAL_MEM_FENCE);
+     * </code>
+     * </p>
+     */
     public static void globalBarrier() {
 
     }
