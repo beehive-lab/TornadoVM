@@ -46,6 +46,7 @@ function print_usage {
     echo "              --debug               Print debugging information"
     echo "              --version             Print tornado version information"
     echo "              --log4j <config>      Specifies log4j config file"
+    echo "              --javaFlags           Prints Tornado Java flags and exits"
     echo ""
     exit 0
 }
@@ -56,6 +57,7 @@ function print_version {
 }
 
 TORNADO_FLAGS="-Djava.ext.dirs=${TORNADO_SDK}/share/java/tornado -Djava.library.path=${TORNADO_SDK}/lib"
+javaflag=0
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -92,11 +94,16 @@ case $key in
     shift
     shift
     ;;
+    --javaFlags)
+    javaflag=1
+    shift
+    ;;
     -h|--help)
     print_usage
     shift
     ;;
     *)    # unknown option
+    print_usage
     POSITIONAL+=("$1") # save it in an array for later
     shift # past argument
     ;;
@@ -113,4 +120,11 @@ TORNADO_FLAGS="${TORNADO_FLAGS}  -Dlog4j.configurationFile=${LOG4J_CONFIG}"
 JAVA_CMD=${JAVA_HOME}/bin/java
 JAVA_FLAGS="-server -XX:-UseJVMCIClassLoader -XX:-UseCompressedOops ${TORNADO_FLAGS} "
 
+if [ $javaflag -eq 1 ] ; then
+	echo $JAVA_CMD
+	echo $JAVA_FLAGS
+	exit 0
+fi
+
 ${JAVA_CMD} ${JAVA_FLAGS} $@
+
