@@ -1,4 +1,4 @@
-#Loading Tornado on IntelliJ
+# Loading Tornado on IntelliJ
 
 ## Intellij 
 
@@ -28,7 +28,7 @@ Two different configurations are needed for **Build** and **Debug**
 Now, in Intellij:
 ***Maven Projects > tornado (root) > Lifecycle > package > right click > create tornado [package]***
 
-Then: ***Run > Edit Configurations > Maven > tornado Package ***
+Then: ***Run > Edit Configurations > Maven > tornado Package***
 
 You need to manually add and check the following information:
 
@@ -36,13 +36,13 @@ You need to manually add and check the following information:
     * `-Dcmake.root.dir=/home/michalis/opt/cmake-3.10.2-Linux-x86_64/ clean package`
         * In case that you need to reduce the amount of maven warnings add also on the above line the command **--quiet**, which constraints maven verbose to only errors
 * **Runner**:  You need to enter the folloiwing enviroment variables, which are alredy set in the (`tornado/etc/tornado.env`):
-      * PATH
-      * TORNADO_SDK
-      * JVMCI_VERSION
-      * GRAAL_ROOT
-      * GRAAL_VERSION
-      * CMAKE_ROOT
-      * TORNADO_ROOT
+    * PATH
+    * TORNADO_SDK
+    * JVMCI_VERSION
+    * GRAAL_ROOT
+    * GRAAL_VERSION
+    * CMAKE_ROOT
+    * TORNADO_ROOT
 * **Runner**: Ensure that in **JRE** tab the selected JRE corresponds to `Use Project JDK` (e.g.1.8.0_131)
 
 Finally, one the top right corner drop-down menu select the adove custome `tornado [package]` configuration.
@@ -53,8 +53,7 @@ To  build either press the **play button** on the top right corner or **Shift+F1
 In order to Run and Debug Java code running through Tornado another custom configuration is needed.
 For this configuration the Tornado `JAVA_FLAGS` and `CLASSPATHS` are needed.
 
-**Firstly, in order to obtain the `JAVA_FLAGS` the following modifications are needed:
-**
+**Firstly, in order to obtain the `JAVA_FLAGS` the following modifications are needed:**
 ```
 $ cd /PATH_TO_TORNADO/tornado/assembly/src/bin
 $ vim tornado 
@@ -80,8 +79,9 @@ Add the end of the output should get something similar to this:
 ```
 Copy from `-server` to end
 
-** Now, introduce a new Run Configuration**
-Again, ***Run > Edit Configurations > Application > Add new (e.g. plus sign) ***
+**Now, introduce a new Run Configuration**
+
+Again, ***Run > Edit Configurations > Application > Add new (e.g. plus sign)***
 
 Then, add your own paraters similar to the following:
 
