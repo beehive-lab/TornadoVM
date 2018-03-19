@@ -1,6 +1,6 @@
-#Loading and build Tornado on IntelliJ
+# Loading and build Tornado on IntelliJ
 
-##Intellij 
+## IntelliJ 
 
 
 Download and install the latest IntelliJ IDEA Community Edition: [https://www.jetbrains.com/idea/download/](https://www.jetbrains.com/idea/download/)
