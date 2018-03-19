@@ -47,6 +47,7 @@ import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoBarriersReplacements;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoLocalIDReplacements;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoTaskSpecialisation;
 import uk.ac.manchester.tornado.graal.compiler.TornadoHighTier;
@@ -116,6 +117,7 @@ public class OCLHighTier extends TornadoHighTier {
         // After the first Lowering, Tornado replaces reductions with snippets
         // that contains method calls to barriers.
         appendPhase(new TornadoBarriersReplacements());
+        appendPhase(new TornadoLocalIDReplacements());
 
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER));
 

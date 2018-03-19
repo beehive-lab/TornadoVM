@@ -32,12 +32,24 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         // TODO: Pending, if it is local variable
     }
 
-    // XXX: Cover all the cases here as soon as we discover more reductions
-    // use-cases
-    private boolean recursiveCheck(ValueNode arrayToStore, ValueNode indexToStore, ValueNode currentNode) {
+    /**
+     * It checks if there is a reduction in the IR. For now it checks simple
+     * reductions. It assumes that the value to store is a binary arithmetic and
+     * then load index. As soon as we discover more cases, new nodes should be
+     * inspected here.
+     * 
+     * XXX: Cover all the cases here as soon as we discover more reductions //
+     * use-cases
+     * 
+     * @param arrayToStore
+     * @param indexToStore
+     * @param currentNode
+     * @return boolean
+     */
+    public boolean recursiveCheck(ValueNode arrayToStore, ValueNode indexToStore, ValueNode currentNode) {
         boolean isReduction = false;
         if (currentNode instanceof BinaryArithmeticNode) {
-            @SuppressWarnings("rawtypes") BinaryArithmeticNode value = (BinaryArithmeticNode) currentNode;
+            BinaryArithmeticNode<?> value = (BinaryArithmeticNode<?>) currentNode;
             ValueNode x = value.getX();
             isReduction = recursiveCheck(arrayToStore, indexToStore, x);
             if (isReduction == false) {
@@ -63,16 +75,38 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
     private static class ReductionNodes {
         private ValueNode value;
         private ValueNode accumulator;
+        private ValueNode inputArray;
 
-        public ReductionNodes(ValueNode value, ValueNode accumulator) {
+        public ReductionNodes(ValueNode value, ValueNode accumulator, ValueNode inputArray) {
             super();
             this.value = value;
             this.accumulator = accumulator;
+            this.inputArray = inputArray;
         }
 
     }
 
-    private ReductionNodes createReductionNode(StructuredGraph graph, StoreIndexedNode store) {
+    private ValueNode obtainInputArray(ValueNode currentNode, ValueNode outputArray, ValueNode indexToStore) {
+        ValueNode array = null;
+        if (currentNode instanceof StoreIndexedNode) {
+            StoreIndexedNode store = (StoreIndexedNode) currentNode;
+            return obtainInputArray(store.value(), store.array(), store.index());
+        } else if (currentNode instanceof BinaryArithmeticNode) {
+            BinaryArithmeticNode<?> value = (BinaryArithmeticNode<?>) currentNode;
+            array = obtainInputArray(value.getX(), outputArray, indexToStore);
+            if (array == null) {
+                array = obtainInputArray(value.getY(), outputArray, indexToStore);
+            }
+        } else if (currentNode instanceof LoadIndexedNode) {
+            LoadIndexedNode loadNode = (LoadIndexedNode) currentNode;
+            if (loadNode.array() != outputArray) {
+                array = loadNode.array();
+            }
+        }
+        return array;
+    }
+
+    private ReductionNodes createReductionNode(StructuredGraph graph, StoreIndexedNode store, ValueNode inputArray) {
         ValueNode value = null;
         ValueNode accumulator = null;
         if (store.value() instanceof AddNode) {
@@ -94,16 +128,19 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             value = atomicSub;
             subNode.safeDelete();
         } else {
+            /// XXX: It could be min, max, OR, AND, etc.
             throw new RuntimeException("\n\n[NOT SUPPORTED] Node : " + store.value() + " not suported yet.");
         }
-        return new ReductionNodes(value, accumulator);
+
+        return new ReductionNodes(value, accumulator, inputArray);
     }
 
     private void performNodeReplacement(StructuredGraph graph, StoreIndexedNode store, Node pred, ReductionNodes reductionNode) {
         // Final Replacement
         ValueNode value = reductionNode.value;
         ValueNode accumulator = reductionNode.accumulator;
-        final StoreAtomicIndexedNode atomicStore = graph.addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), value, accumulator));
+        ValueNode inputArray = reductionNode.inputArray;
+        final StoreAtomicIndexedNode atomicStore = graph.addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), value, accumulator, inputArray));
         atomicStore.setNext(store.next());
         pred.replaceFirstSuccessor(store, atomicStore);
         store.replaceAndDelete(atomicStore);
@@ -126,7 +163,10 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                     continue;
                 }
 
-                ReductionNodes reductionNode = createReductionNode(graph, store);
+                ValueNode inputArray = obtainInputArray(store.value(), store.array(), store.index());
+                System.out.println("INPUT ARRAY: " + inputArray);
+
+                ReductionNodes reductionNode = createReductionNode(graph, store, inputArray);
                 Node pred = node.predecessor();
                 performNodeReplacement(graph, store, pred, reductionNode);
 

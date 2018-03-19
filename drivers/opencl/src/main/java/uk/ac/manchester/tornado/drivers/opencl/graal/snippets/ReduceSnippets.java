@@ -50,7 +50,7 @@ public class ReduceSnippets implements Snippets {
     }
 
     @Snippet
-    public static void reduceIntAdd(int[] inputArray, int[] outputArray, int[] localMemory, int gidx, int localIdx, int groupSize, int numGroups) {
+    public static void reduceIntAdd(int[] inputArray, int[] outputArray, int[] localMemory, int gidx, int groupSize, int numGroups) {
 
         //@formatter:off
         /*
@@ -60,23 +60,25 @@ public class ReduceSnippets implements Snippets {
          */
         //@formatter:on
 
-        int[] lm = new int[128];
+        // int[] lm = new int[128];
+        //
+        // // Copy input data to local memory
+        // lm[localIdx] = inputArray[gidx];
 
-        // Copy input data to local memory
-        lm[localIdx] = inputArray[gidx];
+        int localIdx = OpenCLIntrinsics.get_local_id(0);
 
         // Reduction in local memory
         for (int stride = 1; stride < (groupSize / 2); stride *= 2) {
             // Node substitution for this barrier
             OpenCLIntrinsics.localBarrier();
-            if (stride > localIdx) {
-                lm[localIdx] += lm[localIdx + stride];
-            }
+            // if (stride > localIdx) {
+            inputArray[localIdx] += inputArray[localIdx + stride];
+            // }
         }
 
         // Final copy to global memory
         if (localIdx == 0) {
-            outputArray[0] += lm[0];
+            outputArray[0] += inputArray[0];
         }
 
         // Note: This is expensive, but it's the final
@@ -124,11 +126,11 @@ public class ReduceSnippets implements Snippets {
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
 
             // TODO: pass the corresponding nodes to the snippet.
-            args.add("inputData", storeAtomicIndexed.array());
+            args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("localMemory", storeAtomicIndexed.array());
             args.add("gidx", storeAtomicIndexed.index());
-            args.add("localIdx", storeAtomicIndexed.index());
+            // args.add("localIdx", storeAtomicIndexed.index());
             args.add("groupSize", storeAtomicIndexed.index());
             args.add("numGroups", storeAtomicIndexed.index());
 

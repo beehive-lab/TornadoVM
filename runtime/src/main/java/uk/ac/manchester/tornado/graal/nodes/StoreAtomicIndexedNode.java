@@ -39,12 +39,13 @@ import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 import jdk.vm.ci.meta.JavaKind;
 
 @NodeInfo(nameTemplate = "AtomicIndexedStore")
-public final class StoreAtomicIndexedNode extends AccessIndexedNode implements StateSplit, Lowerable, Virtualizable { 
+public final class StoreAtomicIndexedNode extends AccessIndexedNode implements StateSplit, Lowerable, Virtualizable {
 
     public static final NodeClass<StoreAtomicIndexedNode> TYPE = NodeClass.create(StoreAtomicIndexedNode.class);
     @Input ValueNode value;
-    @OptionalInput(State) FrameState stateAfter;
     @Input ValueNode accumulator;
+    @Input ValueNode inputArray;
+    @OptionalInput(State) FrameState stateAfter;
 
     @Override
     public FrameState stateAfter() {
@@ -67,10 +68,11 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
         return value;
     }
 
-    public StoreAtomicIndexedNode(ValueNode array, ValueNode index, JavaKind elementKind, ValueNode value, ValueNode accumulator) {
-        super(TYPE, StampFactory.forVoid(), array, index, elementKind);
+    public StoreAtomicIndexedNode(ValueNode outputArray, ValueNode index, JavaKind elementKind, ValueNode value, ValueNode accumulator, ValueNode inputArray) {
+        super(TYPE, StampFactory.forVoid(), outputArray, index, elementKind);
         this.value = value;
         this.accumulator = accumulator;
+        this.inputArray = inputArray;
     }
 
     @Override
@@ -81,10 +83,13 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     public FrameState getState() {
         return stateAfter;
     }
-    
+
     public ValueNode getAccumulator() {
-    	return accumulator;
+        return accumulator;
+    }
+
+    public ValueNode getInputArray() {
+        return inputArray;
     }
 
 }
-
