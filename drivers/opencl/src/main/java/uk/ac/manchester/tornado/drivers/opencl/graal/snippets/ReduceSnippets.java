@@ -65,7 +65,8 @@ public class ReduceSnippets implements Snippets {
         // // Copy input data to local memory
         // lm[localIdx] = inputArray[gidx];
 
-        int localIdx = OpenCLIntrinsics.get_local_id(0);
+        // int localIdx = OpenCLIntrinsics.get_local_id(0);
+        int localIdx = 0;
 
         // Reduction in local memory
         for (int stride = 1; stride < (groupSize / 2); stride *= 2) {

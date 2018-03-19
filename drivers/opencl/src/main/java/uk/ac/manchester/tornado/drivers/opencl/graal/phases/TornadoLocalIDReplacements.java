@@ -23,13 +23,15 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
 
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIdNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIDFixedNode;
 import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
 
 public class TornadoLocalIDReplacements extends BasePhase<TornadoHighTierContext> {
@@ -38,14 +40,21 @@ public class TornadoLocalIDReplacements extends BasePhase<TornadoHighTierContext
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
 
         NodeIterable<InvokeNode> invokeNodes = graph.getNodes().filter(InvokeNode.class);
-        for (InvokeNode node : invokeNodes) {
-            String methodName = node.callTarget().targetName();
+        for (InvokeNode invoke : invokeNodes) {
+            String methodName = invoke.callTarget().targetName();
 
             if (methodName.equals("Direct#OpenCLIntrinsics.get_local_id")) {
-                LocalThreadIdNode localIDNode = graph.addOrUnique(new LocalThreadIdNode(ConstantNode.forInt(0)));
-                node.replaceAndDelete(localIDNode);
-                // node.replaceAtUsages(localIDNode);
-                // node.safeDelete();
+                LocalThreadIDFixedNode localIDNode = graph.addOrUnique(new LocalThreadIDFixedNode(ConstantNode.forInt(0)));
+                // localIDNode.setNext(invoke.next());
+                //
+                // Node pred = invoke.predecessor();
+                // pred.replaceFirstSuccessor(invoke, localIDNode);
+                // invoke.replaceAtUsages(localIDNode);
+                // invoke.setNext(null);
+                // // invoke.safeDelete();
+                //
+                // GraphUtil.removeFixedWithUnusedInputs(invoke);
+
             }
         }
     }

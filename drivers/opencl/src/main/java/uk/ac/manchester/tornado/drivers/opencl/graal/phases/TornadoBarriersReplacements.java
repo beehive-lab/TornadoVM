@@ -27,6 +27,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
@@ -38,22 +39,32 @@ public class TornadoBarriersReplacements extends BasePhase<TornadoHighTierContex
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
 
         NodeIterable<InvokeNode> invokeNodes = graph.getNodes().filter(InvokeNode.class);
-        for (InvokeNode node : invokeNodes) {
-            String methodName = node.callTarget().targetName();
+        for (InvokeNode invoke : invokeNodes) {
+            String methodName = invoke.callTarget().targetName();
 
             if (methodName.equals("Direct#OpenCLIntrinsics.localBarrier")) {
                 OCLBarrierNode barrier = graph.addOrUnique(new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.LOCAL));
-                barrier.setNext(node.next());
-                Node pred = node.predecessor();
-                pred.replaceFirstSuccessor(node, barrier);
-                node.replaceAtUsages(barrier);
+                barrier.setNext(invoke.next());
+                Node pred = invoke.predecessor();
+                pred.replaceFirstSuccessor(invoke, barrier);
+                invoke.replaceAtUsages(barrier);
+
+                // invoke.setNext(null);
+                // GraphUtil.removeFixedWithUnusedInputs(invoke);
+
+                // invoke.clearSuccessors();
+                // invoke.callTarget().safeDelete();
+                // invoke.safeDelete();
 
             } else if (methodName.equals("Direct#OpenCLIntrinsics.globalBarrier")) {
                 OCLBarrierNode barrier = graph.addOrUnique(new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.GLOBAL));
-                barrier.setNext(node.next());
-                Node pred = node.predecessor();
-                pred.replaceFirstSuccessor(node, barrier);
-                node.replaceAtUsages(barrier);
+                barrier.setNext(invoke.next());
+                Node pred = invoke.predecessor();
+                pred.replaceFirstSuccessor(invoke, barrier);
+                invoke.replaceAtUsages(barrier);
+
+                // invoke.setNext(null);
+                // GraphUtil.removeFixedWithUnusedInputs(invoke);
             }
 
         }
