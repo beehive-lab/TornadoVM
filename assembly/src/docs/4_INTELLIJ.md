@@ -1,4 +1,4 @@
-# Loading Tornado on IntelliJ
+# Loading Tornado into IntelliJ
 
 ## Intellij 
 
