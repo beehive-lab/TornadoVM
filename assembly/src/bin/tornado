@@ -103,7 +103,6 @@ case $key in
     shift
     ;;
     *)    # unknown option
-    print_usage
     POSITIONAL+=("$1") # save it in an array for later
     shift # past argument
     ;;
