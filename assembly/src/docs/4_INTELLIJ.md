@@ -53,31 +53,22 @@ To  build either press the **play button** on the top right corner or **Shift+F1
 In order to Run and Debug Java code running through Tornado another custom configuration is needed.
 For this configuration the Tornado `JAVA_FLAGS` and `CLASSPATHS` are needed.
 
-**Firstly, in order to obtain the `JAVA_FLAGS` the following modifications are needed:**
-```
-$ cd /PATH_TO_TORNADO/tornado/assembly/src/bin
-$ vim tornado 
-```
-Add to end of the file the following:
+**Firstly, you need to obtain the `JAVA_FLAGS` used by Tornado. Use the following commands to print the flags:**
 
-```
-echo $JAVA_CMD
-echo $JAVA_FLAGS
-
-```
-Now, back to `TORNADO_ROOT`
 
 ```
 $ make
-$ tornado
+$ tornado --javaFlags
 ```
 
-Add the end of the output should get something similar to this:
+Output should be something similar to this:
 ```
+/PATH_TOJ_DK/jdk1.8.0_131/bin/java
 -server -XX:-UseJVMCIClassLoader -XX:-UseCompressedOops -Djava.ext.dirs=/home/michalis/Tornado/tornado/bin/sdk/share/java/tornado -Djava.library.path=/home/michalis/Tornado/tornado/bin/sdk/lib -Dlog4j.configurationFile=/home/michalis/Tornado/tornado/bin/sdk/etc/log4j2.xml
 
+
 ```
-Copy from `-server` to end
+You need to copy from `-server` to end.
 
 **Now, introduce a new Run Configuration**
 
@@ -86,7 +77,7 @@ Again, ***Run > Edit Configurations > Application > Add new (e.g. plus sign)***
 Then, add your own paraters similar to the following:
 
 * **Main Class:** uk.ac.manchester.tornado.examples.HelloWord
-* **VM Options:** What you copied from -server and on
+* **VM Options:** What you copied from `-server` and on
 * **Working Directory:** `/home/tornado`
 * **JRE:** Default (Should point to the 1.8.0_131)
 
