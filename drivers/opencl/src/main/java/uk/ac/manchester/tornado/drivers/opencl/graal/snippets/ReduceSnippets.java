@@ -50,7 +50,7 @@ public class ReduceSnippets implements Snippets {
     }
 
     @Snippet
-    public static void reduceIntAdd(int[] inputArray, int[] outputArray, int[] localMemory, int gidx, int localIdx, int groupSize) {
+    public static void reduceIntAdd(int[] inputArray, int[] outputArray, int[] localMemory, int gidx, int localIdx, int groupSize, int numGroups) {
 
         //@formatter:off
         /*
@@ -60,22 +60,35 @@ public class ReduceSnippets implements Snippets {
          */
         //@formatter:on
 
+        int[] lm = new int[128];
+
         // Copy input data to local memory
-        localMemory[localIdx] = inputArray[gidx];
+        lm[localIdx] = inputArray[gidx];
 
         // Reduction in local memory
         for (int stride = 1; stride < (groupSize / 2); stride *= 2) {
             // Node substitution for this barrier
             OpenCLIntrinsics.localBarrier();
             if (stride > localIdx) {
-                localMemory[localIdx] += localMemory[localIdx + stride];
+                lm[localIdx] += lm[localIdx + stride];
             }
         }
 
         // Final copy to global memory
         if (localIdx == 0) {
-            OpenCLIntrinsics.globalBarrier();
-            outputArray[0] += localMemory[0];
+            outputArray[0] += lm[0];
+        }
+
+        // Note: This is expensive, but it's the final
+        // reduction with the elements left from the first
+        // reduction.
+        OpenCLIntrinsics.globalBarrier();
+
+        // Final reduction - sequential
+        if (gidx == 0) {
+            for (int i = 1; i < numGroups; i++) {
+                outputArray[0] += outputArray[i];
+            }
         }
     }
 
@@ -117,6 +130,7 @@ public class ReduceSnippets implements Snippets {
             args.add("gidx", storeAtomicIndexed.index());
             args.add("localIdx", storeAtomicIndexed.index());
             args.add("groupSize", storeAtomicIndexed.index());
+            args.add("numGroups", storeAtomicIndexed.index());
 
             template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, DEFAULT_REPLACER, args);
 
