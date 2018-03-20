@@ -1,9 +1,7 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
- *
- * Copyright (c) 2013-2018, APT Group, School of Computer Science,
+ * Copyright (c) 2018, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,13 +39,13 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 
 @NodeInfo
-public class LocalThreadIDFixedNode extends FixedWithNextNode implements LIRLowerable {
+public class GroupSizeNode extends FixedWithNextNode implements LIRLowerable {
 
-    public static final NodeClass<LocalThreadIDFixedNode> TYPE = NodeClass.create(LocalThreadIDFixedNode.class);
+    public static final NodeClass<GroupSizeNode> TYPE = NodeClass.create(GroupSizeNode.class);
 
     @Input protected ConstantNode index;
 
-    public LocalThreadIDFixedNode(ConstantNode value) {
+    public GroupSizeNode(ConstantNode value) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
         assert stamp != null;
         index = value;
@@ -57,11 +55,9 @@ public class LocalThreadIDFixedNode extends FixedWithNextNode implements LIRLowe
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
-        tool.append(new OCLLIRStmt.AssignStmt(result, new OCLUnary.Intrinsic(OCLUnaryIntrinsic.LOCAL_ID, tool.getLIRKind(stamp), gen.operand(index))));
+        gen.operand(index);
+        tool.append(new OCLLIRStmt.AssignStmt(result, new OCLUnary.Intrinsic(OCLUnaryIntrinsic.GROUP_SIZE, tool.getLIRKind(stamp), gen.operand(index))));
         gen.setResult(this, result);
     }
 
-    public ConstantNode getIndex() {
-        return index;
-    }
 }

@@ -50,15 +50,7 @@ public class ReduceSnippets implements Snippets {
     }
 
     @Snippet
-    public static void reduceIntAdd(int[] inputArray, int[] outputArray, int[] localMemory, int gidx, int groupSize, int numGroups) {
-
-        //@formatter:off
-        /*
-         * int idx = OpenCLIntrinsics.get_global_id(0); 
-         * int localIdx =OpenCLIntrinsics.get_local_id(0); 
-         * int groupSize = OpenCLIntrinsics.get_group_size(0);
-         */
-        //@formatter:on
+    public static void reduceIntAdd(int[] inputArray, int[] outputArray, int[] localMemory, int gidx, int numGroups) {
 
         // int[] lm = new int[128];
         //
@@ -66,15 +58,15 @@ public class ReduceSnippets implements Snippets {
         // lm[localIdx] = inputArray[gidx];
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
-        // int localIdx = 0;
+        int groupSize = OpenCLIntrinsics.get_group_size(0);
 
         // Reduction in local memory
         for (int stride = 1; stride < (groupSize / 2); stride *= 2) {
             // Node substitution for this barrier
             OpenCLIntrinsics.localBarrier();
-            // if (stride > localIdx) {
-            inputArray[localIdx] += inputArray[localIdx + stride];
-            // }
+            if (stride > localIdx) {
+                inputArray[localIdx] += inputArray[localIdx + stride];
+            }
         }
 
         // Final copy to global memory
@@ -131,8 +123,6 @@ public class ReduceSnippets implements Snippets {
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("localMemory", storeAtomicIndexed.array());
             args.add("gidx", storeAtomicIndexed.index());
-            // args.add("localIdx", storeAtomicIndexed.index());
-            args.add("groupSize", storeAtomicIndexed.index());
             args.add("numGroups", storeAtomicIndexed.index());
 
             template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, DEFAULT_REPLACER, args);
