@@ -58,7 +58,7 @@ For this configuration the Tornado `JAVA_FLAGS` and `CLASSPATHS` are needed.
 
 ```
 $ make
-$ tornado --javaFlags
+$ tornado --printFlags
 ```
 
 Output should be something similar to this:
