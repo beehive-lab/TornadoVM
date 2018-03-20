@@ -32,6 +32,7 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.memory.MemoryNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
@@ -45,7 +46,7 @@ public class LocalThreadIDFixedNode extends FixedWithNextNode implements LIRLowe
 
     public static final NodeClass<LocalThreadIDFixedNode> TYPE = NodeClass.create(LocalThreadIDFixedNode.class);
 
-    @Input private ConstantNode index;
+    @Input protected ConstantNode index;
 
     public LocalThreadIDFixedNode(ConstantNode value) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
@@ -55,9 +56,14 @@ public class LocalThreadIDFixedNode extends FixedWithNextNode implements LIRLowe
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
+        System.out.println("GENERATING OPENCL C CODE FOR LOCAL THREAD ID");
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
         tool.append(new OCLLIRStmt.AssignStmt(result, new OCLUnary.Intrinsic(OCLUnaryIntrinsic.LOCAL_ID, tool.getLIRKind(stamp), gen.operand(index))));
         gen.setResult(this, result);
+    }
+
+    public ConstantNode getIndex() {
+        return index;
     }
 }

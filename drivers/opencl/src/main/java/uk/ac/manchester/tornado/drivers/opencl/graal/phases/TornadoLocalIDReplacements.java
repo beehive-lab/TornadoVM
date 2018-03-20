@@ -23,12 +23,10 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIDFixedNode;
@@ -44,17 +42,8 @@ public class TornadoLocalIDReplacements extends BasePhase<TornadoHighTierContext
             String methodName = invoke.callTarget().targetName();
 
             if (methodName.equals("Direct#OpenCLIntrinsics.get_local_id")) {
-                LocalThreadIDFixedNode localIDNode = graph.addOrUnique(new LocalThreadIDFixedNode(ConstantNode.forInt(0)));
-                // localIDNode.setNext(invoke.next());
-                //
-                // Node pred = invoke.predecessor();
-                // pred.replaceFirstSuccessor(invoke, localIDNode);
-                // invoke.replaceAtUsages(localIDNode);
-                // invoke.setNext(null);
-                // // invoke.safeDelete();
-                //
-                // GraphUtil.removeFixedWithUnusedInputs(invoke);
-
+                LocalThreadIDFixedNode localIDNode = graph.addOrUnique(new LocalThreadIDFixedNode(ConstantNode.forInt(0, graph)));
+                graph.replaceFixed(invoke, localIDNode);
             }
         }
     }
