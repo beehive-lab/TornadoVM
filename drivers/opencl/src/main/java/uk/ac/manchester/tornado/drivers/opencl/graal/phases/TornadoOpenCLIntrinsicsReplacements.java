@@ -30,9 +30,10 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIDFixedNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
 import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
 
-public class TornadoLocalIDReplacements extends BasePhase<TornadoHighTierContext> {
+public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTierContext> {
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
@@ -41,7 +42,21 @@ public class TornadoLocalIDReplacements extends BasePhase<TornadoHighTierContext
         for (InvokeNode invoke : invokeNodes) {
             String methodName = invoke.callTarget().targetName();
 
-            if (methodName.equals("Direct#OpenCLIntrinsics.get_local_id")) {
+            if (methodName.equals("Direct#OpenCLIntrinsics.localBarrier")) {
+                OCLBarrierNode barrier = graph.addOrUnique(new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.LOCAL));
+
+                graph.replaceFixed(invoke, barrier);
+
+                // barrier.setNext(invoke.next());
+                // Node pred = invoke.predecessor();
+                // pred.replaceFirstSuccessor(invoke, barrier);
+                // invoke.replaceAtUsages(barrier);
+
+            } else if (methodName.equals("Direct#OpenCLIntrinsics.globalBarrier")) {
+                OCLBarrierNode barrier = graph.addOrUnique(new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.GLOBAL));
+                graph.replaceFixed(invoke, barrier);
+
+            } else if (methodName.equals("Direct#OpenCLIntrinsics.get_local_id")) {
                 LocalThreadIDFixedNode localIDNode = graph.addOrUnique(new LocalThreadIDFixedNode(ConstantNode.forInt(0, graph)));
                 graph.replaceFixed(invoke, localIDNode);
             }
