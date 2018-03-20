@@ -49,6 +49,15 @@ public class ReduceSnippets implements Snippets {
         data[0] = acc;
     }
 
+    /**
+     * 1D full snippet for OpenCL reductions.
+     * 
+     * @param inputArray
+     * @param outputArray
+     * @param localMemory
+     * @param gidx
+     * @param numGroups
+     */
     @Snippet
     public static void reduceIntAdd(int[] inputArray, int[] outputArray, int[] localMemory, int gidx, int numGroups) {
 
@@ -79,7 +88,8 @@ public class ReduceSnippets implements Snippets {
         // reduction.
         OpenCLIntrinsics.globalBarrier();
 
-        // Final reduction - sequential
+        // Final reduction in sequential. This is done by the thread
+        // id = 0;
         if (gidx == 0) {
             for (int i = 1; i < numGroups; i++) {
                 outputArray[0] += outputArray[i];
