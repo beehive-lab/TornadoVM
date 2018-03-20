@@ -46,7 +46,7 @@ function print_usage {
     echo "              --debug               Print debugging information"
     echo "              --version             Print tornado version information"
     echo "              --log4j <config>      Specifies log4j config file"
-    echo "              --javaFlags           Prints Tornado Java flags and exits"
+    echo "              --printFlags          Prints Tornado Java flags and exits"
     echo ""
     exit 0
 }
