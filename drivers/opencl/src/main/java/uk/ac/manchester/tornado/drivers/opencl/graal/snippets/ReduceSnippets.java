@@ -23,6 +23,8 @@ import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode.ATOMIC_OPERATION;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceAddNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceSubNode;
@@ -59,15 +61,16 @@ public class ReduceSnippets implements Snippets {
      * @param numGroups
      */
     @Snippet
-    public static void reduceIntAdd(int[] inputArray, int[] outputArray, int[] localMemory, int gidx, int numGroups) {
-
-        // int[] lm = new int[128];
-        //
-        // // Copy input data to local memory
-        // lm[localIdx] = inputArray[gidx];
+    public static void reduceIntAdd(int[] inputArray, int[] outputArray, int gidx, int globalSize) {
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
-        int groupSize = OpenCLIntrinsics.get_group_size(0);
+        int groupSize = OpenCLIntrinsics.get_local_size(0);
+
+        // Allocate a chunk of data in local memory
+        // int[] localMemory = OpenCLIntrinsics.createLocalMemory(1024);
+
+        // Copy input data to local memory
+        // localMemory[localIdx] = inputArray[gidx];
 
         // Reduction in local memory
         for (int stride = 1; stride < (groupSize / 2); stride *= 2) {
@@ -87,10 +90,10 @@ public class ReduceSnippets implements Snippets {
         // reduction with the elements left from the first
         // reduction.
         OpenCLIntrinsics.globalBarrier();
-
         // Final reduction in sequential. This is done by the thread
         // id = 0;
         if (gidx == 0) {
+            int numGroups = globalSize / groupSize;
             for (int i = 1; i < numGroups; i++) {
                 outputArray[0] += outputArray[i];
             }
@@ -106,7 +109,8 @@ public class ReduceSnippets implements Snippets {
             super(options, providers, snippetReflection, target);
         }
 
-        public void lower(StoreAtomicIndexedNode storeAtomicIndexed, AddressNode address, OCLWriteAtomicNode memoryWrite, LoweringTool tool) {
+        public void lower(StoreAtomicIndexedNode storeAtomicIndexed, AddressNode address, OCLWriteAtomicNode memoryWrite, GlobalThreadIdNode globalId, GlobalThreadSizeNode globalSize,
+                LoweringTool tool) {
 
             StructuredGraph graph = storeAtomicIndexed.graph();
 
@@ -131,9 +135,8 @@ public class ReduceSnippets implements Snippets {
             // TODO: pass the corresponding nodes to the snippet.
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
-            args.add("localMemory", storeAtomicIndexed.array());
-            args.add("gidx", storeAtomicIndexed.index());
-            args.add("numGroups", storeAtomicIndexed.index());
+            args.add("gidx", globalId);
+            args.add("globalSize", globalSize);
 
             template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, DEFAULT_REPLACER, args);
 

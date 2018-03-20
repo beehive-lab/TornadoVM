@@ -239,6 +239,8 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic LOG = new OCLUnaryIntrinsic("log");
         public static final OCLUnaryIntrinsic SIN = new OCLUnaryIntrinsic("sin");
         public static final OCLUnaryIntrinsic COS = new OCLUnaryIntrinsic("cos");
+        
+        public static final OCLUnaryIntrinsic LOCAL_MEMORY = new OCLUnaryIntrinsic("local");
 
         public static final OCLUnaryIntrinsic POPCOUNT = new OCLUnaryIntrinsic("popcount");
 

@@ -29,7 +29,7 @@ import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
 
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GroupSizeNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIDFixedNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
 import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
@@ -60,8 +60,11 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
             } else if (methodName.equals("Direct#OpenCLIntrinsics.get_local_id")) {
                 LocalThreadIDFixedNode localIDNode = graph.addOrUnique(new LocalThreadIDFixedNode(ConstantNode.forInt(0, graph)));
                 graph.replaceFixed(invoke, localIDNode);
-            } else if (methodName.equals("Direct#OpenCLIntrinsics.get_group_size")) {
-                GroupSizeNode groupSizeNode = graph.addOrUnique(new GroupSizeNode(ConstantNode.forInt(0, graph)));
+            } else if (methodName.equals("Direct#OpenCLIntrinsics.get_local_size")) {
+                LocalGroupSizeNode groupSizeNode = graph.addOrUnique(new LocalGroupSizeNode(ConstantNode.forInt(0, graph)));
+                graph.replaceFixed(invoke, groupSizeNode);
+            } else if (methodName.equals("Direct#OpenCLIntrinsics.createLocalMemory")) {
+                LocalGroupSizeNode groupSizeNode = graph.addOrUnique(new LocalGroupSizeNode(ConstantNode.forInt(0, graph)));
                 graph.replaceFixed(invoke, groupSizeNode);
 
             }

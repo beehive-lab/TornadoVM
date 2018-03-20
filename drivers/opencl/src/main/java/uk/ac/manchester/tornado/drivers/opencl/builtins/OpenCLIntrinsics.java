@@ -79,4 +79,7 @@ public class OpenCLIntrinsics {
         return null;
     }
 
+    public static int[] createLocalMemory(int size) {
+        return null;
+    }
 }

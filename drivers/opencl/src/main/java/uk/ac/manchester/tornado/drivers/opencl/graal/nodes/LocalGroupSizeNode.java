@@ -39,13 +39,13 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 
 @NodeInfo
-public class GroupSizeNode extends FixedWithNextNode implements LIRLowerable {
+public class LocalGroupSizeNode extends FixedWithNextNode implements LIRLowerable {
 
-    public static final NodeClass<GroupSizeNode> TYPE = NodeClass.create(GroupSizeNode.class);
+    public static final NodeClass<LocalGroupSizeNode> TYPE = NodeClass.create(LocalGroupSizeNode.class);
 
     @Input protected ConstantNode index;
 
-    public GroupSizeNode(ConstantNode value) {
+    public LocalGroupSizeNode(ConstantNode value) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
         assert stamp != null;
         index = value;
@@ -56,7 +56,7 @@ public class GroupSizeNode extends FixedWithNextNode implements LIRLowerable {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         Variable result = tool.newVariable(tool.getLIRKind(stamp));
         gen.operand(index);
-        tool.append(new OCLLIRStmt.AssignStmt(result, new OCLUnary.Intrinsic(OCLUnaryIntrinsic.GROUP_SIZE, tool.getLIRKind(stamp), gen.operand(index))));
+        tool.append(new OCLLIRStmt.AssignStmt(result, new OCLUnary.Intrinsic(OCLUnaryIntrinsic.LOCAL_SIZE, tool.getLIRKind(stamp), gen.operand(index))));
         gen.setResult(this, result);
     }
 
