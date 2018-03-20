@@ -68,14 +68,14 @@ public class ReduceSnippets implements Snippets {
 
         // Allocate a chunk of data in local memory
         int[] localMemory = new int[1024];
-        // OpenCLIntrinsics.createLocalMemory(localMemory);
+        OpenCLIntrinsics.createLocalMemory(localMemory);
 
         // Copy input data to local memory
         localMemory[localIdx] = inputArray[gidx];
 
-        int start = groupSize / 2;
+        int start = groupSize >> 1;
         // Reduction in local memory
-        for (int stride = start; stride > 0; stride /= 2) {
+        for (int stride = start; stride > 0; stride <<= 1) {
             OpenCLIntrinsics.localBarrier();
             if (stride > localIdx) {
                 localMemory[localIdx] += localMemory[localIdx + stride];
@@ -97,6 +97,7 @@ public class ReduceSnippets implements Snippets {
                 outputArray[0] += outputArray[i];
             }
         }
+        OpenCLIntrinsics.globalBarrier();
     }
 
     public static class Templates extends AbstractTemplates {

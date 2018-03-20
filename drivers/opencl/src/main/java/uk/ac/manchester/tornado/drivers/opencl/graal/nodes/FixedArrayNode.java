@@ -68,6 +68,10 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
         return memoryRegister;
     }
 
+    public void setMemoryLocation(OCLMemoryBase memoryRegister) {
+        this.memoryRegister = memoryRegister;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         /*
