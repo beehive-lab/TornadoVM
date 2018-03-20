@@ -458,6 +458,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLBinaryTemplate ARRAY_INDEX = new OCLBinaryTemplate("index", "%s[%s]");
 
         public static final OCLBinaryTemplate NEW_ARRAY = new OCLBinaryTemplate("new array", "char %s[%s]");
+        public static final OCLBinaryTemplate NEW_LOCAL_INT_ARRAY = new OCLBinaryTemplate("new array", "__local int %s[%s]");
 
         // @formatter:on
         private final String template;

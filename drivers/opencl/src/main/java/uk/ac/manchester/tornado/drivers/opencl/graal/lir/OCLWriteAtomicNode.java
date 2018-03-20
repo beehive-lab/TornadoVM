@@ -73,7 +73,6 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
         OCLStamp oclStamp = null;
         switch (operation) {
             case ADD:
-                System.out.println("ADD OPERATION");
                 oclStamp = new OCLStamp(OCLKind.ATOMIC_ADD_FLOAT);
                 break;
             default:
@@ -100,14 +99,11 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
                 oclStamp = new OCLStamp(OCLKind.ATOMIC_ADD_INT);
                 break;
             case Float:
-                System.out.print("FLOAT VERSION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 oclStamp = getStampFloat();
                 break;
             default:
                 throw new RuntimeException("Data type for reduction not supported yet: " + elementKind);
         }
-
-        System.out.println("Generating");
 
         LIRKind writeKind = gen.getLIRGeneratorTool().getLIRKind(oclStamp);
         LIRKind accKind = gen.getLIRGeneratorTool().getLIRKind(accStamp);

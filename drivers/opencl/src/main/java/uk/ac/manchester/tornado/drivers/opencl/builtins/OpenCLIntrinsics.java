@@ -75,11 +75,12 @@ public class OpenCLIntrinsics {
 
     }
 
+    public static void createLocalMemory(int[] array) {
+
+    }
+
     public static <T1, T2, R> R op(ReductionOp op, T1 x, T2 y) {
         return null;
     }
 
-    public static int[] createLocalMemory(int size) {
-        return null;
-    }
 }

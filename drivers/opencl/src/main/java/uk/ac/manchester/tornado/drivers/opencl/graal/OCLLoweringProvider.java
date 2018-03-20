@@ -36,13 +36,11 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
-import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.hotspot.replacements.NewObjectSnippets;
 import org.graalvm.compiler.nodes.AbstractDeoptimizeNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.Invoke;
-import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.LoweredCallTargetNode;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -88,8 +86,10 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode.ATOM
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.CastNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedLocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.NewLocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
@@ -126,8 +126,13 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     @Override
     public void lower(Node node, LoweringTool tool) {
 
+        System.out.println("LOWWRING NODE: " + node);
+
         if (node instanceof Invoke) {
             lowerInvoke((Invoke) node, tool, (StructuredGraph) node.graph());
+        } else if (node instanceof NewLocalArrayNode) {
+            System.out.println("LOWER LOCAL ARRAY NODE!!!!!!!!!!!!!!!!!!!");
+            lowerNewLocalArrayNode((NewLocalArrayNode) node, tool);
         } else if (node instanceof VectorLoadNode) {
             lowerVectorLoadNode((VectorLoadNode) node, tool);
         } else if (node instanceof VectorStoreNode) {
@@ -519,6 +524,36 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else {
             unimplemented("dynamically sized array declarations are not supported");
         }
+    }
+
+    private void lowerNewLocalArrayNode(NewLocalArrayNode newArray, LoweringTool tool) {
+        // final StructuredGraph graph = newArray.graph();
+        // final ConstantNode firstInput = newArray.getSize();
+        //
+        // if (firstInput.getValue() instanceof PrimitiveConstant) {
+        // final int length = ((PrimitiveConstant)
+        // firstInput.getValue()).asInt();
+        //
+        // JavaKind elementKind = newArray.getKind();
+        // final int offset = arrayBaseOffset(elementKind);
+        // final int size = offset + (elementKind.getByteCount() * length);
+        //
+        // final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
+        //
+        // final FixedLocalArrayNode fixedArrayNode = graph.addWithoutUnique(new
+        // FixedLocalArrayNode(newArray.getOCLKind(), newLengthNode,
+        // newArray.getKind()));
+        //
+        // graph.replaceFixed(newArray, fixedArrayNode);
+        //
+        // // newArray.replaceAtUsages(fixedArrayNode);
+        // // newArray.clearInputs();
+        // // GraphUtil.unlinkFixedNode(newArray);
+        //
+        // } else {
+        // unimplemented("dynamically sized array declarations are not
+        // supported");
+        // }
     }
 
     @Override
