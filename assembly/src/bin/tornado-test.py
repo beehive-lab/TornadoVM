@@ -63,6 +63,16 @@ __DEBUG_TORNADO__ = "-Dtornado.debug=True "
 ## 
 __VERSION__ = "0.3_21032018"
 
+__TORNADO_TESTS_WHITE_LIST__ = [
+	"uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorAdditionShort",
+	"uk.ac.manchester.tornado.unittests.vectortypes.TestFloats#simpleDotProductFloat8",
+	"uk.ac.manchester.tornado.unittests.vectortypes.TestFloats#simpleDotProduct",
+	"uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest#testPrebuild01",
+	]
+
+
+__TEST_NOT_PASSED__= False
+
 def composeAllOptions(args):
 	""" This method contatenates all JVM options that will be passed to 
 		the Tornado VM. New options should be concatenated in this method. 
@@ -111,12 +121,39 @@ def processStats(out, stats):
 	""" It updates the hash table `stats` for reporting the total number 
 		of method that were failed and passed
 	"""
-	statsProcessing = out.split(" ")
-	for w in statsProcessing:
-		if (w == "[PASS]"):
+	
+	global __TEST_NOT_PASSED__ 
+
+	pattern = r'Test: class (?P<test_class>[\w\.]+)*\S*$'
+	regex = re.compile(pattern)
+
+	statsProcessing = out.splitlines()
+	className = ""
+	for line in statsProcessing:
+		match = regex.search(line)
+		if match != None:
+			className = match.groups(0)[0]
+		
+		l = re.sub(r'(  )+', '', line).strip()
+
+		if (l.find("[PASS]") != -1):
 			stats["[PASS]"] = stats["[PASS]"] + 1
-		elif (w == "[FAILED]"):
+		elif (l.find("[FAILED]") != -1) :
 			stats["[FAILED]"] = stats["[FAILED]"] + 1
+			name = l.split(" ")[2]
+
+			# It removes characters for colors
+			name = name[5:-4]
+		
+			if (name.endswith(".")):
+				name = name[:-16]
+
+			if (className + "#" + name in __TORNADO_TESTS_WHITE_LIST__):
+				print "Test: " + className + "#" + name + " in whiteList."
+			else:
+				## set a flag
+				__TEST_NOT_PASSED__ = True
+	
 	return stats
 
 
@@ -204,6 +241,10 @@ def main():
 		runWithJUnit(args)
 	else:
 		runTests(args)	
+
+	if (__TEST_NOT_PASSED__):
+		# return error
+		sys.exit(1)
 
 if __name__ == '__main__':
 	main()
