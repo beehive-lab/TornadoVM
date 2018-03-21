@@ -56,12 +56,9 @@ def executeCommand(command):
 
 def newCommit():
 	## Clone existing version
-	command = "git clone " + __GIT_URL_REPOSITORY__ + " /tmp/tornado-sdk" 
+	command = "git clone -b " + __LINUX_BRANCH__ + " " + __GIT_URL_REPOSITORY__ + " /tmp/tornado-sdk" 
 	executeCommand(command)
 
-	## change-branch
-	command = "cd /tmp/tornado-sdk git checkout " + __LINUX_BRANCH__
-	
 	## Copy new files
 	tornadoSDK = os.environ['TORNADO_SDK']
 	command = "cp -R " + tornadoSDK + "/* /tmp/tornado-sdk/"
