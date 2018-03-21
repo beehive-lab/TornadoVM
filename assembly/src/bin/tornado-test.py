@@ -229,6 +229,14 @@ def parseArguments():
 	args = parser.parse_args()
 	return args
 
+def writeStatusInFile():
+	f = open(".unittestingStatus", "w")
+	if (__TEST_NOT_PASSED__):
+		f.write("FAIL")
+	else:
+		f.write("OK")
+	f.close()
+
 
 def main():
 	args = parseArguments()
@@ -242,6 +250,7 @@ def main():
 	else:
 		runTests(args)	
 
+	writeStatusInFile()
 	if (__TEST_NOT_PASSED__):
 		# return error
 		sys.exit(1)
