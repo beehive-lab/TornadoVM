@@ -30,7 +30,7 @@ import os
 import subprocess
 
 __ALLOWED_BRANCH__ = "feature/56-sdk/juan"
-__GIT_URL_REPOSITORY__ = "/home/juan/manchester/tornado-sdk"
+__GIT_URL_REPOSITORY__ = "git@github.com:beehive-lab/tornado-sdk-internal.git"
 __MESSAGE__ = '"[AUTOMATIC] TORNADO-SDK-LINUX"'
 
 __EMULATION__ = True
