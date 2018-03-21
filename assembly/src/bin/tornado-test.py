@@ -65,7 +65,7 @@ __VERSION__ = "0.3_21032018"
 
 def composeAllOptions(args):
 	""" This method contatenates all JVM options that will be passed to 
-	the Tornado VM. New options should be concatenated in this method. 
+		the Tornado VM. New options should be concatenated in this method. 
 	"""
 
 	verbose = "-Dtornado.unittests.verbose="
@@ -89,10 +89,9 @@ def composeAllOptions(args):
 
 
 def runSingleCommand(cmd, args):
-	""" Run a command without processing the result 
-        of which tests are passed and failed.
-		This method is used to pass a single test quickly 
-		in the terminal.
+	""" Run a command without processing the result of which tests 
+		are passed and failed. This method is used to pass a single 
+		test quickly in the terminal.
 	"""
 
 	cmd = cmd + " " + args.testClass
@@ -109,8 +108,8 @@ def runSingleCommand(cmd, args):
 
 
 def processStats(out, stats):
-	""" It updates the hash table `stats` for reporting 
-		the total number of method that were failed and passed
+	""" It updates the hash table `stats` for reporting the total number 
+		of method that were failed and passed
 	"""
 	statsProcessing = out.split(" ")
 	for w in statsProcessing:
