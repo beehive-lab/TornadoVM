@@ -28,8 +28,11 @@
 import os
 import sys
 import argparse
+import time
+import subprocess
+import re
 
-## Include the new test class here
+## Include here the new test clasess in Tornado
 __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.TestHello",
 	"uk.ac.manchester.tornado.unittests.arrays.TestArrays",
@@ -58,10 +61,12 @@ __PRINT_OPENCL_KERNEL__ = "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ = "-Dtornado.debug=True "
 
 ## 
-__VERSION__ = "0.2_27022018"
-
+__VERSION__ = "0.3_21032018"
 
 def composeAllOptions(args):
+	""" This method contatenates all JVM options that will be passed to 
+	the Tornado VM. New options should be concatenated in this method. 
+	"""
 
 	verbose = "-Dtornado.unittests.verbose="
 	options = verbose
@@ -83,23 +88,86 @@ def composeAllOptions(args):
 	return options
 
 
+def runSingleCommand(cmd, args):
+	""" Run a command without processing the result 
+        of which tests are passed and failed.
+		This method is used to pass a single test quickly 
+		in the terminal.
+	"""
+
+	cmd = cmd + " " + args.testClass
+	cmd = cmd.split(" ")
+	print cmd
+
+	start = time.time()
+	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	out, err = p.communicate()
+	end = time.time()
+
+	print out
+	print "Total Time (s): " + str(end-start)
+
+
+def processStats(out, stats):
+	""" It updates the hash table `stats` for reporting 
+		the total number of method that were failed and passed
+	"""
+	statsProcessing = out.split(" ")
+	for w in statsProcessing:
+		if (w == "[PASS]"):
+			stats["[PASS]"] = stats["[PASS]"] + 1
+		elif (w == "[FAILED]"):
+			stats["[FAILED]"] = stats["[FAILED]"] + 1
+	return stats
+
+
+def runCommandWithStats(command, stats):
+	""" Run a command and update the stats dictionary """
+	command = command.split(" ")
+	p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	out, err = p.communicate()
+
+	print err
+	print out
+	
+	return processStats(out, stats)
+
+
 def runTests(args):
+	""" Run the tests using the TornadoTestRunner program """	
+
 	options = composeAllOptions(args)
+
+	stats = {"[PASS]" : 0, "[FAILED]": 0}
 
 	## Run test
 	cmd = "tornado " + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
 	if (args.testClass != None):
-		cmd = cmd + " " + args.testClass 
-		#print cmd
-		os.system(cmd)
+		runSingleCommand(cmd, args)
 	else:
+		start = time.time()
 		for t in __TEST_THE_WORLD__:
 			command = cmd + t
-			#print cmd
-			os.system(command)
 
+			if (args.fast):
+				os.system(command)
+			else:
+				stats = runCommandWithStats(command, stats)
+		
+		end = time.time()
+
+		if (args.fast == False):
+			print stats
+			coverage = stats["[PASS]"] / float((stats["[PASS]"] + stats["[FAILED]"])) * 100.0
+			print "Coverage: " + str(round(coverage, 2))  + "%" 
+	
+
+		print "Total Time(s): " + str(end-start)
+		
 
 def runWithJUnit(args):
+	""" Run the tests using JUNIT """
+
 	cmd = "tornado " + __MAIN_TORNADO_JUNIT__ 
 
 	if (args.testClass != None):
@@ -120,7 +188,8 @@ def parseArguments():
 	parser.add_argument('--printKernel', "-pk", action="store_true", dest="printKernel", default=False, help="Print OpenCL kernel")	
 	parser.add_argument('--junit', action="store_true", dest="junit", default=False, help="Run within JUnitCore main class")	
 	parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")	
-	parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False, help="Debug Tornado")	
+	parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False, help="Debug Tornado")
+	parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")	
 	args = parser.parse_args()
 	return args
 
