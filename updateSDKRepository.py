@@ -26,9 +26,16 @@
 #
 
 import sys
+import os
 import subprocess
 
-__ALLOWED_BRANCH__ = "develop"
+__ALLOWED_BRANCH__ = "feature/56-sdk/juan"
+__GIT_URL_REPOSITORY__ = "/home/juan/manchester/tornado-sdk"
+__MESSAGE__ = '"[AUTOMATIC] TORNADO-SDK-LINUX"'
+
+__EMULATION__ = True
+
+__LINUX_BRANCH__ = "linux-x86"
 
 def checkUnittestStatus():
 	f = open(".unittestingStatus")
@@ -38,11 +45,45 @@ def checkUnittestStatus():
 	else:
 		return False
 
+def executeCommand(command):
+	command = command.split(" ")
+	p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	out, err = p.communicate()
+	print "OUTPUT: " + out
+	print "STDERR: " + err
+	return (out, err)
+	
+
 def newCommit():
-	print "New Commit"
+	## Clone existing version
+	command = "git clone " + __GIT_URL_REPOSITORY__ + " /tmp/tornado-sdk" 
+	executeCommand(command)
+
+	## change-branch
+	command = "cd /tmp/tornado-sdk git checkout " + __LINUX_BRANCH__
+	
+	## Copy new files
+	tornadoSDK = os.environ['TORNADO_SDK']
+	command = "cp -R " + tornadoSDK + "/* /tmp/tornado-sdk/"
+	print command
+	os.system(command)
+
+	## Commit new version
+	command = "cd /tmp/tornado-sdk && git commit -a -m " + __MESSAGE__
+	os.system(command)
+		
 
 def push():
-	print "Push new SDK"
+
+	command = "cd /tmp/tornado-sdk && git push -u origin " + __LINUX_BRANCH__
+	print command 
+	if ( __EMULATION__ == False):
+		os.system(command)
+	
+
+def clean():
+	command = "rm -Rf /tmp/tornado-sdk"
+	os.system(command)
 
 def publicNewVersionSDK():
 
@@ -53,15 +94,19 @@ def publicNewVersionSDK():
 	currentBranchName = out
 
 	## For now, we only publish if there is a new version in develop
-	if (currentBranchName == __ALLOWED_BRANCH__):
+	if (currentBranchName.startswith(__ALLOWED_BRANCH__)):
 		newCommit()
 		push()
+		#clean()
 	else:
 		print "Version not publish because the current branch is not " + __ALLOWED_BRANCH__
 
 
 def main():
 	status = checkUnittestStatus()
+
+	## Patterm: status = status and anotherCheck() 
+
 	if (status):
 		publicNewVersionSDK()
 	else:
