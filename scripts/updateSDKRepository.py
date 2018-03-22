@@ -119,6 +119,7 @@ def publicNewVersionSDK():
 		print "Version not publish because the current branch is not " + __ALLOWED_BRANCH__
 
 
+
 def main():
 	status = checkUnittestStatus()
 
