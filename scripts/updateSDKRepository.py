@@ -41,12 +41,16 @@ __EMULATION__ = True
 __LINUX_BRANCH__ = "linux-x86"
 
 def checkUnittestStatus():
-	f = open(".unittestingStatus")
-	content = f.read()
-	if (content.startswith("OK")):
-		return True
-	else:
-		return False
+	try:
+		f = open(".unittestingStatus")
+		content = f.read()
+		if (content.startswith("OK")):
+			return True
+		else:
+			return False
+	except:
+		print("Log file for unittests not found - execute `make tests` first")
+		sys.exit(1)
 
 def executeCommand(command):
 	command = command.split(" ")
@@ -91,7 +95,10 @@ def push():
 
 def clean():
 	command = "rm -Rf " + __TEMPORAL_DIRECTORY__ + __REPOSITORY_NAME__
+	#os.system(command)
+	command = "mv " + __OUTPUT_FILE__ + " .lastUnitTestsStatus"
 	os.system(command)
+
 
 def publicNewVersionSDK():
 
@@ -105,7 +112,7 @@ def publicNewVersionSDK():
 	if (currentBranchName.startswith(__ALLOWED_BRANCH__)):
 		newCommit()
 		push()
-		#clean()
+		clean()
 	else:
 		print "Version not publish because the current branch is not " + __ALLOWED_BRANCH__
 
