@@ -20,16 +20,16 @@ pipeline {
 	stages {
 		stage('checkout-branch') {
 			steps {
-     		    step([$class: 'WsCleanup'])
-		    checkout scm
-                checkout([$class: 'GitSCM', branches: [[name: '*/feature/jenkinsfile/michalis']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/tornado.git']]])
+     				step([$class: 'WsCleanup'])
+		    		checkout scm
+                		checkout([$class: 'GitSCM', branches: [[name: '*/feature/jenkinsfile/michalis']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/tornado.git']]])
 			}
 		}
 		stage('pre-make') {
-			steps{
-		       sh 'currentBranch=`git rev-parse --abbrev-ref HEAD`'
-		       sh 'git checkout master'
-		       sh 'git checkout $currentBranch'
+			steps {
+		        	sh 'currentBranch=`git rev-parse --abbrev-ref HEAD`'
+		       		sh 'git checkout master'
+		       		sh 'git checkout $currentBranch'
 		     }
 		}
 		stage('build') {
@@ -52,13 +52,14 @@ pipeline {
 	
 	}
 	post {
-        success {
-            slackSend color: '#00CC00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
-        }
-        failure {
-            slackSend color: '#CC0000', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
-        }
-    }
+        	success {
+            		slackSend color: '#00CC00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
+	    		deleteDir() /* clean up our workspace */
+        	}	
+        	failure {
+            		slackSend color: '#CC0000', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
+        	}
+    	}
 }
 
 
