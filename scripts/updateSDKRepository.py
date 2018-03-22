@@ -103,14 +103,20 @@ def clean():
 
 def publicNewVersionSDK():
 
-	cmd = "git rev-parse --abbrev-ref HEAD".split(" ")
+	cmd = "git branch".split(" ")
 	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	out, err = p.communicate()
 
 	## Remove the last character \n
-	currentBranchName = out[0:-1]
+	out = out.split("\n")
 
-	print "Checking current branch: " + currentBranchName
+	currentBranchName = ""
+	for line in out:
+		print line
+		if (line.startswith("*")):
+			currentBranchName = line.split(" ")[1].strip()
+
+	print "Checking current branch: " + str(currentBranchName)
 
 	## For now, we only publish if there is a new version in develop
 	if (currentBranchName in __ALLOWED_BRANCHES__):
