@@ -51,6 +51,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
      * @param result
      */
     public static void reductionAnnotation(int[] input, @Reduce int[] result) {
+        result[0] = 0;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += input[i];
         }
