@@ -34,7 +34,7 @@ __GIT_URL_REPOSITORY__ = "git@github.com:beehive-lab/tornado-sdk-internal.git"
 __TEMPORAL_DIRECTORY__ = "temporal/"
 __OUTPUT_FILE__ = ".unittestingStatus"
 __REPOSITORY_NAME__ = "tornado-sdk-internal"
-__MESSAGE__ = '"[AUTOMATIC] TORNADO-SDK-LINUX"'
+__MESSAGE_HEADER__ = '"[AUTOMATIC] '
 
 __EMULATION__ = True
 
@@ -72,13 +72,17 @@ def newCommit():
 	print command
 	os.system(command)
 
+	## Get message of the last commit in Tornado
+	command = "git log --format=%B -n 1"
+	out, err =executeCommand(command)
+	message = __MESSAGE_HEADER__ + out + '"'
+
 	## Commit new version
-	command = "cd " + __TEMPORAL_DIRECTORY__ + __REPOSITORY_NAME__ + "&& git commit -a -m " + __MESSAGE__
+	command = "cd " + __TEMPORAL_DIRECTORY__ + __REPOSITORY_NAME__ + "&& git commit -a -m " + message
 	os.system(command)
 		
 
 def push():
-
 	command = "cd " + __TEMPORAL_DIRECTORY__ + __REPOSITORY_NAME__ + " && git push -u origin " + __LINUX_BRANCH__
 	print command 
 	if ( __EMULATION__ == False):
