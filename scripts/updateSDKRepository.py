@@ -29,7 +29,7 @@ import sys
 import os
 import subprocess
 
-__ALLOWED_BRANCH__ = "feature/56-sdk/juan"
+__ALLOWED_BRANCHES__ = ("feature/56-sdk/juan", "develop", "master")
 __GIT_URL_REPOSITORY__ = "git@github.com:beehive-lab/tornado-sdk-internal.git"
 __TEMPORAL_DIRECTORY__ = "temporal/"
 __OUTPUT_FILE__ = ".unittestingStatus"
@@ -51,6 +51,7 @@ def checkUnittestStatus():
 	except:
 		print("Log file for unittests not found - execute `make tests` first")
 		sys.exit(1)
+
 
 def executeCommand(command):
 	command = command.split(" ")
@@ -106,10 +107,11 @@ def publicNewVersionSDK():
 	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	out, err = p.communicate()
 
-	currentBranchName = out
+	## Remove the last character \n
+	currentBranchName = out[0:-1]
 
 	## For now, we only publish if there is a new version in develop
-	if (currentBranchName.startswith(__ALLOWED_BRANCH__)):
+	if (currentBranchName in __ALLOWED_BRANCHES__):
 		newCommit()
 		push()
 		clean()
