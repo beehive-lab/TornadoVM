@@ -73,6 +73,14 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
 __TEST_NOT_PASSED__= False
 
+RED   = "\033[1;31m"  
+BLUE  = "\033[1;34m"
+CYAN  = "\033[1;36m"
+GREEN = "\033[0;32m"
+RESET = "\033[0;0m"
+BOLD    = "\033[;1m"
+REVERSE = "\033[;7m"
+
 def composeAllOptions(args):
 	""" This method contatenates all JVM options that will be passed to 
 		the Tornado VM. New options should be concatenated in this method. 
@@ -191,14 +199,23 @@ def runTests(args):
 				stats = runCommandWithStats(command, stats)
 		
 		end = time.time()
+		print CYAN
 
 		if (args.fast == False):
+			print GREEN
+			print "=================================================="
+			print BLUE + "              Unit tests report " + GREEN
+			print "=================================================="
+			print CYAN
 			print stats
 			coverage = stats["[PASS]"] / float((stats["[PASS]"] + stats["[FAILED]"])) * 100.0
 			print "Coverage: " + str(round(coverage, 2))  + "%" 
-	
+			print GREEN
+			print "=================================================="
+			print CYAN
 
 		print "Total Time(s): " + str(end-start)
+		print RESET
 		
 
 def runWithJUnit(args):
