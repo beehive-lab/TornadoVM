@@ -50,7 +50,9 @@ pipeline {
 			}
 		}
 		stage('tornado-sdk-push') {
+			steps {
 				sh 'python scripts/updateSDKRepository.py'
+			}
 		}
 	
 	}
