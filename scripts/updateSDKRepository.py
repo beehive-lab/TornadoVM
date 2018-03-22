@@ -110,6 +110,8 @@ def publicNewVersionSDK():
 	## Remove the last character \n
 	currentBranchName = out[0:-1]
 
+	print "Checking current branch: " + currentBranchName
+
 	## For now, we only publish if there is a new version in develop
 	if (currentBranchName in __ALLOWED_BRANCHES__):
 		newCommit()
