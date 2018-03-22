@@ -82,7 +82,7 @@ BOLD    = "\033[;1m"
 REVERSE = "\033[;7m"
 
 def composeAllOptions(args):
-	""" This method contatenates all JVM options that will be passed to 
+	""" This method concatenates all JVM options that will be passed to 
 		the Tornado VM. New options should be concatenated in this method. 
 	"""
 
@@ -127,7 +127,7 @@ def runSingleCommand(cmd, args):
 
 def processStats(out, stats):
 	""" It updates the hash table `stats` for reporting the total number 
-		of method that were failed and passed
+		of methods that were failed and passed
 	"""
 	
 	global __TEST_NOT_PASSED__ 
