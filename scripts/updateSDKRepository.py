@@ -31,6 +31,9 @@ import subprocess
 
 __ALLOWED_BRANCH__ = "feature/56-sdk/juan"
 __GIT_URL_REPOSITORY__ = "git@github.com:beehive-lab/tornado-sdk-internal.git"
+__TEMPORAL_DIRECTORY__ = "temporal/"
+__OUTPUT_FILE__ = ".unittestingStatus"
+__REPOSITORY_NAME__ = "tornado-sdk-internal"
 __MESSAGE__ = '"[AUTOMATIC] TORNADO-SDK-LINUX"'
 
 __EMULATION__ = True
@@ -55,31 +58,35 @@ def executeCommand(command):
 	
 
 def newCommit():
+
+	if (os.path.exists(__TEMPORAL_DIRECTORY__) == False):
+		os.makedirs(__TEMPORAL_DIRECTORY__)
+
 	## Clone existing version
-	command = "git clone -b " + __LINUX_BRANCH__ + " " + __GIT_URL_REPOSITORY__ + " /tmp/tornado-sdk" 
+	command = "git clone -b " + __LINUX_BRANCH__ + " " + __GIT_URL_REPOSITORY__ + " " + __TEMPORAL_DIRECTORY__ + __REPOSITORY_NAME__ 
 	executeCommand(command)
 
 	## Copy new files
 	tornadoSDK = os.environ['TORNADO_SDK']
-	command = "cp -R " + tornadoSDK + "/* /tmp/tornado-sdk/"
+	command = "cp -R " + tornadoSDK + "/* " + __TEMPORAL_DIRECTORY__ + __REPOSITORY_NAME__
 	print command
 	os.system(command)
 
 	## Commit new version
-	command = "cd /tmp/tornado-sdk && git commit -a -m " + __MESSAGE__
+	command = "cd " + __TEMPORAL_DIRECTORY__ + __REPOSITORY_NAME__ + "&& git commit -a -m " + __MESSAGE__
 	os.system(command)
 		
 
 def push():
 
-	command = "cd /tmp/tornado-sdk && git push -u origin " + __LINUX_BRANCH__
+	command = "cd " + __TEMPORAL_DIRECTORY__ + __REPOSITORY_NAME__ + " && git push -u origin " + __LINUX_BRANCH__
 	print command 
 	if ( __EMULATION__ == False):
 		os.system(command)
 	
 
 def clean():
-	command = "rm -Rf /tmp/tornado-sdk"
+	command = "rm -Rf " + __TEMPORAL_DIRECTORY__ + __REPOSITORY_NAME__
 	os.system(command)
 
 def publicNewVersionSDK():
