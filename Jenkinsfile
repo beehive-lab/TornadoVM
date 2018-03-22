@@ -25,7 +25,7 @@ pipeline {
                 		checkout([$class: 'GitSCM', branches: [[name: '**']], doGenerateSubmoduleConfigurations: false, extensions:[[$class: 'LocalBranch']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/tornado.git']]])
 			}
 		}
-		stage('pre-make') {
+		stage('pre-build') {
 			steps {
 		        	sh 'currentBranch=`git rev-parse --abbrev-ref HEAD`'
 		       		sh 'git checkout master'
@@ -48,6 +48,9 @@ pipeline {
 				sh 'mvn clean install -DskipTests'
 				sh 'kfusion kfusion.java.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado/conf/bm-traj2.settings'
 			}
+		}
+		stage('tornado-sdk-push') {
+				sh 'python scripts/updateSDKRepository.py'
 		}
 	
 	}
