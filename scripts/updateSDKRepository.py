@@ -36,7 +36,7 @@ __OUTPUT_FILE__ = ".unittestingStatus"
 __REPOSITORY_NAME__ = "tornado-sdk-internal"
 __MESSAGE_HEADER__ = '"[AUTOMATIC] '
 
-__EMULATION__ = True
+__EMULATION__ = False
 
 __LINUX_BRANCH__ = "linux-x86"
 
