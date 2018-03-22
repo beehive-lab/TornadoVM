@@ -20,7 +20,8 @@ pipeline {
 	stages {
 		stage('checkout-branch') {
 			steps {
-     		    step([$class: 'WsCleanup'])
+     		    step([$class: 'WsCleanup']
+		    checkout scm)
                 checkout([$class: 'GitSCM', branches: [[name: '*/feature/jenkinsfile/michalis']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/tornado.git']]])
 			}
 		}
