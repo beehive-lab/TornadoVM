@@ -29,7 +29,7 @@ import sys
 import os
 import subprocess
 
-__ALLOWED_BRANCHES__ = ("origin/feature/56-sdk/juan", "origin/develop", "origin/master", "feature/56-sdk/juan", "develop", "master")
+__ALLOWED_BRANCHES__ = ("heads/origin/feature/56-sdk/juan", "heads/origin/develop", "heads/origin/master", "feature/56-sdk/juan", "develop", "master")
 __GIT_URL_REPOSITORY__ = "git@tornado-sdk.github.com:beehive-lab/tornado-sdk-internal.git"
 __TEMPORAL_DIRECTORY__ = "temporal/"
 __OUTPUT_FILE__ = ".unittestingStatus"
