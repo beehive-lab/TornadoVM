@@ -22,7 +22,7 @@ pipeline {
 			steps {
      				step([$class: 'WsCleanup'])
 		    		checkout scm
-                		checkout([$class: 'GitSCM', branches: [[name: '*/feature/jenkinsfile/michalis']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/tornado.git']]])
+                		checkout([$class: 'GitSCM', branches: [[name: '*/feature/jenkinsfile/michalis']], doGenerateSubmoduleConfigurations: false, extensions:[[$class: 'LocalBranch']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/tornado.git']]])
 			}
 		}
 		stage('pre-make') {
@@ -51,8 +51,9 @@ pipeline {
 		}
 	
 	}
+
 	post {
-        	success {
+		success {
             		slackSend color: '#00CC00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
 	    		deleteDir() /* clean up our workspace */
         	}	
