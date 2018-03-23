@@ -12,7 +12,7 @@ pipeline {
 		 GRAAL_VERSION="0.22"
 		 JVMCI_VERSION="1.8.0_131"
 		 PATH="/var/lib/jenkins/workspace/Slambench/slambench-tornado/bin:/var/lib/jenkins/workspace/Tornado-pipeline/bin/bin:$PATH"    
-		 TORNADO_SDK="/var/lib/jenkins/workspace/Tornado-pipeline/bin/sdk" #d
+		 TORNADO_SDK="/var/lib/jenkins/workspace/Tornado-pipeline/bin/sdk" 
 		 CMAKE_ROOT="/opt/jenkins/cmake-3.10.2-Linux-x86_64"
 		 KFUSION_ROOT="/var/lib/jenkins/workspace/Slambench/slambench-tornado"
 	}
