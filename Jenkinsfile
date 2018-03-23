@@ -28,6 +28,7 @@ pipeline {
 		stage('pre-build') {
 			steps {
 		        	sh 'currentBranch=`git rev-parse --abbrev-ref HEAD`'
+                                sh 'echo $currentBranch'
 		       		sh 'git checkout master'
 		       		sh 'git checkout $currentBranch'
 		     }
@@ -35,11 +36,15 @@ pipeline {
 		stage('build') {
 			steps {
 				sh 'make'
+				sh 'currentBranch=`git rev-parse --abbrev-ref HEAD`'
+                                sh 'echo $currentBranch'
 			}
 		}
 		stage('tornado-unittests') {
 			steps {
 				sh 'make tests'
+				sh 'currentBranch=`git rev-parse --abbrev-ref HEAD`'
+                                sh 'echo $currentBranch'
 		    }
 		}		
 		stage('tornado-sdk-push') {
