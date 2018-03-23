@@ -45,6 +45,8 @@ pipeline {
 		stage('tornado-sdk-push') {
 			steps {
 				sh 'cd $TORNADO_ROOT'
+				sh 'currentBranch=`git rev-parse --abbrev-ref HEAD`'
+				sh 'echo $currentBranch'
 				sh 'python scripts/updateSDKRepository.py'
 			}
 		}
