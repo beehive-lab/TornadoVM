@@ -84,7 +84,6 @@ public class TornadoVM extends TornadoLogger {
     private final List<Object> constants;
     private final List<SchedulableTask> tasks;
 
-    private final byte[] code;
     private final ByteBuffer buffer;
 
     private double totalTime;
@@ -92,7 +91,6 @@ public class TornadoVM extends TornadoLogger {
 
     public TornadoVM(ExecutionContext graphContext, byte[] code, int limit) {
         this.graphContext = graphContext;
-        this.code = code;
 
         useDependencies = graphContext.meta().enableOooExecution() | VM_USE_DEPS;
         totalTime = 0;
