@@ -29,22 +29,23 @@ pipeline {
 		stage('build') {
 			steps {
 				sh 'make'
-				sh 'currentBranch=`git rev-parse --abbrev-ref HEAD`'
-                                sh 'echo $currentBranch'
 			}
 		}
 		stage('tornado-unittests') {
 			steps {
 				sh 'make tests'
-				sh 'currentBranch=`git rev-parse --abbrev-ref HEAD`'
-                                sh 'echo $currentBranch'
-		    }
+			 }
 		}		
+		stage('build-n-run-kfusion') {
+                	steps {
+                		sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado'
+                		sh 'mvn clean install -DskipTests'
+                		sh 'kfusion kfusion.java.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado/conf/bm-traj2.settings'
+            		}
+        	}
 		stage('tornado-sdk-push') {
 			steps {
 				sh 'cd $TORNADO_ROOT'
-				sh 'currentBranch=`git rev-parse --abbrev-ref HEAD`'
-				sh 'echo $currentBranch'
 				sh 'python scripts/updateSDKRepository.py'
 			}
 		}
