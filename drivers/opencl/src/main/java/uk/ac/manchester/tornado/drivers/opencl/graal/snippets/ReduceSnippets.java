@@ -64,7 +64,7 @@ public class ReduceSnippets implements Snippets {
     public static void reduceIntAdd(int[] inputArray, int[] outputArray, int gidx, int globalSize) {
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
-        int groupSize = OpenCLIntrinsics.get_local_size(0);
+        int localGroupSize = OpenCLIntrinsics.get_local_size(0);
 
         // Allocate a chunk of data in local memory
         int[] localMemory = new int[1024];
@@ -73,9 +73,10 @@ public class ReduceSnippets implements Snippets {
         // Copy input data to local memory
         localMemory[localIdx] = inputArray[gidx];
 
-        int start = groupSize >> 1;
+        int start = localGroupSize / 2;
         // Reduction in local memory
-        for (int stride = start; stride > 0; stride <<= 1) {
+        for (int stride = start; stride > 0; stride /= 2) {
+
             OpenCLIntrinsics.localBarrier();
             if (stride > localIdx) {
                 localMemory[localIdx] += localMemory[localIdx + stride];
@@ -84,20 +85,20 @@ public class ReduceSnippets implements Snippets {
 
         // Final copy to global memory
         if (localIdx == 0) {
-            outputArray[0] += localMemory[0];
+            int groupID = OpenCLIntrinsics.get_group_id(0);
+            outputArray[groupID] += localMemory[0];
         }
 
         // Note: This is expensive, but it's the final
         // reduction with the elements left from the first
         // reduction.
-        OpenCLIntrinsics.globalBarrier();
         if (gidx == 0) {
-            int numGroups = globalSize / groupSize;
+            OpenCLIntrinsics.globalBarrier();
+            int numGroups = globalSize / localGroupSize;
             for (int i = 1; i < numGroups; i++) {
                 outputArray[0] += outputArray[i];
             }
         }
-        OpenCLIntrinsics.globalBarrier();
     }
 
     public static class Templates extends AbstractTemplates {

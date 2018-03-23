@@ -35,6 +35,7 @@ import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIDFixedNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.NewLocalArrayNode;
@@ -56,7 +57,7 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
                 graph.replaceFixed(invoke, barrier);
 
                 // barrier.setNext(invoke.next());
-                // Node pred = invoke.predecessor();
+                // Node pred = invoke.predecessor();R
                 // pred.replaceFirstSuccessor(invoke, barrier);
                 // invoke.replaceAtUsages(barrier);
 
@@ -70,6 +71,9 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
             } else if (methodName.equals("Direct#OpenCLIntrinsics.get_local_size")) {
                 LocalGroupSizeNode groupSizeNode = graph.addOrUnique(new LocalGroupSizeNode(ConstantNode.forInt(0, graph)));
                 graph.replaceFixed(invoke, groupSizeNode);
+            } else if (methodName.equals("Direct#OpenCLIntrinsics.get_group_id")) {
+                GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(ConstantNode.forInt(0, graph)));
+                graph.replaceFixed(invoke, groupIdNode);
             } else if (methodName.equals("Direct#OpenCLIntrinsics.createLocalMemory")) {
                 // TODO: get the corresponding parameters
 

@@ -116,7 +116,6 @@ def runSingleCommand(cmd, args):
 
 	cmd = cmd + " " + args.testClass
 	cmd = cmd.split(" ")
-	print cmd
 
 	start = time.time()
 	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
