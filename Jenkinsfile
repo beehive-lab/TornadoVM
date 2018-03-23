@@ -26,14 +26,6 @@ pipeline {
 	               		checkout([$class: 'GitSCM', branches: [[name: '**']], doGenerateSubmoduleConfigurations: false, extensions:[[$class: 'LocalBranch']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/tornado.git']]])
 			}
 		}
-		stage('pre-build') {
-			steps {
-		        	sh 'currentBranch=`git rev-parse --abbrev-ref HEAD`'
-                                sh 'echo $currentBranch'
-		       		//sh 'git checkout master'
-		       		sh 'git checkout $currentBranch'
-		     }
-		}
 		stage('build') {
 			steps {
 				sh 'make'
