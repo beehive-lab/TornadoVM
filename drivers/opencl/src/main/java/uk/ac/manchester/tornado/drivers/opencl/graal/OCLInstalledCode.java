@@ -50,7 +50,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
     private final OCLKernelScheduler DEFAULT_SCHEDULER;
 
-    //TODO replace with a system property/Tornado setting
+    // TODO replace with a system property/Tornado setting
     private final ByteBuffer buffer = ByteBuffer.allocate(8);
     private final byte[] code;
     private final OCLDeviceContext deviceContext;
@@ -60,12 +60,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     private final OCLKernelScheduler scheduler;
     private final int[] internalEvents = new int[1];
 
-    public OCLInstalledCode(
-            final String entryPoint,
-            final byte[] code,
-            final OCLDeviceContext deviceContext,
-            final OCLProgram program,
-            final OCLKernel kernel) {
+    public OCLInstalledCode(final String entryPoint, final byte[] code, final OCLDeviceContext deviceContext, final OCLProgram program, final OCLKernel kernel) {
         super(entryPoint);
         this.code = code;
         this.deviceContext = deviceContext;
@@ -91,10 +86,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     public void execute(final OCLByteBuffer stack, final TaskMetaData meta) {
-        debug("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(),
-                kernel.getName(), deviceContext.getDevice().getName());
-        debug("\tstack    : buffer id=0x%x, address=0x%x relative=0x%x", stack.toBuffer(),
-                stack.toAbsoluteAddress(), stack.toRelativeAddress());
+        debug("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getName());
+        debug("\tstack    : buffer id=0x%x, address=0x%x relative=0x%x", stack.toBuffer(), stack.toAbsoluteAddress(), stack.toRelativeAddress());
 
         setKernelArgs(stack, meta);
         stack.write();
@@ -117,20 +110,18 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             }
 
             if (meta != null && meta.shouldDumpProfiles()) {
-//            meta.addProfile(task);
+                // meta.addProfile(task);
             }
 
         }
-        //NOTE stack needs to be read so that the return value
-        //     is transfered back to the host
-        //     - As this is blocking then no clFinish() is needed
+        // NOTE stack needs to be read so that the return value
+        // is transfered back to the host
+        // - As this is blocking then no clFinish() is needed
         stack.read();
 
         Event event = deviceContext.resolveEvent(task);
 
-        debug("kernel completed: id=0x%x, method = %s, device = %s",
-                kernel.getId(), kernel.getName(),
-                deviceContext.getDevice().getName());
+        debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getName());
         if (event != null) {
             debug("\tstatus   : %s", event.getStatus());
 
@@ -150,7 +141,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     @Override
     public Object executeVarargs(final Object... args) throws InvalidInstalledCodeException {
 
-        // final OCLCallStack callStack = memoryManager.createCallStack(args.length);
+        // final OCLCallStack callStack =
+        // memoryManager.createCallStack(args.length);
         //
         // callStack.reset();
         // callStack.pushArgs(args);
@@ -177,6 +169,14 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return code;
     }
 
+    /**
+     * Set arguments into the OpenCL device Kernel.
+     * 
+     * @param stack
+     *            {@link OCLByteBuffer}
+     * @param meta
+     *            {@link TaskMetaData}
+     */
     private void setKernelArgs(final OCLByteBuffer stack, TaskMetaData meta) {
         int index = 0;
 
@@ -220,14 +220,11 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         kernel.setArgUnused(index);
     }
 
-    public int submit(final OCLCallStack stack, final TaskMetaData meta,
-            final int[] events) {
+    public int submit(final OCLCallStack stack, final TaskMetaData meta, final int[] events) {
 
         if (DEBUG) {
-            info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(),
-                    kernel.getName(), deviceContext.getDevice().getName());
-            info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(),
-                    stack.toAbsoluteAddress(), stack.toRelativeAddress());
+            info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getName());
+            info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(), stack.toAbsoluteAddress(), stack.toRelativeAddress());
         }
 
         /*
@@ -251,8 +248,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         } else {
             if (meta.isParallel()) {
                 if (meta.enableThreadCoarsener()) {
-                    //FIXME hack to support both the old paralleliser and the
-                    //      new thread coarsener schemes
+                    // FIXME hack to support both the old paralleliser and the
+                    // new thread coarsener schemes
                     task = DEFAULT_SCHEDULER.submit(kernel, meta, waitEvents);
                 } else {
                     task = scheduler.submit(kernel, meta, waitEvents);
@@ -278,10 +275,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     public void submit(final OCLCallStack stack, final TaskMetaData meta) {
 
         if (DEBUG) {
-            info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(),
-                    kernel.getName(), deviceContext.getDevice().getName());
-            info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(),
-                    stack.toAbsoluteAddress(), stack.toRelativeAddress());
+            info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getName());
+            info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(), stack.toAbsoluteAddress(), stack.toRelativeAddress());
         }
 
         /*
@@ -301,8 +296,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
             final int task;
             if (meta.isParallel()) {
-                //FIXME hack to support both the old paralleliser and the
-                //      new thread coarsener schemes
+                // FIXME hack to support both the old paralleliser and the
+                // new thread coarsener schemes
                 if (meta.enableThreadCoarsener()) {
                     task = DEFAULT_SCHEDULER.submit(kernel, meta, null);
                 } else {

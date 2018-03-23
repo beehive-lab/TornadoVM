@@ -35,6 +35,8 @@ public class OCLAssemblerConstants {
     public static final String PRIVATE_MEM_MODIFIER = "__private";
     public static final String CONSTANT_MEM_MODIFIER = "__constant";
 
+    public static final String TORNADO_HEAP_MEMORY = "heap";
+
     public static final String GLOBAL_REGION_NAME = "_global_region";
     public static final String LOCAL_REGION_NAME = "_local_region";
     public static final String PRIVATE_REGION_NAME = "_private_region";
