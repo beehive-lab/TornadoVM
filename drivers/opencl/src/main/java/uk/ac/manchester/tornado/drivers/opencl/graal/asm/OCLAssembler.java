@@ -729,6 +729,8 @@ public final class OCLAssembler extends Assembler {
         }
     }
 
+    private static final boolean EMIT_INTRINSICS = false;
+
     private int indent;
     private int lastIndent;
     private String delimiter;
@@ -737,20 +739,7 @@ public final class OCLAssembler extends Assembler {
     private List<String> operandStack;
     private boolean pushToStack;
 
-    public OCLAssembler(TargetDescription target) {
-        super(target);
-        indent = 0;
-        delimiter = OCLAssemblerConstants.STMT_DELIMITER;
-        emitEOL = true;
-        operandStack = new ArrayList<>(10);
-        pushToStack = false;
-
-        if (((OCLTargetDescription) target).supportsFP64()) {
-            emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable");
-            // emitLine("#pragma OPENCL EXTENSION cl_intel_printf :enable");
-            // emitLine("#pragma OPENCL EXTENSION cl_amd_printf :enable");
-        }
-
+    private void emitAtomicIntrinsics() {
         //@formatter:off
         emitLine("inline void atomicAdd_Tornado_Floats(volatile __global float *source, const float operand) {\n" + 
                 "   union {\n" + 
@@ -804,6 +793,25 @@ public final class OCLAssembler extends Assembler {
         
         
         //@formatter:on
+    }
+
+    public OCLAssembler(TargetDescription target) {
+        super(target);
+        indent = 0;
+        delimiter = OCLAssemblerConstants.STMT_DELIMITER;
+        emitEOL = true;
+        operandStack = new ArrayList<>(10);
+        pushToStack = false;
+
+        if (((OCLTargetDescription) target).supportsFP64()) {
+            emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable");
+            // emitLine("#pragma OPENCL EXTENSION cl_intel_printf :enable");
+            // emitLine("#pragma OPENCL EXTENSION cl_amd_printf :enable");
+        }
+
+        if (EMIT_INTRINSICS) {
+            emitAtomicIntrinsics();
+        }
 
         // String extensions = ((OCLTargetDescription) target).getExtensions();
         // emitLine("// " + extensions);
