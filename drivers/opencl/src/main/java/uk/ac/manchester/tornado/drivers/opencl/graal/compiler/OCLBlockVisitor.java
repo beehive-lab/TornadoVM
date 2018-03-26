@@ -30,6 +30,7 @@ import java.util.Set;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StartNode;
@@ -129,11 +130,11 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                     asm.endScope();
                 }
             }
-            // XXX: We might want also to check for switch-case.
         }
+        // XXX: We might want also to check for switch-case.
     }
 
-    private void closeWitchStatement(Block b) {
+    private void closeSwitchStatement(Block b) {
         asm.emitLine(OCLAssemblerConstants.BREAK + OCLAssemblerConstants.STMT_DELIMITER);
 
         final IntegerSwitchNode switchNode = (IntegerSwitchNode) b.getDominator().getEndNode();
@@ -146,11 +147,13 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         }
     }
 
+    private boolean isLegalEndBlock(Block block) {
+        return !(block.getBeginNode() instanceof LoopExitNode);
+    }
+
     @Override
     public void exit(Block b, Block value) {
         if (b.isLoopEnd()) {
-            // asm.emitLine(String.format("// block %d exits loop %d",
-            // b.getId(), b.getLoop().getHeader().getId()));
             asm.endScope();
         }
         if (b.getPostdominator() != null) {
@@ -159,9 +162,11 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                 // asm.emitLine(String.format("// block %d merges control flow
                 // -> pdom = %d depth=%d",b.getId(), pdom.getId(),
                 // pdom.getDominatorDepth()));
-                asm.endScope();
+                if (isLegalEndBlock(b)) {
+                    asm.endScope();
+                }
             } else if (!merges.contains(pdom) && isMergeBlock(pdom) && switches.contains(b) && isSwitchBlock(b.getDominator())) {
-                closeWitchStatement(b);
+                closeSwitchStatement(b);
             } else {
                 checkClosingBlockInsideIf(b, pdom);
             }
