@@ -29,8 +29,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
@@ -66,17 +68,15 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
+    private static final boolean USE_EXPERIMENTAL_TRAVERSE = true;
     protected LIR lir;
     protected int currentBlockIndex;
     protected final Set<ResolvedJavaMethod> nonInlinedMethods;
     protected boolean isKernel;
 
-    public OCLCompilationResultBuilder(CodeCacheProvider codeCache,
-            ForeignCallsProvider foreignCalls, FrameMap frameMap,
-            Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
+    public OCLCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
             OCLCompilationResult compilationResult, OptionValues options) {
-        super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext,
-                options, compilationResult);
+        super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, compilationResult);
         nonInlinedMethods = new HashSet<>();
     }
 
@@ -111,7 +111,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
      * code emitting order}.
      */
     @Override
-    public void emit(@SuppressWarnings("hiding") LIR lir) {
+    public void emit(LIR lir) {
         assert this.lir == null;
         assert currentBlockIndex == 0;
         this.lir = lir;
@@ -121,7 +121,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
         trace("Traversing CFG: ", cfg.graph.name);
         cfg.computePostdominators();
-        traverseCfg(cfg, new OCLBlockVisitor(this));
+        traverseControlFlowGraph(cfg, new OCLBlockVisitor(this));
 
         trace("Finished traversing CFG");
         this.lir = null;
@@ -134,7 +134,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         int position = asm.position();
         compilationResult.setTargetCode(asm.close(true), position);
 
-//        closeCompilationResult();
+        // closeCompilationResult();
     }
 
     private String toString(Collection<Block> blocks) {
@@ -211,8 +211,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     @Deprecated
-    private void migrateInsnToBody(List<LIRInstruction> header,
-            List<LIRInstruction> body) {
+    private void migrateInsnToBody(List<LIRInstruction> header, List<LIRInstruction> body) {
 
         // build up set of IVs
         // final Set<AllocatableValue> ivs = new HashSet<AllocatableValue>();
@@ -233,7 +232,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
         LIRInstruction current = header.get(index);
         while (!(current instanceof LoopConditionOp)) {
-            // System.out.printf("moving: %s from block %s to block %s...\n",current,
+            // System.out.printf("moving: %s from block %s to block
+            // %s...\n",current,
             // header, body);
             if (!(current instanceof LoopPostOp)) {
                 body.add(insertAt, header.remove(index));
@@ -268,9 +268,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
 
         @Override
-        public Value doValue(LIRInstruction instruction, Value value,
-                OperandMode mode, EnumSet<OperandFlag> flags) {
-            // System.out.printf("dep: insn=%s, emitValue=%s\n",instruction,emitValue);
+        public Value doValue(LIRInstruction instruction, Value value, OperandMode mode, EnumSet<OperandFlag> flags) {
+            // System.out.printf("dep: insn=%s,
+            // emitValue=%s\n",instruction,emitValue);
             if (value instanceof Variable) {
                 dependencies.add(value);
             }
@@ -357,8 +357,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
 
         if (PrintLIRWithAssembly.getValue(getOptions())) {
-            blockComment(String.format("block B%d %s", block.getId(),
-                    block.getLoop()));
+            blockComment(String.format("block B%d %s", block.getId(), block.getLoop()));
         }
 
         LIRInstruction breakInst = null;
@@ -377,8 +376,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             try {
                 emitOp(this, op);
             } catch (TornadoInternalError e) {
-                throw e.addContext("lir instruction", block + "@" + op.id()
-                        + " " + op + "\n");
+                throw e.addContext("lir instruction", block + "@" + op.id() + " " + op + "\n");
             }
         }
 
@@ -391,8 +389,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             try {
                 emitOp(this, breakInst);
             } catch (TornadoInternalError e) {
-                throw e.addContext("lir instruction",
-                        block + "@" + breakInst.id() + " " + breakInst + "\n");
+                throw e.addContext("lir instruction", block + "@" + breakInst.id() + " " + breakInst + "\n");
             }
         }
 
@@ -407,21 +404,89 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
     }
 
-    private static void traverseCfg(ControlFlowGraph cfg, OCLBlockVisitor visitor) {
-        traverseCfg(cfg.getStartBlock(), visitor);
+    private static void traverseControlFlowGraph(ControlFlowGraph cfg, OCLBlockVisitor visitor) {
+        if (USE_EXPERIMENTAL_TRAVERSE) {
+            traverseControlFlowGraph(cfg.getStartBlock(), visitor, new HashSet<>());
+        } else {
+            traverseCurrentCfg(cfg.getStartBlock(), visitor);
+        }
     }
 
-    private static void traverseCfg(Block b, OCLBlockVisitor visitor) {
+    private static void traverseCurrentCfg(Block b, OCLBlockVisitor visitor) {
         visitor.enter(b);
         Block firstDominated = b.getFirstDominated();
         while (firstDominated != null) {
-//            if (firstDominated.getDominator().getPostdominator() == firstDominated) {
-//                System.out.println("very very bad");
-//            }
-            traverseCfg(firstDominated, visitor);
+            traverseCurrentCfg(firstDominated, visitor);
             firstDominated = firstDominated.getDominatedSibling();
         }
         visitor.exit(b, null);
+    }
+
+    private static void traverseControlFlowGraph(Block b, OCLBlockVisitor visitor, HashSet<Block> visited) {
+
+        visitor.enter(b);
+        visited.add(b);
+
+        Block firstDominated = b.getFirstDominated();
+        LinkedList<Block> queue = new LinkedList<>();
+        queue.add(firstDominated);
+
+        if (b.isLoopHeader()) {
+            Block[] successors = b.getSuccessors();
+            ArrayList<Block> last = new ArrayList<>();
+            for (Block block : successors) {
+                boolean isInnerLoop = isLoopBlock(block, b);
+                if (!isInnerLoop) {
+                    last.add(block);
+                } else {
+                    queue.addLast(block);
+                }
+            }
+            for (Block l : last) {
+                queue.addLast(l);
+            }
+            queue.removeFirst();
+            System.out.println(queue);
+        }
+
+        for (Block block : queue) {
+            firstDominated = block;
+            while (firstDominated != null) {
+                if (!visited.contains(firstDominated)) {
+                    traverseControlFlowGraph(firstDominated, visitor, visited);
+                }
+                firstDominated = firstDominated.getDominatedSibling();
+            }
+        }
+        visitor.exit(b, null);
+    }
+
+    private static boolean isLoopBlock(Block block, Block loopHeader) {
+
+        Set<Block> visited = new HashSet<>();
+        Stack<Block> stack = new Stack<>();
+        stack.push(block);
+
+        while (!stack.isEmpty()) {
+
+            Block b = stack.pop();
+            visited.add(b);
+
+            if (b.getId() < loopHeader.getId()) {
+                return false;
+            } else if (b == loopHeader) {
+                return true;
+            } else {
+                Block[] successors = b.getSuccessors();
+                for (Block bl : successors) {
+                    if (!visited.contains(bl)) {
+                        stack.push(bl);
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
 }
