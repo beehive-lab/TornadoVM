@@ -12,7 +12,7 @@ pipeline {
 		 GRAAL_VERSION="0.22"
 		 JVMCI_VERSION="1.8.0_131"
 		 PATH="/var/lib/jenkins/workspace/Slambench/slambench-tornado/bin:/var/lib/jenkins/workspace/Tornado-pipeline/bin/bin:$PATH"    
-		 TORNADO_SDK="/var/lib/jenkins/workspace/Tornado-pipeline/bin/sdk"
+		 TORNADO_SDK="/var/lib/jenkins/workspace/Tornado-pipeline/bin/sdk" 
 		 CMAKE_ROOT="/opt/jenkins/cmake-3.10.2-Linux-x86_64"
 		 KFUSION_ROOT="/var/lib/jenkins/workspace/Slambench/slambench-tornado"
 	}
@@ -22,15 +22,9 @@ pipeline {
 			steps {
      				step([$class: 'WsCleanup'])
 		    		checkout scm
-                		checkout([$class: 'GitSCM', branches: [[name: '**']], doGenerateSubmoduleConfigurations: false, extensions:[[$class: 'LocalBranch']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/tornado.git']]])
+                                sh 'git checkout master'
+	               		checkout([$class: 'GitSCM', branches: [[name: '**']], doGenerateSubmoduleConfigurations: false, extensions:[[$class: 'LocalBranch']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/tornado.git']]])
 			}
-		}
-		stage('pre-build') {
-			steps {
-		        	sh 'currentBranch=`git rev-parse --abbrev-ref HEAD`'
-		       		sh 'git checkout master'
-		       		sh 'git checkout $currentBranch'
-		     }
 		}
 		stage('build') {
 			steps {
@@ -40,13 +34,13 @@ pipeline {
 		stage('tornado-unittests') {
 			steps {
 				sh 'make tests'
-		    }
-		}
+			 }
+		}		
 		stage('build-n-run-kfusion') {
 			steps {
 				sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado'
 				sh 'mvn clean install -DskipTests'
-				sh 'kfusion kfusion.java.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado/conf/bm-traj2.settings'
+				sh 'kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado/conf/bm-traj2.settings'
 			}
 		}
 		stage('tornado-sdk-push') {
