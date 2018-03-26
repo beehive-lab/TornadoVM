@@ -77,7 +77,7 @@ public class ReduceSnippets implements Snippets {
         // Reduction in local memory
         for (int stride = start; stride > 0; stride /= 2) {
 
-            OpenCLIntrinsics.localBarrier();
+            // OpenCLIntrinsics.localBarrier();
             if (stride > localIdx) {
                 localMemory[localIdx] += localMemory[localIdx + stride];
             }
@@ -92,8 +92,8 @@ public class ReduceSnippets implements Snippets {
         // Note: This is expensive, but it's the final
         // reduction with the elements left from the first
         // reduction.
+        OpenCLIntrinsics.globalBarrier();
         if (gidx == 0) {
-            OpenCLIntrinsics.globalBarrier();
             int numGroups = globalSize / localGroupSize;
             for (int i = 1; i < numGroups; i++) {
                 outputArray[0] += outputArray[i];
