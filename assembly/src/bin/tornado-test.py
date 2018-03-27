@@ -158,7 +158,7 @@ def processStats(out, stats):
 				name = name[:-16]
 
 			if (className + "#" + name in __TORNADO_TESTS_WHITE_LIST__):
-				print "Test: " + className + "#" + name + " in whiteList."
+				print RED + "Test: " + className + "#" + name + " in whiteList." + RESET
 			else:
 				## set a flag
 				__TEST_NOT_PASSED__ = True
