@@ -188,7 +188,7 @@ def runTests(args):
 	## Run test
 	cmd = "tornado " + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
 	if (args.testClass != None):
-		print "TEST CLASS"
+
 		if (args.fast):
 			cmd = cmd + " " + args.testClass
 			os.system(cmd)
