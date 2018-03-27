@@ -164,7 +164,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 }
 
                 ValueNode inputArray = obtainInputArray(store.value(), store.array(), store.index());
-                System.out.println("INPUT ARRAY: " + inputArray);
+                // System.out.println("INPUT ARRAY: " + inputArray);
 
                 ReductionNodes reductionNode = createReductionNode(graph, store, inputArray);
                 Node pred = node.predecessor();

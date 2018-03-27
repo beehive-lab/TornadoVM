@@ -44,6 +44,11 @@ import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
 
 public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTierContext> {
 
+    private ConstantNode getConstantNodeFromArguments(InvokeNode invoke, int index) {
+        NodeInputList<ValueNode> arguments = invoke.callTarget().arguments();
+        return (ConstantNode) arguments.get(index);
+    }
+
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
 
@@ -53,29 +58,23 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
 
             if (methodName.equals("Direct#OpenCLIntrinsics.localBarrier")) {
                 OCLBarrierNode barrier = graph.addOrUnique(new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.LOCAL));
-
                 graph.replaceFixed(invoke, barrier);
-
-                // barrier.setNext(invoke.next());
-                // Node pred = invoke.predecessor();R
-                // pred.replaceFirstSuccessor(invoke, barrier);
-                // invoke.replaceAtUsages(barrier);
-
             } else if (methodName.equals("Direct#OpenCLIntrinsics.globalBarrier")) {
                 OCLBarrierNode barrier = graph.addOrUnique(new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.GLOBAL));
                 graph.replaceFixed(invoke, barrier);
-
             } else if (methodName.equals("Direct#OpenCLIntrinsics.get_local_id")) {
-                LocalThreadIDFixedNode localIDNode = graph.addOrUnique(new LocalThreadIDFixedNode(ConstantNode.forInt(0, graph)));
+                ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
+                LocalThreadIDFixedNode localIDNode = graph.addOrUnique(new LocalThreadIDFixedNode(dimension));
                 graph.replaceFixed(invoke, localIDNode);
             } else if (methodName.equals("Direct#OpenCLIntrinsics.get_local_size")) {
-                LocalGroupSizeNode groupSizeNode = graph.addOrUnique(new LocalGroupSizeNode(ConstantNode.forInt(0, graph)));
+                ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
+                LocalGroupSizeNode groupSizeNode = graph.addOrUnique(new LocalGroupSizeNode(dimension));
                 graph.replaceFixed(invoke, groupSizeNode);
             } else if (methodName.equals("Direct#OpenCLIntrinsics.get_group_id")) {
-                GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(ConstantNode.forInt(0, graph)));
+                ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
+                GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(dimension));
                 graph.replaceFixed(invoke, groupIdNode);
             } else if (methodName.equals("Direct#OpenCLIntrinsics.createLocalMemory")) {
-                // TODO: get the corresponding parameters
 
                 NodeInputList<ValueNode> arguments = invoke.callTarget().arguments();
                 FixedArrayNode array = (FixedArrayNode) arguments.get(0);

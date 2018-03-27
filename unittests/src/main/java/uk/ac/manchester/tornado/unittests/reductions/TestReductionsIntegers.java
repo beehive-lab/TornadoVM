@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsIntegers extends TornadoTestBase {
 
-    public static final int SIZE = 64;
+    public static final int SMALL_SIZE = 64;
     public static final int BIG_SIZE = 128;
 
     /**
@@ -90,12 +90,12 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
     @Test
     public void testSequentialReduction() {
-        float[] input = new float[SIZE];
+        float[] input = new float[SMALL_SIZE];
         float[] result = new float[1];
 
         Random r = new Random();
 
-        IntStream.range(0, SIZE).parallel().forEach(i -> {
+        IntStream.range(0, SMALL_SIZE).parallel().forEach(i -> {
             input[i] = r.nextFloat();
         });
 
@@ -124,12 +124,12 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
     @Test
     public void testSequentialReduction2() {
-        int[] input = new int[SIZE * 2];
+        int[] input = new int[SMALL_SIZE * 2];
         int[] result = new int[1];
 
         Random r = new Random();
 
-        IntStream.range(0, SIZE * 2).parallel().forEach(i -> {
+        IntStream.range(0, SMALL_SIZE * 2).parallel().forEach(i -> {
             input[i] = r.nextInt();
         });
 
@@ -156,12 +156,12 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
     @Test
     public void testSequentialReductionBig() {
-        int[] input = new int[SIZE * 2];
+        int[] input = new int[SMALL_SIZE * 2];
         int[] result = new int[1];
 
         Random r = new Random();
 
-        IntStream.range(0, SIZE * 2).parallel().forEach(i -> {
+        IntStream.range(0, SMALL_SIZE * 2).parallel().forEach(i -> {
             input[i] = r.nextInt();
         });
 
@@ -188,12 +188,12 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
     @Test
     public void testReduction01() {
-        int[] input = new int[SIZE];
+        int[] input = new int[SMALL_SIZE];
         int[] result = new int[1];
 
         Random r = new Random();
 
-        IntStream.range(0, SIZE).parallel().forEach(i -> {
+        IntStream.range(0, SMALL_SIZE).parallel().forEach(i -> {
             input[i] = r.nextInt();
         });
 
@@ -227,14 +227,14 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
     @Test
     public void testMapReduce() {
-        int[] a = new int[SIZE * 2];
-        int[] b = new int[SIZE * 2];
-        int[] c = new int[SIZE * 2];
-        int[] result = new int[SIZE * 2];
+        int[] a = new int[SMALL_SIZE * 2];
+        int[] b = new int[SMALL_SIZE * 2];
+        int[] c = new int[SMALL_SIZE * 2];
+        int[] result = new int[SMALL_SIZE * 2];
 
         Random r = new Random();
 
-        IntStream.range(0, SIZE * 2).parallel().forEach(i -> {
+        IntStream.range(0, SMALL_SIZE * 2).parallel().forEach(i -> {
             a[i] = r.nextInt();
             b[i] = r.nextInt();
         });
@@ -247,7 +247,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        int[] sequential = new int[SIZE * 2];
+        int[] sequential = new int[SMALL_SIZE * 2];
 
         mapReduce01(a, b, c, sequential);
 
@@ -270,13 +270,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
     @Test
     public void testMapReduce2() {
-        int[] a = new int[SIZE * 2];
-        int[] b = new int[SIZE * 2];
-        int[] result = new int[SIZE * 2];
+        int[] a = new int[SMALL_SIZE * 2];
+        int[] b = new int[SMALL_SIZE * 2];
+        int[] result = new int[SMALL_SIZE * 2];
 
         Random r = new Random();
 
-        IntStream.range(0, SIZE * 2).parallel().forEach(i -> {
+        IntStream.range(0, SMALL_SIZE * 2).parallel().forEach(i -> {
             a[i] = r.nextInt();
             b[i] = r.nextInt();
         });
@@ -289,7 +289,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        int[] sequential = new int[SIZE * 2];
+        int[] sequential = new int[SMALL_SIZE * 2];
 
         mapReduce02(a, b, sequential);
 
@@ -312,13 +312,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
     @Test
     public void testMapReduce3() {
-        int[] a = new int[SIZE * 2];
-        int[] b = new int[SIZE * 2];
-        int[] result = new int[SIZE * 2];
+        int[] a = new int[SMALL_SIZE * 2];
+        int[] b = new int[SMALL_SIZE * 2];
+        int[] result = new int[SMALL_SIZE * 2];
 
         Random r = new Random();
 
-        IntStream.range(0, SIZE * 2).parallel().forEach(i -> {
+        IntStream.range(0, SMALL_SIZE * 2).parallel().forEach(i -> {
             a[i] = r.nextInt();
             b[i] = r.nextInt();
         });
@@ -331,7 +331,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 	            .execute();
 	        //@formatter:on
 
-        int[] sequential = new int[SIZE * 2];
+        int[] sequential = new int[SMALL_SIZE * 2];
 
         mapReduce03(a, b, sequential);
 
@@ -354,13 +354,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
     @Test
     public void testThreadSchuler() {
-        int[] a = new int[SIZE * 2];
-        int[] b = new int[SIZE * 2];
-        int[] result = new int[SIZE * 2];
+        int[] a = new int[SMALL_SIZE * 2];
+        int[] b = new int[SMALL_SIZE * 2];
+        int[] result = new int[SMALL_SIZE * 2];
 
         Random r = new Random();
 
-        IntStream.range(0, SIZE * 2).parallel().forEach(i -> {
+        IntStream.range(0, SMALL_SIZE * 2).parallel().forEach(i -> {
             a[i] = r.nextInt();
             b[i] = r.nextInt();
         });
@@ -373,7 +373,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 		            .execute();
 		        //@formatter:on
 
-        int[] sequential = new int[SIZE * 2];
+        int[] sequential = new int[SMALL_SIZE * 2];
 
         testThreadSchuler(a, b, sequential);
 
@@ -388,13 +388,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
     @Test
     public void testThreadSchuler2() {
-        int[] a = new int[SIZE * 2];
-        int[] b = new int[SIZE * 2];
-        int[] result = new int[SIZE * 2];
+        int[] a = new int[SMALL_SIZE * 2];
+        int[] b = new int[SMALL_SIZE * 2];
+        int[] result = new int[SMALL_SIZE * 2];
 
         Random r = new Random();
 
-        IntStream.range(0, SIZE * 2).parallel().forEach(i -> {
+        IntStream.range(0, SMALL_SIZE * 2).parallel().forEach(i -> {
             a[i] = r.nextInt();
             b[i] = r.nextInt();
         });
@@ -407,7 +407,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 		            .execute();
 		        //@formatter:on
 
-        int[] sequential = new int[SIZE * 2];
+        int[] sequential = new int[SMALL_SIZE * 2];
 
         testThreadSchuler2(a, b, sequential);
 
@@ -422,13 +422,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
     @Test
     public void testThreadLoop() {
-        int[] a = new int[SIZE * 2];
-        int[] b = new int[SIZE * 2];
-        int[] result = new int[SIZE * 2];
+        int[] a = new int[SMALL_SIZE * 2];
+        int[] b = new int[SMALL_SIZE * 2];
+        int[] result = new int[SMALL_SIZE * 2];
 
         Random r = new Random();
 
-        IntStream.range(0, SIZE * 2).parallel().forEach(i -> {
+        IntStream.range(0, SMALL_SIZE * 2).parallel().forEach(i -> {
             a[i] = r.nextInt();
             b[i] = r.nextInt();
         });
@@ -441,11 +441,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
 		            .execute();
 		        //@formatter:on
 
-        int[] sequential = new int[SIZE * 2];
+        int[] sequential = new int[SMALL_SIZE * 2];
 
         testThreadLoop(a, sequential);
 
-        for (int i = 2; i < SIZE * 2; i++) {
+        for (int i = 2; i < SMALL_SIZE * 2; i++) {
             assertEquals(sequential[i], result[i]);
         }
     }
