@@ -86,7 +86,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode.ATOM
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.CastNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedLocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.NewLocalArrayNode;
@@ -102,6 +101,7 @@ import uk.ac.manchester.tornado.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 
+/// XXX: Clean this code
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     private static final boolean USE_ATOMICS = false;
@@ -126,12 +126,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     @Override
     public void lower(Node node, LoweringTool tool) {
 
-        System.out.println("LOWWRING NODE: " + node);
-
         if (node instanceof Invoke) {
             lowerInvoke((Invoke) node, tool, (StructuredGraph) node.graph());
         } else if (node instanceof NewLocalArrayNode) {
-            System.out.println("LOWER LOCAL ARRAY NODE!!!!!!!!!!!!!!!!!!!");
             lowerNewLocalArrayNode((NewLocalArrayNode) node, tool);
         } else if (node instanceof VectorLoadNode) {
             lowerVectorLoadNode((VectorLoadNode) node, tool);
@@ -584,10 +581,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         return null;
     }
 
-    // @Override
-    // public LocationIdentity initLocationIdentity() {
-    // return INIT_LOCATION;
-    // }
     @Override
     public ValueNode staticFieldBase(StructuredGraph graph, ResolvedJavaField f) {
         HotSpotResolvedJavaField field = (HotSpotResolvedJavaField) f;

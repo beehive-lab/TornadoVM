@@ -446,7 +446,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                 queue.addLast(l);
             }
             queue.removeFirst();
-            System.out.println(queue);
         }
 
         for (Block block : queue) {
