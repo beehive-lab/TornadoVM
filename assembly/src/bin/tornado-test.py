@@ -105,7 +105,9 @@ def composeAllOptions(args):
 	if (args.printKernel):
 		options = options + __PRINT_OPENCL_KERNEL__
 
-	options = options + "-Ds0.t0.tornado=0:1 "
+	if (args.device != None):
+		options = options + args.device
+		print options
 
 	return options
 
@@ -251,6 +253,7 @@ def parseArguments():
 	parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")	
 	parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False, help="Debug Tornado")
 	parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")	
+	parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")	
 	args = parser.parse_args()
 	return args
 
