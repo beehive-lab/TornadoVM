@@ -17,7 +17,7 @@ __TORNADO_PROJECTS__ = [
 			#"collections",
 			#"drivers/opencl",
 			#"examples",
-			#"runtime",
+			"runtime",
 			"unittests",
 		   ]
 

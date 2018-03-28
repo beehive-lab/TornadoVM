@@ -95,24 +95,37 @@ $ tornado --printKernel --debug examples/TestTornado
 
 The `--debug` option will print in which device the kernel was executed (e.g. GPU or CPU).
 
-In order to see the available devices on your system you can issue:
+Use the following option to identify id for Tornado devices:
 
+```bas
+tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput
+```
+Tornado device output corresponds to:
 ```bash
-$ tornado uk.ac.manchester.tornado.drivers.opencl.OpenCL
+Tornado device=<driverNumber>:<deviceNumber>
+```
+You will see an example output similar to the following:
+```bash
+Number of Tornado drivers: 1
+Number of devices: 3
+
+Tornado device=0:0
+NVIDIA CUDA -- GeForce GTX 1050
+Tornado device=0:1
+Intel(R) OpenCL -- Intel(R) HD Graphics
+Tornado device=0:2
+Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
+
 ```
 
-and you will see an output similar to the one below (MacBook Pro 2018):
+To run on a specific device user the following option:
 
 ```bash
-usage: OpenCL <platform> <device>
-
-[0] platform: Apple
-[0:0] device: Intel(R) Core(TM) i7-7920HQ CPU @ 3.10GHz
-[0:1] device: Intel(R) HD Graphics 630
-[0:2] device: AMD Radeon Pro 560 Compute Engine
+ -D<s>.<t>.device=<driverNumber>:<deviceNumber>
 ```
 
-In order to run your code on a device of choice you can issue, for example:
+
+In order to run your code on a device of choice you can issue, for example running on device [1] will look like this:
 
 ```bash
 $ tornado -Ds0.device=0:1 --debug examples/TestTornado

@@ -80,8 +80,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
         return count;
     }
 
-    private OCLBackend checkAndInitBackend(final int platform,
-            final int device) {
+    private OCLBackend checkAndInitBackend(final int platform, final int device) {
         final OCLBackend backend = backends[platform][device];
         if (!backend.isInitialised()) {
             backend.init();

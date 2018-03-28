@@ -74,7 +74,7 @@ public class GraphCompilationResult {
         } else if (node instanceof TaskNode) {
             final TaskNode taskNode = (TaskNode) node;
 
-            asm.launch(gtid, taskNode.getContext().getIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), depIn);
+            asm.launch(gtid, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), depIn);
             gtid++;
 
             emitArgList(graph, context, taskNode);

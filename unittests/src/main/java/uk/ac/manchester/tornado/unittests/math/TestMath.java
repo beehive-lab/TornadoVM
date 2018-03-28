@@ -26,11 +26,11 @@
 
 package uk.ac.manchester.tornado.unittests.math;
 
+import static org.junit.Assert.assertArrayEquals;
+
 import java.util.stream.IntStream;
 
 import org.junit.Test;
-
-import static org.junit.Assert.assertArrayEquals;
 
 import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
