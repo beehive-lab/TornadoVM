@@ -32,7 +32,7 @@ import time
 import subprocess
 import re
 
-## Include the new test class here
+## Include here the new test clasess in Tornado
 __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.TestHello",
 	"uk.ac.manchester.tornado.unittests.arrays.TestArrays",
@@ -61,6 +61,7 @@ __MAIN_TORNADO_JUNIT__ = "org.junit.runner.JUnitCore "
 __IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintCFG=true "
 __PRINT_OPENCL_KERNEL__ = "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ = "-Dtornado.debug=True "
+__IGNORE_INTEL_PLATFORM__ = "-Dtornado.ignore.intel=True "  # Due to a bug when running with optirun
 
 ## 
 __VERSION__ = "0.3_21032018"
@@ -190,7 +191,11 @@ def runTests(args):
 	stats = {"[PASS]" : 0, "[FAILED]": 0}
 
 	## Run test
-	cmd = "tornado " + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
+	cmd = ""
+	if (args.useOptirun):
+		cmd = "optirun tornado " + __IGNORE_INTEL_PLATFORM__ + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
+	else:
+		cmd = "tornado " + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
 	if (args.testClass != None):
 
 		if (args.fast):
@@ -253,6 +258,7 @@ def parseArguments():
 	parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")	
 	parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False, help="Debug Tornado")
 	parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")	
+	parser.add_argument('--optirun', "-optirun", action="store_true", dest="useOptirun", default=False, help="Use optirun with Tornado")	
 	parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")	
 	args = parser.parse_args()
 	return args
