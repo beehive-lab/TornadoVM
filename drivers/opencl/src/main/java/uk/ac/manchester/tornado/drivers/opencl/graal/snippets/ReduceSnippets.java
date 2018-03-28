@@ -66,9 +66,11 @@ public class ReduceSnippets implements Snippets {
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
 
+        int sizeLocalMemory = 1024;
+
         // Allocate a chunk of data in local memory
-        int[] localMemory = new int[1024];
-        OpenCLIntrinsics.createLocalMemory(localMemory);
+        int[] localMemory = new int[sizeLocalMemory];
+        OpenCLIntrinsics.createLocalMemory(localMemory, sizeLocalMemory);
 
         // Copy input data to local memory
         localMemory[localIdx] = inputArray[gidx];
@@ -85,12 +87,9 @@ public class ReduceSnippets implements Snippets {
         // Final copy to global memory
         if (localIdx == 0) {
             int groupID = OpenCLIntrinsics.get_group_id(0);
-            outputArray[groupID] += localMemory[0];
+            outputArray[groupID] = localMemory[0];
         }
 
-        // // Note: This is expensive, but it's the final
-        // // reduction with the elements left from the first
-        // // reduction.
         // OpenCLIntrinsics.globalBarrier();
         // if (gidx == 0) {
         // int numGroups = globalSize / localGroupSize;

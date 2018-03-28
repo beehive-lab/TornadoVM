@@ -29,12 +29,15 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedLocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIDFixedNode;
@@ -78,9 +81,13 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
 
                 NodeInputList<ValueNode> arguments = invoke.callTarget().arguments();
                 FixedArrayNode array = (FixedArrayNode) arguments.get(0);
+                ConstantNode size = getConstantNodeFromArguments(invoke, 1);
 
-                NewLocalArrayNode newLocalArrayNode = graph.addOrUnique(new NewLocalArrayNode(ConstantNode.forInt(1024, graph), JavaKind.Int, OCLArchitecture.lp, OCLKind.INT, array));
+                array.setLocalType(OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY);
+
+                NewLocalArrayNode newLocalArrayNode = graph.addOrUnique(new NewLocalArrayNode(size, JavaKind.Int, OCLArchitecture.lp, OCLKind.INT, array));
                 graph.replaceFixed(invoke, newLocalArrayNode);
+
             }
         }
     }

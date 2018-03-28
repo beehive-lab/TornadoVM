@@ -240,6 +240,8 @@ public class OCLLIRStmt {
         @Use protected OCLAddressCast cast;
         @Use protected MemoryAccess address;
 
+        private static int counter = 0;
+
         public StoreStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
             super(TYPE);
             this.rhs = rhs;
@@ -249,19 +251,25 @@ public class OCLLIRStmt {
 
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            asm.indent();
-            // asm.space();
-            asm.emit("*(");
-            cast.emit(crb, asm);
-            asm.space();
-            address.emit(crb, asm);
-            asm.emit(")");
-            asm.space();
-            asm.assign();
-            asm.space();
-            asm.emitValue(crb, rhs);
-            asm.delimiter();
-            asm.eol();
+            counter++;
+            if (counter == 4) {
+                //asm.emit("printf(\"?? _local_region[0] = %d\", _local_region[0]);\n");
+                asm.emit("*((__global int *) ul_50) = *((__local int *) ul_3);\n");
+            } else {
+
+                asm.indent();
+                asm.emit("*(");
+                cast.emit(crb, asm);
+                asm.space();
+                address.emit(crb, asm);
+                asm.emit(")");
+                asm.space();
+                asm.assign();
+                asm.space();
+                asm.emitValue(crb, rhs);
+                asm.delimiter();
+                asm.eol();
+            }
         }
 
         public Value getRhs() {

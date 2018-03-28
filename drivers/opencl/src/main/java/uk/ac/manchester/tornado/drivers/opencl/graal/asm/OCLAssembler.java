@@ -458,7 +458,8 @@ public final class OCLAssembler extends Assembler {
         public static final OCLBinaryTemplate ARRAY_INDEX = new OCLBinaryTemplate("index", "%s[%s]");
 
         public static final OCLBinaryTemplate NEW_ARRAY = new OCLBinaryTemplate("new array", "char %s[%s]");
-        public static final OCLBinaryTemplate NEW_LOCAL_INT_ARRAY = new OCLBinaryTemplate("new array", "__local int %s[%s]");
+        //public static final OCLBinaryTemplate NEW_LOCAL_INT_ARRAY = new OCLBinaryTemplate("__local ulong *ul_2 = (__local ulong* ) &_local_region[0]; // new array", "__local int %s[%s]");
+        public static final OCLBinaryTemplate NEW_LOCAL_INT_ARRAY = new OCLBinaryTemplate("new array", "ulong ul_2 = (__local ulong) &_local_region[0]; //__local int %s[%s] ");
 
         // @formatter:on
         private final String template;
@@ -804,9 +805,10 @@ public final class OCLAssembler extends Assembler {
         pushToStack = false;
 
         if (((OCLTargetDescription) target).supportsFP64()) {
-            emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable");
-            // emitLine("#pragma OPENCL EXTENSION cl_intel_printf :enable");
-            // emitLine("#pragma OPENCL EXTENSION cl_amd_printf :enable");
+            emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable  ");
+            // emitLine("#pragma OPENCL EXTENSION cl_intel_printf : enable");
+            emitLine("#pragma OPENCL EXTENSION cl_amd_printf : enable  ");
+
         }
 
         if (EMIT_INTRINSICS) {

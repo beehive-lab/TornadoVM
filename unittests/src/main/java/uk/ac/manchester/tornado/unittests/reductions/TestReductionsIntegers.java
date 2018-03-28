@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 public class TestReductionsIntegers extends TornadoTestBase {
 
     public static final int SMALL_SIZE = 64;
-    public static final int BIG_SIZE = 128;
+    public static final int BIG_SIZE = 1024;
 
     /**
      * First approach: use annotations in the user code to identify the

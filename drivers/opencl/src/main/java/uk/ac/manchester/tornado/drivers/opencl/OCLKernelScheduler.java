@@ -25,6 +25,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
+import java.util.Arrays;
+
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 
 public abstract class OCLKernelScheduler {
@@ -67,15 +69,22 @@ public abstract class OCLKernelScheduler {
         if (meta.isDebug()) {
             meta.printThreadDims();
         }
-        
+
+        System.out.println("LAUNCHING WITH: ");
+        System.out.println("\tGLOBAL: " + Arrays.toString(meta.getGlobalWork()));
+        System.out.println("\tLOCAL: " + Arrays.toString(meta.getLocalWork()));
+
         final int task;
         if (meta.shouldUseOpenclScheduling()) {
-            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(),
-                    meta.getGlobalWork(), null, waitEvents);
+            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
         } else {
-            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
-            //task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
-
+            // task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(),
+            // meta.getGlobalOffset(), meta.getGlobalWork(), new long[] { 128 },
+            // waitEvents);
+            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), new long[] { 512 }, new long[] { 16 }, waitEvents);
+            // task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(),
+            // meta.getGlobalOffset(), meta.getGlobalWork(),
+            // meta.getLocalWork(), waitEvents);
         }
         return task;
     }

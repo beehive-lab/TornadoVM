@@ -93,7 +93,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVec
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceSnippets;
-import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceSnippets.Templates;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceAddNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceSubNode;
@@ -120,11 +119,13 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     @Override
     public void initialize(OptionValues options, SnippetCounter.Group.Factory factory, Providers providers, SnippetReflectionProvider snippetReflection) {
         super.initialize(options, factory, providers, snippetReflection);
-        this.reduceSnippets = new Templates(options, providers, snippetReflection, target);
+        this.reduceSnippets = new ReduceSnippets.Templates(options, providers, snippetReflection, target);
     }
 
     @Override
     public void lower(Node node, LoweringTool tool) {
+
+        System.out.println("LOWRWING NODE: " + node);
 
         if (node instanceof Invoke) {
             lowerInvoke((Invoke) node, tool, (StructuredGraph) node.graph());

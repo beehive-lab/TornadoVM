@@ -184,10 +184,9 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private Event execute(boolean isWarmup) {
+
         final long t0 = System.nanoTime();
-
         int lastEvent = -1;
-
         for (int[] waitList : events) {
             Arrays.fill(waitList, -1);
         }

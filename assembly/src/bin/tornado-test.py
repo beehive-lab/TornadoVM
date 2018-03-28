@@ -105,6 +105,8 @@ def composeAllOptions(args):
 	if (args.printKernel):
 		options = options + __PRINT_OPENCL_KERNEL__
 
+	options = options + "-Ds0.t0.tornado=0:1 "
+
 	return options
 
 

@@ -52,12 +52,16 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
 
     protected OCLKind elementKind;
     protected OCLMemoryBase memoryRegister;
+    protected ResolvedJavaType elemenType;
+    protected OCLBinaryTemplate arrayTemplate;
 
     public FixedArrayNode(OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
         this.memoryRegister = memoryRegister;
         this.length = length;
+        this.elemenType = elementType;
         this.elementKind = OCLKind.fromResolvedJavaType(elementType);
+        this.arrayTemplate = OCLBinaryTemplate.NEW_ARRAY;
     }
 
     public FixedArrayNode(ResolvedJavaType elementType, ConstantNode length) {
@@ -72,6 +76,14 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
         this.memoryRegister = memoryRegister;
     }
 
+    public ResolvedJavaType getElementType() {
+        return elemenType;
+    }
+
+    public ConstantNode getLength() {
+        return length;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         /*
@@ -84,7 +96,7 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
 
         LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());
         final Variable variable = gen.getLIRGeneratorTool().newVariable(lirKind);
-        final OCLBinary.Expr declaration = new OCLBinary.Expr(OCLBinaryTemplate.NEW_ARRAY, lirKind, variable, lengthValue);
+        final OCLBinary.Expr declaration = new OCLBinary.Expr(arrayTemplate, lirKind, variable, lengthValue);
 
         final OCLLIRStmt.ExprStmt expr = new OCLLIRStmt.ExprStmt(declaration);
 
@@ -92,6 +104,10 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
         gen.getLIRGeneratorTool().append(expr);
 
         gen.setResult(this, variable);
+    }
+
+    public void setLocalType(OCLBinaryTemplate template) {
+        this.arrayTemplate = template;
     }
 
 }

@@ -25,17 +25,17 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary;
@@ -43,7 +43,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 
 @NodeInfo
-public class FixedLocalArrayNode extends FixedWithNextNode implements LIRLowerable {
+public class FixedLocalArrayNode extends FloatingNode implements LIRLowerable {
 
     public static final NodeClass<FixedLocalArrayNode> TYPE = NodeClass.create(FixedLocalArrayNode.class);
 
@@ -51,41 +51,31 @@ public class FixedLocalArrayNode extends FixedWithNextNode implements LIRLowerab
 
     protected OCLKind elementKind;
     protected OCLMemoryBase memoryRegister;
+    protected ResolvedJavaType elemenType;
 
-    public FixedLocalArrayNode(OCLMemoryBase memoryRegister, OCLKind elementType, ConstantNode length, JavaKind javaKind) {
-        super(TYPE, StampFactory.forKind(javaKind));
+    public FixedLocalArrayNode(OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
+        super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
+        // super(memoryRegister, elementType, length);
+        System.out.println("FIXED LOCAL");
         this.memoryRegister = memoryRegister;
         this.length = length;
-        this.elementKind = elementType;
-    }
+        this.elemenType = elementType;
+        this.elementKind = OCLKind.fromResolvedJavaType(elementType);
+        System.out.println("FIXED LOCAL END");
 
-    public FixedLocalArrayNode(OCLKind elementType, ConstantNode length, JavaKind kind) {
-        this(OCLArchitecture.lp, elementType, length, kind);
-    }
-
-    public OCLMemoryBase getMemoryRegister() {
-        return memoryRegister;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        /*
-         * using as_T reinterprets the data as type T - consider: float x =
-         * (float) 1; and int value = 1, float x = &(value);
-         */
+
         final Value lengthValue = gen.operand(length);
-        // System.out.printf("gen operand: %s (%s)\n", lengthValue,
-        // lengthValue.getClass().getName());
 
         LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());
         final Variable variable = gen.getLIRGeneratorTool().newVariable(lirKind);
-        final OCLBinary.Expr declaration = new OCLBinary.Expr(OCLBinaryTemplate.NEW_ARRAY, lirKind, variable, lengthValue);
-
+        final OCLBinary.Expr declaration = new OCLBinary.Expr(OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY, lirKind, variable, lengthValue);
         final OCLLIRStmt.ExprStmt expr = new OCLLIRStmt.ExprStmt(declaration);
 
-        // System.out.printf("expr: %s\n", expr);
         gen.getLIRGeneratorTool().append(expr);
-
         gen.setResult(this, variable);
     }
 

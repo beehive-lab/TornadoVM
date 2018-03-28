@@ -54,6 +54,10 @@ public class NewLocalArrayNode extends FixedWithNextNode implements LIRLowerable
         return this.size;
     }
 
+    public FixedArrayNode getArray() {
+        return this.array;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool gen) {
 
