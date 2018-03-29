@@ -28,6 +28,7 @@ package uk.ac.manchester.tornado.unittests.reductions;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -43,7 +44,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     public static final int SMALL_SIZE = 64;
     public static final int BIG_SIZE = 1024;
 
-    public static final int SIZE = 128;
+    public static final int SIZE = 32;
 
     /**
      * First approach: use annotations in the user code to identify the
@@ -53,7 +54,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
      * @param result
      */
     public static void reductionAnnotation(int[] input, @Reduce int[] result) {
-        result[0] = 0;
+        // result[0] = 0;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += input[i];
         }
@@ -62,7 +63,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     @Test
     public void testReductionAnnotation() {
         int[] input = new int[SIZE];
-        int[] result = new int[1];
+        int[] result = new int[SIZE];
 
         IntStream.range(0, SIZE).parallel().forEach(i -> {
             input[i] = 2;
@@ -79,8 +80,45 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] sequential = new int[1];
         reductionAnnotation(input, sequential);
 
+        System.out.println(Arrays.toString(result));
+
         // Check result
         assertEquals(sequential[0], result[0]);
+    }
+
+    /**
+     * First approach: use annotations in the user code to identify the
+     * reduction variables. This is a similar approach to OpenMP and OpenACC.
+     * 
+     * @param input
+     * @param result
+     */
+    public static void copy(int[] input, int[] result) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[i] = input[i];
+        }
+    }
+
+    @Test
+    public void testCopy() {
+        int[] input = new int[SIZE];
+        int[] result = new int[SIZE];
+
+        IntStream.range(0, SIZE).parallel().forEach(i -> {
+            input[i] = 2;
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t0", TestReductionsIntegers::copy, input, result)
+            .streamOut(result)
+            .execute();
+        //@formatter:on
+
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(input[i], result[i]);
+        }
     }
 
     public static void reductionSequentialSmall(float[] input, float[] result) {

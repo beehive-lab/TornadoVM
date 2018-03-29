@@ -111,7 +111,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             openclBuilder.emitLoopHeader(block);
             asm.beginScope();
         } else {
-            // Emit either a Else statement or a switch statement
+            // Emit either an ELSE statement or a SWITCH statement
             final Block dom = block.getDominator();
             if (dom != null && !isMerge && !dom.isLoopHeader() && isIfBlock(dom)) {
                 emitBeginBlockForElseStatement(dom, block);

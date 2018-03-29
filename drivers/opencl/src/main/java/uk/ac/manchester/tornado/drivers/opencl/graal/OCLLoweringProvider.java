@@ -129,8 +129,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     @Override
     public void lower(Node node, LoweringTool tool) {
 
-        System.out.println("LOWRWING NODE: " + node);
-
         if (node instanceof Invoke) {
             lowerInvoke((Invoke) node, tool, (StructuredGraph) node.graph());
         } else if (node instanceof NewLocalArrayNode) {

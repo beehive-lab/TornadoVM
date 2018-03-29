@@ -38,11 +38,11 @@ public class OpenCLIntrinsics {
     }
 
     public static int get_global_size(int value) {
-        return 1;
+        return 0;
     }
 
     public static int get_local_size(int value) {
-        return 1;
+        return 0;
     }
 
     public static int get_group_id(int value) {
@@ -50,7 +50,7 @@ public class OpenCLIntrinsics {
     }
 
     public static int get_group_size(int value) {
-        return 1;
+        return 0;
     }
 
     /**

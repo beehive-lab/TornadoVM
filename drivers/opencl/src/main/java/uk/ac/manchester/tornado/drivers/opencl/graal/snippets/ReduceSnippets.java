@@ -20,13 +20,9 @@ import org.graalvm.compiler.replacements.Snippets;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.collections.types.Float2;
-import uk.ac.manchester.tornado.collections.types.Float4;
-import uk.ac.manchester.tornado.collections.types.VectorFloat4;
 import uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode.ATOMIC_OPERATION;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceAddNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
@@ -69,7 +65,7 @@ public class ReduceSnippets implements Snippets {
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
 
-        int sizeLocalMemory = 1024;
+        int sizeLocalMemory = 16;
 
         // Allocate a chunk of data in local memory
         int[] localMemory = new int[sizeLocalMemory];
@@ -92,13 +88,13 @@ public class ReduceSnippets implements Snippets {
             outputArray[groupID] = localMemory[0];
         }
 
-        OpenCLIntrinsics.globalBarrier();
-        if (gidx == 0) {
-            int numGroups = globalSize / localGroupSize;
-            for (int i = 1; i < numGroups; i++) {
-                outputArray[0] += outputArray[i];
-            }
-        }
+        // OpenCLIntrinsics.globalBarrier();
+        // if (gidx == 0) {
+        // int numGroups = globalSize / localGroupSize;
+        // for (int i = 1; i < numGroups; i++) {
+        // outputArray[0] += outputArray[i];
+        // }
+        // }
     }
 
     @Snippet
@@ -139,11 +135,48 @@ public class ReduceSnippets implements Snippets {
         // }
     }
 
+    @Snippet
+    public static void reduceIntAdd3(int[] inputArray, int[] outputArray, int gidx, int[] localMemory, int globalSize) {
+
+        int localIdx = OpenCLIntrinsics.get_local_id(0);
+        int localGroupSize = OpenCLIntrinsics.get_local_size(0);
+
+        //
+        // int sizeLocalMemory = 1024;
+        // int[] localMemory = new int[sizeLocalMemory];
+        // OpenCLIntrinsics.createLocalMemory(localMemory, sizeLocalMemory);
+
+        //
+        localMemory[localIdx] = inputArray[gidx];
+        int start = localGroupSize / 2;
+        //
+        for (int stride = start; stride > 0; stride /= 2) {
+            OpenCLIntrinsics.localBarrier();
+            if (stride > localIdx) {
+                localMemory[localIdx] += localMemory[localIdx + stride];
+            }
+        }
+
+        if (localIdx == 0) {
+            int groupID = OpenCLIntrinsics.get_group_id(0);
+            outputArray[groupID] = localMemory[0];
+        }
+
+        OpenCLIntrinsics.globalBarrier();
+        if (gidx == 0) {
+            int numGroups = globalSize / localGroupSize;
+            for (int i = 1; i < numGroups; i++) {
+                outputArray[0] += outputArray[i];
+            }
+        }
+    }
+
     public static class Templates extends AbstractTemplates {
 
         @SuppressWarnings("unused") private final SnippetInfo helloSnippet = snippet(ReduceSnippets.class, "testReduceLoop");
-        private final SnippetInfo reduceIntSnippet = snippet(ReduceSnippets.class, "reduceIntAdd");
-        private final SnippetInfo reduceIntSnippet2 = snippet(ReduceSnippets.class, "reduceIntAdd2");
+        @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippet = snippet(ReduceSnippets.class, "reduceIntAdd");
+        @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippet2 = snippet(ReduceSnippets.class, "reduceIntAdd2");
+        @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippet3 = snippet(ReduceSnippets.class, "reduceIntAdd3");
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);
@@ -168,14 +201,15 @@ public class ReduceSnippets implements Snippets {
                 operation = ATOMIC_OPERATION.MUL;
             }
 
-            SnippetInfo snippet = reduceIntSnippet2;
+            SnippetInfo snippet = reduceIntSnippet3;
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
 
-            // args.add("inputData", storeAtomicIndexed.getInputArray());
+            args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", globalId);
+            args.add("localMemory", storeAtomicIndexed.array());
             args.add("globalSize", globalSize);
-            args.add("value", storeAtomicIndexed.value());
+            // args.add("value", storeAtomicIndexed.value());
 
             template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, DEFAULT_REPLACER, args);
 

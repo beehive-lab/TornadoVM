@@ -459,7 +459,7 @@ public final class OCLAssembler extends Assembler {
 
         public static final OCLBinaryTemplate NEW_ARRAY = new OCLBinaryTemplate("new array", "char %s[%s]");
         //public static final OCLBinaryTemplate NEW_LOCAL_INT_ARRAY = new OCLBinaryTemplate("__local ulong *ul_2 = (__local ulong* ) &_local_region[0]; // new array", "__local int %s[%s]");
-        public static final OCLBinaryTemplate NEW_LOCAL_INT_ARRAY = new OCLBinaryTemplate("new array", "ulong ul_2 = (__local ulong) &_local_region[0]; //__local int %s[%s] ");
+        public static final OCLBinaryTemplate NEW_LOCAL_INT_ARRAY = new OCLBinaryTemplate("local memory array", "ulong %s = (__local ulong) &_local_region[0]; //__local int %s ");
 
         // @formatter:on
         private final String template;

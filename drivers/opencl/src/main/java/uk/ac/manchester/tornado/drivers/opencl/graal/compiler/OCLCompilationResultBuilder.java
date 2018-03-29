@@ -356,6 +356,12 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             ((OCLAssembler) asm).emitLine("// BLOCK %d", block.getId());
         }
 
+        if (block.getId() == 2) {
+            // ((OCLAssembler) asm).emitLine("printf(\"THREAD_ID: %d LOOP INDEX:
+            // %d\\n\", get_global_id(0), i_8);");
+            // ((OCLAssembler) asm).emitLine("printf(\"TID: %d \\n\", i_7);");
+        }
+
         if (PrintLIRWithAssembly.getValue(getOptions())) {
             blockComment(String.format("block B%d %s", block.getId(), block.getLoop()));
         }
