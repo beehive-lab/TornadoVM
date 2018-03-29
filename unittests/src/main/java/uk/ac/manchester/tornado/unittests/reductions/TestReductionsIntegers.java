@@ -43,6 +43,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
     public static final int SMALL_SIZE = 64;
     public static final int BIG_SIZE = 1024;
 
+    public static final int SIZE = 128;
+
     /**
      * First approach: use annotations in the user code to identify the
      * reduction variables. This is a similar approach to OpenMP and OpenACC.
@@ -59,11 +61,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
     @Test
     public void testReductionAnnotation() {
-        int[] input = new int[BIG_SIZE];
+        int[] input = new int[SIZE];
         int[] result = new int[1];
 
-        IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
-            input[i] = 1;
+        IntStream.range(0, SIZE).parallel().forEach(i -> {
+            input[i] = 2;
         });
 
         //@formatter:off

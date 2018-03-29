@@ -69,7 +69,7 @@ public class TestHello extends TornadoTestBase {
 
     @Test
     public void testVectorAddition() {
-        int numElements = 8;
+        int numElements = 32;
         int[] a = new int[numElements];
         int[] b = new int[numElements];
         int[] c = new int[numElements];

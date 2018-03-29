@@ -28,6 +28,8 @@ import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCA
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
 
+import java.util.Iterator;
+
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -43,12 +45,14 @@ import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.LoweredCallTargetNode;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
+import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.UnwindNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.DivNode;
 import org.graalvm.compiler.nodes.calc.FloatConvertNode;
 import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
+import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.calc.RemNode;
 import org.graalvm.compiler.nodes.java.ArrayLengthNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
@@ -191,7 +195,34 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         GlobalThreadIdNode oclIdNode = graph.getNodes().filter(GlobalThreadIdNode.class).first();
         GlobalThreadSizeNode oclGlobalSize = graph.getNodes().filter(GlobalThreadSizeNode.class).first();
 
-        reduceSnippets.lower(storeIndexed, address, memoryWrite, oclIdNode, oclGlobalSize, tool);
+        /// XXX: Assuming CPU scheduler
+        ValueNode threadID = null;
+        Iterator<Node> usages = oclIdNode.usages().iterator();
+        while (usages.hasNext()) {
+            Node n = usages.next();
+
+            // GPU SCHEDULER
+            if (n instanceof PhiNode) {
+                threadID = (ValueNode) n;
+                break;
+            }
+
+            // CPU SCHEDULER
+            if (n instanceof MulNode) {
+                Iterator<Node> usages2 = n.usages().iterator();
+                while (usages2.hasNext()) {
+                    Node n2 = usages2.next();
+                    if (n2 instanceof PhiNode) {
+                        threadID = (ValueNode) n2;
+                        break;
+                    }
+                }
+            }
+        }
+
+        System.out.println("THREAD ID PASSED TO SNIPPET: " + threadID);
+
+        reduceSnippets.lower(storeIndexed, address, memoryWrite, threadID, oclGlobalSize, tool);
     }
 
     private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {

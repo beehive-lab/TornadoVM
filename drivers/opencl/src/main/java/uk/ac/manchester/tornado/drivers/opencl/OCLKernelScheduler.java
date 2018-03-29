@@ -78,13 +78,10 @@ public abstract class OCLKernelScheduler {
         if (meta.shouldUseOpenclScheduling()) {
             task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
         } else {
-            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), new long[] { 128 }, waitEvents);
             // task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(),
-            // meta.getGlobalOffset(), new long[] { 512 }, new long[] { 16 },
+            // meta.getGlobalOffset(), meta.getGlobalWork(), new long[] { 8 },
             // waitEvents);
-            // task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(),
-            // meta.getGlobalOffset(), meta.getGlobalWork(),
-            // meta.getLocalWork(), waitEvents);
+            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
         }
         return task;
     }

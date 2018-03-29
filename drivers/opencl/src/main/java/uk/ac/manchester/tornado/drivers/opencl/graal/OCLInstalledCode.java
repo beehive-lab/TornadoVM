@@ -195,7 +195,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         // stack pointer
         buffer.clear();
-        System.out.println("2ND parameters: " + stack.toRelativeAddress());
         buffer.putLong(stack.toRelativeAddress());
         kernel.setArg(index, buffer);
         index++;
