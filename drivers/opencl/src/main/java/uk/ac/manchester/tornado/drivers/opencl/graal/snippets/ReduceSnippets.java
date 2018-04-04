@@ -179,24 +179,28 @@ public class ReduceSnippets implements Snippets {
         int myID = localIdx + (localGroupSize * groupID);
 
         int start = localGroupSize / 2;
+        int acc = inputArray[myID];
         for (int stride = start; stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (stride > localIdx) {
-                inputArray[myID] += inputArray[myID + stride];
+                acc += inputArray[myID + stride];
             }
         }
+        inputArray[myID] = acc;
 
         if (localIdx == 0) {
             outputArray[groupID] = inputArray[myID];
         }
 
-        // OpenCLIntrinsics.globalBarrier();
-        // if (gidx == 0) {
-        // int numGroups = globalSize / localGroupSize;
-        // for (int i = 1; i < numGroups; i++) {
-        // outputArray[0] += outputArray[i];
-        // }
-        // }
+        OpenCLIntrinsics.globalBarrier();
+        if (gidx == 0) {
+            int numGroups = globalSize / localGroupSize;
+            int acc2 = outputArray[0];
+            for (int i = 1; i < numGroups; i++) {
+                acc2 += outputArray[i];
+            }
+            outputArray[0] = acc2;
+        }
     }
 
     public static class Templates extends AbstractTemplates {

@@ -85,7 +85,7 @@ public abstract class OCLKernelScheduler {
                 // particular configuration. This code will be removed in the
                 // final version
                 System.out.println("USING CUSTOM SCHEDULER");
-                task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), new long[] { 32 }, new long[] { 8 }, waitEvents);
+                task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), new long[] { 64 }, new long[] { 16 }, waitEvents);
             } else {
                 task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
             }

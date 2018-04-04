@@ -252,8 +252,9 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             counter++;
-            // if (counter == 4) {
-            // asm.emit("*((__global int *) ul_45) = *((__local int*)ul_3);\n");
+            // if (counter == 3) {
+            // asm.emit("*((__global int *) ul_2) = *((__global int *) ul_2) +
+            // i_49;\n");
             // } else {
             asm.indent();
             asm.emit("*(");

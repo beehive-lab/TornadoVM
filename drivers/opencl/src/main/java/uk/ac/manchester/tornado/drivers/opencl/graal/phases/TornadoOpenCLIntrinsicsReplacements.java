@@ -29,7 +29,6 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.JavaKind;
@@ -37,7 +36,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedLocalArrayNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIDFixedNode;
@@ -73,6 +72,10 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
                 ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
                 LocalGroupSizeNode groupSizeNode = graph.addOrUnique(new LocalGroupSizeNode(dimension));
                 graph.replaceFixed(invoke, groupSizeNode);
+            } else if (methodName.equals("Direct#OpenCLIntrinsics.get_global_id")) {
+                ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
+                GlobalThreadIdNode globalThreadId = graph.addOrUnique(new GlobalThreadIdNode(dimension));
+                graph.replaceFixed(invoke, globalThreadId);
             } else if (methodName.equals("Direct#OpenCLIntrinsics.get_group_id")) {
                 ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
                 GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(dimension));
