@@ -140,35 +140,63 @@ public class ReduceSnippets implements Snippets {
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
+        int groupID = OpenCLIntrinsics.get_group_id(0);
 
         //
         // int sizeLocalMemory = 1024;
         // int[] localMemory = new int[sizeLocalMemory];
         // OpenCLIntrinsics.createLocalMemory(localMemory, sizeLocalMemory);
 
-        //
         localMemory[localIdx] = inputArray[gidx];
+
         int start = localGroupSize / 2;
-        //
+        for (int stride = start; stride > 0; stride /= 2) {
+            if (stride > localIdx) {
+                inputArray[localIdx] += inputArray[localIdx + stride];
+            }
+            OpenCLIntrinsics.localBarrier();
+        }
+
+        if (localIdx == 0) {
+            outputArray[groupID] = inputArray[localIdx];
+        }
+
+        // OpenCLIntrinsics.globalBarrier();
+        // if (gidx == 0) {
+        // int numGroups = globalSize / localGroupSize;
+        // for (int i = 1; i < numGroups; i++) {
+        // outputArray[0] += outputArray[i];
+        // }
+        // }
+    }
+
+    @Snippet
+    public static void reduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx, int globalSize) {
+
+        int localIdx = OpenCLIntrinsics.get_local_id(0);
+        int localGroupSize = OpenCLIntrinsics.get_local_size(0);
+        int groupID = OpenCLIntrinsics.get_group_id(0);
+        int myID = localIdx + (localGroupSize * groupID);
+
+        int start = localGroupSize / 2;
         for (int stride = start; stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (stride > localIdx) {
-                localMemory[localIdx] += localMemory[localIdx + stride];
+                inputArray[myID] += inputArray[myID + stride];
             }
         }
 
         if (localIdx == 0) {
-            int groupID = OpenCLIntrinsics.get_group_id(0);
-            outputArray[groupID] = localMemory[0];
+            outputArray[groupID] = inputArray[myID];
         }
 
-        OpenCLIntrinsics.globalBarrier();
-        if (gidx == 0) {
-            int numGroups = globalSize / localGroupSize;
-            for (int i = 1; i < numGroups; i++) {
-                outputArray[0] += outputArray[i];
-            }
-        }
+        // OpenCLIntrinsics.globalBarrier();
+        // if (gidx == 0) {
+        // int numGroups = globalSize / localGroupSize;
+        // for (int i = 1; i < numGroups; i++) {
+        // outputArray[0] += outputArray[i];
+        // }
+        // }
     }
 
     public static class Templates extends AbstractTemplates {
@@ -177,6 +205,7 @@ public class ReduceSnippets implements Snippets {
         @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippet = snippet(ReduceSnippets.class, "reduceIntAdd");
         @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippet2 = snippet(ReduceSnippets.class, "reduceIntAdd2");
         @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippet3 = snippet(ReduceSnippets.class, "reduceIntAdd3");
+        @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippetGlobal = snippet(ReduceSnippets.class, "reduceIntAddGlobal");
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);
@@ -201,13 +230,13 @@ public class ReduceSnippets implements Snippets {
                 operation = ATOMIC_OPERATION.MUL;
             }
 
-            SnippetInfo snippet = reduceIntSnippet3;
+            SnippetInfo snippet = reduceIntSnippetGlobal;
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
 
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", globalId);
-            args.add("localMemory", storeAtomicIndexed.array());
+            // args.add("localMemory", storeAtomicIndexed.array());
             args.add("globalSize", globalSize);
             // args.add("value", storeAtomicIndexed.value());
 
