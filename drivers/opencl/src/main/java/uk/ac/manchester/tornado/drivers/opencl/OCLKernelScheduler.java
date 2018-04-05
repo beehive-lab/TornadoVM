@@ -40,7 +40,7 @@ public abstract class OCLKernelScheduler {
     protected double std;
     protected double samples;
 
-    private static final boolean CHECK_REDUCTIONS = true;
+    private static final boolean CHECK_REDUCTIONS = false;
 
     public OCLKernelScheduler(final OCLDeviceContext context) {
         deviceContext = context;
