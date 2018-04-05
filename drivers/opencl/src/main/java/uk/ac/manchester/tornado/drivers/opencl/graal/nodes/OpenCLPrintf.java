@@ -25,46 +25,29 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.ExprStmt;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLPrintf;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLPrintString;
 
-@NodeInfo(shortName = "printf")
-public class PrintfNode extends FixedWithNextNode implements LIRLowerable {
+@NodeInfo
+public class OpenCLPrintf extends FixedWithNextNode implements LIRLowerable {
 
-    public static final NodeClass<PrintfNode> TYPE = NodeClass.create(PrintfNode.class);
+    public static final NodeClass<OpenCLPrintf> TYPE = NodeClass.create(OpenCLPrintf.class);
 
-    @Input
-    private NodeInputList<ValueNode> inputs;
+    private String value;
 
-    public PrintfNode(ValueNode... values) {
+    public OpenCLPrintf(String value) {
         super(TYPE, StampFactory.forVoid());
-        this.inputs = new NodeInputList<>(this, values.length);
-        for (int i = 0; i < values.length; i++) {
-            inputs.set(i, values[i]);
-        }
+        this.value = value;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        Value[] args = new Value[inputs.size()];
-        for (int i = 0; i < args.length; i++) {
-
-            ValueNode param = inputs.get(i);
-            if (param.isConstant()) {
-                args[i] = gen.operand(param);
-            } else {
-                args[i] = gen.getLIRGeneratorTool().load(gen.operand(param));
-            }
-        }
-        gen.getLIRGeneratorTool().append(new ExprStmt(new OCLPrintf(args)));
+        gen.getLIRGeneratorTool().append(new ExprStmt(new OCLPrintString(value)));
     }
 
 }

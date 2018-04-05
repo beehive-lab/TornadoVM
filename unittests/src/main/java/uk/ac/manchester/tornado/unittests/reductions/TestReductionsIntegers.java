@@ -44,7 +44,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     public static final int SMALL_SIZE = 64;
     public static final int BIG_SIZE = 1024;
 
-    public static final int SIZE = 64;
+    public static final int SIZE = 32;
 
     /**
      * First approach: use annotations in the user code to identify the
@@ -54,7 +54,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
      * @param result
      */
     public static void reductionAnnotation(int[] input, @Reduce int[] result) {
-        // result[0] = 0;
+        result[0] = 0;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += input[i];
         }

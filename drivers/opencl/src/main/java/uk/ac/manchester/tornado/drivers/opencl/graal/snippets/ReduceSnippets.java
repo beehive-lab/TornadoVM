@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.graal.nodes.OCLReduceAddNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceSubNode;
 import uk.ac.manchester.tornado.graal.nodes.StoreAtomicIndexedNode;
+import uk.ac.manchester.tornado.lang.Debug;
 
 public class ReduceSnippets implements Snippets {
 
@@ -171,45 +172,51 @@ public class ReduceSnippets implements Snippets {
     }
 
     @Snippet
-    public static void reduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx, int globalSize) {
+    public static void reduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx) {
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
+        int globalSize = OpenCLIntrinsics.get_global_size(0);
+
+        int numGroups = globalSize / localGroupSize;
+
         int myID = localIdx + (localGroupSize * groupID);
 
-        int start = localGroupSize / 2;
-        int acc = inputArray[myID];
-        for (int stride = start; stride > 0; stride /= 2) {
-            OpenCLIntrinsics.localBarrier();
-            if (stride > localIdx) {
-                acc += inputArray[myID + stride];
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            OpenCLIntrinsics.globalBarrier();
+            if (localIdx < stride) {
+                inputArray[myID] += inputArray[myID + stride];
             }
         }
-        inputArray[myID] = acc;
 
+        OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
             outputArray[groupID] = inputArray[myID];
         }
 
         OpenCLIntrinsics.globalBarrier();
         if (gidx == 0) {
-            int numGroups = globalSize / localGroupSize;
-            int acc2 = outputArray[0];
+            int acc = outputArray[0];
             for (int i = 1; i < numGroups; i++) {
-                acc2 += outputArray[i];
+                acc += outputArray[i];
             }
-            outputArray[0] = acc2;
+            outputArray[0] = acc;
         }
     }
 
     public static class Templates extends AbstractTemplates {
 
-        @SuppressWarnings("unused") private final SnippetInfo helloSnippet = snippet(ReduceSnippets.class, "testReduceLoop");
-        @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippet = snippet(ReduceSnippets.class, "reduceIntAdd");
-        @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippet2 = snippet(ReduceSnippets.class, "reduceIntAdd2");
-        @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippet3 = snippet(ReduceSnippets.class, "reduceIntAdd3");
-        @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippetGlobal = snippet(ReduceSnippets.class, "reduceIntAddGlobal");
+        @SuppressWarnings("unused")
+        private final SnippetInfo helloSnippet = snippet(ReduceSnippets.class, "testReduceLoop");
+        @SuppressWarnings("unused")
+        private final SnippetInfo reduceIntSnippet = snippet(ReduceSnippets.class, "reduceIntAdd");
+        @SuppressWarnings("unused")
+        private final SnippetInfo reduceIntSnippet2 = snippet(ReduceSnippets.class, "reduceIntAdd2");
+        @SuppressWarnings("unused")
+        private final SnippetInfo reduceIntSnippet3 = snippet(ReduceSnippets.class, "reduceIntAdd3");
+        @SuppressWarnings("unused")
+        private final SnippetInfo reduceIntSnippetGlobal = snippet(ReduceSnippets.class, "reduceIntAddGlobal");
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);
@@ -241,7 +248,7 @@ public class ReduceSnippets implements Snippets {
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", globalId);
             // args.add("localMemory", storeAtomicIndexed.array());
-            args.add("globalSize", globalSize);
+            // args.add("globalSize", globalSize);
             // args.add("value", storeAtomicIndexed.value());
 
             template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, DEFAULT_REPLACER, args);

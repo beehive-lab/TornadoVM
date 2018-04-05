@@ -37,11 +37,13 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryT
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GroupIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIDFixedNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.NewLocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OpenCLPrintf;
 import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
 
 public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTierContext> {
@@ -76,6 +78,10 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
                 ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
                 GlobalThreadIdNode globalThreadId = graph.addOrUnique(new GlobalThreadIdNode(dimension));
                 graph.replaceFixed(invoke, globalThreadId);
+            } else if (methodName.equals("Direct#OpenCLIntrinsics.get_global_size")) {
+                ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
+                GlobalThreadSizeNode globalSize = graph.addOrUnique(new GlobalThreadSizeNode(dimension));
+                graph.replaceFixed(invoke, globalSize);
             } else if (methodName.equals("Direct#OpenCLIntrinsics.get_group_id")) {
                 ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
                 GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(dimension));
@@ -91,6 +97,13 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
                 NewLocalArrayNode newLocalArrayNode = graph.addOrUnique(new NewLocalArrayNode(size, JavaKind.Int, OCLArchitecture.lp, OCLKind.INT, array));
                 graph.replaceFixed(invoke, newLocalArrayNode);
 
+            } else if (methodName.equals("Direct#OpenCLIntrinsics.printf")) {
+                System.out.println(" PRINTF REPLACEMENTS");
+                // NodeInputList<ValueNode> arguments =
+                // invoke.callTarget().arguments();
+                // ValueNode valueNode = (ConstantNode) arguments.get(0);
+                OpenCLPrintf printfNode = graph.addOrUnique(new OpenCLPrintf("\"INFO: %d in group %d\\n\", i_32, i_32"));
+                graph.replaceFixed(invoke, printfNode);
             }
         }
     }
