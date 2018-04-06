@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIDFixedNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.NewLocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OpenCLControl;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OpenCLPrintf;
 import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
 
@@ -102,8 +103,13 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
                 // NodeInputList<ValueNode> arguments =
                 // invoke.callTarget().arguments();
                 // ValueNode valueNode = (ConstantNode) arguments.get(0);
-                OpenCLPrintf printfNode = graph.addOrUnique(new OpenCLPrintf("\"INFO: %d in group %d\\n\", i_32, i_32"));
+                // OpenCLPrintf printfNode = graph.addOrUnique(new
+                // OpenCLPrintf("\"INFO: %d in group %d\\n\", i_43, i_43"));
+                OpenCLPrintf printfNode = graph.addOrUnique(new OpenCLPrintf("\"\""));
                 graph.replaceFixed(invoke, printfNode);
+            } else if (methodName.equals("Direct#OpenCLIntrinsics.control")) {
+                OpenCLControl control = graph.addOrUnique(new OpenCLControl());
+                graph.replaceFixed(invoke, control);
             }
         }
     }

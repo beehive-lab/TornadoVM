@@ -28,7 +28,6 @@ import uk.ac.manchester.tornado.graal.nodes.OCLReduceAddNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceSubNode;
 import uk.ac.manchester.tornado.graal.nodes.StoreAtomicIndexedNode;
-import uk.ac.manchester.tornado.lang.Debug;
 
 public class ReduceSnippets implements Snippets {
 
@@ -179,8 +178,6 @@ public class ReduceSnippets implements Snippets {
         int groupID = OpenCLIntrinsics.get_group_id(0);
         int globalSize = OpenCLIntrinsics.get_global_size(0);
 
-        int numGroups = globalSize / localGroupSize;
-
         int myID = localIdx + (localGroupSize * groupID);
 
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
@@ -195,14 +192,16 @@ public class ReduceSnippets implements Snippets {
             outputArray[groupID] = inputArray[myID];
         }
 
-        // OpenCLIntrinsics.globalBarrier();
-        // if (gidx == 0) {
-        // int acc = outputArray[0];
-        // for (int i = 1; i < numGroups; i++) {
-        // acc += outputArray[i];
-        // }
-        // outputArray[0] = acc;
-        // }
+        OpenCLIntrinsics.globalBarrier();
+        if (myID == 0) {
+            int numGroups = globalSize / localGroupSize;
+            int acc = outputArray[0];
+            OpenCLIntrinsics.control();
+            for (int i = 1; i < numGroups; i++) {
+                acc += outputArray[i];
+            }
+            outputArray[0] = acc;
+        }
     }
 
     public static class Templates extends AbstractTemplates {

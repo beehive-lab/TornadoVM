@@ -815,6 +815,8 @@ public final class OCLAssembler extends Assembler {
             emitAtomicIntrinsics();
         }
 
+        emitLine("void control() { printf(\"\"); }");
+
         // String extensions = ((OCLTargetDescription) target).getExtensions();
         // emitLine("// " + extensions);
     }
