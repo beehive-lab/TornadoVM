@@ -172,7 +172,6 @@ public class ReduceSnippets implements Snippets {
 
     @Snippet
     public static void reduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx) {
-
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
@@ -197,7 +196,7 @@ public class ReduceSnippets implements Snippets {
             int numGroups = globalSize / localGroupSize;
             int acc = outputArray[0];
             for (int i = 1; i < numGroups; i++) {
-                OpenCLIntrinsics.control();
+                OpenCLIntrinsics.printEmpty();
                 acc += outputArray[i];
             }
             outputArray[0] = acc;

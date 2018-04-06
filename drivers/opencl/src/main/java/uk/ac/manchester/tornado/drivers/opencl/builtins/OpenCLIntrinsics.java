@@ -79,7 +79,7 @@ public class OpenCLIntrinsics {
 
     }
 
-    public static void control() {
+    public static void printEmpty() {
 
     }
 

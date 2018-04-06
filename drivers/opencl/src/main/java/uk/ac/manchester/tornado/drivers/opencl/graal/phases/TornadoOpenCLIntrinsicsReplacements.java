@@ -43,7 +43,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIDFixedNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.NewLocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OpenCLControl;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OpenCLPrintf;
 import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
 
@@ -88,28 +87,15 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
                 GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(dimension));
                 graph.replaceFixed(invoke, groupIdNode);
             } else if (methodName.equals("Direct#OpenCLIntrinsics.createLocalMemory")) {
-
                 NodeInputList<ValueNode> arguments = invoke.callTarget().arguments();
                 FixedArrayNode array = (FixedArrayNode) arguments.get(0);
                 ConstantNode size = getConstantNodeFromArguments(invoke, 1);
-
                 array.setLocalType(OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY);
-
                 NewLocalArrayNode newLocalArrayNode = graph.addOrUnique(new NewLocalArrayNode(size, JavaKind.Int, OCLArchitecture.lp, OCLKind.INT, array));
                 graph.replaceFixed(invoke, newLocalArrayNode);
-
-            } else if (methodName.equals("Direct#OpenCLIntrinsics.printf")) {
-                System.out.println(" PRINTF REPLACEMENTS");
-                // NodeInputList<ValueNode> arguments =
-                // invoke.callTarget().arguments();
-                // ValueNode valueNode = (ConstantNode) arguments.get(0);
-                // OpenCLPrintf printfNode = graph.addOrUnique(new
-                // OpenCLPrintf("\"INFO: %d in group %d\\n\", i_43, i_43"));
+            } else if (methodName.equals("Direct#OpenCLIntrinsics.printEmpty")) {
                 OpenCLPrintf printfNode = graph.addOrUnique(new OpenCLPrintf("\"\""));
                 graph.replaceFixed(invoke, printfNode);
-            } else if (methodName.equals("Direct#OpenCLIntrinsics.control")) {
-                OpenCLControl control = graph.addOrUnique(new OpenCLControl());
-                graph.replaceFixed(invoke, control);
             }
         }
     }
