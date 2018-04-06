@@ -146,12 +146,60 @@ public class ReduceSnippets implements Snippets {
         }
     }
 
+    /**
+     * Full reduction in global memory for GPU.
+     * 
+     * @param inputArray
+     * @param outputArray
+     * @param gidx
+     */
+    @Snippet
+    public static void reduceIntAddLocalMemory(int[] inputArray, int[] outputArray, int gidx) {
+        int localIdx = OpenCLIntrinsics.get_local_id(0);
+        int localGroupSize = OpenCLIntrinsics.get_local_size(0);
+        int groupID = OpenCLIntrinsics.get_group_id(0);
+        int globalSize = OpenCLIntrinsics.get_global_size(0);
+
+        int myID = localIdx + (localGroupSize * groupID);
+
+        int sizeLocalMemory = 512;
+        int[] localMemory = new int[sizeLocalMemory];
+        OpenCLIntrinsics.createLocalMemory(localMemory, sizeLocalMemory);
+        localMemory[localIdx] = inputArray[myID];
+
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            OpenCLIntrinsics.localBarrier();
+            if (localIdx < stride) {
+                localMemory[localIdx] += localMemory[localIdx + stride];
+            }
+        }
+
+        OpenCLIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID] = localMemory[0];
+        }
+
+        OpenCLIntrinsics.globalBarrier();
+        if (myID == 0) {
+            int numGroups = globalSize / localGroupSize;
+            int acc = outputArray[0];
+            for (int i = 1; i < numGroups; i++) {
+                OpenCLIntrinsics.printEmpty();
+                acc += outputArray[i];
+            }
+            outputArray[0] = acc;
+        }
+    }
+
     public static class Templates extends AbstractTemplates {
 
         @SuppressWarnings("unused")
         private final SnippetInfo reduceIntSnippet = snippet(ReduceSnippets.class, "reduceIntAdd");
         @SuppressWarnings("unused")
         private final SnippetInfo reduceIntSnippetGlobal = snippet(ReduceSnippets.class, "reduceIntAddGlobal");
+
+        @SuppressWarnings("unused")
+        private final SnippetInfo reduceIntSnippetLocalMemory = snippet(ReduceSnippets.class, "reduceIntAddLocalMemory");
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);

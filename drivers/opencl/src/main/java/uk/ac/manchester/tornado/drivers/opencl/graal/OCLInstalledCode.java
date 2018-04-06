@@ -213,6 +213,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             kernel.setLocalRegion(index, meta.getLocalSize());
         } else {
             kernel.setArgUnused(index);
+
         }
         index++;
 
