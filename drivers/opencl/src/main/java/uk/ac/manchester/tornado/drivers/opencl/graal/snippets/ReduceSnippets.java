@@ -196,8 +196,8 @@ public class ReduceSnippets implements Snippets {
         if (myID == 0) {
             int numGroups = globalSize / localGroupSize;
             int acc = outputArray[0];
-            OpenCLIntrinsics.control();
             for (int i = 1; i < numGroups; i++) {
+                OpenCLIntrinsics.control();
                 acc += outputArray[i];
             }
             outputArray[0] = acc;
