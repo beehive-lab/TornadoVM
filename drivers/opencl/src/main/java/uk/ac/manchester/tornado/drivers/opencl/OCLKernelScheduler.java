@@ -25,8 +25,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import java.util.Arrays;
-
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 
 public abstract class OCLKernelScheduler {

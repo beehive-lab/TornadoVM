@@ -26,7 +26,6 @@
 package uk.ac.manchester.tornado.api.meta;
 
 import static uk.ac.manchester.tornado.common.Tornado.EVENT_WINDOW;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
 
 import java.lang.annotation.Annotation;
@@ -47,6 +46,7 @@ import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.meta.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.EventSet;
 
+@SuppressWarnings("deprecation")
 public class TaskMetaData extends AbstractMetaData {
 
     public static TaskMetaData create(ScheduleMetaData scheduleMeta, String id, Method method, boolean readMetaData) {

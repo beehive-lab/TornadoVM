@@ -64,7 +64,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     @Test
     public void testReductionAnnotation() {
         int[] input = new int[SIZE];
-        int[] result = new int[SIZE];
+        int[] result = new int[8];
 
         IntStream.range(0, SIZE).parallel().forEach(i -> {
             input[i] = 2;
