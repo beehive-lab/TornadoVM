@@ -1,3 +1,26 @@
+/*
+ * Copyright (c) 2018, APT Group, School of Computer Science,
+ * The University of Manchester. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Authors: Juan Fumero
+ *
+ */
 package uk.ac.manchester.tornado.drivers.opencl.graal.snippets;
 
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
@@ -34,20 +57,6 @@ public class ReduceSnippets implements Snippets {
     @Fold
     static LocationIdentity getArrayLocation(JavaKind kind) {
         return NamedLocationIdentity.getArrayLocation(kind);
-    }
-
-    /**
-     * Dummy snippet to understand the process of node replacements using
-     * snippet during lowering.
-     * 
-     */
-    @Snippet
-    public static void testReduceLoop(int n, int[] data, int value) {
-        int acc = 0;
-        for (int i = 0; i < n; i++) {
-            acc += value;
-        }
-        data[0] = acc;
     }
 
     /**
@@ -88,88 +97,22 @@ public class ReduceSnippets implements Snippets {
             outputArray[groupID] = localMemory[0];
         }
 
-        // OpenCLIntrinsics.globalBarrier();
-        // if (gidx == 0) {
-        // int numGroups = globalSize / localGroupSize;
-        // for (int i = 1; i < numGroups; i++) {
-        // outputArray[0] += outputArray[i];
-        // }
-        // }
-    }
-
-    @Snippet
-    public static void reduceIntAdd2(int[] outputArray, int gidx, int globalSize, int value) {
-
-        int localIdx = OpenCLIntrinsics.get_local_id(0);
-        int localGroupSize = OpenCLIntrinsics.get_local_size(0);
-
-        int sizeLocalMemory = 16;
-
-        // Allocate a chunk of data in local memory
-        int[] localMemory = new int[sizeLocalMemory];
-        OpenCLIntrinsics.createLocalMemory(localMemory, sizeLocalMemory);
-
-        // Copy input data to local memory
-        localMemory[localIdx] = value;
-
-        int start = localGroupSize / 2;
-        // Reduction in local memory
-        for (int stride = start; stride > 0; stride /= 2) {
-            OpenCLIntrinsics.localBarrier();
-            if (localIdx < stride) {
-                localMemory[localIdx] += localMemory[localIdx + stride];
+        OpenCLIntrinsics.globalBarrier();
+        if (gidx == 0) {
+            int numGroups = globalSize / localGroupSize;
+            for (int i = 1; i < numGroups; i++) {
+                outputArray[0] += outputArray[i];
             }
         }
-
-        if (localIdx == 0) {
-            int groupID = OpenCLIntrinsics.get_group_id(0);
-            outputArray[groupID] = localMemory[0];
-        }
-
-        // OpenCLIntrinsics.globalBarrier();
-        // if (gidx == 0) {
-        // int numGroups = globalSize / localGroupSize;
-        // for (int i = 1; i < numGroups; i++) {
-        // outputArray[0] += outputArray[i];
-        // }
-        // }
     }
 
-    @Snippet
-    public static void reduceIntAdd3(int[] inputArray, int[] outputArray, int gidx, int[] localMemory, int globalSize) {
-
-        int localIdx = OpenCLIntrinsics.get_local_id(0);
-        int localGroupSize = OpenCLIntrinsics.get_local_size(0);
-        int groupID = OpenCLIntrinsics.get_group_id(0);
-
-        //
-        // int sizeLocalMemory = 1024;
-        // int[] localMemory = new int[sizeLocalMemory];
-        // OpenCLIntrinsics.createLocalMemory(localMemory, sizeLocalMemory);
-
-        localMemory[localIdx] = inputArray[gidx];
-
-        int start = localGroupSize / 2;
-        for (int stride = start; stride > 0; stride /= 2) {
-            if (stride > localIdx) {
-                inputArray[localIdx] += inputArray[localIdx + stride];
-            }
-            OpenCLIntrinsics.localBarrier();
-        }
-
-        if (localIdx == 0) {
-            outputArray[groupID] = inputArray[localIdx];
-        }
-
-        // OpenCLIntrinsics.globalBarrier();
-        // if (gidx == 0) {
-        // int numGroups = globalSize / localGroupSize;
-        // for (int i = 1; i < numGroups; i++) {
-        // outputArray[0] += outputArray[i];
-        // }
-        // }
-    }
-
+    /**
+     * Full reduction in global memory for GPU.
+     * 
+     * @param inputArray
+     * @param outputArray
+     * @param gidx
+     */
     @Snippet
     public static void reduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx) {
         int localIdx = OpenCLIntrinsics.get_local_id(0);
@@ -206,13 +149,7 @@ public class ReduceSnippets implements Snippets {
     public static class Templates extends AbstractTemplates {
 
         @SuppressWarnings("unused")
-        private final SnippetInfo helloSnippet = snippet(ReduceSnippets.class, "testReduceLoop");
-        @SuppressWarnings("unused")
         private final SnippetInfo reduceIntSnippet = snippet(ReduceSnippets.class, "reduceIntAdd");
-        @SuppressWarnings("unused")
-        private final SnippetInfo reduceIntSnippet2 = snippet(ReduceSnippets.class, "reduceIntAdd2");
-        @SuppressWarnings("unused")
-        private final SnippetInfo reduceIntSnippet3 = snippet(ReduceSnippets.class, "reduceIntAdd3");
         @SuppressWarnings("unused")
         private final SnippetInfo reduceIntSnippetGlobal = snippet(ReduceSnippets.class, "reduceIntAddGlobal");
 
@@ -241,13 +178,9 @@ public class ReduceSnippets implements Snippets {
 
             SnippetInfo snippet = reduceIntSnippetGlobal;
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
-
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", globalId);
-            // args.add("localMemory", storeAtomicIndexed.array());
-            // args.add("globalSize", globalSize);
-            // args.add("value", storeAtomicIndexed.value());
 
             template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, DEFAULT_REPLACER, args);
 
