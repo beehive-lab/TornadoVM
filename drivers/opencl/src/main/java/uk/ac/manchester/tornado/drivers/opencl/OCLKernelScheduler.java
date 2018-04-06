@@ -40,8 +40,6 @@ public abstract class OCLKernelScheduler {
     protected double std;
     protected double samples;
 
-    private static final boolean CHECK_REDUCTIONS = false;
-
     public OCLKernelScheduler(final OCLDeviceContext context) {
         deviceContext = context;
     }
@@ -72,23 +70,11 @@ public abstract class OCLKernelScheduler {
             meta.printThreadDims();
         }
 
-        System.out.println("LAUNCHING WITH: ");
-        System.out.println("\tGLOBAL: " + Arrays.toString(meta.getGlobalWork()));
-        System.out.println("\tLOCAL: " + Arrays.toString(meta.getLocalWork()));
-
         final int task;
         if (meta.shouldUseOpenclScheduling()) {
             task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
         } else {
-            if (CHECK_REDUCTIONS) {
-                // Dummy example to check reductions and snippet with one
-                // particular configuration. This code will be removed in the
-                // final version
-                System.out.println("USING CUSTOM SCHEDULER");
-                task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), new long[] { 256 }, waitEvents);
-            } else {
-                task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
-            }
+            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
         }
         return task;
     }

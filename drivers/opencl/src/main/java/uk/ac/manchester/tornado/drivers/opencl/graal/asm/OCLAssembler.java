@@ -806,16 +806,11 @@ public final class OCLAssembler extends Assembler {
 
         if (((OCLTargetDescription) target).supportsFP64()) {
             emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable  ");
-            // emitLine("#pragma OPENCL EXTENSION cl_intel_printf : enable");
-            // emitLine("#pragma OPENCL EXTENSION cl_amd_printf : enable ");
-
         }
 
         if (EMIT_INTRINSICS) {
             emitAtomicIntrinsics();
         }
-
-        emitLine("void control() { printf(\"\"); }");
 
         // String extensions = ((OCLTargetDescription) target).getExtensions();
         // emitLine("// " + extensions);

@@ -44,7 +44,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
     public static final int SMALL_SIZE = 64;
     public static final int BIG_SIZE = 1024;
 
-    public static final int SIZE = 524288;
+    public static final int SIZE2 = 524288;
+    public static final int SIZE = 4096;
 
     /**
      * First approach: use annotations in the user code to identify the
