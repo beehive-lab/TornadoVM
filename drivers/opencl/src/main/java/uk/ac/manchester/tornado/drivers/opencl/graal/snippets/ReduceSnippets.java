@@ -114,7 +114,7 @@ public class ReduceSnippets implements Snippets {
      * @param gidx
      */
     @Snippet
-    public static void reduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx) {
+    public static void fullReduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx) {
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
@@ -143,6 +143,35 @@ public class ReduceSnippets implements Snippets {
                 acc += outputArray[i];
             }
             outputArray[0] = acc;
+        }
+    }
+
+    /**
+     * Partial reduction in global memory for GPU.
+     * 
+     * @param inputArray
+     * @param outputArray
+     * @param gidx
+     */
+    @Snippet
+    public static void partialReduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx) {
+
+        int localIdx = OpenCLIntrinsics.get_local_id(0);
+        int localGroupSize = OpenCLIntrinsics.get_local_size(0);
+        int groupID = OpenCLIntrinsics.get_group_id(0);
+
+        int myID = localIdx + (localGroupSize * groupID);
+
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            OpenCLIntrinsics.localBarrier();
+            if (localIdx < stride) {
+                inputArray[myID] += inputArray[myID + stride];
+            }
+        }
+
+        OpenCLIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID] = inputArray[myID];
         }
     }
 
@@ -196,8 +225,9 @@ public class ReduceSnippets implements Snippets {
         @SuppressWarnings("unused")
         private final SnippetInfo reduceIntSnippet = snippet(ReduceSnippets.class, "reduceIntAdd");
         @SuppressWarnings("unused")
-        private final SnippetInfo reduceIntSnippetGlobal = snippet(ReduceSnippets.class, "reduceIntAddGlobal");
-
+        private final SnippetInfo fullReduceIntSnippetGlobal = snippet(ReduceSnippets.class, "fullReduceIntAddGlobal");
+        @SuppressWarnings("unused")
+        private final SnippetInfo partialReduceIntSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceIntAddGlobal");
         @SuppressWarnings("unused")
         private final SnippetInfo reduceIntSnippetLocalMemory = snippet(ReduceSnippets.class, "reduceIntAddLocalMemory");
 
@@ -224,7 +254,7 @@ public class ReduceSnippets implements Snippets {
                 operation = ATOMIC_OPERATION.MUL;
             }
 
-            SnippetInfo snippet = reduceIntSnippetGlobal;
+            SnippetInfo snippet = partialReduceIntSnippetGlobal;
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
