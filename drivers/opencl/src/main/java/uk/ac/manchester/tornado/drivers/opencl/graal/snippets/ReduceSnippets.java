@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.snippets;
 
-import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
-
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
@@ -36,6 +34,7 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
+import org.graalvm.compiler.replacements.SnippetTemplate;
 import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
@@ -52,6 +51,10 @@ import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceSubNode;
 import uk.ac.manchester.tornado.graal.nodes.StoreAtomicIndexedNode;
 
+/**
+ * Graal Snippets for OpenCL reductions.
+ * 
+ */
 public class ReduceSnippets implements Snippets {
 
     @Fold
@@ -115,6 +118,7 @@ public class ReduceSnippets implements Snippets {
      */
     @Snippet
     public static void fullReduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx) {
+
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
@@ -245,24 +249,24 @@ public class ReduceSnippets implements Snippets {
             ValueNode array = storeAtomicIndexed.array();
             ValueNode accumulator = storeAtomicIndexed.getAccumulator();
 
-            ATOMIC_OPERATION operation = ATOMIC_OPERATION.CUSTOM;
+            ATOMIC_OPERATION operation;
             if (value instanceof OCLReduceAddNode) {
                 operation = ATOMIC_OPERATION.ADD;
             } else if (value instanceof OCLReduceSubNode) {
                 operation = ATOMIC_OPERATION.SUB;
             } else if (value instanceof OCLReduceMulNode) {
                 operation = ATOMIC_OPERATION.MUL;
+            } else {
+                throw new RuntimeException("Reduce Operation no supported yet");
             }
 
-            SnippetInfo snippet = partialReduceIntSnippetGlobal;
+            SnippetInfo snippet = fullReduceIntSnippetGlobal;
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", globalId);
 
-            template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, DEFAULT_REPLACER, args);
-
+            template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
         }
-
     }
 }
