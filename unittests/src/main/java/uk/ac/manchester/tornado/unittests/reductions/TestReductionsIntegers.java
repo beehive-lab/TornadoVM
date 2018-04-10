@@ -99,7 +99,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] input = new int[64];
         int[] result = new int[16];
 
-        Arrays.fill(input, 2);
+        Arrays.fill(input, 1);
 
         //@formatter:off
         new TaskSchedule("s0")
