@@ -87,6 +87,37 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
+    public static void multReductionAnnotation(int[] input, @Reduce int[] result, int neutral) {
+        result[0] = neutral;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] *= input[i];
+        }
+    }
+
+    @Test
+    public void testMultiplicationReduction() {
+        int[] input = new int[64];
+        int[] result = new int[16];
+
+        Arrays.fill(input, 2);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t0", TestReductionsIntegers::multReductionAnnotation, input, result, 1)
+            .streamOut(result)
+            .execute();
+        //@formatter:on
+
+        int[] sequential = new int[1];
+        multReductionAnnotation(input, sequential, 1);
+
+        System.out.println(Arrays.toString(result));
+
+        // Check result
+        assertEquals(sequential[0], result[0]);
+    }
+
     /**
      * First approach: use annotations in the user code to identify the
      * reduction variables. This is a similar approach to OpenMP and OpenACC.

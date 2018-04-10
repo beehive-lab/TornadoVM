@@ -179,6 +179,28 @@ public class ReduceSnippets implements Snippets {
         }
     }
 
+    @Snippet
+    public static void partialReduceMultiplicationGlobal(int[] inputArray, int[] outputArray, int gidx) {
+
+        int localIdx = OpenCLIntrinsics.get_local_id(0);
+        int localGroupSize = OpenCLIntrinsics.get_local_size(0);
+        int groupID = OpenCLIntrinsics.get_group_id(0);
+
+        int myID = localIdx + (localGroupSize * groupID);
+
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            OpenCLIntrinsics.localBarrier();
+            if (localIdx < stride) {
+                inputArray[myID] *= inputArray[myID + stride];
+            }
+        }
+
+        OpenCLIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID] = inputArray[myID];
+        }
+    }
+
     /**
      * Full reduction in global memory for GPU.
      * 
@@ -230,8 +252,10 @@ public class ReduceSnippets implements Snippets {
         private final SnippetInfo reduceIntSnippet = snippet(ReduceSnippets.class, "reduceIntAdd");
         @SuppressWarnings("unused")
         private final SnippetInfo fullReduceIntSnippetGlobal = snippet(ReduceSnippets.class, "fullReduceIntAddGlobal");
-        @SuppressWarnings("unused")
+
         private final SnippetInfo partialReduceIntSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceIntAddGlobal");
+        private final SnippetInfo partialReduceMultiplicationSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceMultiplicationGlobal");
+
         @SuppressWarnings("unused")
         private final SnippetInfo reduceIntSnippetLocalMemory = snippet(ReduceSnippets.class, "reduceIntAddLocalMemory");
 
@@ -243,24 +267,29 @@ public class ReduceSnippets implements Snippets {
 
             StructuredGraph graph = storeAtomicIndexed.graph();
 
+            // In this point, depending on the type and the operation,
+            // we call the corresponding snippet.
             JavaKind elementKind = storeAtomicIndexed.elementKind();
 
             ValueNode value = storeAtomicIndexed.value();
             ValueNode array = storeAtomicIndexed.array();
             ValueNode accumulator = storeAtomicIndexed.getAccumulator();
 
+            SnippetInfo snippet = null;
+
             ATOMIC_OPERATION operation;
             if (value instanceof OCLReduceAddNode) {
+                snippet = partialReduceIntSnippetGlobal;
                 operation = ATOMIC_OPERATION.ADD;
             } else if (value instanceof OCLReduceSubNode) {
                 operation = ATOMIC_OPERATION.SUB;
             } else if (value instanceof OCLReduceMulNode) {
                 operation = ATOMIC_OPERATION.MUL;
+                snippet = partialReduceMultiplicationSnippetGlobal;
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet");
             }
 
-            SnippetInfo snippet = fullReduceIntSnippetGlobal;
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
