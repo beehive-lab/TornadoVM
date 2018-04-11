@@ -68,6 +68,17 @@ public class TestReductionsFloats extends TornadoTestBase {
 			.execute();
 		//@formatter:on
 
+        // Final result
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+
+        // Final result
+        for (int i = 1; i < numGroups; i++) {
+            result[0] += result[i];
+        }
+
         float[] sequential = new float[1];
         reductionAddFloats(input, sequential);
 
@@ -105,6 +116,16 @@ public class TestReductionsFloats extends TornadoTestBase {
             .streamOut(result)
             .execute();
         //@formatter:on
+
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+
+        // Final result
+        for (int i = 1; i < numGroups; i++) {
+            result[0] *= result[i];
+        }
 
         float[] sequential = new float[1];
         multiplyFloats(input, sequential);
