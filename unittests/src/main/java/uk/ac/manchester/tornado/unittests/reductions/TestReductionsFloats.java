@@ -73,8 +73,6 @@ public class TestReductionsFloats extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-
-        // Final result
         for (int i = 1; i < numGroups; i++) {
             result[0] += result[i];
         }
@@ -121,8 +119,6 @@ public class TestReductionsFloats extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-
-        // Final result
         for (int i = 1; i < numGroups; i++) {
             result[0] *= result[i];
         }

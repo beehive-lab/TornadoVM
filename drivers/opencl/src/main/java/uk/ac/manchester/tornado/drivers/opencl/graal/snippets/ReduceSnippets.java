@@ -44,11 +44,9 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode.ATOMIC_OPERATION;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceAddNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
-import uk.ac.manchester.tornado.graal.nodes.OCLReduceSubNode;
 import uk.ac.manchester.tornado.graal.nodes.StoreAtomicIndexedNode;
 
 /**
@@ -117,7 +115,7 @@ public class ReduceSnippets implements Snippets {
      * @param gidx
      */
     @Snippet
-    public static void fullReduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx) {
+    public static void fullReduceIntAddGlobalMemory(int[] inputArray, int[] outputArray, int gidx) {
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
@@ -202,7 +200,7 @@ public class ReduceSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceMultiplicationGlobal(int[] inputArray, int[] outputArray, int gidx) {
+    public static void partialReduceIntMultGlobal(int[] inputArray, int[] outputArray, int gidx) {
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
@@ -295,13 +293,13 @@ public class ReduceSnippets implements Snippets {
         @SuppressWarnings("unused")
         private final SnippetInfo reduceIntSnippet = snippet(ReduceSnippets.class, "reduceIntAdd");
         @SuppressWarnings("unused")
-        private final SnippetInfo fullReduceIntSnippetGlobal = snippet(ReduceSnippets.class, "fullReduceIntAddGlobal");
+        private final SnippetInfo fullReduceIntSnippetGlobal = snippet(ReduceSnippets.class, "fullReduceIntAddGlobalMemory");
 
         private final SnippetInfo partialReduceIntSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceIntAddGlobal");
         private final SnippetInfo partialReduceAddFloatSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceFloatAddGlobal");
-        private final SnippetInfo partialReduceMultiplicationSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceMultiplicationGlobal");
+        private final SnippetInfo partialReduceIntMultSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceIntMultGlobal");
 
-        private final SnippetInfo partialReduceMultFloatSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceFloatMultGlobal");
+        private final SnippetInfo partialReducetFloatMultSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceFloatMultGlobal");
 
         @SuppressWarnings("unused")
         private final SnippetInfo reduceIntSnippetLocalMemory = snippet(ReduceSnippets.class, "reduceIntAddLocalMemory");
@@ -316,7 +314,7 @@ public class ReduceSnippets implements Snippets {
                 snippet = partialReduceIntSnippetGlobal;
             } else if (value instanceof OCLReduceMulNode) {
                 // operation = ATOMIC_OPERATION.MUL;
-                snippet = partialReduceMultiplicationSnippetGlobal;
+                snippet = partialReduceIntMultSnippetGlobal;
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet");
             }
@@ -330,7 +328,7 @@ public class ReduceSnippets implements Snippets {
                 snippet = partialReduceAddFloatSnippetGlobal;
             } else if (value instanceof OCLReduceMulNode) {
                 System.out.println("Float MULT Reduction");
-                snippet = partialReduceMultFloatSnippetGlobal;
+                snippet = partialReducetFloatMultSnippetGlobal;
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet");
             }
