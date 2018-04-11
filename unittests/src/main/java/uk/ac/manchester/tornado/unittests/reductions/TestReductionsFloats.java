@@ -28,6 +28,7 @@ package uk.ac.manchester.tornado.unittests.reductions;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -43,8 +44,8 @@ public class TestReductionsFloats extends TornadoTestBase {
     public static final int SIZE = 64;
     public static final int BIG_SIZE = 128;
 
-    public static void reductionAddFloats(float[] input, @Reduce float[] result, float[] neutral) {
-        result[0] = neutral[0];
+    public static void reductionAddFloats(float[] input, @Reduce float[] result) {
+        result[0] = 0.0f;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += input[i];
         }
@@ -53,25 +54,27 @@ public class TestReductionsFloats extends TornadoTestBase {
     @Test
     public void testReductionFloats() {
         float[] input = new float[BIG_SIZE];
-        float[] result = new float[1];
+        float[] result = new float[32];
 
-        IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
-            input[i] = 1;
+        Random r = new Random();
+        IntStream.range(0, BIG_SIZE).sequential().forEach(i -> {
+            input[i] = r.nextFloat();
         });
 
         //@formatter:off
 		new TaskSchedule("s0")
 			.streamIn(input)
-			.task("t0", TestReductionsFloats::reductionAddFloats, input, result, new float[] {0.0f})
+			.task("t0", TestReductionsFloats::reductionAddFloats, input, result)
 			.streamOut(result)
 			.execute();
 		//@formatter:on
 
         float[] sequential = new float[1];
-        reductionAddFloats(input, sequential, new float[] { 0.0f });
+        reductionAddFloats(input, sequential);
+
+        System.out.println(Arrays.toString(result));
 
         // Check result
         assertEquals(sequential[0], result[0], 0.001f);
     }
-
 }

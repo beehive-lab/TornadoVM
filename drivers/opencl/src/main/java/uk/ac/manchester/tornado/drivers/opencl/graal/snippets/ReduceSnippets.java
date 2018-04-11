@@ -180,6 +180,28 @@ public class ReduceSnippets implements Snippets {
     }
 
     @Snippet
+    public static void partialReduceFloatAddGlobal(float[] inputArray, float[] outputArray, int gidx) {
+
+        int localIdx = OpenCLIntrinsics.get_local_id(0);
+        int localGroupSize = OpenCLIntrinsics.get_local_size(0);
+        int groupID = OpenCLIntrinsics.get_group_id(0);
+
+        int myID = localIdx + (localGroupSize * groupID);
+
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            OpenCLIntrinsics.localBarrier();
+            if (localIdx < stride) {
+                inputArray[myID] += inputArray[myID + stride];
+            }
+        }
+
+        OpenCLIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID] = inputArray[myID];
+        }
+    }
+
+    @Snippet
     public static void partialReduceMultiplicationGlobal(int[] inputArray, int[] outputArray, int gidx) {
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
@@ -254,6 +276,7 @@ public class ReduceSnippets implements Snippets {
         private final SnippetInfo fullReduceIntSnippetGlobal = snippet(ReduceSnippets.class, "fullReduceIntAddGlobal");
 
         private final SnippetInfo partialReduceIntSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceIntAddGlobal");
+        private final SnippetInfo partialReduceAddFloatSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceFloatAddGlobal");
         private final SnippetInfo partialReduceMultiplicationSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceMultiplicationGlobal");
 
         @SuppressWarnings("unused")
@@ -261,6 +284,30 @@ public class ReduceSnippets implements Snippets {
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);
+        }
+
+        private SnippetInfo inferIntSnippet(ValueNode value) {
+            SnippetInfo snippet = null;
+            if (value instanceof OCLReduceAddNode) {
+                snippet = partialReduceIntSnippetGlobal;
+            } else if (value instanceof OCLReduceMulNode) {
+                // operation = ATOMIC_OPERATION.MUL;
+                snippet = partialReduceMultiplicationSnippetGlobal;
+            } else {
+                throw new RuntimeException("Reduce Operation no supported yet");
+            }
+            return snippet;
+        }
+
+        private SnippetInfo inferFloatSnippet(ValueNode value) {
+            SnippetInfo snippet = null;
+            if (value instanceof OCLReduceAddNode) {
+                System.out.println("Float ADD Reduction");
+                snippet = partialReduceAddFloatSnippetGlobal;
+            } else {
+                throw new RuntimeException("Reduce Operation no supported yet");
+            }
+            return snippet;
         }
 
         public void lower(StoreAtomicIndexedNode storeAtomicIndexed, AddressNode address, OCLWriteAtomicNode memoryWrite, ValueNode globalId, GlobalThreadSizeNode globalSize, LoweringTool tool) {
@@ -277,17 +324,10 @@ public class ReduceSnippets implements Snippets {
 
             SnippetInfo snippet = null;
 
-            ATOMIC_OPERATION operation;
-            if (value instanceof OCLReduceAddNode) {
-                snippet = partialReduceIntSnippetGlobal;
-                operation = ATOMIC_OPERATION.ADD;
-            } else if (value instanceof OCLReduceSubNode) {
-                operation = ATOMIC_OPERATION.SUB;
-            } else if (value instanceof OCLReduceMulNode) {
-                operation = ATOMIC_OPERATION.MUL;
-                snippet = partialReduceMultiplicationSnippetGlobal;
-            } else {
-                throw new RuntimeException("Reduce Operation no supported yet");
+            if (elementKind == JavaKind.Int) {
+                snippet = inferIntSnippet(value);
+            } else if (elementKind == JavaKind.Float) {
+                snippet = inferFloatSnippet(value);
             }
 
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
