@@ -41,8 +41,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsFloats extends TornadoTestBase {
 
-    public static final int SIZE = 64;
-    public static final int BIG_SIZE = 128;
+    public static final int SIZE = 512;
 
     public static void reductionAddFloats(float[] input, @Reduce float[] result) {
         result[0] = 0.0f;
@@ -52,12 +51,12 @@ public class TestReductionsFloats extends TornadoTestBase {
     }
 
     @Test
-    public void testReductionFloats() {
-        float[] input = new float[BIG_SIZE];
+    public void testSumFloats() {
+        float[] input = new float[SIZE];
         float[] result = new float[32];
 
         Random r = new Random();
-        IntStream.range(0, BIG_SIZE).sequential().forEach(i -> {
+        IntStream.range(0, SIZE).sequential().forEach(i -> {
             input[i] = r.nextFloat();
         });
 
@@ -71,6 +70,44 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         float[] sequential = new float[1];
         reductionAddFloats(input, sequential);
+
+        System.out.println(Arrays.toString(result));
+
+        // Check result
+        assertEquals(sequential[0], result[0], 0.001f);
+    }
+
+    public static void multiplyFloats(float[] input, @Reduce float[] result) {
+        result[0] = 1.0f;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] *= input[i];
+        }
+    }
+
+    @Test
+    public void testMultFloats() {
+        float[] input = new float[SIZE];
+        float[] result = new float[32];
+
+        Random r = new Random();
+        IntStream.range(0, SIZE).sequential().forEach(i -> {
+            input[i] = 1.0f;
+        });
+
+        input[0] = r.nextFloat();
+        input[10] = r.nextFloat();
+        input[11] = r.nextFloat();
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t0", TestReductionsFloats::multiplyFloats, input, result)
+            .streamOut(result)
+            .execute();
+        //@formatter:on
+
+        float[] sequential = new float[1];
+        multiplyFloats(input, sequential);
 
         System.out.println(Arrays.toString(result));
 

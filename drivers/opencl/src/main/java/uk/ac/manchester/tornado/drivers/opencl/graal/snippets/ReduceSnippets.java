@@ -223,6 +223,28 @@ public class ReduceSnippets implements Snippets {
         }
     }
 
+    @Snippet
+    public static void partialReduceFloatMultGlobal(float[] inputArray, float[] outputArray, int gidx) {
+
+        int localIdx = OpenCLIntrinsics.get_local_id(0);
+        int localGroupSize = OpenCLIntrinsics.get_local_size(0);
+        int groupID = OpenCLIntrinsics.get_group_id(0);
+
+        int myID = localIdx + (localGroupSize * groupID);
+
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            OpenCLIntrinsics.localBarrier();
+            if (localIdx < stride) {
+                inputArray[myID] *= inputArray[myID + stride];
+            }
+        }
+
+        OpenCLIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID] = inputArray[myID];
+        }
+    }
+
     /**
      * Full reduction in global memory for GPU.
      * 
@@ -279,6 +301,8 @@ public class ReduceSnippets implements Snippets {
         private final SnippetInfo partialReduceAddFloatSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceFloatAddGlobal");
         private final SnippetInfo partialReduceMultiplicationSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceMultiplicationGlobal");
 
+        private final SnippetInfo partialReduceMultFloatSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceFloatMultGlobal");
+
         @SuppressWarnings("unused")
         private final SnippetInfo reduceIntSnippetLocalMemory = snippet(ReduceSnippets.class, "reduceIntAddLocalMemory");
 
@@ -304,6 +328,9 @@ public class ReduceSnippets implements Snippets {
             if (value instanceof OCLReduceAddNode) {
                 System.out.println("Float ADD Reduction");
                 snippet = partialReduceAddFloatSnippetGlobal;
+            } else if (value instanceof OCLReduceMulNode) {
+                System.out.println("Float MULT Reduction");
+                snippet = partialReduceMultFloatSnippetGlobal;
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet");
             }
