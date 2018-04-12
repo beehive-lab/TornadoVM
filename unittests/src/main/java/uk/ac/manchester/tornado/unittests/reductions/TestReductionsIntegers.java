@@ -135,6 +135,48 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
+    public static void maxReductionAnnotation(int[] input, @Reduce int[] result, int neutral) {
+        result[0] = neutral;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] = Math.max(result[0], input[i]);
+        }
+    }
+
+    @Test
+    public void testMaxReduction() {
+        int[] input = new int[SIZE];
+        int[] result = new int[SIZE];
+
+        IntStream.range(0, SIZE).forEach(idx -> {
+            input[idx] = idx;
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t0", TestReductionsIntegers::maxReductionAnnotation, input, result, Integer.MIN_VALUE)
+            .streamOut(result)
+            .execute();
+        //@formatter:on
+
+        // Final result
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+        for (int i = 1; i < numGroups; i++) {
+            result[0] += Math.max(result[0], result[i]);
+        }
+
+        int[] sequential = new int[1];
+        maxReductionAnnotation(input, sequential, 1);
+
+        System.out.println(Arrays.toString(result));
+
+        // Check result
+        assertEquals(sequential[0], result[0]);
+    }
+
     public static void reductionSequentialSmall(float[] input, float[] result) {
         result[0] = 0;
         for (int i = 0; i < input.length; i++) {

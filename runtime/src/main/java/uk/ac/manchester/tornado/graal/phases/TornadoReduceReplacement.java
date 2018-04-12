@@ -10,6 +10,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
+import org.graalvm.compiler.nodes.calc.BinaryNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
@@ -38,8 +39,8 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
      * then load index. As soon as we discover more cases, new nodes should be
      * inspected here.
      * 
-     * XXX: Cover all the cases here as soon as we discover more reductions //
-     * use-cases
+     * XXX: Cover all the cases here as soon as we discover more reductions
+     * use-cases.
      * 
      * @param arrayToStore
      * @param indexToStore
@@ -48,14 +49,15 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
      */
     public boolean recursiveCheck(ValueNode arrayToStore, ValueNode indexToStore, ValueNode currentNode) {
         boolean isReduction = false;
-        if (currentNode instanceof BinaryArithmeticNode) {
-            BinaryArithmeticNode<?> value = (BinaryArithmeticNode<?>) currentNode;
+        if (currentNode instanceof BinaryNode) {
+            BinaryNode value = (BinaryNode) currentNode;
             ValueNode x = value.getX();
             isReduction = recursiveCheck(arrayToStore, indexToStore, x);
             if (isReduction == false) {
                 ValueNode y = value.getY();
                 return recursiveCheck(arrayToStore, indexToStore, y);
             }
+
         } else if (currentNode instanceof LoadIndexedNode) {
             LoadIndexedNode loadNode = (LoadIndexedNode) currentNode;
             if (loadNode.array() == arrayToStore && loadNode.index() == indexToStore) {
@@ -164,7 +166,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 }
 
                 ValueNode inputArray = obtainInputArray(store.value(), store.array(), store.index());
-                // System.out.println("INPUT ARRAY: " + inputArray);
 
                 ReductionNodes reductionNode = createReductionNode(graph, store, inputArray);
                 Node pred = node.predecessor();
