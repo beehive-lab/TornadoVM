@@ -72,7 +72,7 @@ public class OCLGraphBuilderPlugins {
         TornadoMathPlugins.registerTornadoMathPlugins(plugins);
         VectorPlugins.registerPlugins(ps, plugins);
 
-		//AtomicPlugins.registerPlugins(plugins);
+        // AtomicPlugins.registerPlugins(plugins);
     }
 
     private static void registerCompilerInstrinsicsPlugins(InvocationPlugins plugins) {
@@ -80,13 +80,11 @@ public class OCLGraphBuilderPlugins {
 
         r.register0("getSlotsAddress", new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 b.addPush(JavaKind.Object, new SlotsBaseAddressNode());
                 return true;
             }
         });
-
     }
 
     private static void registerTornadoInstrinsicsPlugins(InvocationPlugins plugins) {
@@ -94,8 +92,7 @@ public class OCLGraphBuilderPlugins {
         final InvocationPlugin tprintfPlugin = new InvocationPlugin() {
 
             @Override
-            public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode... args) {
+            public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode... args) {
 
                 int idCount = 0;
                 int index = 0;
@@ -145,10 +142,13 @@ public class OCLGraphBuilderPlugins {
                 b.add(b.append(printfNode));
                 while (newArrayNode.hasUsages()) {
                     Node n = newArrayNode.getUsageAt(0);
-                    // need to remove all nodes from the graph that operate on the
-                    // new array, however, we cannot remove all inputs as they may be
+                    // need to remove all nodes from the graph that operate on
+                    // the
+                    // new array, however, we cannot remove all inputs as they
+                    // may be
                     // used by the currently unbuilt part of the graph.
-                    // We also need to ensure that we do not leave any gaps inbetween
+                    // We also need to ensure that we do not leave any gaps
+                    // inbetween
                     // fixed nodes
                     if (n instanceof FixedWithNextNode) {
                         GraphUtil.unlinkFixedNode((FixedWithNextNode) n);
@@ -173,8 +173,7 @@ public class OCLGraphBuilderPlugins {
         final InvocationPlugin printfPlugin = new InvocationPlugin() {
 
             @Override
-            public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode... args) {
+            public boolean defaultHandler(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode... args) {
 
                 NewArrayNode newArrayNode = (NewArrayNode) args[1];
                 ConstantNode lengthNode = (ConstantNode) newArrayNode.dimension(0);
@@ -206,10 +205,13 @@ public class OCLGraphBuilderPlugins {
 
                 while (newArrayNode.hasUsages()) {
                     Node n = newArrayNode.getUsageAt(0);
-                    // need to remove all nodes from the graph that operate on the
-                    // new array, however, we cannot remove all inputs as they may be
+                    // need to remove all nodes from the graph that operate on
+                    // the
+                    // new array, however, we cannot remove all inputs as they
+                    // may be
                     // used by the currently unbuilt part of the graph.
-                    // We also need to ensure that we do not leave any gaps inbetween
+                    // We also need to ensure that we do not leave any gaps
+                    // inbetween
                     // fixed nodes
                     if (n instanceof FixedWithNextNode) {
                         GraphUtil.unlinkFixedNode((FixedWithNextNode) n);
@@ -237,14 +239,13 @@ public class OCLGraphBuilderPlugins {
         registerOpenCLOverridesForType(r, Integer.TYPE, JavaKind.Int);
         registerOpenCLOverridesForType(r, Long.TYPE, JavaKind.Long);
 
-//        registerFPIntrinsics(r, Float.TYPE, JavaKind.Float);
+        // registerFPIntrinsics(r, Float.TYPE, JavaKind.Float);
         registerFPIntrinsics(r, Double.TYPE, JavaKind.Double);
 
         Registration longReg = new Registration(plugins, Long.class);
         longReg.register1("bitCount", Long.TYPE, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Int, b.append(OCLIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Long)));
                 return true;
             }
@@ -253,8 +254,7 @@ public class OCLGraphBuilderPlugins {
         Registration intReg = new Registration(plugins, Integer.class);
         intReg.register1("bitCount", Integer.TYPE, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(JavaKind.Int, b.append(OCLIntUnaryIntrinsicNode.create(value, POPCOUNT, JavaKind.Int)));
                 return true;
             }
@@ -264,8 +264,7 @@ public class OCLGraphBuilderPlugins {
     private static void registerFPIntrinsics(Registration r, Class<?> type, JavaKind kind) {
         r.register2("pow", type, type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode x, ValueNode y) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 b.push(kind, b.append(OCLFPBinaryIntrinsicNode.create(x, y, POW, kind)));
                 return true;
             }
@@ -273,8 +272,7 @@ public class OCLGraphBuilderPlugins {
 
         r.register1("sin", type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, SIN, kind)));
                 return true;
             }
@@ -282,26 +280,23 @@ public class OCLGraphBuilderPlugins {
 
         r.register1("cos", type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, COS, kind)));
                 return true;
             }
         });
-        
+
         r.register1("log", type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, LOG, kind)));
                 return true;
             }
         });
-        
+
         r.register1("exp", type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, EXP, kind)));
                 return true;
             }
@@ -311,8 +306,7 @@ public class OCLGraphBuilderPlugins {
     private static void registerOpenCLOverridesForType(Registration r, Class<?> type, JavaKind kind) {
         r.register2("min", type, type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode x, ValueNode y) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 if (kind.isNumericFloat()) {
                     b.push(kind, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMIN, kind)));
                 } else {
@@ -324,8 +318,7 @@ public class OCLGraphBuilderPlugins {
 
         r.register2("max", type, type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode x, ValueNode y) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 if (kind.isNumericFloat()) {
                     b.push(kind, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMAX, kind)));
                 } else {
@@ -337,13 +330,14 @@ public class OCLGraphBuilderPlugins {
 
         r.register1("abs", type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 if (kind.isNumericFloat()) {
                     b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, FABS, kind)));
                 }
-                //else
-                //	b.push(kind, b.recursiveAppend(OCLIntUnaryIntrinsicNode.create(value, ABS , kind)));
+                // else
+                // b.push(kind,
+                // b.recursiveAppend(OCLIntUnaryIntrinsicNode.create(value, ABS
+                // , kind)));
                 return true;
             }
         });

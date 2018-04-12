@@ -53,23 +53,24 @@ public class OCLIntBinaryIntrinsicNode extends BinaryNode implements ArithmeticL
         this.operation = op;
     }
 
-    public static final NodeClass<OCLIntBinaryIntrinsicNode> TYPE = NodeClass
-            .create(OCLIntBinaryIntrinsicNode.class);
+    public static final NodeClass<OCLIntBinaryIntrinsicNode> TYPE = NodeClass.create(OCLIntBinaryIntrinsicNode.class);
     protected final Operation operation;
 
+    //@formatter:off
     public enum Operation {
-        ABS_DIFF,
-        ABS_SAT,
-        HADD,
-        RHADD,
-        MAX,
-        MIN,
-        MUL_HI,
-        ROTATE,
-        SUB_SAT,
-        UPSAMPLE,
+        ABS_DIFF, 
+        ABS_SAT, 
+        HADD, 
+        RHADD, 
+        MAX, 
+        MIN, 
+        MUL_HI, 
+        ROTATE, 
+        SUB_SAT, 
+        UPSAMPLE, 
         MUL24
     }
+    //@formatter:on
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool) {

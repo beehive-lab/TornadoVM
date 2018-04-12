@@ -57,7 +57,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 ValueNode y = value.getY();
                 return recursiveCheck(arrayToStore, indexToStore, y);
             }
-
         } else if (currentNode instanceof LoadIndexedNode) {
             LoadIndexedNode loadNode = (LoadIndexedNode) currentNode;
             if (loadNode.array() == arrayToStore && loadNode.index() == indexToStore) {
@@ -85,7 +84,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             this.accumulator = accumulator;
             this.inputArray = inputArray;
         }
-
     }
 
     private ValueNode obtainInputArray(ValueNode currentNode, ValueNode outputArray, ValueNode indexToStore) {
@@ -111,19 +109,28 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
     private ReductionNodes createReductionNode(StructuredGraph graph, StoreIndexedNode store, ValueNode inputArray) {
         ValueNode value = null;
         ValueNode accumulator = null;
-        if (store.value() instanceof AddNode) {
+
+        ValueNode storeValue = store.value();
+
+        if (storeValue instanceof AddNode) {
             AddNode addNode = (AddNode) store.value();
             final OCLReduceAddNode atomicAdd = graph.addOrUnique(new OCLReduceAddNode(addNode.getX(), addNode.getY()));
             accumulator = addNode.getX();
             value = atomicAdd;
             addNode.safeDelete();
-        } else if (store.value() instanceof MulNode) {
+        } else if (storeValue instanceof MulNode) {
             MulNode mulNode = (MulNode) store.value();
             final OCLReduceMulNode atomicMultiplication = graph.addOrUnique(new OCLReduceMulNode(mulNode.getX(), mulNode.getY()));
             accumulator = mulNode.getX();
             value = atomicMultiplication;
             mulNode.safeDelete();
-        } else if (store.value() instanceof SubNode) {
+        } else if (storeValue instanceof SubNode) {
+            SubNode subNode = (SubNode) store.value();
+            final OCLReduceSubNode atomicSub = graph.addOrUnique(new OCLReduceSubNode(subNode.getX(), subNode.getY()));
+            accumulator = subNode.getX();
+            value = atomicSub;
+            subNode.safeDelete();
+        } else if (storeValue instanceof OCLIntBinaryIntrinsicNode) {
             SubNode subNode = (SubNode) store.value();
             final OCLReduceSubNode atomicSub = graph.addOrUnique(new OCLReduceSubNode(subNode.getX(), subNode.getY()));
             accumulator = subNode.getX();
@@ -131,7 +138,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             subNode.safeDelete();
         } else {
             /// XXX: It could be min, max, OR, AND, etc.
-            throw new RuntimeException("\n\n[NOT SUPPORTED] Node : " + store.value() + " not suported yet.");
+            throw new RuntimeException("\n\n[NODE REDUCTION NOT SUPPORTED] Node : " + store.value() + " not suported yet.");
         }
 
         return new ReductionNodes(value, accumulator, inputArray);
