@@ -193,6 +193,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         GlobalThreadIdNode oclIdNode = graph.getNodes().filter(GlobalThreadIdNode.class).first();
         GlobalThreadSizeNode oclGlobalSize = graph.getNodes().filter(GlobalThreadSizeNode.class).first();
 
+        System.out.println("oclIDNode: " + oclIdNode);
+
         /// XXX: Assuming CPU scheduler
         ValueNode threadID = null;
         Iterator<Node> usages = oclIdNode.usages().iterator();

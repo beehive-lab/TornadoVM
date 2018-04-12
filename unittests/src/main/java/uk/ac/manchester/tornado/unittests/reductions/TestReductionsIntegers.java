@@ -244,38 +244,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.001f);
     }
 
-    public static void reductionSequentialBig(int[] input, @Reduce int[] result) {
-        for (int i = 0; i < input.length; i++) {
-            result[0] += input[i];
-        }
-    }
-
-    @Test
-    public void testSequentialReductionBig() {
-        int[] input = new int[SMALL_SIZE * 2];
-        int[] result = new int[1];
-
-        Random r = new Random();
-
-        IntStream.range(0, SMALL_SIZE * 2).parallel().forEach(i -> {
-            input[i] = r.nextInt();
-        });
-
-        //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(input)
-            .task("t0", TestReductionsIntegers::reductionSequentialBig, input, result)
-            .streamOut(result)
-            .execute();
-        //@formatter:on
-
-        int[] sequential = new int[1];
-
-        reductionSequentialBig(input, sequential);
-
-        assertEquals(sequential[0], result[0], 0.001f);
-    }
-
     public static void reduction01(int[] a, @Reduce int[] result) {
         for (@Parallel int i = 0; i < a.length; i++) {
             result[0] += a[i];
@@ -312,10 +280,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         // map
         for (@Parallel int i = 0; i < a.length; i++) {
-            c[i] = a[i] * b[i];
+            c[i] = a[i] + b[i];
         }
 
         // reduction
+        result[0] = 0;
         for (@Parallel int i = 0; i < a.length; i++) {
             result[0] += c[i];
         }
@@ -343,51 +312,17 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .execute();
         //@formatter:on
 
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+        for (int i = 1; i < numGroups; i++) {
+            result[0] += result[i];
+        }
+
         int[] sequential = new int[SMALL_SIZE * 2];
 
         mapReduce01(a, b, c, sequential);
-
-        assertEquals(sequential[0], result[0], 0.001f);
-    }
-
-    // Reusing result, sequential
-    public static void mapReduce02(int[] a, int[] b, @Reduce int[] result) {
-
-        // map
-        for (int i = 0; i < a.length; i++) {
-            result[i] = a[i] * b[i];
-        }
-
-        // reduction
-        for (int i = 0; i < result.length; i++) {
-            result[0] += result[i];
-        }
-    }
-
-    @Test
-    public void testMapReduce2() {
-        int[] a = new int[SMALL_SIZE * 2];
-        int[] b = new int[SMALL_SIZE * 2];
-        int[] result = new int[SMALL_SIZE * 2];
-
-        Random r = new Random();
-
-        IntStream.range(0, SMALL_SIZE * 2).parallel().forEach(i -> {
-            a[i] = r.nextInt();
-            b[i] = r.nextInt();
-        });
-
-        //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(a)
-            .task("t0", TestReductionsIntegers::mapReduce02, a, b, result)
-            .streamOut(result)
-            .execute();
-        //@formatter:on
-
-        int[] sequential = new int[SMALL_SIZE * 2];
-
-        mapReduce02(a, b, sequential);
 
         assertEquals(sequential[0], result[0], 0.001f);
     }
@@ -474,177 +409,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         testThreadSchuler(a, b, sequential);
 
         assertEquals(sequential[0], result[0], 0.001f);
-    }
-
-    public static void testThreadSchuler2(int[] a, int[] b, int[] result) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            result[i] = a[i] * b[i];
-        }
-    }
-
-    @Test
-    public void testThreadSchuler2() {
-        int[] a = new int[SMALL_SIZE * 2];
-        int[] b = new int[SMALL_SIZE * 2];
-        int[] result = new int[SMALL_SIZE * 2];
-
-        Random r = new Random();
-
-        IntStream.range(0, SMALL_SIZE * 2).parallel().forEach(i -> {
-            a[i] = r.nextInt();
-            b[i] = r.nextInt();
-        });
-
-        //@formatter:off
-		        new TaskSchedule("s0")
-		            .streamIn(a)
-		            .task("t0", TestReductionsIntegers::testThreadSchuler2, a, b, result)
-		            .streamOut(result)
-		            .execute();
-		        //@formatter:on
-
-        int[] sequential = new int[SMALL_SIZE * 2];
-
-        testThreadSchuler2(a, b, sequential);
-
-        assertEquals(sequential[0], result[0], 0.001f);
-    }
-
-    public static void testThreadLoop(int[] a, int[] result) {
-        for (@Parallel int i = 1; i < a.length; i++) {
-            result[i] = a[i] * a[i];
-        }
-    }
-
-    @Test
-    public void testThreadLoop() {
-        int[] a = new int[SMALL_SIZE * 2];
-        int[] b = new int[SMALL_SIZE * 2];
-        int[] result = new int[SMALL_SIZE * 2];
-
-        Random r = new Random();
-
-        IntStream.range(0, SMALL_SIZE * 2).parallel().forEach(i -> {
-            a[i] = r.nextInt();
-            b[i] = r.nextInt();
-        });
-
-        //@formatter:off
-		        new TaskSchedule("s0")
-		            .streamIn(a)
-		            .task("t0", TestReductionsIntegers::testThreadLoop, a, result)
-		            .streamOut(result)
-		            .execute();
-		        //@formatter:on
-
-        int[] sequential = new int[SMALL_SIZE * 2];
-
-        testThreadLoop(a, sequential);
-
-        for (int i = 2; i < SMALL_SIZE * 2; i++) {
-            assertEquals(sequential[i], result[i]);
-        }
-    }
-
-    public static void reductionMultiplication(int[] input, @Reduce int[] result, int[] neutral) {
-        // neutral
-        result[0] = neutral[0];
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] = result[0] * input[i];
-        }
-    }
-
-    @Test
-    public void testReductionMultiplication() {
-        int[] input = new int[BIG_SIZE];
-        int[] result = new int[1];
-
-        input[0] = 5;
-        input[1] = 2;
-        for (int i = 2; i < input.length; i++) {
-            input[i] = 1;
-        }
-
-        //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(input)
-            .task("t0", TestReductionsIntegers::reductionMultiplication, input, result, new int[] {1})
-            .streamOut(result)
-            .execute();
-        //@formatter:on
-
-        int[] sequential = new int[1];
-        reductionMultiplication(input, sequential, new int[] { 1 });
-        System.out.println("[I] " + sequential[0]);
-
-        // Check result
-        assertEquals(sequential[0], result[0]);
-    }
-
-    public static void reductionSub(int[] input, @Reduce int[] result, int[] neutral) {
-        result[0] = neutral[0];
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] -= input[i];
-        }
-    }
-
-    @Test
-    public void testReductionSub() {
-        int[] input = new int[BIG_SIZE];
-        int[] result = new int[1];
-
-        IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
-            input[i] = 2;
-        });
-
-        //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(input)
-            .task("t0", TestReductionsIntegers::reductionSub, input, result, new int[] {0})
-            .streamOut(result)
-            .execute();
-        //@formatter:on
-
-        int[] sequential = new int[1];
-        reductionSub(input, sequential, new int[] { 0 });
-
-        // Check result
-        assertEquals(sequential[0], result[0]);
-    }
-
-    public static void reductionSubRandom(int[] input, @Reduce int[] result, int[] neutral) {
-        result[0] = neutral[0];
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] -= input[i];
-        }
-    }
-
-    @Test
-    public void testReductionSubRandom() {
-        int[] input = new int[BIG_SIZE];
-        int[] result = new int[1];
-
-        Random r = new Random();
-
-        IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
-            input[i] = r.nextInt(100);
-        });
-
-        //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(input)
-            .task("t0", TestReductionsIntegers::reductionSubRandom, input, result, new int[] {0})
-            .streamOut(result)
-            .execute();
-        //@formatter:on
-
-        int[] sequential = new int[1];
-        reductionSubRandom(input, sequential, new int[] { 0 });
-
-        System.out.println("VALUE: " + sequential[0]);
-
-        // Check result
-        assertEquals(sequential[0], result[0]);
     }
 
 }

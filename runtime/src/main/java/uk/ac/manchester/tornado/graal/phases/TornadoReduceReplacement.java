@@ -130,12 +130,10 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             accumulator = subNode.getX();
             value = atomicSub;
             subNode.safeDelete();
-        } else if (storeValue instanceof OCLIntBinaryIntrinsicNode) {
-            SubNode subNode = (SubNode) store.value();
-            final OCLReduceSubNode atomicSub = graph.addOrUnique(new OCLReduceSubNode(subNode.getX(), subNode.getY()));
-            accumulator = subNode.getX();
-            value = atomicSub;
-            subNode.safeDelete();
+        } else if (storeValue instanceof BinaryNode) {
+            // For any other binary node
+            accumulator = storeValue;
+            value = storeValue;
         } else {
             /// XXX: It could be min, max, OR, AND, etc.
             throw new RuntimeException("\n\n[NODE REDUCTION NOT SUPPORTED] Node : " + store.value() + " not suported yet.");

@@ -23,15 +23,24 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
 @NodeInfo(nameTemplate = "OCLAtomicWrite#{p#location/s}")
 public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerableAccess {
 
-    @Input(InputType.Association) private AddressNode address;
-    @Input private ValueNode accumulator;
+    @Input(InputType.Association)
+    private AddressNode address;
+    @Input
+    private ValueNode accumulator;
     private Stamp accStamp;
     private JavaKind elementKind;
     private ATOMIC_OPERATION operation;
 
+    //@formatter:off
     public enum ATOMIC_OPERATION {
-        ADD, SUB, MUL, DIV, CUSTOM;
+        ADD,  
+        MUL, 
+        MAX,
+        MIN,
+        SUB,
+        CUSTOM;
     }
+    //@formatter:on
 
     public static final NodeClass<OCLWriteAtomicNode> TYPE = NodeClass.create(OCLWriteAtomicNode.class);
 
@@ -56,9 +65,6 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
         switch (operation) {
             case ADD:
                 oclStamp = new OCLStamp(OCLKind.ATOMIC_ADD_INT);
-                break;
-            case SUB:
-                oclStamp = new OCLStamp(OCLKind.ATOMIC_SUB_INT);
                 break;
             case MUL:
                 oclStamp = new OCLStamp(OCLKind.ATOMIC_MUL_INT);
