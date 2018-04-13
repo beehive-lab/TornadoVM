@@ -23,18 +23,31 @@
  */
 package uk.ac.manchester.tornado.graal.phases;
 
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+
+import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.NodeBitMap;
+import org.graalvm.compiler.graph.iterators.NodeIterable;
+import org.graalvm.compiler.loop.LoopEx;
+import org.graalvm.compiler.loop.LoopFragmentInside;
+import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.phases.BasePhase;
-import java.util.Collections;
-import java.util.List;
 
 import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.meta.domain.DomainTree;
 import uk.ac.manchester.tornado.meta.domain.IntDomain;
 
+// XXX: Add documentation of this class. 
 public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
 
     private static final int resolveInt(ValueNode value) {
@@ -52,15 +65,42 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
             return;
         }
 
+        int dimensions = 1;
+        if (graph.hasLoops()) {
+            final LoopsData data = new LoopsData(graph);
+            data.detectedCountedLoops();
+
+            final List<LoopEx> loops = data.outerFirst();
+
+            for (int i = 0; i < loops.size(); i++) {
+                LoopEx loopEx = loops.get(i);
+                LoopFragmentInside inside = loopEx.inside();
+                NodeBitMap nodes = inside.nodes();
+
+                List<LoopBeginNode> snapshot = nodes.filter(LoopBeginNode.class).snapshot();
+                if (snapshot.size() > 1) {
+                    dimensions = Math.max(dimensions, snapshot.size());
+                }
+            }
+        }
+
+        System.out.println(" DIMINSOINS SIZE:" + dimensions);
+
         final List<ParallelRangeNode> ranges = graph.getNodes().filter(ParallelRangeNode.class).snapshot();
 
+        if (ranges.size() < dimensions) {
+            dimensions = ranges.size();
+        }
+
+        // dimensions = ranges.size();
+        System.out.println(" RANGE:" + dimensions);
         Collections.sort(ranges);
 
-        final DomainTree domainTree = new DomainTree(ranges.size());
+        final DomainTree domainTree = new DomainTree(dimensions);
 
         int lastIndex = -1;
         boolean valid = true;
-        for (int i = 0; i < ranges.size(); i++) {
+        for (int i = 0; i < dimensions; i++) {
             final ParallelRangeNode range = ranges.get(i);
             final int index = range.index();
             if (index != lastIndex && resolveInt(range.offset().value()) != Integer.MIN_VALUE && resolveInt(range.stride().value()) != Integer.MIN_VALUE

@@ -399,7 +399,6 @@ public class ReduceSnippets implements Snippets {
             args.add("gidx", globalId);
 
             template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
-
         }
     }
 }

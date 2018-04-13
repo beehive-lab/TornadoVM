@@ -55,10 +55,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
 
     private final OCLCodeCache codeCache;
 
-    protected OCLDeviceContext(
-            OCLDevice device,
-            OCLCommandQueue queue,
-            OCLContext context) {
+    protected OCLDeviceContext(OCLDevice device, OCLCommandQueue queue, OCLContext context) {
         this.device = device;
         this.queue = queue;
         this.context = context;
@@ -145,164 +142,124 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         return queue.enqueueTask(kernel, null);
     }
 
-    public int enqueueNDRangeKernel(OCLKernel kernel, int dim,
-            long[] globalWorkOffset, long[] globalWorkSize,
-            long[] localWorkSize, int[] waitEvents) {
-        return queue.enqueueNDRangeKernel(kernel, dim, globalWorkOffset,
-                globalWorkSize, localWorkSize, waitEvents);
+    public int enqueueNDRangeKernel(OCLKernel kernel, int dim, long[] globalWorkOffset, long[] globalWorkSize, long[] localWorkSize, int[] waitEvents) {
+        return queue.enqueueNDRangeKernel(kernel, dim, globalWorkOffset, globalWorkSize, localWorkSize, waitEvents);
     }
 
     public ByteOrder getByteOrder() {
-        return device.isLittleEndian() ? ByteOrder.LITTLE_ENDIAN
-                : ByteOrder.BIG_ENDIAN;
+        return device.isLittleEndian() ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN;
     }
 
     /*
      * Asynchronous writes to device
      */
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
-            byte[] array, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array,
-                waitEvents);
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, byte[] array, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
-            int[] array, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array,
-                waitEvents);
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, int[] array, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
-            long[] array, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array,
-                waitEvents);
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, long[] array, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
-            short[] array, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array,
-                waitEvents);
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, short[] array, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
-            float[] array, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array,
-                waitEvents);
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, float[] array, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes,
-            double[] array, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array,
-                waitEvents);
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, double[] array, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
     }
 
     /*
      * Asynchronouse reads from device
      */
-    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
-            byte[] array, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array,
-                waitEvents);
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes, byte[] array, int[] waitEvents) {
+        return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
-            int[] array, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array,
-                waitEvents);
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes, int[] array, int[] waitEvents) {
+        return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
-            long[] array, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array,
-                waitEvents);
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes, long[] array, int[] waitEvents) {
+        return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
-            float[] array, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array,
-                waitEvents);
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes, float[] array, int[] waitEvents) {
+        return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
 
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
-            double[] array, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array,
-                waitEvents);
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes, double[] array, int[] waitEvents) {
+        return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
 
     }
 
-    public int enqueueReadBuffer(long bufferId, long offset, long bytes,
-            short[] array, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array,
-                waitEvents);
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes, short[] array, int[] waitEvents) {
+        return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
 
     }
 
     /*
      * Synchronous writes to device
      */
-    public void writeBuffer(long bufferId, long offset, long bytes,
-            byte[] array, int[] waitEvents) {
+    public void writeBuffer(long bufferId, long offset, long bytes, byte[] array, int[] waitEvents) {
         queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes,
-            int[] array, int[] waitEvents) {
+    public void writeBuffer(long bufferId, long offset, long bytes, int[] array, int[] waitEvents) {
         queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes,
-            long[] array, int[] waitEvents) {
+    public void writeBuffer(long bufferId, long offset, long bytes, long[] array, int[] waitEvents) {
         queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes,
-            short[] array, int[] waitEvents) {
+    public void writeBuffer(long bufferId, long offset, long bytes, short[] array, int[] waitEvents) {
         queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes,
-            float[] array, int[] waitEvents) {
+    public void writeBuffer(long bufferId, long offset, long bytes, float[] array, int[] waitEvents) {
         queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes,
-            double[] array, int[] waitEvents) {
+    public void writeBuffer(long bufferId, long offset, long bytes, double[] array, int[] waitEvents) {
         queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
     }
 
     /*
      * Synchronous reads from device
      */
-    public void readBuffer(long bufferId, long offset, long bytes,
-            byte[] array, int[] waitEvents) {
+    public void readBuffer(long bufferId, long offset, long bytes, byte[] array, int[] waitEvents) {
         queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
     }
 
-    public void readBuffer(long bufferId, long offset, long bytes, int[] array,
-            int[] waitEvents) {
+    public void readBuffer(long bufferId, long offset, long bytes, int[] array, int[] waitEvents) {
         queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
     }
 
-    public void readBuffer(long bufferId, long offset, long bytes,
-            long[] array, int[] waitEvents) {
+    public void readBuffer(long bufferId, long offset, long bytes, long[] array, int[] waitEvents) {
         queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
     }
 
-    public void readBuffer(long bufferId, long offset, long bytes,
-            float[] array, int[] waitEvents) {
+    public void readBuffer(long bufferId, long offset, long bytes, float[] array, int[] waitEvents) {
         queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
 
     }
 
-    public void readBuffer(long bufferId, long offset, long bytes,
-            double[] array, int[] waitEvents) {
+    public void readBuffer(long bufferId, long offset, long bytes, double[] array, int[] waitEvents) {
         queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
 
     }
 
-    public void readBuffer(long bufferId, long offset, long bytes,
-            short[] array, int[] waitEvents) {
+    public void readBuffer(long bufferId, long offset, long bytes, short[] array, int[] waitEvents) {
         queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
 
     }

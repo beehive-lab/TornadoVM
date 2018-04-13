@@ -35,11 +35,11 @@ public class OCLGpuScheduler extends OCLKernelScheduler {
     public static final double GPU_WORK_GROUP_COEFF = .125;
 
     @SuppressWarnings("unused")
-    private double maxComputeUnits;
+    private long maxComputeUnits;
     @SuppressWarnings("unused")
     private double workGroupUtil;
     @SuppressWarnings("unused")
-    private double maxWorkGroupSize;
+    private long maxWorkGroupSize;
 
     private final long[] maxWorkItemSizes;
 
@@ -50,6 +50,8 @@ public class OCLGpuScheduler extends OCLKernelScheduler {
         maxWorkItemSizes = device.getMaxWorkItemSizes();
         maxComputeUnits = device.getMaxComputeUnits();
         maxWorkGroupSize = device.getMaxWorkGroupSize();
+
+        System.out.println("MAX GROUP SIZE!!!: " + maxWorkGroupSize);
 
         workGroupUtil = GPU_WORK_GROUP_COEFF;
     }

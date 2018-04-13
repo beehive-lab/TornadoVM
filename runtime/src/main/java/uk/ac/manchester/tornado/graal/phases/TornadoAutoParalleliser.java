@@ -51,13 +51,15 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
             info("auto parallelisation disabled");
             return;
         }
+        autoParallelise(graph, context);
+    }
 
+    private void autoParallelise(StructuredGraph graph, TornadoSketchTierContext context) {
         if (graph.hasLoops()) {
             final LoopsData data = new LoopsData(graph);
             data.detectedCountedLoops();
 
             final List<LoopEx> loops = data.outerFirst();
-            // Collections.reverse(loops);
 
             // is single loop nest?
             for (int i = loops.size() - 1; i > 1; i--) {
@@ -111,8 +113,7 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
 
                 final InductionVariable iv = ivs.get(0);
                 ValueNode maxIterations = null;
-                List<IntegerLessThanNode> conditions = iv.valueNode().usages()
-                        .filter(IntegerLessThanNode.class).snapshot();
+                List<IntegerLessThanNode> conditions = iv.valueNode().usages().filter(IntegerLessThanNode.class).snapshot();
                 if (conditions.size() == 1) {
                     final IntegerLessThanNode lessThan = conditions.get(0);
                     maxIterations = lessThan.getY();
@@ -123,37 +124,26 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
 
                 if (iv.isConstantInit() && iv.isConstantStride()) {
 
-                    final ConstantNode newInit = graph.addWithoutUnique(ConstantNode
-                            .forInt((int) iv.constantInit()));
-                    final ConstantNode newStride = graph.addWithoutUnique(ConstantNode
-                            .forInt((int) iv.constantStride()));
+                    final ConstantNode newInit = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantInit()));
+                    final ConstantNode newStride = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantStride()));
 
-                    final ParallelOffsetNode offset = graph
-                            .addWithoutUnique(new ParallelOffsetNode(parallelDepth, newInit));
+                    final ParallelOffsetNode offset = graph.addWithoutUnique(new ParallelOffsetNode(parallelDepth, newInit));
 
-                    final ParallelStrideNode stride = graph
-                            .addWithoutUnique(new ParallelStrideNode(parallelDepth, newStride));
+                    final ParallelStrideNode stride = graph.addWithoutUnique(new ParallelStrideNode(parallelDepth, newStride));
 
-                    final ParallelRangeNode range = graph
-                            .addWithoutUnique(new ParallelRangeNode(parallelDepth, maxIterations,
-                                    offset, stride));
+                    final ParallelRangeNode range = graph.addWithoutUnique(new ParallelRangeNode(parallelDepth, maxIterations, offset, stride));
 
                     final ValuePhiNode phi = (ValuePhiNode) iv.valueNode();
-                    final ValueNode oldStride = phi.singleBackValueOrThis(); // was singleBackValue()
+                    final ValueNode oldStride = phi.singleBackValueOrThis(); // was
+                                                                             // singleBackValue()
 
-                    //System.out.printf("oldStride: %s\n",oldStride.toString());
                     if (oldStride.usages().count() > 1) {
                         final ValueNode duplicateStride = (ValueNode) oldStride.copyWithInputs(true);
-
                         oldStride.replaceAtMatchingUsages(duplicateStride, usage -> !usage.equals(phi));
-
-                        //duplicateStride.removeUsage(phi);
-                        //oldStride.removeUsage(node)
                     }
 
                     iv.initNode().replaceAtMatchingUsages(offset, node -> node.equals(phi));
-                    iv.strideNode().replaceAtMatchingUsages(stride,
-                            node -> node.equals(oldStride));
+                    iv.strideNode().replaceAtMatchingUsages(stride, node -> node.equals(oldStride));
 
                     // only replace this node in the loop condition
                     maxIterations.replaceAtMatchingUsages(range, node -> node.equals(conditions.get(0)));
@@ -164,10 +154,8 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
                 }
                 parallelDepth++;
             }
-
             info("automatically parallelised %s (%dD kernel)\n", graph.method().getName(), parallelDepth);
         }
-
     }
 
 }

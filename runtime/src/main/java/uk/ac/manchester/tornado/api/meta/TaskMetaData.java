@@ -284,6 +284,7 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public void setDomain(final DomainTree value) {
+
         domain = value;
         coarseness = new Coarseness(domain.getDepth());
 
