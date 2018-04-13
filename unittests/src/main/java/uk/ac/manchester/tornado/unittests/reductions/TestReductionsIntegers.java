@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.Parallel;
@@ -143,6 +144,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
+    @Ignore
     public void testMaxReduction() {
         int[] input = new int[SIZE];
         int[] result = new int[SIZE];
@@ -327,22 +329,26 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.001f);
     }
 
-    // Reusing result, in Parallel
-    public static void mapReduce03(int[] a, int[] b, @Reduce int[] result) {
-
+    /**
+     * We reuse one of the input values
+     * 
+     * @param a
+     * @param b
+     * @param result
+     */
+    public static void mapReduce2(int[] a, int[] b, @Reduce int[] result) {
         // map
         for (@Parallel int i = 0; i < a.length; i++) {
-            result[i] = a[i] * b[i];
+            a[i] = a[i] * b[i];
         }
 
-        // reduction
-        for (@Parallel int i = 0; i < result.length; i++) {
-            result[0] += result[i];
+        for (@Parallel int i = 0; i < a.length; i++) {
+            result[0] += a[i];
         }
     }
 
     @Test
-    public void testMapReduce3() {
+    public void testMapReduce2() {
         int[] a = new int[SMALL_SIZE * 2];
         int[] b = new int[SMALL_SIZE * 2];
         int[] result = new int[SMALL_SIZE * 2];
@@ -357,14 +363,14 @@ public class TestReductionsIntegers extends TornadoTestBase {
         //@formatter:off
 	        new TaskSchedule("s0")
 	            .streamIn(a)
-	            .task("t0", TestReductionsIntegers::mapReduce03, a, b, result)
+	            .task("t0", TestReductionsIntegers::mapReduce2, a, b, result)
 	            .streamOut(result)
 	            .execute();
 	        //@formatter:on
 
         int[] sequential = new int[SMALL_SIZE * 2];
 
-        mapReduce03(a, b, sequential);
+        mapReduce2(a, b, sequential);
 
         assertEquals(sequential[0], result[0], 0.001f);
     }

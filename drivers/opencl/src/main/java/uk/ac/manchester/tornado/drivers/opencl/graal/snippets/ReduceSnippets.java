@@ -362,10 +362,8 @@ public class ReduceSnippets implements Snippets {
         private SnippetInfo inferFloatSnippet(ValueNode value) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
-                System.out.println("Float ADD Reduction");
                 snippet = partialReduceAddFloatSnippetGlobal;
             } else if (value instanceof OCLReduceMulNode) {
-                System.out.println("Float MULT Reduction");
                 snippet = partialReducetFloatMultSnippetGlobal;
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");

@@ -24,22 +24,16 @@
 package uk.ac.manchester.tornado.graal.phases;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
-import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeBitMap;
-import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.loop.LoopEx;
 import org.graalvm.compiler.loop.LoopFragmentInside;
 import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.common.Tornado;
@@ -58,14 +52,9 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
         }
     }
 
-    @Override
-    protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-
-        if (!context.hasMeta()) {
-            return;
-        }
-
+    private int getMaxLevelNestedLoops(StructuredGraph graph) {
         int dimensions = 1;
+
         if (graph.hasLoops()) {
             final LoopsData data = new LoopsData(graph);
             data.detectedCountedLoops();
@@ -83,19 +72,10 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
                 }
             }
         }
+        return dimensions;
+    }
 
-        System.out.println(" DIMINSOINS SIZE:" + dimensions);
-
-        final List<ParallelRangeNode> ranges = graph.getNodes().filter(ParallelRangeNode.class).snapshot();
-
-        if (ranges.size() < dimensions) {
-            dimensions = ranges.size();
-        }
-
-        // dimensions = ranges.size();
-        System.out.println(" RANGE:" + dimensions);
-        Collections.sort(ranges);
-
+    private void setDomainTree(int dimensions, List<ParallelRangeNode> ranges, TornadoHighTierContext context) {
         final DomainTree domainTree = new DomainTree(dimensions);
 
         int lastIndex = -1;
@@ -116,11 +96,27 @@ public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
 
         if (valid) {
             Tornado.trace("loop nest depth = %d", domainTree.getDepth());
-
             Tornado.debug("discovered parallel domain: %s", domainTree);
-
             context.getMeta().setDomain(domainTree);
         }
+    }
+
+    @Override
+    protected void run(StructuredGraph graph, TornadoHighTierContext context) {
+
+        if (!context.hasMeta()) {
+            return;
+        }
+
+        int dimensions = getMaxLevelNestedLoops(graph);
+
+        final List<ParallelRangeNode> ranges = graph.getNodes().filter(ParallelRangeNode.class).snapshot();
+        if (ranges.size() < dimensions) {
+            dimensions = ranges.size();
+        }
+        Collections.sort(ranges);
+
+        setDomainTree(dimensions, ranges, context);
 
     }
 

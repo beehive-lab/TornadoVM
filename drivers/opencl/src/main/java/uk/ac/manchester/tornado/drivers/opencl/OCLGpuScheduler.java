@@ -51,8 +51,6 @@ public class OCLGpuScheduler extends OCLKernelScheduler {
         maxComputeUnits = device.getMaxComputeUnits();
         maxWorkGroupSize = device.getMaxWorkGroupSize();
 
-        System.out.println("MAX GROUP SIZE!!!: " + maxWorkGroupSize);
-
         workGroupUtil = GPU_WORK_GROUP_COEFF;
     }
 
