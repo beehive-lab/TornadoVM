@@ -162,9 +162,14 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                 // asm.emitLine(String.format("// block %d merges control flow
                 // -> pdom = %d depth=%d",b.getId(), pdom.getId(),
                 // pdom.getDominatorDepth()));
-                if (isLegalEndBlock(b)) {
-                    asm.endScope();
-                }
+
+                asm.endScope();
+
+                // The following code might be needed for the full snippet
+                // if (isLegalEndBlock(b)) {
+                // asm.endScope();
+                // }
+
             } else if (!merges.contains(pdom) && isMergeBlock(pdom) && switches.contains(b) && isSwitchBlock(b.getDominator())) {
                 closeSwitchStatement(b);
             } else {
