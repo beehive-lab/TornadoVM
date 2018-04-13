@@ -53,6 +53,12 @@ public class TestHello extends TornadoTestBase {
         }
     }
 
+    public void compute(int[] a, int[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            b[i] = a[i] * 2;
+        }
+    }
+
     @Test
     public void testHello() {
         TaskSchedule task = new TaskSchedule("s0").task("t0", TestHello::printHello, 8);
@@ -83,6 +89,28 @@ public class TestHello extends TornadoTestBase {
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
+        }
+    }
+
+    @Test
+    public void testSimpleCompute() {
+        int numElements = 256;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+
+        Arrays.fill(a, 10);
+
+        TestHello t = new TestHello();
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .task("t0", t::compute, a, b)
+            .streamOut(b)
+            .execute();
+        //@formatter:on
+
+        for (int i = 0; i < b.length; i++) {
+            assertEquals(a[i] * 2, b[i]);
         }
     }
 
