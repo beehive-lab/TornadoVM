@@ -26,13 +26,13 @@
 #
 
 PACKAGE="uk.ac.manchester.tornado.benchmarks"
-BENCHMARKS="sadd saxpy sgemm dgemm spmv addvector dotvector rotatevector rotateimage convolvearray convolveimage"
+BENCHMARKS="sadd saxpy sgemm dgemm spmv addvector dotvector rotatevector rotateimage convolvearray convolveimage montecarlo"
 MAIN_CLASS="Benchmark"
 
 TORNADO_CMD="tornado"
 
 if [ -z "${TORNADO_BM_FLAGS}" ]; then
-	TORNADO_BM_FLAGS="-Xms8G -server -Dtornado.kernels.coarsener=False -Dtornado.profiles.print=False -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
+	TORNADO_BM_FLAGS="-Xms8G -server -Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
 fi
 
 TORNADO_FLAGS="${TORNADO_FLAGS} ${TORNADO_BM_FLAGS}"
@@ -45,7 +45,7 @@ BM_ROOT="${RESULTS_ROOT}/${DATE}"
 if [ -z "${DEVICES}" ]; then
 	echo "Please set env variable DEVICES."
 	echo "	e.g. DEVICES=0:0,0:1"
-	exit
+	DEVICES=0:1
 fi
 
 if [ ! -d ${BM_ROOT} ]; then
