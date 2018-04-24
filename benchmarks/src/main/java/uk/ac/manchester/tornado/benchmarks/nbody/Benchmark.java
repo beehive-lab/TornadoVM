@@ -35,12 +35,12 @@ public class Benchmark extends BenchmarkRunner {
     @Override
     public void parseArgs(String[] args) {
         if (args.length == 2) {
-            numBodies = Integer.parseInt(args[0]);
-            iterations = Integer.parseInt(args[1]);
+            iterations = Integer.parseInt(args[0]);
+            numBodies = Integer.parseInt(args[1]);
 
         } else {
-            iterations = 1000;
-            numBodies = 10240;
+            iterations = 50;
+            numBodies = 4096;
         }
     }
 
