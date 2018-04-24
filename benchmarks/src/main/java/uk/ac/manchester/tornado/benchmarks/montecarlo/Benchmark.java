@@ -66,7 +66,7 @@ public class Benchmark extends BenchmarkRunner {
 
     @Override
     protected BenchmarkDriver getTornadoDriver() {
-        return new MonteCarloJava(size, iterations);
+        return new MonteCarloTornado(size, iterations);
     }
 
 }
