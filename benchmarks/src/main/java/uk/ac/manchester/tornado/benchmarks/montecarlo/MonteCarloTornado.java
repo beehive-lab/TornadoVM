@@ -38,7 +38,7 @@ public class MonteCarloTornado extends BenchmarkDriver {
 
     private TaskSchedule graph;
 
-    public MonteCarloTornado(int size, int iterations) {
+    public MonteCarloTornado(int iterations, int size) {
         super(iterations);
         this.size = size;
     }

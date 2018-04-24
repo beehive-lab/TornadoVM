@@ -39,8 +39,8 @@ public class Benchmark extends BenchmarkRunner {
             size = Integer.parseInt(args[1]);
 
         } else {
-            iterations = 10240;
-            size = 1024;
+            iterations = 100;
+            size = 10240;
         }
     }
 
@@ -51,7 +51,7 @@ public class Benchmark extends BenchmarkRunner {
 
     @Override
     protected String getIdString() {
-        return String.format("%s-%d", getName(), size, iterations);
+        return String.format("%s-%d", getName(), iterations, size);
     }
 
     @Override
@@ -61,12 +61,12 @@ public class Benchmark extends BenchmarkRunner {
 
     @Override
     protected BenchmarkDriver getJavaDriver() {
-        return new MonteCarloJava(size, iterations);
+        return new MonteCarloJava(iterations, size);
     }
 
     @Override
     protected BenchmarkDriver getTornadoDriver() {
-        return new MonteCarloTornado(size, iterations);
+        return new MonteCarloTornado(iterations, size);
     }
 
 }

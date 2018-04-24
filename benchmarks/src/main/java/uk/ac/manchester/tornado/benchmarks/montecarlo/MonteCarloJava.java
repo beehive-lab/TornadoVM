@@ -35,7 +35,7 @@ public class MonteCarloJava extends BenchmarkDriver {
 
     private float[] seq;
 
-    public MonteCarloJava(int size, int iterations) {
+    public MonteCarloJava(int iterations, int size) {
         super(iterations);
         this.size = size;
     }
@@ -68,6 +68,6 @@ public class MonteCarloJava extends BenchmarkDriver {
     }
 
     public void printSummary() {
-        System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n", getElapsed(), getElapsedPerIteration());
+        System.out.printf("java-serial, elapsed=%f, per iteration=%f\n", getElapsed(), getElapsedPerIteration());
     }
 }
