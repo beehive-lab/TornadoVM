@@ -25,26 +25,18 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
-
 import static uk.ac.manchester.tornado.common.Tornado.*;
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.*;
+
+import java.util.*;
+
+import uk.ac.manchester.tornado.runtime.*;
 
 public abstract class BenchmarkRunner {
 
-    private static final boolean SKIP_SERIAL = Boolean
-            .parseBoolean(System.getProperty(
-                    "tornado.benchmarks.skipserial",
-                    "False"));
+    private static final boolean SKIP_SERIAL = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipserial", "False"));
 
-    private static final boolean SKIP_STREAMS = Boolean
-            .parseBoolean(System.getProperty(
-                    "tornado.benchmarks.skipstreams",
-                    "True"));
+    private static final boolean SKIP_STREAMS = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipstreams", "True"));
 
     protected abstract String getName();
 
@@ -65,24 +57,21 @@ public abstract class BenchmarkRunner {
     public void run() {
         final String id = getIdString();
 
-        System.out.printf("benchmark=%s, iterations=%d, %s\n", id, iterations,
-                getConfigString());
+        System.out.printf("benchmark=%s, iterations=%d, %s\n", id, iterations, getConfigString());
 
         final double refElapsed;
         if (!SKIP_SERIAL) {
             final BenchmarkDriver referenceTest = getJavaDriver();
             referenceTest.benchmark();
 
-            System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-reference",
-                    referenceTest.getSummary());
+            System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-reference", referenceTest.getSummary());
 
             refElapsed = referenceTest.getElapsed();
 
             final BenchmarkDriver streamsTest = getStreamsDriver();
             if (streamsTest != null && !SKIP_STREAMS) {
                 streamsTest.benchmark();
-                System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-streams",
-                        streamsTest.getSummary());
+                System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-streams", streamsTest.getSummary());
             }
         } else {
             refElapsed = -1;
@@ -125,9 +114,7 @@ public abstract class BenchmarkRunner {
 
                 deviceTest.benchmark();
 
-                System.out.printf("bm=%-15s, device=%-5s, %s, speedup=%.4f\n", id,
-                        driverIndex + ":" + deviceIndex,
-                        deviceTest.getSummary(), refElapsed / deviceTest.getElapsed());
+                System.out.printf("bm=%-15s, device=%-5s, %s, speedup=%.4f\n", id, driverIndex + ":" + deviceIndex, deviceTest.getSummary(), refElapsed / deviceTest.getElapsed());
 
             }
         }
@@ -146,9 +133,7 @@ public abstract class BenchmarkRunner {
 
             deviceTest.benchmark();
 
-            System.out.printf("bm=%-15s, device=%-5s, %s, speedup=%.4f\n", id,
-                    driverIndex + ":" + deviceIndex,
-                    deviceTest.getSummary(), refElapsed / deviceTest.getElapsed());
+            System.out.printf("bm=%-15s, device=%-5s, %s, speedup=%.4f\n", id, driverIndex + ":" + deviceIndex, deviceTest.getSummary(), refElapsed / deviceTest.getElapsed());
         }
     }
 
