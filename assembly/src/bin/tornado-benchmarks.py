@@ -27,6 +27,7 @@
 
 import argparse
 import os
+import textwrap
 
 ## Include here benchmarks to run
 __BENCHMARKS__ = [
@@ -61,24 +62,32 @@ __ITERATIONS__ = " 10 "
 __TORNADO__ = "tornado "
 
 
-def runforallsizes():
+def printBenchmakrks():
+    print "List of benchmarks: "
+    wrapper = textwrap.TextWrapper(initial_indent="* ")
+
+    for b in __BENCHMARKS__:
+        print wrapper.fill(b)
+
+
+def runForAllSizes():
     for s in __PROBLEM_SIZES__:
         for b in __BENCHMARKS__:
             command = __TORNADO__ + __RUNNER__ + b + __ITERATIONS__ + s
             os.system(command)
 
 
-def runalldevices():
+def runAllDevices():
     index = 0
     for d in __DEVICES__:
-        print "Currenly executing on device: device=0:", index
+        print "Currently executing on device: device=0:", index
         for b in __BENCHMARKS__:
             command = __TORNADO__ + d + __RUNNER__ + b
             os.system(command)
             index += 1
 
 
-def runbenchmarks():
+def runBenchmarks():
     for b in __BENCHMARKS__:
         command = __TORNADO__ + __RUNNER__ + b
         os.system(command)
@@ -86,9 +95,11 @@ def runbenchmarks():
 
 def parseArguments():
     parser = argparse.ArgumentParser(description='Tool to execute benchmarks in Tornado')
-    parser.add_argument('--devices', action="store_true", dest="device", default=False, help="Run to all devices")
+    parser.add_argument('--devices', "-D", action="store_true", dest="device", default=False, help="Run to all devices")
     parser.add_argument('--sizes', "-S", action="store_true", dest="size", default=False,
                         help="Run for all problem sizes")
+    parser.add_argument('--benchmarks', "-BL", action="store_true", dest="bl", default=False,
+                        help="Print list of benchmarks")
     args = parser.parse_args()
     return args
 
@@ -97,11 +108,13 @@ def main():
     args = parseArguments()
 
     if args.device:
-        runalldevices()
+        runAllDevices()
     elif args.size:
-        runforallsizes()
+        runForAllSizes()
+    elif args.bl:
+        printBenchmakrks()
     else:
-        runbenchmarks()
+        runBenchmarks()
 
 
 if __name__ == '__main__':
