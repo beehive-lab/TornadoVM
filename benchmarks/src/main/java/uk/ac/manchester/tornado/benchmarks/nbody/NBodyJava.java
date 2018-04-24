@@ -26,18 +26,18 @@
 
 package uk.ac.manchester.tornado.benchmarks.nbody;
 
+import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.*;
+
 import java.util.*;
 
 import uk.ac.manchester.tornado.benchmarks.*;
-import uk.ac.manchester.tornado.runtime.api.*;
 
-public class NBodyTornado extends BenchmarkDriver {
+public class NBodyJava extends BenchmarkDriver {
     private float delT,espSqr;
     private float[] posSeq,velSeq;
     private int numBodies;
-    private TaskSchedule graph;
 
-    public NBodyTornado(int numBodies, int iterations) {
+    public NBodyJava(int numBodies, int iterations) {
         super(iterations);
         this.numBodies = numBodies;
     }
@@ -65,21 +65,6 @@ public class NBodyTornado extends BenchmarkDriver {
         for (int i = 0; i < auxVelocityZero.length; i++) {
             velSeq[i] = auxVelocityZero[i];
         }
-
-        graph = new TaskSchedule("benchmark");
-        graph.task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
-        graph.warmup();
-    }
-
-    @Override
-    public void tearDown() {
-        graph.dumpProfiles();
-
-        posSeq = null;
-        velSeq = null;
-
-        graph.getDevice().reset();
-        super.tearDown();
     }
 
     @Override
@@ -89,6 +74,6 @@ public class NBodyTornado extends BenchmarkDriver {
 
     @Override
     public void code() {
-        graph.execute();
+        nBody(numBodies, posSeq, velSeq, delT, espSqr);
     }
 }
