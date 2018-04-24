@@ -49,9 +49,9 @@ public class ComputeKernels {
 
     static final float SIGMA_UPPER_LIMIT = 0.10f;
 
-    public static void computeMontecarlo(float[] output, final int iterations) {
+    public static void computeMontecarlo(float[] output, final int size) {
         @Atomic float sum = 0.0f;
-        for (@Parallel int j = 0; j < iterations; j++) {
+        for (@Parallel int j = 0; j < size; j++) {
             long seed = j;
             // generate a pseudo random number (you do need it twice)
             seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
