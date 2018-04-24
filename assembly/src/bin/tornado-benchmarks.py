@@ -56,7 +56,16 @@ __DEVICES__ = ["-Ddevice=0:0",
                "-Ddevice=0:1",
                ]
 
-cmd = "tornado "
+__ITERATIONS__ = " 10 "
+
+__TORNADO__ = "tornado "
+
+
+def runforallsizes():
+    for s in __PROBLEM_SIZES__:
+        for b in __BENCHMARKS__:
+            command = __TORNADO__ + __RUNNER__ + b + __ITERATIONS__ + s
+            os.system(command)
 
 
 def runalldevices():
@@ -64,21 +73,21 @@ def runalldevices():
     for d in __DEVICES__:
         print "Currenly executing on device: device=0:", index
         for b in __BENCHMARKS__:
-            command = cmd + d + __RUNNER__ + b
+            command = __TORNADO__ + d + __RUNNER__ + b
             os.system(command)
             index += 1
 
 
 def runbenchmarks():
     for b in __BENCHMARKS__:
-        command = cmd + __RUNNER__ + b
+        command = __TORNADO__ + __RUNNER__ + b
         os.system(command)
 
 
 def parseArguments():
     parser = argparse.ArgumentParser(description='Tool to execute benchmarks in Tornado')
-    parser.add_argument('--devices', action="store_true", dest="dev", default=False, help="Run to all devices")
-    parser.add_argument('--sizes', "-S", action="store_true", dest="siz", default=False,
+    parser.add_argument('--devices', action="store_true", dest="device", default=False, help="Run to all devices")
+    parser.add_argument('--sizes', "-S", action="store_true", dest="size", default=False,
                         help="Run for all problem sizes")
     args = parser.parse_args()
     return args
@@ -87,8 +96,10 @@ def parseArguments():
 def main():
     args = parseArguments()
 
-    if args.dev:
+    if args.device:
         runalldevices()
+    elif args.size:
+        runforallsizes()
     else:
         runbenchmarks()
 
