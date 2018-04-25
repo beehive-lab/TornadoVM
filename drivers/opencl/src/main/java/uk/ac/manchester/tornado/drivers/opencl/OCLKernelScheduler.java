@@ -25,6 +25,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
+import uk.ac.manchester.tornado.api.Event;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 
 public abstract class OCLKernelScheduler {
@@ -74,6 +75,10 @@ public abstract class OCLKernelScheduler {
         } else {
             task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
         }
+
+        Event event = deviceContext.resolveEvent(task);
+        System.out.println("Kernel Time: " + event.getExecutionTimeInNanoSeconds());
+
         return task;
     }
 

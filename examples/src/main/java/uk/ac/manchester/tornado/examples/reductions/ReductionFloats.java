@@ -24,7 +24,7 @@
  *
  */
 
-package uk.ac.manchester.tornado.reductions;
+package uk.ac.manchester.tornado.examples.reductions;
 
 import java.util.ArrayList;
 import java.util.Collections;
