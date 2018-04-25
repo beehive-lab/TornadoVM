@@ -104,6 +104,7 @@ public class NBody {
         }
 
         for (int i = 0; i < iterations; i++) {
+            System.gc();
             long start = System.nanoTime();
             nBody(numBodies, posSeq, velSeq, delT, espSqr);
             long end = System.nanoTime();
@@ -116,12 +117,20 @@ public class NBody {
         final TaskSchedule t0 = new TaskSchedule("s0").task("t0", NBody::nBody, numBodies, posSeq, velSeq, delT, espSqr);
 
         t0.warmup();
+        resultsIterations = null;
 
-        long start = System.nanoTime();
-        t0.execute();
-        long end = System.nanoTime();
+        resultsIterations = new StringBuffer();
 
-        System.out.println("Tornado execution time of iteration is: " + (end - start) + " ns");
+        for (int i = 0; i < iterations; i++) {
+            System.gc();
+            long start = System.nanoTime();
+            t0.execute();
+            long end = System.nanoTime();
+            resultsIterations.append("Tornado execution time of iteration " + i + " is: " + (end - start) + " ns");
+            resultsIterations.append("\n");
+        }
+
+        System.out.println(resultsIterations.toString());
 
     }
 
