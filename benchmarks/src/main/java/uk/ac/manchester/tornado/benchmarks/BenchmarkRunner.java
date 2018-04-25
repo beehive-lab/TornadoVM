@@ -60,13 +60,18 @@ public abstract class BenchmarkRunner {
         System.out.printf("benchmark=%s, iterations=%d, %s\n", id, iterations, getConfigString());
 
         final double refElapsed;
+        final double refElapsedMedian;
+        final double refFirstIteration;
+
         if (!SKIP_SERIAL) {
             final BenchmarkDriver referenceTest = getJavaDriver();
             referenceTest.benchmark();
 
-            System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-reference", referenceTest.getSummary());
+            System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-reference", referenceTest.getPreciseSummary());
 
             refElapsed = referenceTest.getElapsed();
+            refElapsedMedian = referenceTest.getMedian();
+            refFirstIteration = referenceTest.getFirstIteration();
 
             final BenchmarkDriver streamsTest = getStreamsDriver();
             if (streamsTest != null && !SKIP_STREAMS) {
@@ -75,20 +80,22 @@ public abstract class BenchmarkRunner {
             }
         } else {
             refElapsed = -1;
+            refElapsedMedian = -1;
+            refFirstIteration = -1;
         }
 
         final boolean tornadoEnabled = Boolean.parseBoolean(getProperty("tornado.enable", "True"));
         if (tornadoEnabled) {
             final String selectedDevices = getProperty("devices");
             if (selectedDevices == null || selectedDevices.isEmpty()) {
-                benchmarkAll(id, refElapsed);
+                benchmarkAll(id, refElapsed, refElapsedMedian, refFirstIteration);
             } else {
                 benchmarkSelected(id, selectedDevices, refElapsed);
             }
         }
     }
 
-    private void benchmarkAll(String id, double refElapsed) {
+    private void benchmarkAll(String id, double refElapsed, double refElapsedMedian, double refFirstIteration) {
         final Set<Integer> blacklistedDrivers = new HashSet<>();
         final Set<Integer> blacklistedDevices = new HashSet<>();
 
@@ -113,8 +120,9 @@ public abstract class BenchmarkRunner {
                 final BenchmarkDriver deviceTest = getTornadoDriver();
 
                 deviceTest.benchmark();
-
-                System.out.printf("bm=%-15s, device=%-5s, %s, speedup=%.4f\n", id, driverIndex + ":" + deviceIndex, deviceTest.getSummary(), refElapsed / deviceTest.getElapsed());
+                System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, stdDeviation=%.4f, deviceName=%s\n", id, driverIndex + ":" + deviceIndex,
+                        deviceTest.getPreciseSummary(), refElapsed / deviceTest.getElapsed(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(),
+                        deviceTest.getStdDev(), driver.getDevice(deviceIndex));
 
             }
         }

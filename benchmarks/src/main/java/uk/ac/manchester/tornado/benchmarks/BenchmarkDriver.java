@@ -25,7 +25,10 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
+import static java.lang.Math.*;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.*;
+
+import java.util.*;
 
 public abstract class BenchmarkDriver {
 
@@ -38,6 +41,7 @@ public abstract class BenchmarkDriver {
     protected final long iterations;
     private double elapsed;
     private boolean validResult;
+    private double[] median;
 
     public BenchmarkDriver(long iterations) {
         this.iterations = iterations;
@@ -69,47 +73,64 @@ public abstract class BenchmarkDriver {
 
         validResult = (VALIDATE) ? validate() : true;
 
+        int size = toIntExact(iterations);
+
+        median = new double[size];
+
         if (validResult) {
 
-            final long start = System.nanoTime();
+            System.gc();
+            final long overallStart = System.nanoTime();
             for (long i = 0; i < iterations; i++) {
+                final long start = System.nanoTime();
                 code();
+                final long end = System.nanoTime();
+                median[toIntExact(i)] = end - start;
             }
-
+            final long overallEnd = System.nanoTime();
             barrier();
-            final long end = System.nanoTime();
 
-            elapsed = elapsedTimeInSeconds(start, end);
-
+            // change to ns
+            elapsed = overallEnd - overallStart;
         }
 
         tearDown();
 
     }
 
-    public void benchmarkJava() {
+    public double getFirstIteration() {
+        return median[0];
+    }
 
-        setUp();
-
-        validResult = (VALIDATE) ? validate() : true;
-
-        if (validResult) {
-
-            final long start = System.nanoTime();
-            long javaIterations = iterations * 100;
-
-            for (long i = 0; i < javaIterations; i++) {
-                code();
-            }
-
-            barrier();
-            final long end = System.nanoTime();
-
-            elapsed = elapsedTimeInSeconds(start, end);
-
+    public double getMedian() {
+        Arrays.sort(median);
+        if (median.length % 2 == 0) {
+            return ((median[median.length / 2] + median[median.length / 2 - 1]) / 2);
+        } else {
+            return median[median.length / 2];
         }
+    }
 
-        tearDown();
+    public double getMean() {
+        double sum = 0.0;
+        for (double a : median)
+            sum += a;
+        return sum / iterations;
+
+    }
+
+    public double getVariance() {
+        double mean = getMean();
+        long temp = 0;
+        for (double a : median)
+            temp += (a - mean) * (a - mean);
+
+        return (temp / (iterations - 1));
+
+    }
+
+    public double getStdDev() {
+        return Math.sqrt(getVariance());
 
     }
 
@@ -121,16 +142,12 @@ public abstract class BenchmarkDriver {
         return elapsed / iterations;
     }
 
-    public double getElapsedPerIterationJava() {
-        return elapsed / (iterations * 100);
-    }
-
     public boolean isValid() {
         return validResult;
     }
 
-    public String getSummaryJava() {
-        return String.format("elapsed=%6e, per iteration=%6e", getElapsed(), getElapsedPerIterationJava());
+    public String getPreciseSummary() {
+        return String.format("average=%6e, median=%6e, firstIteration=%6e", getElapsedPerIteration(), getMedian(), getFirstIteration());
     }
 
     public String getSummary() {
