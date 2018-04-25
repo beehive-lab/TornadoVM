@@ -90,7 +90,7 @@ public abstract class BenchmarkRunner {
             if (selectedDevices == null || selectedDevices.isEmpty()) {
                 benchmarkAll(id, refElapsed, refElapsedMedian, refFirstIteration);
             } else {
-                benchmarkSelected(id, selectedDevices, refElapsed);
+                benchmarkSelected(id, selectedDevices, refElapsed, refElapsedMedian, refFirstIteration);
             }
         }
     }
@@ -120,15 +120,15 @@ public abstract class BenchmarkRunner {
                 final BenchmarkDriver deviceTest = getTornadoDriver();
 
                 deviceTest.benchmark();
-                System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, stdDeviation=%.4f, deviceName=%s\n", id, driverIndex + ":" + deviceIndex,
+                System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f%%, deviceName=%s\n", id, driverIndex + ":" + deviceIndex,
                         deviceTest.getPreciseSummary(), refElapsed / deviceTest.getElapsed(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(),
-                        deviceTest.getStdDev(), driver.getDevice(deviceIndex));
+                        deviceTest.getCV(), driver.getDevice(deviceIndex));
 
             }
         }
     }
 
-    private void benchmarkSelected(String id, String selectedDevices, double refElapsed) {
+    private void benchmarkSelected(String id, String selectedDevices, double refElapsed, double refElapsedMedian, double refFirstIteration) {
 
         final String[] devices = selectedDevices.split(",");
         for (String device : devices) {
@@ -138,10 +138,12 @@ public abstract class BenchmarkRunner {
 
             setProperty("benchmark.device", driverIndex + ":" + deviceIndex);
             final BenchmarkDriver deviceTest = getTornadoDriver();
-
+            final TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
             deviceTest.benchmark();
 
-            System.out.printf("bm=%-15s, device=%-5s, %s, speedup=%.4f\n", id, driverIndex + ":" + deviceIndex, deviceTest.getSummary(), refElapsed / deviceTest.getElapsed());
+            System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f, deviceName=%s\n", id, driverIndex + ":" + deviceIndex,
+                    deviceTest.getPreciseSummary(), refElapsed / deviceTest.getElapsed(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(),
+                    deviceTest.getCV(), driver.getDevice(deviceIndex));
         }
     }
 

@@ -121,17 +121,21 @@ public abstract class BenchmarkDriver {
 
     public double getVariance() {
         double mean = getMean();
-        long temp = 0;
+        double temp = 0;
         for (double a : median)
             temp += (a - mean) * (a - mean);
 
-        return (temp / (iterations - 1));
+        return (temp / (iterations));
 
     }
 
     public double getStdDev() {
         return Math.sqrt(getVariance());
 
+    }
+
+    public double getCV() {
+        return (getStdDev() / getMean()) * 100;
     }
 
     public double getElapsed() {
