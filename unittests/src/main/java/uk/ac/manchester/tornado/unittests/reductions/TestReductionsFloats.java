@@ -28,7 +28,9 @@ package uk.ac.manchester.tornado.unittests.reductions;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -41,7 +43,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsFloats extends TornadoTestBase {
 
-    public static final int SIZE = 512;
+    private static final int MAX_ITERATIONS = 101;
+    private static final int SIZE = 8192;
 
     public static void reductionAddFloats(float[] input, @Reduce float[] result) {
         result[0] = 0.0f;
@@ -61,12 +64,13 @@ public class TestReductionsFloats extends TornadoTestBase {
         });
 
         //@formatter:off
-		new TaskSchedule("s0")
+		TaskSchedule task = new TaskSchedule("s0")
 			.streamIn(input)
 			.task("t0", TestReductionsFloats::reductionAddFloats, input, result)
-			.streamOut(result)
-			.execute();
+			.streamOut(result);
 		//@formatter:on
+
+        task.execute();
 
         // Final result
         int numGroups = 1;
@@ -83,7 +87,61 @@ public class TestReductionsFloats extends TornadoTestBase {
         System.out.println(Arrays.toString(result));
 
         // Check result
-        assertEquals(sequential[0], result[0], 0.001f);
+        assertEquals(sequential[0], result[0], 0.01f);
+    }
+
+    public double computeMedian(ArrayList<Long> input) {
+        Collections.sort(input);
+        double middle = input.size() / 2;
+        if (input.size() % 2 == 1) {
+            middle = (input.get(input.size() / 2) + input.get(input.size() / 2 - 1)) / 2;
+        }
+        return middle;
+    }
+
+    @Test
+    public void testSumFloatsBenchmark() {
+        float[] input = new float[SIZE];
+        float[] result = new float[32];
+
+        Random r = new Random();
+        IntStream.range(0, SIZE).sequential().forEach(i -> {
+            input[i] = r.nextFloat();
+        });
+
+        //@formatter:off
+        TaskSchedule task = new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t0", TestReductionsFloats::reductionAddFloats, input, result)
+            .streamOut(result);
+        //@formatter:on
+
+        ArrayList<Long> timers = new ArrayList<>();
+        for (int i = 0; i < MAX_ITERATIONS; i++) {
+            long start = System.nanoTime();
+            task.execute();
+            long end = System.nanoTime();
+            timers.add((end - start));
+        }
+
+        System.out.println("MEDIAN: " + computeMedian(timers));
+
+        // Final result
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+        for (int i = 1; i < numGroups; i++) {
+            result[0] += result[i];
+        }
+
+        float[] sequential = new float[1];
+        reductionAddFloats(input, sequential);
+
+        System.out.println(Arrays.toString(result));
+
+        // Check result
+        assertEquals(sequential[0], result[0], 0.01f);
     }
 
     public static void multiplyFloats(float[] input, @Reduce float[] result) {
