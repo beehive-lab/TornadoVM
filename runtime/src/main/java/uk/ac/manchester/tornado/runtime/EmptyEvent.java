@@ -93,4 +93,10 @@ public class EmptyEvent implements Event {
         return 0;
     }
 
+    @Override
+    public long getExecutionTimeInNanoSeconds() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
 }
