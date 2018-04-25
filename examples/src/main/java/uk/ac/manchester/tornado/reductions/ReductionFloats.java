@@ -98,7 +98,7 @@ public class ReductionFloats {
 
     public static void main(String[] args) {
         int inputSize = 8192;
-        if (args.length > 1) {
+        if (args.length > 0) {
             inputSize = Integer.parseInt(args[0]);
         }
         System.out.println("Size = " + inputSize);
