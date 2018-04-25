@@ -51,7 +51,7 @@ public class Benchmark extends BenchmarkRunner {
 
     @Override
     protected String getIdString() {
-        return String.format("%s-%d", getName(), size, iterations);
+        return String.format("%s-%d-%d", getName(), size, iterations);
     }
 
     @Override

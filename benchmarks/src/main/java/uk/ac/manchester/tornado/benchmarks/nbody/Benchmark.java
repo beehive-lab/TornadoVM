@@ -30,7 +30,6 @@ import uk.ac.manchester.tornado.benchmarks.*;
 public class Benchmark extends BenchmarkRunner {
 
     private int numBodies;
-    private int iterations;
 
     @Override
     public void parseArgs(String[] args) {
@@ -51,7 +50,7 @@ public class Benchmark extends BenchmarkRunner {
 
     @Override
     protected String getIdString() {
-        return String.format("%s-%d", getName(), numBodies, iterations);
+        return String.format("%s-%d-%d", getName(), iterations, numBodies);
     }
 
     @Override
