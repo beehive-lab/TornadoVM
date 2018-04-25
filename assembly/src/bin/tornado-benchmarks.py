@@ -47,18 +47,23 @@ __PROBLEM_SIZES__ = [
     "40960",
     "102400",
 ]
+dict = {
+    "montecarlo": [[1024, 10240, 81920, 102400, 204800, 4096000, 1024000], [100]],
+    "nbody": [[512, 1024, 2040, 4096, 10240, 20480], [30]],
+    "saxpy": [[1024, 10240, 20480, 40960, 102400, 409600, 1024000, 204800], [100]],
+    "sgemm": [[128, 256, 512, 1024, 2048], [100]],
+    "scopy": [[1024, 10240, 20480, 40960, 102400, 409600, 1024000, 204800], [100]],
+    "blackscholes": [[1024, 10240, 20480, 40960, 102400, 409600, 1024000, 204800], [100]],
+}
 
 ## Options
-__TORNADO_BM_FLAGS__ = "-Xms8G -server -Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
-
+__TORNADO_FLAGS__ = "-Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
+__JVM_FLAGS__ = "-Xms16G -Xmx16G -server"
 __RUNNER__ = " uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
-
 __DEVICES__ = ["-Ddevice=0:0",
                "-Ddevice=0:1",
                ]
-
 __ITERATIONS__ = " 10 "
-
 __TORNADO__ = "tornado "
 
 
@@ -89,8 +94,19 @@ def runAllDevices():
 
 def runBenchmarks():
     for b in __BENCHMARKS__:
-        command = __TORNADO__ + __RUNNER__ + b
+        command = __TORNADO__ + __JVM_FLAGS__ + __RUNNER__ + b
         os.system(command)
+
+
+def runBenchmarksFullCoverage():
+    for dev in __DEVICES__:
+        print str(dev)
+        for key in dict.keys():
+            for size in dict[key][0]:
+                command = __TORNADO__ + __JVM_FLAGS__ + " " + str(dev) + __RUNNER__ + key + " " + str(
+                    dict[key][1][0]) + " " + str(size)
+                # print command
+                os.system(command)
 
 
 def parseArguments():
@@ -100,6 +116,8 @@ def parseArguments():
                         help="Run for all problem sizes")
     parser.add_argument('--benchmarks', "-BL", action="store_true", dest="bl", default=False,
                         help="Print list of benchmarks")
+    parser.add_argument('--metrics', "-M", action="store_true", dest="m", default=False,
+                        help="Run for all sizes in all devices")
     args = parser.parse_args()
     return args
 
@@ -113,6 +131,8 @@ def main():
         runForAllSizes()
     elif args.bl:
         printBenchmakrks()
+    elif args.m:
+        runBenchmarksFullCoverage()
     else:
         runBenchmarks()
 
