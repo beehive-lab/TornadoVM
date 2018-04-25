@@ -100,12 +100,10 @@ def runBenchmarks():
 
 def runBenchmarksFullCoverage():
     for dev in __DEVICES__:
-        print str(dev)
         for key in dict.keys():
             for size in dict[key][0]:
                 command = __TORNADO__ + __JVM_FLAGS__ + " " + str(dev) + __RUNNER__ + key + " " + str(
                     dict[key][1][0]) + " " + str(size)
-                # print command
                 os.system(command)
 
 
