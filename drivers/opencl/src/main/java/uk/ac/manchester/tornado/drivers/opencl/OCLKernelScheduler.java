@@ -69,9 +69,12 @@ public abstract class OCLKernelScheduler {
         }
 
         if (meta.shouldPrintKernelExecutionTime()) {
+
+            // XXX: Add barrier before printing
+
             // Print kernel statistics
             Event kernelEvent = deviceContext.resolveEvent(task);
-            System.out.println("Kernel Time: " + kernelEvent.getExecutionTimeInNanoSeconds() + "(ns)");
+            System.out.println("Kernel Time: " + kernelEvent.getExecutionTimeInNanoSeconds() + " (ns)");
         }
 
         return task;
