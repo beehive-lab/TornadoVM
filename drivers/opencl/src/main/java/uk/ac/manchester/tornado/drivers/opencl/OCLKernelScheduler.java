@@ -43,10 +43,6 @@ public abstract class OCLKernelScheduler {
         deviceContext = context;
     }
 
-    public void calcStats(int window) {
-
-    }
-
     public abstract void calculateGlobalWork(final TaskMetaData meta);
 
     public abstract void calculateLocalWork(final TaskMetaData meta);
@@ -72,8 +68,11 @@ public abstract class OCLKernelScheduler {
             task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
         }
 
-        Event event = deviceContext.resolveEvent(task);
-        System.out.println("Kernel Time: " + event.getExecutionTimeInNanoSeconds());
+        if (meta.shouldPrintKernelExecutionTime()) {
+            // Print kernel statistics
+            Event kernelEvent = deviceContext.resolveEvent(task);
+            System.out.println("Kernel Time: " + kernelEvent.getExecutionTimeInNanoSeconds() + "(ns)");
+        }
 
         return task;
     }

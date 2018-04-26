@@ -135,6 +135,10 @@ public abstract class AbstractMetaData {
         return printCompileTimes;
     }
 
+    public boolean shouldPrintKernelExecutionTime() {
+        return printKernelExecutionTime;
+    }
+
     public boolean shouldRecompile() {
         return shouldRecompile;
     }
@@ -227,6 +231,8 @@ public abstract class AbstractMetaData {
     private final boolean dumpProfiles;
     private final boolean debugKernelArgs;
     private final boolean printCompileTimes;
+    private boolean printKernelExecutionTime;
+
     // private final boolean forceAllToGpu;
     private boolean isOpenclCompilerFlagsDefined;
     private String openclCompilerFlags;
@@ -324,6 +330,7 @@ public abstract class AbstractMetaData {
 
         debugKernelArgs = parseBoolean(getDefault("debug.kernelargs", id, "False"));
         printCompileTimes = parseBoolean(getDefault("debug.compiletimes", id, "False"));
+        printKernelExecutionTime = parseBoolean(getProperty("tornado.debug.executionTime"));
         openclUseRelativeAddresses = parseBoolean(getDefault("opencl.userelative", id, "False"));
         openclWaitActive = parseBoolean(getDefault("opencl.wait.active", id, "False"));
         coarsenWithCpuConfig = parseBoolean(getDefault("coarsener.ascpu", id, "False"));

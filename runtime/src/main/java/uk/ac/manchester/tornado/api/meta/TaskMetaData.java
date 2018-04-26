@@ -409,6 +409,11 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
+    public boolean shouldPrintKernelExecutionTime() {
+        return super.shouldPrintKernelExecutionTime() || scheduleMetaData.shouldPrintKernelExecutionTime();
+    }
+
+    @Override
     public boolean shouldUseOpenclBlockingApiCalls() {
         return super.shouldUseOpenclBlockingApiCalls() || scheduleMetaData.shouldUseOpenclBlockingApiCalls();
     }
