@@ -299,9 +299,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         DepFinder df = new DepFinder(dependencies);
         condition.forEachInput(df);
 
-        // for(Value insn : dependencies){
-        // System.out.printf("dep: %s\n",insn);
-        // }
         index--;
         final List<LIRInstruction> moved = new ArrayList<>();
         LIRInstruction insn = instructions.get(index);
@@ -327,13 +324,14 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
         instructions.add(index + 1, condition);
         instructions.addAll(index - 1, moved);
-
     }
 
     public void emitLoopHeader(Block block) {
-        final List<LIRInstruction> headerInsns = lir.getLIRforBlock(block);
-
-        formatLoopHeader(headerInsns);
+        final List<LIRInstruction> headerInstructions = lir.getLIRforBlock(block);
+        for (LIRInstruction i : headerInstructions) {
+            System.out.println(i);
+        }
+        formatLoopHeader(headerInstructions);
         emitBlock(block);
     }
 
