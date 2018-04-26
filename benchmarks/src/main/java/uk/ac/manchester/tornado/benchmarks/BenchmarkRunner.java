@@ -57,7 +57,8 @@ public abstract class BenchmarkRunner {
     public void run() {
         final String id = getIdString();
 
-        System.out.printf("benchmark=%s, iterations=%d, %s\n", id, iterations, getConfigString());
+        // System.out.printf("benchmark=%s, iterations=%d, %s\n", id, iterations,
+        // getConfigString());
 
         final double refElapsed;
         final double refElapsedMedian;

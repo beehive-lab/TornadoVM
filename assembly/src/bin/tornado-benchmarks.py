@@ -99,16 +99,15 @@ def runBenchmarks():
 
 
 def runBenchmarksFullCoverage():
-    for dev in __DEVICES__:
-        for key in dict.keys():
-            for size in dict[key][0]:
-                if key is 'sgemm':
-                    command = __TORNADO__ + __JVM_FLAGS__ + " " + str(dev) + __RUNNER__ + key + " " + str(
-                        dict[key][1][0]) + " " + str(size) + " " + str(size)
-                else:
-                    command = __TORNADO__ + __JVM_FLAGS__ + " " + str(dev) + __RUNNER__ + key + " " + str(
-                        dict[key][1][0]) + " " + str(size)
-                os.system(command)
+    for key in dict.keys():
+        for size in dict[key][0]:
+            if key is 'sgemm':
+                command = __TORNADO__ + __JVM_FLAGS__ + " " + __RUNNER__ + key + " " + str(
+                    dict[key][1][0]) + " " + str(size) + " " + str(size)
+            else:
+                command = __TORNADO__ + __JVM_FLAGS__ + " " + __RUNNER__ + key + " " + str(
+                    dict[key][1][0]) + " " + str(size)
+            os.system(command)
 
 
 def parseArguments():
