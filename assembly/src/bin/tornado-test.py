@@ -62,6 +62,7 @@ __IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintC
 __PRINT_OPENCL_KERNEL__ = "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ = "-Dtornado.debug=True "
 __IGNORE_INTEL_PLATFORM__ = "-Dtornado.ignore.intel=True "  # Due to a bug when running with optirun
+__PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
 
 ## 
 __VERSION__ = "0.3_21032018"
@@ -108,7 +109,9 @@ def composeAllOptions(args):
 
 	if (args.device != None):
 		options = options + args.device
-		print options
+
+	if (args.printExecution):
+		options = options + __PRINT_EXECUTION_TIMER__
 
 	return options
 
@@ -260,6 +263,7 @@ def parseArguments():
 	parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")	
 	parser.add_argument('--optirun', "-optirun", action="store_true", dest="useOptirun", default=False, help="Use optirun with Tornado")	
 	parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")	
+	parser.add_argument('--printExec', dest="printExecution", action="store_true", default=False, help="Print OpenCL Kernel Execution Time")	
 	args = parser.parse_args()
 	return args
 
