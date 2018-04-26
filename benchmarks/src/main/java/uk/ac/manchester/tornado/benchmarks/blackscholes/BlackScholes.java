@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.runtime.api.*;
 
 public class BlackScholes {
 
-    private static final boolean USE_JAVA = Boolean.parseBoolean(System.getProperty("bs.java", "False"));
+    private static final boolean USE_JAVA = Boolean.parseBoolean(System.getProperty("bs.java", "True"));
     private static final boolean DEBUG = Boolean.parseBoolean(System.getProperty("bs.debug", "False"));
 
     /*
@@ -45,7 +45,8 @@ public class BlackScholes {
      */
     public static void main(final String[] args) {
 
-        final int size = Integer.getInteger("bs.size", 16777216);
+        int size = Integer.getInteger("bs.size", 16777216);
+        size = size * 2;
         final int iterations = Integer.getInteger("bs.iterations", 300);
         if (DEBUG) {
             System.out.println("size =" + size);
