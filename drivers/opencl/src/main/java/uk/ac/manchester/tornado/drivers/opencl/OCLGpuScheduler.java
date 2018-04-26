@@ -90,10 +90,6 @@ public class OCLGpuScheduler extends OCLKernelScheduler {
         }
     }
 
-    @Override
-    public void adjust() {
-    }
-
     private int calculateGroupSize(long maxWorkItemSizes, long sizes2, long l) {
         int value = (int) Math.min(Math.min(maxWorkItemSizes, sizes2), l);
         while (l % value != 0) {

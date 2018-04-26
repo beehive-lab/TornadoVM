@@ -51,10 +51,6 @@ public abstract class OCLKernelScheduler {
 
     public abstract void calculateLocalWork(final TaskMetaData meta);
 
-    public void adjust() {
-
-    }
-
     public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents) {
 
         if (!meta.isGlobalWorkDefined()) {
