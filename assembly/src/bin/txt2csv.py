@@ -26,7 +26,7 @@
 #
 
 import csv
-
+import sys
 
 def split(infile, outfile):
     with open(infile, 'r') as f:
@@ -45,5 +45,11 @@ def split(infile, outfile):
                     temp.append(asdf[1].strip())
                 o.writerow(temp)
 
+def main():
+	filename = sys.argv[1]
+	split(filename, "out.txt")
 
-split("2018-04-26-13:07-log.txt", "out.txt")
+
+if __name__== '__main__':
+	main()
+
