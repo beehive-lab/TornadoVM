@@ -46,4 +46,4 @@ def split(infile, outfile):
                 o.writerow(temp)
 
 
-split("2018-04-26-16:01-log.txt", "out.txt")
+split("2018-04-26-13:07-log.txt", "out.txt")
