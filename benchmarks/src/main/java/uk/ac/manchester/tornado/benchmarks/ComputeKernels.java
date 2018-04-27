@@ -49,6 +49,39 @@ public class ComputeKernels {
 
     static final float SIGMA_UPPER_LIMIT = 0.10f;
 
+    public static void monteCarlo(float[] result, int size) {
+
+        int total = size;
+        final int iter = 25000;
+
+        for (@Parallel int idx = 0; idx < total; idx++) {
+
+            long seed = idx;
+            float sum = 0.0f;
+
+            for (int j = 0; j < iter; ++j) {
+                // generate a pseudo random number (you do need it twice)
+                seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
+                seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
+
+                // this generates a number between 0 and 1 (with an awful entropy)
+                float x = ((float) (seed & 0x0FFFFFFF)) / 268435455f;
+
+                // repeat for y
+                seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
+                seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
+                float y = ((float) (seed & 0x0FFFFFFF)) / 268435455f;
+
+                float dist = TornadoMath.sqrt(x * x + y * y);
+                if (dist <= 1.0f) {
+                    sum += 1.0f;
+                }
+            }
+            sum = sum * 4;
+            result[idx] = sum / (float) iter;
+        }
+    }
+
     public static void computeMontecarlo(float[] output, final int size) {
         @Atomic float sum = 0.0f;
         for (@Parallel int j = 0; j < size; j++) {
@@ -112,8 +145,6 @@ public class ComputeKernels {
      *        Distribution Function)
      * @param X
      *            input value
-     * @param phi
-     *            pointer to store calculated CND of X
      */
     final static float phi(final float X) {
         final float c1 = 0.319381530f;

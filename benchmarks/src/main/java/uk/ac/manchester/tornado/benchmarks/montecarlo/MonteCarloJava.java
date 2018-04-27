@@ -53,7 +53,7 @@ public class MonteCarloJava extends BenchmarkDriver {
 
     @Override
     public void code() {
-        computeMontecarlo(seq, size);
+        monteCarlo(seq, size);
     }
 
     @Override
