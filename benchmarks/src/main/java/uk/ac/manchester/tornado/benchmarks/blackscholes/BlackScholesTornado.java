@@ -32,7 +32,7 @@ public class BlackScholesTornado extends BenchmarkDriver {
     private float[] randArray,call,put;
     private TaskSchedule graph;
 
-    public BlackScholesTornado(int size, int iterations) {
+    public BlackScholesTornado(int iterations, int size) {
         super(iterations);
         this.size = size;
     }

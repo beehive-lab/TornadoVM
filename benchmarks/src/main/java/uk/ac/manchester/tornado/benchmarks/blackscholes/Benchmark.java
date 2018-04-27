@@ -51,7 +51,7 @@ public class Benchmark extends BenchmarkRunner {
 
     @Override
     protected String getIdString() {
-        return String.format("%s-%d-%d", getName(), size, iterations);
+        return String.format("%s-%d-%d", getName(), iterations, size);
     }
 
     @Override
@@ -61,11 +61,11 @@ public class Benchmark extends BenchmarkRunner {
 
     @Override
     protected BenchmarkDriver getJavaDriver() {
-        return new BlackScholesJava(size, iterations);
+        return new BlackScholesJava(iterations, size);
     }
 
     @Override
     protected BenchmarkDriver getTornadoDriver() {
-        return new BlackScholesTornado(size, iterations);
+        return new BlackScholesTornado(iterations, size);
     }
 }

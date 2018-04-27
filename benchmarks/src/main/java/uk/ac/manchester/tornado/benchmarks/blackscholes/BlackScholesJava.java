@@ -34,7 +34,7 @@ public class BlackScholesJava extends BenchmarkDriver {
     private int size;
     private float[] randArray,call,put;
 
-    public BlackScholesJava(int size, int iterations) {
+    public BlackScholesJava(int iterations, int size) {
         super(iterations);
         this.size = size;
     }
