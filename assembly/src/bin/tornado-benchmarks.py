@@ -49,7 +49,7 @@ __PROBLEM_SIZES__ = [
 ]
 dict = {
     "montecarlo": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304, 16777216], [101]],
-    "nbody": [[512, 1024, 2040, 4096, 16384], [101]],
+    "nbody": [[512, 1024, 2040, 4096, 16384, 32768], [101]],
     "saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [101]],
     "sgemm": [[128, 256, 512, 1024], [101]],
     "scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304, 16777216], [101]],
@@ -58,7 +58,7 @@ dict = {
 
 ## Options
 __TORNADO_FLAGS__ = "-Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
-__JVM_FLAGS__ = "-Xms16G -Xmx16G -server"
+__JVM_FLAGS__ = "-Xms30G -Xmx30G -server"
 __RUNNER__ = " uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
 __DEVICES__ = ["-Ddevice=0:0",
                "-Ddevice=0:1",

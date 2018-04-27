@@ -63,6 +63,7 @@ public abstract class BenchmarkRunner {
         final double refElapsed;
         final double refElapsedMedian;
         final double refFirstIteration;
+        final double refBest;
 
         if (!SKIP_SERIAL) {
             final BenchmarkDriver referenceTest = getJavaDriver();
@@ -70,9 +71,10 @@ public abstract class BenchmarkRunner {
 
             System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-reference", referenceTest.getPreciseSummary());
 
-            refElapsed = referenceTest.getElapsed();
+            refElapsed = referenceTest.getMean();
             refElapsedMedian = referenceTest.getMedian();
             refFirstIteration = referenceTest.getFirstIteration();
+            refBest = referenceTest.getBestExecution();
 
             final BenchmarkDriver streamsTest = getStreamsDriver();
             if (streamsTest != null && !SKIP_STREAMS) {
@@ -83,6 +85,7 @@ public abstract class BenchmarkRunner {
             refElapsed = -1;
             refElapsedMedian = -1;
             refFirstIteration = -1;
+            refBest = -1;
         }
 
         final boolean tornadoEnabled = Boolean.parseBoolean(getProperty("tornado.enable", "True"));
@@ -122,7 +125,7 @@ public abstract class BenchmarkRunner {
 
                 deviceTest.benchmark();
                 System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f%%, deviceName=%s\n", id, driverIndex + ":" + deviceIndex,
-                        deviceTest.getPreciseSummary(), refElapsed / deviceTest.getElapsed(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(),
+                        deviceTest.getPreciseSummary(), refElapsed / deviceTest.getMean(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(),
                         deviceTest.getCV(), driver.getDevice(deviceIndex));
 
             }
@@ -143,7 +146,7 @@ public abstract class BenchmarkRunner {
             deviceTest.benchmark();
 
             System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f, deviceName=%s\n", id, driverIndex + ":" + deviceIndex,
-                    deviceTest.getPreciseSummary(), refElapsed / deviceTest.getElapsed(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(),
+                    deviceTest.getPreciseSummary(), refElapsed / deviceTest.getMean(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(),
                     deviceTest.getCV(), driver.getDevice(deviceIndex));
         }
     }

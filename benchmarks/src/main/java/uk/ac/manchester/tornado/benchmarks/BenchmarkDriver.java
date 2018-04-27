@@ -26,9 +26,8 @@
 package uk.ac.manchester.tornado.benchmarks;
 
 import static java.lang.Math.*;
+import static java.util.Arrays.*;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.*;
-
-import java.util.*;
 
 public abstract class BenchmarkDriver {
 
@@ -41,7 +40,8 @@ public abstract class BenchmarkDriver {
     protected final long iterations;
     private double elapsed;
     private boolean validResult;
-    private double[] median;
+    private double[] time;
+    private int startingIndex = 30;
 
     public BenchmarkDriver(long iterations) {
         this.iterations = iterations;
@@ -75,57 +75,70 @@ public abstract class BenchmarkDriver {
 
         int size = toIntExact(iterations);
 
-        median = new double[size];
+        time = new double[size];
 
         if (validResult) {
 
             System.gc();
-            final long overallStart = System.nanoTime();
+
             for (long i = 0; i < iterations; i++) {
+                System.gc();
                 final long start = System.nanoTime();
                 code();
                 final long end = System.nanoTime();
-                median[toIntExact(i)] = end - start;
+                time[toIntExact(i)] = end - start;
+                System.out.printf("Exec time: " + time[toIntExact(i)] + "\n");
             }
-            final long overallEnd = System.nanoTime();
             barrier();
 
-            // change to ns
-            elapsed = overallEnd - overallStart;
         }
 
         tearDown();
+    }
 
+    public double getBestExecution() {
+        double minValue = time[0];
+        for (int i = 1; i < time.length; i++) {
+            if (time[i] < minValue) {
+                minValue = time[i];
+            }
+        }
+        return minValue;
     }
 
     public double getFirstIteration() {
-        return median[0];
+        return time[0];
     }
 
     public double getMedian() {
-        Arrays.sort(median);
-        if (median.length % 2 == 0) {
-            return ((median[median.length / 2] + median[median.length / 2 - 1]) / 2);
+        double[] temp = time.clone();
+        sort(temp);
+        if (temp.length % 2 == 0) {
+            return ((temp[temp.length / 2] + temp[temp.length / 2 - 1]) / 2);
         } else {
-            return median[median.length / 2];
+            return temp[temp.length / 2];
         }
     }
 
     public double getMean() {
+
         double sum = 0.0;
-        for (double a : median)
-            sum += a;
-        return sum / iterations;
+
+        for (int i = startingIndex; i < time.length; i++) {
+            sum += time[i];
+        }
+        return sum / (iterations - startingIndex);
 
     }
 
     public double getVariance() {
         double mean = getMean();
         double temp = 0;
-        for (double a : median)
-            temp += (a - mean) * (a - mean);
+        for (int i = startingIndex; i < time.length; i++) {
+            temp += (time[i] - mean) * (time[i] - mean);
+        }
 
-        return (temp / (iterations));
+        return (temp / (iterations - startingIndex));
 
     }
 
@@ -151,7 +164,7 @@ public abstract class BenchmarkDriver {
     }
 
     public String getPreciseSummary() {
-        return String.format("average=%6e, median=%6e, firstIteration=%6e", getElapsedPerIteration(), getMedian(), getFirstIteration());
+        return String.format("average=%6e, median=%6e, firstIteration=%6e, best=%6e", getMean(), getMedian(), getFirstIteration(), getBestExecution());
     }
 
     public String getSummary() {
