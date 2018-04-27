@@ -328,9 +328,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     public void emitLoopHeader(Block block) {
         final List<LIRInstruction> headerInstructions = lir.getLIRforBlock(block);
-        for (LIRInstruction i : headerInstructions) {
-            System.out.println(i);
-        }
         formatLoopHeader(headerInstructions);
         emitBlock(block);
     }
