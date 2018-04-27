@@ -87,7 +87,6 @@ public abstract class BenchmarkDriver {
                 code();
                 final long end = System.nanoTime();
                 time[toIntExact(i)] = end - start;
-                System.out.printf("Exec time: " + time[toIntExact(i)] + "\n");
             }
             barrier();
 
