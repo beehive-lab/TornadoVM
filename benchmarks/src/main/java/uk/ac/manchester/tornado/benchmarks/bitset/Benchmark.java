@@ -23,54 +23,49 @@
  * Authors: Michalis Papadimitriou
  *
  */
+
 package uk.ac.manchester.tornado.benchmarks.bitset;
 
-import java.util.*;
-
-import org.apache.lucene.util.*;
-
 import uk.ac.manchester.tornado.benchmarks.*;
-import uk.ac.manchester.tornado.runtime.api.*;
 
-public class BitsetJava extends BenchmarkDriver {
-
-    private int numWords;
-    private TaskSchedule graph;
-    private LongBitSet a,b;
-
-    public BitsetJava(int size, int iterations) {
-        super(iterations);
-        this.numWords = size;
-    }
+public class Benchmark extends BenchmarkRunner {
+    private int size;
 
     @Override
-    public void setUp() {
+    public void parseArgs(String[] args) {
+        if (args.length == 2) {
+            iterations = Integer.parseInt(args[0]);
+            size = Integer.parseInt(args[1]);
 
-        final Random rand = new Random(7);
-        final long[] aBits = new long[numWords];
-        final long[] bBits = new long[numWords];
-        for (int i = 0; i < aBits.length; i++) {
-            aBits[i] = rand.nextLong();
-            bBits[i] = rand.nextLong();
+        } else {
+            iterations = 100;
+            size = 10240;
+
         }
-
-        a = new LongBitSet(aBits, numWords * 8);
-        b = new LongBitSet(bBits, numWords * 8);
-
     }
 
     @Override
-    public void tearDown() {
-        super.tearDown();
+    protected String getName() {
+        return "bitset";
     }
 
     @Override
-    public boolean validate() {
-        return true;
+    protected String getIdString() {
+        return String.format("%s-%d-%d", getName(), iterations, size);
     }
 
     @Override
-    public void code() {
-        ComputeKernels.intersectionCount(numWords, a, b);
+    protected String getConfigString() {
+        return String.format("size=%d", size);
+    }
+
+    @Override
+    protected BenchmarkDriver getJavaDriver() {
+        return new BitsetJava(iterations, size);
+    }
+
+    @Override
+    protected BenchmarkDriver getTornadoDriver() {
+        return new BitsetTornado(iterations, size);
     }
 }

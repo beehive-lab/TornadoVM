@@ -23,6 +23,7 @@
  * Authors: Michalis Papadimitriou
  *
  */
+
 package uk.ac.manchester.tornado.benchmarks.bitset;
 
 import java.util.*;
@@ -32,13 +33,11 @@ import org.apache.lucene.util.*;
 import uk.ac.manchester.tornado.benchmarks.*;
 import uk.ac.manchester.tornado.runtime.api.*;
 
-public class BitsetJava extends BenchmarkDriver {
-
+public class BitsetTornado extends BenchmarkDriver {
     private int numWords;
     private TaskSchedule graph;
-    private LongBitSet a,b;
 
-    public BitsetJava(int size, int iterations) {
+    public BitsetTornado(int size, int iterations) {
         super(iterations);
         this.numWords = size;
     }
@@ -54,13 +53,19 @@ public class BitsetJava extends BenchmarkDriver {
             bBits[i] = rand.nextLong();
         }
 
-        a = new LongBitSet(aBits, numWords * 8);
-        b = new LongBitSet(bBits, numWords * 8);
+        final LongBitSet a = new LongBitSet(aBits, numWords * 8);
+        final LongBitSet b = new LongBitSet(bBits, numWords * 8);
 
+        graph = new TaskSchedule("benchmark");
+        graph.task("t0", ComputeKernels::intersectionCount, numWords, a, b);
+        graph.warmup();
     }
 
     @Override
     public void tearDown() {
+        graph.dumpProfiles();
+
+        graph.getDevice().reset();
         super.tearDown();
     }
 
@@ -71,6 +76,6 @@ public class BitsetJava extends BenchmarkDriver {
 
     @Override
     public void code() {
-        ComputeKernels.intersectionCount(numWords, a, b);
+        graph.execute();
     }
 }
