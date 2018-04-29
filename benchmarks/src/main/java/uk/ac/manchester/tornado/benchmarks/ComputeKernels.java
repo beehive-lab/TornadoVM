@@ -25,6 +25,8 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
+import org.apache.lucene.util.*;
+
 import uk.ac.manchester.tornado.api.*;
 import uk.ac.manchester.tornado.collections.math.*;
 
@@ -210,6 +212,22 @@ public class ComputeKernels {
 
             // put[gid] = phi(d2);
             put[gid] = (KexpMinusRT * phiD2) - (S * phiD1);
+        }
+    }
+
+    public static final int intersectionCount(int numWords, LongBitSet a, LongBitSet b) {
+        final long[] aBits = a.getBits();
+        final long[] bBits = b.getBits();
+        int sum = 0;
+        for (@Parallel int i = 0; i < numWords; i++) {
+            Long.bitCount(aBits[i] & bBits[i]);
+        }
+        return sum;
+    }
+
+    public static void vectorMultiply(final float[] a, final float[] b, final float[] c) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            c[i] = a[i] * b[i];
         }
     }
 }
