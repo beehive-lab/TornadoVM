@@ -28,7 +28,6 @@ package uk.ac.manchester.tornado.unittests.reductions;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -42,6 +41,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 public class TestReductionsFloats extends TornadoTestBase {
 
     private static final int SIZE = 8192;
+
+    private static final int SIZE2 = 32;
 
     public static void reductionAddFloats(float[] input, @Reduce float[] result) {
         result[0] = 0.0f;
@@ -80,6 +81,52 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         float[] sequential = new float[1];
         reductionAddFloats(input, sequential);
+
+        // System.out.println(Arrays.toString(result));
+
+        // Check result
+        assertEquals(sequential[0], result[0], 0.01f);
+    }
+
+    public static void reductionAddFloats2(float[] input, @Reduce float[] result) {
+        float error = 2f;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            float v = (error * input[i]);
+            result[0] += v;
+        }
+    }
+
+    /// XXX: Support this case
+    @Test
+    public void testSumFloats2() {
+        float[] input = new float[SIZE2];
+
+        int numGroups = 1;
+        if (SIZE2 > 256) {
+            numGroups = SIZE2 / 256;
+        }
+        float[] result = new float[numGroups];
+
+        Random r = new Random();
+        IntStream.range(0, SIZE2).sequential().forEach(i -> {
+            input[i] = 2.0f;
+        });
+
+        //@formatter:off
+        TaskSchedule task = new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t0", TestReductionsFloats::reductionAddFloats2, input, result)
+            .streamOut(result);
+        //@formatter:on
+
+        task.execute();
+
+        for (int i = 1; i < numGroups; i++) {
+            result[0] += result[i];
+        }
+
+        float[] sequential = new float[1];
+        reductionAddFloats2(input, sequential);
 
         // System.out.println(Arrays.toString(result));
 
