@@ -38,6 +38,8 @@ public abstract class BenchmarkRunner {
 
     private static final boolean SKIP_STREAMS = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipstreams", "True"));
 
+    private static final boolean TORNADO_ENABLED = Boolean.parseBoolean(getProperty("tornado.enable", "True"));
+
     protected abstract String getName();
 
     protected abstract String getIdString();
@@ -57,13 +59,9 @@ public abstract class BenchmarkRunner {
     public void run() {
         final String id = getIdString();
 
-        // System.out.printf("benchmark=%s, iterations=%d, %s\n", id, iterations,
-        // getConfigString());
-
         final double refElapsed;
         final double refElapsedMedian;
         final double refFirstIteration;
-        final double refBest;
 
         if (!SKIP_SERIAL) {
             final BenchmarkDriver referenceTest = getJavaDriver();
@@ -74,7 +72,6 @@ public abstract class BenchmarkRunner {
             refElapsed = referenceTest.getMean();
             refElapsedMedian = referenceTest.getMedian();
             refFirstIteration = referenceTest.getFirstIteration();
-            refBest = referenceTest.getBestExecution();
 
             final BenchmarkDriver streamsTest = getStreamsDriver();
             if (streamsTest != null && !SKIP_STREAMS) {
@@ -85,11 +82,9 @@ public abstract class BenchmarkRunner {
             refElapsed = -1;
             refElapsedMedian = -1;
             refFirstIteration = -1;
-            refBest = -1;
         }
 
-        final boolean tornadoEnabled = Boolean.parseBoolean(getProperty("tornado.enable", "True"));
-        if (tornadoEnabled) {
+        if (TORNADO_ENABLED) {
             final String selectedDevices = getProperty("devices");
             if (selectedDevices == null || selectedDevices.isEmpty()) {
                 benchmarkAll(id, refElapsed, refElapsedMedian, refFirstIteration);

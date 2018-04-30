@@ -65,6 +65,8 @@ __DEVICES__ = ["-Ddevice=0:0",
                ]
 __ITERATIONS__ = " 10 "
 __TORNADO__ = "tornado "
+__SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
+__SKIP_PARALLEL = " -Dtornado.enable=False "
 
 
 def printBenchmakrks():
@@ -110,6 +112,30 @@ def runBenchmarksFullCoverage():
             os.system(command)
 
 
+def runBenchmarksFullCoverageSkipParallel():
+    for key in dict.keys():
+        for size in dict[key][0]:
+            if key is 'sgemm':
+                command = __TORNADO__ + __JVM_FLAGS__ + __SKIP_PARALLEL + " " + __RUNNER__ + key + " " + str(
+                    dict[key][1][0]) + " " + str(size) + " " + str(size)
+            else:
+                command = __TORNADO__ + __JVM_FLAGS__ + __SKIP_PARALLEL + " " + __RUNNER__ + key + " " + str(
+                    dict[key][1][0]) + " " + str(size)
+            os.system(command)
+
+
+def runBenchmarksFullCoverageSkipJava():
+    for key in dict.keys():
+        for size in dict[key][0]:
+            if key is 'sgemm':
+                command = __TORNADO__ + __JVM_FLAGS__ + __SKIP_SERIAL__ + " " + __RUNNER__ + key + " " + str(
+                    dict[key][1][0]) + " " + str(size) + " " + str(size)
+            else:
+                command = __TORNADO__ + __JVM_FLAGS__ + __SKIP_SERIAL__ + " " + __RUNNER__ + key + " " + str(
+                    dict[key][1][0]) + " " + str(size)
+            os.system(command)
+
+
 def parseArguments():
     parser = argparse.ArgumentParser(description='Tool to execute benchmarks in Tornado')
     parser.add_argument('--devices', "-D", action="store_true", dest="device", default=False, help="Run to all devices")
@@ -119,6 +145,10 @@ def parseArguments():
                         help="Print list of benchmarks")
     parser.add_argument('--metrics', "-M", action="store_true", dest="m", default=False,
                         help="Run for all sizes in all devices")
+    parser.add_argument('--skipSeq', "-ss", action="store_true", dest="ss", default=False,
+                        help="Skip java version")
+    parser.add_argument('--skipPar', "-sp", action="store_true", dest="sp", default=False,
+                        help="Skip Tornado version")
     args = parser.parse_args()
     return args
 
@@ -134,6 +164,10 @@ def main():
         printBenchmakrks()
     elif args.m:
         runBenchmarksFullCoverage()
+    elif args.ss:
+        runBenchmarksFullCoverageSkipJava()
+    elif args.sp:
+        runBenchmarksFullCoverageSkipParallel()
     else:
         runBenchmarks()
 
