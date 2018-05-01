@@ -24,6 +24,9 @@
  */
 package uk.ac.manchester.tornado.benchmarks.blackscholes;
 
+import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.*;
+import static uk.ac.manchester.tornado.collections.math.TornadoMath.*;
+
 import uk.ac.manchester.tornado.benchmarks.*;
 import uk.ac.manchester.tornado.runtime.api.*;
 
@@ -67,7 +70,37 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
     @Override
     public boolean validate() {
-        return true;
+        float[] randArrayTor,callTor,putTor,calSeq,putSeq;
+
+        randArrayTor = new float[size];
+        callTor = new float[size];
+        putTor = new float[size];
+        calSeq = new float[size];
+        putSeq = new float[size];
+
+        for (int i = 0; i < size; i++) {
+            randArrayTor[i] = (float) Math.random();
+            // randArrayTor[i] = (i * 1.0f) / size;
+        }
+
+        graph = new TaskSchedule("benchmark");
+        graph.task("t0", ComputeKernels::blackscholes, randArrayTor, putTor, callTor);
+
+        graph.warmup();
+        graph.execute();
+        graph.syncObjects(putTor, callTor);
+        graph.clearProfiles();
+
+        blackscholes(randArrayTor, putSeq, calSeq);
+
+        final float ulp = findULPDistance(calSeq, callTor);
+        System.out.printf(ulp + "\n");
+        for (int i = 0; i < size; i++) {
+            System.out.printf(calSeq[i] + " " + callTor[i] + "\n");
+            // return compare(calSeq, callTo
+        }
+        return ulp < MAX_ULP;
+
     }
 
     @Override

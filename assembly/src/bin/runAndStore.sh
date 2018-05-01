@@ -31,7 +31,7 @@ DATE=$(date '+%Y-%m-%d-%H:%M')
 
 PYTHON="python"
 
-OPTION="-M"
+OPTION="-ss"
 
 OUTPUT="${DATE}-log.txt"
 
