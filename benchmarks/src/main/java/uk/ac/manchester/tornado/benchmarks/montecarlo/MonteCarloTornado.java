@@ -25,6 +25,7 @@
 
 package uk.ac.manchester.tornado.benchmarks.montecarlo;
 
+import static uk.ac.manchester.tornado.collections.math.TornadoMath.*;
 import static uk.ac.manchester.tornado.common.Tornado.*;
 
 import uk.ac.manchester.tornado.benchmarks.*;
@@ -69,9 +70,28 @@ public class MonteCarloTornado extends BenchmarkDriver {
 
     @Override
     public boolean validate() {
+        float[] result;
+        boolean val = true;
 
-        return true;
+        result = new float[size];
 
+        ComputeKernels.monteCarlo(result, size);
+
+        graph.warmup();
+        graph.execute();
+        graph.syncObjects(output);
+        graph.clearProfiles();
+
+        for (int i = 0; i < size; i++) {
+            System.out.printf(output[i] + "   " + result[i] + "\n");
+            if (abs(output[i] - result[i]) > 0.01) {
+                val = false;
+            }
+        }
+
+        System.out.printf("Number validation: " + val + "\n");
+
+        return val;
     }
 
     public void printSummary() {
