@@ -71,6 +71,9 @@ public class BlackScholesTornado extends BenchmarkDriver {
     @Override
     public boolean validate() {
         float[] randArrayTor,callTor,putTor,calSeq,putSeq;
+        boolean val;
+
+        val = true;
 
         randArrayTor = new float[size];
         callTor = new float[size];
@@ -80,7 +83,6 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
         for (int i = 0; i < size; i++) {
             randArrayTor[i] = (float) Math.random();
-            // randArrayTor[i] = (i * 1.0f) / size;
         }
 
         graph = new TaskSchedule("benchmark");
@@ -93,14 +95,20 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
         blackscholes(randArrayTor, putSeq, calSeq);
 
-        final float ulp = findULPDistance(calSeq, callTor);
-        System.out.printf(ulp + "\n");
         for (int i = 0; i < size; i++) {
-            System.out.printf(calSeq[i] + " " + callTor[i] + "\n");
-            // return compare(calSeq, callTo
+            if (abs(putTor[i] - putSeq[i]) > 0.01) {
+                // System.out.printf(abs(putTor[i] - putSeq[i]) + "\n");
+                val = false;
+            }
+            if (abs(callTor[i] - calSeq[i]) > 0.01) {
+                // System.out.printf(abs(callTor[i] - calSeq[i]) + "\n");
+                val = false;
+            }
+            // System.out.printf(abs(putTor[i] - putSeq[i]) + "\n");
+            // System.out.printf(abs(callTor[i] - calSeq[i]) + "\n");
         }
-        return ulp < MAX_ULP;
-
+        System.out.printf("Number validation: " + val + "\n");
+        return val;
     }
 
     @Override
