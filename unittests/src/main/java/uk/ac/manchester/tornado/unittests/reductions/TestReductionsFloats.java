@@ -28,7 +28,6 @@ package uk.ac.manchester.tornado.unittests.reductions;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -93,6 +92,13 @@ public class TestReductionsFloats extends TornadoTestBase {
         float error = 2f;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += (error * input[i]);
+        }
+    }
+
+    public static void reductionAddFloats3(float[] inputA, float[] inputB, @Reduce float[] result) {
+        float error = 2f;
+        for (@Parallel int i = 0; i < inputA.length; i++) {
+            result[0] += (error * (inputA[i] + inputB[i]));
         }
     }
 
@@ -167,6 +173,43 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.01f);
     }
 
+    @Test
+    public void testSumFloats4() {
+        float[] inputA = new float[SIZE];
+        float[] inputB = new float[SIZE];
+
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+        float[] result = new float[numGroups];
+
+        Random r = new Random();
+        IntStream.range(0, SIZE).sequential().forEach(i -> {
+            inputA[i] = r.nextFloat();
+            inputB[i] = r.nextFloat();
+        });
+
+        //@formatter:off
+        TaskSchedule task = new TaskSchedule("s0")
+            .streamIn(inputA, inputB)
+            .task("t0", TestReductionsFloats::reductionAddFloats3, inputA, inputB, result)
+            .streamOut(result);
+        //@formatter:on
+
+        task.execute();
+
+        for (int i = 1; i < numGroups; i++) {
+            result[0] += result[i];
+        }
+
+        float[] sequential = new float[1];
+        reductionAddFloats3(inputA, inputB, sequential);
+
+        // Check result
+        assertEquals(sequential[0], result[0], 0.01f);
+    }
+
     public static void multiplyFloats(float[] input, @Reduce float[] result) {
         result[0] = 1.0f;
         for (@Parallel int i = 0; i < input.length; i++) {
@@ -214,21 +257,4 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.001f);
     }
 
-    /**
-     * MxM using reduce and parallel annotations
-     * 
-     * @param input
-     * @param result
-     */
-    public static void mxm(float[] input, @Reduce float[] result) {
-        int n = input.length;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            for (@Parallel int j = 0; j < input.length; j++) {
-                for (int k = 0; k < input.length; k++) {
-                    float value = input[i * n + k] * input[k * n + j];
-                    result[i * n + j] += value;
-                }
-            }
-        }
-    }
 }
