@@ -38,7 +38,8 @@ import uk.ac.manchester.tornado.api.Vector;
 import uk.ac.manchester.tornado.collections.math.TornadoMath;
 
 /**
- * Class that represents a vector of 3x floats e.g. <float,float,float>
+ * Class that represents a vector of 8x floats e.g.
+ * <float,float,float,float,float,float,float,float>
  *
  * @author jamesclarkson
  *
@@ -78,6 +79,10 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         setS5(s5);
         setS6(s6);
         setS7(s7);
+    }
+
+    public float[] getStorage() {
+        return storage;
     }
 
     public float get(int index) {
@@ -216,8 +221,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * *
-     * Operations on Float8 vectors
+     * * Operations on Float8 vectors
      */
     public static Float8 add(Float8 a, Float8 b) {
         final Float8 result = new Float8();
@@ -322,7 +326,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
         }
         return result;
     }
-    
+
     public static float dot(Float8 a, Float8 b) {
         float result = 0f;
         final Float8 m = mult(a, b);

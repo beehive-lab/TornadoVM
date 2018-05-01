@@ -91,8 +91,8 @@ public class TestReductionsFloats extends TornadoTestBase {
     public static void reductionAddFloats2(float[] input, @Reduce float[] result) {
         float error = 2f;
         for (@Parallel int i = 0; i < input.length; i++) {
-            float v = (error * input[i]);
-            result[0] += v;
+            // float v = (error * input[i]);
+            result[0] += (error * input[i]);
         }
     }
 
@@ -179,5 +179,22 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         // Check result
         assertEquals(sequential[0], result[0], 0.001f);
+    }
+
+    /**
+     * MxM using reduce and parallel annotations
+     * 
+     * @param input
+     * @param result
+     */
+    public static void mxm(float[] input, @Reduce float[] result) {
+        int n = input.length;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            for (@Parallel int j = 0; j < input.length; j++) {
+                for (int k = 0; k < input.length; k++) {
+                    result[i * n + j] += input[i * n + k] * input[k * n + j];
+                }
+            }
+        }
     }
 }

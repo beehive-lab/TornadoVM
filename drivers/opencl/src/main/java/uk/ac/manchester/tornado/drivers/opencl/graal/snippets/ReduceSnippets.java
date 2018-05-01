@@ -26,7 +26,9 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.snippets;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
+import org.graalvm.compiler.api.replacements.Snippet.VarargsParameter;
 import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -202,6 +204,28 @@ public class ReduceSnippets implements Snippets {
     }
 
     @Snippet
+    public static void partialReduceFloatAddGlobal2(float[] inputArray, float[] outputArray, int gidx, float values) {
+
+        int localIdx = OpenCLIntrinsics.get_local_id(0);
+        int localGroupSize = OpenCLIntrinsics.get_local_size(0);
+        int groupID = OpenCLIntrinsics.get_group_id(0);
+
+        int myID = localIdx + (localGroupSize * groupID);
+
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            OpenCLIntrinsics.localBarrier();
+            if (localIdx < stride) {
+                inputArray[myID] += (inputArray[myID + stride]);
+            }
+        }
+
+        OpenCLIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID] = inputArray[myID];
+        }
+    }
+
+    @Snippet
     public static void partialReduceIntMultGlobal(int[] inputArray, int[] outputArray, int gidx) {
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
@@ -322,6 +346,7 @@ public class ReduceSnippets implements Snippets {
         // Add
         private final SnippetInfo partialReduceIntSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceIntAddGlobal");
         private final SnippetInfo partialReduceAddFloatSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceFloatAddGlobal");
+        private final SnippetInfo partialReduceAddFloatSnippetGlobal2 = snippet(ReduceSnippets.class, "partialReduceFloatAddGlobal2");
 
         // Mul
         private final SnippetInfo partialReduceIntMultSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceIntMultGlobal");
@@ -362,7 +387,7 @@ public class ReduceSnippets implements Snippets {
         private SnippetInfo inferFloatSnippet(ValueNode value) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
-                snippet = partialReduceAddFloatSnippetGlobal;
+                snippet = partialReduceAddFloatSnippetGlobal2;
             } else if (value instanceof OCLReduceMulNode) {
                 snippet = partialReducetFloatMultSnippetGlobal;
             } else {
@@ -395,6 +420,7 @@ public class ReduceSnippets implements Snippets {
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", globalId);
+            args.add("values", value);
 
             template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
         }
