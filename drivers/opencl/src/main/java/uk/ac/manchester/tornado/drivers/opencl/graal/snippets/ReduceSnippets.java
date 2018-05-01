@@ -204,7 +204,7 @@ public class ReduceSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceFloatAddGlobal2(float[] inputArray, float[] outputArray, int gidx, float values) {
+    public static void partialReduceFloatAddGlobal2(float[] inputArray, float[] outputArray, int gidx, float value) {
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
@@ -212,10 +212,11 @@ public class ReduceSnippets implements Snippets {
 
         int myID = localIdx + (localGroupSize * groupID);
 
+        inputArray[myID] = value;
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
-                inputArray[myID] += (inputArray[myID + stride]);
+                inputArray[myID] += inputArray[myID + stride];
             }
         }
 
@@ -384,10 +385,10 @@ public class ReduceSnippets implements Snippets {
             return snippet;
         }
 
-        private SnippetInfo inferFloatSnippet(ValueNode value) {
+        private SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
-                snippet = partialReduceAddFloatSnippetGlobal2;
+                snippet = (extra == null) ? partialReduceAddFloatSnippetGlobal : partialReduceAddFloatSnippetGlobal2;
             } else if (value instanceof OCLReduceMulNode) {
                 snippet = partialReducetFloatMultSnippetGlobal;
             } else {
@@ -413,14 +414,16 @@ public class ReduceSnippets implements Snippets {
             if (elementKind == JavaKind.Int) {
                 snippet = inferIntSnippet(value);
             } else if (elementKind == JavaKind.Float) {
-                snippet = inferFloatSnippet(value);
+                snippet = inferFloatSnippet(value, storeAtomicIndexed.getExtraOperation());
             }
 
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", globalId);
-            args.add("values", value);
+            if (storeAtomicIndexed.getExtraOperation() != null) {
+                args.add("value", storeAtomicIndexed.getExtraOperation());
+            }
 
             template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
         }

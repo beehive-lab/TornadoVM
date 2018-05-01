@@ -148,9 +148,23 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         ValueNode accumulator = reductionNode.accumulator;
         ValueNode inputArray = reductionNode.inputArray;
         final StoreAtomicIndexedNode atomicStore = graph.addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), value, accumulator, inputArray));
+
+        // XXX : This part is not generic, quick test
+        ValueNode mult = null;
+        if (value instanceof OCLReduceAddNode) {
+            OCLReduceAddNode reduce = (OCLReduceAddNode) value;
+            if (reduce.getX() instanceof MulNode) {
+                mult = reduce.getX();
+            } else if (reduce.getY() instanceof MulNode) {
+                mult = reduce.getY();
+            }
+        }
+        atomicStore.setOptionalOperation(mult);
+
         atomicStore.setNext(store.next());
         pred.replaceFirstSuccessor(store, atomicStore);
         store.replaceAndDelete(atomicStore);
+
     }
 
     private void processReduceAnnotation(StructuredGraph graph, int index) {

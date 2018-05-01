@@ -28,6 +28,7 @@ package uk.ac.manchester.tornado.unittests.reductions;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -91,7 +92,6 @@ public class TestReductionsFloats extends TornadoTestBase {
     public static void reductionAddFloats2(float[] input, @Reduce float[] result) {
         float error = 2f;
         for (@Parallel int i = 0; i < input.length; i++) {
-            // float v = (error * input[i]);
             result[0] += (error * input[i]);
         }
     }
@@ -109,7 +109,8 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         Random r = new Random();
         IntStream.range(0, SIZE2).sequential().forEach(i -> {
-            input[i] = 2.0f;
+            // input[i] = 2.0f;
+            input[i] = r.nextFloat();
         });
 
         //@formatter:off
@@ -128,7 +129,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         float[] sequential = new float[1];
         reductionAddFloats2(input, sequential);
 
-        // System.out.println(Arrays.toString(result));
+        System.out.println(Arrays.toString(result));
 
         // Check result
         assertEquals(sequential[0], result[0], 0.01f);
@@ -192,7 +193,8 @@ public class TestReductionsFloats extends TornadoTestBase {
         for (@Parallel int i = 0; i < input.length; i++) {
             for (@Parallel int j = 0; j < input.length; j++) {
                 for (int k = 0; k < input.length; k++) {
-                    result[i * n + j] += input[i * n + k] * input[k * n + j];
+                    float value = input[i * n + k] * input[k * n + j];
+                    result[i * n + j] += value;
                 }
             }
         }

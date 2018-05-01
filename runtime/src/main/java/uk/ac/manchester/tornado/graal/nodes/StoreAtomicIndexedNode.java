@@ -42,10 +42,14 @@ import jdk.vm.ci.meta.JavaKind;
 public final class StoreAtomicIndexedNode extends AccessIndexedNode implements StateSplit, Lowerable, Virtualizable {
 
     public static final NodeClass<StoreAtomicIndexedNode> TYPE = NodeClass.create(StoreAtomicIndexedNode.class);
+
+    //@formatter:off
     @Input ValueNode value;
     @Input ValueNode accumulator;
     @Input ValueNode inputArray;
     @OptionalInput(State) FrameState stateAfter;
+    @OptionalInput ValueNode extraOperation;
+    //@formatter:on
 
     @Override
     public FrameState stateAfter() {
@@ -92,4 +96,11 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
         return inputArray;
     }
 
+    public void setOptionalOperation(ValueNode node) {
+        this.extraOperation = node;
+    }
+
+    public ValueNode getExtraOperation() {
+        return extraOperation;
+    }
 }
