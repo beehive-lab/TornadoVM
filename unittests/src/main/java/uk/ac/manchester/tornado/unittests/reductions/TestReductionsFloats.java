@@ -96,7 +96,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         }
     }
 
-    /// XXX: Support this case
+    @SuppressWarnings("unused")
     @Test
     public void testSumFloats2() {
         float[] input = new float[SIZE2];
@@ -109,7 +109,6 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         Random r = new Random();
         IntStream.range(0, SIZE2).sequential().forEach(i -> {
-            // input[i] = 2.0f;
             input[i] = r.nextFloat();
         });
 
@@ -129,7 +128,40 @@ public class TestReductionsFloats extends TornadoTestBase {
         float[] sequential = new float[1];
         reductionAddFloats2(input, sequential);
 
-        System.out.println(Arrays.toString(result));
+        // Check result
+        assertEquals(sequential[0], result[0], 0.01f);
+    }
+
+    @Test
+    public void testSumFloats3() {
+        float[] input = new float[SIZE];
+
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+        float[] result = new float[numGroups];
+
+        Random r = new Random();
+        IntStream.range(0, SIZE).sequential().forEach(i -> {
+            input[i] = r.nextFloat();
+        });
+
+        //@formatter:off
+        TaskSchedule task = new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t0", TestReductionsFloats::reductionAddFloats2, input, result)
+            .streamOut(result);
+        //@formatter:on
+
+        task.execute();
+
+        for (int i = 1; i < numGroups; i++) {
+            result[0] += result[i];
+        }
+
+        float[] sequential = new float[1];
+        reductionAddFloats2(input, sequential);
 
         // Check result
         assertEquals(sequential[0], result[0], 0.01f);

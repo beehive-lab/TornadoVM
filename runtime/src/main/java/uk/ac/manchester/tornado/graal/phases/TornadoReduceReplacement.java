@@ -142,24 +142,27 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         return new ReductionNodes(value, accumulator, inputArray);
     }
 
+    /**
+     * Final Node Replacement
+     * 
+     */
     private void performNodeReplacement(StructuredGraph graph, StoreIndexedNode store, Node pred, ReductionNodes reductionNode) {
-        // Final Replacement
+
         ValueNode value = reductionNode.value;
         ValueNode accumulator = reductionNode.accumulator;
         ValueNode inputArray = reductionNode.inputArray;
         final StoreAtomicIndexedNode atomicStore = graph.addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), value, accumulator, inputArray));
 
-        // XXX : This part is not generic, quick test
-        ValueNode mult = null;
+        ValueNode arithmeticNode = null;
         if (value instanceof OCLReduceAddNode) {
             OCLReduceAddNode reduce = (OCLReduceAddNode) value;
-            if (reduce.getX() instanceof MulNode) {
-                mult = reduce.getX();
-            } else if (reduce.getY() instanceof MulNode) {
-                mult = reduce.getY();
+            if (reduce.getX() instanceof BinaryArithmeticNode) {
+                arithmeticNode = reduce.getX();
+            } else if (reduce.getY() instanceof BinaryArithmeticNode) {
+                arithmeticNode = reduce.getY();
             }
         }
-        atomicStore.setOptionalOperation(mult);
+        atomicStore.setOptionalOperation(arithmeticNode);
 
         atomicStore.setNext(store.next());
         pred.replaceFirstSuccessor(store, atomicStore);
