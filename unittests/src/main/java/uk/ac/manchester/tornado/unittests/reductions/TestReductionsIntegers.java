@@ -49,8 +49,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
     public static final int SIZE = 4096;
 
     /**
-     * First approach: use annotations in the user code to identify the
-     * reduction variables. This is a similar approach to OpenMP and OpenACC.
+     * First approach: use annotations in the user code to identify the reduction
+     * variables. This is a similar approach to OpenMP and OpenACC.
      * 
      * @param input
      * @param result
@@ -415,6 +415,92 @@ public class TestReductionsIntegers extends TornadoTestBase {
         testThreadSchuler(a, b, sequential);
 
         assertEquals(sequential[0], result[0], 0.001f);
+    }
+
+    public static void reductionAddInts2(int[] input, @Reduce int[] result) {
+        int error = 2;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] += (error + input[i]);
+        }
+    }
+
+    public static void reductionAddInts3(int[] inputA, int[] inputB, @Reduce int[] result) {
+        for (@Parallel int i = 0; i < inputA.length; i++) {
+            result[0] += (inputA[i] + inputB[i]);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @Test
+    public void testSumInts2() {
+        int[] input = new int[SMALL_SIZE];
+
+        int numGroups = 1;
+        if (SMALL_SIZE > 256) {
+            numGroups = SMALL_SIZE / 256;
+        }
+        int[] result = new int[numGroups];
+
+        Random r = new Random();
+        IntStream.range(0, SMALL_SIZE).sequential().forEach(i -> {
+            input[i] = 2;
+        });
+
+        //@formatter:off
+        TaskSchedule task = new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t0", TestReductionsIntegers::reductionAddInts2, input, result)
+            .streamOut(result);
+        //@formatter:on
+
+        task.execute();
+
+        for (int i = 1; i < numGroups; i++) {
+            result[0] += result[i];
+        }
+
+        int[] sequential = new int[1];
+        reductionAddInts2(input, sequential);
+
+        // Check result
+        assertEquals(sequential[0], result[0]);
+    }
+
+    @Test
+    public void testSumInts3() {
+        int[] inputA = new int[SIZE];
+        int[] inputB = new int[SIZE];
+
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+        int[] result = new int[numGroups];
+
+        Random r = new Random();
+        IntStream.range(0, SIZE).sequential().forEach(i -> {
+            inputA[i] = r.nextInt();
+            inputB[i] = r.nextInt();
+        });
+
+        //@formatter:off
+        TaskSchedule task = new TaskSchedule("s0")
+            .streamIn(inputA, inputB)
+            .task("t0", TestReductionsIntegers::reductionAddInts3, inputA, inputB, result)
+            .streamOut(result);
+        //@formatter:on
+
+        task.execute();
+
+        for (int i = 1; i < numGroups; i++) {
+            result[0] += result[i];
+        }
+
+        int[] sequential = new int[1];
+        reductionAddInts3(inputA, inputB, sequential);
+
+        // Check result
+        assertEquals(sequential[0], result[0]);
     }
 
 }

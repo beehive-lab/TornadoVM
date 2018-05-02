@@ -155,6 +155,8 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
         ValueNode arithmeticNode = null;
         if (value instanceof OCLReduceAddNode) {
+            // XXX: complete here with more cases as soon as we discover,
+            // It could also be a type conversion (e.g. FloatConvertNode)
             OCLReduceAddNode reduce = (OCLReduceAddNode) value;
             if (reduce.getX() instanceof BinaryArithmeticNode) {
                 arithmeticNode = reduce.getX();
