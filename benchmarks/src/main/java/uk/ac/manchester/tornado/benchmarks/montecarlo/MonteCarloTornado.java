@@ -83,7 +83,6 @@ public class MonteCarloTornado extends BenchmarkDriver {
         graph.clearProfiles();
 
         for (int i = 0; i < size; i++) {
-            System.out.printf(output[i] + "   " + result[i] + "\n");
             if (abs(output[i] - result[i]) > 0.01) {
                 val = false;
             }

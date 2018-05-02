@@ -76,6 +76,20 @@ __ITERATIONS__ = " 101 "
 __TORNADO__ = "tornado "
 __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
 __SKIP_PARALLEL = " -Dtornado.enable=False "
+__VALIDATE__ = " -Dtornado.benchmarks.validate=True "
+__VERBOSE__ = " -Dtornado.unittests.verbose=True "
+
+
+def composeAllOption(args):
+	options = __JVM_FLAGS__
+
+	if args.ss:
+		options = options + __SKIP_SERIAL__
+	if args.sp:
+		options = options + __SKIP_PARALLEL
+	if args.vl:
+		options = options + __VALIDATE__
+	return options
 
 
 def printBenchmakrks():
@@ -86,61 +100,42 @@ def printBenchmakrks():
 		print wrapper.fill(b)
 
 
-def runForAllSizes():
+def runForAllSizes(args):
+	options = composeAllOption(args)
 	for s in __PROBLEM_SIZES__:
 		for b in __BENCHMARKS__:
-			command = __TORNADO__ + __RUNNER__ + b + __ITERATIONS__ + s
+			command = __TORNADO__ + options + __RUNNER__ + b + __ITERATIONS__ + s
 			os.system(command)
 
 
-def runAllDevices():
+def runAllDevices(args):
+	options = composeAllOption(args)
 	index = 0
 	for d in __DEVICES__:
 		print "Currently executing on device: device=0:", index
 		for b in __BENCHMARKS__:
-			command = __TORNADO__ + d + __RUNNER__ + b
+			command = __TORNADO__ + options + d + __RUNNER__ + b
 			os.system(command)
 			index += 1
 
 
-def runBenchmarks():
+def runBenchmarks(args):
+	options = composeAllOption(args)
+
 	for b in __BENCHMARKS__:
-		command = __TORNADO__ + __JVM_FLAGS__ + __RUNNER__ + b
+		command = __TORNADO__ + options + __RUNNER__ + b
 		os.system(command)
 
 
-def runBenchmarksFullCoverage():
+def runBenchmarksFullCoverage(args):
+	options = composeAllOption(args)
 	for key in dict.keys():
 		for size in dict[key][0]:
 			if key is 'sgemm':
-				command = __TORNADO__ + __JVM_FLAGS__ + " " + __RUNNER__ + key + " " + str(
+				command = __TORNADO__ + options + " " + __RUNNER__ + key + " " + str(
 					dict[key][1][0]) + " " + str(size) + " " + str(size)
 			else:
-				command = __TORNADO__ + __JVM_FLAGS__ + " " + __RUNNER__ + key + " " + str(
-					dict[key][1][0]) + " " + str(size)
-			os.system(command)
-
-
-def runBenchmarksFullCoverageSkipParallel():
-	for key in dict.keys():
-		for size in dict[key][0]:
-			if key is 'sgemm':
-				command = __TORNADO__ + __JVM_FLAGS__ + __SKIP_PARALLEL + " " + __RUNNER__ + key + " " + str(
-					dict[key][1][0]) + " " + str(size) + " " + str(size)
-			else:
-				command = __TORNADO__ + __JVM_FLAGS__ + __SKIP_PARALLEL + " " + __RUNNER__ + key + " " + str(
-					dict[key][1][0]) + " " + str(size)
-			os.system(command)
-
-
-def runBenchmarksFullCoverageSkipJava():
-	for key in dict.keys():
-		for size in dict[key][0]:
-			if key is 'sgemm':
-				command = __TORNADO__ + __JVM_FLAGS__ + __SKIP_SERIAL__ + " " + __RUNNER__ + key + " " + str(
-					dict[key][1][0]) + " " + str(size) + " " + str(size)
-			else:
-				command = __TORNADO__ + __JVM_FLAGS__ + __SKIP_SERIAL__ + " " + __RUNNER__ + key + " " + str(
+				command = __TORNADO__ + options + " " + __RUNNER__ + key + " " + str(
 					dict[key][1][0]) + " " + str(size)
 			os.system(command)
 
@@ -154,9 +149,11 @@ def parseArguments():
 						help="Print list of benchmarks")
 	parser.add_argument('--metrics', "-M", action="store_true", dest="m", default=False,
 						help="Run for all sizes in all devices")
-	parser.add_argument('--skipSeq', "-ss", action="store_true", dest="ss", default=False,
+	parser.add_argument('--skipSeq', "-SS", action="store_true", dest="ss", default=False,
 						help="Skip java version")
-	parser.add_argument('--skipPar', "-sp", action="store_true", dest="sp", default=False,
+	parser.add_argument('--validate', "-VL", action="store_true", dest="vl", default=False,
+						help="Enable result validation")
+	parser.add_argument('--skipPar', "-SP", action="store_true", dest="sp", default=False,
 						help="Skip Tornado version")
 	args = parser.parse_args()
 	return args
@@ -166,19 +163,15 @@ def main():
 	args = parseArguments()
 
 	if args.device:
-		runAllDevices()
+		runAllDevices(args)
 	elif args.size:
-		runForAllSizes()
+		runForAllSizes(args)
 	elif args.bl:
 		printBenchmakrks()
 	elif args.m:
-		runBenchmarksFullCoverage()
-	elif args.ss:
-		runBenchmarksFullCoverageSkipJava()
-	elif args.sp:
-		runBenchmarksFullCoverageSkipParallel()
+		runBenchmarksFullCoverage(args)
 	else:
-		runBenchmarks()
+		runBenchmarks(args)
 
 
 if __name__ == '__main__':
