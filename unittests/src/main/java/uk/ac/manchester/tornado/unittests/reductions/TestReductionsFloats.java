@@ -85,7 +85,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         // System.out.println(Arrays.toString(result));
 
         // Check result
-        assertEquals(sequential[0], result[0], 0.01f);
+        assertEquals(sequential[0], result[0], 0.1f);
     }
 
     public static void reductionAddFloats2(float[] input, @Reduce float[] result) {
@@ -170,7 +170,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         reductionAddFloats2(input, sequential);
 
         // Check result
-        assertEquals(sequential[0], result[0], 0.01f);
+        assertEquals(sequential[0], result[0], 0.1f);
     }
 
     @Test
