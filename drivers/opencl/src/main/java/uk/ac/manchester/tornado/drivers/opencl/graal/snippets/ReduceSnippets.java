@@ -247,6 +247,51 @@ public class ReduceSnippets implements Snippets {
     }
 
     @Snippet
+    public static void partialReduceDoubleAddGlobal(double[] inputArray, double[] outputArray, int gidx) {
+
+        int localIdx = OpenCLIntrinsics.get_local_id(0);
+        int localGroupSize = OpenCLIntrinsics.get_local_size(0);
+        int groupID = OpenCLIntrinsics.get_group_id(0);
+
+        int myID = localIdx + (localGroupSize * groupID);
+
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            OpenCLIntrinsics.localBarrier();
+            if (localIdx < stride) {
+                inputArray[myID] += inputArray[myID + stride];
+            }
+        }
+
+        OpenCLIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID] = inputArray[myID];
+        }
+    }
+
+    @Snippet
+    public static void partialReduceDoubleAddGlobal2(double[] inputArray, double[] outputArray, int gidx, double value) {
+
+        int localIdx = OpenCLIntrinsics.get_local_id(0);
+        int localGroupSize = OpenCLIntrinsics.get_local_size(0);
+        int groupID = OpenCLIntrinsics.get_group_id(0);
+
+        int myID = localIdx + (localGroupSize * groupID);
+
+        inputArray[myID] = value;
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            OpenCLIntrinsics.localBarrier();
+            if (localIdx < stride) {
+                inputArray[myID] += inputArray[myID + stride];
+            }
+        }
+
+        OpenCLIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID] = inputArray[myID];
+        }
+    }
+
+    @Snippet
     public static void partialReduceIntMultGlobal(int[] inputArray, int[] outputArray, int gidx) {
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
@@ -315,6 +360,51 @@ public class ReduceSnippets implements Snippets {
 
     @Snippet
     public static void partialReduceFloatMultGlobal2(float[] inputArray, float[] outputArray, int gidx, float value) {
+
+        int localIdx = OpenCLIntrinsics.get_local_id(0);
+        int localGroupSize = OpenCLIntrinsics.get_local_size(0);
+        int groupID = OpenCLIntrinsics.get_group_id(0);
+
+        int myID = localIdx + (localGroupSize * groupID);
+
+        inputArray[myID] = value;
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            OpenCLIntrinsics.localBarrier();
+            if (localIdx < stride) {
+                inputArray[myID] *= inputArray[myID + stride];
+            }
+        }
+
+        OpenCLIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID] = inputArray[myID];
+        }
+    }
+
+    @Snippet
+    public static void partialReduceDoubleMultGlobal(double[] inputArray, double[] outputArray, int gidx) {
+
+        int localIdx = OpenCLIntrinsics.get_local_id(0);
+        int localGroupSize = OpenCLIntrinsics.get_local_size(0);
+        int groupID = OpenCLIntrinsics.get_group_id(0);
+
+        int myID = localIdx + (localGroupSize * groupID);
+
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            OpenCLIntrinsics.localBarrier();
+            if (localIdx < stride) {
+                inputArray[myID] *= inputArray[myID + stride];
+            }
+        }
+
+        OpenCLIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID] = inputArray[myID];
+        }
+    }
+
+    @Snippet
+    public static void partialReduceDoubleMultGlobal2(double[] inputArray, double[] outputArray, int gidx, double value) {
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
@@ -415,12 +505,16 @@ public class ReduceSnippets implements Snippets {
         private final SnippetInfo partialReduceIntSnippetGlobal2 = snippet(ReduceSnippets.class, "partialReduceIntAddGlobal2");
         private final SnippetInfo partialReduceAddFloatSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceFloatAddGlobal");
         private final SnippetInfo partialReduceAddFloatSnippetGlobal2 = snippet(ReduceSnippets.class, "partialReduceFloatAddGlobal2");
+        private final SnippetInfo partialReduceAddDoubleSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceDoubleAddGlobal");
+        private final SnippetInfo partialReduceAddDoubleSnippetGlobal2 = snippet(ReduceSnippets.class, "partialReduceDoubleAddGlobal2");
 
         // Mul
         private final SnippetInfo partialReduceIntMultSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceIntMultGlobal");
         private final SnippetInfo partialReduceIntMultSnippetGlobal2 = snippet(ReduceSnippets.class, "partialReduceIntMultGlobal2");
         private final SnippetInfo partialReducetFloatMultSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceFloatMultGlobal");
         private final SnippetInfo partialReducetFloatMultSnippetGlobal2 = snippet(ReduceSnippets.class, "partialReduceFloatMultGlobal2");
+        private final SnippetInfo partialReducetDoubleMultSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceDoubleMultGlobal");
+        private final SnippetInfo partialReducetDoubleMultSnippetGlobal2 = snippet(ReduceSnippets.class, "partialReduceDoubleMultGlobal2");
 
         // Max
         private final SnippetInfo partialReduceIntMaxSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceIntMaxGlobal");
@@ -466,6 +560,30 @@ public class ReduceSnippets implements Snippets {
             return snippet;
         }
 
+        private SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra) {
+            SnippetInfo snippet = null;
+            if (value instanceof OCLReduceAddNode) {
+                snippet = (extra == null) ? partialReduceAddDoubleSnippetGlobal : partialReduceAddDoubleSnippetGlobal2;
+            } else if (value instanceof OCLReduceMulNode) {
+                snippet = (extra == null) ? partialReducetDoubleMultSnippetGlobal : partialReducetDoubleMultSnippetGlobal2;
+            } else {
+                throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
+            }
+            return snippet;
+        }
+
+        private SnippetInfo getSnippetInfo(JavaKind elementKind, ValueNode value, ValueNode extra) {
+            SnippetInfo snippet = null;
+            if (elementKind == JavaKind.Int) {
+                snippet = inferIntSnippet(value, extra);
+            } else if (elementKind == JavaKind.Float) {
+                snippet = inferFloatSnippet(value, extra);
+            } else if (elementKind == JavaKind.Double) {
+                snippet = inferDoubleSnippet(value, extra);
+            }
+            return snippet;
+        }
+
         public void lower(StoreAtomicIndexedNode storeAtomicIndexed, AddressNode address, OCLWriteAtomicNode memoryWrite, ValueNode globalId, GlobalThreadSizeNode globalSize, LoweringTool tool) {
 
             StructuredGraph graph = storeAtomicIndexed.graph();
@@ -477,31 +595,18 @@ public class ReduceSnippets implements Snippets {
             ValueNode value = storeAtomicIndexed.value();
             ValueNode array = storeAtomicIndexed.array();
             ValueNode accumulator = storeAtomicIndexed.getAccumulator();
+            ValueNode extra = storeAtomicIndexed.getExtraOperation();
 
-            SnippetInfo snippet = null;
-
-            if (elementKind == JavaKind.Int) {
-                snippet = inferIntSnippet(value, storeAtomicIndexed.getExtraOperation());
-            } else if (elementKind == JavaKind.Float) {
-                snippet = inferFloatSnippet(value, storeAtomicIndexed.getExtraOperation());
-            }
+            SnippetInfo snippet = getSnippetInfo(elementKind, value, extra);
 
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", globalId);
-            if (storeAtomicIndexed.getExtraOperation() != null) {
-
-                System.out.println("EXTRA VALUE???/ ");
-                args.add("value", storeAtomicIndexed.getExtraOperation());
+            if (extra != null) {
+                args.add("value", extra);
             }
-
-            System.out.println("Calling lowering: " + snippet);
-
             template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
-
-            System.out.println("End of lowering");
-
         }
     }
 }
