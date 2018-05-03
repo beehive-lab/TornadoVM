@@ -85,7 +85,6 @@ public class ComputeKernels {
     }
 
     public static void computeMontecarlo(float[] output, final int size) {
-        @Atomic float sum = 0.0f;
         for (@Parallel int j = 0; j < size; j++) {
             long seed = j;
             // generate a pseudo random number (you do need it twice)
@@ -228,6 +227,21 @@ public class ComputeKernels {
     public static void vectorMultiply(final float[] a, final float[] b, final float[] c) {
         for (@Parallel int i = 0; i < a.length; i++) {
             c[i] = a[i] * b[i];
+        }
+    }
+
+    public static void computeDft(double[] inreal, double[] inimag, double[] outreal, double[] outimag) {
+        int n = inreal.length;
+        for (@Parallel int k = 0; k < n; k++) { // For each output element
+            double sumreal = 0;
+            double sumimag = 0;
+            for (int t = 0; t < n; t++) { // For each input element
+                double angle = 2 * Math.PI * t * k / n;
+                sumreal += inreal[t] * Math.cos(angle) + inimag[t] * Math.sin(angle);
+                sumimag += -inreal[t] * Math.sin(angle) + inimag[t] * Math.cos(angle);
+            }
+            outreal[k] = sumreal;
+            outimag[k] = sumimag;
         }
     }
 }
