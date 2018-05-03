@@ -31,6 +31,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.Parallel;
@@ -91,7 +92,8 @@ public class TestReductionsFloats extends TornadoTestBase {
     public static void reductionAddFloats2(float[] input, @Reduce float[] result) {
         float error = 2f;
         for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] += (error * input[i]);
+            float v = (error * input[i]);
+            result[0] += v;
         }
     }
 
@@ -255,6 +257,54 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         // Check result
         assertEquals(sequential[0], result[0], 0.1f);
+    }
+
+    public static void reductionAddFloatsConditionally(float[] input, @Reduce float[] result) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            float v = 0.0f;
+            if (input[0] == -1) {
+                v = 1.0f;
+            }
+            result[0] += v;
+        }
+    }
+
+    // This is currently not supported
+    @Ignore
+    @SuppressWarnings("unused")
+    @Test
+    public void testSumFloatsCondition() {
+        float[] input = new float[SIZE2];
+
+        int numGroups = 1;
+        if (SIZE2 > 256) {
+            numGroups = SIZE2 / 256;
+        }
+        float[] result = new float[numGroups];
+
+        Random r = new Random();
+        IntStream.range(0, SIZE2).sequential().forEach(i -> {
+            input[i] = r.nextFloat();
+        });
+
+        //@formatter:off
+        TaskSchedule task = new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t0", TestReductionsFloats::reductionAddFloatsConditionally, input, result)
+            .streamOut(result);
+        //@formatter:on
+
+        task.execute();
+
+        for (int i = 1; i < numGroups; i++) {
+            result[1] += result[i];
+        }
+
+        float[] sequential = new float[1];
+        reductionAddFloatsConditionally(input, sequential);
+
+        // Check result
+        assertEquals(sequential[0], result[0], 0.01f);
     }
 
 }

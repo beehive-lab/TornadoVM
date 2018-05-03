@@ -491,10 +491,17 @@ public class ReduceSnippets implements Snippets {
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", globalId);
             if (storeAtomicIndexed.getExtraOperation() != null) {
+
+                System.out.println("EXTRA VALUE???/ ");
                 args.add("value", storeAtomicIndexed.getExtraOperation());
             }
 
+            System.out.println("Calling lowering: " + snippet);
+
             template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
+
+            System.out.println("End of lowering");
+
         }
     }
 }
