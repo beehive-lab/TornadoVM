@@ -42,11 +42,42 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsIntegers extends TornadoTestBase {
 
-    public static final int SMALL_SIZE = 64;
+    public static final int SMALL_SIZE = 512;
     public static final int BIG_SIZE = 1024;
 
     public static final int SIZE2 = 524288;
     public static final int SIZE = 4096;
+
+    @Test
+    public void testReductionAnnotationCPUSimple() {
+        int[] input = new int[SMALL_SIZE];
+        int[] result = new int[SMALL_SIZE / 8];
+
+        IntStream.range(0, SMALL_SIZE).parallel().forEach(i -> {
+            input[i] = 2;
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t0", TestReductionsIntegers::reductionAnnotation, input, result)
+            .streamOut(result)
+            .execute();
+        //@formatter:on
+
+        int[] sequential = new int[1];
+        reductionAnnotation(input, sequential);
+
+        // Final result
+        for (int i = 1; i < result.length; i++) {
+            result[0] += result[i];
+        }
+
+        System.out.println(Arrays.toString(result));
+
+        // Check result
+        assertEquals(sequential[0], result[0]);
+    }
 
     /**
      * First approach: use annotations in the user code to identify the reduction
