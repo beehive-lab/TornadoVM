@@ -85,6 +85,7 @@ public class MonteCarloTornado extends BenchmarkDriver {
         for (int i = 0; i < size; i++) {
             if (abs(output[i] - result[i]) > 0.01) {
                 val = false;
+                break;
             }
         }
 
