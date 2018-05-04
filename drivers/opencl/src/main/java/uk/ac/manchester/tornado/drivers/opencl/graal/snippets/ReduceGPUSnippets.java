@@ -51,10 +51,10 @@ import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.graal.nodes.StoreAtomicIndexedNode;
 
 /**
- * Graal Snippets for OpenCL reductions.
+ * Graal Snippets for GPU OpenCL reductions.
  * 
  */
-public class ReduceSnippets implements Snippets {
+public class ReduceGPUSnippets implements Snippets {
 
     @Fold
     static LocationIdentity getArrayLocation(JavaKind kind) {
@@ -496,31 +496,31 @@ public class ReduceSnippets implements Snippets {
     public static class Templates extends AbstractTemplates {
 
         @SuppressWarnings("unused")
-        private final SnippetInfo reduceIntSnippet = snippet(ReduceSnippets.class, "reduceIntAdd");
+        private final SnippetInfo reduceIntSnippet = snippet(ReduceGPUSnippets.class, "reduceIntAdd");
         @SuppressWarnings("unused")
-        private final SnippetInfo fullReduceIntSnippetGlobal = snippet(ReduceSnippets.class, "fullReduceIntAddGlobalMemory");
+        private final SnippetInfo fullReduceIntSnippetGlobal = snippet(ReduceGPUSnippets.class, "fullReduceIntAddGlobalMemory");
 
         // Add
-        private final SnippetInfo partialReduceIntSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceIntAddGlobal");
-        private final SnippetInfo partialReduceIntSnippetGlobal2 = snippet(ReduceSnippets.class, "partialReduceIntAddGlobal2");
-        private final SnippetInfo partialReduceAddFloatSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceFloatAddGlobal");
-        private final SnippetInfo partialReduceAddFloatSnippetGlobal2 = snippet(ReduceSnippets.class, "partialReduceFloatAddGlobal2");
-        private final SnippetInfo partialReduceAddDoubleSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceDoubleAddGlobal");
-        private final SnippetInfo partialReduceAddDoubleSnippetGlobal2 = snippet(ReduceSnippets.class, "partialReduceDoubleAddGlobal2");
+        private final SnippetInfo partialReduceIntSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceIntAddGlobal");
+        private final SnippetInfo partialReduceIntSnippetGlobal2 = snippet(ReduceGPUSnippets.class, "partialReduceIntAddGlobal2");
+        private final SnippetInfo partialReduceAddFloatSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceFloatAddGlobal");
+        private final SnippetInfo partialReduceAddFloatSnippetGlobal2 = snippet(ReduceGPUSnippets.class, "partialReduceFloatAddGlobal2");
+        private final SnippetInfo partialReduceAddDoubleSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceDoubleAddGlobal");
+        private final SnippetInfo partialReduceAddDoubleSnippetGlobal2 = snippet(ReduceGPUSnippets.class, "partialReduceDoubleAddGlobal2");
 
         // Mul
-        private final SnippetInfo partialReduceIntMultSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceIntMultGlobal");
-        private final SnippetInfo partialReduceIntMultSnippetGlobal2 = snippet(ReduceSnippets.class, "partialReduceIntMultGlobal2");
-        private final SnippetInfo partialReducetFloatMultSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceFloatMultGlobal");
-        private final SnippetInfo partialReducetFloatMultSnippetGlobal2 = snippet(ReduceSnippets.class, "partialReduceFloatMultGlobal2");
-        private final SnippetInfo partialReducetDoubleMultSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceDoubleMultGlobal");
-        private final SnippetInfo partialReducetDoubleMultSnippetGlobal2 = snippet(ReduceSnippets.class, "partialReduceDoubleMultGlobal2");
+        private final SnippetInfo partialReduceIntMultSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceIntMultGlobal");
+        private final SnippetInfo partialReduceIntMultSnippetGlobal2 = snippet(ReduceGPUSnippets.class, "partialReduceIntMultGlobal2");
+        private final SnippetInfo partialReducetFloatMultSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceFloatMultGlobal");
+        private final SnippetInfo partialReducetFloatMultSnippetGlobal2 = snippet(ReduceGPUSnippets.class, "partialReduceFloatMultGlobal2");
+        private final SnippetInfo partialReducetDoubleMultSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceDoubleMultGlobal");
+        private final SnippetInfo partialReducetDoubleMultSnippetGlobal2 = snippet(ReduceGPUSnippets.class, "partialReduceDoubleMultGlobal2");
 
         // Max
-        private final SnippetInfo partialReduceIntMaxSnippetGlobal = snippet(ReduceSnippets.class, "partialReduceIntMaxGlobal");
+        private final SnippetInfo partialReduceIntMaxSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceIntMaxGlobal");
 
         @SuppressWarnings("unused")
-        private final SnippetInfo reduceIntSnippetLocalMemory = snippet(ReduceSnippets.class, "reduceIntAddLocalMemory");
+        private final SnippetInfo reduceIntSnippetLocalMemory = snippet(ReduceGPUSnippets.class, "reduceIntAddLocalMemory");
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);
@@ -606,6 +606,7 @@ public class ReduceSnippets implements Snippets {
             if (extra != null) {
                 args.add("value", extra);
             }
+
             template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
         }
     }

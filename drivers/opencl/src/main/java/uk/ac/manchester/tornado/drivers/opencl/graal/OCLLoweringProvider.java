@@ -96,7 +96,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.NewLocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceSnippets;
+import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceAddNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceSubNode;
@@ -112,7 +112,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private final TornadoVMConfig vmConfig;
 
     protected NewObjectSnippets.Templates newObjectSnippets;
-    protected ReduceSnippets.Templates reduceSnippets;
+    protected ReduceGPUSnippets.Templates reduceGPUSnippets;
 
     public OCLLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, ConstantReflectionProvider constantReflection, TornadoVMConfig vmConfig, OCLTargetDescription target) {
         super(metaAccess, foreignCalls, target);
@@ -123,7 +123,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     @Override
     public void initialize(OptionValues options, SnippetCounter.Group.Factory factory, Providers providers, SnippetReflectionProvider snippetReflection) {
         super.initialize(options, factory, providers, snippetReflection);
-        this.reduceSnippets = new ReduceSnippets.Templates(options, providers, snippetReflection, target);
+        this.reduceGPUSnippets = new ReduceGPUSnippets.Templates(options, providers, snippetReflection, target);
     }
 
     @Override
@@ -195,6 +195,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
         ValueNode threadID = null;
         Iterator<Node> usages = oclIdNode.usages().iterator();
+
+        boolean cpuScheduler = false;
+
         while (usages.hasNext()) {
             Node n = usages.next();
 
@@ -211,13 +214,18 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                     Node n2 = usages2.next();
                     if (n2 instanceof PhiNode) {
                         threadID = (ValueNode) n2;
+                        cpuScheduler = true;
                         break;
                     }
                 }
             }
         }
 
-        reduceSnippets.lower(storeIndexed, address, memoryWrite, threadID, oclGlobalSize, tool);
+        // Depending on the Scheduler
+        if (cpuScheduler) {
+        } else {
+            reduceGPUSnippets.lower(storeIndexed, address, memoryWrite, threadID, oclGlobalSize, tool);
+        }
     }
 
     private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
