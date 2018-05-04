@@ -52,10 +52,10 @@ import uk.ac.manchester.tornado.graal.nodes.StoreAtomicIndexedNode;
 public class ReduceCPUSnippets implements Snippets {
 
     @Snippet
-    public static void partialReduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads) {
+    public static void partialReduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID) {
         OpenCLIntrinsics.localBarrier();
-        int position = start / numThreads;
-        outputArray[position] += inputArray[gidx];
+        // int position = start / numThreads;
+        outputArray[globalID] += inputArray[gidx];
     }
 
     public static class Templates extends AbstractTemplates {
@@ -87,8 +87,8 @@ public class ReduceCPUSnippets implements Snippets {
             return snippet;
         }
 
-        public void lower(StoreAtomicIndexedNode storeAtomicIndexed, AddressNode address, OCLWriteAtomicNode memoryWrite, ValueNode globalId, GlobalThreadSizeNode globalSize, LoweringTool tool,
-                ValueNode startNode) {
+        public void lower(StoreAtomicIndexedNode storeAtomicIndexed, AddressNode address, OCLWriteAtomicNode memoryWrite, ValueNode threadId, GlobalThreadSizeNode globalSize, ValueNode startNode,
+                ValueNode globalID, LoweringTool tool) {
 
             StructuredGraph graph = storeAtomicIndexed.graph();
 
@@ -106,9 +106,10 @@ public class ReduceCPUSnippets implements Snippets {
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
-            args.add("gidx", globalId);
+            args.add("gidx", threadId);
             args.add("start", startNode);
             args.add("numThreads", 8);
+            args.add("globalID", globalID);
             if (extra != null) {
                 args.add("value", extra);
             }

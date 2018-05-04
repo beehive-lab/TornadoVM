@@ -219,7 +219,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             // CPU SCHEDULER
             if (n instanceof MulNode) {
                 startNode = (ValueNode) n;
-                System.out.println("START NODE!!!!!!!!!!!: " + startNode);
                 Iterator<Node> usages2 = n.usages().iterator();
                 while (usages2.hasNext()) {
                     Node n2 = usages2.next();
@@ -234,8 +233,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
         // Depending on the Scheduler, call the proper snippet
         if (cpuScheduler) {
-            System.out.println("Using the CPU reduce snippet");
-            reduceCPUSnippets.lower(storeIndexed, address, memoryWrite, threadID, oclGlobalSize, tool, startNode);
+            reduceCPUSnippets.lower(storeIndexed, address, memoryWrite, threadID, oclGlobalSize, startNode, oclIdNode, tool);
         } else {
             reduceGPUSnippets.lower(storeIndexed, address, memoryWrite, threadID, oclGlobalSize, tool);
         }
