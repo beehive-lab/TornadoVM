@@ -25,21 +25,20 @@
  */
 package uk.ac.manchester.tornado.benchmarks.sgemm;
 
-import java.util.Random;
+import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.*;
+import static uk.ac.manchester.tornado.collections.math.TornadoMath.*;
+import static uk.ac.manchester.tornado.common.Tornado.*;
 
-import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
-import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import java.util.*;
 
-import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sgemm;
-import static uk.ac.manchester.tornado.collections.math.TornadoMath.findULPDistance;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
+import uk.ac.manchester.tornado.benchmarks.*;
+import uk.ac.manchester.tornado.runtime.api.*;
 
 public class SgemmTornado extends BenchmarkDriver {
 
-    private final int m, n;
+    private final int m,n;
 
-    private float[] a, b, c;
+    private float[] a,b,c;
 
     private TaskSchedule graph;
 
@@ -101,6 +100,7 @@ public class SgemmTornado extends BenchmarkDriver {
     public boolean validate() {
 
         final float[] result = new float[m * n];
+        boolean val = true;
 
         code();
         graph.syncObjects(c);
@@ -108,19 +108,24 @@ public class SgemmTornado extends BenchmarkDriver {
 
         sgemm(m, n, m, a, b, result);
 
-        final float ulp = findULPDistance(c, result);
-        return ulp < MAX_ULP;
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (abs(result[(i * n) + j] - c[(i * n) + j]) > 0.01) {
+                    val = false;
+                    break;
+
+                }
+
+            }
+        }
+        return val;
     }
 
     public void printSummary() {
         if (isValid()) {
-            System.out.printf(
-                    "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("benchmark.device"), getElapsed(),
-                    getElapsedPerIteration());
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
         } else {
-            System.out.printf("id=%s produced invalid result\n",
-                    getProperty("benchmark.device"));
+            System.out.printf("id=%s produced invalid result\n", getProperty("benchmark.device"));
         }
     }
 
