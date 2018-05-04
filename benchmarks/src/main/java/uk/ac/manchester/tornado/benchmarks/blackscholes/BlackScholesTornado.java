@@ -97,15 +97,13 @@ public class BlackScholesTornado extends BenchmarkDriver {
 
         for (int i = 0; i < size; i++) {
             if (abs(putTor[i] - putSeq[i]) > 0.01) {
-                // System.out.printf(abs(putTor[i] - putSeq[i]) + "\n");
                 val = false;
+                break;
             }
             if (abs(callTor[i] - calSeq[i]) > 0.01) {
-                // System.out.printf(abs(callTor[i] - calSeq[i]) + "\n");
                 val = false;
+                break;
             }
-            // System.out.printf(abs(putTor[i] - putSeq[i]) + "\n");
-            // System.out.printf(abs(callTor[i] - calSeq[i]) + "\n");
         }
         System.out.printf("Number validation: " + val + "\n");
         return val;
