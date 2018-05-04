@@ -1,3 +1,4 @@
+[![Build Status](http://130.88.195.127:9080/buildStatus/icon?job=Tornado-pipeline)](http://130.88.195.127:9080/job/Tornado-pipeline/)
 # Installing Tornado #
 
 ### Pre-requisites
