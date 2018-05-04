@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceAddNode;
+import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.graal.nodes.StoreAtomicIndexedNode;
 
 /**
@@ -51,17 +52,65 @@ import uk.ac.manchester.tornado.graal.nodes.StoreAtomicIndexedNode;
  */
 public class ReduceCPUSnippets implements Snippets {
 
+    /**
+     * Reduction array has to be of size = number of local threads (CPU threads).
+     * 
+     * @param inputArray
+     * @param outputArray
+     * @param gidx
+     * @param start
+     * @param numThreads
+     * @param globalID
+     */
     @Snippet
     public static void partialReduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID) {
         OpenCLIntrinsics.localBarrier();
-        // int position = start / numThreads;
         outputArray[globalID] += inputArray[gidx];
+    }
+
+    @Snippet
+    public static void partialReduceIntMulGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID) {
+        OpenCLIntrinsics.localBarrier();
+        outputArray[globalID] *= inputArray[gidx];
+    }
+
+    @Snippet
+    public static void partialReduceFloatAddGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID) {
+        OpenCLIntrinsics.localBarrier();
+        outputArray[globalID] += inputArray[gidx];
+    }
+
+    @Snippet
+    public static void partialReduceFloatMulGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID) {
+        OpenCLIntrinsics.localBarrier();
+        outputArray[globalID] *= inputArray[gidx];
+    }
+
+    @Snippet
+    public static void partialReduceDoubleAddGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID) {
+        OpenCLIntrinsics.localBarrier();
+        outputArray[globalID] += inputArray[gidx];
+    }
+
+    @Snippet
+    public static void partialReduceDoubleMulGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID) {
+        OpenCLIntrinsics.localBarrier();
+        outputArray[globalID] *= inputArray[gidx];
     }
 
     public static class Templates extends AbstractTemplates {
 
-        // Add
-        private final SnippetInfo partialReduceIntSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceIntAddGlobal");
+        // Int
+        private final SnippetInfo partialReduceAddIntSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceIntAddGlobal");
+        private final SnippetInfo partialReduceMulIntSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceIntMulGlobal");
+
+        // Float
+        private final SnippetInfo partialReduceAddFloatSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceFloatAddGlobal");
+        private final SnippetInfo partialReduceMulFloatSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceFloatMulGlobal");
+
+        // Double
+        private final SnippetInfo partialReduceAddDoubleSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceDoubleAddGlobal");
+        private final SnippetInfo partialReduceMulDoubleSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMulGlobal");
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);
@@ -70,7 +119,33 @@ public class ReduceCPUSnippets implements Snippets {
         private SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
-                snippet = partialReduceIntSnippetGlobal;
+                snippet = partialReduceAddIntSnippetGlobal;
+            } else if (value instanceof OCLReduceMulNode) {
+                snippet = partialReduceMulIntSnippetGlobal;
+            } else {
+                throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
+            }
+            return snippet;
+        }
+
+        private SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra) {
+            SnippetInfo snippet = null;
+            if (value instanceof OCLReduceAddNode) {
+                snippet = partialReduceAddFloatSnippetGlobal;
+            } else if (value instanceof OCLReduceMulNode) {
+                snippet = partialReduceMulFloatSnippetGlobal;
+            } else {
+                throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
+            }
+            return snippet;
+        }
+
+        private SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra) {
+            SnippetInfo snippet = null;
+            if (value instanceof OCLReduceAddNode) {
+                snippet = partialReduceAddDoubleSnippetGlobal;
+            } else if (value instanceof OCLReduceMulNode) {
+                snippet = partialReduceMulDoubleSnippetGlobal;
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
@@ -81,6 +156,10 @@ public class ReduceCPUSnippets implements Snippets {
             SnippetInfo snippet = null;
             if (elementKind == JavaKind.Int) {
                 snippet = inferIntSnippet(value, extra);
+            } else if (elementKind == JavaKind.Float) {
+                snippet = inferFloatSnippet(value, extra);
+            } else if (elementKind == JavaKind.Double) {
+                snippet = inferDoubleSnippet(value, extra);
             } else {
                 throw new RuntimeException("Data type not supported");
             }
@@ -92,13 +171,9 @@ public class ReduceCPUSnippets implements Snippets {
 
             StructuredGraph graph = storeAtomicIndexed.graph();
 
-            // In this point, depending on the type and the operation,
-            // we call the corresponding snippet.
             JavaKind elementKind = storeAtomicIndexed.elementKind();
 
             ValueNode value = storeAtomicIndexed.value();
-            ValueNode array = storeAtomicIndexed.array();
-            ValueNode accumulator = storeAtomicIndexed.getAccumulator();
             ValueNode extra = storeAtomicIndexed.getExtraOperation();
 
             SnippetInfo snippet = getSnippetInfo(elementKind, value, extra);
