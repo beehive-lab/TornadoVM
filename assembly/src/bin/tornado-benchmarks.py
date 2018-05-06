@@ -71,8 +71,8 @@ dict = {
 __TORNADO_FLAGS__ = "-Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
 __JVM_FLAGS__ = "-Xms30G -Xmx30G -server"
 __RUNNER__ = " uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
-__DEVICES__ = ["-Ddevice=0:0",
-			   "-Ddevice=0:1",
+__DEVICES__ = ["-Ddevices=0:0",
+			   "-Ddevices=0:1",
 			   ]
 __ITERATIONS__ = " 101 "
 __TORNADO__ = "tornado "
