@@ -118,6 +118,7 @@ public class SgemmTornado extends BenchmarkDriver {
 
             }
         }
+        System.out.printf("Number validation: " + val + "\n");
         return val;
     }
 
