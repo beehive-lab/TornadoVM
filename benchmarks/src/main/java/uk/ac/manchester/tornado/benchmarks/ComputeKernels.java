@@ -244,4 +244,42 @@ public class ComputeKernels {
             outimag[k] = sumimag;
         }
     }
+
+    public static void mandelbrot(int size, short[] output) {
+        final int iterations = 10000;
+        float space = 2.0f / size;
+
+        for (@Parallel int i = 0; i < size; i++) {
+            int indexIDX = i;
+            for (@Parallel int j = 0; j < size; j++) {
+
+                int indexJDX = j;
+
+                float Zr = 0.0f;
+                float Zi = 0.0f;
+                float Cr = (1 * indexJDX * space - 1.5f);
+                float Ci = (1 * indexIDX * space - 1.0f);
+
+                float ZrN = 0;
+                float ZiN = 0;
+                int y = 0;
+
+                for (y = 0; y < iterations; y++) {
+                    float s = ZiN + ZrN;
+                    if (s > 4.0f) {
+                        break;
+                    } else {
+                        Zi = 2.0f * Zr * Zi + Ci;
+                        Zr = 1 * ZrN - ZiN + Cr;
+                        ZiN = Zi * Zi;
+                        ZrN = Zr * Zr;
+
+                    }
+
+                }
+                short r = (short) ((y * 255) / iterations);
+                output[i * size + j] = r;
+            }
+        }
+    }
 }
