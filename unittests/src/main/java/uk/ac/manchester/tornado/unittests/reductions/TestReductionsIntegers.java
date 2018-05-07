@@ -37,6 +37,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.api.Reduce;
+import uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -292,14 +293,29 @@ public class TestReductionsIntegers extends TornadoTestBase {
             c[i] = a[i] + b[i];
         }
 
+        OpenCLIntrinsics.globalBarrier();
+
         // reduction
         result[0] = 0;
-        for (@Parallel int i = 0; i < a.length; i++) {
+        for (@Parallel int i = 0; i < c.length; i++) {
             result[0] += c[i];
         }
     }
 
-    @Ignore
+    public static void map01(int[] a, int[] b, int[] c) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            c[i] = a[i] + b[i];
+        }
+    }
+
+    public static void reduce01(int[] c, @Reduce int[] result) {
+        // reduction
+        result[0] = 0;
+        for (@Parallel int i = 0; i < c.length; i++) {
+            result[0] += c[i];
+        }
+    }
+
     @Test
     public void testMapReduce() {
         int[] a = new int[BIG_SIZE];
@@ -315,17 +331,58 @@ public class TestReductionsIntegers extends TornadoTestBase {
         Random r = new Random();
 
         IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
-            a[i] = 1;
+            a[i] = 10;
+            b[i] = 2;
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(a, b, c)
+            .task("t0", TestReductionsIntegers::map01, a, b, c)
+            .task("t1", TestReductionsIntegers::reduce01, c, result)
+            .streamOut(result)
+            .execute();        
+        //@formatter:on
+
+        for (int i = 1; i < numGroups; i++) {
+            result[0] += result[i];
+        }
+
+        int[] sequential = new int[BIG_SIZE];
+
+        mapReduce01(a, b, c, sequential);
+
+        assertEquals(sequential[0], result[0]);
+    }
+
+    @Test
+    public void testMapReduceSameKernel() {
+        int[] a = new int[BIG_SIZE];
+        int[] b = new int[BIG_SIZE];
+        int[] c = new int[BIG_SIZE];
+
+        int numGroups = 1;
+        if (BIG_SIZE > 256) {
+            numGroups = BIG_SIZE / 256;
+        }
+        int[] result = new int[numGroups];
+
+        Random r = new Random();
+
+        IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
+            a[i] = r.nextInt();
             b[i] = r.nextInt();
         });
 
         //@formatter:off
         new TaskSchedule("s0")
-            .streamIn(a)
+            .streamIn(a, b, c)
             .task("t0", TestReductionsIntegers::mapReduce01, a, b, c, result)
             .streamOut(result)
             .execute();
         //@formatter:on
+
+        System.out.println(Arrays.toString(result));
 
         for (int i = 1; i < numGroups; i++) {
             result[0] += result[i];
@@ -357,7 +414,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Ignore
-    @Test
     public void testMapReduce2() {
         int[] a = new int[BIG_SIZE];
         int[] b = new int[BIG_SIZE];
