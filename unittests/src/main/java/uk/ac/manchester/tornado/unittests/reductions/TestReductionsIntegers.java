@@ -210,40 +210,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
-    public static void reductionSequentialSmall(float[] input, float[] result) {
-        result[0] = 0;
-        for (int i = 0; i < input.length; i++) {
-            result[0] += input[i];
-        }
-    }
-
-    @Test
-    public void testSequentialReduction() {
-        float[] input = new float[SMALL_SIZE];
-        float[] result = new float[1];
-
-        Random r = new Random();
-
-        IntStream.range(0, SMALL_SIZE).parallel().forEach(i -> {
-            input[i] = r.nextFloat();
-        });
-
-        //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(input)
-            .task("t0", TestReductionsIntegers::reductionSequentialSmall, input, result)
-            .streamOut(result)
-            .execute();
-        //@formatter:on
-
-        float[] sequential = new float[1];
-
-        reductionSequentialSmall(input, sequential);
-
-        assertEquals(sequential[0], result[0], 0.001f);
-    }
-
-    public static void reductionSequentialSmall2(int[] input, int[] result) {
+    public static void reductionSequentialSmall(int[] input, int[] result) {
         int acc = 0; // neutral element for the addition
         for (int i = 0; i < input.length; i++) {
             acc += input[i];
@@ -252,7 +219,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Test
-    public void testSequentialReduction2() {
+    public void testSequentialReduction() {
         int[] input = new int[SMALL_SIZE * 2];
         int[] result = new int[1];
 
@@ -265,19 +232,20 @@ public class TestReductionsIntegers extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsIntegers::reductionSequentialSmall2, input, result)
+            .task("t0", TestReductionsIntegers::reductionSequentialSmall, input, result)
             .streamOut(result)
             .execute();
         //@formatter:on
 
         int[] sequential = new int[1];
 
-        reductionSequentialSmall2(input, sequential);
+        reductionSequentialSmall(input, sequential);
 
         assertEquals(sequential[0], result[0], 0.001f);
     }
 
     public static void reduction01(int[] a, @Reduce int[] result) {
+        result[0] = 0;
         for (@Parallel int i = 0; i < a.length; i++) {
             result[0] += a[i];
         }
@@ -286,7 +254,12 @@ public class TestReductionsIntegers extends TornadoTestBase {
     @Test
     public void testReduction01() {
         int[] input = new int[SMALL_SIZE];
-        int[] result = new int[1];
+
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+        int[] result = new int[numGroups];
 
         Random r = new Random();
 
@@ -302,11 +275,14 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        int[] sequential = new int[1];
+        for (int i = 1; i < numGroups; i++) {
+            result[0] += result[i];
+        }
 
+        int[] sequential = new int[1];
         reduction01(input, sequential);
 
-        assertEquals(sequential[0], result[0], 0.001f);
+        assertEquals(sequential[0], result[0]);
     }
 
     public static void mapReduce01(int[] a, int[] b, int[] c, @Reduce int[] result) {
@@ -325,15 +301,20 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
     @Test
     public void testMapReduce() {
-        int[] a = new int[SMALL_SIZE * 2];
-        int[] b = new int[SMALL_SIZE * 2];
-        int[] c = new int[SMALL_SIZE * 2];
-        int[] result = new int[SMALL_SIZE * 2];
+        int[] a = new int[BIG_SIZE];
+        int[] b = new int[BIG_SIZE];
+        int[] c = new int[BIG_SIZE];
+
+        int numGroups = 1;
+        if (BIG_SIZE > 256) {
+            numGroups = BIG_SIZE / 256;
+        }
+        int[] result = new int[numGroups];
 
         Random r = new Random();
 
-        IntStream.range(0, SMALL_SIZE * 2).parallel().forEach(i -> {
-            a[i] = r.nextInt();
+        IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
+            a[i] = 1;
             b[i] = r.nextInt();
         });
 
@@ -345,19 +326,15 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        int numGroups = 1;
-        if (SIZE > 256) {
-            numGroups = SIZE / 256;
-        }
         for (int i = 1; i < numGroups; i++) {
             result[0] += result[i];
         }
 
-        int[] sequential = new int[SMALL_SIZE * 2];
+        int[] sequential = new int[BIG_SIZE];
 
         mapReduce01(a, b, c, sequential);
 
-        assertEquals(sequential[0], result[0], 0.001f);
+        assertEquals(sequential[0], result[0]);
     }
 
     /**
@@ -380,15 +357,20 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
     @Test
     public void testMapReduce2() {
-        int[] a = new int[SMALL_SIZE * 2];
-        int[] b = new int[SMALL_SIZE * 2];
-        int[] result = new int[SMALL_SIZE * 2];
+        int[] a = new int[BIG_SIZE];
+        int[] b = new int[BIG_SIZE];
+
+        int numGroups = 1;
+        if (BIG_SIZE > 256) {
+            numGroups = BIG_SIZE / 256;
+        }
+        int[] result = new int[numGroups];
 
         Random r = new Random();
 
-        IntStream.range(0, SMALL_SIZE * 2).parallel().forEach(i -> {
-            a[i] = r.nextInt();
-            b[i] = r.nextInt();
+        IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
+            a[i] = 1;
+            b[i] = 2;
         });
 
         //@formatter:off
@@ -399,11 +381,14 @@ public class TestReductionsIntegers extends TornadoTestBase {
 	            .execute();
 	        //@formatter:on
 
-        int[] sequential = new int[SMALL_SIZE * 2];
+        for (int i = 1; i < numGroups; i++) {
+            result[0] += result[i];
+        }
 
+        int[] sequential = new int[BIG_SIZE];
         mapReduce2(a, b, sequential);
 
-        assertEquals(sequential[0], result[0], 0.001f);
+        assertEquals(sequential[0], result[0]);
     }
 
     public static void testThreadSchuler(int[] a, int[] b, int[] result) {

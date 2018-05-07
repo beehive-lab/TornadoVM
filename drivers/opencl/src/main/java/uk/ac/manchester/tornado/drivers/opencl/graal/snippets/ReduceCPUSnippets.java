@@ -69,6 +69,12 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
+    public static void partialReduceIntAddGlobal2(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID, int value) {
+        OpenCLIntrinsics.localBarrier();
+        outputArray[globalID] += value;
+    }
+
+    @Snippet
     public static void partialReduceIntMulGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID) {
         OpenCLIntrinsics.localBarrier();
         outputArray[globalID] *= inputArray[gidx];
@@ -78,6 +84,12 @@ public class ReduceCPUSnippets implements Snippets {
     public static void partialReduceFloatAddGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID) {
         OpenCLIntrinsics.localBarrier();
         outputArray[globalID] += inputArray[gidx];
+    }
+
+    @Snippet
+    public static void partialReduceFloatAddGlobal2(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID, int value) {
+        OpenCLIntrinsics.localBarrier();
+        outputArray[globalID] += value;
     }
 
     @Snippet
@@ -102,10 +114,12 @@ public class ReduceCPUSnippets implements Snippets {
 
         // Int
         private final SnippetInfo partialReduceAddIntSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceIntAddGlobal");
+        private final SnippetInfo partialReduceAddIntSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceIntAddGlobal2");
         private final SnippetInfo partialReduceMulIntSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceIntMulGlobal");
 
         // Float
         private final SnippetInfo partialReduceAddFloatSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceFloatAddGlobal");
+        private final SnippetInfo partialReduceAddFloatSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceFloatAddGlobal2");
         private final SnippetInfo partialReduceMulFloatSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceFloatMulGlobal");
 
         // Double
@@ -119,7 +133,7 @@ public class ReduceCPUSnippets implements Snippets {
         private SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
-                snippet = partialReduceAddIntSnippetGlobal;
+                snippet = (extra == null) ? partialReduceAddIntSnippetGlobal : partialReduceAddIntSnippetGlobal2;
             } else if (value instanceof OCLReduceMulNode) {
                 snippet = partialReduceMulIntSnippetGlobal;
             } else {
@@ -131,7 +145,8 @@ public class ReduceCPUSnippets implements Snippets {
         private SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
-                snippet = partialReduceAddFloatSnippetGlobal;
+                System.out.println("Float  Reduction");
+                snippet = (extra == null) ? partialReduceAddFloatSnippetGlobal : partialReduceAddFloatSnippetGlobal2;
             } else if (value instanceof OCLReduceMulNode) {
                 snippet = partialReduceMulFloatSnippetGlobal;
             } else {
@@ -186,6 +201,7 @@ public class ReduceCPUSnippets implements Snippets {
             args.add("numThreads", 8);
             args.add("globalID", globalID);
             if (extra != null) {
+                System.out.println("Calling extra!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 args.add("value", extra);
             }
 
