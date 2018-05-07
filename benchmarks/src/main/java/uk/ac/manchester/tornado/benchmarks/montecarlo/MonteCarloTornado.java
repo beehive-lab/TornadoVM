@@ -76,9 +76,10 @@ public class MonteCarloTornado extends BenchmarkDriver {
         result = new float[size];
 
         ComputeKernels.monteCarlo(result, size);
-
         graph.warmup();
-        graph.execute();
+        for (int i = 0; i < 3; i++) {
+            graph.execute();
+        }
         graph.syncObjects(output);
         graph.clearProfiles();
 
