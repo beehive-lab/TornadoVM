@@ -37,6 +37,8 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.api.Reduce;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
+import uk.ac.manchester.tornado.runtime.utils.TornadoUtils.TornadoDeviceType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsFloats extends TornadoTestBase {
@@ -56,10 +58,8 @@ public class TestReductionsFloats extends TornadoTestBase {
     public void testSumFloats() {
         float[] input = new float[SIZE];
 
-        int numGroups = 1;
-        if (SIZE > 256) {
-            numGroups = SIZE / 256;
-        }
+        int numGroups = TornadoUtils.getSizeReduction(SIZE, TornadoDeviceType.GPU);
+
         float[] result = new float[numGroups];
 
         Random r = new Random();
