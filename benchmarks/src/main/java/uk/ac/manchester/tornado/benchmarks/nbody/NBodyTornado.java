@@ -26,6 +26,9 @@
 
 package uk.ac.manchester.tornado.benchmarks.nbody;
 
+import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.*;
+import static uk.ac.manchester.tornado.collections.math.TornadoMath.*;
+
 import java.util.*;
 
 import uk.ac.manchester.tornado.benchmarks.*;
@@ -84,7 +87,54 @@ public class NBodyTornado extends BenchmarkDriver {
 
     @Override
     public boolean validate() {
-        return true;
+        boolean val = true;
+        float[] posSeqSeq,velSeqSeq;
+        delT = 0.005f;
+        espSqr = 500.0f;
+
+        float[] auxPositionRandom = new float[numBodies * 4];
+        float[] auxVelocityZero = new float[numBodies * 3];
+
+        for (int i = 0; i < auxPositionRandom.length; i++) {
+            auxPositionRandom[i] = (float) Math.random();
+        }
+
+        Arrays.fill(auxVelocityZero, 0.0f);
+
+        posSeq = new float[numBodies * 4];
+        velSeq = new float[numBodies * 4];
+        posSeqSeq = new float[numBodies * 4];
+        velSeqSeq = new float[numBodies * 4];
+
+        for (int i = 0; i < auxPositionRandom.length; i++) {
+            posSeq[i] = auxPositionRandom[i];
+            posSeqSeq[i] = auxPositionRandom[i];
+        }
+        for (int i = 0; i < auxVelocityZero.length; i++) {
+            velSeq[i] = auxVelocityZero[i];
+            velSeqSeq[i] = auxVelocityZero[i];
+        }
+        graph = new TaskSchedule("benchmark");
+        graph.task("t0", ComputeKernels::nBody, numBodies, posSeq, velSeq, delT, espSqr);
+        graph.warmup();
+        graph.execute();
+        graph.syncObjects(posSeq, velSeq);
+        graph.clearProfiles();
+
+        nBody(numBodies, posSeqSeq, velSeqSeq, delT, espSqr);
+
+        for (int i = 0; i < numBodies * 4; i++) {
+            if (abs(posSeqSeq[i] - posSeq[i]) > 0.01) {
+                val = false;
+                break;
+            }
+            if (abs(velSeq[i] - velSeqSeq[i]) > 0.01) {
+                val = false;
+                break;
+            }
+        }
+        System.out.printf("Number validation: " + val + "\n");
+        return val;
     }
 
     @Override
