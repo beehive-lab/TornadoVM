@@ -299,6 +299,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         }
     }
 
+    @Ignore
     @Test
     public void testMapReduce() {
         int[] a = new int[BIG_SIZE];
@@ -355,6 +356,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         }
     }
 
+    @Ignore
     @Test
     public void testMapReduce2() {
         int[] a = new int[BIG_SIZE];
