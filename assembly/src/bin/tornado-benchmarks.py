@@ -64,7 +64,7 @@ dict = {
 	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [131]],
 	"vectormult": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [131]],
 	"bitset": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536], [131]],
-	"dft": [[256, 512, 1024, 2048], [131]],
+	"dft": [[256, 512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [131]],
 }
 
 ## Options
@@ -79,7 +79,7 @@ __TORNADO__ = "tornado "
 __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
 __SKIP_PARALLEL = " -Dtornado.enable=False "
 __VALIDATE__ = " -Dtornado.benchmarks.validate=True "
-__VERBOSE__ = " -Dtornado.unittests.verbose=True "
+__VERBOSE__ = " -Dtornado.verbose=True "
 
 
 def composeAllOption(args):
@@ -91,6 +91,8 @@ def composeAllOption(args):
 		options = options + __SKIP_PARALLEL
 	if args.vl:
 		options = options + __VALIDATE__
+	if args.v:
+		options = options + __VERBOSE__
 	return options
 
 
@@ -157,6 +159,7 @@ def parseArguments():
 						help="Enable result validation")
 	parser.add_argument('--skipPar', "-SP", action="store_true", dest="sp", default=False,
 						help="Skip Tornado version")
+	parser.add_argument('--verbose', "-V", action="store_true", dest="v", default=False, help="Enable verbose")
 	args = parser.parse_args()
 	return args
 
