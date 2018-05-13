@@ -89,9 +89,7 @@ public abstract class BenchmarkDriver {
                 time[toIntExact(i)] = end - start;
             }
             barrier();
-
         }
-
         tearDown();
     }
 
@@ -136,9 +134,7 @@ public abstract class BenchmarkDriver {
         for (int i = startingIndex; i < time.length; i++) {
             temp += (time[i] - mean) * (time[i] - mean);
         }
-
         return (temp / (iterations - startingIndex));
-
     }
 
     public double getStdDev() {
