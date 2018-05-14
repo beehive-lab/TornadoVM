@@ -20,7 +20,7 @@ a number of iterations (e.g. 130). Also, each benchmark can be tested for a vari
 
 ### How to run 
 
-Go to the directory PATH/tornado/assembly/src/bin`
+Go to the directory <tornado path>/tornado/assembly/src/bin`
 
 Then, the run options can be found with the following command:
 
@@ -41,5 +41,7 @@ optional arguments:
   --skipSeq, -SS     Skip java version
   --validate, -VL    Enable result validation
   --skipPar, -SP     Skip Tornado version
+  --verbose, -V      Enable verbose
+
 
 ```

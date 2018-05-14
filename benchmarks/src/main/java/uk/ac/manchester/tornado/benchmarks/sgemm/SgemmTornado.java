@@ -113,9 +113,7 @@ public class SgemmTornado extends BenchmarkDriver {
                 if (abs(result[(i * n) + j] - c[(i * n) + j]) > 0.01) {
                     val = false;
                     break;
-
                 }
-
             }
         }
         System.out.printf("Number validation: " + val + "\n");

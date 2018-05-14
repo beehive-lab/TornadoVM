@@ -71,9 +71,10 @@ dict = {
 __TORNADO_FLAGS__ = "-Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
 __JVM_FLAGS__ = "-Xms30G -Xmx30G -server"
 __RUNNER__ = " uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
-__DEVICES__ = ["-Ddevices=0:0",
-			   "-Ddevices=0:1",
-			   ]
+__DEVICES__ = [
+	"-Ddevices=0:0",
+	"-Ddevices=0:1",
+]
 __ITERATIONS__ = " 101 "
 __TORNADO__ = "tornado "
 __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
@@ -85,13 +86,13 @@ __VERBOSE__ = " -Dtornado.verbose=True "
 def composeAllOption(args):
 	options = __JVM_FLAGS__
 
-	if args.ss:
+	if args.skip_serial:
 		options = options + __SKIP_SERIAL__
-	if args.sp:
+	if args.skip_parallel:
 		options = options + __SKIP_PARALLEL
-	if args.vl:
+	if args.validate:
 		options = options + __VALIDATE__
-	if args.v:
+	if args.verbose:
 		options = options + __VERBOSE__
 	return options
 
@@ -149,17 +150,17 @@ def parseArguments():
 	parser.add_argument('--devices', "-D", action="store_true", dest="device", default=False, help="Run to all devices")
 	parser.add_argument('--sizes', "-S", action="store_true", dest="size", default=False,
 						help="Run for all problem sizes")
-	parser.add_argument('--benchmarks', "-BL", action="store_true", dest="bl", default=False,
+	parser.add_argument('--benchmarks', "-BL", action="store_true", dest="benchmarks", default=False,
 						help="Print list of benchmarks")
-	parser.add_argument('--metrics', "-M", action="store_true", dest="m", default=False,
+	parser.add_argument('--metrics', "-M", action="store_true", dest="metrics", default=False,
 						help="Run for all sizes in all devices")
-	parser.add_argument('--skipSeq', "-SS", action="store_true", dest="ss", default=False,
+	parser.add_argument('--skipSeq', "-SS", action="store_true", dest="skip_serial", default=False,
 						help="Skip java version")
-	parser.add_argument('--validate', "-VL", action="store_true", dest="vl", default=False,
+	parser.add_argument('--validate', "-VL", action="store_true", dest="validate", default=False,
 						help="Enable result validation")
-	parser.add_argument('--skipPar', "-SP", action="store_true", dest="sp", default=False,
+	parser.add_argument('--skipPar', "-SP", action="store_true", dest="skip_parallel", default=False,
 						help="Skip Tornado version")
-	parser.add_argument('--verbose', "-V", action="store_true", dest="v", default=False, help="Enable verbose")
+	parser.add_argument('--verbose', "-V", action="store_true", dest="verbose", default=False, help="Enable verbose")
 	args = parser.parse_args()
 	return args
 
@@ -171,9 +172,9 @@ def main():
 		runAllDevices(args)
 	elif args.size:
 		runForAllSizes(args)
-	elif args.bl:
+	elif args.benchmarks:
 		printBenchmakrks()
-	elif args.m:
+	elif args.metrics:
 		runBenchmarksFullCoverage(args)
 	else:
 		runBenchmarks(args)

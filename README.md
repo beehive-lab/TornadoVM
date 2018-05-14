@@ -148,7 +148,7 @@ $ tornado uk.ac.manchester.tornado.examples.HelloWorld
 Use the following option to identify id for Tornado devices: 
 
 ```bas
-tornado
+tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput
 ```
 Tornado device output corresponds to:
 ```bash

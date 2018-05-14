@@ -176,7 +176,6 @@ public abstract class BenchmarkRunner {
         final String[] ids = values.split(",");
         for (String id : ids) {
             int value = Integer.parseInt(id);
-            value = 2;
             blacklist.add(value);
         }
     }

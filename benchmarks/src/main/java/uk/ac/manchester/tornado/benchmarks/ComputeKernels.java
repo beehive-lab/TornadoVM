@@ -51,6 +51,13 @@ public class ComputeKernels {
 
     static final float SIGMA_UPPER_LIMIT = 0.10f;
 
+    /**
+     * Parallel Implementation of the MonteCarlo computation: this is based on the
+     * Marawacc compiler framework.
+     * 
+     * @author Juan Fumero
+     *
+     */
     public static void monteCarlo(float[] result, int size) {
 
         int total = size;
@@ -101,9 +108,6 @@ public class ComputeKernels {
 
             float dist = (float) Math.sqrt(x * x + y * y);
             if (dist <= 1.0f) {
-                // synchronized(output) {
-                // output[0] += 1.0f;
-                // }
                 output[j] = 1.0f;
             } else {
                 output[j] = 0.0f;
@@ -203,13 +207,10 @@ public class ComputeKernels {
             float phiD1 = phi(d1);
             float phiD2 = phi(d2);
 
-            // call[gid] = phi(d1);
             call[gid] = (S * phiD1) - (KexpMinusRT * phiD2);
-            // call[gid] = KexpMinusRT * phiD2;
             phiD1 = phi(-d1);
             phiD2 = phi(-d2);
 
-            // put[gid] = phi(d2);
             put[gid] = (KexpMinusRT * phiD2) - (S * phiD1);
         }
     }
@@ -245,6 +246,13 @@ public class ComputeKernels {
         }
     }
 
+    /**
+     * Parallel Implementation of the Mandelbrot: this is based on the Marawacc
+     * compiler framework.
+     * 
+     * @author Juan Fumero
+     *
+     */
     public static void mandelbrot(int size, short[] output) {
         final int iterations = 10000;
         float space = 2.0f / size;
@@ -273,7 +281,6 @@ public class ComputeKernels {
                         Zr = 1 * ZrN - ZiN + Cr;
                         ZiN = Zi * Zi;
                         ZrN = Zr * Zr;
-
                     }
 
                 }
