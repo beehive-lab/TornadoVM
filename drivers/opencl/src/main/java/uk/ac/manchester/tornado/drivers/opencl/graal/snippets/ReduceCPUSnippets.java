@@ -201,7 +201,6 @@ public class ReduceCPUSnippets implements Snippets {
             args.add("numThreads", 8);
             args.add("globalID", globalID);
             if (extra != null) {
-                System.out.println("Calling extra!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 args.add("value", extra);
             }
 
