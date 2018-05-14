@@ -28,28 +28,29 @@
 import csv
 import sys
 
+
 def split(infile, outfile):
-    with open(infile, 'r') as f:
-        reader = f.readlines()
-        with open(outfile, 'w') as out:
-            o = csv.writer(out)
-            for row in reader:
-                line = row.split(',')
-                temp = []
-                first = line[0].split('=')[1].strip()
-                lista = first.split('-')
-                for a in lista:
-                    temp.append(a)
-                for el in line[1:]:
-                    asdf = el.split('=')
-                    temp.append(asdf[1].strip())
-                o.writerow(temp)
+	with open(infile, 'r') as f:
+		reader = f.readlines()
+		with open(outfile, 'w') as out:
+			o = csv.writer(out)
+			for row in reader:
+				line = row.split(',')
+				temp = []
+				first = line[0].split('=')[1].strip()
+				lista = first.split('-')
+				for a in lista:
+					temp.append(a)
+				for el in line[1:]:
+					asdf = el.split('=')
+					temp.append(asdf[1].strip())
+				o.writerow(temp)
 
-def main():
+
+def main(outputExtension="out2csv.txt"):
 	filename = sys.argv[1]
-	split(filename, "out.txt")
+	split(filename, outputExtension)
 
 
-if __name__== '__main__':
+if __name__ == '__main__':
 	main()
-
