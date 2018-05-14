@@ -46,7 +46,6 @@ public class BlackScholes {
     public static void main(final String[] args) {
 
         int size = Integer.getInteger("bs.size", 16777216);
-        size = size * 2;
         final int iterations = Integer.getInteger("bs.iterations", 300);
         if (DEBUG) {
             System.out.println("size =" + size);

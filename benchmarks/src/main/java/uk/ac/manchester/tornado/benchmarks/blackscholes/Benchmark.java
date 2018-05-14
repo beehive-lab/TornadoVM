@@ -39,7 +39,7 @@ public class Benchmark extends BenchmarkRunner {
 
         } else {
             iterations = 100;
-            size = 10240;
+            size = 8192;
 
         }
     }
