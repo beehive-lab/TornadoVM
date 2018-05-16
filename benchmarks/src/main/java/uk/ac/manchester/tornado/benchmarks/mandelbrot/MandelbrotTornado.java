@@ -21,7 +21,6 @@ public class MandelbrotTornado extends BenchmarkDriver {
         graph.task("t0", ComputeKernels::mandelbrot, size, output);
         graph.streamOut(output);
         graph.warmup();
-
     }
 
     @Override

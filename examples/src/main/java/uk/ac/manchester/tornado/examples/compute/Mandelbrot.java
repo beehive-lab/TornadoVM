@@ -112,9 +112,7 @@ public class Mandelbrot {
                             Zr = 1 * ZrN - ZiN + Cr;
                             ZiN = Zi * Zi;
                             ZrN = Zr * Zr;
-
                         }
-
                     }
                     short r = (short) ((y * 255) / iterations);
                     output[i * size + j] = r;
@@ -144,7 +142,6 @@ public class Mandelbrot {
 
         @Override
         public void paint(Graphics g) {
-
             if (!USE_TORNADO) {
                 short[] mandelbrotSequential = mandelbrotSequential(SIZE);
                 this.image = writeFile(mandelbrotSequential, SIZE);
@@ -156,7 +153,6 @@ public class Mandelbrot {
                 s0.streamOut(result).execute();
                 this.image = writeFile(result, SIZE);
             }
-
             // draw the image
             g.drawImage(this.image, 0, 0, null);
         }
