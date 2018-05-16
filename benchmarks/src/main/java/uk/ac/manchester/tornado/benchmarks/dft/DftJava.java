@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.benchmarks.*;
 
 public class DftJava extends BenchmarkDriver {
     private int size;
-    private double[] inreal,inimag,outreal,outimag;
+    private double[] inReal,inImag,outReal,outImag;
 
     public DftJava(int iterations, int size) {
         super(iterations);
@@ -38,14 +38,14 @@ public class DftJava extends BenchmarkDriver {
 
     @Override
     public void setUp() {
-        inreal = new double[size];
-        inimag = new double[size];
-        outreal = new double[size];
-        outimag = new double[size];
+        inReal = new double[size];
+        inImag = new double[size];
+        outReal = new double[size];
+        outImag = new double[size];
 
         for (int i = 0; i < size; i++) {
-            inreal[i] = 1 / (double) (i + 2);
-            inimag[i] = 1 / (double) (i + 2);
+            inReal[i] = 1 / (double) (i + 2);
+            inImag[i] = 1 / (double) (i + 2);
         }
     }
 
@@ -56,13 +56,12 @@ public class DftJava extends BenchmarkDriver {
 
     @Override
     public void tearDown() {
-        outimag = null;
-        outreal = null;
+        outImag = null;
+        outReal = null;
     }
 
     @Override
     public void code() {
-        ComputeKernels.computeDft(inreal, inimag, outreal, outimag);
-
+        ComputeKernels.computeDft(inReal, inImag, outReal, outImag);
     }
 }

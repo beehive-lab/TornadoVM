@@ -121,7 +121,7 @@ def runAllDevices(args):
 		for b in __BENCHMARKS__:
 			command = __TORNADO__ + options + d + __RUNNER__ + b
 			os.system(command)
-			index += 1
+		index += 1
 
 
 def runBenchmarks(args):

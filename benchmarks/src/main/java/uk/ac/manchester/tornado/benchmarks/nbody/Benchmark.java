@@ -36,7 +36,8 @@ public class Benchmark extends BenchmarkRunner {
         if (args.length == 2) {
             iterations = Integer.parseInt(args[0]);
             numBodies = Integer.parseInt(args[1]);
-
+        } else if (args.length == 1) {
+            System.out.printf("Two arguments are needed: iterations size");
         } else {
             iterations = 50;
             numBodies = 4096;

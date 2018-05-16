@@ -159,17 +159,22 @@ public class BlackScholes {
         }
     }
 
-    /*
+    /**
      * @brief Calculates the call and put prices by using Black Scholes model
      * 
-     * @param s Array of random values of current option price @param sigma Array of
-     * random values sigma @param k Array of random values strike price
+     * @param s
+     *            Array of random values of current option price @param sigma Array
+     *            of random values sigma @param k Array of random values strike
+     *            price
      * 
-     * @param t Array of random values of expiration time @param r Array of random
-     * values of risk free interest rate @param width Width of call price or put
-     * price array @param call Array of calculated call price values
+     * @param t
+     *            Array of random values of expiration time @param r Array of random
+     *            values of risk free interest rate @param width Width of call price
+     *            or put price array @param call Array of calculated call price
+     *            values
      * 
-     * @param put Array of calculated put price values
+     * @param put
+     *            Array of calculated put price values
      */
     public static void blackscholes(final float[] randArray, final float[] put, final float[] call) {
         for (@Parallel int gid = 0; gid < call.length; gid++) {

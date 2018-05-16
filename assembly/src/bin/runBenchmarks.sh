@@ -45,7 +45,7 @@ BM_ROOT="${RESULTS_ROOT}/${DATE}"
 if [ -z "${DEVICES}" ]; then
 	echo "Please set env variable DEVICES."
 	echo "	e.g. DEVICES=0:0,0:1"
-	DEVICES=0:1
+	exit
 fi
 
 if [ ! -d ${BM_ROOT} ]; then
