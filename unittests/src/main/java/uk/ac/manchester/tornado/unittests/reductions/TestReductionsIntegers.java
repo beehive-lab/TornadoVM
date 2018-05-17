@@ -522,7 +522,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         }
     }
 
-    @SuppressWarnings("unused")
     @Test
     public void testSumInts2() {
         int[] input = new int[SMALL_SIZE];
@@ -531,7 +530,21 @@ public class TestReductionsIntegers extends TornadoTestBase {
         if (SMALL_SIZE > 256) {
             numGroups = SMALL_SIZE / 256;
         }
-        int[] result = new int[numGroups];
+        int[] result = null;
+
+        OCLDeviceType deviceType = getDefaultDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+                result = new int[Runtime.getRuntime().availableProcessors()];
+                break;
+            case CL_DEVICE_TYPE_DEFAULT:
+                break;
+            case CL_DEVICE_TYPE_GPU:
+                result = new int[numGroups];
+                break;
+            default:
+                break;
+        }
 
         Random r = new Random();
         IntStream.range(0, SMALL_SIZE).sequential().forEach(i -> {
@@ -547,7 +560,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         task.execute();
 
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
 
@@ -567,7 +580,21 @@ public class TestReductionsIntegers extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        int[] result = new int[numGroups];
+        int[] result = null;
+
+        OCLDeviceType deviceType = getDefaultDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+                result = new int[Runtime.getRuntime().availableProcessors()];
+                break;
+            case CL_DEVICE_TYPE_DEFAULT:
+                break;
+            case CL_DEVICE_TYPE_GPU:
+                result = new int[numGroups];
+                break;
+            default:
+                break;
+        }
 
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
@@ -584,7 +611,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         task.execute();
 
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
 

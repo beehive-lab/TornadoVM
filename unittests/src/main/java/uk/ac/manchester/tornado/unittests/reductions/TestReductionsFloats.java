@@ -36,6 +36,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.api.Reduce;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils.TornadoDeviceType;
@@ -113,7 +114,21 @@ public class TestReductionsFloats extends TornadoTestBase {
         if (SIZE2 > 256) {
             numGroups = SIZE2 / 256;
         }
-        float[] result = new float[numGroups];
+        float[] result = null;
+
+        OCLDeviceType deviceType = getDefaultDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+                result = new float[Runtime.getRuntime().availableProcessors()];
+                break;
+            case CL_DEVICE_TYPE_DEFAULT:
+                break;
+            case CL_DEVICE_TYPE_GPU:
+                result = new float[numGroups];
+                break;
+            default:
+                break;
+        }
 
         Random r = new Random();
         IntStream.range(0, SIZE2).sequential().forEach(i -> {
@@ -129,7 +144,7 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         task.execute();
 
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
 

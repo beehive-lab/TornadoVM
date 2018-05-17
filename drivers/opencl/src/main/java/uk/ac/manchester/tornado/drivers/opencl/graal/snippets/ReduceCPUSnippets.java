@@ -81,13 +81,19 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
+    public static void partialReduceIntMulGlobal2(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID, int value) {
+        OpenCLIntrinsics.localBarrier();
+        outputArray[globalID] *= value;
+    }
+
+    @Snippet
     public static void partialReduceFloatAddGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID) {
         OpenCLIntrinsics.localBarrier();
         outputArray[globalID] += inputArray[gidx];
     }
 
     @Snippet
-    public static void partialReduceFloatAddGlobal2(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID, int value) {
+    public static void partialReduceFloatAddGlobal2(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID, float value) {
         OpenCLIntrinsics.localBarrier();
         outputArray[globalID] += value;
     }
@@ -99,9 +105,21 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
+    public static void partialReduceFloatMulGlobal2(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID, float value) {
+        OpenCLIntrinsics.localBarrier();
+        outputArray[globalID] *= value;
+    }
+
+    @Snippet
     public static void partialReduceDoubleAddGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID) {
         OpenCLIntrinsics.localBarrier();
         outputArray[globalID] += inputArray[gidx];
+    }
+
+    @Snippet
+    public static void partialReduceDoubleAddGlobal2(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID, double value) {
+        OpenCLIntrinsics.localBarrier();
+        outputArray[globalID] += value;
     }
 
     @Snippet
@@ -110,22 +128,31 @@ public class ReduceCPUSnippets implements Snippets {
         outputArray[globalID] *= inputArray[gidx];
     }
 
+    @Snippet
+    public static void partialReduceDoubleMulGlobal2(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID, double value) {
+        OpenCLIntrinsics.localBarrier();
+        outputArray[globalID] *= value;
+    }
+
     public static class Templates extends AbstractTemplates {
 
         // Int
         private final SnippetInfo partialReduceAddIntSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceIntAddGlobal");
-        @SuppressWarnings("unused")
         private final SnippetInfo partialReduceAddIntSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceIntAddGlobal2");
         private final SnippetInfo partialReduceMulIntSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceIntMulGlobal");
+        private final SnippetInfo partialReduceMulIntSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceIntMulGlobal2");
 
         // Float
         private final SnippetInfo partialReduceAddFloatSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceFloatAddGlobal");
         private final SnippetInfo partialReduceAddFloatSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceFloatAddGlobal2");
         private final SnippetInfo partialReduceMulFloatSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceFloatMulGlobal");
+        private final SnippetInfo partialReduceMulFloatSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceFloatMulGlobal2");
 
         // Double
         private final SnippetInfo partialReduceAddDoubleSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceDoubleAddGlobal");
+        private final SnippetInfo partialReduceAddDoubleSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceDoubleAddGlobal2");
         private final SnippetInfo partialReduceMulDoubleSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMulGlobal");
+        private final SnippetInfo partialReduceMulDoubleSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMulGlobal2");
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);
@@ -134,9 +161,9 @@ public class ReduceCPUSnippets implements Snippets {
         private SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
-                snippet = partialReduceAddIntSnippetGlobal;
+                snippet = (extra == null) ? partialReduceAddIntSnippetGlobal : partialReduceAddIntSnippetGlobal2;
             } else if (value instanceof OCLReduceMulNode) {
-                snippet = partialReduceMulIntSnippetGlobal;
+                snippet = (extra == null) ? partialReduceMulIntSnippetGlobal : partialReduceMulIntSnippetGlobal2;
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
@@ -149,7 +176,7 @@ public class ReduceCPUSnippets implements Snippets {
                 System.out.println("Float  Reduction");
                 snippet = (extra == null) ? partialReduceAddFloatSnippetGlobal : partialReduceAddFloatSnippetGlobal2;
             } else if (value instanceof OCLReduceMulNode) {
-                snippet = partialReduceMulFloatSnippetGlobal;
+                snippet = (extra == null) ? partialReduceMulFloatSnippetGlobal : partialReduceMulFloatSnippetGlobal2;
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
@@ -159,9 +186,9 @@ public class ReduceCPUSnippets implements Snippets {
         private SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
-                snippet = partialReduceAddDoubleSnippetGlobal;
+                snippet = (extra == null) ? partialReduceAddDoubleSnippetGlobal : partialReduceAddDoubleSnippetGlobal2;
             } else if (value instanceof OCLReduceMulNode) {
-                snippet = partialReduceMulDoubleSnippetGlobal;
+                snippet = (extra == null) ? partialReduceMulDoubleSnippetGlobal : partialReduceMulDoubleSnippetGlobal2;
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
