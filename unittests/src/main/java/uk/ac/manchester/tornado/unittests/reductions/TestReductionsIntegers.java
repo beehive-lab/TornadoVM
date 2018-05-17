@@ -355,6 +355,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
+    @Ignore
     @Test
     public void testMapReduceSameKernel() {
         int[] a = new int[BIG_SIZE];
