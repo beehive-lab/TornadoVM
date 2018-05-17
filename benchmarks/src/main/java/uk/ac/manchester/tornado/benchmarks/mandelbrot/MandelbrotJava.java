@@ -24,6 +24,5 @@ public class MandelbrotJava extends BenchmarkDriver {
     @Override
     public void code() {
         ComputeKernels.mandelbrot(size, result);
-
     }
 }
