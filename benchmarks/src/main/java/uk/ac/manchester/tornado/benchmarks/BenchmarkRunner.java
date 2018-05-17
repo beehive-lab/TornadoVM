@@ -25,26 +25,20 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
-
 import static uk.ac.manchester.tornado.common.Tornado.*;
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoRuntime.*;
+
+import java.util.*;
+
+import uk.ac.manchester.tornado.runtime.*;
 
 public abstract class BenchmarkRunner {
 
-    private static final boolean SKIP_SERIAL = Boolean
-            .parseBoolean(System.getProperty(
-                    "tornado.benchmarks.skipserial",
-                    "False"));
+    private static final boolean SKIP_SERIAL = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipserial", "False"));
 
-    private static final boolean SKIP_STREAMS = Boolean
-            .parseBoolean(System.getProperty(
-                    "tornado.benchmarks.skipstreams",
-                    "True"));
+    private static final boolean SKIP_STREAMS = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipstreams", "True"));
+
+    private static final boolean TORNADO_ENABLED = Boolean.parseBoolean(getProperty("tornado.enable", "True"));
 
     protected abstract String getName();
 
@@ -65,41 +59,42 @@ public abstract class BenchmarkRunner {
     public void run() {
         final String id = getIdString();
 
-        System.out.printf("benchmark=%s, iterations=%d, %s\n", id, iterations,
-                getConfigString());
-
         final double refElapsed;
+        final double refElapsedMedian;
+        final double refFirstIteration;
+
         if (!SKIP_SERIAL) {
             final BenchmarkDriver referenceTest = getJavaDriver();
             referenceTest.benchmark();
 
-            System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-reference",
-                    referenceTest.getSummary());
+            System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-reference", referenceTest.getPreciseSummary());
 
-            refElapsed = referenceTest.getElapsed();
+            refElapsed = referenceTest.getMean();
+            refElapsedMedian = referenceTest.getMedian();
+            refFirstIteration = referenceTest.getFirstIteration();
 
             final BenchmarkDriver streamsTest = getStreamsDriver();
             if (streamsTest != null && !SKIP_STREAMS) {
                 streamsTest.benchmark();
-                System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-streams",
-                        streamsTest.getSummary());
+                System.out.printf("bm=%-15s, id=%-20s, %s\n", id, "java-streams", streamsTest.getSummary());
             }
         } else {
             refElapsed = -1;
+            refElapsedMedian = -1;
+            refFirstIteration = -1;
         }
 
-        final boolean tornadoEnabled = Boolean.parseBoolean(getProperty("tornado.enable", "True"));
-        if (tornadoEnabled) {
+        if (TORNADO_ENABLED) {
             final String selectedDevices = getProperty("devices");
             if (selectedDevices == null || selectedDevices.isEmpty()) {
-                benchmarkAll(id, refElapsed);
+                benchmarkAll(id, refElapsed, refElapsedMedian, refFirstIteration);
             } else {
-                benchmarkSelected(id, selectedDevices, refElapsed);
+                benchmarkSelected(id, selectedDevices, refElapsed, refElapsedMedian, refFirstIteration);
             }
         }
     }
 
-    private void benchmarkAll(String id, double refElapsed) {
+    private void benchmarkAll(String id, double refElapsed, double refElapsedMedian, double refFirstIteration) {
         final Set<Integer> blacklistedDrivers = new HashSet<>();
         final Set<Integer> blacklistedDevices = new HashSet<>();
 
@@ -124,16 +119,15 @@ public abstract class BenchmarkRunner {
                 final BenchmarkDriver deviceTest = getTornadoDriver();
 
                 deviceTest.benchmark();
-
-                System.out.printf("bm=%-15s, device=%-5s, %s, speedup=%.4f\n", id,
-                        driverIndex + ":" + deviceIndex,
-                        deviceTest.getSummary(), refElapsed / deviceTest.getElapsed());
+                System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f%%, deviceName=%s\n", id, driverIndex + ":" + deviceIndex,
+                        deviceTest.getPreciseSummary(), refElapsed / deviceTest.getMean(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(),
+                        deviceTest.getCV(), driver.getDevice(deviceIndex));
 
             }
         }
     }
 
-    private void benchmarkSelected(String id, String selectedDevices, double refElapsed) {
+    private void benchmarkSelected(String id, String selectedDevices, double refElapsed, double refElapsedMedian, double refFirstIteration) {
 
         final String[] devices = selectedDevices.split(",");
         for (String device : devices) {
@@ -143,12 +137,12 @@ public abstract class BenchmarkRunner {
 
             setProperty("benchmark.device", driverIndex + ":" + deviceIndex);
             final BenchmarkDriver deviceTest = getTornadoDriver();
-
+            final TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
             deviceTest.benchmark();
 
-            System.out.printf("bm=%-15s, device=%-5s, %s, speedup=%.4f\n", id,
-                    driverIndex + ":" + deviceIndex,
-                    deviceTest.getSummary(), refElapsed / deviceTest.getElapsed());
+            System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f, deviceName=%s\n", id, driverIndex + ":" + deviceIndex,
+                    deviceTest.getPreciseSummary(), refElapsed / deviceTest.getMean(), refElapsedMedian / deviceTest.getMedian(), refFirstIteration / deviceTest.getFirstIteration(),
+                    deviceTest.getCV(), driver.getDevice(deviceIndex));
         }
     }
 
@@ -181,7 +175,7 @@ public abstract class BenchmarkRunner {
 
         final String[] ids = values.split(",");
         for (String id : ids) {
-            final int value = Integer.parseInt(id);
+            int value = Integer.parseInt(id);
             blacklist.add(value);
         }
     }
