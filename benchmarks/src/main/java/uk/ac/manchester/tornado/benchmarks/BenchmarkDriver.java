@@ -25,26 +25,23 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import static uk.ac.manchester.tornado.common.RuntimeUtilities.elapsedTimeInSeconds;
-import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
+import static java.lang.Math.*;
+import static java.util.Arrays.*;
+import static uk.ac.manchester.tornado.common.RuntimeUtilities.*;
 
 public abstract class BenchmarkDriver {
 
-    private static final boolean PRINT_MEM_USAGE = Boolean
-            .parseBoolean(System.getProperty(
-                    "tornado.benchmarks.memusage",
-                    "false"));
+    private static final boolean PRINT_MEM_USAGE = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.memusage", "false"));
 
-    private static final boolean VALIDATE = Boolean
-            .parseBoolean(System.getProperty(
-                    "tornado.benchmarks.validate",
-                    "True"));
+    private static final boolean VALIDATE = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.validate", "False"));
 
-    public static final float MAX_ULP = Float.parseFloat(System.getProperty("tornado.benchmarks.maxulp", "5.0"));
+    public static final float MAX_ULP = Float.parseFloat(System.getProperty("tornado.benchmarks.maxulp", "1000.0"));
 
     protected final long iterations;
     private double elapsed;
     private boolean validResult;
+    private double[] time;
+    private int startingIndex = 30;
 
     public BenchmarkDriver(long iterations) {
         this.iterations = iterations;
@@ -54,12 +51,10 @@ public abstract class BenchmarkDriver {
 
     public void tearDown() {
         final Runtime runtime = Runtime.getRuntime();
-// BUG - this potentially triggers a crash
-//        runtime.gc();
+        // BUG - this potentially triggers a crash
+        // runtime.gc();
         if (PRINT_MEM_USAGE) {
-            System.out.printf("memory: free=%s, total=%s, max=%s\n",
-                    humanReadableByteCount(runtime.freeMemory(), false),
-                    humanReadableByteCount(runtime.totalMemory(), false),
+            System.out.printf("memory: free=%s, total=%s, max=%s\n", humanReadableByteCount(runtime.freeMemory(), false), humanReadableByteCount(runtime.totalMemory(), false),
                     humanReadableByteCount(runtime.maxMemory(), false));
         }
     }
@@ -78,22 +73,77 @@ public abstract class BenchmarkDriver {
 
         validResult = (VALIDATE) ? validate() : true;
 
+        int size = toIntExact(iterations);
+
+        time = new double[size];
+
         if (validResult) {
 
-            final long start = System.nanoTime();
+            System.gc();
+
             for (long i = 0; i < iterations; i++) {
+                System.gc();
+                final long start = System.nanoTime();
                 code();
+                final long end = System.nanoTime();
+                time[toIntExact(i)] = end - start;
             }
-
             barrier();
-            final long end = System.nanoTime();
-
-            elapsed = elapsedTimeInSeconds(start, end);
-
         }
-
         tearDown();
+    }
 
+    public double getBestExecution() {
+        double minValue = time[0];
+        for (int i = 1; i < time.length; i++) {
+            if (time[i] < minValue) {
+                minValue = time[i];
+            }
+        }
+        return minValue;
+    }
+
+    public double getFirstIteration() {
+        return time[0];
+    }
+
+    public double getMedian() {
+        double[] temp = time.clone();
+        sort(temp);
+        if (temp.length % 2 == 0) {
+            return ((temp[temp.length / 2] + temp[temp.length / 2 - 1]) / 2);
+        } else {
+            return temp[temp.length / 2];
+        }
+    }
+
+    public double getMean() {
+
+        double sum = 0.0;
+
+        for (int i = startingIndex; i < time.length; i++) {
+            sum += time[i];
+        }
+        return sum / (iterations - startingIndex);
+
+    }
+
+    public double getVariance() {
+        double mean = getMean();
+        double temp = 0;
+        for (int i = startingIndex; i < time.length; i++) {
+            temp += (time[i] - mean) * (time[i] - mean);
+        }
+        return (temp / (iterations - startingIndex));
+    }
+
+    public double getStdDev() {
+        return Math.sqrt(getVariance());
+
+    }
+
+    public double getCV() {
+        return (getStdDev() / getMean()) * 100;
     }
 
     public double getElapsed() {
@@ -108,9 +158,12 @@ public abstract class BenchmarkDriver {
         return validResult;
     }
 
+    public String getPreciseSummary() {
+        return String.format("average=%6e, median=%6e, firstIteration=%6e, best=%6e", getMean(), getMedian(), getFirstIteration(), getBestExecution());
+    }
+
     public String getSummary() {
-        return String.format("elapsed=%6e, per iteration=%6e", getElapsed(),
-                getElapsedPerIteration());
+        return String.format("elapsed=%6e, per iteration=%6e", getElapsed(), getElapsedPerIteration());
     }
 
 }
