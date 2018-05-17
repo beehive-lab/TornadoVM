@@ -130,7 +130,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     public static void multReductionAnnotation(int[] input, @Reduce int[] result, int neutral) {
-        result[0] = neutral;
+        for (@Parallel int i = 0; i < result.length; i++) {
+            result[i] = neutral;
+        }
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] *= input[i];
         }
@@ -139,7 +141,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
     @Test
     public void testMultiplicationReduction() {
         int[] input = new int[64];
-        int[] result = new int[16];
+
+        int num = Runtime.getRuntime().availableProcessors();
+        int[] result = new int[num];
 
         Arrays.fill(input, 1);
         input[10] = new Random().nextInt() * 10;
@@ -153,16 +157,12 @@ public class TestReductionsIntegers extends TornadoTestBase {
         //@formatter:on
 
         // Final result
-        int numGroups = 1;
-
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] *= result[i];
         }
 
         int[] sequential = new int[1];
         multReductionAnnotation(input, sequential, 1);
-
-        System.out.println(Arrays.toString(result));
 
         // Check result
         assertEquals(sequential[0], result[0]);

@@ -114,6 +114,7 @@ public class ReduceCPUSnippets implements Snippets {
 
         // Int
         private final SnippetInfo partialReduceAddIntSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceIntAddGlobal");
+        @SuppressWarnings("unused")
         private final SnippetInfo partialReduceAddIntSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceIntAddGlobal2");
         private final SnippetInfo partialReduceMulIntSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceIntMulGlobal");
 
@@ -133,7 +134,7 @@ public class ReduceCPUSnippets implements Snippets {
         private SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
-                snippet = (extra == null) ? partialReduceAddIntSnippetGlobal : partialReduceAddIntSnippetGlobal2;
+                snippet = partialReduceAddIntSnippetGlobal;
             } else if (value instanceof OCLReduceMulNode) {
                 snippet = partialReduceMulIntSnippetGlobal;
             } else {
@@ -198,7 +199,8 @@ public class ReduceCPUSnippets implements Snippets {
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", threadId);
             args.add("start", startNode);
-            args.add("numThreads", 8);
+            int numThreads = Runtime.getRuntime().availableProcessors();
+            args.add("numThreads", numThreads);
             args.add("globalID", globalID);
             if (extra != null) {
                 args.add("value", extra);
