@@ -37,7 +37,12 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.api.Reduce;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.runtime.TornadoDriver;
+import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -175,7 +180,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         }
     }
 
-    @Test
     @Ignore
     public void testMaxReduction() {
         int[] input = new int[SIZE];
@@ -326,7 +330,21 @@ public class TestReductionsIntegers extends TornadoTestBase {
         if (BIG_SIZE > 256) {
             numGroups = BIG_SIZE / 256;
         }
-        int[] result = new int[numGroups];
+        int[] result = null;
+
+        OCLDeviceType deviceType = getDefaultDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+                result = new int[Runtime.getRuntime().availableProcessors()];
+                break;
+            case CL_DEVICE_TYPE_DEFAULT:
+                break;
+            case CL_DEVICE_TYPE_GPU:
+                result = new int[numGroups];
+                break;
+            default:
+                break;
+        }
 
         Random r = new Random();
 
@@ -344,7 +362,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .execute();        
         //@formatter:on
 
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
 
@@ -356,7 +374,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     @Ignore
-    @Test
     public void testMapReduceSameKernel() {
         int[] a = new int[BIG_SIZE];
         int[] b = new int[BIG_SIZE];
