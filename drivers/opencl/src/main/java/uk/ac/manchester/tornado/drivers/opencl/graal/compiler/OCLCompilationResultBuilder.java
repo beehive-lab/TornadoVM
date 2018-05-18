@@ -68,7 +68,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
-    private static final boolean USE_EXPERIMENTAL_TRAVERSE = true;
+    // private static final boolean USE_EXPERIMENTAL_TRAVERSE = true;
     protected LIR lir;
     protected int currentBlockIndex;
     protected final Set<ResolvedJavaMethod> nonInlinedMethods;
@@ -308,13 +308,10 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     private static void traverseControlFlowGraph(ControlFlowGraph cfg, OCLBlockVisitor visitor) {
-        if (USE_EXPERIMENTAL_TRAVERSE) {
-            traverseControlFlowGraph(cfg.getStartBlock(), visitor, new HashSet<>());
-        } else {
-            traverseCurrentCfg(cfg.getStartBlock(), visitor);
-        }
+        traverseControlFlowGraph(cfg.getStartBlock(), visitor, new HashSet<>());
     }
 
+    @SuppressWarnings("unused")
     private static void traverseCurrentCfg(Block b, OCLBlockVisitor visitor) {
         visitor.enter(b);
         Block firstDominated = b.getFirstDominated();
