@@ -29,11 +29,11 @@ import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 
-public class OCLCpuScheduler extends OCLKernelScheduler {
+public class OCLCPUScheduler extends OCLKernelScheduler {
 
     private final double CPU_COMPUTE_UNIT_COEFF = Double.parseDouble(getProperty("tornado.opencl.cpu.coeff", "1.0"));
 
-    public OCLCpuScheduler(final OCLDeviceContext context) {
+    public OCLCPUScheduler(final OCLDeviceContext context) {
         super(context);
     }
 
@@ -54,13 +54,7 @@ public class OCLCpuScheduler extends OCLKernelScheduler {
     @Override
     public void calculateLocalWork(final TaskMetaData meta) {
         final long[] localWork = meta.getLocalWork();
-
         meta.setLocalWorkToNull();
-
-        // Why this to 1?
-        // for (int i = 0; i < localWork.length; i++) {
-        // localWork[i] = 1;
-        // }
     }
 
 }

@@ -79,7 +79,6 @@ public class OCLHighTier extends TornadoHighTier {
         }
 
         appendPhase(new TornadoTaskSpecialisation(canonicalizer));
-        // appendPhase(new TornadoVectorResolver());
         appendPhase(canonicalizer);
         appendPhase(new DeadCodeEliminationPhase(Optional));
 
@@ -97,9 +96,6 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(new TornadoShapeAnalysis());
         appendPhase(canonicalizer);
         appendPhase(new TornadoParallelScheduler());
-
-        // possibly not needed - one schedule phase is required but not sure on
-        // its placement
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
 
         LoopPolicies loopPolicies = new DefaultLoopPolicies();
@@ -108,18 +104,12 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(canonicalizer);
         appendPhase(new DeadCodeEliminationPhase(Optional));
 
-        // possibly not needed - one schedule phase is required but not sure on
-        // its placement
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER));
 
         // After the first Lowering, Tornado replaces reductions with snippets
         // that contains method calls to barriers.
         appendPhase(new TornadoOpenCLIntrinsicsReplacements());
-
-        // appendPhase(new LoweringPhase(canonicalizer,
-        // LoweringTool.StandardLoweringStage.HIGH_TIER));
-
         appendPhase(new ExceptionSuppression());
     }
 }

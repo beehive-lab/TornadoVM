@@ -197,7 +197,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         lookupCode.execute(bb, meta);
 
-        // bb.dump();
         final long address = bb.getLong(0);
         Tornado.info("Heap address @ 0x%x on %s", address, deviceContext.getDevice().getName());
         return address;
@@ -206,8 +205,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public void init() {
 
         /*
-         * Allocate the smallest of the requested heap size or the max global
-         * memory size.
+         * Allocate the smallest of the requested heap size or the max global memory
+         * size.
          */
         final long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getMaxAllocationSize());
         if (memorySize < DEFAULT_HEAP_ALLOCATION) {
@@ -272,10 +271,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
                 shouldNotReachHere();
                 // return;
             }
-            // guarantee(oclKind != OCLKind.ILLEGAL,"invalid type for
-            // %s",var.getKind().name());
-            // final String type = oclKind.toString();
-            // //toOpenCLType(var.getKind(), var.getPlatformKind());
 
             if (!kindToVariable.containsKey(oclKind)) {
                 kindToVariable.put(oclKind, new HashSet<>());
@@ -329,12 +324,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         if (crb.isKernel()) {
             /*
-             * BUG There is a bug on some OpenCL devices which requires us to
-             * insert an extra OpenCL buffer into the kernel arguments. This has
-             * the effect of shifting the devices address mappings, which allows
-             * us to avoid the heap starting at address 0x0. (I assume that this
-             * is a interesting case that leads to a few issues.) Iris Pro is
-             * the only culprit at the moment.
+             * BUG There is a bug on some OpenCL devices which requires us to insert an
+             * extra OpenCL buffer into the kernel arguments. This has the effect of
+             * shifting the devices address mappings, which allows us to avoid the heap
+             * starting at address 0x0. (I assume that this is a interesting case that leads
+             * to a few issues.) Iris Pro is the only culprit at the moment.
              */
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
 
@@ -383,33 +377,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             final Local[] locals = method.getLocalVariableTable().getLocalsAt(0);
             final Value[] params = new Value[incomingArguments.getArgumentCount()];
 
-            // for (int i = 0; i < locals.length; i++) {
-            // Local local = locals[i];
-            // System.out.printf("local: slot=%d, name=%s,
-            // type=%s\n",local.getSlot(),local.getName(),local.getType().resolve(method.getDeclaringClass()));
-            // }
             if (params.length > 0) {
                 asm.emit(", ");
             }
 
             for (int i = 0; i < params.length; i++) {
                 final AllocatableValue param = incomingArguments.getArgument(i);
-
-                // OCLKind oclKind = OCLKind.ILLEGAL;
-                // if (param.getPlatformKind().isObject()) {
-                //
-                // oclKind =
-                // OCLKind.resolveToVectorKind(locals[i].getType().resolve(method.getDeclaringClass()));
-                // if (oclKind == OCLKind.ILLEGAL) {
-                // oclKind = target.getOCLKind(param.getKind());
-                // }
-                //
-                // asm.emit("%s %s", oclKind.toString(),
-                // locals[i].getName());
-                // } else {
-                // oclKind = target.getOCLKind(param.getKind());
-                //
-                // }
                 OCLKind oclKind = (OCLKind) param.getPlatformKind();
                 if (locals[i].getType().getJavaKind().isObject()) {
                     OCLKind tmpKind = OCLKind.resolveToVectorKind(locals[i].getType().resolve(method.getDeclaringClass()));
@@ -442,9 +415,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     public OCLCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, OCLCompilationResult compilationResult, CompilationResultBuilderFactory factory,
             boolean isKernel) {
-        // final OCLLIRGenerationResult gen = (OCLLIRGenerationResult)
-        // lirGenRes;
-        // LIR lir = gen.getLIR();
 
         OCLAssembler asm = createAssembler(frameMap);
         OCLFrameContext frameContext = new OCLFrameContext();
@@ -481,42 +451,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new OCLNodeLIRBuilder(graph, lirGen, new OCLNodeMatchRules(lirGen));
     }
 
-    // public OCLInstalledCode compile(final Method method, final Object[]
-    // parameters,
-    // final Access[] access, final Meta meta) {
-    // info("invoke: %s", method.getName());
-    // info("args: %s", RuntimeUtilities.formatArray(parameters));
-    // info("access: %s", RuntimeUtilities.formatArray(access));
-    // info("meta: ");
-    // for (Object provider : meta.providers()) {
-    // Tornado.info("\t%s", provider.toString().trim());
-    // }
-    //
-    // final ResolvedJavaMethod resolvedMethod =
-    // getProviders().getMetaAccess().lookupJavaMethod(
-    // method);
-    // final OCLInstalledCode methodCode = compileCodeForDevice(resolvedMethod,
-    // parameters, meta, (OCLProviders) getProviders(), this);
-    //
-    // if (SHOW_OPENCL) {
-    // String filename = getFile(method.getName() + "-" + meta.hashCode());
-    // Tornado.info("Generated code for device %s - %s\n",
-    // deviceContext.getDevice().getName(), filename);
-    //
-    // try (PrintWriter fileOut = new PrintWriter(filename)) {
-    // String source = new String(methodCode.getCode(), "ASCII");
-    // fileOut.println(source.trim());
-    // } catch (UnsupportedEncodingException | FileNotFoundException e) {
-    // Tornado.warn("Unable to write source to file: %s", e.getMessage());
-    // }
-    // }
-    //
-    // return methodCode;
-    // }
-    private static String getFile(String name) {
-        return String.format("%s/%s.cl", OPENCL_PATH.trim(), name.trim());
-    }
-
     @Override
     public String toString() {
         return String.format("Backend: arch=%s, device=%s", architecture.getName(), deviceContext.getDevice().getName());
@@ -542,5 +476,4 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         unimplemented();
         return null;
     }
-
 }

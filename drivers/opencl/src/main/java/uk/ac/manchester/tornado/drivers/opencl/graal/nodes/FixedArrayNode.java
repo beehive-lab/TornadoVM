@@ -48,7 +48,8 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
 
     public static final NodeClass<FixedArrayNode> TYPE = NodeClass.create(FixedArrayNode.class);
 
-    @Input protected ConstantNode length;
+    @Input
+    protected ConstantNode length;
 
     protected OCLKind elementKind;
     protected OCLMemoryBase memoryRegister;
@@ -87,22 +88,17 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         /*
-         * using as_T reinterprets the data as type T - consider: float x =
-         * (float) 1; and int value = 1, float x = &(value);
+         * using as_T reinterprets the data as type T - consider: float x = (float) 1;
+         * and int value = 1, float x = &(value);
          */
         final Value lengthValue = gen.operand(length);
-        // System.out.printf("gen operand: %s (%s)\n", lengthValue,
-        // lengthValue.getClass().getName());
 
         LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());
         final Variable variable = gen.getLIRGeneratorTool().newVariable(lirKind);
         final OCLBinary.Expr declaration = new OCLBinary.Expr(arrayTemplate, lirKind, variable, lengthValue);
 
         final OCLLIRStmt.ExprStmt expr = new OCLLIRStmt.ExprStmt(declaration);
-
-        // System.out.printf("expr: %s\n", expr);
         gen.getLIRGeneratorTool().append(expr);
-
         gen.setResult(this, variable);
     }
 

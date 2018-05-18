@@ -133,65 +133,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     public void finish() {
         int position = asm.position();
         compilationResult.setTargetCode(asm.close(true), position);
-
-        // closeCompilationResult();
-    }
-
-    private String toString(Collection<Block> blocks) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[ ");
-        for (Block b : blocks) {
-            sb.append(b.getId()).append(" ");
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    private String toString(Block[] blocks) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[ ");
-        for (Block b : blocks) {
-            sb.append(b.getId()).append(" ");
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    private void printBlock(Block b) {
-        System.out.printf("Block %d:\n", b.getId());
-        for (FixedNode node : b.getNodes()) {
-            System.out.printf("  node: %s\n", node);
-        }
-        System.out.println();
-    }
-
-    private void patchDefaultCaseBlock(LIR lir, Block block) {
-        final List<LIRInstruction> insns = lir.getLIRforBlock(block);
-        if (insns.get(1) instanceof OCLControlFlow.CaseOp) {
-            insns.remove(1);
-            insns.remove(insns.size() - 1);
-        }
-
-        insns.add(1, new OCLControlFlow.DefaultCaseOp());
-    }
-
-    private void patchCaseBlock(LIR lir, Constant key, Block block) {
-        final List<LIRInstruction> insns = lir.getLIRforBlock(block);
-        insns.add(1, new OCLControlFlow.CaseOp(key));
-        insns.add(new OCLControlFlow.CaseBreakOp());
-
-    }
-
-    private static boolean isIfBlock(Block block) {
-        return block.getEndNode() instanceof IfNode;
-    }
-
-    private static boolean isSwitchBlock(Block block) {
-        return block.getEndNode() instanceof SwitchNode;
-    }
-
-    private static SwitchNode getSwitchNode(Block block) {
-        return (SwitchNode) block.getEndNode();
     }
 
     private static boolean isMergeBlock(Block block) {
@@ -212,29 +153,12 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     @Deprecated
     private void migrateInsnToBody(List<LIRInstruction> header, List<LIRInstruction> body) {
-
-        // build up set of IVs
-        // final Set<AllocatableValue> ivs = new HashSet<AllocatableValue>();
-        //
-        // for (int i = 1; i < header.size(); i++) {
-        // final LIRInstruction insn = header.get(i);
-        // if (insn instanceof LoopInitOp) {
-        // break;
-        // } else if (insn instanceof OCLLIRStmt.AssignStmt) {
-        // final OCLLIRStmt.AssignStmt assign =
-        // (OCLLIRStmt.AssignStmt) insn;
-        // ivs.add(assign.getResult());
-        // }
-        // }
         // move all insns past the loop expression into the loop body
         int index = header.size() - 1;
         int insertAt = body.size() - 1;
 
         LIRInstruction current = header.get(index);
         while (!(current instanceof LoopConditionOp)) {
-            // System.out.printf("moving: %s from block %s to block
-            // %s...\n",current,
-            // header, body);
             if (!(current instanceof LoopPostOp)) {
                 body.add(insertAt, header.remove(index));
             }
@@ -242,20 +166,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             index--;
             current = header.get(index);
         }
-
-        // move all insns which do not update ivs into the loop body
-        // current = header.get(index);
-        // while(!(current instanceof LoopConditionOp)){
-        // if(current instanceof OCLLIRStmt.AssignStmt){
-        // final OCLLIRStmt.AssignStmt assign =
-        // (OCLLIRStmt.AssignStmt) current;
-        // if(!ivs.contains(assign.getResult())){
-        // body.add(insertAt, header.remove(index));
-        // }
-        // }
-        // index--;
-        // current = header.get(index);
-        // }
     }
 
     @Deprecated
@@ -269,8 +179,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
         @Override
         public Value doValue(LIRInstruction instruction, Value value, OperandMode mode, EnumSet<OperandFlag> flags) {
-            // System.out.printf("dep: insn=%s,
-            // emitValue=%s\n",instruction,emitValue);
             if (value instanceof Variable) {
                 dependencies.add(value);
             }

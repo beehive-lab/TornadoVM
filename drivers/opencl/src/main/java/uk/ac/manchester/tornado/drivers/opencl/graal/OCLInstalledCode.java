@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.CallStack;
 import uk.ac.manchester.tornado.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.OCLGpuScheduler;
+import uk.ac.manchester.tornado.drivers.opencl.OCLGPUScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernelScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLProgram;
@@ -65,7 +65,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         this.code = code;
         this.deviceContext = deviceContext;
         this.scheduler = OCLScheduler.create(deviceContext);
-        this.DEFAULT_SCHEDULER = new OCLGpuScheduler(deviceContext);
+        this.DEFAULT_SCHEDULER = new OCLGPUScheduler(deviceContext);
         this.kernel = kernel;
         valid = kernel != null;
         buffer.order(deviceContext.getByteOrder());
@@ -98,7 +98,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             deviceContext.flush();
             deviceContext.finish();
         } else {
-
             if (meta != null && meta.isParallel()) {
                 if (meta.enableThreadCoarsener()) {
                     task = DEFAULT_SCHEDULER.submit(kernel, meta, null);
@@ -108,12 +107,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             } else {
                 task = deviceContext.enqueueTask(kernel, null);
             }
-
-            if (meta != null && meta.shouldDumpProfiles()) {
-                // meta.addProfile(task);
-            }
-
         }
+
         // NOTE stack needs to be read so that the return value
         // is transfered back to the host
         // - As this is blocking then no clFinish() is needed
@@ -140,28 +135,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
     @Override
     public Object executeVarargs(final Object... args) throws InvalidInstalledCodeException {
-
-        // final OCLCallStack callStack =
-        // memoryManager.createCallStack(args.length);
-        //
-        // callStack.reset();
-        // callStack.pushArgs(args);
-        //
-        // execute(callStack);
-        // return callStack.getReturnValue();
         return null;
-    }
-
-    private String formatArray(final long[] array) {
-        final StringBuilder sb = new StringBuilder();
-
-        sb.append("[");
-        for (final long value : array) {
-            sb.append(" ").append(value);
-        }
-        sb.append(" ]");
-
-        return sb.toString();
     }
 
     @Override
@@ -213,7 +187,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             kernel.setLocalRegion(index, meta.getLocalSize());
         } else {
             kernel.setArgUnused(index);
-
         }
         index++;
 
@@ -229,8 +202,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
 
         /*
-         * Only set the kernel arguments if they are either: - not set or - have
-         * changed
+         * Only set the kernel arguments if they are either: - not set or - have changed
          */
         final int[] waitEvents;
         if (!stack.isOnDevice()) {
@@ -249,8 +221,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         } else {
             if (meta.isParallel()) {
                 if (meta.enableThreadCoarsener()) {
-                    // FIXME hack to support both the old paralleliser and the
-                    // new thread coarsener schemes
                     task = DEFAULT_SCHEDULER.submit(kernel, meta, waitEvents);
                 } else {
                     task = scheduler.submit(kernel, meta, waitEvents);
@@ -281,8 +251,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
 
         /*
-         * Only set the kernel arguments if they are either: - not set or - have
-         * changed
+         * Only set the kernel arguments if they are either: - not set or - have changed
          */
         if (!stack.isOnDevice()) {
             setKernelArgs(stack, meta);
@@ -297,8 +266,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
             final int task;
             if (meta.isParallel()) {
-                // FIXME hack to support both the old paralleliser and the
-                // new thread coarsener schemes
                 if (meta.enableThreadCoarsener()) {
                     task = DEFAULT_SCHEDULER.submit(kernel, meta, null);
                 } else {

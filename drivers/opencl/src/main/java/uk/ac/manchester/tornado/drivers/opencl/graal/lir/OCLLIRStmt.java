@@ -369,8 +369,6 @@ public class OCLLIRStmt {
                 } else {
                     emitStore(crb, asm);
                 }
-            } else {
-                // emitScalarStore(crb, asm);
             }
         }
 
@@ -471,8 +469,6 @@ public class OCLLIRStmt {
                 } else {
                     emitStore(crb, asm);
                 }
-            } else {
-                // emitScalarStore(crb, asm);
             }
         }
 
@@ -571,8 +567,6 @@ public class OCLLIRStmt {
                 } else {
                     emitStore(crb, asm);
                 }
-            } else {
-                // emitScalarStore(crb, asm);
             }
         }
 
@@ -671,8 +665,6 @@ public class OCLLIRStmt {
                 } else {
                     emitStore(crb, asm);
                 }
-            } else {
-                // emitScalarStore(crb, asm);
             }
         }
 
@@ -721,8 +713,6 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-
-            // asm.space();
             asm.emit(op.toString());
             asm.emit("(");
             asm.emitValue(crb, rhs);
@@ -732,11 +722,6 @@ public class OCLLIRStmt {
             cast.emit(crb, asm);
             asm.space();
             address.emit(crb, asm);
-            // if (address instanceof MemoryAccess) {
-            // ((MemoryAccess) address).emit(crb);
-            // } else if (address instanceof Variable) {
-            // asm.emitValue(crb, address);
-            // }
             asm.emit(")");
             asm.delimiter();
             asm.eol();

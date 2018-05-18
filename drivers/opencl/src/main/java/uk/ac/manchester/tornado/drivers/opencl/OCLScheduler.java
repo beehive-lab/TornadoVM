@@ -34,19 +34,19 @@ public class OCLScheduler {
     public static final OCLKernelScheduler create(final OCLDeviceContext context) {
 
         if (FORCE_ALL_TO_GPU) {
-            return new OCLGpuScheduler(context);
+            return new OCLGPUScheduler(context);
         }
 
         if (null != context.getDevice().getDeviceType()) {
             switch (context.getDevice().getDeviceType()) {
                 case CL_DEVICE_TYPE_GPU:
-                    return new OCLGpuScheduler(context);
+                    return new OCLGPUScheduler(context);
                 case CL_DEVICE_TYPE_ACCELERATOR:
                     return (ACCELERATOR_IS_GPU)
-                            ? new OCLGpuScheduler(context)
-                            : new OCLCpuScheduler(context);
+                            ? new OCLGPUScheduler(context)
+                            : new OCLCPUScheduler(context);
                 case CL_DEVICE_TYPE_CPU:
-                    return new OCLCpuScheduler(context);
+                    return new OCLCPUScheduler(context);
                 default:
                     fatal("No scheduler available for device: %s", context);
                     break;

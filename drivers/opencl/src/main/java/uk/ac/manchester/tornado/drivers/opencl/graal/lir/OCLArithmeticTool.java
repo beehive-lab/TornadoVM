@@ -300,7 +300,6 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         trace("emitLoad: %s <- %s\nstate:%s", lirKind, address, state);
         final Variable result = getGen().newVariable(lirKind);
 
-        // final MemoryAccess memAccess = (MemoryAccess) address;
         guarantee(lirKind.getPlatformKind() instanceof OCLKind, "invalid LIRKind: %s", lirKind);
         OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
         OCLMemoryBase base = ((MemoryAccess) address).getBase();

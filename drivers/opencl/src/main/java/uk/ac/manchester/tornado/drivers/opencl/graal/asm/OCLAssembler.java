@@ -141,9 +141,7 @@ public final class OCLAssembler extends Assembler {
     }
 
     public static class OCLNullaryTemplate extends OCLNullaryOp {
-        // @formatter:off
 
-        // @formatter:on
         public OCLNullaryTemplate(String opcode) {
             super(opcode);
         }
@@ -285,7 +283,6 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryTemplate LOAD_PARAM_DOUBLE = new OCLUnaryTemplate("param", "(double) " + FRAME_REF_NAME + "[%s]");
         public static final OCLUnaryTemplate LOAD_PARAM_ULONG = new OCLUnaryTemplate("param", "(ulong) " + FRAME_REF_NAME + "[%s]");
         public static final OCLUnaryTemplate LOAD_PARAM_UINT = new OCLUnaryTemplate("param", "(uint) " + FRAME_REF_NAME + "[%s]");
-//        public static final OCLUnaryTemplate LOAD_PARAM_OBJECT_REL = new OCLUnaryTemplate("param", "(ulong) &"+OCLAssemblerConstants.HEAP_REF_NAME +" [slots[%s]]");
         public static final OCLUnaryTemplate SLOT_ADDRESS = new OCLUnaryTemplate("param", "(ulong) &" + FRAME_REF_NAME + "[%s]");
 
         public static final OCLUnaryTemplate MEM_CHECK = new OCLUnaryTemplate("mem check", "MEM_CHECK(%s)");
@@ -458,7 +455,6 @@ public final class OCLAssembler extends Assembler {
         public static final OCLBinaryTemplate ARRAY_INDEX = new OCLBinaryTemplate("index", "%s[%s]");
 
         public static final OCLBinaryTemplate NEW_ARRAY = new OCLBinaryTemplate("new array", "char %s[%s]");
-        //public static final OCLBinaryTemplate NEW_LOCAL_INT_ARRAY = new OCLBinaryTemplate("__local ulong *ul_2 = (__local ulong* ) &_local_region[0]; // new array", "__local int %s[%s]");
         public static final OCLBinaryTemplate NEW_LOCAL_INT_ARRAY = new OCLBinaryTemplate("local memory array", "ulong %s = (__local ulong) &_local_region[0]; //__local int %s ");
 
         // @formatter:on
@@ -1067,16 +1063,8 @@ public final class OCLAssembler extends Assembler {
             if (!((ConstantValue) value).isJavaConstant()) {
                 shouldNotReachHere("constant value: ", value);
             }
-
             ConstantValue cv = (ConstantValue) value;
             return formatConstant(cv);
-            // } else if (value instanceof OCLReturnSlot) {
-            // final String type = ((OCLKind)
-            // value.getPlatformKind()).name().toLowerCase();
-            // return String.format("*((__global %s *) %s)", type,
-            // HEAP_REF_NAME);
-            // } else if (emitValue instanceof OCLNullary.Expr) {
-            // return ((OCLNullary.Expr) emitValue).toString();
         } else {
             unimplemented("value: toString() type=%s, value=%s", value.getClass().getName(), value);
         }

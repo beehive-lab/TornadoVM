@@ -25,7 +25,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import uk.ac.manchester.tornado.api.Event;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 
 public abstract class OCLKernelScheduler {
@@ -67,17 +66,6 @@ public abstract class OCLKernelScheduler {
         } else {
             task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
         }
-
-        if (meta.shouldPrintKernelExecutionTime()) {
-            // This option is under testing - first need to solve OpenCL events in JNI
-            // XXX: Add barrier before printing
-            // meta.wait();
-
-            // Print kernel statistics
-            Event kernelEvent = deviceContext.resolveEvent(task);
-            System.out.println("Kernel Time: " + kernelEvent.getExecutionTimeInNanoSeconds() + " (ns)");
-        }
-
         return task;
     }
 

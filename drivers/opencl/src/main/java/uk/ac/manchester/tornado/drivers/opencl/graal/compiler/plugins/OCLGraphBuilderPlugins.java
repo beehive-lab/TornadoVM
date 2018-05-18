@@ -71,8 +71,6 @@ public class OCLGraphBuilderPlugins {
 
         TornadoMathPlugins.registerTornadoMathPlugins(plugins);
         VectorPlugins.registerPlugins(ps, plugins);
-
-        // AtomicPlugins.registerPlugins(plugins);
     }
 
     private static void registerCompilerInstrinsicsPlugins(InvocationPlugins plugins) {
@@ -142,14 +140,10 @@ public class OCLGraphBuilderPlugins {
                 b.add(b.append(printfNode));
                 while (newArrayNode.hasUsages()) {
                     Node n = newArrayNode.getUsageAt(0);
-                    // need to remove all nodes from the graph that operate on
-                    // the
-                    // new array, however, we cannot remove all inputs as they
-                    // may be
-                    // used by the currently unbuilt part of the graph.
-                    // We also need to ensure that we do not leave any gaps
-                    // inbetween
-                    // fixed nodes
+                    // need to remove all nodes from the graph that operate on the new array,
+                    // however, we cannot remove all inputs as they may be used by the currently
+                    // unbuilt part of the graph. We also need to ensure that we do not leave any
+                    // gaps inbetween fixed nodes
                     if (n instanceof FixedWithNextNode) {
                         GraphUtil.unlinkFixedNode((FixedWithNextNode) n);
                     }
@@ -205,14 +199,10 @@ public class OCLGraphBuilderPlugins {
 
                 while (newArrayNode.hasUsages()) {
                     Node n = newArrayNode.getUsageAt(0);
-                    // need to remove all nodes from the graph that operate on
-                    // the
-                    // new array, however, we cannot remove all inputs as they
-                    // may be
-                    // used by the currently unbuilt part of the graph.
-                    // We also need to ensure that we do not leave any gaps
-                    // inbetween
-                    // fixed nodes
+                    // need to remove all nodes from the graph that operate on the new array,
+                    // however, we cannot remove all inputs as they
+                    // may be used by the currently unbuilt part of the graph. We also need to
+                    // ensure that we do not leave any gaps inbetween fixed nodes
                     if (n instanceof FixedWithNextNode) {
                         GraphUtil.unlinkFixedNode((FixedWithNextNode) n);
                     }
@@ -334,10 +324,6 @@ public class OCLGraphBuilderPlugins {
                 if (kind.isNumericFloat()) {
                     b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, FABS, kind)));
                 }
-                // else
-                // b.push(kind,
-                // b.recursiveAppend(OCLIntUnaryIntrinsicNode.create(value, ABS
-                // , kind)));
                 return true;
             }
         });

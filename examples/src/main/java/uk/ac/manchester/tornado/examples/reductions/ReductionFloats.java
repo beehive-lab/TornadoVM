@@ -90,10 +90,6 @@ public class ReductionFloats {
         }
 
         System.out.println("Median TotalTime: " + computeMedian(timers));
-
-        // float[] sequential = new float[1];
-        // reductionAddFloats(input, sequential);
-        // System.out.println(Arrays.toString(result));
     }
 
     public static void main(String[] args) {

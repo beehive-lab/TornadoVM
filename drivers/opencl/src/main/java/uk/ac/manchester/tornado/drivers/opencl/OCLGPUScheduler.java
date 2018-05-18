@@ -26,9 +26,8 @@
 package uk.ac.manchester.tornado.drivers.opencl;
 
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.meta.domain.DomainTree;
 
-public class OCLGpuScheduler extends OCLKernelScheduler {
+public class OCLGPUScheduler extends OCLKernelScheduler {
 
     public static final double GPU_COMPUTE_UNIT_COEFF = 1;
     public static final double GPU_COMPUTE_UNIT_QUEUE_COEFF = 128;
@@ -43,7 +42,7 @@ public class OCLGpuScheduler extends OCLKernelScheduler {
 
     private final long[] maxWorkItemSizes;
 
-    public OCLGpuScheduler(final OCLDeviceContext context) {
+    public OCLGPUScheduler(final OCLDeviceContext context) {
         super(context);
         OCLDevice device = context.getDevice();
 
@@ -60,12 +59,10 @@ public class OCLGpuScheduler extends OCLKernelScheduler {
 
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (long) (meta.getDomain().get(i).cardinality());
-
             // adjust for irregular problem sizes
             if (value % 32 != 0) {
                 value = ((value / 32) + 1) * 32;
             }
-
             globalWork[i] = value;
         }
     }

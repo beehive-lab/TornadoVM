@@ -179,19 +179,4 @@ public class OCLTargetDescription extends TargetDescription {
     public OCLKind getOCLKind(JavaKind javaKind) {
         return (OCLKind) arch.getPlatformKind(javaKind);
     }
-
-    // @Override
-    // public LIRKind getLIRKind(JavaKind javaKind) {
-    // if (javaKind == JavaKind.Void) {
-    // return LIRKind.fromJavaKind(arch, javaKind);
-    // }
-    // return LIRKind.value(getOCLKind(javaKind));
-    // }
-    //
-    // @Override
-    // public ReferenceMap createReferenceMap(boolean hasRegisters, int
-    // stackSlotCount) {
-    // unimplemented();
-    // return null;
-    // }
 }

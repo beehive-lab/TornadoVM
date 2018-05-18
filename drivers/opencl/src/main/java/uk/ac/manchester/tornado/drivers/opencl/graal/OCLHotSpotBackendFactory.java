@@ -87,14 +87,11 @@ public class OCLHotSpotBackendFactory {
         OCLDeviceContext deviceContext = openclContext.createDeviceContext(device.getIndex());
 
         OCLProviders providers;
-        // HotSpotRegistersProvider registers;
         OCLLoweringProvider lowerer;
         OCLSuitesProvider suites;
         Plugins plugins;
 
         try (InitTimer t = timer("create providers")) {
-            // registers = createRegisters();
-
             lowerer = new OCLLoweringProvider(metaAccess, foreignCalls, constantReflection, config, target);
 
             Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider);

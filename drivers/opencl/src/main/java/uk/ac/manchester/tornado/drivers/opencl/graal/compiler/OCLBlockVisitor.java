@@ -111,7 +111,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             openclBuilder.emitLoopHeader(block);
             asm.beginScope();
         } else {
-            // Emit either an ELSE statement or a SWITCH statement
+            // We emit either an ELSE statement or a SWITCH statement
             final Block dom = block.getDominator();
             if (dom != null && !isMerge && !dom.isLoopHeader() && isIfBlock(dom)) {
                 emitBeginBlockForElseStatement(dom, block);
@@ -131,7 +131,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                 }
             }
         }
-        // XXX: We might want also to check for switch-case.
     }
 
     private void closeSwitchStatement(Block b) {
@@ -147,10 +146,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         }
     }
 
-    private boolean isLegalEndBlock(Block block) {
-        return !(block.getBeginNode() instanceof LoopExitNode);
-    }
-
     @Override
     public void exit(Block b, Block value) {
         if (b.isLoopEnd()) {
@@ -159,17 +154,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         if (b.getPostdominator() != null) {
             Block pdom = b.getPostdominator();
             if (!merges.contains(pdom) && isMergeBlock(pdom) && !switches.contains(b)) {
-                // asm.emitLine(String.format("// block %d merges control flow
-                // -> pdom = %d depth=%d",b.getId(), pdom.getId(),
-                // pdom.getDominatorDepth()));
-
                 asm.endScope();
-
-                // The following code might be needed for the full snippet
-                // if (isLegalEndBlock(b)) {
-                // asm.endScope();
-                // }
-
             } else if (!merges.contains(pdom) && isMergeBlock(pdom) && switches.contains(b) && isSwitchBlock(b.getDominator())) {
                 closeSwitchStatement(b);
             } else {
@@ -267,5 +252,4 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     private static boolean isSwitchBlock(Block block) {
         return block.getEndNode() instanceof IntegerSwitchNode;
     }
-
 }
