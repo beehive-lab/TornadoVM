@@ -62,7 +62,7 @@ __MAIN_TORNADO_JUNIT__ = "org.junit.runner.JUnitCore "
 __IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintCFG=true "
 __PRINT_OPENCL_KERNEL__ = "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ = "-Dtornado.debug=True "
-__IGNORE_INTEL_PLATFORM__ = "-Dtornado.ignore.intel=True "  # Due to a bug when running with optirun
+__IGNORE_INTEL_PLATFORM__ = "-Dtornado.ignore.platform=Intel "  # Due to a bug when running with optirun
 __PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
 
 ## 
