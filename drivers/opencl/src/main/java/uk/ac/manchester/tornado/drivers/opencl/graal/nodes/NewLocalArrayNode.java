@@ -40,8 +40,10 @@ public class NewLocalArrayNode extends FixedWithNextNode implements LIRLowerable
 
     public static final NodeClass<NewLocalArrayNode> TYPE = NodeClass.create(NewLocalArrayNode.class);
 
-    @Input protected ConstantNode size;
-    @Input protected FixedArrayNode array;
+    @Input
+    protected ConstantNode size;
+    @Input
+    protected FixedArrayNode array;
 
     public NewLocalArrayNode(ConstantNode size, JavaKind kind, OCLMemoryBase base, OCLKind oclKind, FixedArrayNode array) {
         super(TYPE, StampFactory.forKind(kind));
@@ -60,28 +62,6 @@ public class NewLocalArrayNode extends FixedWithNextNode implements LIRLowerable
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-
-        // array.generate(gen);
-
-        // final Value lengthValue = gen.operand(size);
-        // // System.out.printf("gen operand: %s (%s)\n", lengthValue,
-        // // lengthValue.getClass().getName());
-        //
-        // LIRKind lirKind =
-        // LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());
-        // final Variable variable =
-        // gen.getLIRGeneratorTool().newVariable(lirKind);
-        // final OCLBinary.Expr declaration = new
-        // OCLBinary.Expr(OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY, lirKind,
-        // variable, lengthValue);
-        //
-        // final OCLLIRStmt.ExprStmt expr = new
-        // OCLLIRStmt.ExprStmt(declaration);
-        //
-        // // System.out.printf("expr: %s\n", expr);
-        // gen.getLIRGeneratorTool().append(expr);
-        //
-        // gen.setResult(array, variable);
 
     }
 }

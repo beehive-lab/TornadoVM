@@ -107,8 +107,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     /**
-     * Emits code for {@code lir} in its {@linkplain LIR#codeEmittingOrder()
-     * code emitting order}.
+     * Emits code for {@code lir} in its {@linkplain LIR#codeEmittingOrder() code
+     * emitting order}.
      */
     @Override
     public void emit(LIR lir) {
@@ -351,12 +351,6 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             ((OCLAssembler) asm).emitLine("// BLOCK %d", block.getId());
         }
 
-        if (block.getId() == 2) {
-            // ((OCLAssembler) asm).emitLine("printf(\"THREAD_ID: %d LOOP INDEX:
-            // %d\\n\", get_global_id(0), i_8);");
-            // ((OCLAssembler) asm).emitLine("printf(\"TID: %d \\n\", i_7);");
-        }
-
         if (PrintLIRWithAssembly.getValue(getOptions())) {
             blockComment(String.format("block B%d %s", block.getId(), block.getLoop()));
         }
@@ -381,11 +375,11 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             }
         }
 
-        // because of the way Graal handles Phi nodes, we generate the break
-        // instruction
-        // before any phi nodes are updated, therefore we need to ensure that
-        // the break
-        // is emitted as the end of the block.
+        /*
+         * Because of the way Graal handles Phi nodes, we generate the break instruction
+         * before any phi nodes are updated, therefore we need to ensure that the break
+         * is emitted as the end of the block.
+         */
         if (breakInst != null) {
             try {
                 emitOp(this, breakInst);

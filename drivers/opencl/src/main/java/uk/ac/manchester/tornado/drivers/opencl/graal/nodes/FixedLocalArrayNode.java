@@ -18,7 +18,7 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: Juan Fumero
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
@@ -47,7 +47,8 @@ public class FixedLocalArrayNode extends FloatingNode implements LIRLowerable {
 
     public static final NodeClass<FixedLocalArrayNode> TYPE = NodeClass.create(FixedLocalArrayNode.class);
 
-    @Input protected ConstantNode length;
+    @Input
+    protected ConstantNode length;
 
     protected OCLKind elementKind;
     protected OCLMemoryBase memoryRegister;
@@ -55,14 +56,10 @@ public class FixedLocalArrayNode extends FloatingNode implements LIRLowerable {
 
     public FixedLocalArrayNode(OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
-        // super(memoryRegister, elementType, length);
-        System.out.println("FIXED LOCAL");
         this.memoryRegister = memoryRegister;
         this.length = length;
         this.elemenType = elementType;
         this.elementKind = OCLKind.fromResolvedJavaType(elementType);
-        System.out.println("FIXED LOCAL END");
-
     }
 
     @Override

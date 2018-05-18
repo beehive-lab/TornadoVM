@@ -791,8 +791,6 @@ public final class OCLAssembler extends Assembler {
                 "   } while (atomic_cmpxchg((volatile __global unsigned int *)source, prevVal.intVal,\n" + 
                 "   newVal.intVal) != prevVal.intVal);" +
                 "}");
-        
-        
         //@formatter:on
     }
 
@@ -811,9 +809,6 @@ public final class OCLAssembler extends Assembler {
         if (EMIT_INTRINSICS) {
             emitAtomicIntrinsics();
         }
-
-        // String extensions = ((OCLTargetDescription) target).getExtensions();
-        // emitLine("// " + extensions);
     }
 
     @Override
@@ -852,8 +847,7 @@ public final class OCLAssembler extends Assembler {
     }
 
     /**
-     * * Used to emit instructions within a method. i.e. ones that terminal with
-     * a ';'
+     * Used to emit instructions within a method. i.e. ones that terminal with a ';'
      *
      * @param fmt
      * @param args
@@ -866,8 +860,8 @@ public final class OCLAssembler extends Assembler {
     }
 
     /**
-     * * Used to emit function defs and control flow statements. i.e. strings
-     * that do not terminate with a ';'
+     * Used to emit function defs and control flow statements. i.e. strings that do
+     * not terminate with a ';'
      *
      * @param fmt
      * @param args

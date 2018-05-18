@@ -337,6 +337,9 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
             getGen().append(new VectorStoreStmt(intrinsic, new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0), cast, memAccess, input));
         } else {
 
+            /**
+             * Handling atomic operations introduced during lowering.
+             */
             if (oclKind == OCLKind.ATOMIC_ADD_INT || oclKind == OCLKind.ATOMIC_ADD_LONG) {
                 if (memAccess != null) {
                     OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
@@ -361,14 +364,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
             } else if (oclKind == OCLKind.ATOMIC_ADD_FLOAT) {
                 if (memAccess != null) {
                     OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
-                    System.out.println("ATMOMIC ADD FLOAT !!!!!!!!!!!!");
                     getGen().append(new StoreAtomicAddFloatStmt(cast, memAccess, input));
                 } else {
                     getGen().append(new StoreAtomicAddFloatStmt(accumulator, input));
                 }
             } else {
-                // XXX: I think I dont need this part any more: Check with the
-                // unittests.
                 if (memAccess != null) {
                     OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
                     getGen().append(new StoreStmt(cast, memAccess, input));

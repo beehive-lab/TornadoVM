@@ -20,7 +20,7 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: Juan Fumero
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
@@ -45,7 +45,8 @@ public class LocalThreadIDFixedNode extends FixedWithNextNode implements LIRLowe
 
     public static final NodeClass<LocalThreadIDFixedNode> TYPE = NodeClass.create(LocalThreadIDFixedNode.class);
 
-    @Input protected ConstantNode index;
+    @Input
+    protected ConstantNode index;
 
     public LocalThreadIDFixedNode(ConstantNode value) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));
