@@ -173,7 +173,6 @@ public class ReduceCPUSnippets implements Snippets {
         private SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
-                System.out.println("Float  Reduction");
                 snippet = (extra == null) ? partialReduceAddFloatSnippetGlobal : partialReduceAddFloatSnippetGlobal2;
             } else if (value instanceof OCLReduceMulNode) {
                 snippet = (extra == null) ? partialReduceMulFloatSnippetGlobal : partialReduceMulFloatSnippetGlobal2;
