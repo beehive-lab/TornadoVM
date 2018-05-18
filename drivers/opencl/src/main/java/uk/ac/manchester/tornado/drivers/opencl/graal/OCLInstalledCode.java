@@ -147,9 +147,9 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
      * Set arguments into the OpenCL device Kernel.
      * 
      * @param stack
-     *            {@link OCLByteBuffer}
+     *            OpenCL stack parameters {@link OCLByteBuffer}
      * @param meta
-     *            {@link TaskMetaData}
+     *            task metadata {@link TaskMetaData}
      */
     private void setKernelArgs(final OCLByteBuffer stack, TaskMetaData meta) {
         int index = 0;
