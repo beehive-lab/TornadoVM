@@ -62,8 +62,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
      * then load index. As soon as we discover more cases, new nodes should be
      * inspected here.
      * 
-     * XXX: Cover all the cases here as soon as we discover more reductions
-     * use-cases.
+     * Cover all the cases here as soon as we discover more reductions use-cases.
      * 
      * @param arrayToStore
      * @param indexToStore
@@ -158,7 +157,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             accumulator = storeValue;
             value = storeValue;
         } else {
-            /// XXX: It could be min, max, OR, AND, etc.
             throw new RuntimeException("\n\n[NODE REDUCTION NOT SUPPORTED] Node : " + store.value() + " not suported yet.");
         }
 
@@ -178,8 +176,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
         ValueNode arithmeticNode = null;
         if (value instanceof OCLReduceAddNode) {
-            // XXX: complete here with more cases as soon as we discover,
-            // It could also be a type conversion (e.g. FloatConvertNode)
             OCLReduceAddNode reduce = (OCLReduceAddNode) value;
             if (reduce.getX() instanceof BinaryArithmeticNode) {
                 arithmeticNode = reduce.getX();
