@@ -69,8 +69,9 @@ public abstract class OCLKernelScheduler {
         }
 
         if (meta.shouldPrintKernelExecutionTime()) {
-
+            // This option is under testing - first need to solve OpenCL events in JNI
             // XXX: Add barrier before printing
+            // meta.wait();
 
             // Print kernel statistics
             Event kernelEvent = deviceContext.resolveEvent(task);

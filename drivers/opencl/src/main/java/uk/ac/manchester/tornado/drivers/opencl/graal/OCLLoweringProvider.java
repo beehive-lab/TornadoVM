@@ -138,8 +138,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
         if (node instanceof Invoke) {
             lowerInvoke((Invoke) node, tool, (StructuredGraph) node.graph());
-        } else if (node instanceof NewLocalArrayNode) {
-            lowerNewLocalArrayNode((NewLocalArrayNode) node, tool);
         } else if (node instanceof VectorLoadNode) {
             lowerVectorLoadNode((VectorLoadNode) node, tool);
         } else if (node instanceof VectorStoreNode) {
@@ -159,7 +157,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else if (node instanceof StoreIndexedNode) {
             lowerStoreIndexedNode((StoreIndexedNode) node, tool);
         } else if (node instanceof StoreAtomicIndexedNode) {
-            // Reduction
+            /*
+             * Reduction
+             */
             lowerStoreAtomicsReduction(node, tool);
         } else if (node instanceof LoadFieldNode) {
             lowerLoadFieldNode((LoadFieldNode) node, tool);
@@ -242,7 +242,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
         if (!USE_ATOMICS) {
             lowerReduceSnippet((StoreAtomicIndexedNode) node, tool);
-            // reduceSnippets.lower((StoreAtomicIndexedNode) node, tool);
         } else {
             lowerAtomicStoreIndexedNode((StoreAtomicIndexedNode) node, tool);
         }
@@ -567,36 +566,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else {
             unimplemented("dynamically sized array declarations are not supported");
         }
-    }
-
-    private void lowerNewLocalArrayNode(NewLocalArrayNode newArray, LoweringTool tool) {
-        // final StructuredGraph graph = newArray.graph();
-        // final ConstantNode firstInput = newArray.getSize();
-        //
-        // if (firstInput.getValue() instanceof PrimitiveConstant) {
-        // final int length = ((PrimitiveConstant)
-        // firstInput.getValue()).asInt();
-        //
-        // JavaKind elementKind = newArray.getKind();
-        // final int offset = arrayBaseOffset(elementKind);
-        // final int size = offset + (elementKind.getByteCount() * length);
-        //
-        // final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
-        //
-        // final FixedLocalArrayNode fixedArrayNode = graph.addWithoutUnique(new
-        // FixedLocalArrayNode(newArray.getOCLKind(), newLengthNode,
-        // newArray.getKind()));
-        //
-        // graph.replaceFixed(newArray, fixedArrayNode);
-        //
-        // // newArray.replaceAtUsages(fixedArrayNode);
-        // // newArray.clearInputs();
-        // // GraphUtil.unlinkFixedNode(newArray);
-        //
-        // } else {
-        // unimplemented("dynamically sized array declarations are not
-        // supported");
-        // }
     }
 
     @Override

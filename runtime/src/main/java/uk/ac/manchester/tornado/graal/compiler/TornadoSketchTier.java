@@ -69,7 +69,7 @@ public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
         appendPhase(new TornadoStampResolver());
 
         appendPhase(new TornadoReduceReplacement());
-        
+
         appendPhase(new TornadoApiReplacement());
         appendPhase(new TornadoAutoParalleliser());
         appendPhase(new TornadoDataflowAnalysis());
