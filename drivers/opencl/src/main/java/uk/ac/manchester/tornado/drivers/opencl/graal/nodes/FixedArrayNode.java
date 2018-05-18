@@ -46,20 +46,23 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 @NodeInfo
 public class FixedArrayNode extends FloatingNode implements LIRLowerable {
 
-    public static final NodeClass<FixedArrayNode> TYPE = NodeClass
-            .create(FixedArrayNode.class);
+    public static final NodeClass<FixedArrayNode> TYPE = NodeClass.create(FixedArrayNode.class);
 
     @Input
     protected ConstantNode length;
 
     protected OCLKind elementKind;
     protected OCLMemoryBase memoryRegister;
+    protected ResolvedJavaType elemenType;
+    protected OCLBinaryTemplate arrayTemplate;
 
     public FixedArrayNode(OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
         this.memoryRegister = memoryRegister;
         this.length = length;
+        this.elemenType = elementType;
         this.elementKind = OCLKind.fromResolvedJavaType(elementType);
+        this.arrayTemplate = OCLBinaryTemplate.NEW_ARRAY;
     }
 
     public FixedArrayNode(ResolvedJavaType elementType, ConstantNode length) {
@@ -70,25 +73,37 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
         return memoryRegister;
     }
 
+    public void setMemoryLocation(OCLMemoryBase memoryRegister) {
+        this.memoryRegister = memoryRegister;
+    }
+
+    public ResolvedJavaType getElementType() {
+        return elemenType;
+    }
+
+    public ConstantNode getLength() {
+        return length;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         /*
-         * using as_T reinterprets the data as type T - consider: float x =
-         * (float) 1; and int value = 1, float x = &(value);
+         * using as_T reinterprets the data as type T - consider: float x = (float) 1;
+         * and int value = 1, float x = &(value);
          */
         final Value lengthValue = gen.operand(length);
-//        System.out.printf("gen operand: %s (%s)\n", lengthValue, lengthValue.getClass().getName());
 
         LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());
         final Variable variable = gen.getLIRGeneratorTool().newVariable(lirKind);
-        final OCLBinary.Expr declaration = new OCLBinary.Expr(OCLBinaryTemplate.NEW_ARRAY, lirKind, variable, lengthValue);
+        final OCLBinary.Expr declaration = new OCLBinary.Expr(arrayTemplate, lirKind, variable, lengthValue);
 
         final OCLLIRStmt.ExprStmt expr = new OCLLIRStmt.ExprStmt(declaration);
-
-//        System.out.printf("expr: %s\n", expr);
         gen.getLIRGeneratorTool().append(expr);
-
         gen.setResult(this, variable);
+    }
+
+    public void setLocalType(OCLBinaryTemplate template) {
+        this.arrayTemplate = template;
     }
 
 }

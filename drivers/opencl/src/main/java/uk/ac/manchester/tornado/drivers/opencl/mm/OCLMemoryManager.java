@@ -194,6 +194,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return headerStart;
     }
 
+    @SuppressWarnings("unused")
     private void initialiseMemory(OCLInstalledCode code, long offset, int count) {
         if (count <= 0) {
             return;

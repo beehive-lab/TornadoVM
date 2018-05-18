@@ -61,6 +61,8 @@ public class OCLCodeCache {
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-logs");
 
+    private final boolean PRINT_WARNINGS = false;
+
     private final Map<String, OCLInstalledCode> cache;
     private final OCLDeviceContext deviceContext;
 
@@ -106,8 +108,7 @@ public class OCLCodeCache {
     public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
 
         info("Installing code for %s into code cache", entryPoint);
-        final OCLProgram program = deviceContext.createProgramWithSource(source,
-                new long[]{source.length});
+        final OCLProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
 
         if (OPENCL_DUMP_SOURCE) {
             final Path outDir = resolveSourceDir();
@@ -136,7 +137,7 @@ public class OCLCodeCache {
         if (!log.isEmpty()) {
             debug(log);
         }
-        if (status == OCLBuildStatus.CL_BUILD_ERROR) {
+        if (PRINT_WARNINGS || (status == OCLBuildStatus.CL_BUILD_ERROR)) {
             final Path outDir = resolveLogDir();
             final String identifier = id + "-" + entryPoint;
             error("Unable to compile task %s: check logs at %s/%s.log", identifier, outDir.toAbsolutePath(), identifier);
@@ -157,8 +158,7 @@ public class OCLCodeCache {
 
         final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
 
-        final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, deviceContext, program,
-                kernel);
+        final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, deviceContext, program, kernel);
 
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
@@ -167,7 +167,8 @@ public class OCLCodeCache {
             }
             cache.put(id + "-" + entryPoint, code);
 
-            // BUG Apple does not seem to like implementing the OpenCL spec properly, this causes a sigfault.
+            // BUG Apple does not seem to like implementing the OpenCL spec
+            // properly, this causes a sigfault.
             if ((OPENCL_CACHE_ENABLE || OPENCL_DUMP_BINS) && !deviceContext.getPlatformContext().getPlatform().getVendor().equalsIgnoreCase("Apple")) {
                 final Path outDir = resolveCacheDir();
                 program.dumpBinaries(outDir.toAbsolutePath().toString() + "/" + entryPoint);
@@ -187,8 +188,7 @@ public class OCLCodeCache {
     private OCLInstalledCode installBinary(String entryPoint, byte[] binary, boolean alreadyCached) throws OCLException {
 
         info("Installing binary for %s into code cache", entryPoint);
-        final OCLProgram program = deviceContext.createProgramWithBinary(binary,
-                new long[]{binary.length});
+        final OCLProgram program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
 
         if (program == null) {
             throw new OCLException("unable to load binary for " + entryPoint);
@@ -208,8 +208,7 @@ public class OCLCodeCache {
 
         final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
 
-        final OCLInstalledCode code = new OCLInstalledCode(entryPoint, null, deviceContext, program,
-                kernel);
+        final OCLInstalledCode code = new OCLInstalledCode(entryPoint, null, deviceContext, program, kernel);
 
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
@@ -234,9 +233,7 @@ public class OCLCodeCache {
     private void load() {
         try {
             final Path cacheDir = resolveCacheDir();
-            Files.list(cacheDir)
-                    .filter(p -> Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS))
-                    .forEach(this::loadBinary);
+            Files.list(cacheDir).filter(p -> Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS)).forEach(this::loadBinary);
         } catch (IOException e) {
             error("io exception when loading cache files: %s", e.getMessage());
         }

@@ -23,24 +23,21 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.meta;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-
 import org.graalvm.compiler.core.common.LIRKind;
 
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 
 public class OCLMemorySpace extends Value {
-    // @formatter:off
 
     public static final OCLMemorySpace GLOBAL = new OCLMemorySpace(OCLAssemblerConstants.GLOBAL_MEM_MODIFIER);
-//        public static final OCLMemorySpace SHARED = new OCLMemorySpace(OCLAssemblerConstants.SHARED_MEM_MODIFIER);
+    public static final OCLMemorySpace SHARED = new OCLMemorySpace(OCLAssemblerConstants.SHARED_MEM_MODIFIER);
     public static final OCLMemorySpace LOCAL = new OCLMemorySpace(OCLAssemblerConstants.LOCAL_MEM_MODIFIER);
     public static final OCLMemorySpace PRIVATE = new OCLMemorySpace(OCLAssemblerConstants.PRIVATE_MEM_MODIFIER);
     public static final OCLMemorySpace CONSTANT = new OCLMemorySpace(OCLAssemblerConstants.CONSTANT_MEM_MODIFIER);
-    public static final OCLMemorySpace HEAP = new OCLMemorySpace("heap");
-    // @formatter:on
+    public static final OCLMemorySpace HEAP = new OCLMemorySpace(OCLAssemblerConstants.TORNADO_HEAP_MEMORY);
 
     private final String name;
 
@@ -50,7 +47,6 @@ public class OCLMemorySpace extends Value {
     }
 
     public OCLArchitecture.OCLMemoryBase getBase() {
-
         if (this == GLOBAL || this == HEAP) {
             return OCLArchitecture.hp;
         } else if (this == LOCAL) {
@@ -60,8 +56,7 @@ public class OCLMemorySpace extends Value {
         } else if (this == PRIVATE) {
             return OCLArchitecture.pp;
         }
-
-        shouldNotReachHere();
+        TornadoInternalError.shouldNotReachHere();
         return null;
     }
 

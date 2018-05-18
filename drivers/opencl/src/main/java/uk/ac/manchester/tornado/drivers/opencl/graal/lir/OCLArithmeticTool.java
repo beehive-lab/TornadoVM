@@ -50,6 +50,10 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.LoadStmt;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreAtomicAddFloatStmt;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreAtomicAddStmt;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreAtomicMulStmt;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreAtomicSubStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorLoadStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.VectorStoreStmt;
@@ -296,7 +300,6 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
         trace("emitLoad: %s <- %s\nstate:%s", lirKind, address, state);
         final Variable result = getGen().newVariable(lirKind);
 
-        // final MemoryAccess memAccess = (MemoryAccess) address;
         guarantee(lirKind.getPlatformKind() instanceof OCLKind, "invalid LIRKind: %s", lirKind);
         OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
         OCLMemoryBase base = ((MemoryAccess) address).getBase();
@@ -314,20 +317,64 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
     }
 
     @Override
-    public void emitStore(ValueKind<?> lirKind, Value address, Value input,
-            LIRFrameState state) {
+    public void emitStore(ValueKind<?> lirKind, Value address, Value input, LIRFrameState state) {
         trace("emitStore: kind=%s, address=%s, input=%s", lirKind, address, input);
         guarantee(lirKind.getPlatformKind() instanceof OCLKind, "invalid LIRKind: %s", lirKind);
         OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
-        final MemoryAccess memAccess = (MemoryAccess) address;
+
+        MemoryAccess memAccess = null;
+        Value accumulator = null;
+        if (address instanceof MemoryAccess) {
+            memAccess = (MemoryAccess) address;
+        } else {
+            accumulator = address;
+        }
 
         if (oclKind.isVector()) {
             OCLTernaryIntrinsic intrinsic = VectorUtil.resolveStoreIntrinsic(oclKind);
             OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind.getElementKind()));
             getGen().append(new VectorStoreStmt(intrinsic, new ConstantValue(LIRKind.value(OCLKind.INT), PrimitiveConstant.INT_0), cast, memAccess, input));
         } else {
-            OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
-            getGen().append(new StoreStmt(cast, memAccess, input));
+
+            /**
+             * Handling atomic operations introduced during lowering.
+             */
+            if (oclKind == OCLKind.ATOMIC_ADD_INT || oclKind == OCLKind.ATOMIC_ADD_LONG) {
+                if (memAccess != null) {
+                    OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
+                    getGen().append(new StoreAtomicAddStmt(cast, memAccess, input));
+                } else {
+                    getGen().append(new StoreAtomicAddStmt(accumulator, input));
+                }
+            } else if (oclKind == OCLKind.ATOMIC_SUB_INT) {
+                if (memAccess != null) {
+                    OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
+                    getGen().append(new StoreAtomicSubStmt(cast, memAccess, input));
+                } else {
+                    getGen().append(new StoreAtomicSubStmt(accumulator, input));
+                }
+            } else if (oclKind == OCLKind.ATOMIC_MUL_INT) {
+                if (memAccess != null) {
+                    OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
+                    getGen().append(new StoreAtomicMulStmt(cast, memAccess, input));
+                } else {
+                    getGen().append(new StoreAtomicMulStmt(accumulator, input));
+                }
+            } else if (oclKind == OCLKind.ATOMIC_ADD_FLOAT) {
+                if (memAccess != null) {
+                    OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
+                    getGen().append(new StoreAtomicAddFloatStmt(cast, memAccess, input));
+                } else {
+                    getGen().append(new StoreAtomicAddFloatStmt(accumulator, input));
+                }
+            } else {
+                if (memAccess != null) {
+                    OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
+                    getGen().append(new StoreStmt(cast, memAccess, input));
+                } else {
+                    getGen().append(new StoreAtomicAddStmt(accumulator, input));
+                }
+            }
         }
     }
 

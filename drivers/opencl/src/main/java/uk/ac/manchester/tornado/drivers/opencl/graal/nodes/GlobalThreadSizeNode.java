@@ -43,8 +43,7 @@ public class GlobalThreadSizeNode extends FloatingNode implements LIRLowerable {
 
     public static final NodeClass<GlobalThreadSizeNode> TYPE = NodeClass.create(GlobalThreadSizeNode.class);
 
-    @Input
-    protected ConstantNode index;
+    @Input protected ConstantNode index;
 
     public GlobalThreadSizeNode(ConstantNode value) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));

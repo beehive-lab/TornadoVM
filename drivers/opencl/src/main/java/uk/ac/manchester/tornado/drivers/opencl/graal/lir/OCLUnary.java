@@ -50,11 +50,9 @@ public class OCLUnary {
      */
     protected static class UnaryConsumer extends OCLLIROp {
 
-        @Opcode
-        protected final OCLUnaryOp opcode;
+        @Opcode protected final OCLUnaryOp opcode;
 
-        @Use
-        protected Value value;
+        @Use protected Value value;
 
         protected UnaryConsumer(OCLUnaryOp opcode, LIRKind lirKind, Value value) {
             super(lirKind);

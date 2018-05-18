@@ -57,10 +57,8 @@ public class OCLControlFlow {
 
     public static final class ReturnOp extends AbstractBlockEndOp {
 
-        public static final LIRInstructionClass<ReturnOp> TYPE = LIRInstructionClass
-                .create(ReturnOp.class);
-        @Use
-        protected Value x;
+        public static final LIRInstructionClass<ReturnOp> TYPE = LIRInstructionClass.create(ReturnOp.class);
+        @Use protected Value x;
 
         public ReturnOp(Value x) {
             super(TYPE);
@@ -76,8 +74,7 @@ public class OCLControlFlow {
 
     public static final class EndScopeOp extends AbstractBlockEndOp {
 
-        public static final LIRInstructionClass<EndScopeOp> TYPE = LIRInstructionClass
-                .create(EndScopeOp.class);
+        public static final LIRInstructionClass<EndScopeOp> TYPE = LIRInstructionClass.create(EndScopeOp.class);
 
         public EndScopeOp() {
             super(TYPE);
@@ -94,8 +91,7 @@ public class OCLControlFlow {
      */
     public static final class BeginScopeOp extends AbstractInstruction {
 
-        public static final LIRInstructionClass<BeginScopeOp> TYPE = LIRInstructionClass
-                .create(BeginScopeOp.class);
+        public static final LIRInstructionClass<BeginScopeOp> TYPE = LIRInstructionClass.create(BeginScopeOp.class);
 
         public BeginScopeOp() {
             super(TYPE);
@@ -109,8 +105,7 @@ public class OCLControlFlow {
 
     public static class LoopInitOp extends AbstractInstruction {
 
-        public static final LIRInstructionClass<LoopInitOp> TYPE = LIRInstructionClass
-                .create(LoopInitOp.class);
+        public static final LIRInstructionClass<LoopInitOp> TYPE = LIRInstructionClass.create(LoopInitOp.class);
 
         public LoopInitOp() {
             super(TYPE);
@@ -130,8 +125,7 @@ public class OCLControlFlow {
 
     public static class LoopPostOp extends AbstractInstruction {
 
-        public static final LIRInstructionClass<LoopPostOp> TYPE = LIRInstructionClass
-                .create(LoopPostOp.class);
+        public static final LIRInstructionClass<LoopPostOp> TYPE = LIRInstructionClass.create(LoopPostOp.class);
 
         public LoopPostOp() {
             super(TYPE);
@@ -153,10 +147,8 @@ public class OCLControlFlow {
 
     public static class LoopConditionOp extends AbstractInstruction {
 
-        public static final LIRInstructionClass<LoopConditionOp> TYPE = LIRInstructionClass
-                .create(LoopConditionOp.class);
-        @Use
-        private final Value condition;
+        public static final LIRInstructionClass<LoopConditionOp> TYPE = LIRInstructionClass.create(LoopConditionOp.class);
+        @Use private final Value condition;
 
         public LoopConditionOp(Value condition) {
             super(TYPE);
@@ -188,10 +180,8 @@ public class OCLControlFlow {
 
     public static class ConditionalBranchOp extends AbstractInstruction {
 
-        public static final LIRInstructionClass<ConditionalBranchOp> TYPE = LIRInstructionClass
-                .create(ConditionalBranchOp.class);
-        @Use
-        private final Value condition;
+        public static final LIRInstructionClass<ConditionalBranchOp> TYPE = LIRInstructionClass.create(ConditionalBranchOp.class);
+        @Use private final Value condition;
 
         public ConditionalBranchOp(Value condition) {
             super(TYPE);
@@ -207,10 +197,8 @@ public class OCLControlFlow {
 
     public static class LinkedConditionalBranchOp extends AbstractInstruction {
 
-        public static final LIRInstructionClass<LinkedConditionalBranchOp> TYPE = LIRInstructionClass
-                .create(LinkedConditionalBranchOp.class);
-        @Use
-        private final Value condition;
+        public static final LIRInstructionClass<LinkedConditionalBranchOp> TYPE = LIRInstructionClass.create(LinkedConditionalBranchOp.class);
+        @Use private final Value condition;
 
         public LinkedConditionalBranchOp(Value condition) {
             super(TYPE);
@@ -226,8 +214,7 @@ public class OCLControlFlow {
 
     public static class ElseBranchOp extends AbstractInstruction {
 
-        public static final LIRInstructionClass<ElseBranchOp> TYPE = LIRInstructionClass
-                .create(ElseBranchOp.class);
+        public static final LIRInstructionClass<ElseBranchOp> TYPE = LIRInstructionClass.create(ElseBranchOp.class);
 
         public ElseBranchOp() {
             super(TYPE);
@@ -244,17 +231,13 @@ public class OCLControlFlow {
 
     public static class SwitchOp extends AbstractInstruction {
 
-        public static final LIRInstructionClass<SwitchOp> TYPE = LIRInstructionClass
-                .create(SwitchOp.class);
+        public static final LIRInstructionClass<SwitchOp> TYPE = LIRInstructionClass.create(SwitchOp.class);
 
-        @Use
-        private final Variable value;
+        @Use private final Variable value;
 
-        @Use({CONST})
-        private final Constant[] keyConstants;
+        @Use({ CONST }) private final Constant[] keyConstants;
 
-        @Use
-        private final LabelRef[] keyTargets;
+        @Use private final LabelRef[] keyTargets;
         private final LabelRef defaultTarget;
 
         public SwitchOp(Variable value, Constant[] keyConstants, LabelRef[] keyTargets, LabelRef defaultTarget) {
@@ -291,11 +274,9 @@ public class OCLControlFlow {
 
     public static class CaseOp extends AbstractInstruction {
 
-        public static final LIRInstructionClass<CaseOp> TYPE = LIRInstructionClass
-                .create(CaseOp.class);
+        public static final LIRInstructionClass<CaseOp> TYPE = LIRInstructionClass.create(CaseOp.class);
 
-        @Use
-        private final Constant value;
+        @Use private final Constant value;
 
         public CaseOp(Constant value) {
             super(TYPE);
@@ -316,8 +297,7 @@ public class OCLControlFlow {
 
     public static class DefaultCaseOp extends AbstractInstruction {
 
-        public static final LIRInstructionClass<DefaultCaseOp> TYPE = LIRInstructionClass
-                .create(DefaultCaseOp.class);
+        public static final LIRInstructionClass<DefaultCaseOp> TYPE = LIRInstructionClass.create(DefaultCaseOp.class);
 
         public DefaultCaseOp() {
             super(TYPE);
@@ -335,8 +315,7 @@ public class OCLControlFlow {
 
     public static class CaseBreakOp extends AbstractInstruction {
 
-        public static final LIRInstructionClass<CaseBreakOp> TYPE = LIRInstructionClass
-                .create(CaseBreakOp.class);
+        public static final LIRInstructionClass<CaseBreakOp> TYPE = LIRInstructionClass.create(CaseBreakOp.class);
 
         public CaseBreakOp() {
             super(TYPE);
@@ -354,8 +333,7 @@ public class OCLControlFlow {
 
     public static class LoopBreakOp extends AbstractInstruction {
 
-        public static final LIRInstructionClass<LoopBreakOp> TYPE = LIRInstructionClass
-                .create(LoopBreakOp.class);
+        public static final LIRInstructionClass<LoopBreakOp> TYPE = LIRInstructionClass.create(LoopBreakOp.class);
 
         public LoopBreakOp() {
             super(TYPE);
@@ -373,10 +351,8 @@ public class OCLControlFlow {
 
     public static class DeoptOp extends AbstractInstruction {
 
-        public static final LIRInstructionClass<DeoptOp> TYPE = LIRInstructionClass
-                .create(DeoptOp.class);
-        @Use
-        private final Value actionAndReason;
+        public static final LIRInstructionClass<DeoptOp> TYPE = LIRInstructionClass.create(DeoptOp.class);
+        @Use private final Value actionAndReason;
 
         public DeoptOp(Value actionAndReason) {
             super(TYPE);

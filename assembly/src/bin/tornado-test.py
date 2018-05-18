@@ -51,6 +51,9 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.loops.TestLoops",
 	"uk.ac.manchester.tornado.unittests.matrices.TestMatrices",
 	"uk.ac.manchester.tornado.unittests.images.TestResizeImage",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles",
 ]
 
 ## Options
@@ -59,6 +62,8 @@ __MAIN_TORNADO_JUNIT__ = "org.junit.runner.JUnitCore "
 __IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintCFG=true "
 __PRINT_OPENCL_KERNEL__ = "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ = "-Dtornado.debug=True "
+__IGNORE_INTEL_PLATFORM__ = "-Dtornado.ignore.platform=Intel "  # Due to a bug when running with optirun
+__PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
 
 ## 
 __VERSION__ = "0.3_21032018"
@@ -68,6 +73,21 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 	"uk.ac.manchester.tornado.unittests.vectortypes.TestFloats#simpleDotProductFloat8",
 	"uk.ac.manchester.tornado.unittests.vectortypes.TestFloats#simpleDotProduct",
 	"uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest#testPrebuild01",
+
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testReductionAnnotationCPUSimple",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testReductionAnnotation", 
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testMultiplicationReduction",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testSequentialReduction",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testReduction01",    
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testMapReduce",               
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testThreadSchuler",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testSumInts2",     
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testSumInts3",
+
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testSumFloats",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testMultFloats",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles#testSumDoubles",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles#testMultdoubles",
 	]
 
 
@@ -103,6 +123,12 @@ def composeAllOptions(args):
 	if (args.printKernel):
 		options = options + __PRINT_OPENCL_KERNEL__
 
+	if (args.device != None):
+		options = options + args.device
+
+	if (args.printExecution):
+		options = options + __PRINT_EXECUTION_TIMER__
+
 	return options
 
 
@@ -114,7 +140,6 @@ def runSingleCommand(cmd, args):
 
 	cmd = cmd + " " + args.testClass
 	cmd = cmd.split(" ")
-	print cmd
 
 	start = time.time()
 	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -157,7 +182,7 @@ def processStats(out, stats):
 				name = name[:-16]
 
 			if (className + "#" + name in __TORNADO_TESTS_WHITE_LIST__):
-				print "Test: " + className + "#" + name + " in whiteList."
+				print RED + "Test: " + className + "#" + name + " in whiteList." + RESET
 			else:
 				## set a flag
 				__TEST_NOT_PASSED__ = True
@@ -185,9 +210,18 @@ def runTests(args):
 	stats = {"[PASS]" : 0, "[FAILED]": 0}
 
 	## Run test
-	cmd = "tornado " + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
+	cmd = ""
+	if (args.useOptirun):
+		cmd = "optirun tornado " + __IGNORE_INTEL_PLATFORM__ + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
+	else:
+		cmd = "tornado " + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
 	if (args.testClass != None):
-		runSingleCommand(cmd, args)
+
+		if (args.fast):
+			cmd = cmd + " " + args.testClass
+			os.system(cmd)
+		else:
+			runSingleCommand(cmd, args)
 	else:
 		start = time.time()
 		for t in __TEST_THE_WORLD__:
@@ -243,6 +277,9 @@ def parseArguments():
 	parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")	
 	parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False, help="Debug Tornado")
 	parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")	
+	parser.add_argument('--optirun', "-optirun", action="store_true", dest="useOptirun", default=False, help="Use optirun with Tornado")	
+	parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")	
+	parser.add_argument('--printExec', dest="printExecution", action="store_true", default=False, help="Print OpenCL Kernel Execution Time")	
 	args = parser.parse_args()
 	return args
 

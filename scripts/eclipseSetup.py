@@ -13,10 +13,10 @@ class Colors:
 
 ## Wait still we merge with @James to include formatting in all the projects
 __TORNADO_PROJECTS__ = [
-			#"benchmarks",
-			#"collections",
-			#"drivers/opencl",
-			#"examples",
+			"benchmarks",
+			"collections",
+			"drivers/opencl",
+			"examples",
 			"runtime",
 			"unittests",
 		   ]

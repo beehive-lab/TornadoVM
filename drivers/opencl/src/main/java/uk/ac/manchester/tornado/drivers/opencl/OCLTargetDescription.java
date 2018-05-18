@@ -38,14 +38,16 @@ public class OCLTargetDescription extends TargetDescription {
     private static final int STACK_ALIGNMENT = 8;
     private static final boolean INLINE_OBJECTS = true;
     private final boolean supportsFP64;
+    private String extensions;
 
-    public OCLTargetDescription(Architecture arch, boolean supportsFP64) {
-        this(arch, false, STACK_ALIGNMENT, 4096, INLINE_OBJECTS, supportsFP64);
+    public OCLTargetDescription(Architecture arch, boolean supportsFP64, String extensions) {
+        this(arch, false, STACK_ALIGNMENT, 4096, INLINE_OBJECTS, supportsFP64, extensions);
     }
 
-    protected OCLTargetDescription(Architecture arch, boolean isMP, int stackAlignment, int implicitNullCheckLimit, boolean inlineObjects, boolean supportsFP64) {
+    protected OCLTargetDescription(Architecture arch, boolean isMP, int stackAlignment, int implicitNullCheckLimit, boolean inlineObjects, boolean supportsFP64, String extensions) {
         super(arch, isMP, stackAlignment, implicitNullCheckLimit, inlineObjects);
         this.supportsFP64 = supportsFP64;
+        this.extensions = extensions;
     }
 
     //@formatter:off
@@ -62,7 +64,7 @@ public class OCLTargetDescription extends TargetDescription {
         {OCLKind.FLOAT2, OCLKind.FLOAT3, OCLKind.FLOAT4, OCLKind.FLOAT8, OCLKind.FLOAT16},
         {OCLKind.DOUBLE2, OCLKind.DOUBLE3, OCLKind.DOUBLE4, OCLKind.DOUBLE8, OCLKind.DOUBLE16}
     };
-//@formatter:on
+    //@formatter:on
 
     public OCLArchitecture getArch() {
         return (OCLArchitecture) arch;
@@ -70,6 +72,10 @@ public class OCLTargetDescription extends TargetDescription {
 
     public boolean supportsFP64() {
         return supportsFP64;
+    }
+
+    public String getExtensions() {
+        return extensions;
     }
 
     // should use OCLKind.lookupLengthIndex instead
@@ -159,6 +165,8 @@ public class OCLTargetDescription extends TargetDescription {
             case Object:
                 shouldNotReachHere("invalid vector type");
                 break;
+            default:
+                break;
         }
 
         return VECTOR_LOOKUP_TABLE[index][lookupLengthIndex(vectorLength)];
@@ -171,18 +179,4 @@ public class OCLTargetDescription extends TargetDescription {
     public OCLKind getOCLKind(JavaKind javaKind) {
         return (OCLKind) arch.getPlatformKind(javaKind);
     }
-
-//    @Override
-//    public LIRKind getLIRKind(JavaKind javaKind) {
-//        if (javaKind == JavaKind.Void) {
-//            return LIRKind.fromJavaKind(arch, javaKind);
-//        }
-//        return LIRKind.value(getOCLKind(javaKind));
-//    }
-//
-//    @Override
-//    public ReferenceMap createReferenceMap(boolean hasRegisters, int stackSlotCount) {
-//        unimplemented();
-//        return null;
-//    }
 }

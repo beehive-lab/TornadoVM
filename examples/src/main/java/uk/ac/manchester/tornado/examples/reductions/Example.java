@@ -20,49 +20,48 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: Juan Fumero
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.builtins;
+package uk.ac.manchester.tornado.examples.reductions;
 
-import uk.ac.manchester.tornado.api.ReductionOp;
+import java.util.stream.IntStream;
 
-public class Intrinsics {
+import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.Reduce;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
-    public static int getGlobalId(int value) {
-        return 0;
+public class Example {
+
+    public static void reductionAnnotation(int[] input, @Reduce int[] result) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] += input[i];
+        }
     }
 
-    public static int getLocalId(int value) {
-        return 0;
-    }
+    public static void testReductionAnnotation() {
+        int[] input = new int[128];
+        int[] result = new int[1];
 
-    public static int getGlobalSize(int value) {
-        return 1;
-    }
+        IntStream.range(0, 128).parallel().forEach(i -> {
+            input[i] = 1;
+        });
 
-    public static int getLocalSize(int value) {
-        return 1;
-    }
+        //@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t0", Example::reductionAnnotation, input, result)
+            .streamOut(result)
+            .execute();
+        //@formatter:on
 
-    public static int getGroupId(int value) {
-        return 0;
-    }
-
-    public static int getGroupSize(int value) {
-        return 1;
-    }
-
-    public static void localBarrier() {
+        int[] sequential = new int[1];
+        reductionAnnotation(input, sequential);
 
     }
 
-    public static void globalBarrier() {
-
-    }
-
-    public static <T1, T2, R> R op(ReductionOp op, T1 x, T2 y) {
-        return null;
+    public static void main(String[] args) {
+        testReductionAnnotation();
     }
 
 }

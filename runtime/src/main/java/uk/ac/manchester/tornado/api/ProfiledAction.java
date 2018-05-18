@@ -45,6 +45,8 @@ public interface ProfiledAction {
 
     public double getTotalTime();
 
+    public long getExecutionTimeInNanoSeconds();
+
     public void retain();
 
 }

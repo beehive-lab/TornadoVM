@@ -77,19 +77,21 @@ public class EmptyEvent implements Event {
 
     @Override
     public long getSubmitTime() {
-        // TODO Auto-generated method stub
         return 0;
     }
 
     @Override
     public long getStartTime() {
-        // TODO Auto-generated method stub
         return 0;
     }
 
     @Override
     public long getEndTime() {
-        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public long getExecutionTimeInNanoSeconds() {
         return 0;
     }
 

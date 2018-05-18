@@ -34,26 +34,17 @@ import org.graalvm.compiler.phases.tiers.HighTierContext;
 
 public class TornadoValueTypeCleanup extends BasePhase<TornadoHighTierContext> {
 
-	
+    private static final NodePredicate valueTypeFilter = new NodePredicate() {
+        @Override
+        public boolean apply(Node node) {
+            return ((VirtualInstanceNode) node).hasNoUsages();
+        }
+    };
 
-	private static final NodePredicate	valueTypeFilter		= new NodePredicate() {
-
-																@Override
-																public boolean apply(Node node) {
-																	return ((VirtualInstanceNode) node).hasNoUsages();
-																}
-
-															};
-
-
-	@Override
-	protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-		
-		graph.getNodes().filter(NewInstanceNode.class).filter(valueTypeFilter)
-				.forEach(instance -> {
-					GraphUtil.tryKillUnused(instance);
-				});
-
-	}
-
+    @Override
+    protected void run(StructuredGraph graph, TornadoHighTierContext context) {
+        graph.getNodes().filter(NewInstanceNode.class).filter(valueTypeFilter).forEach(instance -> {
+            GraphUtil.tryKillUnused(instance);
+        });
+    }
 }
