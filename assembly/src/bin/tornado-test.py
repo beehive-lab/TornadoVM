@@ -73,6 +73,10 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 	"uk.ac.manchester.tornado.unittests.vectortypes.TestFloats#simpleDotProductFloat8",
 	"uk.ac.manchester.tornado.unittests.vectortypes.TestFloats#simpleDotProduct",
 	"uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest#testPrebuild01",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testSumFloats",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testMultFloats",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles#testSumDoubles",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles#tesMultDoubles",
 	]
 
 
