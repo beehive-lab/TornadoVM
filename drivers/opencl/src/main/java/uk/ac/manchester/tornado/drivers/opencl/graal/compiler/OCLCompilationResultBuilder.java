@@ -68,7 +68,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
-    // private static final boolean USE_EXPERIMENTAL_TRAVERSE = true;
     protected LIR lir;
     protected int currentBlockIndex;
     protected final Set<ResolvedJavaMethod> nonInlinedMethods;
