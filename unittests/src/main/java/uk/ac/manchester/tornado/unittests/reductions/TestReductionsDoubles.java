@@ -96,10 +96,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
         double[] sequential = new double[1];
         reductionAddDoubles(input, sequential);
-
-        // System.out.println(Arrays.toString(result));
-
-        // Check result
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
@@ -163,8 +159,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
         double[] sequential = new double[1];
         reductionAddDoubles2(input, sequential);
-
-        // Check result
         assertEquals(sequential[0], result[0], 0.01f);
     }
 
@@ -199,7 +193,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
         double[] sequential = new double[1];
         reductionAddDoubles2(input, sequential);
 
-        // Check result
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
@@ -235,8 +228,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
         double[] sequential = new double[1];
         reductionAddDoubles3(inputA, inputB, sequential);
-
-        // Check result
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
@@ -280,10 +271,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
         double[] sequential = new double[1];
         multiplyDoubles(input, sequential);
-
-        // System.out.println(Arrays.toString(result));
-
-        // Check result
         assertEquals(sequential[0], result[0], 0.1f);
     }
 

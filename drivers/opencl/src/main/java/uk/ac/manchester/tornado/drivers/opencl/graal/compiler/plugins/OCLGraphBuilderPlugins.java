@@ -228,8 +228,6 @@ public class OCLGraphBuilderPlugins {
         registerOpenCLOverridesForType(r, Double.TYPE, JavaKind.Double);
         registerOpenCLOverridesForType(r, Integer.TYPE, JavaKind.Int);
         registerOpenCLOverridesForType(r, Long.TYPE, JavaKind.Long);
-
-        // registerFPIntrinsics(r, Float.TYPE, JavaKind.Float);
         registerFPIntrinsics(r, Double.TYPE, JavaKind.Double);
 
         Registration longReg = new Registration(plugins, Long.class);

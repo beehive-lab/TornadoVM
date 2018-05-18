@@ -41,7 +41,11 @@ import uk.ac.manchester.tornado.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.meta.domain.DomainTree;
 import uk.ac.manchester.tornado.meta.domain.IntDomain;
 
-// XXX: Add documentation of this class. 
+/**
+ * It analyses the loop index space and determines the correct indices using
+ * strides in loops.
+ *
+ */
 public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
 
     private static final int resolveInt(ValueNode value) {
