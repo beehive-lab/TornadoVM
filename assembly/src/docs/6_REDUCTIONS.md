@@ -2,7 +2,6 @@
 
 Tornado now supports basic reductions for `int`, `float` and `double` data types for the operators `+` and `*`.
 This wiki shows how to program with reduction in Tornado.
-
 More examples can be found in `examples/src/main/java/uk/ac/manchester/tornado/unittests/reductions` directory of the Tornado SDK.
 
 ## Example
@@ -19,8 +18,6 @@ public static void reductionAddFloats(float[] input, @Reduce float[] result) {
 The code is very similar to a Java sequential reduction but with `@Reduce` and `@Parallel` annotations.
 The `@Reduce` annotation is associated with a variable, in this case, with the `result` float array.
 Then, we annotate the loop with `@Parallel`.
-
-
 The OpenCL JIT compiler generates OpenCL parallel version for this code that can on GPU and CPU.
 
 
@@ -29,7 +26,8 @@ The OpenCL JIT compiler generates OpenCL parallel version for this code that can
 Tornado generates different OpenCL code depending on target device. 
 If the target is the GPU, it performs full reductions within work-groups. 
 If the target is the CPU, it performs full reduction within the same thread-id.
-Therefore, the size of the output varies depending on the device. 
+Therefore, the size of the output varies depending on the device.
+This also means that a final reduction has to be performed after the GPU/Multi-threaded CPU execution. 
 Line 3 obtains the size of the output when the target device is a GPU.
 
 
