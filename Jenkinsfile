@@ -7,7 +7,7 @@ pipeline {
 	environment {
 		 JAVA_HOME="/opt/jenkins/jdk1.8.0_131"
 		 GRAAL_ROOT="/opt/jenkins"
-		 TORNADO_ROOT="/var/lib/jenkins/workspace/Tornado"
+		 TORNADO_ROOT="/var/lib/jenkins/workspace/Tornado-pipeline"
 		 TORNADO_REVISION='$(echo `git rev-parse --short HEAD`)'
 		 GRAAL_VERSION="0.22"
 		 JVMCI_VERSION="1.8.0_131"
