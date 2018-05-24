@@ -202,6 +202,80 @@ public void testSumFloats() {
 }
 ```
 
+## Map/Reduce
+
+This section shows an example of how to perform map/reduce operations within Tornado. 
+Each of the operation corresponds to a task as follows in the next example:
+
+
+```java
+public static void map01(int[] a, int[] b, int[] c) {
+    for (@Parallel int i = 0; i < a.length; i++) {
+        c[i] = a[i] + b[i];
+    }
+}
+
+public static void reduce01(int[] c, @Reduce int[] result) {
+    result[0] = 0;
+    for (@Parallel int i = 0; i < c.length; i++) {
+        result[0] += c[i];
+    }
+}
+
+public void testMapReduce() {
+    int[] a = new int[BIG_SIZE];
+    int[] b = new int[BIG_SIZE];
+    int[] c = new int[BIG_SIZE];
+
+    int numGroups = TornadoUtils.getSizeReduction(BIG_SIZE, TornadoDeviceType.GPU);
+    int[] result = null;
+
+    OCLDeviceType deviceType = getDefaultDeviceType();
+    switch (deviceType) {
+        case CL_DEVICE_TYPE_CPU:
+            result = new int[Runtime.getRuntime().availableProcessors()];
+            break;
+        case CL_DEVICE_TYPE_GPU:
+            result = new int[numGroups];
+            break;
+    }
+
+    Random r = new Random();
+
+    IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
+        a[i] = 10;
+        b[i] = 2;
+    });
+
+    new TaskSchedule("s0")
+        .streamIn(a, b, c)
+        .task("t0", TestReductionsIntegers::map01, a, b, c)
+        .task("t1", TestReductionsIntegers::reduce01, c, result)
+        .streamOut(result)
+        .execute();        
+
+    for (int i = 1; i < result.length; i++) {
+        result[0] += result[i];
+    }
+}
+```
+
+## Reduction with dependencies
+
+Tornado also supports reductions using data dependencies. 
+The next example illustrates this use:
+
+
+```java
+public static void reductionAddDoubles3(double[] inputA, double[] inputB, @Reduce double[] result) {
+   double error = 2f;
+   for (@Parallel int i = 0; i < inputA.length; i++) {
+       result[0] += (error * (inputA[i] + inputB[i]));
+   }
+}
+
+```
+
 ### Limitations and known issues
 
 There are a few limitations concerning reductions. 
