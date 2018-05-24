@@ -25,8 +25,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import uk.ac.manchester.tornado.api.Atomic;
-import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.*;
 
 public class LinearAlgebraArrays {
 
@@ -101,10 +100,7 @@ public class LinearAlgebraArrays {
         }
     }
 
-    public static void sgemv(
-            int M, int N, float[] A,
-            float[] X,
-            float[] Y) {
+    public static void sgemv(int M, int N, float[] A, float[] X, float[] Y) {
 
         for (@Parallel int i = 0; i < M; i++) {
             float y0 = 0f;
@@ -115,8 +111,7 @@ public class LinearAlgebraArrays {
         }
     }
 
-    public static void sgemm(final int M, final int N, final int K, final float A[], final float B[],
-            final float C[]) {
+    public static void sgemm(final int M, final int N, final int K, final float A[], final float B[], final float C[]) {
 
         for (@Parallel int i = 0; i < N; i++) {
             for (@Parallel int j = 0; j < N; j++) {
@@ -130,8 +125,7 @@ public class LinearAlgebraArrays {
 
     }
 
-    public static void dgemm(final int M, final int N, final int K, final double A[], final double B[],
-            final double C[]) {
+    public static void dgemm(final int M, final int N, final int K, final double A[], final double B[], final double C[]) {
 
         for (@Parallel int i = 0; i < N; i++) {
             for (@Parallel int j = 0; j < N; j++) {
@@ -145,9 +139,7 @@ public class LinearAlgebraArrays {
 
     }
 
-    public static void spmv(final float[] val, final int[] cols,
-            final int[] rowDelimiters, final float[] vec,
-            final int dim, final float[] out) {
+    public static void spmv(final float[] val, final int[] cols, final int[] rowDelimiters, final float[] vec, final int dim, final float[] out) {
 
         for (@Parallel int i = 0; i < dim; i++) {
             float t = 0.0f;

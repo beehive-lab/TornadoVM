@@ -32,39 +32,28 @@ import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class ReductionTest {
 
-    public final int[] data;
-    public int result;
-
-    public void sum() {
+    public static void sum(int[] data, int[] result) {
         int sum = 0;
         for (@Parallel int i = 0; i < data.length; i++) {
             sum += data[i];
         }
-        result = sum;
-    }
-
-    public ReductionTest(int[] data) {
-        this.data = data;
+        result[0] = sum;
     }
 
     public static void main(String[] args) {
         final int[] data = new int[614400];
+        final int[] output = new int[1];
 
         Arrays.fill(data, 1);
 
-        ReductionTest rt = new ReductionTest(data);
-
-        new TaskSchedule("s0")
-                .task("t0", ReductionTest::sum, rt)
-                .streamOut(rt)
-                .execute();
+        new TaskSchedule("s0").task("t0", ReductionTest::sum, data, output).streamOut(output).execute();
 
         int sum = 0;
         for (int value : data) {
             sum += value;
         }
 
-        System.out.printf("result: %d == %d\n", rt.result, sum);
+        System.out.printf("result: %d == %d\n", output[0], sum);
 
     }
 

@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
@@ -20,49 +20,44 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: Michalis Papadimitriou
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.builtins;
 
-import uk.ac.manchester.tornado.api.ReductionOp;
+package uk.ac.manchester.tornado.benchmarks.blackscholes;
 
-public class Intrinsics {
+import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.*;
 
-    public static int getGlobalId(int value) {
-        return 0;
+import uk.ac.manchester.tornado.benchmarks.*;
+
+public class BlackScholesJava extends BenchmarkDriver {
+    private int size;
+    private float[] randArray,call,put;
+
+    public BlackScholesJava(int iterations, int size) {
+        super(iterations);
+        this.size = size;
     }
 
-    public static int getLocalId(int value) {
-        return 0;
-    }
+    @Override
+    public void setUp() {
+        randArray = new float[size];
+        call = new float[size];
+        put = new float[size];
 
-    public static int getGlobalSize(int value) {
-        return 1;
-    }
-
-    public static int getLocalSize(int value) {
-        return 1;
-    }
-
-    public static int getGroupId(int value) {
-        return 0;
-    }
-
-    public static int getGroupSize(int value) {
-        return 1;
-    }
-
-    public static void localBarrier() {
+        for (int i = 0; i < size; i++) {
+            randArray[i] = (i * 1.0f) / size;
+        }
 
     }
 
-    public static void globalBarrier() {
-
+    @Override
+    public boolean validate() {
+        return true;
     }
 
-    public static <T1, T2, R> R op(ReductionOp op, T1 x, T2 y) {
-        return null;
+    @Override
+    public void code() {
+        blackscholes(randArray, call, put);
     }
-
 }

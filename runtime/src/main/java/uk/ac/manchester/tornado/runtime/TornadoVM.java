@@ -25,6 +25,27 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
+import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
+import static uk.ac.manchester.tornado.common.Tornado.ENABLE_PROFILING;
+import static uk.ac.manchester.tornado.common.Tornado.USE_VM_FLUSH;
+import static uk.ac.manchester.tornado.common.Tornado.VM_USE_DEPS;
+import static uk.ac.manchester.tornado.common.enums.Access.READ_WRITE;
+import static uk.ac.manchester.tornado.common.enums.Access.WRITE;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.ADD_DEP;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.ALLOCATE;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.BARRIER;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.BEGIN;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.CONSTANT_ARG;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.CONTEXT;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.COPY_IN;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.END;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.LAUNCH;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.REFERENCE_ARG;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.SETUP;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.STREAM_IN;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.STREAM_OUT;
+import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.STREAM_OUT_BLOCKING;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
@@ -33,18 +54,16 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.api.Event;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.common.*;
+import uk.ac.manchester.tornado.common.CallStack;
+import uk.ac.manchester.tornado.common.DeviceObjectState;
+import uk.ac.manchester.tornado.common.SchedulableTask;
+import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.common.TornadoLogger;
 import uk.ac.manchester.tornado.common.enums.Access;
+import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
-
-import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
-import static uk.ac.manchester.tornado.common.Tornado.*;
-import static uk.ac.manchester.tornado.common.enums.Access.READ_WRITE;
-import static uk.ac.manchester.tornado.common.enums.Access.WRITE;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.*;
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
-import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.*;
 
 public class TornadoVM extends TornadoLogger {
 
@@ -65,16 +84,13 @@ public class TornadoVM extends TornadoLogger {
     private final List<Object> constants;
     private final List<SchedulableTask> tasks;
 
-    private final byte[] code;
     private final ByteBuffer buffer;
 
     private double totalTime;
     private long invocations;
 
-    @SuppressWarnings("unchecked")
     public TornadoVM(ExecutionContext graphContext, byte[] code, int limit) {
         this.graphContext = graphContext;
-        this.code = code;
 
         useDependencies = graphContext.meta().enableOooExecution() | VM_USE_DEPS;
         totalTime = 0;
@@ -86,7 +102,7 @@ public class TornadoVM extends TornadoLogger {
 
         debug("loading tornado vm...");
 
-        guarantee(buffer.get() == SETUP, "invalid code");
+        TornadoInternalError.guarantee(buffer.get() == SETUP, "invalid code");
         contexts = graphContext.getDevices();
         buffer.getInt();
         int taskCount = buffer.getInt();
@@ -110,15 +126,14 @@ public class TornadoVM extends TornadoLogger {
         debug("fetching %d object states...", globalStates.length);
         for (int i = 0; i < objects.size(); i++) {
             final Object object = objects.get(i);
-            guarantee(object != null, "null object found in TornadoVM");
-            globalStates[i] = getTornadoRuntime().resolveObject(object);
-            debug("\tobject[%d]: [0x%x] %s %s", i, object.hashCode(), object.getClass().getTypeName(),
-                    globalStates[i]);
+            TornadoInternalError.guarantee(object != null, "null object found in TornadoVM");
+            globalStates[i] = TornadoRuntime.getTornadoRuntime().resolveObject(object);
+            debug("\tobject[%d]: [0x%x] %s %s", i, object.hashCode(), object.getClass().getTypeName(), globalStates[i]);
         }
 
         byte op = buffer.get();
         while (op != BEGIN) {
-            guarantee(op == CONTEXT, "invalid code: 0x%x", op);
+            TornadoInternalError.guarantee(op == CONTEXT, "invalid code: 0x%x", op);
             final int deviceIndex = buffer.getInt();
             debug("loading context %s", contexts.get(deviceIndex));
             final long t0 = System.nanoTime();
@@ -143,9 +158,11 @@ public class TornadoVM extends TornadoLogger {
         return globalStates[index].getDeviceState(contexts.get(device));
     }
 
-    private static CallStack resolveStack(int index, int numArgs,
-            CallStack[] stacks, TornadoDevice device) {
-        if (stacks[index] == null) {
+    private CallStack resolveStack(int index, int numArgs, CallStack[] stacks, TornadoDevice device, boolean setNewDevice) {
+        if (graphContext.meta().isDebug() && setNewDevice) {
+            debug("Recompiling task on device " + device);
+        }
+        if (stacks[index] == null || setNewDevice) {
             stacks[index] = device.createStack(numArgs);
         }
 
@@ -167,19 +184,18 @@ public class TornadoVM extends TornadoLogger {
     }
 
     private Event execute(boolean isWarmup) {
+
         final long t0 = System.nanoTime();
-
         int lastEvent = -1;
-
         for (int[] waitList : events) {
             Arrays.fill(waitList, -1);
         }
 
-//        if (!isWarmup) {
-//            for (TornadoDevice device : contexts) {
-//                device.markEvent();
-//            }
-//        }
+        // if (!isWarmup) {
+        // for (TornadoDevice device : contexts) {
+        // device.markEvent();
+        // }
+        // }
         while (buffer.hasRemaining()) {
             final byte op = buffer.get();
 
@@ -195,11 +211,9 @@ public class TornadoVM extends TornadoLogger {
                 final Object object = objects.get(objectIndex);
 
                 if (graphContext.meta().isDebug()) {
-                    debug("vm: ALLOCATE [0x%x] %s on %s", object.hashCode(),
-                            object, device);
+                    debug("vm: ALLOCATE [0x%x] %s on %s", object.hashCode(), object, device);
                 }
-                final DeviceObjectState objectState = resolveObjectState(
-                        objectIndex, contextIndex);
+                final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
                 lastEvent = device.ensureAllocated(object, objectState);
 
@@ -216,11 +230,9 @@ public class TornadoVM extends TornadoLogger {
                 final TornadoDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
                 if (graphContext.meta().isDebug()) {
-                    debug("vm: COPY_IN [0x%x] %s on %s [event list=%d]",
-                            object.hashCode(), object, device, eventList);
+                    debug("vm: COPY_IN [0x%x] %s on %s [event list=%d]", object.hashCode(), object, device, eventList);
                 }
-                final DeviceObjectState objectState = resolveObjectState(
-                        objectIndex, contextIndex);
+                final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
                 if (graphContext.meta().isDebug()) {
                     debug("vm: state=%s", objectState);
                 }
@@ -247,11 +259,10 @@ public class TornadoVM extends TornadoLogger {
                 final TornadoDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
                 if (graphContext.meta().isDebug()) {
-                    debug("vm: STREAM_IN [0x%x] %s on %s [event list=%d]",
-                            object.hashCode(), object, device, eventList);
+                    debug("vm: STREAM_IN [0x%x] %s on %s [event list=%d]", object.hashCode(), object, device, eventList);
                 }
-                final DeviceObjectState objectState = resolveObjectState(
-                        objectIndex, contextIndex);
+                final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
+
                 if (graphContext.meta().isDebug()) {
                     debug("vm: state=%s", objectState);
                 }
@@ -278,11 +289,9 @@ public class TornadoVM extends TornadoLogger {
                 final TornadoDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
                 if (graphContext.meta().isDebug()) {
-                    debug("vm: STREAM_OUT [0x%x] %s on %s [event list=%d]",
-                            object.hashCode(), object, device, eventList);
+                    debug("vm: STREAM_OUT [0x%x] %s on %s [event list=%d]", object.hashCode(), object, device, eventList);
                 }
-                final DeviceObjectState objectState = resolveObjectState(
-                        objectIndex, contextIndex);
+                final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
                 if (useDependencies) {
                     lastEvent = device.streamOut(object, objectState, waitList);
@@ -305,17 +314,16 @@ public class TornadoVM extends TornadoLogger {
                 final TornadoDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
                 if (graphContext.meta().isDebug()) {
-                    debug("vm: STREAM_OUT_BLOCKING [0x%x] %s on %s [event list=%d]",
-                            object.hashCode(), object, device, eventList);
+                    debug("vm: STREAM_OUT_BLOCKING [0x%x] %s on %s [event list=%d]", object.hashCode(), object, device, eventList);
                 }
-                final DeviceObjectState objectState = resolveObjectState(
-                        objectIndex, contextIndex);
+                final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
                 if (useDependencies) {
                     lastEvent = device.streamOut(object, objectState, waitList);
                 } else {
                     lastEvent = device.streamOut(object, objectState);
                 }
+
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
@@ -327,15 +335,15 @@ public class TornadoVM extends TornadoLogger {
                 final int eventList = buffer.getInt();
 
                 final TornadoDevice device = contexts.get(contextIndex);
-                final CallStack stack = resolveStack(gtid, numArgs, stacks,
-                        device);
+                boolean redeployOnDevice = graphContext.redeployOnDevice();
+
+                final CallStack stack = resolveStack(gtid, numArgs, stacks, device, redeployOnDevice);
+
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
                 final SchedulableTask task = tasks.get(taskIndex);
 
                 if (graphContext.meta().isDebug()) {
-                    debug("vm: LAUNCH %s on %s [event list=%d]",
-                            task.getName(),
-                            contexts.get(contextIndex), eventList);
+                    debug("vm: LAUNCH %s on %s [event list=%d]", task.getName(), contexts.get(contextIndex), eventList);
                 }
 
                 if (installedCodes[taskIndex] == null) {
@@ -353,8 +361,7 @@ public class TornadoVM extends TornadoLogger {
                     }
 
                     if (graphContext.meta().isDebug()) {
-                        debug("vm: compiled in %.9f s",
-                                (compileEnd - compileStart) * 1e-9);
+                        debug("vm: compiled in %.9f s", (compileEnd - compileStart) * 1e-9);
                     }
 
                 }
@@ -370,7 +377,8 @@ public class TornadoVM extends TornadoLogger {
                 final TornadoInstalledCode installedCode = installedCodes[taskIndex];
 
                 final Access[] accesses = task.getArgumentsAccess();
-                if (!stack.isOnDevice()) {
+
+                if (redeployOnDevice || !stack.isOnDevice()) {
                     stack.reset();
                 }
                 for (int i = 0; i < numArgs; i++) {
@@ -387,19 +395,16 @@ public class TornadoVM extends TornadoLogger {
                         final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
                         final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
 
-                        guarantee(objectState.isValid(),
-                                "object is not valid: %s %s",
-                                objects.get(argIndex), objectState);
+                        TornadoInternalError.guarantee(objectState.isValid(), "object is not valid: %s %s", objects.get(argIndex), objectState);
+
                         stack.push(objects.get(argIndex), objectState);
-                        if (accesses[i] == WRITE
-                                || accesses[i] == READ_WRITE) {
+                        if (accesses[i] == WRITE || accesses[i] == READ_WRITE) {
                             globalState.setOwner(device);
                             objectState.setContents(true);
-
                             objectState.setModified(true);
                         }
                     } else {
-                        shouldNotReachHere();
+                        TornadoInternalError.shouldNotReachHere();
                     }
                 }
 
@@ -421,11 +426,10 @@ public class TornadoVM extends TornadoLogger {
 
                 if (useDependencies && lastEvent != -1) {
                     if (graphContext.meta().isDebug()) {
-                        debug("vm: ADD_DEP %s to event list %d", lastEvent,
-                                eventList);
+                        debug("vm: ADD_DEP %s to event list %d", lastEvent, eventList);
                     }
 
-                    guarantee(eventsIndicies[eventList] < events[eventList].length, "event list is too small");
+                    TornadoInternalError.guarantee(eventsIndicies[eventList] < events[eventList].length, "event list is too small");
                     events[eventList][eventsIndicies[eventList]] = lastEvent;
                     eventsIndicies[eventList]++;
 
@@ -446,7 +450,7 @@ public class TornadoVM extends TornadoLogger {
                     final TornadoDevice device = contexts.get(0);
                     lastEvent = device.enqueueMarker(waitList);
                 } else if (contexts.size() > 1) {
-                    shouldNotReachHere("unimplemented multi-context barrier");
+                    TornadoInternalError.shouldNotReachHere("unimplemented multi-context barrier");
                 }
 
                 if (eventList != -1) {
@@ -461,25 +465,21 @@ public class TornadoVM extends TornadoLogger {
                 if (graphContext.meta().isDebug()) {
                     debug("vm: invalid op 0x%x(%d)", op, op);
                 }
-                shouldNotReachHere();
+                TornadoInternalError.shouldNotReachHere();
             }
         }
 
         Event barrier = EMPTY_EVENT;
         if (!isWarmup) {
-            if (contexts.size() == 1) {
-                final TornadoDevice device = contexts.get(0);
-
+            for (TornadoDevice dev : contexts) {
                 if (useDependencies) {
-                    final int event = device.enqueueMarker();
-                    barrier = device.resolveEvent(event);
+                    final int event = dev.enqueueMarker();
+                    barrier = dev.resolveEvent(event);
                 }
 
                 if (USE_VM_FLUSH) {
-                    device.flush();
+                    dev.flush();
                 }
-            } else if (contexts.size() > 1) {
-                unimplemented("multi-context applications");
             }
         }
 
@@ -491,8 +491,7 @@ public class TornadoVM extends TornadoLogger {
         }
 
         if (graphContext.meta().isDebug()) {
-            debug("vm: complete elapsed=%.9f s (%d iterations, %.9f s mean)",
-                    elapsed, invocations, (totalTime / invocations));
+            debug("vm: complete elapsed=%.9f s (%d iterations, %.9f s mean)", elapsed, invocations, (totalTime / invocations));
         }
 
         buffer.reset();
@@ -501,8 +500,7 @@ public class TornadoVM extends TornadoLogger {
     }
 
     public void printTimes() {
-        System.out.printf("vm: complete %d iterations - %.9f s mean and %.9f s total\n",
-                invocations, (totalTime / invocations), totalTime);
+        System.out.printf("vm: complete %d iterations - %.9f s mean and %.9f s total\n", invocations, (totalTime / invocations), totalTime);
     }
 
     public void clearProfiles() {
@@ -536,7 +534,8 @@ public class TornadoVM extends TornadoLogger {
                     final Event profile = eventset.getDevice().resolveEvent(i);
 
                     if (profile.getStatus() == COMPLETE) {
-                        System.out.printf("task: %s %s %.9f %9d %9d %9d\n", eventset.getDevice().getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(), profile.getEndTime());
+                        System.out.printf("task: %s %s %.9f %9d %9d %9d\n", eventset.getDevice().getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getSubmitTime(),
+                                profile.getStartTime(), profile.getEndTime());
                     }
                 }
 

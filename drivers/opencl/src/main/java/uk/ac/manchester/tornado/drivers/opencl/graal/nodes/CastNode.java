@@ -44,11 +44,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 @NodeInfo
 public class CastNode extends FloatingNode implements LIRLowerable {
 
-    public static final NodeClass<CastNode> TYPE = NodeClass
-            .create(CastNode.class);
+    public static final NodeClass<CastNode> TYPE = NodeClass.create(CastNode.class);
 
-    @Input
-    protected ValueNode value;
+    @Input protected ValueNode value;
     protected FloatConvert op;
 
     public CastNode(Stamp stamp, FloatConvert op, ValueNode value) {
@@ -71,14 +69,14 @@ public class CastNode extends FloatingNode implements LIRLowerable {
                 return OCLUnaryOp.CAST_TO_FLOAT;
             case L2F:
                 return OCLUnaryOp.CAST_TO_FLOAT;
-            case D2I: 
+            case D2I:
                 return OCLUnaryOp.CAST_TO_INT;
-            case D2L: 
+            case D2L:
                 return OCLUnaryOp.CAST_TO_LONG;
             case F2L:
                 return OCLUnaryOp.CAST_TO_LONG;
             case L2D:
-                return OCLUnaryOp.CAST_TO_DOUBLE;    
+                return OCLUnaryOp.CAST_TO_DOUBLE;
             default:
                 unimplemented("Conversion unimplemented: " + op.toString());
                 break;

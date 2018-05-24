@@ -142,9 +142,9 @@ public class TornadoHelper {
                 bufferConsole.append(message);
                 bufferFile.append(message);
                 failedCounter++;
-                for (Failure f : result.getFailures()) {
-                    bufferConsole.append("\t\t\\_[REASON] " + f.getMessage() + "\n");
-                    bufferFile.append("\t\t\\_[REASON] " + f.getMessage() + "\n\t" + f.getTrace());
+                for (Failure failure : result.getFailures()) {
+                    bufferConsole.append("\t\t\\_[REASON] " + failure.getMessage() + "\n");
+                    bufferFile.append("\t\t\\_[REASON] " + failure.getMessage() + "\n\t" + failure.getTrace() + "\n" + failure.getDescription() + "\n" + failure.getException());
                 }
             }
         }

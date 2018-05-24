@@ -61,6 +61,7 @@ import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.IndirectCallTargetNode;
 import org.graalvm.compiler.nodes.Invoke;
+import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
@@ -139,8 +140,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void emitInvoke(Invoke x) {
-        LoweredCallTargetNode callTarget = (LoweredCallTargetNode) x
-                .callTarget();
+        LoweredCallTargetNode callTarget = (LoweredCallTargetNode) x.callTarget();
 
         final Stamp stamp = x.asNode().stamp();
         LIRKind lirKind = resolveStamp(stamp);
@@ -151,27 +151,17 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         }
 
         CallingConvention invokeCc = new CallingConvention(0, result);
-        // gen.getResult().getFrameMapBuilder().getRegisterConfig().getCallingConvention(callTarget.callType(),
-        // x.asNode().stamp().javaType(gen.getMetaAccess()),
-        // callTarget.signature(), gen.target(), false);
         gen.getResult().getFrameMapBuilder().callsMethod(invokeCc);
 
-        Value[] parameters = visitInvokeArguments(invokeCc,
-                callTarget.arguments());
+        Value[] parameters = visitInvokeArguments(invokeCc, callTarget.arguments());
 
         LabelRef exceptionEdge = null;
-        // if (x instanceof InvokeWithExceptionNode) {
-        // exceptionEdge = getLIRBlock(((InvokeWithExceptionNode)
-        // x).exceptionEdge());
-        // }
         LIRFrameState callState = stateWithExceptionEdge(x, exceptionEdge);
 
         if (callTarget instanceof DirectCallTargetNode) {
-            emitDirectCall((DirectCallTargetNode) callTarget, result,
-                    parameters, AllocatableValue.NONE, callState);
+            emitDirectCall((DirectCallTargetNode) callTarget, result, parameters, AllocatableValue.NONE, callState);
         } else if (callTarget instanceof IndirectCallTargetNode) {
-            emitIndirectCall((IndirectCallTargetNode) callTarget, result,
-                    parameters, AllocatableValue.NONE, callState);
+            emitIndirectCall((IndirectCallTargetNode) callTarget, result, parameters, AllocatableValue.NONE, callState);
         } else {
             shouldNotReachHere();
         }
@@ -179,21 +169,15 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         if (isLegal(result)) {
             setResult(x.asNode(), result);
         }
-
-        // if (x instanceof InvokeWithExceptionNode) {
-        // gen.emitJump(getLIRBlock(((InvokeWithExceptionNode) x).next()));
-        // }
     }
 
     @Override
-    public Value[] visitInvokeArguments(CallingConvention invokeCc,
-            Collection<ValueNode> arguments) {
+    public Value[] visitInvokeArguments(CallingConvention invokeCc, Collection<ValueNode> arguments) {
         final Value[] values = new Value[arguments.size()];
         int j = 0;
         for (ValueNode arg : arguments) {
             if (arg != null) {
                 Value operand = operand(arg);
-                // gen.emitMove(operand, operand(arg));
                 values[j] = operand;
                 j++;
             } else {
@@ -214,29 +198,24 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     private boolean elseClause;
 
-    public OCLNodeLIRBuilder(final StructuredGraph graph,
-            final LIRGeneratorTool gen, NodeMatchRules nodeMatchRules) {
+    public OCLNodeLIRBuilder(final StructuredGraph graph, final LIRGeneratorTool gen, NodeMatchRules nodeMatchRules) {
         super(graph, gen, nodeMatchRules);
     }
 
-    public void doBlock(final Block block, final StructuredGraph graph,
-            final BlockMap<List<Node>> blockMap, boolean isKernel) {
+    public void doBlock(final Block block, final StructuredGraph graph, final BlockMap<List<Node>> blockMap, boolean isKernel) {
         OptionValues options = graph.getOptions();
         trace("%s - block %s", graph.method().getName(), block);
-        // System.out.printf("emit: block=%s\n",block);
         try (BlockScope blockScope = gen.getBlockScope(block)) {
 
-            if (block == gen.getResult().getLIR().getControlFlowGraph()
-                    .getStartBlock()) {
+            if (block == gen.getResult().getLIR().getControlFlowGraph().getStartBlock()) {
                 assert block.getPredecessorCount() == 0;
                 emitPrologue(graph, isKernel);
             }
 
             final List<Node> nodes = blockMap.get(block);
 
-            // Allow NodeLIRBuilder subclass to specialize code generation of
-            // any interesting groups
-            // of instructions
+            // Allow NodeLIRBuilder subclass to specialise code generation of any
+            // interesting groups of instructions
             matchComplexExpressions(nodes);
 
             for (int i = 0; i < nodes.size(); i++) {
@@ -256,8 +235,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                             } catch (final Throwable e) {
                                 System.out.println("e: " + e.toString());
                                 e.printStackTrace();
-                                throw new TornadoInternalError(e)
-                                        .addContext(valueNode.toString());
+                                throw new TornadoInternalError(e).addContext(valueNode.toString());
                             }
                         }
                     } else {
@@ -274,8 +252,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                             }
                         } else if (valueNode instanceof VectorValueNode) {
                             // There can be cases in which the result of an
-                            // instruction is already set
-                            // before by other instructions.
+                            // instruction is already set before by other instructions.
                             // case where vector value is used as an input to a phi
                             // node before it is assigned to
                             final VectorValueNode vectorNode = (VectorValueNode) valueNode;
@@ -298,8 +275,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void platformPatch(boolean isKernel) {
-        final List<LIRInstruction> insns = getLIRGeneratorTool().getResult()
-                .getLIR().getLIRforBlock(gen.getCurrentBlock());
+        final List<LIRInstruction> insns = getLIRGeneratorTool().getResult().getLIR().getLIRforBlock(gen.getCurrentBlock());
         final int index = insns.size() - 1;
         final LIRInstruction op = insns.get(index);
 
@@ -309,14 +285,9 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
         if (op instanceof ExprStmt) {
             ExprStmt expr = (ExprStmt) op;
-            if (expr.getExpr() instanceof OCLUnary.Expr
-                    && ((OCLUnary.Expr) expr.getExpr()).getOpcode().equals(
-                            OCLUnaryOp.RETURN)) {
-
+            if (expr.getExpr() instanceof OCLUnary.Expr && ((OCLUnary.Expr) expr.getExpr()).getOpcode().equals(OCLUnaryOp.RETURN)) {
                 OCLUnary.Expr returnExpr = (OCLUnary.Expr) expr.getExpr();
-
-                append(new ExprStmt(new OCLNullary.Expr(OCLNullaryOp.RETURN,
-                        LIRKind.value(OCLKind.ILLEGAL))));
+                append(new ExprStmt(new OCLNullary.Expr(OCLNullaryOp.RETURN, LIRKind.value(OCLKind.ILLEGAL))));
                 insns.remove(index);
                 LIRKind lirKind = LIRKind.value(returnExpr.getPlatformKind());
                 final AllocatableValue slotAddress = new OCLReturnSlot(lirKind);
@@ -346,8 +317,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final FloatLessThanNode condition = (FloatLessThanNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
-            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_GREATEREQUAL, intLirKind, x,
-                    y);
+            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryIntrinsicCmp.FLOAT_IS_GREATEREQUAL, intLirKind, x, y);
         } else if (node instanceof IntegerBelowNode) {
             final IntegerBelowNode condition = (IntegerBelowNode) node;
             final Value x = operand(condition.getX());
@@ -362,19 +332,13 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final IntegerLessThanNode condition = (IntegerLessThanNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
-            // if (condition.getX().isConstant())
-            // result = getGen().getArithmetic().genBinaryExpr(
-            // OCLBinaryOp.RELATIONAL_GTE, Kind.Boolean, y, x);
-            // else
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_GTE, boolLirKind, x, y);
         } else if (node instanceof IsNullNode) {
             final IsNullNode condition = (IsNullNode) node;
             final Value value = operand(condition.getValue());
-            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_NE, boolLirKind, value,
-                    new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
+            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_NE, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
         } else {
-            unimplemented(String.format(
-                    "logic node (class=%s)", node.getClass().getName()));
+            unimplemented(String.format("logic node (class=%s)", node.getClass().getName()));
         }
 
         setResult(node, result);
@@ -434,16 +398,14 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         } else if (node instanceof IsNullNode) {
             final IsNullNode condition = (IsNullNode) node;
             final Value value = operand(condition.getValue());
-            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_EQ, boolLirKind, value,
-                    new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
+            result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_EQ, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
         } else if (node instanceof ShortCircuitOrNode) {
             final ShortCircuitOrNode condition = (ShortCircuitOrNode) node;
             final Value x = operandOrConjunction(condition.getX());
             final Value y = operandOrConjunction(condition.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_OR, boolLirKind, x, y);
         } else {
-            unimplemented(String.format(
-                    "logic node (class=%s)", node.getClass().getName()));
+            unimplemented(String.format("logic node (class=%s)", node.getClass().getName()));
         }
 
         setResult(node, result);
@@ -463,29 +425,18 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     @Override
-    protected void emitDirectCall(final DirectCallTargetNode callTarget,
-            final Value result, final Value[] parameters, final Value[] temps,
-            final LIRFrameState callState) {
+    protected void emitDirectCall(final DirectCallTargetNode callTarget, final Value result, final Value[] parameters, final Value[] temps, final LIRFrameState callState) {
 
-        final OCLDirectCall call = new OCLDirectCall(
-                callTarget, result, parameters, callState);
+        final OCLDirectCall call = new OCLDirectCall(callTarget, result, parameters, callState);
         if (isLegal(result)) {
-            append(new OCLLIRStmt.AssignStmt(gen.asAllocatable(result),
-                    call));
-            // setResult(callTarget,result);
-            // System.out.printf("arg0: %s\n", callTarget);
-            // System.out.printf("assign: %s\n",assign);
-            // System.out.printf("result: %s\n", result);
+            append(new OCLLIRStmt.AssignStmt(gen.asAllocatable(result), call));
         } else {
             append(new OCLLIRStmt.ExprStmt(call));
-            // setResult(callTarget,expr);
         }
     }
 
     @Override
-    protected void emitIndirectCall(final IndirectCallTargetNode arg0,
-            final Value arg1, final Value[] arg2, final Value[] arg3,
-            final LIRFrameState arg4) {
+    protected void emitIndirectCall(final IndirectCallTargetNode arg0, final Value arg1, final Value[] arg2, final Value[] arg3, final LIRFrameState arg4) {
         unimplemented();
 
     }
@@ -495,8 +446,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         trace("emitIf: %s, condition=%s\n", x, x.condition().getClass().getName());
 
         /**
-         * test to see if this is an exception check need to implement this
-         * properly? or omit!
+         * test to see if this is an exception check need to implement this properly? or
+         * omit!
          */
         final LabelRef falseBranch = getLIRBlock(x.falseSuccessor());
         if (falseBranch.getTargetBlock().isExceptionEntry()) {
@@ -505,11 +456,9 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         }
 
         final boolean isLoop = gen.getCurrentBlock().isLoopHeader();
-        final boolean invertedLoop = isLoop
-                && x.trueSuccessor() instanceof LoopExitNode;
+        final boolean invertedLoop = isLoop && x.trueSuccessor() instanceof LoopExitNode;
 
-        final Value condition = (invertedLoop) ? emitNegatedLogicNode(x
-                .condition()) : emitLogicNode(x.condition());
+        final Value condition = (invertedLoop) ? emitNegatedLogicNode(x.condition()) : emitLogicNode(x.condition());
         trace("condition: %s -> %s", x.condition(), condition);
 
         if (isLoop) {
@@ -525,11 +474,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void emitLoopBegin(final LoopBeginNode node) {
-        // System.out.printf("emitter: loop begin=%s\n",node);
+
         trace("emitLoopBegin");
-        // trace("result = %s", gen.getResult());
-        // for (PhiNode phi : node.phis())
-        // trace("phi: %s", phi);
 
         final Block block = (Block) gen.getCurrentBlock();
 
@@ -539,68 +485,23 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
         List<ValuePhiNode> valuePhis = node.valuePhis().snapshot();
 
-        // for(final ValuePhiNode phi : valuePhis){
-        // assert operandForPhi(phi) != null : "no operand for phi=" + phi;
-        // }
-        // System.out.printf("here: phi generate...\n");
         for (ValuePhiNode phi : valuePhis) {
             final Value value = operand(phi.firstValue());
-            // TODO check what has been changed here
-//            if (!(value instanceof PhiNode)) {
-            if (phi.singleBackValueOrThis() == phi
-                    && value instanceof Variable) {
+
+            if (phi.singleBackValueOrThis() == phi && value instanceof Variable) {
                 /*
                  * preserve loop-carried dependencies outside of loops
                  */
-                // System.out.printf("phi: phi=%s, value=%s\n", phi, value);
                 setResult(phi, value);
             } else {
                 final AllocatableValue result = (AllocatableValue) operandForPhi(phi);
                 append(new OCLLIRStmt.AssignStmt(result, value));
-                // System.out.printf("phi-else: phi=%s, value=%s\n", phi,
-                // value);
-                // setResult(phi,value);
             }
-//            }
         }
 
-        // System.out.printf("here: loop init op\n");
         append(new OCLControlFlow.LoopInitOp());
-
-        // for (ValuePhiNode phi : valuePhis) {
-        // System.out.printf("emitLoopBegin: phi=%s, operand=%s\n",phi,operandForPhi(phi));
-        // final ValueNode value = phi.singleBackValue();
-        // final int valueCount = phi.values().distinct().count();
-        // if (value == PhiNode.MULTIPLE_VALUES) {
-        // if (valueCount == 2) {
-        // AllocatableValue result = (AllocatableValue) operandForPhi(phi);
-        // Value src = operand(phi.valueAt(1));
-        // // System.out.printf("here: phi=%s, value=%s\n", phi,
-        // phi.valueAt(1));
-        // append(new OCLLIRStmt.AssignStmt(result, src));
-        // } else {
-        // System.out.printf("unhandled phi: %s\n",phi);
-        // }
-        // } else if (!(value instanceof PhiNode)) {
-        // // System.out.printf("here: phi=%s, operand=%s\n", phi,
-        // operandForPhi(phi));
-        // final AllocatableValue result = (AllocatableValue)
-        // operandForPhi(phi);
-        // // System.out.printf("here: phi=%s, value=%s\n", phi, value);
-        // Value src = operand(value);
-        // if (src == null) {
-        // emitInputsAndNode(value);
-        // src = operand(value);
-        // }
-        //
-        // append(new OCLLIRStmt.AssignStmt(result, src));
-        // }
-        // }
-        // System.out.printf("here: loop post op\n");
         append(new OCLControlFlow.LoopPostOp());
-
         label.clearIncomingValues();
-
     }
 
     @Override
@@ -611,26 +512,18 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         final List<ValuePhiNode> phis = loopBegin.valuePhis().snapshot();
 
         for (ValuePhiNode phi : phis) {
-//            final ValueNode value = phi.singleBackValue();
-//            final int valueCount = phi.values().count();
-            // if (value == PhiNode.MULTIPLE_VALUES && value != phi &&
-            // valueCount > 2) {
-            // System.out.printf("emitting: phi=%s, value=%s\n",phi,value);
             AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
             Value src = operand(phi.valueAt(loopEnd));
 
             if (!dest.equals(src)) {
                 append(new OCLLIRStmt.AssignStmt(dest, src));
             }
-            // }
         }
-
     }
 
     @Override
     public void visitMerge(final AbstractMergeNode mergeNode) {
         trace("visitMerge: ", mergeNode);
-        // System.out.printf("merge: %s\n",mergeNode);
 
         boolean loopExitMerge = true;
         for (EndNode end : mergeNode.forwardEnds()) {
@@ -638,11 +531,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         }
 
         for (ValuePhiNode phi : mergeNode.valuePhis()) {
-            // System.out.printf("visitMerge: merge=%s, phi=%s, operand=%s\n",mergeNode,
-            // phi,operandForPhi(phi));
             final ValueNode value = phi.singleValueOrThis();
             if (value != phi) {
-                // System.out.printf("emitting: phi=%s, value=%s\n",phi,value);
                 AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
                 Value src = operand(value);
 
@@ -684,13 +574,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             if (keyCount == 1) {
                 assert defaultTarget != null;
                 double probability = x.probability(x.keySuccessor(0));
-                PlatformKind kind = gen.getLIRKind(x.value().stamp())
-                        .getPlatformKind();
+                PlatformKind kind = gen.getLIRKind(x.value().stamp()).getPlatformKind();
                 unimplemented();
-//                gen.emitCompareBranch(kind, gen.load(operand(x.value())),
-//                        x.keyAt(0), Condition.EQ, false,
-//                        getLIRBlock(x.keySuccessor(0)), defaultTarget,
-//                        probability);
             } else {
                 LabelRef[] keyTargets = new LabelRef[keyCount];
                 JavaConstant[] keyConstants = new JavaConstant[keyCount];
@@ -699,10 +584,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                     keyTargets[i] = getLIRBlock(x.keySuccessor(i));
                     keyConstants[i] = (JavaConstant) x.keyAt(i);
                     keyProbabilities[i] = x.keyProbability(i);
-                    // System.out.printf("switch: key=%s, target=%s\n",keyConstants[i],keyTargets[i]);
                 }
-                gen.emitStrategySwitch(keyConstants, keyProbabilities,
-                        keyTargets, defaultTarget, value);
+                gen.emitStrategySwitch(keyConstants, keyProbabilities, keyTargets, defaultTarget, value);
             }
         }
     }
@@ -712,15 +595,13 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         final Variable result = gen.newVariable(lirKind);
         final Value x = operandOrConjunction(node.getX());
         final Value y = operandOrConjunction(node.getY());
-        append(new AssignStmt(result, new OCLBinary.Expr(
-                OCLBinaryOp.LOGICAL_OR, lirKind, x, y)));
+        append(new AssignStmt(result, new OCLBinary.Expr(OCLBinaryOp.LOGICAL_OR, lirKind, x, y)));
         setResult(node, result);
 
     }
 
     private void emitLoopExit(LoopExitNode node) {
-        if (!node.loopBegin().getBlockNodes()
-                .contains((FixedNode) node.predecessor())) {
+        if (!node.loopBegin().getBlockNodes().contains((FixedNode) node.predecessor())) {
             append(new OCLControlFlow.LoopBreakOp());
         }
     }
@@ -733,8 +614,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 setResult(param, getGen().getOCLGenTool().emitParameterLoad(param, param.index()));
             }
         } else {
-            final Local[] locals = graph.method().getLocalVariableTable()
-                    .getLocalsAt(0);
+            final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
             int index = 0;
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                 LIRKind lirKind = getGen().getLIRKind(param.stamp());
@@ -801,12 +681,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         final AbstractMergeNode merge = end.merge();
         for (ValuePhiNode phi : merge.valuePhis()) {
             final ValueNode value = phi.valueAt(end);
-            if (!phi.isLoopPhi()
-                    && phi.singleValueOrThis() == phi
-                    || (value instanceof PhiNode && !((PhiNode) value)
-                            .isLoopPhi())) {
-                final AllocatableValue result = gen
-                        .asAllocatable(operandForPhi(phi));
+            if (!phi.isLoopPhi() && phi.singleValueOrThis() == phi || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
+                final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
                 append(new OCLLIRStmt.AssignStmt(result, operand(value)));
             }
         }
@@ -849,7 +725,5 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     @Override
     public void visitSafepointNode(final SafepointNode arg0) {
         unimplemented();
-
     }
-
 }

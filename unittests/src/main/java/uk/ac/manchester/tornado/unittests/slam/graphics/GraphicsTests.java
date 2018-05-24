@@ -47,6 +47,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.Reduce;
 import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.collections.graphics.Renderer;
 import uk.ac.manchester.tornado.collections.math.TornadoMath;
@@ -445,7 +446,8 @@ public class GraphicsTests extends TornadoTestBase {
         for (@Parallel int y = 0; y < normals.Y(); y++) {
             for (@Parallel int x = 0; x < normals.X(); x++) {
                 final Float4 hit = GraphicsMath.raycastPoint(volume, volumeDims, x, y, view, nearPlane, farPlane, smallStep, largeStep);
-                output.set(y * normals.X() + x, hit);
+                output.set(x, hit);
+
             }
         }
     }
@@ -823,7 +825,7 @@ public class GraphicsTests extends TornadoTestBase {
         // @formatter:on
     }
 
-    public static void reduceValues(float[] sums, int startIndex, ImageFloat8 trackingResults, int resultIndex) {
+    public static void reduceValues(final float[] sums, final int startIndex, final ImageFloat8 trackingResults, int resultIndex) {
 
         final int jtj = startIndex + 7;
         final int info = startIndex + 28;
@@ -844,7 +846,7 @@ public class GraphicsTests extends TornadoTestBase {
 
         // Float6 base(+1) += row.scale(error)
         // for (int i = 0; i < 6; i++) {
-        // sums[startIndex + 0 + 1] += error * value.get(0);
+        // sums[startIndex + i + 1] += error * value.get(i);
         // sums[startIndex + i + 1] = value.get(i);
         // }
 
@@ -860,7 +862,6 @@ public class GraphicsTests extends TornadoTestBase {
         sums[jtj + 1] += (value.getS0() * value.getS1());
         sums[jtj + 2] += (value.getS0() * value.getS2());
         sums[jtj + 3] += (value.getS0() * value.getS3());
-
         sums[jtj + 4] += (value.getS0() * value.getS4());
         sums[jtj + 5] += (value.getS0() * value.getS5());
 
@@ -885,6 +886,7 @@ public class GraphicsTests extends TornadoTestBase {
         sums[jtj + 20] += (value.getS5() * value.getS5());
 
         sums[info]++;
+
     }
 
     public static void mapReduce(final float[] output, final ImageFloat8 input) {
@@ -913,8 +915,6 @@ public class GraphicsTests extends TornadoTestBase {
             Float4 f = input.get(i);
             Float4 ff = new Float4(f.get(3), f.get(2), f.get(1), f.get(0));
             output.set(i, ff);
-            // f.get(0)));
-            // output.set(i, Float4.add(input.get(i), input.get(i)));
         }
     }
 

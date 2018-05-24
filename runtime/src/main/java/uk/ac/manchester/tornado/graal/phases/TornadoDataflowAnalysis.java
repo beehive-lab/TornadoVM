@@ -49,6 +49,7 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.graal.nodes.ParallelRangeNode;
+import uk.ac.manchester.tornado.graal.nodes.StoreAtomicIndexedNode;
 
 public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext> {
 
@@ -97,11 +98,11 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             return fatherNodeStore;
         }
     }
-    
+
     private boolean checkIgnoreStride(ParallelRangeNode range) {
         ValueNode value = range.stride().value();
         if (value instanceof ConstantNode) {
-            ConstantNode c = (ConstantNode)value;
+            ConstantNode c = (ConstantNode) value;
             Constant value2 = c.getValue();
             String v = value2.toValueString();
             int stride = Integer.parseInt(v);
@@ -113,10 +114,11 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         }
         return false;
     }
-    
+
     private boolean shouldIgnoreNode(IfNode ifNode, IfNode fatherNodeStore) {
-       
-        // Check first if the IF node controls stride, in which case we should only ignore
+
+        // Check first if the IF node controls stride, in which case we should
+        // only ignore
         // if the stride is 1.
         boolean ignore = false;
         if (ifNode.condition() instanceof BinaryOpLogicNode) {
@@ -127,12 +129,13 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 ignore = checkIgnoreStride((ParallelRangeNode) condition.getY());
             }
         }
-        
+
         if (ignore) {
             return true;
         }
-        
-        // Check if the IF node found is different from the one previously recorded.
+
+        // Check if the IF node found is different from the one previously
+        // recorded.
         if (fatherNodeStore != null) {
             if (!fatherNodeStore.equals(ifNode)) {
                 // We found different father IF node for each
@@ -161,7 +164,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             }
             if (predecessor instanceof IfNode) {
                 IfNode ifNode = (IfNode) predecessor;
-                
+
                 if (shouldIgnoreNode(ifNode, fatherNodeStore)) {
                     continue;
                 }
@@ -201,7 +204,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 if (((ValueNode) currentNode).stamp().javaType(metaAccess).isArray()) {
                     nf.addAll(currentNode.usages().snapshot());
                 }
-            } else if (currentNode instanceof StoreIndexedNode) {
+            } else if (currentNode instanceof StoreIndexedNode || currentNode instanceof StoreAtomicIndexedNode) {
                 MetaControlFlow meta = analyseControlFlowForWriting(currentNode, fatherNodeStore, isWrittenTrueCondition, isWrittenFalseCondition);
                 fatherNodeStore = meta.getFatherNodeStore();
                 isWrittenTrueCondition = meta.isWrittenTrueCondition();

@@ -26,7 +26,6 @@
 package uk.ac.manchester.tornado.api.meta;
 
 import static uk.ac.manchester.tornado.common.Tornado.EVENT_WINDOW;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
 
 import java.lang.annotation.Annotation;
@@ -47,6 +46,7 @@ import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.meta.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.EventSet;
 
+@SuppressWarnings("deprecation")
 public class TaskMetaData extends AbstractMetaData {
 
     public static TaskMetaData create(ScheduleMetaData scheduleMeta, String id, Method method, boolean readMetaData) {
@@ -69,6 +69,7 @@ public class TaskMetaData extends AbstractMetaData {
         return sb.toString();
     }
 
+    private String idTask;
     private Coarseness coarseness;
     private byte[] constantData;
     private int constantSize;
@@ -98,6 +99,7 @@ public class TaskMetaData extends AbstractMetaData {
         profiles = new HashMap<>();
         argumentsAccess = new Access[numParameters];
         Arrays.fill(argumentsAccess, Access.NONE);
+        this.idTask = scheduleMetaData.getId() + "." + id;
 
         localWorkDefined = getProperty(getId() + ".local.dims") != null;
         if (localWorkDefined) {
@@ -119,6 +121,10 @@ public class TaskMetaData extends AbstractMetaData {
 
         this.schedule = !(globalWorkDefined && localWorkDefined);
         this.canAssumeExact = Boolean.parseBoolean(getDefault("coarsener.exact", getId(), "False"));
+    }
+
+    private static String getProperty(String key) {
+        return System.getProperty(key);
     }
 
     public boolean canAssumeExact() {
@@ -151,6 +157,10 @@ public class TaskMetaData extends AbstractMetaData {
         }
         localWorkDefined = true;
         schedule = !(globalWorkDefined && localWorkDefined);
+    }
+
+    public void setLocalWorkToNull() {
+        localWork = null;
     }
 
     public void setSchedule(boolean value) {
@@ -274,6 +284,7 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public void setDomain(final DomainTree value) {
+
         domain = value;
         coarseness = new Coarseness(domain.getDepth());
 
@@ -364,12 +375,13 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public void printThreadDims() {
-        System.out.printf("task info: %s\n", getId());
+        System.out.printf("task info: %s\n", idTask);
+        System.out.printf("\tplatform          : %s\n", getDevice().getPlatformName());
         System.out.printf("\tdevice            : %s\n", getDevice().getDescription());
         System.out.printf("\tdims              : %d\n", domain.getDepth());
         System.out.printf("\tglobal work offset: %s\n", formatArray(globalOffset));
         System.out.printf("\tglobal work size  : %s\n", formatArray(globalWork));
-        System.out.printf("\tlocal  work size  : %s\n", formatArray(localWork));
+        System.out.printf("\tlocal  work size  : %s\n", localWork == null ? "null" : formatArray(localWork));
     }
 
     public void setCoarseness(int index, int value) {
@@ -394,6 +406,11 @@ public class TaskMetaData extends AbstractMetaData {
     @Override
     public boolean shouldPrintCompileTimes() {
         return super.shouldPrintCompileTimes() || scheduleMetaData.shouldPrintCompileTimes();
+    }
+
+    @Override
+    public boolean shouldPrintKernelExecutionTime() {
+        return super.shouldPrintKernelExecutionTime() || scheduleMetaData.shouldPrintKernelExecutionTime();
     }
 
     @Override
@@ -435,8 +452,7 @@ public class TaskMetaData extends AbstractMetaData {
 
         final int paramCount = method.getParameterCount();
 
-        final Annotation[][] paramAnnotations = method
-                .getParameterAnnotations();
+        final Annotation[][] paramAnnotations = method.getParameterAnnotations();
 
         for (int i = 0; i < paramCount; i++) {
             Access access = Access.UNKNOWN;
@@ -473,8 +489,7 @@ public class TaskMetaData extends AbstractMetaData {
         final int paramCount = method.getParameterCount();
 
         Access thisAccess = Access.NONE;
-        for (final Annotation an : method.getAnnotatedReceiverType()
-                .getAnnotations()) {
+        for (final Annotation an : method.getAnnotatedReceiverType().getAnnotations()) {
             if (an instanceof Read) {
                 thisAccess = Access.READ;
             } else if (an instanceof ReadWrite) {
@@ -489,8 +504,7 @@ public class TaskMetaData extends AbstractMetaData {
 
         argumentsAccess[0] = thisAccess;
 
-        final Annotation[][] paramAnnotations = method
-                .getParameterAnnotations();
+        final Annotation[][] paramAnnotations = method.getParameterAnnotations();
 
         for (int i = 0; i < paramCount; i++) {
             Access access = Access.UNKNOWN;

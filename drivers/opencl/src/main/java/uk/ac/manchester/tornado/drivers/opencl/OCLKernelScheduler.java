@@ -42,17 +42,9 @@ public abstract class OCLKernelScheduler {
         deviceContext = context;
     }
 
-    public void calcStats(int window) {
-
-    }
-
     public abstract void calculateGlobalWork(final TaskMetaData meta);
 
     public abstract void calculateLocalWork(final TaskMetaData meta);
-
-    public void adjust() {
-
-    }
 
     public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents) {
 
@@ -70,12 +62,9 @@ public abstract class OCLKernelScheduler {
 
         final int task;
         if (meta.shouldUseOpenclScheduling()) {
-            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(),
-                    meta.getGlobalWork(), null, waitEvents);
+            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
         } else {
-            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(),
-                    meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
-
+            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
         }
         return task;
     }

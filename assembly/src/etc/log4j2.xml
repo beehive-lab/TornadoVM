@@ -24,7 +24,7 @@
 		<Logger name="tornado.graal.TornadoLIRGenerator" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
     		</Logger>
-		<Logger name="tornado.runtime.TornadoVM" level="warn" additivity="false">
+		<Logger name="uk.ac.manchester.tornado.runtime.TornadoVM" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
     		</Logger>
 	</Loggers>

@@ -79,8 +79,7 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     native static void clGetEventInfo(long eventId, int param, byte[] buffer) throws OCLException;
 
-    native static void clGetEventProfilingInfo(long eventId, int param,
-            byte[] buffer) throws OCLException;
+    native static void clGetEventProfilingInfo(long eventId, int param, byte[] buffer) throws OCLException;
 
     native static void clWaitForEvents(long[] events) throws OCLException;
 
@@ -106,35 +105,34 @@ public class OCLEvent extends TornadoLogger implements Event {
     }
 
     public long getCLQueuedTime() {
-        return readEventTime(CL_PROFILING_COMMAND_QUEUED
-                .getValue());
+        return readEventTime(CL_PROFILING_COMMAND_QUEUED.getValue());
     }
 
     public long getCLSubmitTime() {
-        return readEventTime(CL_PROFILING_COMMAND_SUBMIT
-                .getValue());
+        return readEventTime(CL_PROFILING_COMMAND_SUBMIT.getValue());
     }
 
     public long getCLStartTime() {
-        return readEventTime(CL_PROFILING_COMMAND_START
-                .getValue());
+        return readEventTime(CL_PROFILING_COMMAND_START.getValue());
     }
 
     public long getCLEndTime() {
-        return readEventTime(CL_PROFILING_COMMAND_END
-                .getValue());
+        return readEventTime(CL_PROFILING_COMMAND_END.getValue());
     }
 
     @Override
     public double getExecutionTime() {
-        return RuntimeUtilities.elapsedTimeInSeconds(getCLStartTime(),
-                getCLEndTime());
+        return RuntimeUtilities.elapsedTimeInSeconds(getCLStartTime(), getCLEndTime());
+    }
+
+    @Override
+    public long getExecutionTimeInNanoSeconds() {
+        return getCLEndTime() - getCLStartTime();
     }
 
     @Override
     public double getTotalTime() {
-        return RuntimeUtilities.elapsedTimeInSeconds(
-                getCLSubmitTime(), getCLEndTime());
+        return RuntimeUtilities.elapsedTimeInSeconds(getCLSubmitTime(), getCLEndTime());
     }
 
     protected OCLCommandExecutionStatus getCLStatus() {
@@ -198,8 +196,7 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     @Override
     public double getQueuedTime() {
-        return RuntimeUtilities.elapsedTimeInSeconds(getCLSubmitTime(),
-                getCLStartTime());
+        return RuntimeUtilities.elapsedTimeInSeconds(getCLSubmitTime(), getCLStartTime());
     }
 
     @Override

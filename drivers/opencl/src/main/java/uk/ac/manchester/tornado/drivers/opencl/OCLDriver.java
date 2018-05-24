@@ -80,8 +80,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
         return count;
     }
 
-    private OCLBackend checkAndInitBackend(final int platform,
-            final int device) {
+    private OCLBackend checkAndInitBackend(final int platform, final int device) {
         final OCLBackend backend = backends[platform][device];
         if (!backend.isInitialised()) {
             backend.init();
@@ -90,36 +89,56 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
         return backend;
     }
 
-    private OCLBackend createOCLBackend(final OptionValues options,
-            final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, final OCLContext context,
-            final int deviceIndex) {
+    private OCLBackend createOCLBackend(final OptionValues options, final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, final OCLContext context, final int deviceIndex) {
         final OCLDevice device = context.devices().get(deviceIndex);
         info("Creating backend for %s", device.getName());
         return OCLHotSpotBackendFactory.createBackend(options, jvmciRuntime.getHostJVMCIBackend(), vmConfig, context, device);
     }
 
+    private static boolean getBoolean(String property) {
+        if (System.getProperty(property) == null) {
+            return false;
+        } else if (System.getProperty(property).toLowerCase().equals("true")) {
+            return true;
+        }
+        return false;
+    }
+
+    private static String getString(String property) {
+        if (System.getProperty(property) == null) {
+            return null;
+        } else {
+            return System.getProperty(property);
+        }
+
+    }
+
+    private void installDevices(int platformIndex, OCLPlatform platform, final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
+        info("OpenCL[%d]: Platform %s", platformIndex, platform.getName());
+        final OCLContext context = platform.createContext();
+        contexts.add(context);
+        final int numDevices = context.getNumDevices();
+        info("OpenCL[%d]: Has %d devices...", platformIndex, numDevices);
+
+        backends[platformIndex] = new OCLBackend[numDevices];
+        for (int j = 0; j < numDevices; j++) {
+            final OCLDevice device = context.devices().get(j);
+            info("OpenCL[%d]: device=%s", platformIndex, device.getName());
+            backends[platformIndex][j] = createOCLBackend(options, vmRuntime, vmConfig, context, j);
+        }
+    }
+
     protected void discoverDevices(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
         final int numPlatforms = OpenCL.getNumPlatforms();
         if (numPlatforms > 0) {
-
+            String platformToIgnore = getString("tornado.ignore.platform");
             for (int i = 0; i < numPlatforms; i++) {
                 final OCLPlatform platform = OpenCL.getPlatform(i);
 
-                info("OpenCL[%d]: Platform %s", i, platform.getName());
-                final OCLContext context = platform.createContext();
-                contexts.add(context);
-                final int numDevices = context.getNumDevices();
-                info("OpenCL[%d]: Has %d devices...", i, numDevices);
-
-                backends[i] = new OCLBackend[numDevices];
-
-                for (int j = 0; j < numDevices; j++) {
-                    final OCLDevice device = context.devices().get(j);
-                    info("OpenCL[%d]: device=%s", i, device.getName());
-
-                    backends[i][j] = createOCLBackend(options, vmRuntime, vmConfig,
-                            context, j);
-
+                if (platformToIgnore != null && platform.getName().startsWith(platformToIgnore)) {
+                    info("Ignore " + platform.getName());
+                } else {
+                    installDevices(i, platform, options, vmRuntime, vmConfig);
                 }
             }
         }
@@ -134,7 +153,11 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
     }
 
     public int getNumDevices(int platform) {
-        return backends[platform].length;
+        try {
+            return backends[platform].length;
+        } catch (NullPointerException e) {
+            return 0;
+        }
     }
 
     public int getNumPlatforms() {
