@@ -12,16 +12,16 @@
 		<Root level="warn">
 			<AppenderRef ref="Console"/>
 		</Root>
-		<Logger name="tornado" level="warn" additivity="false">
+		<Logger name="uk.ac.manchester.tornado" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
     		</Logger>
-		<Logger name="tornado.runtime.ObjectReference" level="warn" additivity="false">
+		<Logger name="uk.ac.manchester.tornado.runtime.ObjectReference" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
     		</Logger>
-		<Logger name="tornado.graal.compiler.TornadoCodeGenerator" level="warn" additivity="false">
+		<Logger name="uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
     		</Logger>
-		<Logger name="tornado.graal.TornadoLIRGenerator" level="warn" additivity="false">
+		<Logger name="uk.ac.manchester.tornado.graal.TornadoLIRGenerator" level="warn" additivity="false">
 			<AppenderRef ref="Console"/>
     		</Logger>
 		<Logger name="uk.ac.manchester.tornado.runtime.TornadoVM" level="warn" additivity="false">
