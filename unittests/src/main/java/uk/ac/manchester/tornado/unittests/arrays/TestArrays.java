@@ -76,6 +76,12 @@ public class TestArrays extends TornadoTestBase {
         }
     }
 
+    public static void vectorChars(char[] a, char[] b, char[] c) {
+        for (@Parallel int i = 0; i < c.length; i++) {
+            c[i] = (char) (a[i] + 'f');
+        }
+    }
+
     public static void initializeSequential(int[] a) {
         for (int i = 0; i < a.length; i++) {
             a[i] = 1;
@@ -197,7 +203,7 @@ public class TestArrays extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
+            assertEquals(a[i] + b[i], c[i], 0.01);
         }
     }
 
@@ -222,7 +228,7 @@ public class TestArrays extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
+            assertEquals(a[i] + b[i], c[i], 0.01f);
         }
     }
 
@@ -248,7 +254,7 @@ public class TestArrays extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
+            assertEquals(a[i] + b[i], c[i]);
         }
     }
 
@@ -273,7 +279,7 @@ public class TestArrays extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
+            assertEquals(a[i] + b[i], c[i]);
         }
     }
 
@@ -298,7 +304,32 @@ public class TestArrays extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
+            assertEquals(a[i] + b[i], c[i]);
+        }
+    }
+
+    @Test
+    public void testVectorChars() {
+        final int numElements = 4096;
+        char[] a = new char[numElements];
+        char[] b = new char[numElements];
+        char[] c = new char[numElements];
+
+        IntStream.range(0, numElements).parallel().forEach(idx -> {
+            a[idx] = 'a';
+            b[idx] = '0';
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(a, b)
+            .task("t0", TestArrays::vectorChars, a, b, c)
+            .streamOut(c)
+            .execute();
+        //@formatter:on
+
+        for (int i = 0; i < c.length; i++) {
+            assertEquals(a[i] + 'f', c[i]);
         }
     }
 

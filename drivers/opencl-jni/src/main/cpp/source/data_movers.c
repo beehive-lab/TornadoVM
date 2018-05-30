@@ -46,6 +46,7 @@
         }
 
 CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, B, byte)
+CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, C, char)
 CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, I, int)
 CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, J, long)
 CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, F, float)
@@ -68,6 +69,7 @@ CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, D, double)
     }
 
 WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, B, byte)
+WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, C, char)
 WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, S, short)
 WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, I, int)
 WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, J, long)
@@ -91,6 +93,7 @@ WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, D, dou
             return (jlong) event; \
     }
 READ_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, B, byte)
+READ_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, C, char)
 READ_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, S, short)
 READ_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, I, int)
 READ_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, J, long)
