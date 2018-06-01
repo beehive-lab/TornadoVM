@@ -53,7 +53,7 @@ public class OCLCodeCache {
 
     private final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", "False"));
-    private final boolean OPENCL_LOAD_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.load", "False"));
+    private final boolean OPENCL_LOAD_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.load", "True"));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", "False"));
     private final boolean OPENCL_DUMP_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.dump", "False"));
     private final boolean OPENCL_PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.print", "False"));
@@ -74,6 +74,9 @@ public class OCLCodeCache {
             info("loading binaries into code cache");
             load();
         }
+    }
+    public boolean getBinStatus(){
+        return OPENCL_LOAD_BINS;
     }
 
     private Path resolveDir(String dir) {
@@ -176,6 +179,20 @@ public class OCLCodeCache {
         } else {
             warn("\tunable to compile %s", entryPoint);
             code.invalidate();
+
+//            Path lookupPath = Paths.get("/home/admin/Tornado/tornado/null/var/opencl-codecache/device-2-0/");
+//            final File file = lookupPath.toFile();
+//
+//            try {
+//                final byte[] binary = Files.readAllBytes(lookupPath);
+//
+//            } catch (OCLException | IOException e) {
+//                error("unable to load binary: %s (%s)", file, e.getMessage());
+//
+//            }
+//            OCLInstalledCode coded = new OCLInstalledCode(entryPoint, binary, deviceContext, program, kernel);
+//            coded =  installBinary(file.getName(), binary);
+//            code = coded;
         }
 
         return code;
