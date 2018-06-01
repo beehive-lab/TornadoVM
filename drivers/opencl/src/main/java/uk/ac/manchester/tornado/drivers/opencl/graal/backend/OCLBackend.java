@@ -25,13 +25,19 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.backend;
 
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.common.Tornado.DEBUG_KERNEL_ARGS;
+import static uk.ac.manchester.tornado.common.Tornado.error;
+import static uk.ac.manchester.tornado.common.Tornado.info;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import uk.ac.manchester.tornado.drivers.opencl.*;
+import uk.ac.manchester.tornado.drivers.opencl.exceptions.*;
 import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
+import java.io.*;
 import java.lang.reflect.Method;
+import java.nio.file.*;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -80,9 +86,6 @@ import uk.ac.manchester.tornado.api.Vector;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.Tornado;
-import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeUtil;
@@ -219,12 +222,33 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
          * Retrive the address of the heap on the device
          */
         TaskMetaData meta = new TaskMetaData(scheduleMeta, "lookupBufferAddress", 0);
+        OCLCodeCache check = new OCLCodeCache(deviceContext);
+
         if (deviceContext.isCached("internal", "lookupBufferAddress")) {
             lookupCode = deviceContext.getCode("internal", "lookupBufferAddress");
-        } else {
+        } else if (check.getBinStatus() ){
+            System.out.println("CHECKING FOR BIN LOOKUP" + "\n");
 
-            OCLCompilationResult result = OCLCompiler.compileCodeForDevice(getTornadoRuntime().resolveMethod(getLookupMethod()), null, meta, (OCLProviders) getProviders(), this);
-            lookupCode = deviceContext.installCode(result);
+            Path lookupPath = Paths.get("/home/admin/Tornado/tornado/null/var/opencl-codecache/lookupBufferAddress");
+                final File file = lookupPath.toFile();
+                if (file.length() == 0) {
+                    return;
+                }
+                try {
+                    final byte[] binary = Files.readAllBytes(lookupPath);
+                    lookupCode=  check.installBinary(file.getName(), binary);
+                } catch (OCLException | IOException e) {
+                    error("unable to load binary: %s (%s)", file, e.getMessage());
+
+            }
+            //lookupCode = check.installBinary("lookupBufferAddress", binary);
+            System.out.println("out  OF  BIN LOOKUP" + "\n");
+
+        }
+        else {
+            //INSTALL LOOKUPBUFFERTODEVICE
+           OCLCompilationResult result = OCLCompiler.compileCodeForDevice(getTornadoRuntime().resolveMethod(getLookupMethod()), null, meta, (OCLProviders) getProviders(), this);
+           lookupCode = deviceContext.installCode(result);
         }
 
         deviceContext.getMemoryManager().init(this, readHeapBaseAddress(meta));
