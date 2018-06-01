@@ -81,9 +81,11 @@ public class OCLCodeCache {
         return OPENCL_LOAD_BINS;
     }
 
+
     public String getFPGABinDir() {
         return FPGA_BIN_DIR;
     }
+
 
     private Path resolveDir(String dir) {
         final String tornadoRoot = System.getenv("TORNADO_SDK");
@@ -185,6 +187,20 @@ public class OCLCodeCache {
         } else {
             warn("\tunable to compile %s", entryPoint);
             code.invalidate();
+
+//            Path lookupPath = Paths.get("/home/admin/Tornado/tornado/null/var/opencl-codecache/device-2-0/");
+//            final File file = lookupPath.toFile();
+//
+//            try {
+//                final byte[] binary = Files.readAllBytes(lookupPath);
+//
+//            } catch (OCLException | IOException e) {
+//                error("unable to load binary: %s (%s)", file, e.getMessage());
+//
+//            }
+//            OCLInstalledCode coded = new OCLInstalledCode(entryPoint, binary, deviceContext, program, kernel);
+//            coded =  installBinary(file.getName(), binary);
+//            code = coded;
         }
 
         return code;

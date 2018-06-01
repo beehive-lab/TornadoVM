@@ -1,16 +1,14 @@
 package uk.ac.manchester.tornado.examples;
 
-import org.omg.Messaging.*;
+
 import uk.ac.manchester.tornado.api.*;
-import uk.ac.manchester.tornado.common.enums.*;
-import uk.ac.manchester.tornado.drivers.opencl.*;
+
 import uk.ac.manchester.tornado.examples.vectors.*;
 import uk.ac.manchester.tornado.lang.*;
 import uk.ac.manchester.tornado.runtime.*;
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import uk.ac.manchester.tornado.runtime.api.*;
 
-import java.util.*;
 
 public class Saxpy {
 
@@ -46,6 +44,7 @@ public class Saxpy {
             //System.out.print(Arrays.toString(y));
            // System.out.println(Arrays.toString(y));
         }
+
 
     }
 
