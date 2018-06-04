@@ -199,7 +199,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         bb.putLong(0);
         bb.putLong(0);
 
+        System.out.println("Install lookup and execute: BEFORE" + "\n");
         lookupCode.execute(bb, meta);
+        System.out.println("Install lookup and execute: AFTER" + "\n");
 
         final long address = bb.getLong(0);
         Tornado.info("Heap address @ 0x%x on %s ", address, deviceContext.getDevice().getName());
