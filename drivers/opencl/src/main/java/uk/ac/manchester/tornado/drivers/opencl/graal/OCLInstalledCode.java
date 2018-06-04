@@ -117,7 +117,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         Event event = deviceContext.resolveEvent(task);
 
-        debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getName());
+         debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getName());
         if (event != null) {
             debug("\tstatus   : %s", event.getStatus());
 
