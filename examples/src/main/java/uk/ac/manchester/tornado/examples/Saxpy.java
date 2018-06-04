@@ -44,8 +44,6 @@ public class Saxpy {
             //System.out.print(Arrays.toString(y));
            // System.out.println(Arrays.toString(y));
         }
-
-
     }
 
 }
