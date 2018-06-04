@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.examples;
 
+import org.omg.Messaging.*;
 import uk.ac.manchester.tornado.api.*;
 import uk.ac.manchester.tornado.examples.vectors.*;
 import uk.ac.manchester.tornado.lang.*;
@@ -25,7 +26,8 @@ public class Saxpy {
         float[] y = new float[numElements];
 
         for (int i = 0; i < numElements; i++) {
-            x[i] = i;
+            x[i] = 1;
+            y[i] = 0;
         }
 
        TaskSchedule s0 = new TaskSchedule("s0")
@@ -37,6 +39,9 @@ public class Saxpy {
 
         //s0.warmup();
         s0.execute();
+        for (int i=0; i < y.length; i++){
+            System.out.println(y[i] + "\n");
+        }
 
     }
 
