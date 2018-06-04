@@ -193,7 +193,9 @@ public class OCLTornadoDevice implements TornadoDevice {
         final OCLDeviceContext deviceContext = getDeviceContext();
         OCLCodeCache tmp = new OCLCodeCache(deviceContext);
 
+
         if ((tmp.getBinStatus() == false) && (tmp.getFPGABinDir() != null)) {
+
             if (task instanceof CompilableTask) {
                 final CompilableTask executable = (CompilableTask) task;
 //			final long t0 = System.nanoTime();
@@ -263,6 +265,37 @@ public class OCLTornadoDevice implements TornadoDevice {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
+
+                }
+                return null;
+            } else if (task instanceof PrebuiltTask) {
+                final PrebuiltTask executable = (PrebuiltTask) task;
+                if (deviceContext.isCached(task.getId(), executable.getEntryPoint())) {
+                    return deviceContext.getCode(task.getId(), executable.getEntryPoint());
+                }
+
+                final Path path = Paths.get(executable.getFilename());
+                guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
+                try {
+                    final byte[] source = Files.readAllBytes(path);
+                    return deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(),
+                            source);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            OCLCodeCache check = new OCLCodeCache(deviceContext);
+
+            Path lookupPath = Paths.get("/home/admin/Tornado/tornado/null/var/opencl-codecache/device-2-0/saxpy");
+            final File file = lookupPath.toFile();
+
+            try {
+                final byte[] binary = Files.readAllBytes(lookupPath);
+                return check.installBinary(file.getName(), binary);
+            } catch (OCLException | IOException e) {
+                error("unable to load binary: %s (%s)", file, e.getMessage());
             }
         } else {
             final OCLCodeCache check = new OCLCodeCache(deviceContext);
