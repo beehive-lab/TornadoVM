@@ -185,22 +185,26 @@ public class OCLCodeCache {
                 program.dumpBinaries(outDir.toAbsolutePath().toString() + "/" + entryPoint);
             }
         } else {
+            System.out.println("TRY TO BUILD FROM SOURCE: WHY????" + "\n");
             warn("\tunable to compile %s", entryPoint);
             code.invalidate();
-
+//
 //            Path lookupPath = Paths.get("/home/admin/Tornado/tornado/null/var/opencl-codecache/device-2-0/");
 //            final File file = lookupPath.toFile();
-//
+//            OCLInstalledCode tmp = null;
 //            try {
 //                final byte[] binary = Files.readAllBytes(lookupPath);
+//                OCLInstalledCode coded = new OCLInstalledCode(entryPoint, binary, deviceContext, program, kernel);
+//                coded =  installBinary(file.getName(), binary);
+//                //final OCLInstalledCode code = coded;
+//                tmp = coded;
 //
 //            } catch (OCLException | IOException e) {
 //                error("unable to load binary: %s (%s)", file, e.getMessage());
-//
+//                return  null;
 //            }
-//            OCLInstalledCode coded = new OCLInstalledCode(entryPoint, binary, deviceContext, program, kernel);
-//            coded =  installBinary(file.getName(), binary);
-//            code = coded;
+//            code = tmp;
+
         }
 
         return code;
@@ -215,6 +219,7 @@ public class OCLCodeCache {
         try {
             entryPoint = entryPoint.split("-")[1];
         } catch (Exception e) {
+
 
         }
         info("Installing binary for %s into code cache", entryPoint);
