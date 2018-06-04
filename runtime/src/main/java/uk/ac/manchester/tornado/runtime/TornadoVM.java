@@ -347,6 +347,7 @@ public class TornadoVM extends TornadoLogger {
                 }
 
                 if (installedCodes[taskIndex] == null) {
+                    System.out.println("INSTALLED CODES == NULL" + "\n");
                     final long compileStart = System.nanoTime();
                     task.mapTo(device);
                     try {
