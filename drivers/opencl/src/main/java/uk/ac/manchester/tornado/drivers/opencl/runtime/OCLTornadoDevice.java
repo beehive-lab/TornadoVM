@@ -27,14 +27,16 @@ package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.isPrimitiveArray;
 import static uk.ac.manchester.tornado.common.Tornado.FORCE_ALL_TO_GPU;
+import static uk.ac.manchester.tornado.common.Tornado.error;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import uk.ac.manchester.tornado.drivers.opencl.*;
+import uk.ac.manchester.tornado.drivers.opencl.exceptions.*;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler.compileSketchForDevice;
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,9 +55,6 @@ import uk.ac.manchester.tornado.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.common.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
@@ -192,33 +191,39 @@ public class OCLTornadoDevice implements TornadoDevice {
     @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {
         final OCLDeviceContext deviceContext = getDeviceContext();
+        OCLCodeCache tmp = new OCLCodeCache(deviceContext);
 
-        if (task instanceof CompilableTask) {
-            final CompilableTask executable = (CompilableTask) task;
+        if (tmp.getBinStatus() == false) {
+            if (task instanceof CompilableTask) {
+                final CompilableTask executable = (CompilableTask) task;
 //			final long t0 = System.nanoTime();
-            final ResolvedJavaMethod resolvedMethod = getTornadoRuntime()
-                    .resolveMethod(executable.getMethod());
+                final ResolvedJavaMethod resolvedMethod = getTornadoRuntime()
+                        .resolveMethod(executable.getMethod());
 
 //			final long t1 = System.nanoTime();
-            final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
+                final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
 
-            // copy meta data into task
-            final TaskMetaData sketchMeta = sketch.getMeta();
-            final TaskMetaData taskMeta = executable.meta();
-            final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
-            final Access[] taskAccess = taskMeta.getArgumentsAccess();
-            for (int i = 0; i < sketchAccess.length; i++) {
-                taskAccess[i] = sketchAccess[i];
-            }
-
-            try {
-                final OCLCompilationResult result = compileSketchForDevice(
-                        sketch, executable,
-                        (OCLProviders) getBackend().getProviders(), getBackend());
-
-                if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
-                    return deviceContext.getCode(task.getId(), resolvedMethod.getName());
+                // copy meta data into task
+                final TaskMetaData sketchMeta = sketch.getMeta();
+                final TaskMetaData taskMeta = executable.meta();
+                final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
+                final Access[] taskAccess = taskMeta.getArgumentsAccess();
+                for (int i = 0; i < sketchAccess.length; i++) {
+                    taskAccess[i] = sketchAccess[i];
                 }
+
+                try {
+                    final OCLCompilationResult result = compileSketchForDevice(
+                            sketch, executable,
+                            (OCLProviders) getBackend().getProviders(), getBackend());
+
+                    if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
+
+                        System.out.println("Kernel is cached " + task.getId() + "  -  " + resolvedMethod.getName());
+                        return deviceContext.getCode(task.getId(), resolvedMethod.getName());
+                    } else {
+                        System.out.println("Kernel is NOT cached: " + task.getId() + "  -  " + resolvedMethod.getName());
+                    }
 
 //            if (SHOW_OPENCL) {
 //                String filename = getFile(executable.getMethodName());
@@ -233,29 +238,44 @@ public class OCLTornadoDevice implements TornadoDevice {
 //                    e.printStackTrace();
 //                }
 //            }
-                return deviceContext.installCode(result);
-            } catch (Exception e) {
-                driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
-                driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
-                driver.fatal("exception: %s", e.toString());
+                    return deviceContext.installCode(result);
+                } catch (Exception e) {
+                    driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
+                    driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
+                    driver.fatal("exception: %s", e.toString());
 //                driver.fatal("cause: %s", e.getCause().toString());
-                e.printStackTrace();
-            }
-            return null;
-        } else if (task instanceof PrebuiltTask) {
-            final PrebuiltTask executable = (PrebuiltTask) task;
-            if (deviceContext.isCached(task.getId(), executable.getEntryPoint())) {
-                return deviceContext.getCode(task.getId(), executable.getEntryPoint());
-            }
+                    e.printStackTrace();
 
-            final Path path = Paths.get(executable.getFilename());
-            guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
+                }
+                return null;
+            } else if (task instanceof PrebuiltTask) {
+                final PrebuiltTask executable = (PrebuiltTask) task;
+                if (deviceContext.isCached(task.getId(), executable.getEntryPoint())) {
+                    return deviceContext.getCode(task.getId(), executable.getEntryPoint());
+                }
+
+                final Path path = Paths.get(executable.getFilename());
+                guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
+                try {
+                    final byte[] source = Files.readAllBytes(path);
+                    return deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(),
+                            source);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            OCLCodeCache check = new OCLCodeCache(deviceContext);
+
+            Path lookupPath = Paths.get("/home/admin/Tornado/tornado/null/var/opencl-codecache/device-2-0/saxpy");
+            final File file = lookupPath.toFile();
+
             try {
-                final byte[] source = Files.readAllBytes(path);
-                return deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(),
-                        source);
-            } catch (IOException e) {
-                e.printStackTrace();
+                final byte[] binary = Files.readAllBytes(lookupPath);
+                return check.installBinary(file.getName(), binary);
+            } catch (OCLException | IOException e) {
+                error("unable to load binary: %s (%s)", file, e.getMessage());
+
             }
         }
 
