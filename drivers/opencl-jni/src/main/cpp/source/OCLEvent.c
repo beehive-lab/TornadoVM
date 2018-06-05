@@ -85,14 +85,21 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clG
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clWaitForEvents
 (JNIEnv *env, jclass clazz, jlongArray array) {
     OPENCL_PROLOGUE;
+	jsize len;
+	cl_event* events;
 
-    OPENCL_DECODE_WAITLIST(array, events, len);
+    //OPENCL_DECODE_WAITLIST(array, events, len);
 
-    size_t return_size = 0;
-    OPENCL_SOFT_ERROR("clWaitForEvents",
-            clWaitForEvents((cl_uint) len, (cl_event *) events), 0);
+	if (array != NULL) {
+		len = (*env)->GetArrayLength(env, array);
+		events = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
+	    
+		OPENCL_SOFT_ERROR("clWaitForEvents",
+    	        clWaitForEvents((cl_uint) len, (const cl_event *) events), 0);
 
-    OPENCL_RELEASE_WAITLIST(array);
+		(*env)->ReleasePrimitiveArrayCritical(env, array, events, 0);
+	    //OPENCL_RELEASE_WAITLIST(array);
+	}
 }
 
 /*

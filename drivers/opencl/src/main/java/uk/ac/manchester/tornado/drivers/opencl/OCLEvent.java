@@ -28,7 +28,7 @@ package uk.ac.manchester.tornado.drivers.opencl;
 import static uk.ac.manchester.tornado.common.Tornado.ENABLE_PROFILING;
 import static uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue.EVENT_DESCRIPTIONS;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus.CL_COMPLETE;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus.toEnum;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus.createOCLCommandExecutionStatus;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLEventInfo.CL_EVENT_COMMAND_EXECUTION_STATUS;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_END;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_QUEUED;
@@ -96,6 +96,7 @@ public class OCLEvent extends TornadoLogger implements Event {
         buffer.clear();
 
         try {
+            clWaitForEvents(new long[] { id });
             clGetEventProfilingInfo(id, eventType.getValue(), buffer.array());
             time = buffer.getLong();
         } catch (OCLException e) {
@@ -150,7 +151,7 @@ public class OCLEvent extends TornadoLogger implements Event {
             error(e.getMessage());
         }
 
-        return toEnum(status);
+        return createOCLCommandExecutionStatus(status);
     }
 
     @Override
