@@ -239,7 +239,7 @@ public class OCLCommandQueue extends TornadoLogger {
 
         if (events[currentEvent] > 0 && !retain.get(currentEvent)) {
             internalEvent.setEventId(currentEvent, events[currentEvent]);
-            // internalEvent.release();
+            internalEvent.release();
         }
         events[currentEvent] = eventId;
         descriptors[currentEvent] = descriptorId;
