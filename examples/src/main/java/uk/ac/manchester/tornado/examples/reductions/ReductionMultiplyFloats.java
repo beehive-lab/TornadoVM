@@ -33,16 +33,21 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.api.Reduce;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.runtime.TornadoDriver;
+import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
-public class ReductionFloats {
+public class ReductionMultiplyFloats {
 
     private static final int MAX_ITERATIONS = 101;
 
     public static void reductionAddFloats(float[] input, @Reduce float[] result) {
-        result[0] = 0.0f;
+        result[0] = 1.0f;
         for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] += input[i];
+            result[0] *= input[i];
         }
     }
 
@@ -55,16 +60,37 @@ public class ReductionFloats {
         return middle;
     }
 
+    public static OCLDeviceType getDefaultDeviceType() {
+        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        OCLTornadoDevice defaultDevice = (OCLTornadoDevice) driver.getDefaultDevice();
+        OCLDevice device = defaultDevice.getDevice();
+        return device.getDeviceType();
+    }
+
     public static void benchmarkSumFloats(int size) {
         float[] input = new float[size];
 
-        // Final result
         int numGroups = 1;
         if (size > 256) {
             numGroups = size / 256;
         }
+        float[] result = null;
 
-        float[] result = new float[numGroups];
+        OCLDeviceType deviceType = getDefaultDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+                result = new float[Runtime.getRuntime().availableProcessors()];
+                break;
+            case CL_DEVICE_TYPE_GPU:
+                result = new float[numGroups];
+                break;
+            default:
+                break;
+        }
+
+        if (result == null) {
+            throw new RuntimeException("Result is null");
+        }
 
         Random r = new Random();
         IntStream.range(0, size).sequential().forEach(i -> {
@@ -74,17 +100,19 @@ public class ReductionFloats {
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", ReductionFloats::reductionAddFloats, input, result)
+            .task("t0", ReductionMultiplyFloats::reductionAddFloats, input, result)
             .streamOut(result);
         //@formatter:on
 
         ArrayList<Long> timers = new ArrayList<>();
         for (int i = 0; i < MAX_ITERATIONS; i++) {
+
             long start = System.nanoTime();
             task.execute();
             long end = System.nanoTime();
-            for (int j = 1; j < numGroups; j++) {
-                result[0] += result[j];
+
+            for (int j = 1; j < result.length; j++) {
+                result[0] *= result[j];
             }
             timers.add((end - start));
         }
