@@ -96,9 +96,6 @@ public class OCLEvent extends TornadoLogger implements Event {
         buffer.clear();
 
         try {
-
-            clWaitForEvents(new long[] { id });
-
             clGetEventProfilingInfo(id, eventType.getValue(), buffer.array());
             time = buffer.getLong();
         } catch (OCLException e) {
