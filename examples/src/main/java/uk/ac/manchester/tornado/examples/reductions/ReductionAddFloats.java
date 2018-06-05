@@ -44,8 +44,7 @@ public class ReductionAddFloats {
 
     private static final int MAX_ITERATIONS = 101;
 
-    public void reductionAddFloats(float[] input, @Reduce float[] result) {
-        result[0] = 0.0f;
+    public static void reductionAddFloats(float[] input, @Reduce float[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += input[i];
         }
@@ -98,7 +97,7 @@ public class ReductionAddFloats {
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", this::reductionAddFloats, input, result)
+            .task("t0", ReductionAddFloats::reductionAddFloats, input, result)
             .streamOut(result);
         //@formatter:on
 

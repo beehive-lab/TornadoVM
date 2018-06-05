@@ -44,7 +44,7 @@ public class ReductionMultiplyFloats {
 
     private static final int MAX_ITERATIONS = 101;
 
-    public void reductionAddFloats(float[] input, @Reduce float[] result) {
+    public static void reductionMulFloats(float[] input, @Reduce float[] result) {
         result[0] = 1.0f;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] *= input[i];
@@ -100,7 +100,7 @@ public class ReductionMultiplyFloats {
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", this::reductionAddFloats, input, result)
+            .task("t0", ReductionMultiplyFloats::reductionMulFloats, input, result)
             .streamOut(result);
         //@formatter:on
 
