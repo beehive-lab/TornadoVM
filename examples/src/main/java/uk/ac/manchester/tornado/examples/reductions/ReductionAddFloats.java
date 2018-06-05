@@ -44,14 +44,14 @@ public class ReductionAddFloats {
 
     private static final int MAX_ITERATIONS = 101;
 
-    public static void reductionAddFloats(float[] input, @Reduce float[] result) {
+    public void reductionAddFloats(float[] input, @Reduce float[] result) {
         result[0] = 0.0f;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += input[i];
         }
     }
 
-    public static double computeMedian(ArrayList<Long> input) {
+    public double computeMedian(ArrayList<Long> input) {
         Collections.sort(input);
         double middle = input.size() / 2;
         if (input.size() % 2 == 1) {
@@ -60,14 +60,14 @@ public class ReductionAddFloats {
         return middle;
     }
 
-    public static OCLDeviceType getDefaultDeviceType() {
+    public OCLDeviceType getDefaultDeviceType() {
         TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         OCLTornadoDevice defaultDevice = (OCLTornadoDevice) driver.getDefaultDevice();
         OCLDevice device = defaultDevice.getDevice();
         return device.getDeviceType();
     }
 
-    public static void benchmarkSumFloats(int size) {
+    public void run(int size) {
         float[] input = new float[size];
 
         int numGroups = 1;
@@ -98,7 +98,7 @@ public class ReductionAddFloats {
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", ReductionAddFloats::reductionAddFloats, input, result)
+            .task("t0", this::reductionAddFloats, input, result)
             .streamOut(result);
         //@formatter:on
 
@@ -125,6 +125,6 @@ public class ReductionAddFloats {
             inputSize = Integer.parseInt(args[0]);
         }
         System.out.println("Size = " + inputSize);
-        benchmarkSumFloats(inputSize);
+        new ReductionAddFloats().run(inputSize);
     }
 }
