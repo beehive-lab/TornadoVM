@@ -42,6 +42,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.common.TornadoLogger;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 
 public class OCLEvent extends TornadoLogger implements Event {
@@ -79,13 +80,13 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     native static void clGetEventInfo(long eventId, int param, byte[] buffer) throws OCLException;
 
-    native static void clGetEventProfilingInfo(long eventId, int param, byte[] buffer) throws OCLException;
+    native static void clGetEventProfilingInfo(long eventId, long param, byte[] buffer) throws OCLException;
 
     native static void clWaitForEvents(long[] events) throws OCLException;
 
     native static void clReleaseEvent(long eventId) throws OCLException;
 
-    private long readEventTime(int param) {
+    private long readEventTime(OCLProfilingInfo eventType) {
 
         if (!ENABLE_PROFILING || getCLStatus() != CL_COMPLETE) {
             return -1;
@@ -95,7 +96,10 @@ public class OCLEvent extends TornadoLogger implements Event {
         buffer.clear();
 
         try {
-            clGetEventProfilingInfo(id, param, buffer.array());
+
+            clWaitForEvents(new long[] { id });
+
+            clGetEventProfilingInfo(id, eventType.getValue(), buffer.array());
             time = buffer.getLong();
         } catch (OCLException e) {
             error(e.getMessage());
@@ -105,19 +109,19 @@ public class OCLEvent extends TornadoLogger implements Event {
     }
 
     public long getCLQueuedTime() {
-        return readEventTime(CL_PROFILING_COMMAND_QUEUED.getValue());
+        return readEventTime(CL_PROFILING_COMMAND_QUEUED);
     }
 
     public long getCLSubmitTime() {
-        return readEventTime(CL_PROFILING_COMMAND_SUBMIT.getValue());
+        return readEventTime(CL_PROFILING_COMMAND_SUBMIT);
     }
 
     public long getCLStartTime() {
-        return readEventTime(CL_PROFILING_COMMAND_START.getValue());
+        return readEventTime(CL_PROFILING_COMMAND_START);
     }
 
     public long getCLEndTime() {
-        return readEventTime(CL_PROFILING_COMMAND_END.getValue());
+        return readEventTime(CL_PROFILING_COMMAND_END);
     }
 
     @Override
@@ -127,7 +131,7 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     @Override
     public long getExecutionTimeInNanoSeconds() {
-        return getCLEndTime() - getCLStartTime();
+        return (getCLEndTime() - getCLStartTime());
     }
 
     @Override

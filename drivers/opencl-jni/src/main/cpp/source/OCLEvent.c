@@ -58,10 +58,10 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clG
 /*
  * Class:     jacc_runtime_drivers_opencl_OCLEvent
  * Method:    clGetEventProfilingInfo
- * Signature: (JI[B)V
+ * Signature: (JJ[B)V
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clGetEventProfilingInfo
-(JNIEnv *env, jclass clazz, jlong event_id, jint param_name, jbyteArray array) {
+(JNIEnv *env, jclass clazz, jlong event_id, jlong param_name, jbyteArray array) {
     OPENCL_PROLOGUE;
 
     jbyte *value;
@@ -90,7 +90,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clW
 
     size_t return_size = 0;
     OPENCL_SOFT_ERROR("clWaitForEvents",
-            clWaitForEvents((cl_uint) len, (const cl_event *) events),);
+            clWaitForEvents((cl_uint) len, (cl_event *) events), 0);
 
     OPENCL_RELEASE_WAITLIST(array);
 }
