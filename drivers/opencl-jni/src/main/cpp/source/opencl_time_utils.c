@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
@@ -20,27 +20,24 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: Juan Fumero
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.enums;
 
-public enum OCLProfilingInfo {
+#ifdef __APPLE__
+    #include <OpenCL/cl.h>
+#else 
+    #include <CL/cl.h>
+#endif
 
-    // @formatter:off
-	CL_PROFILING_COMMAND_QUEUED(0x1280),
-	CL_PROFILING_COMMAND_SUBMIT(0x1281),
-	CL_PROFILING_COMMAND_START(0x1282),
-	CL_PROFILING_COMMAND_END(0x1283);
-    // @formatter:on
-
-    private final long value;
-
-    OCLProfilingInfo(final long v) {
-        value = v;
-    }
-
-    public long getValue() {
-        return value;
-    }
+/*
+ * It returns the time in nanoseconds
+ */
+long getTimeEvent(cl_event event) {
+    clWaitForEvents(1, &event);
+    cl_ulong time_start, time_end;
+    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+    return (time_end - time_start);
 }
+
