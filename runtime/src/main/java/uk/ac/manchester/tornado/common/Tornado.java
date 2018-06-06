@@ -52,12 +52,6 @@ public final class Tornado {
         return settings.getProperty(key, defaultValue);
     }
 
-    /*
-     * Forces the executing kernel to output its arguments before execution
-     */
-    // public static final boolean DUMP_TASK_SCHEDULE =
-    // Boolean.parseBoolean(settings.getProperty("tornado.schedule.dump",
-    // "False"));
     public static final boolean VALIDATE_ARRAY_HEADERS = Boolean.parseBoolean(settings.getProperty("tornado.opencl.array.validate", "True"));
     public static final boolean TORNADO_LOOPS_REVERSE = Boolean.parseBoolean(settings.getProperty("tornado.loops.reverse", "True"));
     public static final boolean MARKER_USE_BARRIER = Boolean.parseBoolean(settings.getProperty("tornado.opencl.marker.asbarrier", "False"));
@@ -69,51 +63,17 @@ public final class Tornado {
     public static final int EVENT_WINDOW = Integer.parseInt(getProperty("tornado.opencl.eventwindow", "10240"));
     public static final int MAX_WAIT_EVENTS = Integer.parseInt(getProperty("tornado.opencl.maxwaitevents", "32"));
     public static final boolean OPENCL_USE_RELATIVE_ADDRESSES = Boolean.parseBoolean(settings.getProperty("tornado.opencl.userelative", "False"));
-    // public static final boolean OPENCL_WAIT_ACTIVE =
-    // Boolean.parseBoolean(settings.getProperty("tornado.opencl.wait.active",
-    // "False"));
-
     public static final boolean DUMP_COMPILED_METHODS = Boolean.parseBoolean(getProperty("tornado.compiled.dump", "False"));
-    /*
-     * Allows the OpenCL driver to select the size of local work groups
-     */
-    // public static final boolean USE_OPENCL_SCHEDULING =
-    // Boolean.parseBoolean(settings.getProperty("tornado.opencl.schedule",
-    // "False"));
-    // public static final boolean VM_WAIT_EVENT =
-    // Boolean.parseBoolean(settings.getProperty("tornado.vm.waitevent",
-    // "False"));
-    // public static final boolean ENABLE_EXCEPTIONS = Boolean
-    // .parseBoolean(settings.getProperty("tornado.exceptions.enable",
-    // "False"));
+
     public static final boolean ENABLE_PROFILING = Boolean.parseBoolean(settings.getProperty("tornado.profiling.enable", "True"));
     public static final boolean ENABLE_OOO_EXECUTION = Boolean.parseBoolean(settings.getProperty("tornado.ooo-execution.enable", "False"));
     public static final boolean VM_USE_DEPS = Boolean.parseBoolean(Tornado.getProperty("tornado.vm.deps", "False"));
     public static boolean FORCE_BLOCKING_API_CALLS;
-    // public static final boolean ENABLE_PARALLELIZATION =
-    // Boolean.parseBoolean(Tornado.getProperty("tornado.kernels.parallelize",
-    // "True"));
-    // public static final boolean USE_THREAD_COARSENING =
-    // Boolean.parseBoolean(Tornado.getProperty("tornado.kernels.coarsener",
-    // "True"));
+
     public static final boolean ENABLE_VECTORS = Boolean.parseBoolean(settings.getProperty("tornado.vectors.enable", "True"));
     public static final boolean TORNADO_ENABLE_BIFS = Boolean.parseBoolean(settings.getProperty("tornado.bifs.enable", "False"));
     public static final boolean DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.debug", "False"));
-    // public static final boolean ENABLE_MEM_CHECKS = Boolean
-    // .parseBoolean(settings.getProperty("tornado.memory.check", "False"));
-    // public static final boolean DUMP_EVENTS = Boolean.parseBoolean(settings
-    // .getProperty("tornado.events.dump", "False"));
-    // public static final boolean DUMP_PROFILES =
-    // Boolean.parseBoolean(settings.getProperty("tornado.profiles.dump",
-    // "false"));
-    // public static final String OPENCL_CFLAGS = settings.getProperty(
-    // "tornado.opencl.cflags", "-w");
-    // public static final int OPENCL_GPU_BLOCK_X = Integer.parseInt(settings
-    // .getProperty("tornado.opencl.gpu.block.x", "256"));
-    // public static final int OPENCL_GPU_BLOCK_2D_X = Integer.parseInt(settings
-    // .getProperty("tornado.opencl.gpu.block2d.x", "4"));
-    // public static final int OPENCL_GPU_BLOCK_2D_Y = Integer.parseInt(settings
-    // .getProperty("tornado.opencl.gpu.block2d.y", "4"));
+
     public static final boolean SHOULD_LOAD_RMI = Boolean.parseBoolean(settings.getProperty("tornado.rmi.enable", "false"));
 
     public static final TornadoLogger log = new TornadoLogger(Tornado.class);
@@ -133,8 +93,10 @@ public final class Tornado {
             }
         }
 
-        // merge local and system properties
-        // note that command line args override saved properties
+        /*
+         * merge local and system properties, note that command line args
+         * override saved properties
+         */
         Set<String> localKeys = loadProperties.stringPropertyNames();
         Set<String> systemKeys = settings.stringPropertyNames();
         Set<String> diff = new HashSet<>();
