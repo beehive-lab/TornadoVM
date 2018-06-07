@@ -328,7 +328,7 @@ public abstract class AbstractMetaData {
             deviceIndex = DEFAULT_DEVICE_INDEX;
         }
 
-        debugKernelArgs = parseBoolean(getDefault("debug.kernelargs", id, "False"));
+        debugKernelArgs = parseBoolean(getDefault("debug.kernelargs", id, "True"));
         printCompileTimes = parseBoolean(getDefault("debug.compiletimes", id, "False"));
         printKernelExecutionTime = parseBoolean(getProperty("tornado.debug.executionTime"));
         openclUseRelativeAddresses = parseBoolean(getDefault("opencl.userelative", id, "False"));
@@ -338,7 +338,7 @@ public abstract class AbstractMetaData {
         /*
          * Allows the OpenCL driver to select the size of local work groups
          */
-        openclUseScheduling = parseBoolean(getDefault("opencl.schedule", id, "False"));
+        openclUseScheduling = parseBoolean(getDefault("opencl.schedule", id, "True"));
         vmWaitEvent = parseBoolean(getDefault("vm.waitevent", id, "False"));
         enableExceptions = parseBoolean(getDefault("exceptions.enable", id, "False"));
         enableProfiling = parseBoolean(getDefault("profiling.enable", id, "False"));
@@ -350,11 +350,11 @@ public abstract class AbstractMetaData {
 
         enableVectors = parseBoolean(getDefault("vectors.enable", id, "True"));
         openclEnableBifs = parseBoolean(getDefault("bifs.enable", id, "False"));
-        debug = parseBoolean(getDefault("debug", id, "False"));
+        debug = parseBoolean(getDefault("debug", id, "True"));
         enableMemChecks = parseBoolean(getDefault("memory.check", id, "False"));
-        dumpEvents = parseBoolean(getDefault("events.dump", id, "False"));
+        dumpEvents = parseBoolean(getDefault("events.dump", id, "True"));
         dumpProfiles = parseBoolean(getDefault("profiles.print", id, "False"));
-        dumpTaskSchedule = parseBoolean(getDefault("schedule.dump", id, "False"));
+        dumpTaskSchedule = parseBoolean(getDefault("schedule.dump", id, "True"));
 
         openclCompilerFlags = getDefault("opencl.cflags", id, "-w");
         isOpenclCompilerFlagsDefined = getProperty(id + ".opencl.cflags") != null;
