@@ -55,7 +55,7 @@ public final class Tornado {
     public static final boolean VALIDATE_ARRAY_HEADERS = Boolean.parseBoolean(settings.getProperty("tornado.opencl.array.validate", "True"));
     public static final boolean TORNADO_LOOPS_REVERSE = Boolean.parseBoolean(settings.getProperty("tornado.loops.reverse", "True"));
     public static final boolean MARKER_USE_BARRIER = Boolean.parseBoolean(settings.getProperty("tornado.opencl.marker.asbarrier", "False"));
-    public static final boolean DEBUG_KERNEL_ARGS = Boolean.parseBoolean(settings.getProperty("tornado.debug.kernelargs", "False"));
+    public static final boolean DEBUG_KERNEL_ARGS = Boolean.parseBoolean(settings.getProperty("tornado.debug.kernelargs", "True"));
     public static final boolean PRINT_COMPILE_TIMES = Boolean.parseBoolean(settings.getProperty("tornado.debug.compiletimes", "False"));
     public static final boolean FORCE_ALL_TO_GPU = Boolean.parseBoolean(settings.getProperty("tornado.opencl.forcegpu", "False"));
     public static final boolean USE_SYNC_FLUSH = Boolean.parseBoolean(settings.getProperty("tornado.opencl.syncflush", "False"));
@@ -65,6 +65,7 @@ public final class Tornado {
     public static final boolean OPENCL_USE_RELATIVE_ADDRESSES = Boolean.parseBoolean(settings.getProperty("tornado.opencl.userelative", "False"));
     public static final boolean DUMP_COMPILED_METHODS = Boolean.parseBoolean(getProperty("tornado.compiled.dump", "False"));
 
+
     public static final boolean ENABLE_PROFILING = Boolean.parseBoolean(settings.getProperty("tornado.profiling.enable", "True"));
     public static final boolean ENABLE_OOO_EXECUTION = Boolean.parseBoolean(settings.getProperty("tornado.ooo-execution.enable", "False"));
     public static final boolean VM_USE_DEPS = Boolean.parseBoolean(Tornado.getProperty("tornado.vm.deps", "False"));
@@ -73,6 +74,21 @@ public final class Tornado {
     public static final boolean ENABLE_VECTORS = Boolean.parseBoolean(settings.getProperty("tornado.vectors.enable", "True"));
     public static final boolean TORNADO_ENABLE_BIFS = Boolean.parseBoolean(settings.getProperty("tornado.bifs.enable", "False"));
     public static final boolean DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.debug", "False"));
+
+
+//    public static final boolean ENABLE_MEM_CHECKS = Boolean
+//            .parseBoolean(settings.getProperty("tornado.memory.check", "False"));
+//    public static final boolean DUMP_EVENTS = Boolean.parseBoolean(settings
+//            .getProperty("tornado.events.dump", "False"));
+//    public static final boolean DUMP_PROFILES = Boolean.parseBoolean(settings.getProperty("tornado.profiles.dump", "false"));
+//    public static final String OPENCL_CFLAGS = settings.getProperty(
+//            "tornado.opencl.cflags", "-w");
+//    public static final int OPENCL_GPU_BLOCK_X = Integer.parseInt(settings
+//            .getProperty("tornado.opencl.gpu.block.x", "256"));
+//    public static final int OPENCL_GPU_BLOCK_2D_X = Integer.parseInt(settings
+//            .getProperty("tornado.opencl.gpu.block2d.x", "4"));
+//    public static final int OPENCL_GPU_BLOCK_2D_Y = Integer.parseInt(settings
+//            .getProperty("tornado.opencl.gpu.block2d.y", "4"));
 
     public static final boolean SHOULD_LOAD_RMI = Boolean.parseBoolean(settings.getProperty("tornado.rmi.enable", "false"));
 

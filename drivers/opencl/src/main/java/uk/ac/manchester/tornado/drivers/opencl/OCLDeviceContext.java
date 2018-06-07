@@ -152,7 +152,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
     }
 
     public ByteOrder getByteOrder() {
-        return device.isLittleEndian() ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN;
+       return device.isLittleEndian() ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN;
     }
 
     /*
