@@ -69,7 +69,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         this.kernel = kernel;
         valid = kernel != null;
         buffer.order(deviceContext.getByteOrder());
-        //System.out.println(deviceContext + "\n");
+       System.out.println(deviceContext + "\n");
     }
 
     @Override
@@ -126,6 +126,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                 debug("\ttotal    : %f seconds", event.getTotalTime());
             }
         }
+        //deviceContext.enqueueReadBuffer();
     }
 
     public void execute(final OCLCallStack stack) {
@@ -196,6 +197,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     public int submit(final OCLCallStack stack, final TaskMetaData meta, final int[] events) {
+
+        System.out.print("SUBMIT CODE" + "\n");
 
         if (DEBUG) {
             info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getName());
@@ -274,6 +277,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                 }
             } else {
                 task = deviceContext.enqueueTask(kernel, null);
+                //task = scheduler.submit(kernel, meta, null);
+
             }
 
             if (meta.shouldDumpProfiles()) {
