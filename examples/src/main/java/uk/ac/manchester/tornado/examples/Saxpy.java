@@ -32,17 +32,16 @@ public class Saxpy {
             x[i] = 450;
             y[i] = 0;
         }
-
        TaskSchedule s0 = new TaskSchedule("s0")
-               .streamIn(x)
+
+               .streamIn(x,y)
                 .task("t0", Saxpy::saxpy, alpha, x,y)
                 .streamOut(y);
 
 
         s0.execute();
         for (int i=0; i < y.length; i++){
-            //System.out.print(Arrays.toString(y));
-           // System.out.println(Arrays.toString(y));
+          //  System.out.println(y[i] + "\n");
         }
     }
 

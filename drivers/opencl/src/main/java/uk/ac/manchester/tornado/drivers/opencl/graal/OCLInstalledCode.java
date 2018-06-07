@@ -69,7 +69,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         this.kernel = kernel;
         valid = kernel != null;
         buffer.order(deviceContext.getByteOrder());
-
     }
 
     @Override

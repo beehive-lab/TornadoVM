@@ -194,7 +194,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     public long readHeapBaseAddress(TaskMetaData meta) {
+<<<<<<< HEAD
         final OCLByteBuffer bb = deviceContext.getMemoryManager().getSubBuffer(0, 16);
+=======
+        final OCLByteBuffer bb = deviceContext.getMemoryManager().getSubBuffer(0, 16); // <-----------------------------------------------------------
+        //long adr2 = (long) bb;
+>>>>>>> FPGA intergation latest
 
         bb.putLong(0);
         bb.putLong(0);
@@ -202,6 +207,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         System.out.println("Install lookup and execute: BEFORE" + "\n");
         lookupCode.execute(bb, meta);
         System.out.println("Install lookup and execute: AFTER" + "\n");
+
+
 
         final long address = bb.getLong(0);
         Tornado.info("Heap address @ 0x%x on %s ", address, deviceContext.getDevice().getName());
