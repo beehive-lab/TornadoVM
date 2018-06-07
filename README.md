@@ -214,7 +214,7 @@ $ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello
 To test just a method of a unittest class:
 
 ```bash
-$ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello#helloWorld
+$ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello#testHello
 ```
 
 
