@@ -113,7 +113,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         // NOTE stack needs to be read so that the return value
         // is transfered back to the host
         // - As this is blocking then no clFinish() is needed
-        stack.read();
+        stack.read(); //<----------------------------------------
 
         Event event = deviceContext.resolveEvent(task);
 
