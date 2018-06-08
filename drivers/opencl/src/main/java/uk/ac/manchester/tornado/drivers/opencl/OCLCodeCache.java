@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 
 public class OCLCodeCache {
 
+    private static  OCLProgram program;
     private final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", "False"));
     private final boolean OPENCL_LOAD_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.load", "True"));
@@ -216,27 +217,33 @@ public class OCLCodeCache {
          System.out.println("INSTALL BINARY FOR:" + entryPoint  + "\n");
 
         info("Installing binary for %s into code cache", entryPoint);
-        final OCLProgram program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
+        //final OCLProgram program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
 
-        if (program == null) {
-            throw new OCLException("unable to load binary for " + entryPoint);
-        }
+        OCLBuildStatus status  = null;
+        //if (program == null) {
+             program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
+            if (program == null) {
+                throw new OCLException("unable to load binary for " + entryPoint);
+            }
+             long t0 = System.nanoTime();
+            program.build("");
+             long t1 = System.nanoTime();
+            status = program.getStatus(deviceContext.getDeviceId());
+            debug("\tOpenCL compilation status = %s", status.toString());
 
-        final long t0 = System.nanoTime();
-        program.build("");
-        final long t1 = System.nanoTime();
+            final String log = program.getBuildLog(deviceContext.getDeviceId()).trim();
+            if (!log.isEmpty()) {
+                debug(log);
+            }
 
-        final OCLBuildStatus status = program.getStatus(deviceContext.getDeviceId());
-        debug("\tOpenCL compilation status = %s", status.toString());
+        //}
 
-        final String log = program.getBuildLog(deviceContext.getDeviceId()).trim();
-        if (!log.isEmpty()) {
-            debug(log);
-        }
 
         final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
 
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, null, deviceContext, program, kernel);
+        //long t0 = System.nanoTime();
+        //long t1 = System.nanoTime();
 
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
