@@ -288,9 +288,15 @@ public class OCLTornadoDevice implements TornadoDevice {
         } else {
             OCLCodeCache check = new OCLCodeCache(deviceContext);
 
-            Path lookupPath = Paths.get("/home/admin/Tornado/tornado/null/var/opencl-codecache/device-2-0/saxpy");
-            final File file = lookupPath.toFile();
+            Path lookupPath = Paths.get("/tmp/pre-tornado/combined/lookupBufferAddress");
 
+
+            //Path lookupPath = Paths.get("/home/admin/Tornado/tornado/null/var/opencl-codecache/device-2-0/saxpy");
+            //Path lookupPath = Paths.get("/tmp/pre-tornado/emulator/saxpy");
+
+
+            final File file = lookupPath.toFile();
+            final String entry = "saxpy";
             try {
                 final byte[] binary = Files.readAllBytes(lookupPath);
                 return check.installBinary(file.getName(), binary);

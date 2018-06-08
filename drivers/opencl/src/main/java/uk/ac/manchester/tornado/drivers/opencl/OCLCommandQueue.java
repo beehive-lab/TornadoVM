@@ -457,6 +457,7 @@ public class OCLCommandQueue extends TornadoLogger {
 
         try {
             flush();
+
             event = registerEvent(writeArrayToDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking,
                     offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_WRITE_FLOAT, offset);
         } catch (OCLException e) {
