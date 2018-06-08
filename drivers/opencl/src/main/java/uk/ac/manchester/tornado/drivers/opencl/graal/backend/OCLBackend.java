@@ -195,7 +195,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     public long readHeapBaseAddress(TaskMetaData meta) {
         final OCLByteBuffer bb = deviceContext.getMemoryManager().getSubBuffer(0, 16); // <-----------------------------------------------------------
-        //long adr2 = (long) bb;
 
         bb.putLong(0);
         bb.putLong(0);
@@ -205,9 +204,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         System.out.println("Install lookup and execute: AFTER" + "\n");
 
 
-
         final long address = bb.getLong(0);
-        Tornado.info("Heap address @ 0x%x on %s", address, deviceContext.getDevice().getName());
+        Tornado.info("Heap address @ 0x%x on %s ---->AFTER<-----", address, deviceContext.getDevice().getName());
         return address;
     }
 
@@ -235,7 +233,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         } else if (check.getBinStatus() ){
             System.out.println("CHECKING FOR BIN LOOKUP" + "\n");
 
-            Path lookupPath = Paths.get("/home/admin/Tornado/tornado/null/var/opencl-codecache/lookupBufferAddress");
+            Path lookupPath = Paths.get("/tmp/pre-tornado/combined/lookupBufferAddress");
+           //Path lookupPath = Paths.get("/home/admin/Tornado/tornado/null/var/opencl-codecache/lookupBufferAddress");
                 final File file = lookupPath.toFile();
                 if (file.length() == 0) {
                     return;
