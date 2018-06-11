@@ -220,7 +220,6 @@ public class OCLCodeCache {
             entryPoint = entryPoint.split("-")[1];
         } catch (Exception e) {
 
-
         }
         info("Installing binary for %s into code cache", entryPoint);
         //final OCLProgram program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });

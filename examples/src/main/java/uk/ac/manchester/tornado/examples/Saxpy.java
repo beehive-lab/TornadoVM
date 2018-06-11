@@ -32,6 +32,7 @@ public class Saxpy {
             x[i] = 450;
             y[i] = 0;
         }
+
        TaskSchedule s0 = new TaskSchedule("s0")
 
                 .task("t0", Saxpy::saxpy, alpha, x,y)
@@ -41,7 +42,6 @@ public class Saxpy {
         s0.execute();
         for (int i=0; i < y.length; i++){
             //System.out.print(Arrays.toString(y));
-
         }
     }
 

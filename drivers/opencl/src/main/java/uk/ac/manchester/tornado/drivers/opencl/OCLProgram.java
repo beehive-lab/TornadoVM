@@ -254,6 +254,7 @@ public class OCLProgram extends TornadoLogger {
         OCLKernel kernel = null;
         try {
 <<<<<<< HEAD
+<<<<<<< HEAD
             kernel = new OCLKernel(clCreateKernel(id, entryPoint),deviceContext);
 =======
             //if(i==1) {
@@ -265,6 +266,9 @@ public class OCLProgram extends TornadoLogger {
 
            // i++;
 >>>>>>> First working version for intergration with the FPGA
+=======
+            kernel = new OCLKernel(clCreateKernel(id, entryPoint),deviceContext);
+>>>>>>> [cleanup] Code cleanup for last working version of Saxpy onto FPGA
         } catch (OCLException e) {
             error(e.getMessage());
         }
