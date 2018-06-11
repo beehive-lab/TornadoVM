@@ -31,7 +31,7 @@ public class Saxpy {
         float[] y = new float[numElements];
 
         for (int i = 0; i < numElements; i++) {
-            x[i] = 100;
+            x[i] = 450;
             y[i] = 0;
         }
 //        new TaskSchedule("s0")
