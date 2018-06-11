@@ -278,7 +278,8 @@ public class OCLTornadoDevice implements TornadoDevice {
             final String entry = "saxpy";
             try {
                 final byte[] binary = Files.readAllBytes(lookupPath);
-                return check.installBinary(file.getName(), binary);
+                return check.installBinary(entry, binary);
+                //return check.installBinary(file.getName(), binary);
             } catch (OCLException | IOException e) {
                 error("unable to load binary: %s (%s)", file, e.getMessage());
 
