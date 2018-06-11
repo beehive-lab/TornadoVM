@@ -194,15 +194,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     public long readHeapBaseAddress(TaskMetaData meta) {
-        final OCLByteBuffer bb = deviceContext.getMemoryManager().getSubBuffer(0, 16); // <-----------------------------------------------------------
+        final OCLByteBuffer bb = deviceContext.getMemoryManager().getSubBuffer(0, 16);
 
         bb.putLong(0);
         bb.putLong(0);
 
-        System.out.println("Install lookup and execute: BEFORE" + "\n");
         lookupCode.execute(bb, meta);
-        System.out.println("Install lookup and execute: AFTER" + "\n");
-
 
         final long address = bb.getLong(0);
         Tornado.info("Heap address @ 0x%x on %s ---->AFTER<-----", address, deviceContext.getDevice().getName());
@@ -231,10 +228,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         if (deviceContext.isCached("internal", "lookupBufferAddress")) {
             lookupCode = deviceContext.getCode("internal", "lookupBufferAddress");
         } else if (check.getBinStatus() ){
-            System.out.println("CHECKING FOR BIN LOOKUP" + "\n");
-
             Path lookupPath = Paths.get("/tmp/pre-tornado/combined/lookupBufferAddress");
-           //Path lookupPath = Paths.get("/home/admin/Tornado/tornado/null/var/opencl-codecache/lookupBufferAddress");
                 final File file = lookupPath.toFile();
                 if (file.length() == 0) {
                     return;
@@ -244,11 +238,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
                     lookupCode=  check.installBinary(file.getName(), binary);
                 } catch (OCLException | IOException e) {
                     error("unable to load binary: %s (%s)", file, e.getMessage());
-
             }
-            //lookupCode = check.installBinary("lookupBufferAddress", binary);
-            System.out.println("out  OF  BIN LOOKUP" + "\n");
-
         }
         else {
            OCLCompilationResult result = OCLCompiler.compileCodeForDevice(getTornadoRuntime().resolveMethod(getLookupMethod()), null, meta, (OCLProviders) getProviders(), this);

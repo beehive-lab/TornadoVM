@@ -214,8 +214,6 @@ public class OCLCodeCache {
         } catch (Exception e) {
 
         }
-         System.out.println("INSTALL BINARY FOR:" + entryPoint  + "\n");
-
         info("Installing binary for %s into code cache", entryPoint);
         //final OCLProgram program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
 
