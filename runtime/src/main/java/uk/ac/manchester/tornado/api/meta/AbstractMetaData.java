@@ -354,7 +354,7 @@ public abstract class AbstractMetaData {
         enableMemChecks = parseBoolean(getDefault("memory.check", id, "False"));
         dumpEvents = parseBoolean(getDefault("events.dump", id, "True"));
         dumpProfiles = parseBoolean(getDefault("profiles.print", id, "False"));
-        dumpTaskSchedule = parseBoolean(getDefault("schedule.dump", id, "True"));
+        dumpTaskSchedule = parseBoolean(getDefault("schedule.dump", id, "False"));
 
         openclCompilerFlags = getDefault("opencl.cflags", id, "-w");
         isOpenclCompilerFlagsDefined = getProperty(id + ".opencl.cflags") != null;

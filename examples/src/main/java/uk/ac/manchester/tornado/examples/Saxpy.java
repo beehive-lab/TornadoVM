@@ -34,28 +34,17 @@ public class Saxpy {
             x[i] = 450;
             y[i] = 0;
         }
-//        new TaskSchedule("s0")
-//                .prebuiltTask("t0",
-//                        "saxpy",
-//                        "/home/admin/Tornado/tornado/null/var/opencl-codecache/device-2-0/saxpy",
-//                        new Object[] { alpha, x , y},
-//                        new Access[] { Access.READ, Access.READ, Access.WRITE },
-//                        OpenCL.defaultDevice(),
-//                        new int[] { numElements })
-//                .streamOut(y)
-//                .execute();
+
        TaskSchedule s0 = new TaskSchedule("s0")
                .streamIn(x)
                 .task("t0", Saxpy::saxpy, alpha, x,y)
                 .streamOut(y);
 
-        //s0.warmup();
 
         s0.execute();
         for (int i=0; i < y.length; i++){
             //System.out.print(Arrays.toString(y));
-
-            // System.out.print(Array.s);
+            System.out.println(Arrays.toString(y));
         }
 
     }

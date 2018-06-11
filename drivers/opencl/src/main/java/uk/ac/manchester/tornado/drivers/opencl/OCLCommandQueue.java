@@ -453,7 +453,6 @@ public class OCLCommandQueue extends TornadoLogger {
             event = registerEvent(writeArrayToDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking,
                     offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_WRITE_INT, offset);
             flush();
-            System.out.print("Device WRITE TO  ---> " + devicePtr + "\n");
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -500,11 +499,8 @@ public class OCLCommandQueue extends TornadoLogger {
 
         try {
             flush();
-            System.out.print(Arrays.toString(array));
-
             event = registerEvent(writeArrayToDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking,
                     offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_WRITE_FLOAT, offset);
-            System.out.print("Device WRITE TO  ---> " + devicePtr + "\n");
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -549,16 +545,8 @@ public class OCLCommandQueue extends TornadoLogger {
 
         try {
             flush();
-//            try {
-//                Thread.sleep(10000);
-//            } catch (InterruptedException ex){
-//                ex.printStackTrace();
-//            }
             event = registerEvent(readArrayFromDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking,
                     offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_INT, offset);
-          System.out.print("Device READ FROM ---> " + devicePtr + "\n");
-           System.out.print(Arrays.toString(array));
-
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -603,18 +591,8 @@ public class OCLCommandQueue extends TornadoLogger {
 
         try {
             flush();
-//            try {
-//                Thread.sleep(10000);
-//            } catch (InterruptedException ex){
-//                ex.printStackTrace();
-//            }
-
             event = registerEvent(readArrayFromDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking,
                     offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_FLOAT, offset);
-            System.out.print("Device READ FROM ---> " + devicePtr + "\n");
-
-            System.out.print(Arrays.toString(array));
-
         } catch (OCLException e) {
             error(e.getMessage());
         }
