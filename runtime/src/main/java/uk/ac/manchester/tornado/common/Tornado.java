@@ -69,13 +69,16 @@ public final class Tornado {
     public static final boolean ENABLE_PROFILING = Boolean.parseBoolean(settings.getProperty("tornado.profiling.enable", "True"));
     public static final boolean ENABLE_OOO_EXECUTION = Boolean.parseBoolean(settings.getProperty("tornado.ooo-execution.enable", "False"));
     public static final boolean VM_USE_DEPS = Boolean.parseBoolean(Tornado.getProperty("tornado.vm.deps", "False"));
-    public static boolean FORCE_BLOCKING_API_CALLS;
 
-    public static final boolean ENABLE_VECTORS = Boolean.parseBoolean(settings.getProperty("tornado.vectors.enable", "True"));
-    public static final boolean TORNADO_ENABLE_BIFS = Boolean.parseBoolean(settings.getProperty("tornado.bifs.enable", "False"));
-    public static final boolean DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.debug", "False"));
-
-
+    public static boolean FORCE_BLOCKING_API_CALLS = true;
+    public static final boolean ENABLE_PARALLELIZATION = Boolean.parseBoolean(Tornado.getProperty("tornado.kernels.parallelize", "True"));
+//    public static final boolean USE_THREAD_COARSENING = Boolean.parseBoolean(Tornado.getProperty("tornado.kernels.coarsener", "True"));
+    public static final boolean ENABLE_VECTORS = Boolean.parseBoolean(settings
+            .getProperty("tornado.vectors.enable", "True"));
+    public static final boolean TORNADO_ENABLE_BIFS = Boolean
+            .parseBoolean(settings.getProperty("tornado.bifs.enable", "False"));
+    public static final boolean DEBUG = Boolean.parseBoolean(settings
+            .getProperty("tornado.debug", "True"));
 //    public static final boolean ENABLE_MEM_CHECKS = Boolean
 //            .parseBoolean(settings.getProperty("tornado.memory.check", "False"));
 //    public static final boolean DUMP_EVENTS = Boolean.parseBoolean(settings
