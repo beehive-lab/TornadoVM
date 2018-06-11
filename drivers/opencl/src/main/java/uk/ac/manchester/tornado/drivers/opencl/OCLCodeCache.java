@@ -242,8 +242,8 @@ public class OCLCodeCache {
         final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
 
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, null, deviceContext, program, kernel);
-        //long t0 = System.nanoTime();
-        //long t1 = System.nanoTime();
+       // long t0 = System.nanoTime();
+       // long t1 = System.nanoTime();
 
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
@@ -282,7 +282,11 @@ public class OCLCodeCache {
         info("loading %s into cache", file.getAbsoluteFile());
         try {
             final byte[] binary = Files.readAllBytes(path);
+           String name = "saxpy";
+
             installBinary(file.getName(), binary, true);
+            System.out.print("LOAD BINARY <-----" + "\n");
+            //installBinary(name, binary, true);
         } catch (OCLException | IOException e) {
             error("unable to load binary: %s (%s)", file, e.getMessage());
         }
