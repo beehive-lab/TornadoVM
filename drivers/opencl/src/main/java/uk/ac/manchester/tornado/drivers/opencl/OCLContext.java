@@ -301,6 +301,7 @@ public class OCLContext extends TornadoLogger {
      * @return
      */
     public long allocate(long bytes, long alignment) {
+        System.out.println("Allocate off heal memory: alignment ------->" + alignment + "\n");
         final long address = allocateOffHeapMemory(bytes, alignment);
         if (address == 0) {
             throw new TornadoInternalError("Unable to allocate off-heap memory");
@@ -324,6 +325,7 @@ public class OCLContext extends TornadoLogger {
             final OCLBufferResult result = createBuffer(id, flags, bytes,
                     address);
             devicePtr = result.getBuffer();
+            System.out.println("CREATE BUFFER OCL CONTEXT --- Device PRT --->" + devicePtr + "\n");
             allocatedRegions[allocatedRegionCount] = devicePtr;
             allocatedRegionCount++;
             info("buffer allocated %s @ 0x%x",
