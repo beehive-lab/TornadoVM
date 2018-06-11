@@ -78,7 +78,7 @@ public final class Tornado {
     public static final boolean TORNADO_ENABLE_BIFS = Boolean
             .parseBoolean(settings.getProperty("tornado.bifs.enable", "False"));
     public static final boolean DEBUG = Boolean.parseBoolean(settings
-            .getProperty("tornado.debug", "False"));
+            .getProperty("tornado.debug", "True"));
 //    public static final boolean ENABLE_MEM_CHECKS = Boolean
 //            .parseBoolean(settings.getProperty("tornado.memory.check", "False"));
 //    public static final boolean DUMP_EVENTS = Boolean.parseBoolean(settings
@@ -92,7 +92,6 @@ public final class Tornado {
 //            .getProperty("tornado.opencl.gpu.block2d.x", "4"));
 //    public static final int OPENCL_GPU_BLOCK_2D_Y = Integer.parseInt(settings
 //            .getProperty("tornado.opencl.gpu.block2d.y", "4"));
-
 
     public static final boolean SHOULD_LOAD_RMI = Boolean.parseBoolean(settings.getProperty("tornado.rmi.enable", "false"));
 
