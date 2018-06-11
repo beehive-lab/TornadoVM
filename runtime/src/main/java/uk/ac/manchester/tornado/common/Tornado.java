@@ -83,7 +83,7 @@ public final class Tornado {
                     "True"));
     public static final boolean ENABLE_OOO_EXECUTION = Boolean.parseBoolean(settings.getProperty("tornado.ooo-execution.enable", "False"));
     public static final boolean VM_USE_DEPS = Boolean.parseBoolean(Tornado.getProperty("tornado.vm.deps", "False"));
-    public static boolean FORCE_BLOCKING_API_CALLS;
+    public static boolean FORCE_BLOCKING_API_CALLS = true;
    public static final boolean ENABLE_PARALLELIZATION = Boolean.parseBoolean(Tornado.getProperty("tornado.kernels.parallelize", "True"));
 //    public static final boolean USE_THREAD_COARSENING = Boolean.parseBoolean(Tornado.getProperty("tornado.kernels.coarsener", "True"));
     public static final boolean ENABLE_VECTORS = Boolean.parseBoolean(settings
