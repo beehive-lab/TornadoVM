@@ -249,12 +249,18 @@ public class OCLProgram extends TornadoLogger {
 
         return sb.toString();
     }
-
+    int i = 0;
     public OCLKernel getKernel(String entryPoint) {
         OCLKernel kernel = null;
         try {
+            //if(i==1) {
+             //   entryPoint = "saxpy";
+           // }
             kernel = new OCLKernel(clCreateKernel(id, entryPoint),
                     deviceContext);
+            System.out.print("Kernel ID ---> " + id + " Entrypoint ---> " + entryPoint + "\n");
+
+           // i++;
         } catch (OCLException e) {
             error(e.getMessage());
         }

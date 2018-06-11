@@ -273,12 +273,16 @@ public class OCLCommandQueue extends TornadoLogger {
         }
 
         Arrays.fill(waitEventsBuffer, 0);
+
+     System.out.printf("waitlist:\n");
         int index = 0;
         for (int i = 0; i < dependencies.length; i++) {
             final int value = dependencies[i];
             if (value != -1) {
                 index++;
                 waitEventsBuffer[index] = events[value];
+
+               System.out.printf("[%d] 0x%x - %s 0x%x\n",index,events[value],EVENT_DESCRIPTIONS[descriptors[value]], tags[value]);
             }
         }
         waitEventsBuffer[0] = index;
@@ -405,8 +409,11 @@ public class OCLCommandQueue extends TornadoLogger {
         int event = -1;
 
         try {
-            event = registerEvent(writeArrayToDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
-                    DESC_WRITE_INT, offset);
+            flush();
+
+            event = registerEvent(writeArrayToDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking,
+                    offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_WRITE_INT, offset);
+
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -495,8 +502,10 @@ public class OCLCommandQueue extends TornadoLogger {
 
         try {
             flush();
+
             event = registerEvent(readArrayFromDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking,
                     offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_INT, offset);
+
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -537,8 +546,8 @@ public class OCLCommandQueue extends TornadoLogger {
         int event = -1;
 
         try {
-
             flush();
+
             event = registerEvent(readArrayFromDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking,
                     offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_FLOAT, offset);
         } catch (OCLException e) {

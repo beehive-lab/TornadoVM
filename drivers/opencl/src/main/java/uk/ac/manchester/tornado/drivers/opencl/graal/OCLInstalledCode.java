@@ -248,6 +248,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     public void submit(final OCLCallStack stack, final TaskMetaData meta) {
+        System.out.print("SUBMIT CODE: ---> Installed code <---" + "\n");
 
         if (DEBUG) {
             info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getName());
@@ -257,7 +258,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         /*
          * Only set the kernel arguments if they are either: - not set or - have changed
          */
-        if (!stack.isOnDevice()) {
+         if (!stack.isOnDevice()) { //<------------------
             setKernelArgs(stack, meta);
             stack.enqueueWrite();
         }
@@ -285,7 +286,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                 deviceContext.retainEvent(task);
                 meta.addProfile(task);
             }
-
+            //reads the results
             if (meta.enableExceptions()) {
                 stack.enqueueRead(null);
             }
