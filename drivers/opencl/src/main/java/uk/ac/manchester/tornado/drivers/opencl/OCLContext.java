@@ -325,6 +325,7 @@ public class OCLContext extends TornadoLogger {
             final OCLBufferResult result = createBuffer(id, flags, bytes,
                     address);
             devicePtr = result.getBuffer();
+            System.out.println("CREATE BUFFER OCL CONTEXT --- Device PRT --->" + devicePtr + "\n");
             allocatedRegions[allocatedRegionCount] = devicePtr;
             allocatedRegionCount++;
             info("buffer allocated %s @ 0x%x",

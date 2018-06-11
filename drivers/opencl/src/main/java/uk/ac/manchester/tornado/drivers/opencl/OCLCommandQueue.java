@@ -273,14 +273,16 @@ public class OCLCommandQueue extends TornadoLogger {
         }
 
         Arrays.fill(waitEventsBuffer, 0);
-
+        
         System.out.printf("waitlist:\n");
+
         int index = 0;
         for (int i = 0; i < dependencies.length; i++) {
             final int value = dependencies[i];
             if (value != -1) {
                 index++;
                 waitEventsBuffer[index] = events[value];
+
                 System.out.printf("[%d] 0x%x - %s 0x%x\n",index,events[value],EVENT_DESCRIPTIONS[descriptors[value]], tags[value]);
 
             }
@@ -504,6 +506,7 @@ public class OCLCommandQueue extends TornadoLogger {
 
             event = registerEvent(readArrayFromDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking,
                     offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_INT, offset);
+
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -544,8 +547,8 @@ public class OCLCommandQueue extends TornadoLogger {
         int event = -1;
 
         try {
-
             flush();
+
             event = registerEvent(readArrayFromDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking,
                     offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_FLOAT, offset);
         } catch (OCLException e) {
