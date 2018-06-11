@@ -328,7 +328,6 @@ public class TornadoVM extends TornadoLogger {
                     eventsIndicies[eventList] = 0;
                 }
             } else if (op == LAUNCH) {
-                System.out.print("LAUNCH" + "\n");
                 final int gtid = buffer.getInt();
                 final int contextIndex = buffer.getInt();
                 final int taskIndex = buffer.getInt();
@@ -348,7 +347,6 @@ public class TornadoVM extends TornadoLogger {
                 }
 
                 if (installedCodes[taskIndex] == null) {
-                    System.out.println("INSTALLED CODES == NULL" + "\n");
                     final long compileStart = System.nanoTime();
                     task.mapTo(device);
                     try {
