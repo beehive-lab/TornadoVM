@@ -61,7 +61,6 @@ public class OCLCodeCache {
     private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "/var/opencl-codecache");
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-logs");
-
     private final String FPGA_BIN_DIR = getProperty("tornado.precompilied.dir", null);
 
 
