@@ -193,7 +193,7 @@ public class OCLTornadoDevice implements TornadoDevice {
         final OCLDeviceContext deviceContext = getDeviceContext();
         OCLCodeCache tmp = new OCLCodeCache(deviceContext);
 
-        if ((tmp.getBinStatus() == false) && (tmp.getFPGA_BIN_DIR() != null)) {
+        if ((tmp.getBinStatus() == false) && (tmp.getFPGABinDir() != null)) {
             if (task instanceof CompilableTask) {
                 final CompilableTask executable = (CompilableTask) task;
 //			final long t0 = System.nanoTime();
@@ -266,7 +266,7 @@ public class OCLTornadoDevice implements TornadoDevice {
             }
         } else {
             final OCLCodeCache check = new OCLCodeCache(deviceContext);
-            final Path lookupPath = Paths.get(check.getFPGA_BIN_DIR());
+            final Path lookupPath = Paths.get(check.getFPGABinDir());
 
             String[] tempEntryToSplit = task.getName().split("- ");
             String entry = tempEntryToSplit[1];
