@@ -267,7 +267,6 @@ public class OCLTornadoDevice implements TornadoDevice {
             }
         } else {
             final OCLCodeCache check = new OCLCodeCache(deviceContext);
-
             final Path lookupPath = Paths.get(check.getFPGABinDir());
 
             String[] tempEntryToSplit = task.getName().split("- ");
