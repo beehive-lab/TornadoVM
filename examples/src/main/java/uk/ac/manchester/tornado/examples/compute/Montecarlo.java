@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 public class Montecarlo {
 
     private static void computeMontecarlo(float[] output, final int iterations) {
-        @Atomic float sum = 0.0f;
+        float sum = 0.0f;
         for (@Parallel int j = 0; j < iterations; j++) {
             long seed = j;
             // generate a pseudo random number (you do need it twice)
@@ -75,7 +75,7 @@ public class Montecarlo {
             .task("t0", Montecarlo::computeMontecarlo, output, size)
             .streamOut(output);
         
-        for (int i = 0; i < 21; i++) {
+
             long start = System.nanoTime();
             t0.execute();
             long end = System.nanoTime();
@@ -108,12 +108,12 @@ public class Montecarlo {
             System.out.println("Speedup: " + speedup);
         }
         
-    }
+
     
     
     public static void main(String[] args) {
         System.out.println("Compute Montecarlo");
-        montecarlo(100000000);
+        montecarlo(16777216);
     }
     
     
