@@ -254,8 +254,6 @@ public class OCLProgram extends TornadoLogger {
         OCLKernel kernel = null;
         try {
             kernel = new OCLKernel(clCreateKernel(id, entryPoint),deviceContext);
-            kernel = new OCLKernel(clCreateKernel(id, entryPoint),
-                    deviceContext);
         } catch (OCLException e) {
             error(e.getMessage());
         }

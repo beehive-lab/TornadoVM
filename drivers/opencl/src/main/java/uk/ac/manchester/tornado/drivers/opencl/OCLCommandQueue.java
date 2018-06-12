@@ -273,9 +273,14 @@ public class OCLCommandQueue extends TornadoLogger {
         }
 
         Arrays.fill(waitEventsBuffer, 0);
+<<<<<<< HEAD
         
         System.out.printf("waitlist:\n");
 
+=======
+
+     System.out.printf("waitlist:\n");
+>>>>>>> ca476b680b65d941880e61acad9030c7a47506e5
         int index = 0;
         for (int i = 0; i < dependencies.length; i++) {
             final int value = dependencies[i];
@@ -283,8 +288,12 @@ public class OCLCommandQueue extends TornadoLogger {
                 index++;
                 waitEventsBuffer[index] = events[value];
 
+<<<<<<< HEAD
                 System.out.printf("[%d] 0x%x - %s 0x%x\n",index,events[value],EVENT_DESCRIPTIONS[descriptors[value]], tags[value]);
 
+=======
+               System.out.printf("[%d] 0x%x - %s 0x%x\n",index,events[value],EVENT_DESCRIPTIONS[descriptors[value]], tags[value]);
+>>>>>>> ca476b680b65d941880e61acad9030c7a47506e5
             }
         }
         waitEventsBuffer[0] = index;
@@ -415,7 +424,10 @@ public class OCLCommandQueue extends TornadoLogger {
 
             event = registerEvent(writeArrayToDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking,
                     offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_WRITE_INT, offset);
+<<<<<<< HEAD
 
+=======
+>>>>>>> ca476b680b65d941880e61acad9030c7a47506e5
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -459,7 +471,10 @@ public class OCLCommandQueue extends TornadoLogger {
 
         try {
             flush();
+<<<<<<< HEAD
 
+=======
+>>>>>>> ca476b680b65d941880e61acad9030c7a47506e5
             event = registerEvent(writeArrayToDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking,
                     offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_WRITE_FLOAT, offset);
         } catch (OCLException e) {
@@ -548,7 +563,10 @@ public class OCLCommandQueue extends TornadoLogger {
 
         try {
             flush();
+<<<<<<< HEAD
 
+=======
+>>>>>>> ca476b680b65d941880e61acad9030c7a47506e5
             event = registerEvent(readArrayFromDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking,
                     offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_FLOAT, offset);
         } catch (OCLException e) {

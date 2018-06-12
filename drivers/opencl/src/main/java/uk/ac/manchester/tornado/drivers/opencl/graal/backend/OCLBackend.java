@@ -203,7 +203,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         final long address = bb.getLong(0);
         Tornado.info("Heap address @ 0x%x on %s ", address, deviceContext.getDevice().getName());
-
         return address;
     }
 

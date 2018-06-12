@@ -222,10 +222,14 @@ public class OCLCodeCache {
                 debug(log);
             }
 
+        //}
+
 
         final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
 
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, null, deviceContext, program, kernel);
+       // long t0 = System.nanoTime();
+       // long t1 = System.nanoTime();
 
 
         if (status == CL_BUILD_SUCCESS) {

@@ -9,7 +9,6 @@ import uk.ac.manchester.tornado.runtime.*;
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import uk.ac.manchester.tornado.runtime.api.*;
 
-
 public class Saxpy {
 
 
@@ -34,13 +33,12 @@ public class Saxpy {
         }
 
        TaskSchedule s0 = new TaskSchedule("s0")
-
                 .task("t0", Saxpy::saxpy, alpha, x,y)
                 .streamOut(y);
 
 
         s0.execute();
-        for (int i=0; i < y.length; i++){
+        for (int i=0; i < y.length; i++) {
             //System.out.print(Arrays.toString(y));
         }
     }

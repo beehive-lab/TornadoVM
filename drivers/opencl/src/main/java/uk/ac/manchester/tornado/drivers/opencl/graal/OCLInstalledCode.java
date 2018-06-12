@@ -69,6 +69,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         this.kernel = kernel;
         valid = kernel != null;
         buffer.order(deviceContext.getByteOrder());
+       System.out.println(deviceContext + "\n");
     }
 
     @Override
@@ -247,7 +248,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     public void submit(final OCLCallStack stack, final TaskMetaData meta) {
-
         if (DEBUG) {
             info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getName());
             info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(), stack.toAbsoluteAddress(), stack.toRelativeAddress());
