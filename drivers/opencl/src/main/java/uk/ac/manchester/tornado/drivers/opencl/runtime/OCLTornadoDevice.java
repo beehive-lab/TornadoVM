@@ -267,16 +267,11 @@ public class OCLTornadoDevice implements TornadoDevice {
         } else {
             final OCLCodeCache check = new OCLCodeCache(deviceContext);
             final Path lookupPath = Paths.get(check.getFPGA_BIN_DIR());
-            final File file = lookupPath.toFile();
 
             String[] tempEntryToSplit = task.getName().split("- ");
             String entry = tempEntryToSplit[1];
-            try {
-                final byte[] binary = Files.readAllBytes(lookupPath);
-                return check.installBinary(entry, binary);
-            } catch (OCLException | IOException e) {
-                error("unable to load binary: %s (%s)", file, e.getMessage());
-            }
+
+            return check.installEntryPointForBinaryForFPGAs(lookupPath, entry);
         }
 
         shouldNotReachHere("task of unknown type: " + task.getClass().getSimpleName());
