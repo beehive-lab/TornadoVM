@@ -230,7 +230,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             lookupCode = deviceContext.getCode("internal", "lookupBufferAddress");
         } else if (check.getBinStatus() && check.getFPGABinDir() != null){
             Path lookupPath = Paths.get(check.getFPGABinDir());
-
             lookupCode = check.installEntryPointForBinaryForFPGAs(lookupPath, "lookupBufferAddress");
         }
         else {

@@ -194,7 +194,6 @@ public class OCLTornadoDevice implements TornadoDevice {
         OCLCodeCache tmp = new OCLCodeCache(deviceContext);
 
         if ((tmp.getBinStatus() == false) && (tmp.getFPGABinDir() != null)) {
-
             if (task instanceof CompilableTask) {
                 final CompilableTask executable = (CompilableTask) task;
 //			final long t0 = System.nanoTime();
