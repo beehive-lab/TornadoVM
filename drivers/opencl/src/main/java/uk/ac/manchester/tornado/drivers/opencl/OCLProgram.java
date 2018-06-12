@@ -253,22 +253,9 @@ public class OCLProgram extends TornadoLogger {
     public OCLKernel getKernel(String entryPoint) {
         OCLKernel kernel = null;
         try {
-<<<<<<< HEAD
-<<<<<<< HEAD
             kernel = new OCLKernel(clCreateKernel(id, entryPoint),deviceContext);
-=======
-            //if(i==1) {
-             //   entryPoint = "saxpy";
-           // }
             kernel = new OCLKernel(clCreateKernel(id, entryPoint),
                     deviceContext);
-            System.out.print("Kernel ID ---> " + id + " Entrypoint ---> " + entryPoint + "\n");
-
-           // i++;
->>>>>>> First working version for intergration with the FPGA
-=======
-            kernel = new OCLKernel(clCreateKernel(id, entryPoint),deviceContext);
->>>>>>> [cleanup] Code cleanup for last working version of Saxpy onto FPGA
         } catch (OCLException e) {
             error(e.getMessage());
         }
