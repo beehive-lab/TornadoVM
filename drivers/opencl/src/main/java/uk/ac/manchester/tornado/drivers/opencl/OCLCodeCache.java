@@ -81,7 +81,7 @@ public class OCLCodeCache {
         return OPENCL_LOAD_BINS;
     }
 
-    public String getFPGA_BIN_DIR() {
+    public String getFPGABinDir() {
         return FPGA_BIN_DIR;
     }
 
