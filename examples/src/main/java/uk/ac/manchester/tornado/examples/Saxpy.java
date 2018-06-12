@@ -44,7 +44,7 @@ public class Saxpy {
         s0.execute();
         for (int i=0; i < y.length; i++){
             //System.out.print(Arrays.toString(y));
-            System.out.println(Arrays.toString(y));
+           // System.out.println(Arrays.toString(y));
         }
 
     }
