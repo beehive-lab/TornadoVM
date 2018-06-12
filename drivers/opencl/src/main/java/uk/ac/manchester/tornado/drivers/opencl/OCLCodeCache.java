@@ -61,7 +61,9 @@ public class OCLCodeCache {
     private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "/var/opencl-codecache");
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-logs");
+
     private final String FPGA_BIN_DIR = getProperty("tornado.precompilied.dir", null);
+
 
     private final boolean PRINT_WARNINGS = false;
 
@@ -81,11 +83,9 @@ public class OCLCodeCache {
         return OPENCL_LOAD_BINS;
     }
 
-
     public String getFPGABinDir() {
         return FPGA_BIN_DIR;
     }
-
 
     private Path resolveDir(String dir) {
         final String tornadoRoot = System.getenv("TORNADO_SDK");
@@ -185,26 +185,8 @@ public class OCLCodeCache {
                 program.dumpBinaries(outDir.toAbsolutePath().toString() + "/" + entryPoint);
             }
         } else {
-            System.out.println("TRY TO BUILD FROM SOURCE: WHY????" + "\n");
             warn("\tunable to compile %s", entryPoint);
             code.invalidate();
-//
-//            Path lookupPath = Paths.get("/home/admin/Tornado/tornado/null/var/opencl-codecache/device-2-0/");
-//            final File file = lookupPath.toFile();
-//            OCLInstalledCode tmp = null;
-//            try {
-//                final byte[] binary = Files.readAllBytes(lookupPath);
-//                OCLInstalledCode coded = new OCLInstalledCode(entryPoint, binary, deviceContext, program, kernel);
-//                coded =  installBinary(file.getName(), binary);
-//                //final OCLInstalledCode code = coded;
-//                tmp = coded;
-//
-//            } catch (OCLException | IOException e) {
-//                error("unable to load binary: %s (%s)", file, e.getMessage());
-//                return  null;
-//            }
-//            code = tmp;
-
         }
 
         return code;
@@ -284,11 +266,7 @@ public class OCLCodeCache {
         info("loading %s into cache", file.getAbsoluteFile());
         try {
             final byte[] binary = Files.readAllBytes(path);
-           String name = "saxpy";
-
             installBinary(file.getName(), binary, true);
-            System.out.print("LOAD BINARY <-----" + "\n");
-            //installBinary(name, binary, true);
         } catch (OCLException | IOException e) {
             error("unable to load binary: %s (%s)", file, e.getMessage());
         }
