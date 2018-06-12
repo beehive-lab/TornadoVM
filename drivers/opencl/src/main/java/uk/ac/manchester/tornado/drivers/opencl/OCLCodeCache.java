@@ -291,6 +291,22 @@ public class OCLCodeCache {
         cache.clear();
     }
 
+
+    public OCLInstalledCode installEntryPointForBinaryForFPGAs(Path lookupPath, String entrypoint){
+        final File file = lookupPath.toFile();
+        OCLInstalledCode lookupCode = null;
+        if (file.length() == 0) {
+            error("Empty input binary: %s (%s)", file);
+        }
+        try {
+            final byte[] binary = Files.readAllBytes(lookupPath);
+            lookupCode =  installBinary(entrypoint, binary);
+        } catch (OCLException | IOException e) {
+            error("unable to load binary: %s (%s)", file, e.getMessage());
+        }
+        return lookupCode;
+    }
+
     public boolean isCached(String id, String entryPoint) {
         return cache.containsKey(id + "-" + entryPoint);
     }

@@ -202,7 +202,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         lookupCode.execute(bb, meta);
 
         final long address = bb.getLong(0);
-        Tornado.info("Heap address @ 0x%x on %s ---->AFTER<-----", address, deviceContext.getDevice().getName());
+        Tornado.info("Heap address @ 0x%x on %s ", address, deviceContext.getDevice().getName());
         return address;
     }
 
@@ -227,18 +227,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         if (deviceContext.isCached("internal", "lookupBufferAddress")) {
             lookupCode = deviceContext.getCode("internal", "lookupBufferAddress");
-        } else if (check.getBinStatus() ){
-            Path lookupPath = Paths.get("/tmp/pre-tornado/combined/lookupBufferAddress");
-                final File file = lookupPath.toFile();
-                if (file.length() == 0) {
-                    return;
-                }
-                try {
-                    final byte[] binary = Files.readAllBytes(lookupPath);
-                    lookupCode=  check.installBinary(file.getName(), binary);
-                } catch (OCLException | IOException e) {
-                    error("unable to load binary: %s (%s)", file, e.getMessage());
-            }
+        } else if (check.getBinStatus() && check.getFPGA_BIN_DIR() != null){
+            Path lookupPath = Paths.get(check.getFPGA_BIN_DIR());
+            lookupCode = check.installEntryPointForBinaryForFPGAs(lookupPath, "lookupBufferAddress");
         }
         else {
            OCLCompilationResult result = OCLCompiler.compileCodeForDevice(getTornadoRuntime().resolveMethod(getLookupMethod()), null, meta, (OCLProviders) getProviders(), this);
