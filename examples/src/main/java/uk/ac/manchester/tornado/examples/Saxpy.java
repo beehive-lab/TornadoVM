@@ -38,9 +38,20 @@ public class Saxpy {
 
 
         s0.execute();
+
+		System.out.println("Checking result");
+		boolean wrongResult = false;
         for (int i=0; i < y.length; i++) {
-            //System.out.print(Arrays.toString(y));
+			if (Math.abs(y[i] - (alpha * x[i])) > 0.01) {
+				wrongResult = true;
+				break;
+			}
         }
+		if (!wrongResult) {
+			System.out.println("Test success");
+		} else {
+			System.out.println("Result is wrong");
+		}
     }
 
 }
