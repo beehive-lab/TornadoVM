@@ -32,14 +32,14 @@
 
 ## List of Benchmarks and binary location:
 
-1.Saxpy 
-    Path: /hdd/pre-compilied/pre-tornado/combined/WorkingExamples/Saxpy/lookupBufferAddress
-2.MonteCarlo
-    Path: /hdd/pre-compilied/pre-tornado/combined/WorkingExamples/MonteCarlo/lookupBufferAddress
-3.Sgemm 
-    Path: /hdd/pre-compilied/pre-tornado/combined/WorkingExamples/Sgemm/lookupBufferAddress
-4.NBody
-    Path: /hdd/pre-compilied/pre-tornado/combined/WorkingExamples/Nbody/lookupBufferAddress
+    1.Saxpy 
+        * Path: /hdd/pre-compilied/pre-tornado/combined/WorkingExamples/Saxpy/lookupBufferAddress
+    2.MonteCarlo
+        * Path: /hdd/pre-compilied/pre-tornado/combined/WorkingExamples/MonteCarlo/lookupBufferAddress
+    3.Sgemm 
+        * Path: /hdd/pre-compilied/pre-tornado/combined/WorkingExamples/Sgemm/lookupBufferAddress
+    4.NBody
+        * Path: /hdd/pre-compilied/pre-tornado/combined/WorkingExamples/Nbody/lookupBufferAddress
         
 ## How To Execute:
 Two additional  parameters are needed for executing the pre-compilied binaries onto FPGAs:
