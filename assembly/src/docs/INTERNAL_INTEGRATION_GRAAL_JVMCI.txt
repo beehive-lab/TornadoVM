@@ -1,0 +1,15 @@
+This document contains changes made to fix some issues/improvement over the Graal and JVMCI base code.
+This list of changes have to taken into account in future integrations with the last Graal version.
+
+
+1) Graal addition of the TernaryNodes
+
+Link: https://github.com/beehive-lab/graal-core/commit/528acb9abd681cd227edc7e4faac2450071d8a7a 
+
+
+2) Adition of the OCLWriteNode
+
+Link: https://github.com/beehive-lab/tornado/blob/05030422764571a6d512d52221257ad5c3e9f047/drivers/opencl/src/main/java/uk/ac/manchester/tornado/drivers/opencl/graal/OCLLoweringProvider.java#L324-L328 
+
+
+

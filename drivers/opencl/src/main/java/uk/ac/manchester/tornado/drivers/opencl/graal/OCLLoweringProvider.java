@@ -329,6 +329,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
         AbstractWriteNode memoryWrite = null;
         if (isSimpleCharOrShort(elementKind, value)) {
+            // XXX: This call is due to an error in Graal when storing a
+            // variable of type char or short. In future integrations with JVMCI
+            // and Graal, this issue is completely solved.
             memoryWrite = graph.add(new OCLWriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), elementKind));
         } else {
             memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind())));
