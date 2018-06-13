@@ -297,6 +297,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryTemplate NEW_FLOAT_ARRAY = new OCLUnaryTemplate("float[]", "float[%s]");
         public static final OCLUnaryTemplate NEW_DOUBLE_ARRAY = new OCLUnaryTemplate("double[]", "double[%s]");
         public static final OCLUnaryTemplate NEW_BYTE_ARRAY = new OCLUnaryTemplate("char[]", "char[%s]");
+        public static final OCLUnaryTemplate NEW_CHAR_ARRAY = new OCLUnaryTemplate("char[]", "char[%s]");
         public static final OCLUnaryTemplate NEW_SHORT_ARRAY = new OCLUnaryTemplate("short[]", "short[%s]");
 
         // @formatter:on

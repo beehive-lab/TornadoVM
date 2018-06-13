@@ -69,8 +69,6 @@ __PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
 __VERSION__ = "0.3_21032018"
 
 __TORNADO_TESTS_WHITE_LIST__ = [
-	"uk.ac.manchester.tornado.unittests.arrays.TestArrays#testVectorAdditionShort",
-	"uk.ac.manchester.tornado.unittests.vectortypes.TestFloats#simpleDotProductFloat8",
 	"uk.ac.manchester.tornado.unittests.vectortypes.TestFloats#simpleDotProduct",
 	"uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest#testPrebuild01",
 
