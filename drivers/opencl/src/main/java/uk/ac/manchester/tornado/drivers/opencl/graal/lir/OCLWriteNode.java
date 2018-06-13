@@ -46,6 +46,7 @@ public class OCLWriteNode extends AbstractWriteNode implements LIRLowerableAcces
 
     public OCLWriteNode(AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType, JavaKind type) {
         super(TYPE, address, location, value, barrierType);
+        assert (type == JavaKind.Char || type == JavaKind.Short);
         this.type = type;
     }
 
