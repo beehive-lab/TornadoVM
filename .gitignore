@@ -39,3 +39,5 @@ autom4te.cache
 /drivers/target/
 bin/bin
 bin/sdk
+*.swp
+*.pyc

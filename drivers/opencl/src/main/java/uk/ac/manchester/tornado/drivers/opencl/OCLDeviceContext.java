@@ -45,6 +45,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
 
     private static final long BUMP_BUFFER_SIZE = Long.decode(getProperty("tornado.opencl.bump.size", "0x100000"));
     private static final String[] BUMP_DEVICES = parseDevices(getProperty("tornado.opencl.bump.devices", "Iris Pro"));
+    private static final boolean PRINT_OCL_KERNEL_TIME = Boolean.parseBoolean(getProperty("tornado.opencl.timer.kernel", "False").toLowerCase());
 
     private final OCLDevice device;
     private final OCLCommandQueue queue;
@@ -80,6 +81,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
 
     private static String[] parseDevices(String str) {
         return str.split(";");
+    }
+
+    public boolean printOCLKernelTime() {
+        return PRINT_OCL_KERNEL_TIME;
     }
 
     public List<OCLEvent> events() {

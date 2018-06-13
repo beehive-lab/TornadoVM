@@ -59,7 +59,7 @@ public class GraphCompilationResult {
         asm.end();
     }
 
-    public void emitAsyncNode(Graph graph, ExecutionContext context,
+    public void emitAsyncNode(TornadoGraph graph, ExecutionContext context,
             AbstractNode node, int ctx, int depIn) {
 
 //		System.out.printf("emit: %s\n",node);
@@ -81,7 +81,7 @@ public class GraphCompilationResult {
         }
     }
 
-    private void emitArgList(Graph graph, ExecutionContext context,
+    private void emitArgList(TornadoGraph graph, ExecutionContext context,
             TaskNode taskNode) {
 
         final int numArgs = taskNode.getNumArgs();

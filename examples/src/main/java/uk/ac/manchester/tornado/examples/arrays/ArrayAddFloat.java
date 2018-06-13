@@ -34,8 +34,8 @@ import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 public class ArrayAddFloat {
 
     public static void main(final String[] args) {
-        final int numElements = (args.length == 1) ? Integer.parseInt(args[0])
-                : 8192;
+
+        final int numElements = (args.length == 1) ? Integer.parseInt(args[0]) : 8192;
         final int iterations = 1;
         final float[] a = new float[numElements];
         final float[] b = new float[numElements];
@@ -61,11 +61,10 @@ public class ArrayAddFloat {
         double megaBytes = (((double) numElements * 4)) * 3 * iterations;
         double bw = megaBytes / elapsed;
 
-        System.out.printf("Overall  : time = %f seconds, bw = %s\n", elapsed,
-                RuntimeUtilities.formatBytesPerSecond(bw));
+        System.out.printf("Overall  : time = %f seconds, bw = %s\n", elapsed, RuntimeUtilities.formatBytesPerSecond(bw));
 
         /*
-         * Check to make sure result is correct
+         * Check results
          */
         int errors = 0;
         for (final float value : c) {

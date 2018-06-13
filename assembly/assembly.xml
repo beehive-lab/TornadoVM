@@ -14,7 +14,6 @@
             <directory>src</directory> <!-- README file in share/tornado -->
             <includes>
                 <include>README.md</include>
-                <!-- <include>LICENSE</include> -->
             </includes>
             <outputDirectory>share/tornado</outputDirectory>
             <fileMode>0444</fileMode>
@@ -34,6 +33,7 @@
                 <include>*.sh</include>
                 <include>*.py</include>
                 <include>tornado*</include>
+                <include>misc/*.py</include>
             </includes>
             <lineEnding>unix</lineEnding>
             <fileMode>0755</fileMode>

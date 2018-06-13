@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.api.Reduce;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
-public class Example {
+public class TornadoSum {
 
     public static void reductionAnnotation(int[] input, @Reduce int[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
@@ -50,7 +50,7 @@ public class Example {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", Example::reductionAnnotation, input, result)
+            .task("t0", TornadoSum::reductionAnnotation, input, result)
             .streamOut(result)
             .execute();
         //@formatter:on
@@ -63,5 +63,4 @@ public class Example {
     public static void main(String[] args) {
         testReductionAnnotation();
     }
-
 }

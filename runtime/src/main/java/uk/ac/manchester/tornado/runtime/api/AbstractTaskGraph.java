@@ -50,10 +50,10 @@ import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
-import uk.ac.manchester.tornado.runtime.graph.Graph;
-import uk.ac.manchester.tornado.runtime.graph.GraphBuilder;
+import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
+import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
 import uk.ac.manchester.tornado.runtime.graph.GraphCompilationResult;
-import uk.ac.manchester.tornado.runtime.graph.GraphCompiler;
+import uk.ac.manchester.tornado.runtime.graph.TornadoGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
 
@@ -150,7 +150,7 @@ public abstract class AbstractTaskGraph {
         hlBuffer.put(LAUNCH);
     }
 
-    private void updateDeviceContext(Graph graph) {
+    private void updateDeviceContext(TornadoGraph graph) {
         BitSet deviceContexts = graph.filter(ContextNode.class);
         final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
         contextNode.setDeviceIndex(meta().getDeviceIndex());
@@ -165,14 +165,14 @@ public abstract class AbstractTaskGraph {
         buffer.limit(hlBuffer.position());
 
         // final long t0 = System.nanoTime();
-        final Graph graph = GraphBuilder.buildGraph(graphContext, buffer);
+        final TornadoGraph graph = TornadoGraphBuilder.buildGraph(graphContext, buffer);
         // final long t1 = System.nanoTime();
 
         if (setNewDevice) {
             updateDeviceContext(graph);
         }
 
-        result = GraphCompiler.compile(graph, graphContext);
+        result = TornadoGraphCompiler.compile(graph, graphContext);
         // final long t2 = System.nanoTime();
         vm = new TornadoVM(graphContext, result.getCode(), result.getCodeSize());
         // final long t3 = System.nanoTime();
