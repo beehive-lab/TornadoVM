@@ -312,6 +312,13 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
     }
 
+    private boolean isSimpleCharOrShort(JavaKind elementKind, ValueNode value) {
+        if ((elementKind == JavaKind.Char && value.getStackKind() != JavaKind.Object) || (elementKind == JavaKind.Short && value.getStackKind() != JavaKind.Object)) {
+            return true;
+        }
+        return false;
+    }
+
     @Override
     protected void lowerStoreIndexedNode(StoreIndexedNode storeIndexed, LoweringTool tool) {
         StructuredGraph graph = storeIndexed.graph();
@@ -321,7 +328,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
 
         AbstractWriteNode memoryWrite = null;
-        if (elementKind == JavaKind.Char || elementKind == JavaKind.Short) {
+        if (isSimpleCharOrShort(elementKind, value)) {
             memoryWrite = graph.add(new OCLWriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), elementKind));
         } else {
             memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind())));
