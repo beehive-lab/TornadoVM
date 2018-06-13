@@ -51,9 +51,26 @@ public class OCLCommandQueue extends TornadoLogger {
     protected static final Event EMPTY_EVENT = new EmptyEvent();
     private static final int NUM_EVENTS_BUFFERS = 1;
 
-    protected static final String[] EVENT_DESCRIPTIONS = { "kernel - serial", "kernel - parallel", "writeToDevice - byte[]", "writeToDevice - short[]", "writeToDevice - int[]",
-            "writeToDevice - long[]", "writeToDevice - float[]", "writeToDevice - double[]", "readFromDevice - byte[]", "readFromDevice - short[]", "readFromDevice - int[]", "readFromDevice - long[]",
-            "readFromDevice - float[]", "readFromDevice - double[]", "sync - marker", "sync - barrier" };
+    // @formatter:off
+    protected static final String[] EVENT_DESCRIPTIONS = { 
+            "kernel - serial", 
+            "kernel - parallel", 
+            "writeToDevice - byte[]", 
+            "writeToDevice - short[]", 
+            "writeToDevice - int[]",
+            "writeToDevice - long[]", 
+            "writeToDevice - float[]", 
+            "writeToDevice - double[]", 
+            "readFromDevice - byte[]", 
+            "readFromDevice - short[]", 
+            "readFromDevice - int[]", 
+            "readFromDevice - long[]",
+            "readFromDevice - float[]", 
+            "readFromDevice - double[]", 
+            "sync - marker", 
+            "sync - barrier" 
+            };
+    // @formatter:on
 
     protected static final int DESC_SERIAL_KERNEL = 0;
     protected static final int DESC_PARALLEL_KERNEL = 1;
@@ -169,7 +186,7 @@ public class OCLCommandQueue extends TornadoLogger {
     native static long readArrayFromDevice(long queueId, double[] buffer, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
     /*
-     * for OpenCL 1.1 compatability
+     * for OpenCL 1.1 compatibility
      */
     native static long clEnqueueMarker(long queueId) throws OCLException;
 
@@ -178,7 +195,7 @@ public class OCLCommandQueue extends TornadoLogger {
     native static void clEnqueueWaitForEvents(long queueId, long[] events) throws OCLException;
 
     /*
-     * for OpenCL 1.2 implemetations
+     * for OpenCL 1.2 implementations
      */
     native static long clEnqueueMarkerWithWaitList(long queueId, long[] events) throws OCLException;
 
@@ -231,9 +248,9 @@ public class OCLCommandQueue extends TornadoLogger {
         guarantee(!retain.get(currentEvent), "overwriting retained event");
 
         /*
-         * OpenCL can generate an out of resources error which produces an invalid event
-         * (-1) we need to avoid releasing any invalid events and trigger a fatal
-         * exception when we miss an event
+         * OpenCL can generate an out of resources error which produces an
+         * invalid event (-1) we need to avoid releasing any invalid events and
+         * trigger a fatal exception when we miss an event
          */
         if (eventId == -1) {
             fatal("invalid event: event=0x%x, description=%s, tag=0x%x\n", eventId, EVENT_DESCRIPTIONS[descriptorId], tag);
@@ -259,16 +276,12 @@ public class OCLCommandQueue extends TornadoLogger {
         }
 
         Arrays.fill(waitEventsBuffer, 0);
-        // System.out.printf("waitlist:\n");
         int index = 0;
         for (int i = 0; i < dependencies.length; i++) {
             final int value = dependencies[i];
             if (value != -1) {
                 index++;
                 waitEventsBuffer[index] = events[value];
-                // System.out.printf("[%d] 0x%x - %s
-                // 0x%x\n",index,events[value],EVENT_DESCRIPTIONS[descriptors[value]],
-                // tags[value]);
             }
         }
         waitEventsBuffer[0] = index;
@@ -591,9 +604,7 @@ public class OCLCommandQueue extends TornadoLogger {
     }
 
     public void printEvents() {
-        // for (OCLEvent event : events) {
-        // System.out.println(event.toString());
-        // }
+
     }
 
     public int enqueueBarrier(int[] events) {
@@ -630,14 +641,6 @@ public class OCLCommandQueue extends TornadoLogger {
 
     private int enqueueMarker11(long[] events) {
         return enqueueBarrier11(events);
-        // OCLEvent event = null;
-        //
-        // try {
-        // event = registerEvent(new OCLEvent(clEnqueueMarker(id),"barrier"));
-        // } catch (OCLException e) {
-        // Tornado.fatal(e.getMessage());
-        // }
-        // return event;
     }
 
     private int enqueueMarker12(long[] waitEvents) {
