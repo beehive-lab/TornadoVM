@@ -1,8 +1,8 @@
 #  FPGA Execution with TornadoVM
 
-** This is a testing version **
+**This is a testing version**
 
-** Prerequsites ** 
+**Prerequsites** 
 
 * The ICD loaders for all other OpenCL devices must be disabled:
 
