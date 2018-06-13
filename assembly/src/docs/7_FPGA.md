@@ -28,16 +28,17 @@
 ```
 
 * The working branch should be  ``` feature/fpgaintergation ```.
-* Access to the ``` Tornado  ``` machine and permissions to the ** /hdd/pre-compilied  ** directory.
+* Access to the ``` Tornado  ``` machine and permissions to the **/hdd/pre-compilied** directory.
 
 ## List of Benchmarks and binary location:
-    1. Saxpy 
+
+    1.Saxpy 
         Path: /hdd/pre-compilied/pre-tornado/combined/WorkingExamples/Saxpy/lookupBufferAddress
-    2. MonteCarlo
+    2.MonteCarlo
         Path: /hdd/pre-compilied/pre-tornado/combined/WorkingExamples/MonteCarlo/lookupBufferAddress
-    3. Sgemm 
+    3.Sgemm 
         Path: /hdd/pre-compilied/pre-tornado/combined/WorkingExamples/Sgemm/lookupBufferAddress
-    4. NBody
+    4.NBody
         Path: /hdd/pre-compilied/pre-tornado/combined/WorkingExamples/Nbody/lookupBufferAddress
         
 ## How To Execute:
