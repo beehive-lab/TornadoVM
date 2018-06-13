@@ -29,6 +29,7 @@ package uk.ac.manchester.tornado.unittests.arrays;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -78,7 +79,13 @@ public class TestArrays extends TornadoTestBase {
 
     public static void vectorChars(char[] a, char[] b, char[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = (char) (a[i] + 'f');
+            c[i] = 'f';
+        }
+    }
+
+    public static void addChars(char[] a, int[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] += b[i];
         }
     }
 
@@ -329,8 +336,30 @@ public class TestArrays extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + 'f', c[i]);
+            assertEquals('f', c[i]);
         }
+    }
+
+    @Test
+    public void testVectorCharsMessage() {
+        char[] a = new char[] { 'h', 'e', 'l', 'l', 'o', ' ', '\0', '\0', '\0', '\0', '\0', '\0' };
+        int[] b = new int[] { 15, 10, 6, 0, -11, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(a, b)
+            .task("t0", TestArrays::addChars, a, b)
+            .streamOut(a)
+            .execute();
+        //@formatter:on
+
+        assertEquals('w', a[0]);
+        assertEquals('o', a[1]);
+        assertEquals('r', a[2]);
+        assertEquals('l', a[3]);
+        assertEquals('d', a[4]);
+        assertEquals('!', a[5]);
+
     }
 
 }
