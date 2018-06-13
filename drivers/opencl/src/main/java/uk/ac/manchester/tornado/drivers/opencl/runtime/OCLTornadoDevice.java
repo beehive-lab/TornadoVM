@@ -218,25 +218,11 @@ public class OCLTornadoDevice implements TornadoDevice {
                     return deviceContext.getCode(task.getId(), resolvedMethod.getName());
                 }
 
-                // if (SHOW_OPENCL) {
-                // String filename = getFile(executable.getMethodName());
-                // // Tornado.info("Generated code for device %s - %s\n",
-                // // deviceContext.getDevice().getName(), filename);
-                // try {
-                // PrintWriter fileOut = new PrintWriter(filename);
-                // String source = new String(result.getTargetCode(), "ASCII");
-                // fileOut.println(source.trim());
-                // fileOut.close();
-                // } catch (UnsupportedEncodingException | FileNotFoundException e) {
-                // e.printStackTrace();
-                // }
-                // }
                 return deviceContext.installCode(result);
             } catch (Exception e) {
                 driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
                 driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
                 driver.fatal("exception: %s", e.toString());
-                // driver.fatal("cause: %s", e.getCause().toString());
                 e.printStackTrace();
             }
             return null;
@@ -265,8 +251,6 @@ public class OCLTornadoDevice implements TornadoDevice {
     }
 
     private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg, OCLDeviceContext device) throws TornadoOutOfMemoryException {
-        // System.out.printf("creating buffer: type=%s, arg=%s,
-        // device=%s\n",type.getSimpleName(),arg,device);
         ObjectBuffer result = null;
         if (type.isArray()) {
 
@@ -313,7 +297,6 @@ public class OCLTornadoDevice implements TornadoDevice {
             }
 
         } else if (!type.isPrimitive() && !type.isArray()) {
-            // System.out.println("creating object wrapper...good");
             result = new OCLObjectWrapper(device, arg);
         }
 
