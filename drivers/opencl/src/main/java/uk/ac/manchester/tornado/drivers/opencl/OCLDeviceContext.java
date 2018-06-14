@@ -162,6 +162,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
     }
 
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, char[] array, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
+    }
+
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, int[] array, int[] waitEvents) {
         return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
     }
@@ -186,6 +190,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
      * Asynchronouse reads from device
      */
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, byte[] array, int[] waitEvents) {
+        return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
+    }
+
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes, char[] array, int[] waitEvents) {
         return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
     }
 
@@ -219,6 +227,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
     }
 
+    public void writeBuffer(long bufferId, long offset, long bytes, char[] array, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
+    }
+
     public void writeBuffer(long bufferId, long offset, long bytes, int[] array, int[] waitEvents) {
         queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
     }
@@ -243,6 +255,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
      * Synchronous reads from device
      */
     public void readBuffer(long bufferId, long offset, long bytes, byte[] array, int[] waitEvents) {
+        queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
+    }
+
+    public void readBuffer(long bufferId, long offset, long bytes, char[] array, int[] waitEvents) {
         queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
     }
 

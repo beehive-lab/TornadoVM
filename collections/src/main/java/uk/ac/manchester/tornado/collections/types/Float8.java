@@ -328,12 +328,8 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public static float dot(Float8 a, Float8 b) {
-        float result = 0f;
         final Float8 m = mult(a, b);
-        for (int i = 0; i < numElements; i++) {
-            result += m.get(i);
-        }
-        return result;
+        return m.getS0() + m.getS1() + m.getS2() + m.getS3() + m.getS4() + m.getS5() + m.getS6() + m.getS7();
     }
 
     public static boolean isEqual(Float8 a, Float8 b) {

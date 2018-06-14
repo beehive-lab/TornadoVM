@@ -151,7 +151,8 @@ public class TestFloats extends TornadoTestBase {
         assertEquals(120, output.get(0), 0.001f);
     }
 
-    @Test
+    // This is currently not supported
+    @Ignore
     public void simpleDotProduct() {
         Float3 a = new Float3(1f, 2f, 3f);
         Float3 b = new Float3(3f, 2f, 1f);
