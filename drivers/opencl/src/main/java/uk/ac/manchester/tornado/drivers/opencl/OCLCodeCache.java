@@ -51,7 +51,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 
 public class OCLCodeCache {
 
-    private static  OCLProgram program;
+    private static OCLProgram program;
     private final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", "False"));
     private final boolean OPENCL_LOAD_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.loadbin", "False"));
@@ -62,7 +62,6 @@ public class OCLCodeCache {
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-logs");
     private final String FPGA_BIN_DIR = getProperty("tornado.precompilied.dir", null);
-
 
     private final boolean PRINT_WARNINGS = false;
 
@@ -78,7 +77,8 @@ public class OCLCodeCache {
             load();
         }
     }
-    public boolean getBinStatus(){
+
+    public boolean getBinStatus() {
         return OPENCL_LOAD_BINS;
     }
 
@@ -203,34 +203,34 @@ public class OCLCodeCache {
 
         }
         info("Installing binary for %s into code cache", entryPoint);
-        //final OCLProgram program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
+        // final OCLProgram program =
+        // deviceContext.createProgramWithBinary(binary, new long[] {
+        // binary.length });
 
-        OCLBuildStatus status  = null;
-        //if (program == null) {
-             program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
-            if (program == null) {
-                throw new OCLException("unable to load binary for " + entryPoint);
-            }
-             long t0 = System.nanoTime();
-            program.build("");
-             long t1 = System.nanoTime();
-            status = program.getStatus(deviceContext.getDeviceId());
-            debug("\tOpenCL compilation status = %s", status.toString());
+        OCLBuildStatus status = null;
+        // if (program == null) {
+        program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
+        if (program == null) {
+            throw new OCLException("unable to load binary for " + entryPoint);
+        }
+        long t0 = System.nanoTime();
+        program.build("");
+        long t1 = System.nanoTime();
+        status = program.getStatus(deviceContext.getDeviceId());
+        debug("\tOpenCL compilation status = %s", status.toString());
 
-            final String log = program.getBuildLog(deviceContext.getDeviceId()).trim();
-            if (!log.isEmpty()) {
-                debug(log);
-            }
+        final String log = program.getBuildLog(deviceContext.getDeviceId()).trim();
+        if (!log.isEmpty()) {
+            debug(log);
+        }
 
-        //}
-
+        // }
 
         final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
 
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, null, deviceContext, program, kernel);
-       // long t0 = System.nanoTime();
-       // long t1 = System.nanoTime();
-
+        // long t0 = System.nanoTime();
+        // long t1 = System.nanoTime();
 
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
@@ -293,8 +293,7 @@ public class OCLCodeCache {
         cache.clear();
     }
 
-
-    public OCLInstalledCode installEntryPointForBinaryForFPGAs(Path lookupPath, String entrypoint){
+    public OCLInstalledCode installEntryPointForBinaryForFPGAs(Path lookupPath, String entrypoint) {
         final File file = lookupPath.toFile();
         OCLInstalledCode lookupCode = null;
         if (file.length() == 0) {
@@ -302,7 +301,7 @@ public class OCLCodeCache {
         }
         try {
             final byte[] binary = Files.readAllBytes(lookupPath);
-            lookupCode =  installBinary(entrypoint, binary);
+            lookupCode = installBinary(entrypoint, binary);
         } catch (OCLException | IOException e) {
             error("unable to load binary: %s (%s)", file, e.getMessage());
         }

@@ -92,7 +92,7 @@ public class OCLTornadoDevice implements TornadoDevice {
     public OCLTornadoDevice(final int platformIndex, final int deviceIndex) {
         this.platformIndex = platformIndex;
         this.deviceIndex = deviceIndex;
-        
+
         platformName = findDriver().getPlatformContext(platformIndex).getPlatform().getName();
         device = findDriver().getPlatformContext(platformIndex).devices().get(deviceIndex);
 
@@ -108,10 +108,10 @@ public class OCLTornadoDevice implements TornadoDevice {
         final String availability = (device.isAvailable()) ? "available" : "not available";
         return String.format("%s %s (%s)", device.getName(), device.getDeviceType(), availability);
     }
-    
+
     @Override
     public String getPlatformName() {
-    	return platformName;
+        return platformName;
     }
 
     public OCLDevice getDevice() {
@@ -146,7 +146,7 @@ public class OCLTornadoDevice implements TornadoDevice {
 
     @Override
     public String toString() {
-        return String.format(getPlatformName() + " -- " +  device.getName());
+        return String.format(getPlatformName() + " -- " + device.getName());
     }
 
     @Override
@@ -193,14 +193,13 @@ public class OCLTornadoDevice implements TornadoDevice {
         final OCLDeviceContext deviceContext = getDeviceContext();
         OCLCodeCache tmp = new OCLCodeCache(deviceContext);
 
-        if ((tmp.getBinStatus() == false) && (tmp.getFPGABinDir() != null)) {
+        if ((tmp.getBinStatus() == false) && (tmp.getFPGABinDir() == null)) {
             if (task instanceof CompilableTask) {
                 final CompilableTask executable = (CompilableTask) task;
-//			final long t0 = System.nanoTime();
-                final ResolvedJavaMethod resolvedMethod = getTornadoRuntime()
-                        .resolveMethod(executable.getMethod());
+                // final long t0 = System.nanoTime();
+                final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(executable.getMethod());
 
-//			final long t1 = System.nanoTime();
+                // final long t1 = System.nanoTime();
                 final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
 
                 // copy meta data into task
@@ -213,9 +212,7 @@ public class OCLTornadoDevice implements TornadoDevice {
                 }
 
                 try {
-                    final OCLCompilationResult result = compileSketchForDevice(
-                            sketch, executable,
-                            (OCLProviders) getBackend().getProviders(), getBackend());
+                    final OCLCompilationResult result = compileSketchForDevice(sketch, executable, (OCLProviders) getBackend().getProviders(), getBackend());
 
                     if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
 
@@ -225,25 +222,27 @@ public class OCLTornadoDevice implements TornadoDevice {
                         System.out.println("Kernel is NOT cached: " + task.getId() + "  -  " + resolvedMethod.getName());
                     }
 
-//            if (SHOW_OPENCL) {
-//                String filename = getFile(executable.getMethodName());
-//                // Tornado.info("Generated code for device %s - %s\n",
-//                // deviceContext.getDevice().getName(), filename);
-//                try {
-//                    PrintWriter fileOut = new PrintWriter(filename);
-//                    String source = new String(result.getTargetCode(), "ASCII");
-//                    fileOut.println(source.trim());
-//                    fileOut.close();
-//                } catch (UnsupportedEncodingException | FileNotFoundException e) {
-//                    e.printStackTrace();
-//                }
-//            }
+                    // if (SHOW_OPENCL) {
+                    // String filename = getFile(executable.getMethodName());
+                    // // Tornado.info("Generated code for device %s - %s\n",
+                    // // deviceContext.getDevice().getName(), filename);
+                    // try {
+                    // PrintWriter fileOut = new PrintWriter(filename);
+                    // String source = new String(result.getTargetCode(),
+                    // "ASCII");
+                    // fileOut.println(source.trim());
+                    // fileOut.close();
+                    // } catch (UnsupportedEncodingException |
+                    // FileNotFoundException e) {
+                    // e.printStackTrace();
+                    // }
+                    // }
                     return deviceContext.installCode(result);
                 } catch (Exception e) {
                     driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
                     driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
                     driver.fatal("exception: %s", e.toString());
-//                driver.fatal("cause: %s", e.getCause().toString());
+                    // driver.fatal("cause: %s", e.getCause().toString());
                     e.printStackTrace();
 
                 }
@@ -258,8 +257,7 @@ public class OCLTornadoDevice implements TornadoDevice {
                 guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
                 try {
                     final byte[] source = Files.readAllBytes(path);
-                    return deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(),
-                            source);
+                    return deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(), source);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -282,9 +280,9 @@ public class OCLTornadoDevice implements TornadoDevice {
         return String.format("%s/%s-%s.cl", OCLBackend.OPENCL_PATH.trim(), name.trim(), getDeviceName());
     }
 
-    private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg,
-            OCLDeviceContext device) throws TornadoOutOfMemoryException {
-//		System.out.printf("creating buffer: type=%s, arg=%s, device=%s\n",type.getSimpleName(),arg,device);
+    private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg, OCLDeviceContext device) throws TornadoOutOfMemoryException {
+        // System.out.printf("creating buffer: type=%s, arg=%s,
+        // device=%s\n",type.getSimpleName(),arg,device);
         ObjectBuffer result = null;
         if (type.isArray()) {
 
@@ -328,21 +326,18 @@ public class OCLTornadoDevice implements TornadoDevice {
                 }
             }
 
-        } else if (!type.isPrimitive()
-                && !type.isArray()) {
-//			System.out.println("creating object wrapper...good");
+        } else if (!type.isPrimitive() && !type.isArray()) {
+            // System.out.println("creating object wrapper...good");
             result = new OCLObjectWrapper(device, arg);
         }
 
-        guarantee(result
-                != null,
-                "Unable to create buffer for object: " + type);
+        guarantee(result != null, "Unable to create buffer for object: " + type);
         return result;
     }
 
     @Override
     public int ensureAllocated(Object object, DeviceObjectState state) {
-    	
+
         if (!state.hasBuffer()) {
             try {
                 final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext());
@@ -376,16 +371,13 @@ public class OCLTornadoDevice implements TornadoDevice {
     }
 
     @Override
-    public int ensurePresent(Object object, DeviceObjectState state
-    ) {
+    public int ensurePresent(Object object, DeviceObjectState state) {
         ensurePresent(object, state, null);
         return -1;
     }
 
     @Override
-    public int ensurePresent(Object object, DeviceObjectState state,
-            int[] events
-    ) {
+    public int ensurePresent(Object object, DeviceObjectState state, int[] events) {
         if (!state.isValid()) {
             ensureAllocated(object, state);
         }
@@ -426,15 +418,12 @@ public class OCLTornadoDevice implements TornadoDevice {
     }
 
     @Override
-    public void streamOutBlocking(Object object, DeviceObjectState state
-    ) {
+    public void streamOutBlocking(Object object, DeviceObjectState state) {
         streamOutBlocking(object, state, null);
     }
 
     @Override
-    public void streamOutBlocking(Object object, DeviceObjectState state,
-            int[] events
-    ) {
+    public void streamOutBlocking(Object object, DeviceObjectState state, int[] events) {
         guarantee(state.isValid(), "invalid variable");
 
         state.getBuffer().read(object, events, events == null);
@@ -531,6 +520,5 @@ public class OCLTornadoDevice implements TornadoDevice {
     public String getDeviceName() {
         return String.format("opencl-%d-%d", platformIndex, deviceIndex);
     }
-
 
 }
