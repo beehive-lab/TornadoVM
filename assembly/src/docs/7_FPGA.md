@@ -41,6 +41,8 @@ $ clinfo
          Path: /hdd/pre-compilied/pre-tornado/combined/WorkingExamples/Sgemm/lookupBufferAddress
     4.NBody
          Path: /hdd/pre-compilied/pre-tornado/combined/WorkingExamples/Nbody/lookupBufferAddress
+    5.VectorAdd
+         Path: /hdd/pre-compilied/pre-tornado/combined/WorkingExamples/VectorAdd/VectorAddAtPar/lookupBufferAddress
         
 ## How To Execute:
 Two additional  parameters are needed for executing the pre-compilied binaries onto FPGAs:
