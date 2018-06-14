@@ -29,7 +29,6 @@ package uk.ac.manchester.tornado.unittests.arrays;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 

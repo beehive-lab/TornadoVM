@@ -90,6 +90,7 @@ public class TornadoVM extends TornadoLogger {
     private long invocations;
 
     public TornadoVM(ExecutionContext graphContext, byte[] code, int limit) {
+
         this.graphContext = graphContext;
 
         useDependencies = graphContext.meta().enableOooExecution() | VM_USE_DEPS;
@@ -191,11 +192,6 @@ public class TornadoVM extends TornadoLogger {
             Arrays.fill(waitList, -1);
         }
 
-        // if (!isWarmup) {
-        // for (TornadoDevice device : contexts) {
-        // device.markEvent();
-        // }
-        // }
         while (buffer.hasRemaining()) {
             final byte op = buffer.get();
 
@@ -417,7 +413,6 @@ public class TornadoVM extends TornadoLogger {
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
-
             } else if (op == ADD_DEP) {
                 final int eventList = buffer.getInt();
 

@@ -350,7 +350,7 @@ public abstract class AbstractMetaData {
 
         enableVectors = parseBoolean(getDefault("vectors.enable", id, "True"));
         openclEnableBifs = parseBoolean(getDefault("bifs.enable", id, "False"));
-        debug = parseBoolean(getDefault("debug", id, "True"));
+        debug = parseBoolean(getDefault("debug", id, "False"));
         enableMemChecks = parseBoolean(getDefault("memory.check", id, "False"));
         dumpEvents = parseBoolean(getDefault("events.dump", id, "True"));
         dumpProfiles = parseBoolean(getDefault("profiles.print", id, "False"));

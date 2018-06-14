@@ -216,13 +216,8 @@ public class OCLTornadoDevice implements TornadoDevice {
 
                 try {
                     final OCLCompilationResult result = compileSketchForDevice(sketch, executable, (OCLProviders) getBackend().getProviders(), getBackend());
-
                     if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
-
-                        System.out.println("Kernel is cached " + task.getId() + "  -  " + resolvedMethod.getName());
                         return deviceContext.getCode(task.getId(), resolvedMethod.getName());
-                    } else {
-                        System.out.println("Kernel is NOT cached: " + task.getId() + "  -  " + resolvedMethod.getName());
                     }
                     return deviceContext.installCode(result);
                 } catch (Exception e) {
