@@ -57,7 +57,7 @@ public abstract class OCLKernelScheduler {
             calculateLocalWork(meta);
         }
 
-        if (meta.isDebug() | true) {
+        if (meta.isDebug()) {
             meta.printThreadDims();
         }
 

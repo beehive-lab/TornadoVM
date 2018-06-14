@@ -27,16 +27,14 @@ package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.isPrimitiveArray;
 import static uk.ac.manchester.tornado.common.Tornado.FORCE_ALL_TO_GPU;
-import static uk.ac.manchester.tornado.common.Tornado.error;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
-import uk.ac.manchester.tornado.drivers.opencl.*;
-import uk.ac.manchester.tornado.drivers.opencl.exceptions.*;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler.compileSketchForDevice;
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
-import java.io.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,11 +53,16 @@ import uk.ac.manchester.tornado.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.common.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
+import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCharArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLDoubleArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLIntArrayWrapper;
@@ -221,30 +224,12 @@ public class OCLTornadoDevice implements TornadoDevice {
                     } else {
                         System.out.println("Kernel is NOT cached: " + task.getId() + "  -  " + resolvedMethod.getName());
                     }
-
-                    // if (SHOW_OPENCL) {
-                    // String filename = getFile(executable.getMethodName());
-                    // // Tornado.info("Generated code for device %s - %s\n",
-                    // // deviceContext.getDevice().getName(), filename);
-                    // try {
-                    // PrintWriter fileOut = new PrintWriter(filename);
-                    // String source = new String(result.getTargetCode(),
-                    // "ASCII");
-                    // fileOut.println(source.trim());
-                    // fileOut.close();
-                    // } catch (UnsupportedEncodingException |
-                    // FileNotFoundException e) {
-                    // e.printStackTrace();
-                    // }
-                    // }
                     return deviceContext.installCode(result);
                 } catch (Exception e) {
                     driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
                     driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
                     driver.fatal("exception: %s", e.toString());
-                    // driver.fatal("cause: %s", e.getCause().toString());
                     e.printStackTrace();
-
                 }
                 return null;
             } else if (task instanceof PrebuiltTask) {
@@ -276,13 +261,7 @@ public class OCLTornadoDevice implements TornadoDevice {
         return null;
     }
 
-    private String getFile(String name) {
-        return String.format("%s/%s-%s.cl", OCLBackend.OPENCL_PATH.trim(), name.trim(), getDeviceName());
-    }
-
     private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg, OCLDeviceContext device) throws TornadoOutOfMemoryException {
-        // System.out.printf("creating buffer: type=%s, arg=%s,
-        // device=%s\n",type.getSimpleName(),arg,device);
         ObjectBuffer result = null;
         if (type.isArray()) {
 
@@ -299,6 +278,8 @@ public class OCLTornadoDevice implements TornadoDevice {
                     result = new OCLDoubleArrayWrapper(device);
                 } else if (type == long[].class) {
                     result = new OCLLongArrayWrapper(device);
+                } else if (type == char[].class) {
+                    result = new OCLCharArrayWrapper(device);
                 } else {
                     unimplemented("array of type %s", type.getName());
                 }
@@ -327,7 +308,6 @@ public class OCLTornadoDevice implements TornadoDevice {
             }
 
         } else if (!type.isPrimitive() && !type.isArray()) {
-            // System.out.println("creating object wrapper...good");
             result = new OCLObjectWrapper(device, arg);
         }
 
