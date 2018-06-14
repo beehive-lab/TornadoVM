@@ -177,7 +177,7 @@ public class TornadoVM extends TornadoLogger {
     }
 
     public void warmup() {
-        execute(false);
+        execute(true);
     }
 
     public Event execute() {
