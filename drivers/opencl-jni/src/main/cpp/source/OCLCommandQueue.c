@@ -167,6 +167,11 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
     OPENCL_SOFT_ERROR("clEnqueueTask",
             clEnqueueTask((cl_command_queue) queue_id, (cl_kernel) kernel_id, (size_t) len, (cl_event *) events, &event), 0);
 
+    if (PRINT_KERNEL_EVENTS) {
+        long kernelTime = getTimeEvent(event);
+        printf("Kernel time: %d (ns) \n", kernelTime);
+    }
+
     if (array != NULL)
         (*env)->ReleasePrimitiveArrayCritical(env, array, waitList, JNI_ABORT);
 
