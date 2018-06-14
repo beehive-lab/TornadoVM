@@ -124,7 +124,7 @@ public class TestArrays extends TornadoTestBase {
         s0.execute();
 
         for (int i = 0; i < N; i++) {
-            assertEquals(i + numKernels, data[i], 0.0001);
+            assertEquals(i + numKernels, data[i]);
         }
     }
 
