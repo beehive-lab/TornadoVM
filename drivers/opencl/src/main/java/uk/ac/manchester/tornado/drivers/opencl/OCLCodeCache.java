@@ -72,7 +72,8 @@ public class OCLCodeCache {
         this.deviceContext = deviceContext;
         cache = new HashMap<>();
 
-        if (OPENCL_CACHE_ENABLE || OPENCL_LOAD_BINS) {
+        if (OPENCL_CACHE_ENABLE) {
+            // if (OPENCL_CACHE_ENABLE || OPENCL_LOAD_BINS) {
             info("loading binaries into code cache");
             load();
         }
