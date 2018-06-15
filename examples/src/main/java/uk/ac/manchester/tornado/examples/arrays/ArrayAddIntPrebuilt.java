@@ -25,12 +25,12 @@
  */
 package uk.ac.manchester.tornado.examples.arrays;
 
-import java.util.Arrays;
+import java.util.*;
 
-import uk.ac.manchester.tornado.api.Parallel;
-import uk.ac.manchester.tornado.common.enums.Access;
-import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.*;
+import uk.ac.manchester.tornado.common.enums.*;
+import uk.ac.manchester.tornado.drivers.opencl.*;
+import uk.ac.manchester.tornado.runtime.api.*;
 
 public class ArrayAddIntPrebuilt {
 
@@ -51,16 +51,8 @@ public class ArrayAddIntPrebuilt {
         Arrays.fill(b, 2);
         Arrays.fill(c, 0);
 
-        new TaskSchedule("s0")
-                .prebuiltTask("t0",
-                        "add",
-                        "opencl/add.cl",
-                        new Object[]{a, b, c},
-                        new Access[]{Access.READ, Access.READ, Access.WRITE},
-                        OpenCL.defaultDevice(),
-                        new int[]{numElements})
-                .streamOut(c)
-                .execute();
+        new TaskSchedule("s0").prebuiltTask("t0", "add", "assembly/src/examples/add.cl", new Object[] { a, b, c }, new Access[] { Access.READ, Access.READ, Access.WRITE }, OpenCL.defaultDevice(),
+                new int[] { numElements }).streamOut(c).execute();
 
         System.out.println("a: " + Arrays.toString(a));
         System.out.println("b: " + Arrays.toString(b));

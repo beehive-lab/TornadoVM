@@ -26,16 +26,16 @@
 
 package uk.ac.manchester.tornado.unittests.prebuilt;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
-import java.util.Arrays;
+import java.util.*;
 
-import org.junit.Test;
+import org.junit.*;
 
-import uk.ac.manchester.tornado.api.Parallel;
-import uk.ac.manchester.tornado.common.enums.Access;
-import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.*;
+import uk.ac.manchester.tornado.common.enums.*;
+import uk.ac.manchester.tornado.drivers.opencl.*;
+import uk.ac.manchester.tornado.runtime.api.*;
 
 public class PrebuiltTest {
 
@@ -60,7 +60,7 @@ public class PrebuiltTest {
         new TaskSchedule("s0")
             .prebuiltTask("t0", 
                         "add", 
-                        "opencl/add.cl", 
+                        "assembly/src/examples/add.cl",
                         new Object[] { a, b, c },
                         new Access[] { Access.READ, Access.READ, Access.WRITE }, 
                         OpenCL.defaultDevice(),
