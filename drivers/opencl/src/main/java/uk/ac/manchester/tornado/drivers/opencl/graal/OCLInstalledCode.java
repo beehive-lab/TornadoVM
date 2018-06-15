@@ -110,12 +110,16 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return task;
     }
 
+    /**
+     * stack needs to be read so that the return value is transfered back to the
+     * host.- As this is blocking then no clFinish() is needed
+     * 
+     * @param stack
+     * @param meta
+     * @param task
+     */
     public void readValue(final OCLByteBuffer stack, final TaskMetaData meta, int task) {
-        // NOTE stack needs to be read so that the return value
-        // is transfered back to the host
-        // - As this is blocking then no clFinish() is needed
         stack.read();
-
     }
 
     public void resolveEvent(final OCLByteBuffer stack, final TaskMetaData meta, int task) {
@@ -129,55 +133,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                 debug("\ttotal    : %f seconds", event.getTotalTime());
             }
         }
-    }
-
-    public void execute(final OCLByteBuffer stack, final TaskMetaData meta) {
-        debug("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getName());
-        debug("\tstack    : buffer id=0x%x, address=0x%x relative=0x%x", stack.toBuffer(), stack.toAbsoluteAddress(), stack.toRelativeAddress());
-
-        setKernelArgs(stack, meta);
-        stack.write();
-
-        int task;
-        if (meta == null) {
-            task = deviceContext.enqueueTask(kernel, internalEvents);
-            deviceContext.flush();
-            deviceContext.finish();
-        } else {
-            if (meta != null && meta.isParallel()) {
-                if (meta.enableThreadCoarsener()) {
-                    task = DEFAULT_SCHEDULER.submit(kernel, meta, null);
-                } else {
-                    task = scheduler.submit(kernel, meta, null);
-                }
-            } else {
-                task = deviceContext.enqueueTask(kernel, null);
-            }
-        }
-
-        // NOTE stack needs to be read so that the return value
-        // is transfered back to the host
-        // - As this is blocking then no clFinish() is needed
-        stack.read();
-
-        Event event = deviceContext.resolveEvent(task);
-
-        debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getName());
-        if (event != null) {
-            debug("\tstatus   : %s", event.getStatus());
-
-            if (meta != null && meta.enableProfiling()) {
-                debug("\texecuting: %f seconds", event.getExecutionTime());
-                debug("\ttotal    : %f seconds", event.getTotalTime());
-            }
-        }
-        // deviceContext.enqueueReadBuffer();
-    }
-
-    public void execute(final OCLCallStack stack) {
-        execute(stack, null);
-        debug("\tdeopt    : 0x%x", stack.getDeoptValue());
-        debug("\treturn   : 0x%x", stack.getReturnValue());
     }
 
     @Override
