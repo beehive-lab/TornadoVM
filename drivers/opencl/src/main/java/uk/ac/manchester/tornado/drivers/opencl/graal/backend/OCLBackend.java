@@ -199,7 +199,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         bb.putLong(0);
         bb.putLong(0);
 
-        lookupCode.execute(bb, meta);
+        int task = lookupCode.executeTask(bb, meta);
+        lookupCode.readValue(bb, meta, task);
+        lookupCode.resolveEvent(bb, meta, task);
 
         final long address = bb.getLong(0);
         Tornado.info("Heap address @ 0x%x on %s ", address, deviceContext.getDevice().getName());
@@ -207,10 +209,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     public void init() {
-
         /*
-         * Allocate the smallest of the requested heap size or the max global memory
-         * size.
+         * Allocate the smallest of the requested heap size or the max global
+         * memory size.
          */
         final long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getMaxAllocationSize());
         if (memorySize < DEFAULT_HEAP_ALLOCATION) {
@@ -220,20 +221,22 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         deviceContext.getMemoryManager().allocateRegion(memorySize);
 
         /*
-         * Retrive the address of the heap on the device
+         * Retrieve the address of the heap on the device
          */
         TaskMetaData meta = new TaskMetaData(scheduleMeta, "lookupBufferAddress", 0);
         OCLCodeCache check = new OCLCodeCache(deviceContext);
 
         if (deviceContext.isCached("internal", "lookupBufferAddress")) {
+            // Getting the lookupBufferAddress from the cache
             lookupCode = deviceContext.getCode("internal", "lookupBufferAddress");
-        } else if (check.getBinStatus() && check.getFPGABinDir() != null){
+        } else if (check.getBinStatus() && check.getFPGABinDir() != null) {
+            // Loading pre-compiled lookupBufferAddress kernel FPGA binary
             Path lookupPath = Paths.get(check.getFPGABinDir());
             lookupCode = check.installEntryPointForBinaryForFPGAs(lookupPath, "lookupBufferAddress");
-        }
-        else {
-           OCLCompilationResult result = OCLCompiler.compileCodeForDevice(getTornadoRuntime().resolveMethod(getLookupMethod()), null, meta, (OCLProviders) getProviders(), this);
-           lookupCode = deviceContext.installCode(result);
+        } else {
+            // Compiling lookupBufferAddress kernel at runtime
+            OCLCompilationResult result = OCLCompiler.compileCodeForDevice(getTornadoRuntime().resolveMethod(getLookupMethod()), null, meta, (OCLProviders) getProviders(), this);
+            lookupCode = deviceContext.installCode(result);
         }
 
         deviceContext.getMemoryManager().init(this, readHeapBaseAddress(meta));
@@ -333,11 +336,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         if (crb.isKernel()) {
             /*
-             * BUG There is a bug on some OpenCL devices which requires us to insert an
-             * extra OpenCL buffer into the kernel arguments. This has the effect of
-             * shifting the devices address mappings, which allows us to avoid the heap
-             * starting at address 0x0. (I assume that this is a interesting case that leads
-             * to a few issues.) Iris Pro is the only culprit at the moment.
+             * BUG There is a bug on some OpenCL devices which requires us to
+             * insert an extra OpenCL buffer into the kernel arguments. This has
+             * the effect of shifting the devices address mappings, which allows
+             * us to avoid the heap starting at address 0x0. (I assume that this
+             * is a interesting case that leads to a few issues.) Iris Pro is
+             * the only culprit at the moment.
              */
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
 
