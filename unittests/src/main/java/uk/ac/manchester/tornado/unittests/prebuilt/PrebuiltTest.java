@@ -60,7 +60,7 @@ public class PrebuiltTest {
         new TaskSchedule("s0")
             .prebuiltTask("t0", 
                         "add", 
-                        "opencl/add.cl", 
+                        "assembly/src/examples/generated/add.cl",
                         new Object[] { a, b, c },
                         new Access[] { Access.READ, Access.READ, Access.WRITE }, 
                         OpenCL.defaultDevice(),
