@@ -126,6 +126,11 @@ def composeAllOptions(args):
 	if (args.printExecution):
 		options = options + __PRINT_EXECUTION_TIMER__
 
+	if (args.jvmFlags != None):
+		options = options + args.jvmFlags
+	
+	print options
+
 	return options
 
 
@@ -277,6 +282,7 @@ def parseArguments():
 	parser.add_argument('--optirun', "-optirun", action="store_true", dest="useOptirun", default=False, help="Use optirun with Tornado")	
 	parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")	
 	parser.add_argument('--printExec', dest="printExecution", action="store_true", default=False, help="Print OpenCL Kernel Execution Time")	
+	parser.add_argument('--jvm', "-J", dest="jvmFlags", required=False, default=None, help="Pass options to the JVM e.g. -J=\"-Ds0.t0.device=0:1\"")	
 	args = parser.parse_args()
 	return args
 
