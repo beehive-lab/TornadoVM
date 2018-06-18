@@ -51,8 +51,18 @@ public class ArrayAddIntPrebuilt {
         Arrays.fill(b, 2);
         Arrays.fill(c, 0);
 
-        new TaskSchedule("s0").prebuiltTask("t0", "add", "assembly/src/examples/generated/add.cl", new Object[] { a, b, c }, new Access[] { Access.READ, Access.READ, Access.WRITE },
-                OpenCL.defaultDevice(), new int[] { numElements }).streamOut(c).execute();
+        String tornadoSDK = System.getenv("TORNADO_SDK");
+
+        // @formatter:off
+        new TaskSchedule("s0")
+                .prebuiltTask("t0", "add", tornadoSDK + "/examples/generated/add.cl", 
+                        new Object[] { a, b, c }, 
+                        new Access[] { Access.READ, Access.READ, Access.WRITE },
+                        OpenCL.defaultDevice(), 
+                        new int[] { numElements })
+                .streamOut(c)
+                .execute();
+        // @formatter:on
 
         System.out.println("a: " + Arrays.toString(a));
         System.out.println("b: " + Arrays.toString(b));

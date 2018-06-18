@@ -62,12 +62,20 @@
             <outputDirectory>examples</outputDirectory>
             <fileMode>0444</fileMode>
         </fileSet>
-	<fileSet>
+		<fileSet>
             <directory>src/examples</directory> <!-- Tornado full examples copied into examples directory -->
             <outputDirectory>examples</outputDirectory>
-	    <includes>
-		<include>TestTornado.java</include>
-	    </includes>
+	    	<includes>
+				<include>TestTornado.java</include>
+	    	</includes>
+            <fileMode>0666</fileMode>
+        </fileSet>
+		<fileSet>
+            <directory>src/examples/generated</directory> <!-- Tornado full examples copied into examples directory -->
+            <outputDirectory>examples/generated</outputDirectory>
+	    	<includes>
+				<include>add.cl</include>
+	    	</includes>
             <fileMode>0666</fileMode>
         </fileSet>
 
