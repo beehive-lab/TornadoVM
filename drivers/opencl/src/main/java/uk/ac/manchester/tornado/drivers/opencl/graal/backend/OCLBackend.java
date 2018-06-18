@@ -235,21 +235,26 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         if (deviceContext.isCached("internal", kernelName)) {
             // Option 1) Getting the lookupBufferAddress from the cache
             lookupCode = deviceContext.getCode("internal", kernelName);
+            if (lookupCode != null) {
+                backendAvailable = true;
+            }
         } else if (check.getBinStatus() && check.getFPGABinDir() != null) {
             // Option 2) Loading precompiled lookupBufferAddress kernel FPGA
             // binary
             Path lookupPath = Paths.get(check.getFPGABinDir());
             lookupCode = check.installEntryPointForBinaryForFPGAs(lookupPath, kernelName);
+            if (lookupCode != null) {
+                backendAvailable = true;
+            }
         } else {
             // Option 3) Compiling lookupBufferAddress kernel at runtime
             ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
             OCLProviders providers = (OCLProviders) getProviders();
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
             lookupCode = deviceContext.installCode(result);
-        }
-
-        if (deviceContext.isKernelAvailable()) {
-            backendAvailable = true;
+            if (deviceContext.isKernelAvailable()) {
+                backendAvailable = true;
+            }
         }
 
         return meta;
@@ -266,11 +271,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public void init() {
         allocateHeapMemoryOnDevice();
         TaskMetaData meta = compileLookupBufferKernel();
-        // if (isBackendAvailable()) {
-        runAndReadLookUpKernel(meta);
-        // } else {
-
-        // }
+        if (isBackendAvailable()) {
+            // Only run kernel is the compilation was correct.
+            runAndReadLookUpKernel(meta);
+        }
     }
 
     public OCLDeviceContext getDeviceContext() {
