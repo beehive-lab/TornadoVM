@@ -25,19 +25,15 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.backend;
 
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.common.Tornado.DEBUG_KERNEL_ARGS;
-import static uk.ac.manchester.tornado.common.Tornado.error;
-import static uk.ac.manchester.tornado.common.Tornado.info;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
-import uk.ac.manchester.tornado.drivers.opencl.*;
-import uk.ac.manchester.tornado.drivers.opencl.exceptions.*;
 import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
-import java.io.*;
 import java.lang.reflect.Method;
-import java.nio.file.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -86,6 +82,10 @@ import uk.ac.manchester.tornado.api.Vector;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.Tornado;
+import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
+import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeUtil;
@@ -226,20 +226,23 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
      * Retrieve the address of the heap on the device
      */
     public TaskMetaData compileLookupBufferKernel() {
+        String kernelName = "lookupBufferAddress";
         int numKernelParameters = 0;
-        TaskMetaData meta = new TaskMetaData(scheduleMeta, "lookupBufferAddress", numKernelParameters);
+        TaskMetaData meta = new TaskMetaData(scheduleMeta, kernelName, numKernelParameters);
         OCLCodeCache check = new OCLCodeCache(deviceContext);
-        if (deviceContext.isCached("internal", "lookupBufferAddress")) {
+        if (deviceContext.isCached("internal", kernelName)) {
             // Option 1) Getting the lookupBufferAddress from the cache
-            lookupCode = deviceContext.getCode("internal", "lookupBufferAddress");
+            lookupCode = deviceContext.getCode("internal", kernelName);
         } else if (check.getBinStatus() && check.getFPGABinDir() != null) {
             // Option 2) Loading precompiled lookupBufferAddress kernel FPGA
             // binary
             Path lookupPath = Paths.get(check.getFPGABinDir());
-            lookupCode = check.installEntryPointForBinaryForFPGAs(lookupPath, "lookupBufferAddress");
+            lookupCode = check.installEntryPointForBinaryForFPGAs(lookupPath, kernelName);
         } else {
             // Option 3) Compiling lookupBufferAddress kernel at runtime
-            OCLCompilationResult result = OCLCompiler.compileCodeForDevice(getTornadoRuntime().resolveMethod(getLookupMethod()), null, meta, (OCLProviders) getProviders(), this);
+            ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
+            OCLProviders providers = (OCLProviders) getProviders();
+            OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
             lookupCode = deviceContext.installCode(result);
         }
         return meta;
@@ -294,7 +297,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             OCLKind oclKind = (OCLKind) var.getPlatformKind();
             if (oclKind == OCLKind.ILLEGAL) {
                 shouldNotReachHere();
-                // return;
             }
 
             if (!kindToVariable.containsKey(oclKind)) {
