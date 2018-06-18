@@ -266,11 +266,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public void init() {
         allocateHeapMemoryOnDevice();
         TaskMetaData meta = compileLookupBufferKernel();
-        if (isBackendAvailable()) {
-            runAndReadLookUpKernel(meta);
-        } else {
+        // if (isBackendAvailable()) {
+        runAndReadLookUpKernel(meta);
+        // } else {
 
-        }
+        // }
     }
 
     public OCLDeviceContext getDeviceContext() {
