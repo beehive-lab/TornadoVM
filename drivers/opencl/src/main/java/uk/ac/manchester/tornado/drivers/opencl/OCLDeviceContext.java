@@ -373,6 +373,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         queue.flushEvents();
     }
 
+    public boolean isKernelAvailable() {
+        return codeCache.isKernelAvailable();
+    }
+
     public OCLInstalledCode installCode(OCLCompilationResult result) {
         return installCode(result.getMeta(), result.getId(), result.getName(), result.getTargetCode());
     }

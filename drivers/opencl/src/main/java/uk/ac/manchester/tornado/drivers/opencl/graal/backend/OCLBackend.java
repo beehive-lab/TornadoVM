@@ -134,6 +134,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     final ScheduleMetaData scheduleMeta;
 
+    private boolean backendAvailable;
+
     public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLContext openclContext, OCLDeviceContext deviceContext) {
         super(providers);
         this.options = options;
@@ -245,7 +247,16 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
             lookupCode = deviceContext.installCode(result);
         }
+
+        if (deviceContext.isKernelAvailable()) {
+            backendAvailable = true;
+        }
+
         return meta;
+    }
+
+    public boolean isBackendAvailable() {
+        return backendAvailable;
     }
 
     public void runAndReadLookUpKernel(TaskMetaData meta) {
@@ -255,7 +266,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public void init() {
         allocateHeapMemoryOnDevice();
         TaskMetaData meta = compileLookupBufferKernel();
-        runAndReadLookUpKernel(meta);
+        if (isBackendAvailable()) {
+            runAndReadLookUpKernel(meta);
+        } else {
+
+        }
     }
 
     public OCLDeviceContext getDeviceContext() {

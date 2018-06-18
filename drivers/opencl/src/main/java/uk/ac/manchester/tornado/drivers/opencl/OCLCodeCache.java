@@ -68,6 +68,8 @@ public class OCLCodeCache {
     private final Map<String, OCLInstalledCode> cache;
     private final OCLDeviceContext deviceContext;
 
+    private boolean kernelAvailable;
+
     public OCLCodeCache(OCLDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
         cache = new HashMap<>();
@@ -114,6 +116,10 @@ public class OCLCodeCache {
 
     private Path resolveLogDir() {
         return resolveDir(OPENCL_LOG_DIR);
+    }
+
+    public boolean isKernelAvailable() {
+        return kernelAvailable;
     }
 
     public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
@@ -168,6 +174,10 @@ public class OCLCodeCache {
         }
 
         final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
+
+        if (kernel != null) {
+            kernelAvailable = true;
+        }
 
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, deviceContext, program, kernel);
 

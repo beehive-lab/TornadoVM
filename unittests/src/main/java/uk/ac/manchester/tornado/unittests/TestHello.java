@@ -70,7 +70,6 @@ public class TestHello extends TornadoTestBase {
         } catch (Exception e) {
             assertTrue("Task was not executed.", false);
         }
-
     }
 
     @Test

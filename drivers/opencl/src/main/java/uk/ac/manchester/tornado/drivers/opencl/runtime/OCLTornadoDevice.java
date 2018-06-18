@@ -219,7 +219,8 @@ public class OCLTornadoDevice implements TornadoDevice {
         }
 
         try {
-            final OCLCompilationResult result = compileSketchForDevice(sketch, executable, (OCLProviders) getBackend().getProviders(), getBackend());
+            OCLProviders providers = (OCLProviders) getBackend().getProviders();
+            final OCLCompilationResult result = compileSketchForDevice(sketch, executable, providers, getBackend());
             if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
                 return deviceContext.getCode(task.getId(), resolvedMethod.getName());
             }
