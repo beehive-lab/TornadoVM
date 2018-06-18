@@ -134,7 +134,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     final ScheduleMetaData scheduleMeta;
 
-    private boolean backendAvailable;
+    private boolean lookupCodeAvailable;
 
     public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLContext openclContext, OCLDeviceContext deviceContext) {
         super(providers);
@@ -236,7 +236,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             // Option 1) Getting the lookupBufferAddress from the cache
             lookupCode = deviceContext.getCode("internal", kernelName);
             if (lookupCode != null) {
-                backendAvailable = true;
+                lookupCodeAvailable = true;
             }
         } else if (check.getBinStatus() && check.getFPGABinDir() != null) {
             // Option 2) Loading precompiled lookupBufferAddress kernel FPGA
@@ -244,7 +244,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             Path lookupPath = Paths.get(check.getFPGABinDir());
             lookupCode = check.installEntryPointForBinaryForFPGAs(lookupPath, kernelName);
             if (lookupCode != null) {
-                backendAvailable = true;
+                lookupCodeAvailable = true;
             }
         } else {
             // Option 3) Compiling lookupBufferAddress kernel at runtime
@@ -253,15 +253,15 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
             lookupCode = deviceContext.installCode(result);
             if (deviceContext.isKernelAvailable()) {
-                backendAvailable = true;
+                lookupCodeAvailable = true;
             }
         }
 
         return meta;
     }
 
-    public boolean isBackendAvailable() {
-        return backendAvailable;
+    public boolean isLookupCodeAvailable() {
+        return lookupCodeAvailable;
     }
 
     public void runAndReadLookUpKernel(TaskMetaData meta) {
@@ -271,7 +271,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public void init() {
         allocateHeapMemoryOnDevice();
         TaskMetaData meta = compileLookupBufferKernel();
-        if (isBackendAvailable()) {
+        if (isLookupCodeAvailable()) {
             // Only run kernel is the compilation was correct.
             runAndReadLookUpKernel(meta);
         }

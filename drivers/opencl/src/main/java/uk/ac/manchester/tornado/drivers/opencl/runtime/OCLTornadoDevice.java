@@ -194,9 +194,9 @@ public class OCLTornadoDevice implements TornadoDevice {
     private boolean isFPGAPreLoadBinary(OCLDeviceContext deviceContext) {
         OCLCodeCache installedCode = new OCLCodeCache(deviceContext);
         if ((installedCode.getBinStatus() == false) && (installedCode.getFPGABinDir() == null)) {
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
     private TornadoInstalledCode compileTask(SchedulableTask task) {
@@ -274,7 +274,7 @@ public class OCLTornadoDevice implements TornadoDevice {
     @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {
         final OCLDeviceContext deviceContext = getDeviceContext();
-        if (isFPGAPreLoadBinary(deviceContext)) {
+        if (!isFPGAPreLoadBinary(deviceContext)) {
             return compileJavaToAccelertor(task);
         } else {
             return loadPreCompiledBinaryFromCache(task);
