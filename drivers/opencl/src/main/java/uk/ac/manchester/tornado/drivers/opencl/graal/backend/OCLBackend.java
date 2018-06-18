@@ -208,38 +208,51 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return address;
     }
 
-    public void init() {
-        /*
-         * Allocate the smallest of the requested heap size or the max global
-         * memory size.
-         */
+    /**
+     * It allocates the smallest of the requested heap size or the max global
+     * memory size.
+     */
+    public void allocateHeapMemoryOnDevice() {
+
         final long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getMaxAllocationSize());
         if (memorySize < DEFAULT_HEAP_ALLOCATION) {
             Tornado.info("Unable to allocate %s of heap space - resized to %s", humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false), humanReadableByteCount(memorySize, false));
         }
         Tornado.info("%s: allocating %s of heap space", deviceContext.getDevice().getName(), humanReadableByteCount(memorySize, false));
         deviceContext.getMemoryManager().allocateRegion(memorySize);
+    }
 
-        /*
-         * Retrieve the address of the heap on the device
-         */
-        TaskMetaData meta = new TaskMetaData(scheduleMeta, "lookupBufferAddress", 0);
+    /*
+     * Retrieve the address of the heap on the device
+     */
+    public TaskMetaData compileLookupBufferKernel() {
+        int numKernelParameters = 0;
+        TaskMetaData meta = new TaskMetaData(scheduleMeta, "lookupBufferAddress", numKernelParameters);
         OCLCodeCache check = new OCLCodeCache(deviceContext);
-
         if (deviceContext.isCached("internal", "lookupBufferAddress")) {
-            // Getting the lookupBufferAddress from the cache
+            // Option 1) Getting the lookupBufferAddress from the cache
             lookupCode = deviceContext.getCode("internal", "lookupBufferAddress");
         } else if (check.getBinStatus() && check.getFPGABinDir() != null) {
-            // Loading pre-compiled lookupBufferAddress kernel FPGA binary
+            // Option 2) Loading precompiled lookupBufferAddress kernel FPGA
+            // binary
             Path lookupPath = Paths.get(check.getFPGABinDir());
             lookupCode = check.installEntryPointForBinaryForFPGAs(lookupPath, "lookupBufferAddress");
         } else {
-            // Compiling lookupBufferAddress kernel at runtime
+            // Option 3) Compiling lookupBufferAddress kernel at runtime
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(getTornadoRuntime().resolveMethod(getLookupMethod()), null, meta, (OCLProviders) getProviders(), this);
             lookupCode = deviceContext.installCode(result);
         }
+        return meta;
+    }
 
+    public void runAndReadLookUpKernel(TaskMetaData meta) {
         deviceContext.getMemoryManager().init(this, readHeapBaseAddress(meta));
+    }
+
+    public void init() {
+        allocateHeapMemoryOnDevice();
+        TaskMetaData meta = compileLookupBufferKernel();
+        runAndReadLookUpKernel(meta);
     }
 
     public OCLDeviceContext getDeviceContext() {
