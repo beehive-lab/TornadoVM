@@ -37,6 +37,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus.CL_BU
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream.PutField;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -114,15 +115,18 @@ public class OCLCodeCache {
         }
 
         for (int i = 0; i < binaries.length; i += 2) {
-            String binary = binaries[i];
+            String binaryFile = binaries[i];
             String taskAndDeviceInfo = binaries[i + 1];
             System.out.println("Inserting: " + taskAndDeviceInfo);
-            System.out.println("\tBin: " + binary);
-            precompiledBinariesPerDevice.put(taskAndDeviceInfo, binary);
+            System.out.println("\tBin: " + binaryFile);
+            precompiledBinariesPerDevice.put(taskAndDeviceInfo, binaryFile);
+
+            // For each entry, we should add also an entry for lookup-buffer
+            String device = taskAndDeviceInfo.split("\\.")[2];
+            String kernelName = "oclbackend.lookupBufferAddress." + device;
+            System.out.println("kernel name: " + kernelName);
+            precompiledBinariesPerDevice.put(kernelName, binaryFile);
         }
-
-        System.out.println(precompiledBinariesPerDevice);
-
     }
 
     public boolean getBinStatus() {
@@ -131,6 +135,7 @@ public class OCLCodeCache {
 
     public String getOpenCLBinary(String taskName) {
         if (precompiledBinariesPerDevice != null) {
+            System.out.println("TASK NAME: " + taskName);
             System.out.println("HIT: " + precompiledBinariesPerDevice.get(taskName));
             return precompiledBinariesPerDevice.get(taskName);
         } else {
