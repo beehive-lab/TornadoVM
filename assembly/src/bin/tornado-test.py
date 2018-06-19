@@ -129,8 +129,6 @@ def composeAllOptions(args):
 	if (args.jvmFlags != None):
 		options = options + args.jvmFlags
 	
-	print options
-
 	return options
 
 

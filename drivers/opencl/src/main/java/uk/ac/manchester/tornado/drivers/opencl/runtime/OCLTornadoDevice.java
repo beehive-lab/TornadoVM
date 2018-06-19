@@ -182,6 +182,7 @@ public class OCLTornadoDevice implements TornadoDevice {
     public void ensureLoaded() {
         final OCLBackend backend = getBackend();
         if (!backend.isInitialised()) {
+            System.out.println("ENsure is loadinng - backend init");
             backend.init();
         }
     }
@@ -193,7 +194,7 @@ public class OCLTornadoDevice implements TornadoDevice {
 
     private boolean isOpenCLPreLoadBinary(OCLDeviceContext deviceContext, String device) {
         OCLCodeCache installedCode = new OCLCodeCache(deviceContext);
-        if ((installedCode.getBinStatus() == false) && (installedCode.getOpenCLBinary(device) == null)) {
+        if ((installedCode.isLoadBinaryOptionEnabled() == false) && (installedCode.getOpenCLBinary(device) == null)) {
             return false;
         }
         return true;

@@ -37,7 +37,6 @@ import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus.CL_BU
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream.PutField;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -124,7 +123,7 @@ public class OCLCodeCache {
         }
     }
 
-    public boolean getBinStatus() {
+    public boolean isLoadBinaryOptionEnabled() {
         return OPENCL_LOAD_BINS;
     }
 

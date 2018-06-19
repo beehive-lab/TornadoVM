@@ -81,7 +81,6 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.Vector;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
@@ -243,7 +242,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             if (lookupCode != null) {
                 lookupCodeAvailable = true;
             }
-        } else if (check.getBinStatus() && check.getOpenCLBinary(deviceFullName) != null) {
+        } else if (check.isLoadBinaryOptionEnabled() && check.getOpenCLBinary(deviceFullName) != null) {
             // Option 2) Loading pre-compiled lookupBufferAddress kernel FPGA
             // binary
             Path lookupPath = Paths.get(check.getOpenCLBinary(deviceFullName));
