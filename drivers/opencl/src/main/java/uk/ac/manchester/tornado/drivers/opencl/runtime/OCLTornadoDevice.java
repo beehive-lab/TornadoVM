@@ -193,7 +193,7 @@ public class OCLTornadoDevice implements TornadoDevice {
 
     private boolean isFPGAPreLoadBinary(OCLDeviceContext deviceContext) {
         OCLCodeCache installedCode = new OCLCodeCache(deviceContext);
-        if ((installedCode.getBinStatus() == false) && (installedCode.getFPGABinDir() == null)) {
+        if ((installedCode.getBinStatus() == false) && (installedCode.getOpenCLBinary() == null)) {
             return false;
         }
         return true;
@@ -265,7 +265,7 @@ public class OCLTornadoDevice implements TornadoDevice {
     private TornadoInstalledCode loadPreCompiledBinaryFromCache(SchedulableTask task) {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final OCLCodeCache check = new OCLCodeCache(deviceContext);
-        final Path lookupPath = Paths.get(check.getFPGABinDir());
+        final Path lookupPath = Paths.get(check.getOpenCLBinary());
         String[] tempEntryToSplit = task.getName().split("- ");
         String entry = tempEntryToSplit[1];
         return check.installEntryPointForBinaryForFPGAs(lookupPath, entry);

@@ -64,7 +64,7 @@ public class OCLCodeCache {
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-logs");
 
     // FPGA options
-    private final String FPGA_BINARY = getProperty("tornado.precompiled.binary", null);
+    private final String OPENCL_BINARY = getProperty("tornado.precompiled.binary", null);
 
     private final boolean PRINT_WARNINGS = false;
 
@@ -88,8 +88,8 @@ public class OCLCodeCache {
         return OPENCL_LOAD_BINS;
     }
 
-    public String getFPGABinDir() {
-        return FPGA_BINARY;
+    public String getOpenCLBinary() {
+        return OPENCL_BINARY;
     }
 
     private Path resolveDir(String dir) {
