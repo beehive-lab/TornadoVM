@@ -192,9 +192,9 @@ public class OCLTornadoDevice implements TornadoDevice {
         return getDeviceContext().getMemoryManager().createCallStack(numArgs);
     }
 
-    private boolean isOpenCLPreLoadBinary(OCLDeviceContext deviceContext, String device) {
+    private boolean isOpenCLPreLoadBinary(OCLDeviceContext deviceContext, String deviceInfo) {
         OCLCodeCache installedCode = new OCLCodeCache(deviceContext);
-        if ((installedCode.isLoadBinaryOptionEnabled() == false) && (installedCode.getOpenCLBinary(device) == null)) {
+        if ((installedCode.isLoadBinaryOptionEnabled() == false) || (installedCode.getOpenCLBinary(deviceInfo) == null)) {
             return false;
         }
         return true;

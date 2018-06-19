@@ -83,7 +83,6 @@ public class OCLCodeCache {
     private boolean kernelAvailable;
 
     private HashMap<String, String> precompiledBinariesPerDevice;
-    private HashMap<String, String> precompiledBinaries;
 
     public OCLCodeCache(OCLDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
@@ -91,9 +90,7 @@ public class OCLCodeCache {
 
         if (OPENCL_BINARY != null) {
             precompiledBinariesPerDevice = new HashMap<>();
-            precompiledBinaries = new HashMap<>();
             processPrecompiledBinaries();
-
         }
 
         if (OPENCL_CACHE_ENABLE) {
