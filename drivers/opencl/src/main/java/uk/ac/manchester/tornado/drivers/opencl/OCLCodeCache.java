@@ -127,12 +127,12 @@ public class OCLCodeCache {
         return OPENCL_LOAD_BINS;
     }
 
-    public String getOpenCLBinary() {
-        return OPENCL_BINARY;
-    }
-
     public String getOpenCLBinary(String taskName) {
-        return precompiledBinariesPerDevice.get(taskName);
+        if (precompiledBinariesPerDevice != null) {
+            return precompiledBinariesPerDevice.get(taskName);
+        } else {
+            return null;
+        }
     }
 
     private Path resolveDir(String dir) {

@@ -81,6 +81,7 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.Vector;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
@@ -224,6 +225,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         deviceContext.getMemoryManager().allocateRegion(memorySize);
     }
 
+    private String getDriverAndDevice(TaskMetaData task) {
+        return "device=" + task.getDriverIndex() + ":" + task.getDeviceIndex();
+    }
+
     /*
      * Retrieve the address of the heap on the device
      */
@@ -231,16 +236,17 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         int numKernelParameters = 0;
         TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME, numKernelParameters);
         OCLCodeCache check = new OCLCodeCache(deviceContext);
+        String deviceFullName = getDriverAndDevice(meta);
         if (deviceContext.isCached("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
             // Option 1) Getting the lookupBufferAddress from the cache
             lookupCode = deviceContext.getCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
             if (lookupCode != null) {
                 lookupCodeAvailable = true;
             }
-        } else if (check.getBinStatus() && check.getOpenCLBinary() != null) {
+        } else if (check.getBinStatus() && check.getOpenCLBinary(deviceFullName) != null) {
             // Option 2) Loading pre-compiled lookupBufferAddress kernel FPGA
             // binary
-            Path lookupPath = Paths.get(check.getOpenCLBinary());
+            Path lookupPath = Paths.get(check.getOpenCLBinary(deviceFullName));
             lookupCode = check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
             if (lookupCode != null) {
                 lookupCodeAvailable = true;

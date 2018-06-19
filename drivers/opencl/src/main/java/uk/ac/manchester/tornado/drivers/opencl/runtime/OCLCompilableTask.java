@@ -47,8 +47,7 @@ public class OCLCompilableTask extends CompilableTask {
 
     private final Map<OCLBackend, OCLInstalledCode> codeCache;
 
-    public OCLCompilableTask(ScheduleMetaData meta, String id, Method method, Object thisObject,
-            Object... args) {
+    public OCLCompilableTask(ScheduleMetaData meta, String id, Method method, Object thisObject, Object... args) {
         super(meta, id, method, thisObject, args);
         this.codeCache = new HashMap<>();
     }
@@ -56,8 +55,6 @@ public class OCLCompilableTask extends CompilableTask {
     public void execute() {
         if (activeCode != null && activeCode.isValid()) {
             executeOnDevice();
-        } else {
-//            executeFallback();
         }
     }
 
@@ -81,21 +78,14 @@ public class OCLCompilableTask extends CompilableTask {
     }
 
     protected void scheduleOnDevice(List<Event> waitEvents) {
-//        stack.reset();
         Tornado.debug("scheduling %s...", method.getName());
         Tornado.debug(toString());
-//        stack.pushArgs(resolvedArgs, argumentsAccess, waitEvents);
-
-//        event = activeCode.submit((OCLCallStack) stack, domainTree, waitEvents);
-//        event.waitOn();
         Tornado.debug("after %s...", method.getName());
         Tornado.debug(toString());
     }
 
     protected void executeOnDevice() {
         scheduleOnDevice(Collections.emptyList());
-//        event.waitOn();
-//        stack.getWriteSet().forEach(ref -> ref.read());
     }
 
     public void schedule() {
@@ -121,22 +111,4 @@ public class OCLCompilableTask extends CompilableTask {
     public void disableJIT() {
         shouldCompile = false;
     }
-
-//    public void loadFromFile(String filename) {
-//        final Path path = Paths.get(filename);
-//        guarantee(path.toFile().exists(), "file does not exist: %s", filename);
-//
-//        final ResolvedJavaMethod resolvedMethod = activeBackend.getProviders()
-//                .getMetaAccess().lookupJavaMethod(method);
-//        try {
-//            final byte[] source = Files.readAllBytes(path);
-//            ((OCLTornadoDevice) mapping).i
-//            activeCode = activeBackend.getCodeCache().addMethod(resolvedMethod,
-//                    source);
-//
-//        } catch (IOException e) {
-//            shouldNotReachHere();
-//        }
-//
-//    }
 }
