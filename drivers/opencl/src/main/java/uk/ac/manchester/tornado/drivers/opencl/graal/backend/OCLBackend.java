@@ -84,6 +84,7 @@ import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
@@ -109,8 +110,10 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.lang.CompilerInternals;
+import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -224,8 +227,27 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         deviceContext.getMemoryManager().allocateRegion(memorySize);
     }
 
-    private String getDriverAndDevice(TaskMetaData task) {
-        return task.getId() + ".device=" + task.getDriverIndex() + ":" + task.getDeviceIndex();
+    private String getDriverAndDevice(TaskMetaData task, int[] deviceInfo) {
+        return task.getId() + ".device=" + deviceInfo[0] + ":" + deviceInfo[1];
+    }
+
+    /**
+     * We explore all devices in driver 0;
+     * 
+     * @return
+     */
+    public int[] getDriverAndDevice() {
+        int numDev = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
+        int deviceIndex = 0;
+        for (int i = 0; i < numDev; i++) {
+            OCLTornadoDevice device = (OCLTornadoDevice) TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(i);
+            OCLDevice dev = device.getDevice();
+            if (dev == deviceContext.getDevice()) {
+                System.out.println("Device Found");
+                deviceIndex = i;
+            }
+        }
+        return new int[] { 0, deviceIndex };
     }
 
     /*
@@ -235,9 +257,13 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         int numKernelParameters = 0;
         TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME, numKernelParameters);
         OCLCodeCache check = new OCLCodeCache(deviceContext);
-        String deviceFullName = getDriverAndDevice(meta);
+        int[] deviceInfo = getDriverAndDevice();
+        String deviceFullName = getDriverAndDevice(meta, deviceInfo);
         if (deviceContext.isCached("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
             // Option 1) Getting the lookupBufferAddress from the cache
+
+            System.out.println(deviceFullName + " from the cache");
+
             lookupCode = deviceContext.getCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
             if (lookupCode != null) {
                 lookupCodeAvailable = true;
@@ -245,6 +271,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         } else if (check.isLoadBinaryOptionEnabled() && check.getOpenCLBinary(deviceFullName) != null) {
             // Option 2) Loading pre-compiled lookupBufferAddress kernel FPGA
             // binary
+            System.out.println(deviceFullName + " binary");
             Path lookupPath = Paths.get(check.getOpenCLBinary(deviceFullName));
             lookupCode = check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
             if (lookupCode != null) {
@@ -252,6 +279,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             }
         } else {
             // Option 3) Compiling lookupBufferAddress kernel at runtime
+            System.out.println(deviceFullName + " compiling");
             ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
             OCLProviders providers = (OCLProviders) getProviders();
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
