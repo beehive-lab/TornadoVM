@@ -63,7 +63,16 @@ public class OCLCodeCache {
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-logs");
 
-    // FPGA options
+    //
+    /**
+     * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
+     * 
+     * e.g.
+     * 
+     * <code>
+     * -Dtornado.precompiled.binary=</tmp/saxpy,s0.t0.device=0:1>
+     * </code>
+     */
     private final String OPENCL_BINARY = getProperty("tornado.precompiled.binary", null);
 
     private final boolean PRINT_WARNINGS = false;
@@ -73,9 +82,18 @@ public class OCLCodeCache {
 
     private boolean kernelAvailable;
 
+    private HashMap<String, String> precompiledBinariesPerDevice;
+    private HashMap<String, String> precompiledBinaries;
+
     public OCLCodeCache(OCLDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
         cache = new HashMap<>();
+
+        if (OPENCL_BINARY != null) {
+            precompiledBinariesPerDevice = new HashMap<>();
+        }
+
+        processPrecompiledBinaries();
 
         if (OPENCL_CACHE_ENABLE) {
             // if (OPENCL_CACHE_ENABLE || OPENCL_LOAD_BINS) {
@@ -84,12 +102,36 @@ public class OCLCodeCache {
         }
     }
 
+    public void processPrecompiledBinaries() {
+
+        System.out.println("Processing BINARIES");
+
+        String[] binaries = OPENCL_BINARY.split(",");
+
+        if ((binaries.length % 2) != 0) {
+            throw new RuntimeException("tornado.precompiled.binary=<path> , device ");
+        }
+
+        for (int i = 0; i < binaries.length; i += 2) {
+            String path = binaries[i];
+            String taskAndDeviceIndo = binaries[i + 1];
+            precompiledBinariesPerDevice.put(taskAndDeviceIndo, path);
+        }
+
+        System.out.println(precompiledBinariesPerDevice);
+
+    }
+
     public boolean getBinStatus() {
         return OPENCL_LOAD_BINS;
     }
 
     public String getOpenCLBinary() {
         return OPENCL_BINARY;
+    }
+
+    public String getOpenCLBinary(String taskName) {
+        return precompiledBinariesPerDevice.get(taskName);
     }
 
     private Path resolveDir(String dir) {
