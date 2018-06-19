@@ -114,9 +114,11 @@ public class OCLCodeCache {
         }
 
         for (int i = 0; i < binaries.length; i += 2) {
-            String path = binaries[i];
-            String taskAndDeviceIndo = binaries[i + 1];
-            precompiledBinariesPerDevice.put(taskAndDeviceIndo, path);
+            String binary = binaries[i];
+            String taskAndDeviceInfo = binaries[i + 1];
+            System.out.println("Inserting: " + taskAndDeviceInfo);
+            System.out.println("\tBin: " + binary);
+            precompiledBinariesPerDevice.put(taskAndDeviceInfo, binary);
         }
 
         System.out.println(precompiledBinariesPerDevice);
