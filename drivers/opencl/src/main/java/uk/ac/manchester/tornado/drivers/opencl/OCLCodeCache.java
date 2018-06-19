@@ -91,9 +91,10 @@ public class OCLCodeCache {
 
         if (OPENCL_BINARY != null) {
             precompiledBinariesPerDevice = new HashMap<>();
-        }
+            precompiledBinaries = new HashMap<>();
+            processPrecompiledBinaries();
 
-        processPrecompiledBinaries();
+        }
 
         if (OPENCL_CACHE_ENABLE) {
             // if (OPENCL_CACHE_ENABLE || OPENCL_LOAD_BINS) {
