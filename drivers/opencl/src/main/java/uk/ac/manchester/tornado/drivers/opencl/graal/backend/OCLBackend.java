@@ -226,7 +226,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     private String getDriverAndDevice(TaskMetaData task) {
-        return "device=" + task.getDriverIndex() + ":" + task.getDeviceIndex();
+        return task.getId() + ".device=" + task.getDriverIndex() + ":" + task.getDeviceIndex();
     }
 
     /*

@@ -129,6 +129,7 @@ public class OCLCodeCache {
 
     public String getOpenCLBinary(String taskName) {
         if (precompiledBinariesPerDevice != null) {
+            System.out.println("HIT: " + precompiledBinariesPerDevice.get(taskName));
             return precompiledBinariesPerDevice.get(taskName);
         } else {
             return null;

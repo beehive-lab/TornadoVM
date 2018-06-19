@@ -265,23 +265,22 @@ public class OCLTornadoDevice implements TornadoDevice {
     private TornadoInstalledCode loadPreCompiledBinaryFromCache(SchedulableTask task) {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final OCLCodeCache check = new OCLCodeCache(deviceContext);
-        final String deviceFullName = getDriverAndDevice(task);
+        final String deviceFullName = getFullTaskIdDevice(task);
         final Path lookupPath = Paths.get(check.getOpenCLBinary(deviceFullName));
         String[] tempEntryToSplit = task.getName().split("- ");
         String entry = tempEntryToSplit[1];
         return check.installEntryPointForBinaryForFPGAs(lookupPath, entry);
     }
 
-    private String getDriverAndDevice(SchedulableTask task) {
-        return "device=" + task.meta().getDriverIndex() + ":" + task.meta().getDeviceIndex();
+    private String getFullTaskIdDevice(SchedulableTask task) {
+        return task.getId() + ".device=" + task.meta().getDriverIndex() + ":" + task.meta().getDeviceIndex();
     }
 
     @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {
-
         final OCLDeviceContext deviceContext = getDeviceContext();
-        final String device = getDriverAndDevice(task);
-        if (!isOpenCLPreLoadBinary(deviceContext, device)) {
+        final String deviceFullName = getFullTaskIdDevice(task);
+        if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName)) {
             return compileJavaToAccelertor(task);
         } else {
             return loadPreCompiledBinaryFromCache(task);
