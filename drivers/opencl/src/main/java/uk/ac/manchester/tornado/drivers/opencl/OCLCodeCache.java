@@ -105,11 +105,7 @@ public class OCLCodeCache {
     }
 
     public void processPrecompiledBinaries() {
-
-        System.out.println("Processing BINARIES");
-
         String[] binaries = OPENCL_BINARY.split(",");
-
         if ((binaries.length % 2) != 0) {
             throw new RuntimeException("tornado.precompiled.binary=<path> , device ");
         }
@@ -124,7 +120,6 @@ public class OCLCodeCache {
             // For each entry, we should add also an entry for lookup-buffer
             String device = taskAndDeviceInfo.split("\\.")[2];
             String kernelName = "oclbackend.lookupBufferAddress." + device;
-            System.out.println("kernel name: " + kernelName);
             precompiledBinariesPerDevice.put(kernelName, binaryFile);
         }
     }
@@ -135,8 +130,6 @@ public class OCLCodeCache {
 
     public String getOpenCLBinary(String taskName) {
         if (precompiledBinariesPerDevice != null) {
-            System.out.println("TASK NAME: " + taskName);
-            System.out.println("HIT: " + precompiledBinariesPerDevice.get(taskName));
             return precompiledBinariesPerDevice.get(taskName);
         } else {
             return null;
