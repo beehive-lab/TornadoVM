@@ -53,6 +53,8 @@ public class PrebuiltTest {
         int[] b = new int[numElements];
         int[] c = new int[numElements];
 
+        String tornadoSDK = System.getenv("TORNADO_SDK");
+
         Arrays.fill(a, 1);
         Arrays.fill(b, 2);
 
@@ -60,7 +62,7 @@ public class PrebuiltTest {
         new TaskSchedule("s0")
             .prebuiltTask("t0", 
                         "add", 
-                        "opencl/add.cl", 
+                        tornadoSDK + "/examples/generated/add.cl",
                         new Object[] { a, b, c },
                         new Access[] { Access.READ, Access.READ, Access.WRITE }, 
                         OpenCL.defaultDevice(),
