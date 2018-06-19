@@ -215,10 +215,8 @@ public class OCLCodeCache {
 
         try {
             entryPoint = entryPoint.split("-")[1];
-        } catch (Exception e) {
-            if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
-                throw new OCLException("Entry point cannot be splitted: " + entryPoint);
-            }
+        } catch (NullPointerException npe) {
+
         }
 
         OCLProgram program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
