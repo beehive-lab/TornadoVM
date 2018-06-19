@@ -156,7 +156,13 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
     }
 
     public OCLContext getPlatformContext(final int index) {
-        return contexts.get(index);
+        if (index < contexts.size()) {
+            return contexts.get(index);
+        } else {
+            // We return device 0 by default
+            // This only happens if we ignore a platform
+            return contexts.get(0);
+        }
     }
 
     @Override
