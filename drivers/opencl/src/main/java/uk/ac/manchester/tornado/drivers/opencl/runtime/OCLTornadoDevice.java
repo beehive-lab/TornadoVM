@@ -282,10 +282,8 @@ public class OCLTornadoDevice implements TornadoDevice {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
         if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName)) {
-            System.out.println("Compiling a task: " + deviceFullName);
             return compileJavaToAccelertor(task);
         } else {
-            System.out.println("Loading a task: " + deviceFullName);
             return loadPreCompiledBinaryFromCache(task);
         }
     }

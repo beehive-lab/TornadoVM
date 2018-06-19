@@ -243,7 +243,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             OCLTornadoDevice device = (OCLTornadoDevice) TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(i);
             OCLDevice dev = device.getDevice();
             if (dev == deviceContext.getDevice()) {
-                System.out.println("Device Found");
                 deviceIndex = i;
             }
         }
@@ -261,9 +260,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         String deviceFullName = getDriverAndDevice(meta, deviceInfo);
         if (deviceContext.isCached("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
             // Option 1) Getting the lookupBufferAddress from the cache
-
-            System.out.println(deviceFullName + " from the cache");
-
             lookupCode = deviceContext.getCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
             if (lookupCode != null) {
                 lookupCodeAvailable = true;
@@ -271,7 +267,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         } else if (check.isLoadBinaryOptionEnabled() && check.getOpenCLBinary(deviceFullName) != null) {
             // Option 2) Loading pre-compiled lookupBufferAddress kernel FPGA
             // binary
-            System.out.println(deviceFullName + " binary");
             Path lookupPath = Paths.get(check.getOpenCLBinary(deviceFullName));
             lookupCode = check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
             if (lookupCode != null) {
@@ -279,7 +274,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             }
         } else {
             // Option 3) Compiling lookupBufferAddress kernel at runtime
-            System.out.println(deviceFullName + " compiling");
             ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
             OCLProviders providers = (OCLProviders) getProviders();
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);

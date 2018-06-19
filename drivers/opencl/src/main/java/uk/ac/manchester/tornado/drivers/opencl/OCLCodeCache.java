@@ -109,8 +109,6 @@ public class OCLCodeCache {
         for (int i = 0; i < binaries.length; i += 2) {
             String binaryFile = binaries[i];
             String taskAndDeviceInfo = binaries[i + 1];
-            System.out.println("Inserting: " + taskAndDeviceInfo);
-            System.out.println("\tBin: " + binaryFile);
             precompiledBinariesPerDevice.put(taskAndDeviceInfo, binaryFile);
 
             // For each entry, we should add also an entry for lookup-buffer
