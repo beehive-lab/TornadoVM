@@ -215,7 +215,7 @@ public class OCLCodeCache {
 
         try {
             entryPoint = entryPoint.split("-")[1];
-        } catch (NullPointerException npe) {
+        } catch (NullPointerException | ArrayIndexOutOfBoundsException e) {
 
         }
 
