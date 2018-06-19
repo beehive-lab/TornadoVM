@@ -78,21 +78,16 @@ import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.LowTierContext;
 import org.graalvm.compiler.phases.util.Providers;
 
-import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.RegisterConfig;
-import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.DefaultProfilingInfo;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.SpeculationLog;
 import jdk.vm.ci.meta.TriState;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeProvider;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeUtil;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLSuitesProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
@@ -115,7 +110,6 @@ public class OCLCompiler {
     private static final AtomicInteger compilationId = new AtomicInteger();
 
     private static final DebugTimer CompilerTimer = Debug.timer("GraalCompiler");
-    private static final DebugTimer Sketcher = Debug.timer("Sketcher");
     private static final DebugTimer FrontEnd = Debug.timer("FrontEnd");
     private static final DebugTimer BackEnd = Debug.timer("BackEnd");
     private static final DebugTimer EmitLIR = Debug.timer("EmitLIR");
@@ -146,15 +140,18 @@ public class OCLCompiler {
         public final boolean buildGraph;
 
         /**
-         * @param graph              the graph to be compiled
-         * @param cc                 the calling convention for calls to the
-         *                           code compiled for {@code graph}
-         * @param installedCodeOwner the method the compiled code will be
-         *                           associated with once installed. This
-         *                           argument can be null.
-         * @param args               the arguments for the method
-         * @param meta               Tornado metadata associated with this
-         *                           method
+         * @param graph
+         *            the graph to be compiled
+         * @param cc
+         *            the calling convention for calls to the code compiled for
+         *            {@code graph}
+         * @param installedCodeOwner
+         *            the method the compiled code will be associated with once
+         *            installed. This argument can be null.
+         * @param args
+         *            the arguments for the method
+         * @param meta
+         *            Tornado metadata associated with this method
          * @param providers
          * @param backend
          * @param target
@@ -167,22 +164,9 @@ public class OCLCompiler {
          * @param compilationResult
          * @param factory
          */
-        public Request(
-                StructuredGraph graph,
-                ResolvedJavaMethod installedCodeOwner,
-                Object[] args,
-                TaskMetaData meta,
-                Providers providers,
-                OCLBackend backend,
-                PhaseSuite<HighTierContext> graphBuilderSuite,
-                OptimisticOptimizations optimisticOpts,
-                ProfilingInfo profilingInfo,
-                TornadoSuites suites,
-                TornadoLIRSuites lirSuites,
-                T compilationResult,
-                CompilationResultBuilderFactory factory,
-                boolean isKernel,
-                boolean buildGraph) {
+        public Request(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers, OCLBackend backend,
+                PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
+                T compilationResult, CompilationResultBuilderFactory factory, boolean isKernel, boolean buildGraph) {
             this.graph = graph;
             this.installedCodeOwner = installedCodeOwner;
             this.args = args;
@@ -214,26 +198,24 @@ public class OCLCompiler {
     /**
      * Requests compilation of a given graph.
      *
-     * @param graph              the graph to be compiled
-     * @param cc                 the calling convention for calls to the code
-     *                           compiled for {@code graph}
-     * @param installedCodeOwner the method the compiled code will be associated
-     *                           with once installed. This argument can be null.
+     * @param graph
+     *            the graph to be compiled
+     * @param cc
+     *            the calling convention for calls to the code compiled for
+     *            {@code graph}
+     * @param installedCodeOwner
+     *            the method the compiled code will be associated with once
+     *            installed. This argument can be null.
      *
      * @return the result of the compilation
      */
-    public static <T extends OCLCompilationResult> T compileGraph(StructuredGraph graph,
-            ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta,
-            Providers providers, OCLBackend backend,
-            PhaseSuite<HighTierContext> graphBuilderSuite,
-            OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo,
-            TornadoSuites suites, TornadoLIRSuites lirSuites, T compilationResult,
-            CompilationResultBuilderFactory factory, boolean isKernel) {
+    public static <T extends OCLCompilationResult> T compileGraph(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Object[] args, TaskMetaData meta, Providers providers,
+            OCLBackend backend, PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, TornadoLIRSuites lirSuites,
+            T compilationResult, CompilationResultBuilderFactory factory, boolean isKernel) {
         // Ensure a debug configuration for this thread is initialized
 
-        return compile(new Request<>(graph, installedCodeOwner, args, meta, providers, backend,
-                graphBuilderSuite, optimisticOpts, profilingInfo, suites,
-                lirSuites, compilationResult, factory, isKernel, false));
+        return compile(new Request<>(graph, installedCodeOwner, args, meta, providers, backend, graphBuilderSuite, optimisticOpts, profilingInfo, suites, lirSuites, compilationResult, factory,
+                isKernel, false));
 
     }
 
@@ -266,7 +248,7 @@ public class OCLCompiler {
             return DefaultProfilingInfo.get(TriState.UNKNOWN);
         }
     }
-    
+
     private static boolean isGraphEmpty(StructuredGraph graph) {
         return graph.start().next() == null;
     }
@@ -274,27 +256,16 @@ public class OCLCompiler {
     /**
      * Builds the graph, optimizes it.
      */
-    public static void emitFrontEnd(Providers providers, OCLBackend backend,
-            ResolvedJavaMethod method, Object[] args, TaskMetaData meta, StructuredGraph graph,
-            PhaseSuite<HighTierContext> graphBuilderSuite,
-            OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo,
-            TornadoSuites suites, boolean isKernel, boolean buildGraph) {
-        try (Scope s = Debug.scope("FrontEnd", new DebugDumpScope("FrontEnd"));
-                DebugCloseable a = FrontEnd.start()) {
-
-//            GraalOptions.OmitHotExceptionStacktrace.setValue(false);
-//            GraalOptions.MatchExpressions.setValue(true);
-//            GraalOptions.RemoveNeverExecutedCode.setValue(false);
-//            GraalOptions.SSA_LIR.setValue(true);
+    public static void emitFrontEnd(Providers providers, OCLBackend backend, ResolvedJavaMethod method, Object[] args, TaskMetaData meta, StructuredGraph graph,
+            PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, boolean isKernel, boolean buildGraph) {
+        try (Scope s = Debug.scope("FrontEnd", new DebugDumpScope("FrontEnd")); DebugCloseable a = FrontEnd.start()) {
 
             /*
              * Register metadata with all tornado phases
              */
-            ((OCLCanonicalizer) suites.getHighTier().getCustomCanonicalizer()).setContext(providers.getMetaAccess(), method,
-                    args, meta);
+            ((OCLCanonicalizer) suites.getHighTier().getCustomCanonicalizer()).setContext(providers.getMetaAccess(), method, args, meta);
 
-            final TornadoHighTierContext highTierContext = new TornadoHighTierContext(providers,
-                    graphBuilderSuite, optimisticOpts, method, args, meta, isKernel);
+            final TornadoHighTierContext highTierContext = new TornadoHighTierContext(providers, graphBuilderSuite, optimisticOpts, method, args, meta, isKernel);
 
             if (buildGraph) {
                 if (isGraphEmpty(graph)) {
@@ -307,8 +278,7 @@ public class OCLCompiler {
             suites.getHighTier().apply(graph, highTierContext);
             graph.maybeCompress();
 
-            final TornadoMidTierContext midTierContext = new TornadoMidTierContext(providers,
-                    backend, optimisticOpts, profilingInfo, method, args, meta);
+            final TornadoMidTierContext midTierContext = new TornadoMidTierContext(providers, backend, optimisticOpts, profilingInfo, method, args, meta);
             suites.getMidTier().apply(graph, midTierContext);
 
             graph.maybeCompress();
@@ -322,20 +292,15 @@ public class OCLCompiler {
         }
     }
 
-    public static <T extends OCLCompilationResult> void emitBackEnd(StructuredGraph graph,
-            Object stub, ResolvedJavaMethod installedCodeOwner,
-            OCLBackend backend, T compilationResult,
-            CompilationResultBuilderFactory factory,
-            RegisterConfig registerConfig, TornadoLIRSuites lirSuites, boolean isKernel) {
+    public static <T extends OCLCompilationResult> void emitBackEnd(StructuredGraph graph, Object stub, ResolvedJavaMethod installedCodeOwner, OCLBackend backend, T compilationResult,
+            CompilationResultBuilderFactory factory, RegisterConfig registerConfig, TornadoLIRSuites lirSuites, boolean isKernel) {
         try (Scope s = Debug.scope("BackEnd", graph.getLastSchedule()); DebugCloseable a = BackEnd.start()) {
             LIRGenerationResult lirGen = null;
             lirGen = emitLIR(backend, graph, stub, registerConfig, lirSuites, compilationResult, isKernel);
             try (Scope s2 = Debug.scope("CodeGen", lirGen, lirGen.getLIR())) {
                 int bytecodeSize = graph.method() == null ? 0 : graph.getBytecodeSize();
                 compilationResult.setHasUnsafeAccess(graph.hasUnsafeAccess());
-                emitCode(backend, graph.getAssumptions(), graph.method(),
-                        graph.getMethods(), bytecodeSize, lirGen, compilationResult, installedCodeOwner,
-                        factory, isKernel);
+                emitCode(backend, graph.getAssumptions(), graph.method(), graph.getMethods(), bytecodeSize, lirGen, compilationResult, installedCodeOwner, factory, isKernel);
             } catch (Throwable e) {
                 throw Debug.handle(e);
             }
@@ -344,9 +309,8 @@ public class OCLCompiler {
         }
     }
 
-    public static <T extends CompilationResult> LIRGenerationResult emitLIR(OCLBackend backend,
-            StructuredGraph graph, Object stub,
-            RegisterConfig registerConfig, TornadoLIRSuites lirSuites, T compilationResult, boolean isKernel) {
+    public static <T extends CompilationResult> LIRGenerationResult emitLIR(OCLBackend backend, StructuredGraph graph, Object stub, RegisterConfig registerConfig, TornadoLIRSuites lirSuites,
+            T compilationResult, boolean isKernel) {
         try {
             return emitLIR0(backend, graph, stub, registerConfig, lirSuites, compilationResult, isKernel);
         } catch (Throwable e) {
@@ -365,7 +329,6 @@ public class OCLCompiler {
         return method.format("%H.%n(%p)");
     }
 
-    @SuppressWarnings("try")
     private static <T extends CompilationResult> LIRGenerationResult emitLIR0(OCLBackend backend, StructuredGraph graph, Object stub, RegisterConfig registerConfig, TornadoLIRSuites lirSuites,
             T compilationResult, boolean isKernel) {
         try (Scope ds = Debug.scope("EmitLIR"); DebugCloseable a = EmitLIR.start()) {
@@ -389,7 +352,6 @@ public class OCLCompiler {
                 throw Debug.handle(e);
             }
             FrameMapBuilder frameMapBuilder = backend.newFrameMapBuilder(registerConfig);
-//            String compilationUnitName = getCompilationUnitName(graph, compilationResult);
             LIRGenerationResult lirGenRes = backend.newLIRGenerationResult(graph.compilationId(), lir, frameMapBuilder, graph, stub);
             LIRGeneratorTool lirGen = backend.newLIRGenerator(lirGenRes);
             NodeLIRBuilderTool nodeLirGen = backend.newNodeLIRBuilder(graph, lirGen);
@@ -400,7 +362,7 @@ public class OCLCompiler {
 
             try (Scope s = Debug.scope("LIRStages", nodeLirGen, lir)) {
                 Debug.dump(Debug.BASIC_LEVEL, lir, "After LIR generation");
-                LIRGenerationResult result = emitLowLevel(backend.getTarget(), lirGenRes, lirGen, lirSuites, backend.newRegisterAllocationConfig(registerConfig, new String[]{}));
+                LIRGenerationResult result = emitLowLevel(backend.getTarget(), lirGenRes, lirGen, lirSuites, backend.newRegisterAllocationConfig(registerConfig, new String[] {}));
                 Debug.dump(Debug.BASIC_LEVEL, lir, "Before code generation");
                 return result;
             } catch (Throwable e) {
@@ -411,31 +373,20 @@ public class OCLCompiler {
         }
     }
 
-    public static LIRGenerationResult emitLowLevel(
-            OCLTargetDescription target, LIRGenerationResult lirGenRes, LIRGeneratorTool lirGen, TornadoLIRSuites lirSuites, RegisterAllocationConfig registerAllocationConfig) {
-        final PreAllocationOptimizationContext preAllocOptContext = new PreAllocationOptimizationContext(
-                lirGen);
+    public static LIRGenerationResult emitLowLevel(OCLTargetDescription target, LIRGenerationResult lirGenRes, LIRGeneratorTool lirGen, TornadoLIRSuites lirSuites,
+            RegisterAllocationConfig registerAllocationConfig) {
+        final PreAllocationOptimizationContext preAllocOptContext = new PreAllocationOptimizationContext(lirGen);
         lirSuites.getPreAllocationStage().apply(target, lirGenRes, preAllocOptContext);
-
         AllocationContext allocContext = new AllocationContext(lirGen.getSpillMoveFactory(), registerAllocationConfig);
         lirSuites.getAllocationStage().apply(target, lirGenRes, allocContext);
-
-//        PostAllocationOptimizationContext postAllocOptContext = new PostAllocationOptimizationContext(
-//                lirGen);
-//        lirSuites.getPostAllocationStage().apply(target, lirGenRes, postAllocOptContext);
         return lirGenRes;
     }
 
-    public static void emitCode(OCLBackend backend, Assumptions assumptions,
-            ResolvedJavaMethod rootMethod, List<ResolvedJavaMethod> inlinedMethods,
-            int bytecodeSize,
-            LIRGenerationResult lirGenRes, OCLCompilationResult compilationResult,
-            ResolvedJavaMethod installedCodeOwner, CompilationResultBuilderFactory factory,
-            boolean isKernel) {
+    public static void emitCode(OCLBackend backend, Assumptions assumptions, ResolvedJavaMethod rootMethod, List<ResolvedJavaMethod> inlinedMethods, int bytecodeSize, LIRGenerationResult lirGenRes,
+            OCLCompilationResult compilationResult, ResolvedJavaMethod installedCodeOwner, CompilationResultBuilderFactory factory, boolean isKernel) {
         try (DebugCloseable a = EmitCode.start()) {
             FrameMap frameMap = lirGenRes.getFrameMap();
-            final OCLCompilationResultBuilder crb = backend.newCompilationResultBuilder(lirGenRes,
-                    frameMap, compilationResult, factory, isKernel);
+            final OCLCompilationResultBuilder crb = backend.newCompilationResultBuilder(lirGenRes, frameMap, compilationResult, factory, isKernel);
             backend.emitCode(crb, lirGenRes.getLIR(), installedCodeOwner);
 
             if (assumptions != null && !assumptions.isEmpty()) {
@@ -455,72 +406,14 @@ public class OCLCompiler {
 
             Debug.dump(Debug.BASIC_LEVEL, compilationResult, "After code generation");
         }
-
     }
 
     public static byte[] compileGraphForDevice(StructuredGraph graph, TaskMetaData meta, String entryPoint, OCLProviders providers, OCLBackend backend) {
         throw unimplemented();
-//        final OCLCodeProvider codeCache = backend.getCodeCache();
-//
-//        if (!meta.hasProvider(OCLMemoryRegions.class)) {
-//            meta.addProvider(OCLMemoryRegions.class, new OCLMemoryRegions());
-//        }
-//
-//        graph.maybeCompress();
-//        guarantee(graph.verify(), "graph is invalid");
-//        OCLCompilationResult compilationResult = new OCLCompilationResult(entryPoint);
-//        CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
-//
-//        final SchedulePhase schedule = new SchedulePhase(SchedulingStrategy.LATEST_OUT_OF_LOOPS);
-//        schedule.apply(graph);
-//
-//        List<Block> blocks = schedule.getCFG().getBlocks();
-//        Block startBlock = schedule.getCFG().getStartBlock();
-//        assert startBlock != null;
-//        assert startBlock.getPredecessorCount() == 0;
-//
-//        LIR lir = null;
-//        List<Block> codeEmittingOrder = null;
-//        List<Block> linearScanOrder = null;
-//        try (Scope s = Debug.scope("ComputeLinearScanOrder", lir)) {
-//            codeEmittingOrder = ComputeBlockOrder.computeCodeEmittingOrder(blocks.size(),
-//                    startBlock);
-//            linearScanOrder = ComputeBlockOrder.computeLinearScanOrder(blocks.size(),
-//                    startBlock);
-//
-//            lir = new LIR(schedule.getCFG(), linearScanOrder, codeEmittingOrder);
-//            Debug.dump(lir, "after LIR generation", lir);
-//        } catch (Throwable e) {
-//            throw Debug.handle(e);
-//        }
-//        Debug.dump(lir, "after LIR generation", lir);
-//        FrameMapBuilder frameMapBuilder = backend.newFrameMapBuilder(null);
-//        final LIRGenerationResult lirGenRes = backend.newLIRGenerationResult("<unknown>",
-//                lir, frameMapBuilder, graph.method(), null);
-//        CallingConvention cc = OCLCodeUtil.getCallingConvention(codeCache,
-//                CallingConvention.Type.JavaCallee, graph.method(), false);
-//        final LIRGeneratorTool lirGen = backend.newLIRGenerator(cc, lirGenRes);
-//        final NodeLIRBuilderTool nodeLirGen = backend.newNodeLIRBuilder(graph, lirGen);
-//
-//        // LIR generation
-//        final LIRGenerationContext context = new LIRGenerationContext(lirGen, nodeLirGen, graph,
-//                schedule, true);
-//        new OCLLIRGenerationPhase().apply(backend.getTarget(), lirGenRes, codeEmittingOrder,
-//                linearScanOrder, context);
-//
-//        emitCode(backend, null,
-//                null, Collections.EMPTY_SET,
-//                lirGenRes, compilationResult,
-//                null, factory,
-//                true);
-//
-//        return compilationResult.getTargetCode();
     }
 
-    public static OCLCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod,
-            Object[] args, TaskMetaData meta, OCLProviders providers, OCLBackend backend) {
-        Tornado.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext()
-                .getDevice().getName());
+    public static OCLCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod, Object[] args, TaskMetaData meta, OCLProviders providers, OCLBackend backend) {
+        Tornado.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getName());
         final TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
 
         Builder builder = new Builder(getTornadoRuntime().getOptions(), AllowAssumptions.YES);
@@ -529,25 +422,16 @@ public class OCLCompiler {
         builder.name("compile-kernel" + resolvedMethod.getName());
 
         final StructuredGraph kernelGraph = builder.build();
-        final OCLCodeProvider codeCache = backend.getCodeCache();
-
-        CallingConvention cc = OCLCodeUtil.getCallingConvention(codeCache,
-                HotSpotCallingConventionType.JavaCallee, resolvedMethod, false);
 
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedMethod.getProfilingInfo();
-
-        SpeculationLog speculationLog = null;
 
         OCLCompilationResult kernelCompResult = new OCLCompilationResult("internal", resolvedMethod.getName(), meta, backend);
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         final OCLSuitesProvider suitesProvider = providers.getSuitesProvider();
-        Request<OCLCompilationResult> kernelCompilationRequest = new Request<>(
-                kernelGraph, resolvedMethod, args, meta, providers, backend,
-                suitesProvider.getGraphBuilderSuite(), optimisticOpts,
-                profilingInfo, suitesProvider.createSuites(),
-                suitesProvider.getLIRSuites(), kernelCompResult, factory, true, true);
+        Request<OCLCompilationResult> kernelCompilationRequest = new Request<>(kernelGraph, resolvedMethod, args, meta, providers, backend, suitesProvider.getGraphBuilderSuite(), optimisticOpts,
+                profilingInfo, suitesProvider.createSuites(), suitesProvider.getLIRSuites(), kernelCompResult, factory, true, true);
 
         kernelCompilationRequest.execute();
 
@@ -559,20 +443,14 @@ public class OCLCompiler {
             final ResolvedJavaMethod currentMethod = worklist.pop();
             if (!includedMethods.contains(currentMethod)) {
                 final OCLCompilationResult compResult = new OCLCompilationResult("internal", currentMethod.getName(), meta, backend);
-                final TornadoCompilerIdentifier id1 = new TornadoCompilerIdentifier("compile-call" + currentMethod.getName(), compilationId.getAndIncrement());
-
                 Builder builder1 = new Builder(getTornadoRuntime().getOptions(), AllowAssumptions.YES);
                 builder1.method(resolvedMethod);
                 builder1.compilationId(id);
                 builder1.name("internal" + currentMethod.getName());
 
                 final StructuredGraph graph = builder.build();
-                Request<OCLCompilationResult> methodcompilationRequest = new Request<>(
-                        graph, currentMethod, null, null, providers, backend,
-                        suitesProvider.getGraphBuilderSuite(),
-                        optimisticOpts, profilingInfo,
-                        suitesProvider.createSuites(), suitesProvider.getLIRSuites(),
-                        compResult, factory, false, true);
+                Request<OCLCompilationResult> methodcompilationRequest = new Request<>(graph, currentMethod, null, null, providers, backend, suitesProvider.getGraphBuilderSuite(), optimisticOpts,
+                        profilingInfo, suitesProvider.createSuites(), suitesProvider.getLIRSuites(), compResult, factory, false, true);
 
                 methodcompilationRequest.execute();
                 worklist.addAll(compResult.getNonInlinedMethods());
@@ -584,27 +462,18 @@ public class OCLCompiler {
         return kernelCompResult;
     }
 
-    public static OCLCompilationResult compileSketchForDevice(Sketch sketch,
-            CompilableTask task, OCLProviders providers, OCLBackend backend) {
+    public static OCLCompilationResult compileSketchForDevice(Sketch sketch, CompilableTask task, OCLProviders providers, OCLBackend backend) {
 
         final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().getReadonlyCopy().copy();
         ResolvedJavaMethod resolvedMethod = kernelGraph.method();
 
-        info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext()
-                .getDevice().getName()
-        );
+        info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getName());
 
-        final OCLCodeProvider codeCache = backend.getCodeCache();
         final TaskMetaData taskMeta = task.meta();
         final Object[] args = task.getArguments();
 
-        CallingConvention cc = OCLCodeUtil.getCallingConvention(codeCache,
-                HotSpotCallingConventionType.JavaCallee, resolvedMethod, false);
-
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedMethod.getProfilingInfo();
-
-        SpeculationLog speculationLog = null;
 
         OCLCompilationResult kernelCompResult = new OCLCompilationResult(task.getId(), resolvedMethod.getName(), taskMeta, backend);
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
@@ -612,11 +481,8 @@ public class OCLCompiler {
         Set<ResolvedJavaMethod> methods = new HashSet<>();
 
         final OCLSuitesProvider suitesProvider = providers.getSuitesProvider();
-        Request<OCLCompilationResult> kernelCompilationRequest = new Request<>(
-                kernelGraph, resolvedMethod, args, taskMeta, providers, backend,
-                suitesProvider.getGraphBuilderSuite(), optimisticOpts,
-                profilingInfo, suitesProvider.createSuites(),
-                suitesProvider.getLIRSuites(), kernelCompResult, factory, true, false);
+        Request<OCLCompilationResult> kernelCompilationRequest = new Request<>(kernelGraph, resolvedMethod, args, taskMeta, providers, backend, suitesProvider.getGraphBuilderSuite(), optimisticOpts,
+                profilingInfo, suitesProvider.createSuites(), suitesProvider.getLIRSuites(), kernelCompResult, factory, true, false);
 
         kernelCompilationRequest.execute();
 
@@ -626,7 +492,6 @@ public class OCLCompiler {
             for (ResolvedJavaMethod m : kernelCompResult.getMethods()) {
                 methods.add(m);
             }
-
         }
 
         final Deque<ResolvedJavaMethod> worklist = new ArrayDeque<>();
@@ -636,14 +501,10 @@ public class OCLCompiler {
             final ResolvedJavaMethod currentMethod = worklist.pop();
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod);
             final OCLCompilationResult compResult = new OCLCompilationResult(task.getId(), currentMethod.getName(), taskMeta, backend);
-            final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
+            @SuppressWarnings("unchecked") final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
 
-            Request<OCLCompilationResult> methodcompilationRequest = new Request<>(
-                    graph, currentMethod, null, null, providers, backend,
-                    suitesProvider.getGraphBuilderSuite(),
-                    optimisticOpts, profilingInfo,
-                    suitesProvider.createSuites(), suitesProvider.getLIRSuites(),
-                    compResult, factory, false, false);
+            Request<OCLCompilationResult> methodcompilationRequest = new Request<>(graph, currentMethod, null, null, providers, backend, suitesProvider.getGraphBuilderSuite(), optimisticOpts,
+                    profilingInfo, suitesProvider.createSuites(), suitesProvider.getLIRSuites(), compResult, factory, false, false);
 
             methodcompilationRequest.execute();
             worklist.addAll(compResult.getNonInlinedMethods());
