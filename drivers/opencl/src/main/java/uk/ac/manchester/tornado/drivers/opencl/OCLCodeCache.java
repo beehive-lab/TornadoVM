@@ -51,6 +51,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 
 public class OCLCodeCache {
 
+    public static final String LOOKUP_BUFFER_KERNEL_NAME = "lookupBufferAddress";
+
     private final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", "False"));
     private final boolean OPENCL_LOAD_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.loadbin", "False"));
@@ -214,7 +216,9 @@ public class OCLCodeCache {
         try {
             entryPoint = entryPoint.split("-")[1];
         } catch (Exception e) {
-            throw new OCLException("Entry point cannot be splitted: " + entryPoint);
+            if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
+                throw new OCLException("Entry point cannot be splitted: " + entryPoint);
+            }
         }
 
         OCLProgram program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
