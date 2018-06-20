@@ -182,7 +182,6 @@ public class OCLTornadoDevice implements TornadoDevice {
     public void ensureLoaded() {
         final OCLBackend backend = getBackend();
         if (!backend.isInitialised()) {
-            System.out.println("ENsure is loadinng - backend init");
             backend.init();
         }
     }
