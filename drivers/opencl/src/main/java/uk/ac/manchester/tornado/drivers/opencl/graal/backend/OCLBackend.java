@@ -274,6 +274,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             }
         } else {
             // Option 3) Compiling lookupBufferAddress kernel at runtime
+
+            // To Avoid errors, check the target device is not the FPGA, because
+            // JIT compilation for FPGAs is not supported yet.
+            System.out.println("FPGA?? " + deviceFullName);
+
             ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
             OCLProviders providers = (OCLProviders) getProviders();
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);

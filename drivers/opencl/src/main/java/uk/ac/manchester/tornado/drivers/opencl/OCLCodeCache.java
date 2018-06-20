@@ -192,10 +192,11 @@ public class OCLCodeCache {
         debug("\tOpenCL compilation status = %s", status.toString());
 
         final String log = program.getBuildLog(deviceContext.getDeviceId()).trim();
-        if (!log.isEmpty()) {
-            debug(log);
-        }
+
         if (PRINT_WARNINGS || (status == OCLBuildStatus.CL_BUILD_ERROR)) {
+            if (!log.isEmpty()) {
+                debug(log);
+            }
             final Path outDir = resolveLogDir();
             final String identifier = id + "-" + entryPoint;
             error("Unable to compile task %s: check logs at %s/%s.log", identifier, outDir.toAbsolutePath(), identifier);

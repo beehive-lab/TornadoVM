@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 public class OpenCL {
 
-    public static final String OPENCL_LIBRARY = "tornado-opencl";
+    public static final String OPENCL_JNI_LIBRARY = "tornado-opencl";
 
     private static boolean initialised = false;
 
@@ -57,7 +57,7 @@ public class OpenCL {
     static {
         try {
             // Loading JNI OpenCL library
-            System.loadLibrary(OpenCL.OPENCL_LIBRARY);
+            System.loadLibrary(OpenCL.OPENCL_JNI_LIBRARY);
         } catch (final UnsatisfiedLinkError e) {
             throw e;
         }
