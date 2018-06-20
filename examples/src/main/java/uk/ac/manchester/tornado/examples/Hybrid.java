@@ -59,22 +59,49 @@ public class Hybrid {
         }
     }
 
+    /*
+     * A)
+     * 
+     * x0.t0.device0:0 : GPU
+     * 
+     * v0.t0.device0:0 : GPU
+     * 
+     * B)
+     * 
+     * x0.t1.device0:0 : GPU
+     * 
+     * v0.t1.device0:1 : FPGA
+     * 
+     * c)
+     * 
+     * x1.t0.device0:1 : FPGA
+     * 
+     * v1.t0.device0:0 : GPU
+     * 
+     * D)
+     * 
+     * x1.t1.device0:1 : FPGA
+     * 
+     * v1.t1.device0:1 : FPGA
+     * 
+     * 
+     */
     public void engineExploration(KernelPackage kernelPackage) {
 
         for (int i = 0; i < MAX_DEVICES; i++) {
-
             for (int j = 0; j < MAX_DEVICES; j++) {
-
                 // We play with 2 devices
-                TaskSchedule s0 = new TaskSchedule("s0");
-                Tornado.setProperty("s0.t0.device", "0:" + i);
-                s0.task("t0", Hybrid::saxpy, kernelPackage.alpha, kernelPackage.x, kernelPackage.y);
+                TaskSchedule s0 = new TaskSchedule("x" + i);
+                Tornado.setProperty("x" + i + ".t" + j + ".device", "0:" + i);
+                System.out.println("x" + i + ".t" + j + ".device" + "0:" + i);
+                s0.task("t" + j, Hybrid::saxpy, kernelPackage.alpha, kernelPackage.x, kernelPackage.y);
                 s0.streamOut(kernelPackage.z);
                 s0.execute();
 
-                TaskSchedule s1 = new TaskSchedule("s1");
-                Tornado.setProperty("s1.t1.device", "0:" + j);
-                s1.task("t1", Hybrid::vectorAddition, kernelPackage.x, kernelPackage.y, kernelPackage.z);
+                TaskSchedule s1 = new TaskSchedule("v" + i);
+                Tornado.setProperty("v" + i + ".t" + j + ".device", "0:" + j);
+                System.out.println("v" + i + ".t" + j + ".device" + "0:" + j);
+                s1.task("t" + j, Hybrid::vectorAddition, kernelPackage.x, kernelPackage.y, kernelPackage.z);
                 s1.streamOut(kernelPackage.z);
                 s1.execute();
             }
