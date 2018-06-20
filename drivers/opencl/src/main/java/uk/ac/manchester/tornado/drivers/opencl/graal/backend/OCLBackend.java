@@ -275,7 +275,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
                 lookupCodeAvailable = true;
             }
         } else {
-            // Option 3) Compiling lookupBufferAddress kernel at runtime
+            // Option 3) JIT Compilation of the lookupBufferAddress kernel
 
             // To Avoid errors, check the target device is not the FPGA, because
             // JIT compilation for FPGAs is not supported yet.
@@ -288,7 +288,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR) {
                 // If compilation for other platforms are chosen then we do not
                 // compile for FPGAs
+                if (Tornado.DEBUG) {
+                    System.out.println("JIT Compilation for FPGAs not supported yet.");
+                }
                 return meta;
+            } else {
+                System.out.println("Compiling for " + deviceFullName);
             }
 
             ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
