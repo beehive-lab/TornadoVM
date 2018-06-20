@@ -60,6 +60,9 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     private final OCLKernelScheduler scheduler;
     private final int[] internalEvents = new int[1];
 
+    private final long[] singleThreadGlobalWorkSize = new long[] { 1 };
+    private final long[] singleThreadLocalWorkSize = new long[] { 1 };
+
     public OCLInstalledCode(final String entryPoint, final byte[] code, final OCLDeviceContext deviceContext, final OCLProgram program, final OCLKernel kernel) {
         super(entryPoint);
         this.code = code;
@@ -94,7 +97,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         int task;
         if (meta == null) {
-            task = deviceContext.enqueueTask(kernel, internalEvents);
+            task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, internalEvents);
             deviceContext.flush();
             deviceContext.finish();
         } else {
@@ -105,7 +108,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                     task = scheduler.submit(kernel, meta, null);
                 }
             } else {
-                task = deviceContext.enqueueTask(kernel, null);
+                task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
             }
         }
 
@@ -217,7 +220,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
         int task;
         if (meta == null) {
-            task = deviceContext.enqueueTask(kernel, waitEvents);
+            task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, waitEvents);
         } else {
             if (meta.isParallel()) {
                 if (meta.enableThreadCoarsener()) {
@@ -226,7 +229,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                     task = scheduler.submit(kernel, meta, waitEvents);
                 }
             } else {
-                task = deviceContext.enqueueTask(kernel, waitEvents);
+                task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, waitEvents);
             }
 
             if (meta.shouldDumpProfiles()) {
@@ -261,7 +264,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         guarantee(kernel != null, "kernel is null");
 
         if (meta == null) {
-            deviceContext.enqueueTask(kernel, null);
+            deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
         } else {
 
             final int task;
@@ -272,7 +275,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                     task = scheduler.submit(kernel, meta, null);
                 }
             } else {
-                task = deviceContext.enqueueTask(kernel, null);
+                task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
             }
 
             if (meta.shouldDumpProfiles()) {
