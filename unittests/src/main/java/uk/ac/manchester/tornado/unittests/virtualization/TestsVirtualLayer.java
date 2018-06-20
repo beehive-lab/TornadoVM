@@ -84,7 +84,8 @@ public class TestsVirtualLayer {
 
     /**
      * Test to change execution from one device to another (migration).
-     * @throws Exception 
+     * 
+     * @throws Exception
      */
     @Test
     public void testArrayMigration() {
@@ -126,16 +127,19 @@ public class TestsVirtualLayer {
 
     @Test
     public void testVirtualLayer01() {
+        TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        if (driver.getDeviceCount() < 2) {
+            return;
+        }
+
         /*
          * The following expression is not correct for Tornado to execute on
          * different devices.
          */
         final int N = 128;
-
         int[] data = new int[N];
         Arrays.fill(data, 100);
 
-        TornadoDriver driver = getTornadoRuntime().getDriver(0);
         TaskSchedule s0 = new TaskSchedule("s0");
 
         // This test only is executed once (the first task)
@@ -155,13 +159,17 @@ public class TestsVirtualLayer {
 
     @Test
     public void testVirtualLayer02() {
+
+        TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        if (driver.getDeviceCount() < 2) {
+            return;
+        }
+
         final int N = 128;
         int[] data = new int[N];
-
         Arrays.fill(data, 100);
-        TornadoDriver driver = getTornadoRuntime().getDriver(0);
-        TaskSchedule s0 = new TaskSchedule("s0");
 
+        TaskSchedule s0 = new TaskSchedule("s0");
         s0.setDevice(driver.getDevice(0));
         s0.task("t0", TestsVirtualLayer::testA, data, 1);
         s0.setDevice(driver.getDevice(1));
@@ -176,18 +184,23 @@ public class TestsVirtualLayer {
 
     @Test
     public void testVirtualLayer03() {
+        TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        if (driver.getDeviceCount() < 2) {
+            return;
+        }
+
         final int N = 128;
         int[] dataA = new int[N];
         int[] dataB = new int[N];
 
         Arrays.fill(dataA, 100);
         Arrays.fill(dataB, 200);
-        TornadoDriver driver = getTornadoRuntime().getDriver(0);
+
         TaskSchedule s0 = new TaskSchedule("s0");
 
-        s0.setDevice(driver.getDevice(0));
+        // s0.setDevice(driver.getDevice(0));
         s0.task("t0", TestsVirtualLayer::testA, dataA, 1);
-        s0.setDevice(driver.getDevice(1));
+        // s0.setDevice(driver.getDevice(1));
         s0.task("t1", TestsVirtualLayer::testA, dataB, 10);
         s0.streamOut(dataA);
         s0.streamOut(dataB);
@@ -208,6 +221,11 @@ public class TestsVirtualLayer {
      */
     @Test
     public void testDynamicDeviceSwitch() {
+        TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        if (driver.getDeviceCount() <= 2) {
+            return;
+        }
+
         final int N = 128;
         int[] data = new int[N];
 
@@ -221,7 +239,7 @@ public class TestsVirtualLayer {
             String taskScheduleName = "s" + driverIndex;
 
             TaskSchedule s0 = new TaskSchedule(taskScheduleName);
-            final TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
+            driver = getTornadoRuntime().getDriver(driverIndex);
 
             final int numDevices = driver.getDeviceCount();
             totalNumDevices += numDevices;
@@ -262,6 +280,11 @@ public class TestsVirtualLayer {
      */
     @Test
     public void testSchedulerDevices() {
+        TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(0);
+        if (tornadoDriver.getDeviceCount() < 2) {
+            return;
+        }
+
         final int N = 128;
         int[] dataA = new int[N];
         int[] dataB = new int[N];
@@ -269,7 +292,6 @@ public class TestsVirtualLayer {
         Arrays.fill(dataA, 100);
         Arrays.fill(dataB, 100);
 
-        TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(0);
         if (tornadoDriver.getDeviceCount() < 2) {
             assertFalse("The current driver has less than 2 devices", true);
         }
