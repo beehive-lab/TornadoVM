@@ -82,11 +82,13 @@ import uk.ac.manchester.tornado.api.Vector;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.Tornado;
+import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeUtil;
@@ -278,6 +280,16 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             // To Avoid errors, check the target device is not the FPGA, because
             // JIT compilation for FPGAs is not supported yet.
             System.out.println("FPGA?? " + deviceFullName);
+            // Get driver index + deviceIndex
+            String deviceDriver = deviceFullName.split("=")[1];
+            int driverIndex = Integer.parseInt(deviceDriver.split(":")[0]);
+            int deviceIndex = Integer.parseInt(deviceDriver.split(":")[1]);
+            OCLTornadoDevice device = (OCLTornadoDevice) TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
+            if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR) {
+                // If compilation for other platforms are chosen then we do not
+                // compile for FPGAs
+                return meta;
+            }
 
             ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
             OCLProviders providers = (OCLProviders) getProviders();
