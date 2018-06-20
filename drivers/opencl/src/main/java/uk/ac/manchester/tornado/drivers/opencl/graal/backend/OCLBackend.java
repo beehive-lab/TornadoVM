@@ -251,6 +251,28 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new int[] { 0, deviceIndex };
     }
 
+    private boolean isJITCompilationForFPGAs(String deviceFullName) {
+        // To Avoid errors, check the target device is not the FPGA, because
+        // JIT compilation for FPGAs is not supported yet.
+        // Get driver index + deviceIndex
+        String deviceDriver = deviceFullName.split("=")[1];
+        int driverIndex = Integer.parseInt(deviceDriver.split(":")[0]);
+        int deviceIndex = Integer.parseInt(deviceDriver.split(":")[1]);
+        OCLTornadoDevice device = (OCLTornadoDevice) TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
+        String platformName = device.getPlatformName();
+        if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && platformName.contains("FPGA")) {
+            // If compilation for other platforms are chosen then we do not
+            // compile for FPGAs
+            if (Tornado.DEBUG) {
+                System.out.println("JIT Compilation for FPGAs not supported yet.");
+            }
+            return true;
+        } else if (Tornado.DEBUG) {
+            System.out.println("JIT Compilation for " + deviceFullName);
+        }
+        return false;
+    }
+
     /*
      * Retrieve the address of the heap on the device
      */
@@ -277,23 +299,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         } else {
             // Option 3) JIT Compilation of the lookupBufferAddress kernel
 
-            // To Avoid errors, check the target device is not the FPGA, because
-            // JIT compilation for FPGAs is not supported yet.
-            System.out.println("FPGA?? " + deviceFullName);
-            // Get driver index + deviceIndex
-            String deviceDriver = deviceFullName.split("=")[1];
-            int driverIndex = Integer.parseInt(deviceDriver.split(":")[0]);
-            int deviceIndex = Integer.parseInt(deviceDriver.split(":")[1]);
-            OCLTornadoDevice device = (OCLTornadoDevice) TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
-            if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR) {
-                // If compilation for other platforms are chosen then we do not
-                // compile for FPGAs
-                if (Tornado.DEBUG) {
-                    System.out.println("JIT Compilation for FPGAs not supported yet.");
-                }
+            // Avoid JIT compilation for FPGAs due to unsupported feature
+            if (isJITCompilationForFPGAs(deviceFullName)) {
                 return meta;
-            } else {
-                System.out.println("Compiling for " + deviceFullName);
             }
 
             ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
