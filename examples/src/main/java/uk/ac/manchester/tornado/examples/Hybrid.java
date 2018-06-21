@@ -156,21 +156,26 @@ public class Hybrid {
             }
         }
 
-        // Tasks Execution
-        for (int i = 0; i < tasks.size(); i += 2) {
-            TaskSchedule t0 = tasks.get(i);
-            String key = tasksKey.get(i);
-            String locX = tasksLocation.get(key);
-            System.out.println(key + "=" + locX);
-            Tornado.setProperty(key, locX);
-            t0.execute();
+        for (int k = 0; k < 3; k++) {
 
-            TaskSchedule t1 = tasks.get(i + 1);
-            key = tasksKey.get(i + 1);
-            String locY = tasksLocation.get(key);
-            System.out.println(key + "=" + locY);
-            Tornado.setProperty(key, locY);
-            t1.execute();
+            System.out.println("\n\nITERATION: " + k);
+
+            // Tasks Execution
+            for (int i = 0; i < tasks.size(); i += 2) {
+                TaskSchedule t0 = tasks.get(i);
+                String key = tasksKey.get(i);
+                String locX = tasksLocation.get(key);
+                System.out.println(key + "=" + locX);
+                Tornado.setProperty(key, locX);
+                t0.execute();
+
+                TaskSchedule t1 = tasks.get(i + 1);
+                key = tasksKey.get(i + 1);
+                String locY = tasksLocation.get(key);
+                System.out.println(key + "=" + locY);
+                Tornado.setProperty(key, locY);
+                t1.execute();
+            }
         }
 
     }
