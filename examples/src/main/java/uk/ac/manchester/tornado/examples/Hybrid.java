@@ -180,6 +180,69 @@ public class Hybrid {
 
     }
 
+    public void engineExplorationV3(KernelPackage kernelPackage) {
+
+        ArrayList<TaskSchedule> tasks = new ArrayList<>();
+        HashMap<String, String> tasksLocation = new HashMap<>();
+        ArrayList<String> tasksKey = new ArrayList<>();
+
+        // Tasks preparation
+        for (int i = 0; i < MAX_DEVICES; i++) {
+            for (int j = 0; j < MAX_DEVICES; j++) {
+
+                // Task X
+                TaskSchedule s0 = new TaskSchedule("x" + i);
+                String taskID = "x" + i + ".t" + j + ".device";
+                String location = "0:" + i;
+                s0.task("t" + j, Hybrid::saxpy, kernelPackage.alpha, kernelPackage.x, kernelPackage.y);
+                s0.streamOut(kernelPackage.z);
+                tasks.add(s0);
+                tasksLocation.put(taskID, location);
+                tasksKey.add(taskID);
+
+                // Task V
+                TaskSchedule s1 = new TaskSchedule("v" + i);
+                taskID = "v" + i + ".t" + j + ".device";
+                location = "0:" + j;
+                s1.task("t" + j, Hybrid::vectorAddition, kernelPackage.x, kernelPackage.y, kernelPackage.z);
+                s1.streamOut(kernelPackage.z);
+
+                tasks.add(s1);
+                tasksLocation.put(taskID, location);
+                tasksKey.add(taskID);
+            }
+        }
+
+        for (int k = 0; k < 3; k++) {
+
+            System.out.println("\n\nITERATION: " + k);
+
+            // Tasks Execution
+            for (int i = 0; i < tasks.size(); i += 2) {
+                TaskSchedule t0 = tasks.get(i);
+                String key = tasksKey.get(i);
+                String locX = tasksLocation.get(key);
+                System.out.println(key + "=" + locX);
+                Tornado.setProperty(key, locX);
+
+                for (int j = 0; j < 3; j++) {
+                    t0.execute();
+                }
+
+                TaskSchedule t1 = tasks.get(i + 1);
+                key = tasksKey.get(i + 1);
+                String locY = tasksLocation.get(key);
+                System.out.println(key + "=" + locY);
+                Tornado.setProperty(key, locY);
+
+                for (int j = 0; j < 3; j++) {
+                    t1.execute();
+                }
+            }
+        }
+
+    }
+
     public static class KernelPackage {
         int numElements = 65536;
         int alpha = 2;
@@ -203,7 +266,7 @@ public class Hybrid {
             return;
         }
         KernelPackage kernelPackage = new KernelPackage();
-        new Hybrid().engineExplorationV2(kernelPackage);
+        new Hybrid().engineExplorationV3(kernelPackage);
     }
 
 }
