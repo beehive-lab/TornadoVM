@@ -36,7 +36,6 @@ import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus.CL_BU
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -66,17 +65,30 @@ public class OCLCodeCache {
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-logs");
 
-    //
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
      * 
      * e.g.
      * 
+     * <p>
      * <code>
      * -Dtornado.precompiled.binary=</tmp/saxpy,s0.t0.device=0:1>
      * </code>
+     * </p>
      */
     private final String OPENCL_BINARIES = getProperty("tornado.precompiled.binary", null);
+
+    /**
+     * Configuration File with all paths to the OpenCl pre-compiled binaries:
+     * -Dtornado.precompiled.listFile=<path/to/file>
+     * 
+     * <p>
+     * <code>
+     * -Dtornado.precompiled.listFile=./fileConfigFPGAs
+     * </code>
+     * </p>
+     * 
+     */
     private final String OPENCL_FILE_BINARIES = getProperty("tornado.precompiled.listFile", null);
 
     private final boolean PRINT_WARNINGS = false;
