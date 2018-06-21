@@ -213,31 +213,26 @@ public class Hybrid {
             }
         }
 
-        for (int k = 0; k < 3; k++) {
+        // Tasks Execution
+        for (int i = 0; i < tasks.size(); i += 2) {
+            TaskSchedule t0 = tasks.get(i);
+            String key = tasksKey.get(i);
+            String locX = tasksLocation.get(key);
+            System.out.println(key + "=" + locX);
+            Tornado.setProperty(key, locX);
 
-            System.out.println("\n\nITERATION: " + k);
+            for (int j = 0; j < 3; j++) {
+                t0.execute();
+            }
 
-            // Tasks Execution
-            for (int i = 0; i < tasks.size(); i += 2) {
-                TaskSchedule t0 = tasks.get(i);
-                String key = tasksKey.get(i);
-                String locX = tasksLocation.get(key);
-                System.out.println(key + "=" + locX);
-                Tornado.setProperty(key, locX);
+            TaskSchedule t1 = tasks.get(i + 1);
+            key = tasksKey.get(i + 1);
+            String locY = tasksLocation.get(key);
+            System.out.println(key + "=" + locY);
+            Tornado.setProperty(key, locY);
 
-                for (int j = 0; j < 3; j++) {
-                    t0.execute();
-                }
-
-                TaskSchedule t1 = tasks.get(i + 1);
-                key = tasksKey.get(i + 1);
-                String locY = tasksLocation.get(key);
-                System.out.println(key + "=" + locY);
-                Tornado.setProperty(key, locY);
-
-                for (int j = 0; j < 3; j++) {
-                    t1.execute();
-                }
+            for (int j = 0; j < 3; j++) {
+                t1.execute();
             }
         }
 
@@ -258,6 +253,7 @@ public class Hybrid {
                 y[i] = r.nextInt();
             }
         }
+
     }
 
     public static void main(String[] args) {
