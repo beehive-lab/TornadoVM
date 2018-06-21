@@ -34,8 +34,11 @@ import static uk.ac.manchester.tornado.common.Tornado.warn;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -73,7 +76,8 @@ public class OCLCodeCache {
      * -Dtornado.precompiled.binary=</tmp/saxpy,s0.t0.device=0:1>
      * </code>
      */
-    private final String OPENCL_BINARY = getProperty("tornado.precompiled.binary", null);
+    private final String OPENCL_BINARIES = getProperty("tornado.precompiled.binary", null);
+    private final String OPENCL_FILE_BINARIES = getProperty("tornado.precompiled.listFile", null);
 
     private final boolean PRINT_WARNINGS = false;
 
@@ -88,9 +92,14 @@ public class OCLCodeCache {
         this.deviceContext = deviceContext;
         cache = new HashMap<>();
 
-        if (OPENCL_BINARY != null) {
+        if (OPENCL_BINARIES != null) {
             precompiledBinariesPerDevice = new HashMap<>();
-            processPrecompiledBinaries();
+            processPrecompiledBinaries(null);
+        }
+
+        if (OPENCL_FILE_BINARIES != null) {
+            precompiledBinariesPerDevice = new HashMap<>();
+            processPrecompiledBinariesFromFile();
         }
 
         if (OPENCL_CACHE_ENABLE) {
@@ -100,8 +109,15 @@ public class OCLCodeCache {
         }
     }
 
-    public void processPrecompiledBinaries() {
-        String[] binaries = OPENCL_BINARY.split(",");
+    private void processPrecompiledBinaries(String binList) {
+        String[] binaries = null;
+
+        if (binList == null) {
+            binaries = OPENCL_BINARIES.split(",");
+        } else {
+            binaries = binList.split(",");
+        }
+
         if ((binaries.length % 2) != 0) {
             throw new RuntimeException("tornado.precompiled.binary=<path> , device ");
         }
@@ -116,6 +132,33 @@ public class OCLCodeCache {
             String kernelName = "oclbackend.lookupBufferAddress." + device;
             precompiledBinariesPerDevice.put(kernelName, binaryFile);
         }
+    }
+
+    private void processPrecompiledBinariesFromFile() {
+        StringBuilder listBinaries = new StringBuilder();
+        BufferedReader fileContent = null;
+        try {
+            fileContent = new BufferedReader(new FileReader(OPENCL_FILE_BINARIES));
+            String line = fileContent.readLine();
+
+            while (line != null) {
+
+                if (!line.isEmpty() && !line.startsWith("#")) {
+                    listBinaries.append(line + ",");
+                }
+                line = fileContent.readLine();
+            }
+            listBinaries.deleteCharAt(listBinaries.length() - 1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                fileContent.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        processPrecompiledBinaries(listBinaries.toString());
     }
 
     public boolean isLoadBinaryOptionEnabled() {

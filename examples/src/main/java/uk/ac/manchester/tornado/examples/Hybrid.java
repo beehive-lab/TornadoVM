@@ -39,6 +39,14 @@ import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 /**
  * First try: It assumes the first device is a GPU and the second device is an
  * FPGA.
+ * 
+ * The goal of this experiment is to show that Tornado is able to execute two
+ * different tasks in two different devices and migrate the task at runtime
+ * between devices. We emphasis in the Virtual Layer of Tornado.
+ * 
+ * We execute two methods on the heterogeneous devices. We iterate multiple
+ * times, each time, the method is relocated on different device.
+ * {@link uk.ac.manchester.tornado.examples.Hybrid#engineExplorationV1}
  *
  * 
  */
@@ -46,15 +54,16 @@ public class Hybrid {
 
     public static final int GPU_INDEX = 0;
     public static final int FPGA_INDEX = 1;
-
     public static final int MAX_DEVICES = 2;
 
+    // Task X
     public static void saxpy(int alpha, int[] x, int[] y) {
         for (@Parallel int i = 0; i < y.length; i++) {
             y[i] = alpha * x[i];
         }
     }
 
+    // Task V
     public static void vectorAddition(int[] x, int[] y, int[] z) {
         for (@Parallel int i = 0; i < y.length; i++) {
             z[i] = x[i] * y[i];
@@ -247,8 +256,7 @@ public class Hybrid {
             }
         }
 
-        System.out.println(Arrays.toString(kernelPackage.z));
-
+        // System.out.println(Arrays.toString(kernelPackage.z));
     }
 
     public static class KernelPackage {
