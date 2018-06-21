@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.examples;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -100,7 +101,7 @@ public class Hybrid {
      * 
      * 
      */
-    public void engineExploration(KernelPackage kernelPackage) {
+    public void engineExplorationV1(KernelPackage kernelPackage) {
 
         for (int i = 0; i < MAX_DEVICES; i++) {
             for (int j = 0; j < MAX_DEVICES; j++) {
@@ -120,6 +121,8 @@ public class Hybrid {
                 s1.execute();
             }
         }
+
+        System.out.println(Arrays.toString(kernelPackage.z));
 
     }
 
@@ -213,6 +216,8 @@ public class Hybrid {
             }
         }
 
+        int MAX_INNER = 1;
+
         // Tasks Execution
         for (int i = 0; i < tasks.size(); i += 2) {
             TaskSchedule t0 = tasks.get(i);
@@ -221,7 +226,7 @@ public class Hybrid {
             System.out.println(key + "=" + locX);
             Tornado.setProperty(key, locX);
 
-            for (int j = 0; j < 3; j++) {
+            for (int j = 0; j < MAX_INNER; j++) {
                 long start = System.nanoTime();
                 t0.execute();
                 long stop = System.nanoTime();
@@ -234,13 +239,15 @@ public class Hybrid {
             System.out.println(key + "=" + locY);
             Tornado.setProperty(key, locY);
 
-            for (int j = 0; j < 3; j++) {
+            for (int j = 0; j < MAX_INNER; j++) {
                 long start = System.nanoTime();
                 t1.execute();
                 long stop = System.nanoTime();
                 System.out.println("Total Time V: " + (stop - start) + " (ns)");
             }
         }
+
+        System.out.println(Arrays.toString(kernelPackage.z));
 
     }
 
@@ -255,11 +262,10 @@ public class Hybrid {
         public KernelPackage() {
             Random r = new Random();
             for (int i = 0; i < numElements; i++) {
-                x[i] = r.nextInt();
+                x[i] = 100;
                 y[i] = r.nextInt();
             }
         }
-
     }
 
     public static void main(String[] args) {
