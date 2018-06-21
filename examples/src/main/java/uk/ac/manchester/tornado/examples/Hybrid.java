@@ -222,7 +222,10 @@ public class Hybrid {
             Tornado.setProperty(key, locX);
 
             for (int j = 0; j < 3; j++) {
+                long start = System.nanoTime();
                 t0.execute();
+                long stop = System.nanoTime();
+                System.out.println("Total Time X: " + (stop - start) + " (ns)");
             }
 
             TaskSchedule t1 = tasks.get(i + 1);
@@ -232,7 +235,10 @@ public class Hybrid {
             Tornado.setProperty(key, locY);
 
             for (int j = 0; j < 3; j++) {
+                long start = System.nanoTime();
                 t1.execute();
+                long stop = System.nanoTime();
+                System.out.println("Total Time V: " + (stop - start) + " (ns)");
             }
         }
 
