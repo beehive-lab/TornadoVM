@@ -26,24 +26,25 @@
 
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
-
 import uk.ac.manchester.tornado.runtime.TornadoDriver;
+import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 
 public class TornadoDeviceOutput {
 
     public static void main(String[] args) {
+
         StringBuffer bufferDriversAndPlatforms = new StringBuffer().append("\n");
         StringBuffer bufferDevices = new StringBuffer();
-        final int numDrivers = getTornadoRuntime().getNumDrivers();
+        final int numDrivers = TornadoRuntime.getTornadoRuntime().getNumDrivers();
         bufferDriversAndPlatforms.append("Number of Tornado drivers: " + numDrivers + "\n");
+
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
-            final TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
+            final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
             final int numDevices = driver.getDeviceCount();
-            bufferDriversAndPlatforms.append("Number of devices: " + numDevices + "\n");
+            bufferDriversAndPlatforms.append("Total number of devices  : " + numDevices + "\n");
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
                 bufferDevices.append("Tornado device=" + driverIndex + ":" + deviceIndex + "\n");
-                bufferDevices.append(driver.getDevice(deviceIndex)).append("\n");
+                bufferDevices.append("\t" + driver.getDevice(deviceIndex)).append("\n\n");
             }
         }
 

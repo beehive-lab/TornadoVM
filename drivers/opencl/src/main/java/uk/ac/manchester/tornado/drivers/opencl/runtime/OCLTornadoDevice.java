@@ -53,6 +53,7 @@ import uk.ac.manchester.tornado.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.common.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
@@ -190,64 +191,100 @@ public class OCLTornadoDevice implements TornadoDevice {
         return getDeviceContext().getMemoryManager().createCallStack(numArgs);
     }
 
-    @Override
-    public TornadoInstalledCode installCode(SchedulableTask task) {
+    private boolean isOpenCLPreLoadBinary(OCLDeviceContext deviceContext, String deviceInfo) {
+        OCLCodeCache installedCode = new OCLCodeCache(deviceContext);
+        if ((installedCode.isLoadBinaryOptionEnabled() == false) || (installedCode.getOpenCLBinary(deviceInfo) == null)) {
+            return false;
+        }
+        return true;
+    }
+
+    private TornadoInstalledCode compileTask(SchedulableTask task) {
         final OCLDeviceContext deviceContext = getDeviceContext();
 
-        if (task instanceof CompilableTask) {
-            final CompilableTask executable = (CompilableTask) task;
-            // final long t0 = System.nanoTime();
-            final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(executable.getMethod());
+        final CompilableTask executable = (CompilableTask) task;
+        // final long t0 = System.nanoTime();
+        final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(executable.getMethod());
 
-            // final long t1 = System.nanoTime();
-            final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
+        // final long t1 = System.nanoTime();
+        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
 
-            // copy meta data into task
-            final TaskMetaData sketchMeta = sketch.getMeta();
-            final TaskMetaData taskMeta = executable.meta();
-            final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
-            final Access[] taskAccess = taskMeta.getArgumentsAccess();
-            for (int i = 0; i < sketchAccess.length; i++) {
-                taskAccess[i] = sketchAccess[i];
-            }
-
-            try {
-                final OCLCompilationResult result = compileSketchForDevice(sketch, executable, (OCLProviders) getBackend().getProviders(), getBackend());
-
-                if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
-                    return deviceContext.getCode(task.getId(), resolvedMethod.getName());
-                }
-
-                return deviceContext.installCode(result);
-            } catch (Exception e) {
-                driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
-                driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
-                driver.fatal("exception: %s", e.toString());
-                e.printStackTrace();
-            }
-            return null;
-        } else if (task instanceof PrebuiltTask) {
-            final PrebuiltTask executable = (PrebuiltTask) task;
-            if (deviceContext.isCached(task.getId(), executable.getEntryPoint())) {
-                return deviceContext.getCode(task.getId(), executable.getEntryPoint());
-            }
-
-            final Path path = Paths.get(executable.getFilename());
-            guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
-            try {
-                final byte[] source = Files.readAllBytes(path);
-                return deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(), source);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        // copy meta data into task
+        final TaskMetaData sketchMeta = sketch.getMeta();
+        final TaskMetaData taskMeta = executable.meta();
+        final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
+        final Access[] taskAccess = taskMeta.getArgumentsAccess();
+        for (int i = 0; i < sketchAccess.length; i++) {
+            taskAccess[i] = sketchAccess[i];
         }
 
+        try {
+            OCLProviders providers = (OCLProviders) getBackend().getProviders();
+            final OCLCompilationResult result = compileSketchForDevice(sketch, executable, providers, getBackend());
+            if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
+                return deviceContext.getCode(task.getId(), resolvedMethod.getName());
+            }
+            return deviceContext.installCode(result);
+        } catch (Exception e) {
+            driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
+            driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
+            driver.fatal("exception: %s", e.toString());
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private TornadoInstalledCode compilePreBuiltTask(SchedulableTask task) {
+        final OCLDeviceContext deviceContext = getDeviceContext();
+        final PrebuiltTask executable = (PrebuiltTask) task;
+        if (deviceContext.isCached(task.getId(), executable.getEntryPoint())) {
+            return deviceContext.getCode(task.getId(), executable.getEntryPoint());
+        }
+
+        final Path path = Paths.get(executable.getFilename());
+        guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
+        try {
+            final byte[] source = Files.readAllBytes(path);
+            return deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(), source);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private TornadoInstalledCode compileJavaToAccelertor(SchedulableTask task) {
+        if (task instanceof CompilableTask) {
+            return compileTask(task);
+        } else if (task instanceof PrebuiltTask) {
+            return compilePreBuiltTask(task);
+        }
         shouldNotReachHere("task of unknown type: " + task.getClass().getSimpleName());
         return null;
     }
 
-    private String getFile(String name) {
-        return String.format("%s/%s-%s.cl", OCLBackend.OPENCL_PATH.trim(), name.trim(), getDeviceName());
+    private TornadoInstalledCode loadPreCompiledBinaryFromCache(SchedulableTask task) {
+        final OCLDeviceContext deviceContext = getDeviceContext();
+        final OCLCodeCache check = new OCLCodeCache(deviceContext);
+        final String deviceFullName = getFullTaskIdDevice(task);
+        final Path lookupPath = Paths.get(check.getOpenCLBinary(deviceFullName));
+        String[] tempEntryToSplit = task.getName().split("- ");
+        String entry = tempEntryToSplit[1];
+        return check.installEntryPointForBinaryForFPGAs(lookupPath, entry);
+    }
+
+    private String getFullTaskIdDevice(SchedulableTask task) {
+        return task.getId() + ".device=" + task.meta().getDriverIndex() + ":" + task.meta().getDeviceIndex();
+    }
+
+    @Override
+    public TornadoInstalledCode installCode(SchedulableTask task) {
+        final OCLDeviceContext deviceContext = getDeviceContext();
+        final String deviceFullName = getFullTaskIdDevice(task);
+        if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName)) {
+            return compileJavaToAccelertor(task);
+        } else {
+            return loadPreCompiledBinaryFromCache(task);
+        }
     }
 
     private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg, OCLDeviceContext device) throws TornadoOutOfMemoryException {
@@ -270,16 +307,17 @@ public class OCLTornadoDevice implements TornadoDevice {
                 } else if (type == char[].class) {
                     result = new OCLCharArrayWrapper(device);
                 } else {
-                    unimplemented("1D-array of type %s", type.getName());
+                    unimplemented("array of type %s", type.getName());
                 }
             } else {
                 final Class<?> componentType = type.getComponentType();
                 if (isPrimitiveArray(componentType)) {
-
                     if (componentType == int[].class) {
                         result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLIntArrayWrapper(context));
                     } else if (componentType == short[].class) {
                         result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLShortArrayWrapper(context));
+                    } else if (componentType == char[].class) {
+                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLCharArrayWrapper(context));
                     } else if (componentType == byte[].class) {
                         result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLByteArrayWrapper(context));
                     } else if (componentType == float[].class) {
@@ -306,7 +344,6 @@ public class OCLTornadoDevice implements TornadoDevice {
 
     @Override
     public int ensureAllocated(Object object, DeviceObjectState state) {
-
         if (!state.hasBuffer()) {
             try {
                 final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext());

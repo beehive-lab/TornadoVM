@@ -29,7 +29,6 @@ package uk.ac.manchester.tornado.unittests.arrays;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -125,7 +124,7 @@ public class TestArrays extends TornadoTestBase {
         s0.execute();
 
         for (int i = 0; i < N; i++) {
-            assertEquals(i + numKernels, data[i], 0.0001);
+            assertEquals(i + numKernels, data[i]);
         }
     }
 

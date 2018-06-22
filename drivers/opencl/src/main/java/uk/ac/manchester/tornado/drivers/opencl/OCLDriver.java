@@ -95,15 +95,6 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
         return OCLHotSpotBackendFactory.createBackend(options, jvmciRuntime.getHostJVMCIBackend(), vmConfig, context, device);
     }
 
-    private static boolean getBoolean(String property) {
-        if (System.getProperty(property) == null) {
-            return false;
-        } else if (System.getProperty(property).toLowerCase().equals("true")) {
-            return true;
-        }
-        return false;
-    }
-
     private static String getString(String property) {
         if (System.getProperty(property) == null) {
             return null;
@@ -165,7 +156,13 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
     }
 
     public OCLContext getPlatformContext(final int index) {
-        return contexts.get(index);
+        if (index < contexts.size()) {
+            return contexts.get(index);
+        } else {
+            // We return device 0 by default
+            // This only happens if we ignore a platform
+            return contexts.get(0);
+        }
     }
 
     @Override

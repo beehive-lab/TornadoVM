@@ -50,13 +50,11 @@ public interface TornadoDevice {
 
     public int streamOut(Object object, DeviceObjectState objectState);
 
-    public int streamOut(Object object, DeviceObjectState objectState,
-            int[] list);
+    public int streamOut(Object object, DeviceObjectState objectState, int[] list);
 
     public void streamOutBlocking(Object object, DeviceObjectState objectState);
 
-    public void streamOutBlocking(Object object, DeviceObjectState objectState,
-            int[] list);
+    public void streamOutBlocking(Object object, DeviceObjectState objectState, int[] list);
 
     public TornadoInstalledCode installCode(SchedulableTask task);
 
@@ -89,7 +87,7 @@ public interface TornadoDevice {
     public void dumpEvents();
 
     public void dumpMemory(String file);
-    
+
     public String getPlatformName();
 
 }

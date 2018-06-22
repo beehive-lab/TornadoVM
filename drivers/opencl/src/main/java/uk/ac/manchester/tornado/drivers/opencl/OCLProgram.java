@@ -55,28 +55,21 @@ public class OCLProgram extends TornadoLogger {
     public OCLProgram(long id, OCLDeviceContext deviceContext) {
         this.id = id;
         this.deviceContext = deviceContext;
-        this.devices = new long[]{deviceContext.getDeviceId()};
+        this.devices = new long[] { deviceContext.getDeviceId() };
         this.kernels = new ArrayList<>();
         this.buffer = ByteBuffer.allocate(8192);
         this.buffer.order(OpenCL.BYTE_ORDER);
     }
 
-//	static {
-//		System.loadLibrary(OpenCL.OPENCL_LIBRARY);
-//	}
     native static void clReleaseProgram(long programId) throws OCLException;
 
-    native static void clBuildProgram(long programId, long[] devices,
-            String options) throws OCLException;
+    native static void clBuildProgram(long programId, long[] devices, String options) throws OCLException;
 
-    native static void clGetProgramInfo(long programId, int param, byte[] buffer)
-            throws OCLException;
+    native static void clGetProgramInfo(long programId, int param, byte[] buffer) throws OCLException;
 
-    native static void clGetProgramBuildInfo(long programId, long deviceId,
-            int param, byte[] buffer) throws OCLException;
+    native static void clGetProgramBuildInfo(long programId, long deviceId, int param, byte[] buffer) throws OCLException;
 
-    native static long clCreateKernel(long programId, String name)
-            throws OCLException;
+    native static long clCreateKernel(long programId, String name) throws OCLException;
 
     native static void getBinaries(long programId, long numDevices, ByteBuffer buffer) throws OCLException;
 
@@ -84,9 +77,7 @@ public class OCLProgram extends TornadoLogger {
         OCLBuildStatus result = CL_BUILD_UNKNOWN;
         buffer.clear();
         try {
-            clGetProgramBuildInfo(id, deviceId,
-                    CL_PROGRAM_BUILD_STATUS.getValue(),
-                    buffer.array());
+            clGetProgramBuildInfo(id, deviceId, CL_PROGRAM_BUILD_STATUS.getValue(), buffer.array());
             result = OCLBuildStatus.toEnum(buffer.getInt());
         } catch (OCLException e) {
             error(e.getMessage());
@@ -98,17 +89,14 @@ public class OCLProgram extends TornadoLogger {
         String result = "";
         buffer.clear();
         try {
-            clGetProgramBuildInfo(id, deviceId,
-                    CL_PROGRAM_BUILD_LOG.getValue(),
-                    buffer.array());
-            
+            clGetProgramBuildInfo(id, deviceId, CL_PROGRAM_BUILD_LOG.getValue(), buffer.array());
+
             result = new String(buffer.array(), "ASCII");
         } catch (OCLException | UnsupportedEncodingException e) {
             error(e.getMessage());
             e.printStackTrace();
         }
         result = result.substring(0, result.indexOf('\0'));
-        //System.out.println(result);
         return result;
     }
 
@@ -120,17 +108,6 @@ public class OCLProgram extends TornadoLogger {
         } catch (OCLException e) {
             error(e.getMessage());
         }
-
-//        for (long device : devices) {
-//            if (getStatus(device) != CL_BUILD_SUCCESS) {
-//                StringBuilder sb = new StringBuilder();
-//                sb.append(String.format("build: device=0x%x, status=%s:\n",
-//                        device, getStatus(device)));
-//                sb.append(getBuildLog(device));
-//                error(sb.toString().trim());
-//                return false;
-//            }
-//        }
     }
 
     public void cleanup() {
@@ -149,9 +126,7 @@ public class OCLProgram extends TornadoLogger {
         int result = 0;
         buffer.clear();
         try {
-            clGetProgramInfo(id,
-                    CL_PROGRAM_NUM_DEVICES.getValue(),
-                    buffer.array());
+            clGetProgramInfo(id, CL_PROGRAM_NUM_DEVICES.getValue(), buffer.array());
             result = buffer.getInt();
         } catch (OCLException e) {
             error(e.getMessage());
@@ -165,9 +140,7 @@ public class OCLProgram extends TornadoLogger {
         long result[] = new long[numDevices];
         buffer.clear();
         try {
-            clGetProgramInfo(id,
-                    CL_PROGRAM_DEVICES.getValue(),
-                    buffer.array());
+            clGetProgramInfo(id, CL_PROGRAM_DEVICES.getValue(), buffer.array());
             for (int i = 0; i < numDevices; i++) {
                 result[i] = buffer.getLong();
             }
@@ -183,9 +156,7 @@ public class OCLProgram extends TornadoLogger {
         long result[] = new long[numDevices];
         buffer.clear();
         try {
-            clGetProgramInfo(id,
-                    CL_PROGRAM_BINARY_SIZES.getValue(),
-                    buffer.array());
+            clGetProgramInfo(id, CL_PROGRAM_BINARY_SIZES.getValue(), buffer.array());
             for (int i = 0; i < numDevices; i++) {
                 result[i] = buffer.getLong();
             }
@@ -221,8 +192,7 @@ public class OCLProgram extends TornadoLogger {
             getBinaries(id, numDevices, binary);
 
             info("dumping binary %s", filenamePrefix);
-            try (FileOutputStream fis = new FileOutputStream(filenamePrefix);
-                    FileChannel vChannel = fis.getChannel();) {
+            try (FileOutputStream fis = new FileOutputStream(filenamePrefix); FileChannel vChannel = fis.getChannel();) {
                 binary.position(offset);
                 binary.limit(offset + (int) sizes[index]);
                 vChannel.write(binary);
@@ -240,11 +210,9 @@ public class OCLProgram extends TornadoLogger {
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(String.format("program: id=0x%x, num devices=%d\n", id,
-                devices.length));
+        sb.append(String.format("program: id=0x%x, num devices=%d\n", id, devices.length));
         for (long device : devices) {
-            sb.append(String.format("device: id=0x%x, status=%s\n", device,
-                    getStatus(device)));
+            sb.append(String.format("device: id=0x%x, status=%s\n", device, getStatus(device)));
         }
 
         return sb.toString();
@@ -253,8 +221,7 @@ public class OCLProgram extends TornadoLogger {
     public OCLKernel getKernel(String entryPoint) {
         OCLKernel kernel = null;
         try {
-            kernel = new OCLKernel(clCreateKernel(id, entryPoint),
-                    deviceContext);
+            kernel = new OCLKernel(clCreateKernel(id, entryPoint), deviceContext);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -264,13 +231,7 @@ public class OCLProgram extends TornadoLogger {
 
     public void dump() {
         final int numDevices = getNumDevices();
-        // final long[] sizes = getBinarySizes();
         debug("Num devices: %d", numDevices);
-        for (int i = 0; i < numDevices; i++) {
-            // debug("size[%d]: %s", i,
-            // RuntimeUtilities.humanReadableByteCount(sizes[i], true));
-            // dumpBinaries("./binaries/simple");
-        }
     }
 
 }
