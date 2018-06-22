@@ -201,8 +201,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
     public int submitWithEvents(final OCLCallStack stack, final TaskMetaData meta, final int[] events) {
 
-        System.out.print("SUBMIT CODE" + "\n");
-
         if (DEBUG) {
             info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getName());
             info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(), stack.toAbsoluteAddress(), stack.toRelativeAddress());

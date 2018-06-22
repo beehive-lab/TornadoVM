@@ -115,7 +115,6 @@ public class OCLCodeCache {
         }
 
         if (OPENCL_CACHE_ENABLE) {
-            // if (OPENCL_CACHE_ENABLE || OPENCL_LOAD_BINS) {
             info("loading binaries into code cache");
             load();
         }
@@ -377,7 +376,6 @@ public class OCLCodeCache {
     }
 
     private void writeToFile(String file, byte[] binary) {
-
         info("dumping binary %s", file);
         try (FileOutputStream fis = new FileOutputStream(file);) {
             fis.write(binary);
@@ -390,7 +388,6 @@ public class OCLCodeCache {
         for (OCLInstalledCode code : cache.values()) {
             code.invalidate();
         }
-
         cache.clear();
     }
 

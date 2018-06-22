@@ -182,6 +182,12 @@ public class TestsVirtualLayer {
         }
     }
 
+    /**
+     * Tasks within the same task schedules are always executed on the same
+     * device. Currently, it is not possible to change device for a single tasks
+     * in a group of tasks.
+     * 
+     */
     @Test
     public void testVirtualLayer03() {
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
@@ -197,10 +203,7 @@ public class TestsVirtualLayer {
         Arrays.fill(dataB, 200);
 
         TaskSchedule s0 = new TaskSchedule("s0");
-
-        // s0.setDevice(driver.getDevice(0));
         s0.task("t0", TestsVirtualLayer::testA, dataA, 1);
-        // s0.setDevice(driver.getDevice(1));
         s0.task("t1", TestsVirtualLayer::testA, dataB, 10);
         s0.streamOut(dataA);
         s0.streamOut(dataB);
