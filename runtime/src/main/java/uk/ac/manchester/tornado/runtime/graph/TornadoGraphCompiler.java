@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.api.CompilableTask;
+import uk.ac.manchester.tornado.runtime.graph.GraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextOpNode;
@@ -109,8 +110,8 @@ public class TornadoGraphCompiler {
         final byte[] code = result.getCode();
         final int codeSize = result.getCodeSize();
 
-        if (code[codeSize - 13] == GraphAssembler.STREAM_OUT) {
-            code[codeSize - 13] = GraphAssembler.STREAM_OUT_BLOCKING;
+        if (code[codeSize - 13] == TornadoVMBytecodes.STREAM_OUT.index()) {
+            code[codeSize - 13] = TornadoVMBytecodes.STREAM_OUT_BLOCKING.index();
         } else {
             result.barrier(numDepLists);
         }
