@@ -70,14 +70,14 @@ public abstract class AbstractTaskGraph {
         ARG_LIST ((byte)4),
         CONTEXT  ((byte)5);
         
-        private byte indexID;
+        private byte index;
         
-        TornadoGraphBitcodes(byte indexID) {
-            this.indexID = indexID;
+        TornadoGraphBitcodes(byte index) {
+            this.index = index;
         }
         
-        public byte getIndexID() {
-            return indexID;
+        public byte index() {
+            return index;
         }
         
     }
@@ -134,7 +134,7 @@ public abstract class AbstractTaskGraph {
 
         }
 
-        hlBuffer.put(TornadoGraphBitcodes.CONTEXT.getIndexID());
+        hlBuffer.put(TornadoGraphBitcodes.CONTEXT.index());
         int globalTaskId = graphContext.getTaskCount();
         hlBuffer.putInt(globalTaskId);
         graphContext.incrGlobalTaskCount();
@@ -142,23 +142,23 @@ public abstract class AbstractTaskGraph {
 
         // create parameter list
         final Object[] args = task.getArguments();
-        hlBuffer.put(TornadoGraphBitcodes.ARG_LIST.getIndexID());
+        hlBuffer.put(TornadoGraphBitcodes.ARG_LIST.index());
         hlBuffer.putInt(args.length);
 
         for (int i = 0; i < args.length; i++) {
             final Object arg = args[i];
             index = graphContext.insertVariable(arg);
             if (arg.getClass().isPrimitive() || isBoxedPrimitiveClass(arg.getClass())) {
-                hlBuffer.put(TornadoGraphBitcodes.LOAD_PRIM.getIndexID());
+                hlBuffer.put(TornadoGraphBitcodes.LOAD_PRIM.index());
             } else {
                 guarantee(arg != null, "null argument passed to task");
-                hlBuffer.put(TornadoGraphBitcodes.LOAD_REF.getIndexID());
+                hlBuffer.put(TornadoGraphBitcodes.LOAD_REF.index());
             }
             hlBuffer.putInt(index);
         }
 
         // launch code
-        hlBuffer.put(TornadoGraphBitcodes.LAUNCH.getIndexID());
+        hlBuffer.put(TornadoGraphBitcodes.LAUNCH.index());
     }
 
     private void updateDeviceContext(TornadoGraph graph) {

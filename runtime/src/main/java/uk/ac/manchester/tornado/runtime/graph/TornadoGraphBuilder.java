@@ -83,12 +83,12 @@ public class TornadoGraphBuilder {
         while (!shouldExit && buffer.hasRemaining()) {
             final byte op = buffer.get();
 
-            if (op == TornadoGraphBitcodes.ARG_LIST.getIndexID()) {
+            if (op == TornadoGraphBitcodes.ARG_LIST.index()) {
                 final int size = buffer.getInt();
                 args = new AbstractNode[size];
                 argIndex = 0;
                 taskNode = new TaskNode(context, taskIndex, args);
-            } else if (op == TornadoGraphBitcodes.LOAD_REF.getIndexID()) {
+            } else if (op == TornadoGraphBitcodes.LOAD_REF.index()) {
                 final int variableIndex = buffer.getInt();
 
                 final AbstractNode arg = objectNodes[variableIndex];
@@ -149,14 +149,14 @@ public class TornadoGraphBuilder {
 
                 objectNodes[variableIndex] = nextAccessNode;
                 argIndex++;
-            } else if (op == TornadoGraphBitcodes.LOAD_PRIM.getIndexID()) {
+            } else if (op == TornadoGraphBitcodes.LOAD_PRIM.index()) {
                 final int variableIndex = buffer.getInt();
                 args[argIndex] = constantNodes[variableIndex];
                 argIndex++;
-            } else if (op == TornadoGraphBitcodes.LAUNCH.getIndexID()) {
+            } else if (op == TornadoGraphBitcodes.LAUNCH.index()) {
                 context.addUse(taskNode);
                 graph.add(taskNode);
-            } else if (op == TornadoGraphBitcodes.CONTEXT.getIndexID()) {
+            } else if (op == TornadoGraphBitcodes.CONTEXT.index()) {
                 final int globalTaskId = buffer.getInt();
                 taskIndex = buffer.getInt();
                 task = graphContext.getTask(taskIndex);
