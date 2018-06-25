@@ -62,15 +62,37 @@ public abstract class AbstractTaskGraph {
     private final ExecutionContext graphContext;
 
     // @formatter:off
-    public final static byte D2HCPY = 20;   // D2HCPY(device, host, index)
-    public final static byte H2DCPY = 21;   // H2DCPY(host, device, index)
-    public final static byte MODIFY = 30;   // HMODIFY(index)
-    public final static byte LOAD_REF = 8;  // LOAD_REF(index)
-    public final static byte LOAD_PRIM = 9; // LOAD_PRIM(index)
-    public final static byte LAUNCH = 10;   // LAUNCH() (args [, events])
-    public final static byte DSYNC = 22;    // DSYNC(device)
-    public final static byte ARG_LIST = 11; // ARG_LIST(size)
-    public final static byte CONTEXT = 12;  // FRAME(tasktodevice_index, task_index)
+    public enum TornadoGraphBitcodes {
+        
+        LOAD_REF ((byte)2), 
+        LOAD_PRIM((byte)4), 
+        LAUNCH   ((byte)6), 
+        ARG_LIST ((byte)8),
+        CONTEXT  ((byte)10);
+        
+        private byte index;
+        
+        TornadoGraphBitcodes(byte index) {
+            this.index = index;
+        }
+        
+        public byte getIndex() {
+            return index;
+        }
+        
+    }
+    // @formatter:on
+
+    // @formatter:off
+    //public final static byte D2HCPY = 20;   // D2HCPY(device, host, index)
+    //public final static byte H2DCPY = 21;   // H2DCPY(host, device, index)
+    //public final static byte MODIFY = 30;   // HMODIFY(index)
+    //public final static byte LOAD_REF = 8;  // LOAD_REF(index)
+    //public final static byte LOAD_PRIM = 9; // LOAD_PRIM(index)
+    //public final static byte LAUNCH = 10;   // LAUNCH() (args [, events])
+    //public final static byte DSYNC = 22;    // DSYNC(device)
+    //public final static byte ARG_LIST = 11; // ARG_LIST(size)
+    //public final static byte CONTEXT = 12;  // FRAME(tasktodevice_index, task_index)
     // @formatter:on
 
     private byte[] hlcode = new byte[2048];
@@ -124,7 +146,7 @@ public abstract class AbstractTaskGraph {
 
         }
 
-        hlBuffer.put(CONTEXT);
+        hlBuffer.put(TornadoGraphBitcodes.CONTEXT.getIndex());
         int globalTaskId = graphContext.getTaskCount();
         hlBuffer.putInt(globalTaskId);
         graphContext.incrGlobalTaskCount();
@@ -132,23 +154,23 @@ public abstract class AbstractTaskGraph {
 
         // create parameter list
         final Object[] args = task.getArguments();
-        hlBuffer.put(ARG_LIST);
+        hlBuffer.put(TornadoGraphBitcodes.ARG_LIST.getIndex());
         hlBuffer.putInt(args.length);
 
         for (int i = 0; i < args.length; i++) {
             final Object arg = args[i];
             index = graphContext.insertVariable(arg);
             if (arg.getClass().isPrimitive() || isBoxedPrimitiveClass(arg.getClass())) {
-                hlBuffer.put(LOAD_PRIM);
+                hlBuffer.put(TornadoGraphBitcodes.LOAD_PRIM.getIndex());
             } else {
                 guarantee(arg != null, "null argument passed to task");
-                hlBuffer.put(LOAD_REF);
+                hlBuffer.put(TornadoGraphBitcodes.LOAD_REF.getIndex());
             }
             hlBuffer.putInt(index);
         }
 
         // launch code
-        hlBuffer.put(LAUNCH);
+        hlBuffer.put(TornadoGraphBitcodes.LAUNCH.getIndex());
     }
 
     private void updateDeviceContext(TornadoGraph graph) {
