@@ -33,9 +33,9 @@ import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.runtime.api.AbstractTaskGraph.TornadoGraphBitcodes;
 import uk.ac.manchester.tornado.runtime.api.CompilableTask;
 import uk.ac.manchester.tornado.runtime.api.LocalObjectState;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ConstantNode;
@@ -83,12 +83,12 @@ public class TornadoGraphBuilder {
         while (!shouldExit && buffer.hasRemaining()) {
             final byte op = buffer.get();
 
-            if (op == TaskSchedule.ARG_LIST) {
+            if (op == TornadoGraphBitcodes.ARG_LIST.index()) {
                 final int size = buffer.getInt();
                 args = new AbstractNode[size];
                 argIndex = 0;
                 taskNode = new TaskNode(context, taskIndex, args);
-            } else if (op == TaskSchedule.LOAD_REF) {
+            } else if (op == TornadoGraphBitcodes.LOAD_REF.index()) {
                 final int variableIndex = buffer.getInt();
 
                 final AbstractNode arg = objectNodes[variableIndex];
@@ -149,14 +149,14 @@ public class TornadoGraphBuilder {
 
                 objectNodes[variableIndex] = nextAccessNode;
                 argIndex++;
-            } else if (op == TaskSchedule.LOAD_PRIM) {
+            } else if (op == TornadoGraphBitcodes.LOAD_PRIM.index()) {
                 final int variableIndex = buffer.getInt();
                 args[argIndex] = constantNodes[variableIndex];
                 argIndex++;
-            } else if (op == TaskSchedule.LAUNCH) {
+            } else if (op == TornadoGraphBitcodes.LAUNCH.index()) {
                 context.addUse(taskNode);
                 graph.add(taskNode);
-            } else if (op == TaskSchedule.CONTEXT) {
+            } else if (op == TornadoGraphBitcodes.CONTEXT.index()) {
                 final int globalTaskId = buffer.getInt();
                 taskIndex = buffer.getInt();
                 task = graphContext.getTask(taskIndex);
