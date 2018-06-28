@@ -39,6 +39,9 @@ import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.api.Reduce;
 import uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.runtime.TornadoDriver;
+import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -52,8 +55,18 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
     @Test
     public void testReductionAnnotationCPUSimple() {
+
+        // This test has to be executed on CPU
+        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        OCLTornadoDevice device = (OCLTornadoDevice) driver.getDefaultDevice();
+        if (device.getDevice().getDeviceType() != OCLDeviceType.CL_DEVICE_TYPE_CPU) {
+            return;
+        }
+
+        int numProcessors = Runtime.getRuntime().availableProcessors();
+
         int[] input = new int[SMALL_SIZE];
-        int[] result = new int[SMALL_SIZE / 8];
+        int[] result = new int[numProcessors];
 
         IntStream.range(0, SMALL_SIZE).parallel().forEach(i -> {
             input[i] = 2;
@@ -336,8 +349,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 break;
         }
 
-        Random r = new Random();
-
         IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
             a[i] = 10;
             b[i] = 2;
@@ -357,12 +368,15 @@ public class TestReductionsIntegers extends TornadoTestBase {
         }
 
         int[] sequential = new int[BIG_SIZE];
-
         mapReduce01(a, b, c, sequential);
 
         assertEquals(sequential[0], result[0]);
     }
 
+    /**
+     * Currently we cannot do this due to synchronisation between the first part
+     * and the second part, unless an explicit barrier is used.
+     */
     @Ignore
     public void testMapReduceSameKernel() {
         int[] a = new int[BIG_SIZE];
@@ -430,20 +444,18 @@ public class TestReductionsIntegers extends TornadoTestBase {
         }
         int[] result = new int[numGroups];
 
-        Random r = new Random();
-
         IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
             a[i] = 1;
             b[i] = 2;
         });
 
         //@formatter:off
-	        new TaskSchedule("s0")
-	            .streamIn(a)
-	            .task("t0", TestReductionsIntegers::mapReduce2, a, b, result)
-	            .streamOut(result)
-	            .execute();
-	        //@formatter:on
+	    new TaskSchedule("s0")
+	         .streamIn(a)
+	         .task("t0", TestReductionsIntegers::mapReduce2, a, b, result)
+	         .streamOut(result)
+	         .execute();
+	    //@formatter:on
 
         for (int i = 1; i < numGroups; i++) {
             result[0] += result[i];
@@ -483,15 +495,14 @@ public class TestReductionsIntegers extends TornadoTestBase {
         });
 
         //@formatter:off
-		        new TaskSchedule("s0")
-		            .streamIn(a)
-		            .task("t0", TestReductionsIntegers::testThreadSchuler, a, b, result)
-		            .streamOut(result)
-		            .execute();
-		        //@formatter:on
+        new TaskSchedule("s0")
+            .streamIn(a)
+            .task("t0", TestReductionsIntegers::testThreadSchuler, a, b, result)
+            .streamOut(result)
+            .execute();
+        //@formatter:on
 
         int[] sequential = new int[SMALL_SIZE * 2];
-
         testThreadSchuler(a, b, sequential);
 
         assertEquals(sequential[0], result[0], 0.001f);
@@ -534,7 +545,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
                 break;
         }
 
-        Random r = new Random();
         IntStream.range(0, SMALL_SIZE).sequential().forEach(i -> {
             input[i] = 2;
         });
@@ -555,7 +565,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] sequential = new int[1];
         reductionAddInts2(input, sequential);
 
-        // Check result
         assertEquals(sequential[0], result[0]);
     }
 
