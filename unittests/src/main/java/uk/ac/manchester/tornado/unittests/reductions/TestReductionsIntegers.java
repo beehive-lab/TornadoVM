@@ -106,6 +106,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
         }
     }
 
+    public static void reductionAnnotation2(int[] input, @Reduce int[] result) {
+        result[0] = 0;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] += input[i];
+        }
+    }
+
     @Test
     public void testReductionAnnotation() {
         int[] input = new int[SIZE];
@@ -137,7 +144,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         //@formatter:off
 		new TaskSchedule("s0")
 			.streamIn(input)
-			.task("t0", TestReductionsIntegers::reductionAnnotation, input, result)
+			.task("t0", TestReductionsIntegers::reductionAnnotation2, input, result)
 			.streamOut(result)
 			.execute();
 		//@formatter:on
