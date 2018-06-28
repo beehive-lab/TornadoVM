@@ -75,15 +75,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
             result[0] += result[i];
         }
 
-        System.out.println(Arrays.toString(result));
-
         // Check result
         assertEquals(sequential[0], result[0]);
     }
 
     /**
-     * First approach: use annotations in the user code to identify the reduction
-     * variables. This is a similar approach to OpenMP and OpenACC.
+     * First approach: use annotations in the user code to identify the
+     * reduction variables. This is a similar approach to OpenMP and OpenACC.
      * 
      * @param input
      * @param result
@@ -123,8 +121,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         for (int i = 1; i < numGroups; i++) {
             result[0] += result[i];
         }
-
-        System.out.println(Arrays.toString(result));
 
         // Check result
         assertEquals(sequential[0], result[0]);
@@ -204,8 +200,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         int[] sequential = new int[1];
         maxReductionAnnotation(input, sequential, 1);
-
-        System.out.println(Arrays.toString(result));
 
         // Check result
         assertEquals(sequential[0], result[0]);
@@ -395,8 +389,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .streamOut(result)
             .execute();
         //@formatter:on
-
-        System.out.println(Arrays.toString(result));
 
         for (int i = 1; i < numGroups; i++) {
             result[0] += result[i];

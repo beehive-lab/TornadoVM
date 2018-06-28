@@ -28,20 +28,15 @@ package uk.ac.manchester.tornado.drivers.opencl.runtime;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.meta.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.api.PrebuiltTask;
 
 public class OCLPrebuiltTask extends PrebuiltTask {
 
     private OCLInstalledCode code;
-    private final OCLBackend backend;
 
-    protected OCLPrebuiltTask(ScheduleMetaData meta, String id, String entryPoint, String filename, Object[] args,
-            Access[] access, OCLTornadoDevice device, DomainTree domain) {
+    protected OCLPrebuiltTask(ScheduleMetaData meta, String id, String entryPoint, String filename, Object[] args, Access[] access, OCLTornadoDevice device, DomainTree domain) {
         super(meta, id, entryPoint, filename, args, access, device, domain);
-
-        backend = device.getBackend();
     }
 
     public void dumpCode() {
@@ -51,20 +46,7 @@ public class OCLPrebuiltTask extends PrebuiltTask {
 
     }
 
-//    public void compile() {
-//        final Path path = Paths.get(filename);
-//        guarantee(path.toFile().exists(), "file does not exist: %s", filename);
-//        try {
-//            final byte[] source = Files.readAllBytes(path);
-//            code = backend.getCodeCache().addMethod(null, entryPoint,
-//                    source);
-//        } catch (IOException e) {
-//            shouldNotReachHere();
-//        }
-//
-//    }
     public OCLInstalledCode getCode() {
         return code;
     }
-
 }

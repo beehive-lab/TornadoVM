@@ -26,18 +26,21 @@
 package uk.ac.manchester.tornado.drivers.opencl.enums;
 
 public enum OCLProfilingInfo {
+
+    // @formatter:off
 	CL_PROFILING_COMMAND_QUEUED(0x1280),
 	CL_PROFILING_COMMAND_SUBMIT(0x1281),
 	CL_PROFILING_COMMAND_START(0x1282),
 	CL_PROFILING_COMMAND_END(0x1283);
+    // @formatter:on
 
-	private final int	value;
+    private final long value;
 
-	OCLProfilingInfo(final int v) {
-		value = v;
-	}
+    OCLProfilingInfo(final long v) {
+        value = v;
+    }
 
-	public int getValue() {
-		return value;
-	}
+    public long getValue() {
+        return value;
+    }
 }

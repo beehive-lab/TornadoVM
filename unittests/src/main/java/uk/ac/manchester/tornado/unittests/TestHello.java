@@ -70,7 +70,6 @@ public class TestHello extends TornadoTestBase {
         } catch (Exception e) {
             assertTrue("Task was not executed.", false);
         }
-
     }
 
     @Test
@@ -84,7 +83,10 @@ public class TestHello extends TornadoTestBase {
         Arrays.fill(b, 2);
 
         // @formatter:off
-		new TaskSchedule("s0").task("t0", TestHello::add, a, b, c).streamOut(c).execute();
+		new TaskSchedule("s0")
+		    .task("t0", TestHello::add, a, b, c)
+		    .streamOut(c)
+		    .execute();
 		// @formatter:on
 
         for (int i = 0; i < c.length; i++) {

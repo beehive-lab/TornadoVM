@@ -25,10 +25,6 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
-import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.STREAM_OUT;
-import static uk.ac.manchester.tornado.runtime.graph.GraphAssembler.STREAM_OUT_BLOCKING;
-
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
@@ -40,10 +36,11 @@ import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.StructuredGraph;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.graal.nodes.ParallelRangeNode;
+import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.api.CompilableTask;
+import uk.ac.manchester.tornado.runtime.graph.GraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextOpNode;
@@ -52,7 +49,7 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 
-public class GraphCompiler {
+public class TornadoGraphCompiler {
 
     /**
      * Generate Tornado bytecode from a Tornado Task Graph.
@@ -61,7 +58,7 @@ public class GraphCompiler {
      * @param context
      * @return {@link GraphCompilationResult}
      */
-    public static GraphCompilationResult compile(Graph graph, ExecutionContext context) {
+    public static GraphCompilationResult compile(TornadoGraph graph, ExecutionContext context) {
         final BitSet deviceContexts = graph.filter(ContextNode.class);
         if (deviceContexts.cardinality() == 1) {
             final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
@@ -75,13 +72,12 @@ public class GraphCompiler {
     /*
      * Simplest case where all tasks are executed on the same device
      */
-    private static GraphCompilationResult compileSingleContext(Graph graph, ExecutionContext context, TornadoDevice device) {
+    private static GraphCompilationResult compileSingleContext(TornadoGraph graph, ExecutionContext context, TornadoDevice device) {
 
         final GraphCompilationResult result = new GraphCompilationResult();
 
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
-        // System.out.printf("found: [%s]\n", toString(asyncNodes));
         final BitSet[] deps = new BitSet[asyncNodes.cardinality()];
         final BitSet tasks = new BitSet(asyncNodes.cardinality());
         final int[] nodeIds = new int[asyncNodes.cardinality()];
@@ -93,11 +89,6 @@ public class GraphCompiler {
 
             if (graph.getNode(i) instanceof TaskNode) {
                 tasks.set(index);
-                final TaskNode taskNode = (TaskNode) graph.getNode(i);
-                final SchedulableTask task = context.getTask(taskNode.getTaskIndex());
-                // System.out.printf("node: %s %s\n", task.getName(), taskNode);
-            } else {
-                // System.out.printf("node: %s\n", graph.getNode(i));
             }
 
             if (!deps[index].isEmpty()) {
@@ -109,12 +100,9 @@ public class GraphCompiler {
         result.begin(1, tasks.cardinality(), numDepLists + 1);
 
         schedule(result, graph, context, nodeIds, deps, tasks);
-        // optimise(result, graph, context, nodeIds, deps, tasks);
         peephole(result, numDepLists);
 
         result.end();
-
-        // result.dump();
         return result;
     }
 
@@ -122,15 +110,15 @@ public class GraphCompiler {
         final byte[] code = result.getCode();
         final int codeSize = result.getCodeSize();
 
-        if (code[codeSize - 13] == STREAM_OUT) {
-            code[codeSize - 13] = STREAM_OUT_BLOCKING;
+        if (code[codeSize - 13] == TornadoVMBytecodes.STREAM_OUT.index()) {
+            code[codeSize - 13] = TornadoVMBytecodes.STREAM_OUT_BLOCKING.index();
         } else {
             result.barrier(numDepLists);
         }
     }
 
     @SuppressWarnings("unused")
-    private static void optimise(GraphCompilationResult result, Graph graph, ExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
+    private static void optimise(GraphCompilationResult result, TornadoGraph graph, ExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
         printMatrix(graph, nodeIds, deps, tasks);
         for (int i = tasks.nextSetBit(0); i >= 0; i = tasks.nextSetBit(i + 1)) {
             BitSet dependents = new BitSet(deps[i].length());
@@ -155,8 +143,8 @@ public class GraphCompiler {
 
                 CompilableTask t1 = (CompilableTask) context.getTask(firstTask.getTaskIndex());
                 CompilableTask t2 = (CompilableTask) context.getTask(dependentTask.getTaskIndex());
-                ResolvedJavaMethod rm1 = getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
-                ResolvedJavaMethod rm2 = getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
+                ResolvedJavaMethod rm1 = TornadoRuntime.getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
+                ResolvedJavaMethod rm2 = TornadoRuntime.getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
                 Sketch sketch1 = TornadoSketcher.lookup(rm1);
                 Sketch sketch2 = TornadoSketcher.lookup(rm2);
                 StructuredGraph g1 = (StructuredGraph) sketch1.getGraph().getReadonlyCopy();
@@ -190,16 +178,13 @@ public class GraphCompiler {
         }
     }
 
-    private static void schedule(GraphCompilationResult result, Graph graph, ExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
+    private static void schedule(GraphCompilationResult result, TornadoGraph graph, ExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
 
         final BitSet scheduled = new BitSet(deps.length);
         scheduled.clear();
         final BitSet nodes = new BitSet(graph.getValid().length());
-
-        // System.out.println("----- event lists ------");
         final int[] depLists = new int[deps.length];
         Arrays.fill(depLists, -1);
-
         int index = 0;
         for (int i = 0; i < deps.length; i++) {
             if (!deps[i].isEmpty()) {
@@ -215,8 +200,6 @@ public class GraphCompiler {
         }
 
         while (scheduled.cardinality() < deps.length) {
-            // System.out.printf("nodes: %s\n", toString(nodes));
-            // System.out.printf("scheduled: %s\n", toString(scheduled));
             for (int i = 0; i < deps.length; i++) {
                 if (!scheduled.get(i)) {
 
@@ -224,8 +207,6 @@ public class GraphCompiler {
                     outstandingDeps.or(deps[i]);
                     outstandingDeps.andNot(nodes);
 
-                    // System.out.printf("trying: %d -
-                    // %s\n",nodeIds[i],toString(outstandingDeps));
                     if (outstandingDeps.isEmpty()) {
                         final ContextOpNode asyncNode = (ContextOpNode) graph.getNode(nodeIds[i]);
 
@@ -235,8 +216,6 @@ public class GraphCompiler {
                             if (j == i) {
                                 continue;
                             }
-                            // System.out.printf("checking: %d -
-                            // %s\n",nodeIds[j],toString(deps[j]));
                             if (deps[j].get(nodeIds[i]) && depLists[j] != -1) {
                                 result.emitAddDep(depLists[j]);
                             }
@@ -261,19 +240,16 @@ public class GraphCompiler {
         return sb.toString();
     }
 
-    private static void printMatrix(Graph graph, int[] nodeIds, BitSet[] deps, BitSet tasks) {
-
+    private static void printMatrix(TornadoGraph graph, int[] nodeIds, BitSet[] deps, BitSet tasks) {
         System.out.println("dependency matrix...");
         for (int i = 0; i < nodeIds.length; i++) {
             final int nodeId = nodeIds[i];
             System.out.printf("%d [%s]| %s\n", nodeId, (tasks.get(i)) ? "task" : "data", toString(deps[i]));
         }
-
     }
 
-    private static BitSet calculateDeps(Graph graph, ExecutionContext context, int i) {
+    private static BitSet calculateDeps(TornadoGraph graph, ExecutionContext context, int i) {
         final BitSet deps = new BitSet(graph.getValid().length());
-
         final AbstractNode node = graph.getNode(i);
         for (AbstractNode input : node.getInputs()) {
             if (input instanceof ContextOpNode) {
@@ -284,7 +260,6 @@ public class GraphCompiler {
                 }
             }
         }
-
         return deps;
     }
 

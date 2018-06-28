@@ -34,8 +34,10 @@ import static uk.ac.manchester.tornado.common.Tornado.warn;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -51,9 +53,11 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 
 public class OCLCodeCache {
 
+    public static final String LOOKUP_BUFFER_KERNEL_NAME = "lookupBufferAddress";
+
     private final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", "False"));
-    private final boolean OPENCL_LOAD_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.load", "False"));
+    private final boolean OPENCL_LOAD_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.loadbin", "False"));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", "False"));
     private final boolean OPENCL_DUMP_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.dump", "False"));
     private final boolean OPENCL_PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.print", "False"));
@@ -61,18 +65,122 @@ public class OCLCodeCache {
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-logs");
 
+    /**
+     * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
+     * 
+     * e.g.
+     * 
+     * <p>
+     * <code>
+     * -Dtornado.precompiled.binary=</tmp/saxpy,s0.t0.device=0:1>
+     * </code>
+     * </p>
+     */
+    private final String OPENCL_BINARIES = getProperty("tornado.precompiled.binary", null);
+
+    /**
+     * Configuration File with all paths to the OpenCl pre-compiled binaries:
+     * -Dtornado.precompiled.listFile=<path/to/file>
+     * 
+     * <p>
+     * <code>
+     * -Dtornado.precompiled.listFile=./fileConfigFPGAs
+     * </code>
+     * </p>
+     * 
+     */
+    private final String OPENCL_FILE_BINARIES = getProperty("tornado.precompiled.listFile", null);
+
     private final boolean PRINT_WARNINGS = false;
 
     private final Map<String, OCLInstalledCode> cache;
     private final OCLDeviceContext deviceContext;
 
+    private boolean kernelAvailable;
+
+    private HashMap<String, String> precompiledBinariesPerDevice;
+
     public OCLCodeCache(OCLDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
         cache = new HashMap<>();
 
-        if (OPENCL_CACHE_ENABLE || OPENCL_LOAD_BINS) {
+        if (OPENCL_BINARIES != null) {
+            precompiledBinariesPerDevice = new HashMap<>();
+            processPrecompiledBinaries(null);
+        }
+
+        if (OPENCL_FILE_BINARIES != null) {
+            precompiledBinariesPerDevice = new HashMap<>();
+            processPrecompiledBinariesFromFile();
+        }
+
+        if (OPENCL_CACHE_ENABLE) {
             info("loading binaries into code cache");
             load();
+        }
+    }
+
+    private void processPrecompiledBinaries(String binList) {
+        String[] binaries = null;
+
+        if (binList == null) {
+            binaries = OPENCL_BINARIES.split(",");
+        } else {
+            binaries = binList.split(",");
+        }
+
+        if ((binaries.length % 2) != 0) {
+            throw new RuntimeException("tornado.precompiled.binary=<path> , device ");
+        }
+
+        for (int i = 0; i < binaries.length; i += 2) {
+            String binaryFile = binaries[i];
+            String taskAndDeviceInfo = binaries[i + 1];
+            precompiledBinariesPerDevice.put(taskAndDeviceInfo, binaryFile);
+
+            // For each entry, we should add also an entry for lookup-buffer
+            String device = taskAndDeviceInfo.split("\\.")[2];
+            String kernelName = "oclbackend.lookupBufferAddress." + device;
+            precompiledBinariesPerDevice.put(kernelName, binaryFile);
+        }
+    }
+
+    private void processPrecompiledBinariesFromFile() {
+        StringBuilder listBinaries = new StringBuilder();
+        BufferedReader fileContent = null;
+        try {
+            fileContent = new BufferedReader(new FileReader(OPENCL_FILE_BINARIES));
+            String line = fileContent.readLine();
+
+            while (line != null) {
+
+                if (!line.isEmpty() && !line.startsWith("#")) {
+                    listBinaries.append(line + ",");
+                }
+                line = fileContent.readLine();
+            }
+            listBinaries.deleteCharAt(listBinaries.length() - 1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                fileContent.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        processPrecompiledBinaries(listBinaries.toString());
+    }
+
+    public boolean isLoadBinaryOptionEnabled() {
+        return OPENCL_LOAD_BINS;
+    }
+
+    public String getOpenCLBinary(String taskName) {
+        if (precompiledBinariesPerDevice != null) {
+            return precompiledBinariesPerDevice.get(taskName);
+        } else {
+            return null;
         }
     }
 
@@ -105,6 +213,10 @@ public class OCLCodeCache {
         return resolveDir(OPENCL_LOG_DIR);
     }
 
+    public boolean isKernelAvailable() {
+        return kernelAvailable;
+    }
+
     public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
 
         info("Installing code for %s into code cache", entryPoint);
@@ -134,10 +246,11 @@ public class OCLCodeCache {
         debug("\tOpenCL compilation status = %s", status.toString());
 
         final String log = program.getBuildLog(deviceContext.getDeviceId()).trim();
-        if (!log.isEmpty()) {
-            debug(log);
-        }
+
         if (PRINT_WARNINGS || (status == OCLBuildStatus.CL_BUILD_ERROR)) {
+            if (!log.isEmpty()) {
+                debug(log);
+            }
             final Path outDir = resolveLogDir();
             final String identifier = id + "-" + entryPoint;
             error("Unable to compile task %s: check logs at %s/%s.log", identifier, outDir.toAbsolutePath(), identifier);
@@ -157,6 +270,10 @@ public class OCLCodeCache {
         }
 
         final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
+
+        if (kernel != null) {
+            kernelAvailable = true;
+        }
 
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source, deviceContext, program, kernel);
 
@@ -188,17 +305,23 @@ public class OCLCodeCache {
     private OCLInstalledCode installBinary(String entryPoint, byte[] binary, boolean alreadyCached) throws OCLException {
 
         info("Installing binary for %s into code cache", entryPoint);
-        final OCLProgram program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
 
+        try {
+            entryPoint = entryPoint.split("-")[1];
+        } catch (NullPointerException | ArrayIndexOutOfBoundsException e) {
+
+        }
+
+        OCLProgram program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
         if (program == null) {
             throw new OCLException("unable to load binary for " + entryPoint);
         }
 
-        final long t0 = System.nanoTime();
+        long t0 = System.nanoTime();
         program.build("");
-        final long t1 = System.nanoTime();
+        long t1 = System.nanoTime();
 
-        final OCLBuildStatus status = program.getStatus(deviceContext.getDeviceId());
+        OCLBuildStatus status = program.getStatus(deviceContext.getDeviceId());
         debug("\tOpenCL compilation status = %s", status.toString());
 
         final String log = program.getBuildLog(deviceContext.getDeviceId()).trim();
@@ -209,7 +332,6 @@ public class OCLCodeCache {
         final OCLKernel kernel = (status == CL_BUILD_SUCCESS) ? program.getKernel(entryPoint) : null;
 
         final OCLInstalledCode code = new OCLInstalledCode(entryPoint, null, deviceContext, program, kernel);
-
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
             if (PRINT_COMPILE_TIMES) {
@@ -254,7 +376,6 @@ public class OCLCodeCache {
     }
 
     private void writeToFile(String file, byte[] binary) {
-
         info("dumping binary %s", file);
         try (FileOutputStream fis = new FileOutputStream(file);) {
             fis.write(binary);
@@ -267,8 +388,22 @@ public class OCLCodeCache {
         for (OCLInstalledCode code : cache.values()) {
             code.invalidate();
         }
-
         cache.clear();
+    }
+
+    public OCLInstalledCode installEntryPointForBinaryForFPGAs(Path lookupPath, String entrypoint) {
+        final File file = lookupPath.toFile();
+        OCLInstalledCode lookupCode = null;
+        if (file.length() == 0) {
+            error("Empty input binary: %s (%s)", file);
+        }
+        try {
+            final byte[] binary = Files.readAllBytes(lookupPath);
+            lookupCode = installBinary(entrypoint, binary);
+        } catch (OCLException | IOException e) {
+            error("unable to load binary: %s (%s)", file, e.getMessage());
+        }
+        return lookupCode;
     }
 
     public boolean isCached(String id, String entryPoint) {

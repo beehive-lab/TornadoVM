@@ -33,6 +33,14 @@
 #include "macros.h"
 #include "utils.h"
 
+#define PRINT_KERNEL_EVENTS 0
+
+#ifdef PRINT_KERNEL_EVENTS 
+#include "opencl_time_utils.h"
+#endif
+
+
+
 /*
  * Class:     jacc_runtime_drivers_opencl_OCLCommandQueue
  * Method:    clReleaseCommandQueue
@@ -124,16 +132,22 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
 
     OPENCL_DECODE_WAITLIST(array4, events, numEvents);
 
-    cl_event event;
+    cl_event kernelEvent;
     OPENCL_SOFT_ERROR("clEnqueueNDRangeKernel",
-            clEnqueueNDRangeKernel((cl_command_queue) queue_id, (cl_kernel) kernel_id, (cl_uint) work_dim, (size_t*) global_work_offset, (size_t*) global_work_size, (size_t*) local_work_size, (cl_uint) numEvents, (cl_event*) events, &event), 0);
+            clEnqueueNDRangeKernel((cl_command_queue) queue_id, (cl_kernel) kernel_id, (cl_uint) work_dim, (size_t*) global_work_offset, (size_t*) global_work_size, (size_t*) local_work_size, (cl_uint) numEvents, (numEvents == 0)? NULL: (cl_event*) events, &kernelEvent), 0);
+
+	if (PRINT_KERNEL_EVENTS) {
+		long kernelTime = getTimeEvent(kernelEvent);
+		printf("Kernel time: %d (ns) \n", kernelTime);
+	}
 
     OPENCL_RELEASE_WAITLIST(array4);
 
     JNI_RELEASE_ARRAY(array1, global_work_offset);
     JNI_RELEASE_ARRAY(array2, global_work_size);
 
-    return (jlong) event;
+
+    return (jlong) kernelEvent;
 }
 
 /*
@@ -152,6 +166,11 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
     cl_event event;
     OPENCL_SOFT_ERROR("clEnqueueTask",
             clEnqueueTask((cl_command_queue) queue_id, (cl_kernel) kernel_id, (size_t) len, (cl_event *) events, &event), 0);
+
+    if (PRINT_KERNEL_EVENTS) {
+        long kernelTime = getTimeEvent(event);
+        printf("Kernel time: %d (ns) \n", kernelTime);
+    }
 
     if (array != NULL)
         (*env)->ReleasePrimitiveArrayCritical(env, array, waitList, JNI_ABORT);

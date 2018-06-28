@@ -45,6 +45,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
 
     private static final long BUMP_BUFFER_SIZE = Long.decode(getProperty("tornado.opencl.bump.size", "0x100000"));
     private static final String[] BUMP_DEVICES = parseDevices(getProperty("tornado.opencl.bump.devices", "Iris Pro"));
+    private static final boolean PRINT_OCL_KERNEL_TIME = Boolean.parseBoolean(getProperty("tornado.opencl.timer.kernel", "False").toLowerCase());
 
     private final OCLDevice device;
     private final OCLCommandQueue queue;
@@ -80,6 +81,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
 
     private static String[] parseDevices(String str) {
         return str.split(";");
+    }
+
+    public boolean printOCLKernelTime() {
+        return PRINT_OCL_KERNEL_TIME;
     }
 
     public List<OCLEvent> events() {
@@ -157,6 +162,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
     }
 
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, char[] array, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
+    }
+
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, int[] array, int[] waitEvents) {
         return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
     }
@@ -181,6 +190,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
      * Asynchronouse reads from device
      */
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, byte[] array, int[] waitEvents) {
+        return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
+    }
+
+    public int enqueueReadBuffer(long bufferId, long offset, long bytes, char[] array, int[] waitEvents) {
         return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
     }
 
@@ -214,6 +227,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
     }
 
+    public void writeBuffer(long bufferId, long offset, long bytes, char[] array, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
+    }
+
     public void writeBuffer(long bufferId, long offset, long bytes, int[] array, int[] waitEvents) {
         queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
     }
@@ -238,6 +255,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
      * Synchronous reads from device
      */
     public void readBuffer(long bufferId, long offset, long bytes, byte[] array, int[] waitEvents) {
+        queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
+    }
+
+    public void readBuffer(long bufferId, long offset, long bytes, char[] array, int[] waitEvents) {
         queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
     }
 
@@ -350,6 +371,10 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
 
     public void flushEvents() {
         queue.flushEvents();
+    }
+
+    public boolean isKernelAvailable() {
+        return codeCache.isKernelAvailable();
     }
 
     public OCLInstalledCode installCode(OCLCompilationResult result) {

@@ -100,8 +100,7 @@ public class OCLDevice extends TornadoLogger {
         }
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_TYPE.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_TYPE.getValue(), buffer.array());
 
         long type = buffer.getLong();
         deviceType = OCLDeviceType.toDeviceType(type);
@@ -112,8 +111,7 @@ public class OCLDevice extends TornadoLogger {
     public int getVendorId() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_VENDOR_ID.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_VENDOR_ID.getValue(), buffer.array());
 
         return buffer.getInt();
     }
@@ -121,8 +119,7 @@ public class OCLDevice extends TornadoLogger {
     public int getMemoryBaseAlignment() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MEM_BASE_ADDR_ALIGN.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MEM_BASE_ADDR_ALIGN.getValue(), buffer.array());
 
         return buffer.getInt();
     }
@@ -130,8 +127,7 @@ public class OCLDevice extends TornadoLogger {
     public boolean isAvailable() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_AVAILABLE.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_AVAILABLE.getValue(), buffer.array());
 
         return (buffer.getInt() == 1) ? true : false;
     }
@@ -141,8 +137,7 @@ public class OCLDevice extends TornadoLogger {
             Arrays.fill(buffer.array(), (byte) 0);
             buffer.clear();
 
-            clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_NAME.getValue(),
-                    buffer.array());
+            clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_NAME.getValue(), buffer.array());
             try {
                 name = new String(buffer.array(), "ASCII").trim();
             } catch (UnsupportedEncodingException e) {
@@ -157,8 +152,7 @@ public class OCLDevice extends TornadoLogger {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
 
-        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_VENDOR.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_VENDOR.getValue(), buffer.array());
         String name;
         try {
             name = new String(buffer.array(), "ASCII");
@@ -172,8 +166,7 @@ public class OCLDevice extends TornadoLogger {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
 
-        clGetDeviceInfo(id, OCLDeviceInfo.CL_DRIVER_VERSION.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DRIVER_VERSION.getValue(), buffer.array());
         String name;
         try {
             name = new String(buffer.array(), "ASCII");
@@ -187,8 +180,7 @@ public class OCLDevice extends TornadoLogger {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
 
-        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_VERSION.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_VERSION.getValue(), buffer.array());
         String name;
         try {
             name = new String(buffer.array(), "ASCII");
@@ -203,8 +195,7 @@ public class OCLDevice extends TornadoLogger {
             Arrays.fill(buffer.array(), (byte) 0);
             buffer.clear();
 
-            clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_OPENCL_C_VERSION.getValue(),
-                    buffer.array());
+            clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_OPENCL_C_VERSION.getValue(), buffer.array());
 
             try {
                 openCLVersion = new String(buffer.array(), "ASCII").trim();
@@ -220,8 +211,7 @@ public class OCLDevice extends TornadoLogger {
     public String getExtensions() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_EXTENSIONS.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_EXTENSIONS.getValue(), buffer.array());
         String name;
         try {
             name = new String(buffer.array(), "ASCII");
@@ -238,9 +228,7 @@ public class OCLDevice extends TornadoLogger {
 
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-        clGetDeviceInfo(id,
-                OCLDeviceInfo.CL_DEVICE_MAX_COMPUTE_UNITS.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MAX_COMPUTE_UNITS.getValue(), buffer.array());
 
         maxComputeUnits = buffer.getInt();
 
@@ -250,9 +238,7 @@ public class OCLDevice extends TornadoLogger {
     public int getMaxClockFrequency() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-        clGetDeviceInfo(id,
-                OCLDeviceInfo.CL_DEVICE_MAX_CLOCK_FREQUENCY.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MAX_CLOCK_FREQUENCY.getValue(), buffer.array());
 
         return buffer.getInt();
     }
@@ -264,8 +250,7 @@ public class OCLDevice extends TornadoLogger {
 
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MAX_MEM_ALLOC_SIZE.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MAX_MEM_ALLOC_SIZE.getValue(), buffer.array());
 
         maxAllocationSize = buffer.getLong();
         return maxAllocationSize;
@@ -278,8 +263,7 @@ public class OCLDevice extends TornadoLogger {
 
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_GLOBAL_MEM_SIZE.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_GLOBAL_MEM_SIZE.getValue(), buffer.array());
 
         globalMemorySize = buffer.getLong();
         return globalMemorySize;
@@ -292,8 +276,7 @@ public class OCLDevice extends TornadoLogger {
 
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_LOCAL_MEM_SIZE.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_LOCAL_MEM_SIZE.getValue(), buffer.array());
 
         localMemorySize = buffer.getLong();
         return localMemorySize;
@@ -307,9 +290,7 @@ public class OCLDevice extends TornadoLogger {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
 
-        clGetDeviceInfo(id,
-                OCLDeviceInfo.CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS.getValue(), buffer.array());
 
         maxWorkItemDimensions = buffer.getInt();
         return maxWorkItemDimensions;
@@ -325,9 +306,7 @@ public class OCLDevice extends TornadoLogger {
 
         final int elements = getMaxWorkItemDimensions();
 
-        clGetDeviceInfo(id,
-                OCLDeviceInfo.CL_DEVICE_MAX_WORK_ITEM_SIZES.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MAX_WORK_ITEM_SIZES.getValue(), buffer.array());
 
         buffer.rewind();
 
@@ -346,9 +325,7 @@ public class OCLDevice extends TornadoLogger {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
 
-        clGetDeviceInfo(id,
-                OCLDeviceInfo.CL_DEVICE_MAX_WORK_GROUP_SIZE.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MAX_WORK_GROUP_SIZE.getValue(), buffer.array());
 
         maxWorkGroupSize = buffer.getLong();
         return maxWorkGroupSize;
@@ -361,9 +338,7 @@ public class OCLDevice extends TornadoLogger {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
 
-        clGetDeviceInfo(id,
-                OCLDeviceInfo.CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE.getValue(), buffer.array());
 
         maxConstantBufferSize = buffer.getLong();
         return maxConstantBufferSize;
@@ -377,9 +352,7 @@ public class OCLDevice extends TornadoLogger {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
 
-        clGetDeviceInfo(id,
-                OCLDeviceInfo.CL_DEVICE_DOUBLE_FP_CONFIG.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_DOUBLE_FP_CONFIG.getValue(), buffer.array());
 
         doubleFPConfig = buffer.getLong();
         return doubleFPConfig;
@@ -393,9 +366,7 @@ public class OCLDevice extends TornadoLogger {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
 
-        clGetDeviceInfo(id,
-                OCLDeviceInfo.CL_DEVICE_SINGLE_FP_CONFIG.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_SINGLE_FP_CONFIG.getValue(), buffer.array());
 
         singleFPConfig = buffer.getLong();
         return singleFPConfig;
@@ -449,30 +420,16 @@ public class OCLDevice extends TornadoLogger {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("id=0x%x, name=%s, type=%s, available=%s", id,
-                getName(), getDeviceType().toString(), isAvailable()));
-        // sb.append(String.format("freq=%s, max compute units=%d\n",
-        // RuntimeUtilities.humanReadableFreq(getMaxClockFrequency()),
-        // getMaxComputeUnits()));
-        // sb.append(String.format("global mem. size=%s, local mem. size=%s\n",
-        // RuntimeUtilities.humanReadableByteCount(getGlobalMemorySize(),
-        // false), RuntimeUtilities.humanReadableByteCount(
-        // getLocalMemorySize(), false)));
-        // sb.append(String.format("extensions=%s", getExtensions()));
+        sb.append(String.format("id=0x%x, name=%s, type=%s, available=%s", id, getName(), getDeviceType().toString(), isAvailable()));
         return sb.toString();
     }
 
     public Object toVerboseString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("id=0x%x, name=%s, type=%s, available=%s\n",
-                id, getName(), getDeviceType().toString(), isAvailable()));
-        sb.append(String.format("freq=%s, max compute units=%d\n",
-                humanReadableFreq(getMaxClockFrequency()),
-                getMaxComputeUnits()));
-        sb.append(String.format("global mem. size=%s, local mem. size=%s\n",
-                RuntimeUtilities.humanReadableByteCount(getGlobalMemorySize(),
-                        false), humanReadableByteCount(
-                        getLocalMemorySize(), false)));
+        sb.append(String.format("id=0x%x, name=%s, type=%s, available=%s\n", id, getName(), getDeviceType().toString(), isAvailable()));
+        sb.append(String.format("freq=%s, max compute units=%d\n", humanReadableFreq(getMaxClockFrequency()), getMaxComputeUnits()));
+        sb.append(
+                String.format("global mem. size=%s, local mem. size=%s\n", RuntimeUtilities.humanReadableByteCount(getGlobalMemorySize(), false), humanReadableByteCount(getLocalMemorySize(), false)));
         sb.append(String.format("extensions:\n"));
         for (String extension : getExtensions().split(" ")) {
             sb.append("\t" + extension + "\n");
@@ -497,8 +454,7 @@ public class OCLDevice extends TornadoLogger {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
 
-        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_VERSION.getValue(),
-                buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_VERSION.getValue(), buffer.array());
         try {
             version = new String(buffer.array(), "ASCII").trim();
         } catch (UnsupportedEncodingException e) {

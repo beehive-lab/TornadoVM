@@ -32,6 +32,8 @@ import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.trace
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import java.lang.reflect.Method;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -80,9 +82,12 @@ import uk.ac.manchester.tornado.api.Vector;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.Tornado;
+import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeUtil;
@@ -106,8 +111,10 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.lang.CompilerInternals;
+import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -130,6 +137,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     final AtomicInteger id = new AtomicInteger(0);
 
     final ScheduleMetaData scheduleMeta;
+
+    private boolean lookupCodeAvailable;
 
     public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLContext openclContext, OCLDeviceContext deviceContext) {
         super(providers);
@@ -192,42 +201,135 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     public long readHeapBaseAddress(TaskMetaData meta) {
         final OCLByteBuffer bb = deviceContext.getMemoryManager().getSubBuffer(0, 16);
+
         bb.putLong(0);
         bb.putLong(0);
 
-        lookupCode.execute(bb, meta);
+        int task = lookupCode.executeTask(bb, meta);
+        lookupCode.readValue(bb, meta, task);
+        lookupCode.resolveEvent(bb, meta, task);
 
         final long address = bb.getLong(0);
-        Tornado.info("Heap address @ 0x%x on %s", address, deviceContext.getDevice().getName());
+        Tornado.info("Heap address @ 0x%x on %s ", address, deviceContext.getDevice().getName());
         return address;
     }
 
-    public void init() {
+    /**
+     * It allocates the smallest of the requested heap size or the max global
+     * memory size.
+     */
+    public void allocateHeapMemoryOnDevice() {
 
-        /*
-         * Allocate the smallest of the requested heap size or the max global memory
-         * size.
-         */
         final long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getMaxAllocationSize());
         if (memorySize < DEFAULT_HEAP_ALLOCATION) {
             Tornado.info("Unable to allocate %s of heap space - resized to %s", humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false), humanReadableByteCount(memorySize, false));
         }
         Tornado.info("%s: allocating %s of heap space", deviceContext.getDevice().getName(), humanReadableByteCount(memorySize, false));
         deviceContext.getMemoryManager().allocateRegion(memorySize);
+    }
 
-        /*
-         * Retrive the address of the heap on the device
-         */
-        TaskMetaData meta = new TaskMetaData(scheduleMeta, "lookupBufferAddress", 0);
-        if (deviceContext.isCached("internal", "lookupBufferAddress")) {
-            lookupCode = deviceContext.getCode("internal", "lookupBufferAddress");
+    private String getDriverAndDevice(TaskMetaData task, int[] deviceInfo) {
+        return task.getId() + ".device=" + deviceInfo[0] + ":" + deviceInfo[1];
+    }
+
+    /**
+     * We explore all devices in driver 0;
+     * 
+     * @return
+     */
+    public int[] getDriverAndDevice() {
+        int numDev = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
+        int deviceIndex = 0;
+        for (int i = 0; i < numDev; i++) {
+            OCLTornadoDevice device = (OCLTornadoDevice) TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(i);
+            OCLDevice dev = device.getDevice();
+            if (dev == deviceContext.getDevice()) {
+                deviceIndex = i;
+            }
+        }
+        return new int[] { 0, deviceIndex };
+    }
+
+    private boolean isJITCompilationForFPGAs(String deviceFullName) {
+        // To Avoid errors, check the target device is not the FPGA, because
+        // JIT compilation for FPGAs is not supported yet.
+        // Get driver index + deviceIndex
+        String deviceDriver = deviceFullName.split("=")[1];
+        int driverIndex = Integer.parseInt(deviceDriver.split(":")[0]);
+        int deviceIndex = Integer.parseInt(deviceDriver.split(":")[1]);
+        OCLTornadoDevice device = (OCLTornadoDevice) TornadoRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
+        String platformName = device.getPlatformName();
+        if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && platformName.contains("FPGA")) {
+            // If compilation for other platforms are chosen then we do not
+            // compile for FPGAs
+            if (Tornado.DEBUG) {
+                System.out.println("JIT Compilation for FPGAs not supported yet.");
+            }
+            return true;
+        } else if (Tornado.DEBUG) {
+            System.out.println("JIT Compilation for " + deviceFullName);
+        }
+        return false;
+    }
+
+    /*
+     * Retrieve the address of the heap on the device
+     */
+    public TaskMetaData compileLookupBufferKernel() {
+        int numKernelParameters = 0;
+        TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME, numKernelParameters);
+        OCLCodeCache check = new OCLCodeCache(deviceContext);
+        int[] deviceInfo = getDriverAndDevice();
+        String deviceFullName = getDriverAndDevice(meta, deviceInfo);
+        if (deviceContext.isCached("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
+            // Option 1) Getting the lookupBufferAddress from the cache
+            lookupCode = deviceContext.getCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+            if (lookupCode != null) {
+                lookupCodeAvailable = true;
+            }
+        } else if (check.isLoadBinaryOptionEnabled() && check.getOpenCLBinary(deviceFullName) != null) {
+            // Option 2) Loading pre-compiled lookupBufferAddress kernel FPGA
+            // binary
+            Path lookupPath = Paths.get(check.getOpenCLBinary(deviceFullName));
+            lookupCode = check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+            if (lookupCode != null) {
+                lookupCodeAvailable = true;
+            }
         } else {
+            // Option 3) JIT Compilation of the lookupBufferAddress kernel
 
-            OCLCompilationResult result = OCLCompiler.compileCodeForDevice(getTornadoRuntime().resolveMethod(getLookupMethod()), null, meta, (OCLProviders) getProviders(), this);
+            // Avoid JIT compilation for FPGAs due to unsupported feature
+            if (isJITCompilationForFPGAs(deviceFullName)) {
+                return meta;
+            }
+
+            ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
+            OCLProviders providers = (OCLProviders) getProviders();
+            OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
             lookupCode = deviceContext.installCode(result);
+            if (deviceContext.isKernelAvailable()) {
+                lookupCodeAvailable = true;
+            }
         }
 
+        return meta;
+    }
+
+    public boolean isLookupCodeAvailable() {
+        return lookupCodeAvailable;
+    }
+
+    public void runAndReadLookUpKernel(TaskMetaData meta) {
         deviceContext.getMemoryManager().init(this, readHeapBaseAddress(meta));
+    }
+
+    public void init() {
+        allocateHeapMemoryOnDevice();
+        TaskMetaData meta = compileLookupBufferKernel();
+        if (isLookupCodeAvailable()) {
+            // Only run kernel is the compilation was correct.
+            runAndReadLookUpKernel(meta);
+        }
     }
 
     public OCLDeviceContext getDeviceContext() {
@@ -269,7 +371,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             OCLKind oclKind = (OCLKind) var.getPlatformKind();
             if (oclKind == OCLKind.ILLEGAL) {
                 shouldNotReachHere();
-                // return;
             }
 
             if (!kindToVariable.containsKey(oclKind)) {
@@ -324,11 +425,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         if (crb.isKernel()) {
             /*
-             * BUG There is a bug on some OpenCL devices which requires us to insert an
-             * extra OpenCL buffer into the kernel arguments. This has the effect of
-             * shifting the devices address mappings, which allows us to avoid the heap
-             * starting at address 0x0. (I assume that this is a interesting case that leads
-             * to a few issues.) Iris Pro is the only culprit at the moment.
+             * BUG There is a bug on some OpenCL devices which requires us to
+             * insert an extra OpenCL buffer into the kernel arguments. This has
+             * the effect of shifting the devices address mappings, which allows
+             * us to avoid the heap starting at address 0x0. (I assume that this
+             * is a interesting case that leads to a few issues.) Iris Pro is
+             * the only culprit at the moment.
              */
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
 

@@ -37,17 +37,15 @@ import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 public class OpenCL {
 
-    public static final String OPENCL_LIBRARY = "tornado-opencl";
+    public static final String OPENCL_JNI_LIBRARY = "tornado-opencl";
 
     private static boolean initialised = false;
 
     private static final List<OCLPlatform> platforms = new ArrayList<>();
 
-    public final static boolean DUMP_OPENCL_EVENTS = Boolean.parseBoolean(
-            getProperty("tornado.opencl.events.dump", "False"));
+    public final static boolean DUMP_OPENCL_EVENTS = Boolean.parseBoolean(getProperty("tornado.opencl.events.dump", "False"));
 
-    public final static boolean ACCELERATOR_IS_GPU = Boolean.parseBoolean(
-            getProperty("tornado.opencl.accelerator.asgpu", "True"));
+    public final static boolean ACCELERATOR_IS_GPU = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.asgpu", "True"));
 
     public final static int OCL_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.opencl.callstack.limit", "8192"));
 
@@ -58,7 +56,8 @@ public class OpenCL {
 
     static {
         try {
-            System.loadLibrary(OpenCL.OPENCL_LIBRARY);
+            // Loading JNI OpenCL library
+            System.loadLibrary(OpenCL.OPENCL_JNI_LIBRARY);
         } catch (final UnsatisfiedLinkError e) {
             throw e;
         }
@@ -71,20 +70,15 @@ public class OpenCL {
 
         // add a shutdown hook to free-up all OpenCL resources on VM exit
         Runtime.getRuntime().addShutdownHook(new Thread() {
-
             @Override
             public void run() {
                 setName("OpenCL Cleanup");
-//                if (DUMP_EVENTS)
-//                    TornadoRuntime.getTornadoRuntime().
                 OpenCL.cleanup();
             }
-
         });
     }
 
-    public static void throwException(String message)
-            throws TornadoRuntimeException {
+    public static void throwException(String message) throws TornadoRuntimeException {
         throw new TornadoRuntimeException(message);
     }
 
@@ -112,7 +106,6 @@ public class OpenCL {
     }
 
     public static void initialise() throws TornadoRuntimeException {
-
         if (!initialised) {
             try {
                 int numPlatforms = clGetPlatformCount();
@@ -121,14 +114,12 @@ public class OpenCL {
 
                 for (int i = 0; i < ids.length; i++) {
                     OCLPlatform platform = new OCLPlatform(i, ids[i]);
-                    // Tornado.info("platform [%d]: %s",platform.toString());
                     platforms.add(platform);
                 }
 
             } catch (final Exception exc) {
                 exc.printStackTrace();
-                throw new TornadoRuntimeException(
-                        "Problem with OpenCL bindings");
+                throw new TornadoRuntimeException("Problem with OpenCL bindings");
             } catch (final Error err) {
                 err.printStackTrace();
                 throw new TornadoRuntimeException("Error with OpenCL bindings");
@@ -139,10 +130,8 @@ public class OpenCL {
     }
 
     public static OCLTornadoDevice defaultDevice() {
-        final int platformIndex = Integer.parseInt(Tornado.getProperty(
-                "tornado.platform", "0"));
-        final int deviceIndex = Integer.parseInt(Tornado.getProperty(
-                "tornado.device", "0"));
+        final int platformIndex = Integer.parseInt(Tornado.getProperty("tornado.platform", "0"));
+        final int deviceIndex = Integer.parseInt(Tornado.getProperty("tornado.device", "0"));
         return new OCLTornadoDevice(platformIndex, deviceIndex);
     }
 
@@ -158,14 +147,10 @@ public class OpenCL {
 
             for (int platformIndex = 0; platformIndex < platforms.size(); platformIndex++) {
                 final OCLPlatform platform = platforms.get(platformIndex);
-                System.out.printf("[%d]: platform: %s\n", platformIndex,
-                        platform.getName());
+                System.out.printf("[%d]: platform: %s\n", platformIndex, platform.getName());
                 final OCLContext context = platform.createContext();
                 for (int deviceIndex = 0; deviceIndex < context.getNumDevices(); deviceIndex++) {
-                    System.out.printf("[%d:%d] device: %s\n", platformIndex,
-                            deviceIndex,
-                            context.createDeviceContext(deviceIndex)
-                                    .getDevice().getName());
+                    System.out.printf("[%d:%d] device: %s\n", platformIndex, deviceIndex, context.createDeviceContext(deviceIndex).getDevice().getName());
                 }
             }
 
@@ -175,8 +160,7 @@ public class OpenCL {
             final int deviceIndex = Integer.parseInt(args[1]);
 
             final OCLPlatform platform = platforms.get(platformIndex);
-            final OCLDevice device = platform.createContext()
-                    .createDeviceContext(deviceIndex).getDevice();
+            final OCLDevice device = platform.createContext().createDeviceContext(deviceIndex).getDevice();
 
             System.out.println(device.toVerboseString());
         }

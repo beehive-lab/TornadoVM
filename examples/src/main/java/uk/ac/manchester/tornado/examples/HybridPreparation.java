@@ -23,45 +23,51 @@
  * Authors: Juan Fumero
  *
  */
-package uk.ac.manchester.tornado.examples.reductions;
+package uk.ac.manchester.tornado.examples;
 
-import java.util.stream.IntStream;
+import java.util.Random;
 
 import uk.ac.manchester.tornado.api.Parallel;
-import uk.ac.manchester.tornado.api.Reduce;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
-public class Example {
+public class HybridPreparation {
 
-    public static void reductionAnnotation(int[] input, @Reduce int[] result) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] += input[i];
+    public static void saxpy(int alpha, int[] x, int[] y) {
+        for (@Parallel int i = 0; i < y.length; i++) {
+            y[i] = alpha * x[i];
         }
     }
 
-    public static void testReductionAnnotation() {
-        int[] input = new int[128];
-        int[] result = new int[1];
-
-        IntStream.range(0, 128).parallel().forEach(i -> {
-            input[i] = 1;
-        });
-
-        //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(input)
-            .task("t0", Example::reductionAnnotation, input, result)
-            .streamOut(result)
-            .execute();
-        //@formatter:on
-
-        int[] sequential = new int[1];
-        reductionAnnotation(input, sequential);
-
+    public static void vectorAddition(int[] x, int[] y, int[] z) {
+        for (@Parallel int i = 0; i < y.length; i++) {
+            z[i] = x[i] * y[i];
+        }
     }
 
     public static void main(String[] args) {
-        testReductionAnnotation();
+        int numElements = 65536;
+        int alpha = 2;
+
+        int[] x = new int[numElements];
+        int[] y = new int[numElements];
+        int[] z = new int[numElements];
+
+        Random r = new Random();
+
+        for (int i = 0; i < numElements; i++) {
+            x[i] = r.nextInt();
+            y[i] = r.nextInt();
+        }
+
+        // @formatter:off
+        TaskSchedule s0 = new TaskSchedule("s0")
+                .task("t0", HybridPreparation::saxpy, alpha, x, y)
+                .task("t1", HybridPreparation::vectorAddition, x, y, z)
+                .streamOut(z);
+        // @formatter:on
+
+        s0.execute();
+
     }
 
 }

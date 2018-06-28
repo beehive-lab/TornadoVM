@@ -263,6 +263,8 @@ public class OCLLIRStmt {
 
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+
+            // asm.emitLine("*((__global char *) ul_12) = 102;");
             asm.indent();
             asm.emit("*(");
             cast.emit(crb, asm);
@@ -420,7 +422,8 @@ public class OCLLIRStmt {
 
         private void emitAtomicAddStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            asm.emit("atomicAdd_Tornado_Floats( &("); // Calling to the intrinsic for Floats
+            asm.emit("atomicAdd_Tornado_Floats( &("); // Calling to the
+                                                      // intrinsic for Floats
             asm.emit("*(");
             cast.emit(crb, asm);
             asm.space();

@@ -25,15 +25,14 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
-
 import java.util.BitSet;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 
-public class Graph {
+public class TornadoGraph {
 
     private final static int INITIAL_SIZE = 256;
 
@@ -41,7 +40,7 @@ public class Graph {
     private BitSet valid;
     private int nextNode;
 
-    public Graph() {
+    public TornadoGraph() {
         nodes = new AbstractNode[INITIAL_SIZE];
         valid = new BitSet(INITIAL_SIZE);
         nextNode = 0;
@@ -80,7 +79,7 @@ public class Graph {
     }
 
     private void resize() {
-        unimplemented();
+        TornadoInternalError.unimplemented();
     }
 
     public <T extends AbstractNode> BitSet filter(Class<T> type) {

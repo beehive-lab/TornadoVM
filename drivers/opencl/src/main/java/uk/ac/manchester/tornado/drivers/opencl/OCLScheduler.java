@@ -25,34 +25,34 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.common.Tornado.FORCE_ALL_TO_GPU;
-import static uk.ac.manchester.tornado.common.Tornado.fatal;
-import static uk.ac.manchester.tornado.drivers.opencl.OpenCL.ACCELERATOR_IS_GPU;
+import uk.ac.manchester.tornado.common.Tornado;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 
 public class OCLScheduler {
 
-    public static final OCLKernelScheduler create(final OCLDeviceContext context) {
+    public static final OCLKernelScheduler instanceScheduler(OCLDeviceType type, final OCLDeviceContext context) {
+        switch (type) {
+            case CL_DEVICE_TYPE_GPU:
+                return new OCLGPUScheduler(context);
+            case CL_DEVICE_TYPE_ACCELERATOR:
+                return (OpenCL.ACCELERATOR_IS_GPU) ? new OCLGPUScheduler(context) : new OCLCPUScheduler(context);
+            case CL_DEVICE_TYPE_CPU:
+                return new OCLCPUScheduler(context);
+            default:
+                Tornado.fatal("No scheduler available for device: %s", context);
+                break;
+        }
+        return null;
+    }
 
-        if (FORCE_ALL_TO_GPU) {
+    public static final OCLKernelScheduler create(final OCLDeviceContext context) {
+        if (Tornado.FORCE_ALL_TO_GPU) {
             return new OCLGPUScheduler(context);
         }
-
-        if (null != context.getDevice().getDeviceType()) {
-            switch (context.getDevice().getDeviceType()) {
-                case CL_DEVICE_TYPE_GPU:
-                    return new OCLGPUScheduler(context);
-                case CL_DEVICE_TYPE_ACCELERATOR:
-                    return (ACCELERATOR_IS_GPU)
-                            ? new OCLGPUScheduler(context)
-                            : new OCLCPUScheduler(context);
-                case CL_DEVICE_TYPE_CPU:
-                    return new OCLCPUScheduler(context);
-                default:
-                    fatal("No scheduler available for device: %s", context);
-                    break;
-            }
+        if (context.getDevice().getDeviceType() != null) {
+            OCLDeviceType type = context.getDevice().getDeviceType();
+            return instanceScheduler(type, context);
         }
-
         return null;
     }
 }

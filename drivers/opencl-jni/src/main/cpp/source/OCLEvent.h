@@ -42,10 +42,10 @@ extern "C" {
     /*
      * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
      * Method:    clGetEventProfilingInfo
-     * Signature: (JI[B)V
+     * Signature: (JJ[B)V
      */
     JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clGetEventProfilingInfo
-    (JNIEnv *, jclass, jlong, jint, jbyteArray);
+    (JNIEnv *, jclass, jlong, jlong, jbyteArray);
 
     /*
      * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLEvent
