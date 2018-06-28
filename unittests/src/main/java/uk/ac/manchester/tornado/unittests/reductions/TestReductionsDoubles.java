@@ -67,9 +67,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
             case CL_DEVICE_TYPE_CPU:
                 result = new double[Runtime.getRuntime().availableProcessors()];
                 break;
-            case CL_DEVICE_TYPE_DEFAULT:
-                break;
             case CL_DEVICE_TYPE_GPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new double[numGroups];
                 break;
             default:
@@ -119,18 +118,16 @@ public class TestReductionsDoubles extends TornadoTestBase {
     public void testSumDoubles2() {
         double[] input = new double[SIZE2];
 
-        int numGroups = 1;
-        if (SIZE2 > 256) {
-            numGroups = SIZE2 / 256;
-        }
         double[] result = null;
-
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new double[Runtime.getRuntime().availableProcessors()];
-                break;
-            case CL_DEVICE_TYPE_DEFAULT:
                 break;
             case CL_DEVICE_TYPE_GPU:
                 result = new double[numGroups];
@@ -166,12 +163,23 @@ public class TestReductionsDoubles extends TornadoTestBase {
     public void testSumDoubles3() {
         double[] input = new double[SIZE];
 
+        double[] result = null;
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        double[] result = new double[numGroups];
-
+        OCLDeviceType deviceType = getDefaultDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
+                result = new double[Runtime.getRuntime().availableProcessors()];
+                break;
+            case CL_DEVICE_TYPE_GPU:
+                result = new double[numGroups];
+                break;
+            default:
+                break;
+        }
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
             input[i] = r.nextDouble();
@@ -186,7 +194,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
         task.execute();
 
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
 
@@ -201,12 +209,23 @@ public class TestReductionsDoubles extends TornadoTestBase {
         double[] inputA = new double[SIZE];
         double[] inputB = new double[SIZE];
 
+        double[] result = null;
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        double[] result = new double[numGroups];
-
+        OCLDeviceType deviceType = getDefaultDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
+                result = new double[Runtime.getRuntime().availableProcessors()];
+                break;
+            case CL_DEVICE_TYPE_GPU:
+                result = new double[numGroups];
+                break;
+            default:
+                break;
+        }
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
             inputA[i] = r.nextDouble();
@@ -222,7 +241,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
         task.execute();
 
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
 
@@ -241,12 +260,23 @@ public class TestReductionsDoubles extends TornadoTestBase {
     @Test
     public void testMultdoubles() {
         double[] input = new double[SIZE];
-
+        double[] result = null;
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        double[] result = new double[32];
+        OCLDeviceType deviceType = getDefaultDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
+                result = new double[Runtime.getRuntime().availableProcessors()];
+                break;
+            case CL_DEVICE_TYPE_GPU:
+                result = new double[numGroups];
+                break;
+            default:
+                break;
+        }
 
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
@@ -265,7 +295,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] *= result[i];
         }
 

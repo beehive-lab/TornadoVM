@@ -35,18 +35,18 @@ public class TornadoUtils {
 
         switch (where) {
             case CPU:
-                // If it is executed on the CPU, we return the number of threads of the current
+                // If it is executed on the CPU, we return the number of threads
+                // of the current
                 // CPU
                 return Runtime.getRuntime().availableProcessors();
             case GPU:
+            case FPGA:
                 // size will be the number of work-groups on the GPU
                 int size = 1;
                 if (inputSize > 256) {
                     size = inputSize / 256;
                 }
                 return size;
-            case FPGA:
-                throw new RuntimeException("Unimplemented yet");
         }
 
         return 0;

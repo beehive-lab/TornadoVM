@@ -109,7 +109,26 @@ public class TestReductionsIntegers extends TornadoTestBase {
     @Test
     public void testReductionAnnotation() {
         int[] input = new int[SIZE];
-        int[] result = new int[16];
+        int[] result = null;
+
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+        OCLDeviceType deviceType = getDefaultDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
+                result = new int[Runtime.getRuntime().availableProcessors()];
+                break;
+            case CL_DEVICE_TYPE_DEFAULT:
+                break;
+            case CL_DEVICE_TYPE_GPU:
+                result = new int[numGroups];
+                break;
+            default:
+                break;
+        }
 
         IntStream.range(0, SIZE).parallel().forEach(i -> {
             input[i] = 2;
@@ -126,12 +145,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] sequential = new int[1];
         reductionAnnotation(input, sequential);
 
-        // Final result
-        int numGroups = 1;
-        if (SIZE > 256) {
-            numGroups = SIZE / 256;
-        }
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
 
@@ -151,9 +165,26 @@ public class TestReductionsIntegers extends TornadoTestBase {
     @Test
     public void testMultiplicationReduction() {
         int[] input = new int[64];
+        int[] result = null;
 
-        int num = Runtime.getRuntime().availableProcessors();
-        int[] result = new int[num];
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+        OCLDeviceType deviceType = getDefaultDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
+                result = new int[Runtime.getRuntime().availableProcessors()];
+                break;
+            case CL_DEVICE_TYPE_DEFAULT:
+                break;
+            case CL_DEVICE_TYPE_GPU:
+                result = new int[numGroups];
+                break;
+            default:
+                break;
+        }
 
         Arrays.fill(input, 1);
         input[10] = new Random().nextInt() * 10;
@@ -229,7 +260,27 @@ public class TestReductionsIntegers extends TornadoTestBase {
     @Test
     public void testSequentialReduction() {
         int[] input = new int[SMALL_SIZE * 2];
-        int[] result = new int[1];
+
+        int[] result = null;
+
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+        OCLDeviceType deviceType = getDefaultDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
+                result = new int[Runtime.getRuntime().availableProcessors()];
+                break;
+            case CL_DEVICE_TYPE_DEFAULT:
+                break;
+            case CL_DEVICE_TYPE_GPU:
+                result = new int[numGroups];
+                break;
+            default:
+                break;
+        }
 
         Random r = new Random();
 
@@ -263,11 +314,26 @@ public class TestReductionsIntegers extends TornadoTestBase {
     public void testReduction01() {
         int[] input = new int[SMALL_SIZE];
 
+        int[] result = null;
+
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        int[] result = new int[numGroups];
+        OCLDeviceType deviceType = getDefaultDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
+                result = new int[Runtime.getRuntime().availableProcessors()];
+                break;
+            case CL_DEVICE_TYPE_DEFAULT:
+                break;
+            case CL_DEVICE_TYPE_GPU:
+                result = new int[numGroups];
+                break;
+            default:
+                break;
+        }
 
         Random r = new Random();
 
@@ -283,7 +349,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
 
@@ -329,15 +395,16 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] b = new int[BIG_SIZE];
         int[] c = new int[BIG_SIZE];
 
-        int numGroups = 1;
-        if (BIG_SIZE > 256) {
-            numGroups = BIG_SIZE / 256;
-        }
         int[] result = null;
 
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new int[Runtime.getRuntime().availableProcessors()];
                 break;
             case CL_DEVICE_TYPE_DEFAULT:
@@ -383,11 +450,26 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] b = new int[BIG_SIZE];
         int[] c = new int[BIG_SIZE];
 
+        int[] result = null;
+
         int numGroups = 1;
-        if (BIG_SIZE > 256) {
-            numGroups = BIG_SIZE / 256;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
         }
-        int[] result = new int[numGroups];
+        OCLDeviceType deviceType = getDefaultDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
+                result = new int[Runtime.getRuntime().availableProcessors()];
+                break;
+            case CL_DEVICE_TYPE_DEFAULT:
+                break;
+            case CL_DEVICE_TYPE_GPU:
+                result = new int[numGroups];
+                break;
+            default:
+                break;
+        }
 
         Random r = new Random();
 
@@ -438,11 +520,26 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] a = new int[BIG_SIZE];
         int[] b = new int[BIG_SIZE];
 
+        int[] result = null;
+
         int numGroups = 1;
-        if (BIG_SIZE > 256) {
-            numGroups = BIG_SIZE / 256;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
         }
-        int[] result = new int[numGroups];
+        OCLDeviceType deviceType = getDefaultDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
+                result = new int[Runtime.getRuntime().availableProcessors()];
+                break;
+            case CL_DEVICE_TYPE_DEFAULT:
+                break;
+            case CL_DEVICE_TYPE_GPU:
+                result = new int[numGroups];
+                break;
+            default:
+                break;
+        }
 
         IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
             a[i] = 1;
@@ -525,15 +622,16 @@ public class TestReductionsIntegers extends TornadoTestBase {
     public void testSumInts2() {
         int[] input = new int[SMALL_SIZE];
 
-        int numGroups = 1;
-        if (SMALL_SIZE > 256) {
-            numGroups = SMALL_SIZE / 256;
-        }
         int[] result = null;
 
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new int[Runtime.getRuntime().availableProcessors()];
                 break;
             case CL_DEVICE_TYPE_DEFAULT:
@@ -573,15 +671,16 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] inputA = new int[SIZE];
         int[] inputB = new int[SIZE];
 
+        int[] result = null;
+
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        int[] result = null;
-
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new int[Runtime.getRuntime().availableProcessors()];
                 break;
             case CL_DEVICE_TYPE_DEFAULT:

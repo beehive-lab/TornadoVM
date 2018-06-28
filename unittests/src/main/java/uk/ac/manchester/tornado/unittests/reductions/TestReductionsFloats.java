@@ -287,7 +287,6 @@ public class TestReductionsFloats extends TornadoTestBase {
     // This is currently not supported
     @Ignore
     @SuppressWarnings("unused")
-    @Test
     public void testSumFloatsCondition() {
         float[] input = new float[SIZE2];
 
