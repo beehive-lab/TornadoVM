@@ -125,12 +125,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new int[Runtime.getRuntime().availableProcessors()];
                 break;
-            case CL_DEVICE_TYPE_DEFAULT:
-                break;
             case CL_DEVICE_TYPE_GPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new int[numGroups];
                 break;
             default:
@@ -181,11 +179,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new int[Runtime.getRuntime().availableProcessors()];
                 break;
-            case CL_DEVICE_TYPE_DEFAULT:
-                break;
+            case CL_DEVICE_TYPE_ACCELERATOR:
             case CL_DEVICE_TYPE_GPU:
                 result = new int[numGroups];
                 break;
@@ -277,12 +273,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new int[Runtime.getRuntime().availableProcessors()];
                 break;
-            case CL_DEVICE_TYPE_DEFAULT:
-                break;
             case CL_DEVICE_TYPE_GPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new int[numGroups];
                 break;
             default:
@@ -330,12 +324,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new int[Runtime.getRuntime().availableProcessors()];
                 break;
-            case CL_DEVICE_TYPE_DEFAULT:
-                break;
             case CL_DEVICE_TYPE_GPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new int[numGroups];
                 break;
             default:
@@ -411,11 +403,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new int[Runtime.getRuntime().availableProcessors()];
                 break;
-            case CL_DEVICE_TYPE_DEFAULT:
-                break;
+            case CL_DEVICE_TYPE_ACCELERATOR:
             case CL_DEVICE_TYPE_GPU:
                 result = new int[numGroups];
                 break;
@@ -466,11 +456,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new int[Runtime.getRuntime().availableProcessors()];
                 break;
-            case CL_DEVICE_TYPE_DEFAULT:
-                break;
+            case CL_DEVICE_TYPE_ACCELERATOR:
             case CL_DEVICE_TYPE_GPU:
                 result = new int[numGroups];
                 break;
@@ -536,11 +524,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new int[Runtime.getRuntime().availableProcessors()];
                 break;
-            case CL_DEVICE_TYPE_DEFAULT:
-                break;
+            case CL_DEVICE_TYPE_ACCELERATOR:
             case CL_DEVICE_TYPE_GPU:
                 result = new int[numGroups];
                 break;
@@ -638,12 +624,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new int[Runtime.getRuntime().availableProcessors()];
                 break;
-            case CL_DEVICE_TYPE_DEFAULT:
-                break;
             case CL_DEVICE_TYPE_GPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new int[numGroups];
                 break;
             default:
@@ -687,11 +671,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new int[Runtime.getRuntime().availableProcessors()];
                 break;
             case CL_DEVICE_TYPE_DEFAULT:
                 break;
+            case CL_DEVICE_TYPE_ACCELERATOR:
             case CL_DEVICE_TYPE_GPU:
                 result = new int[numGroups];
                 break;

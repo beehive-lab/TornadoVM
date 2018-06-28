@@ -113,7 +113,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
         }
     }
 
-    @SuppressWarnings("unused")
     @Test
     public void testSumDoubles2() {
         double[] input = new double[SIZE2];
@@ -126,10 +125,10 @@ public class TestReductionsDoubles extends TornadoTestBase {
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new double[Runtime.getRuntime().availableProcessors()];
                 break;
             case CL_DEVICE_TYPE_GPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new double[numGroups];
                 break;
             default:
@@ -171,10 +170,10 @@ public class TestReductionsDoubles extends TornadoTestBase {
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new double[Runtime.getRuntime().availableProcessors()];
                 break;
             case CL_DEVICE_TYPE_GPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new double[numGroups];
                 break;
             default:
@@ -217,10 +216,10 @@ public class TestReductionsDoubles extends TornadoTestBase {
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new double[Runtime.getRuntime().availableProcessors()];
                 break;
             case CL_DEVICE_TYPE_GPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new double[numGroups];
                 break;
             default:
@@ -268,10 +267,10 @@ public class TestReductionsDoubles extends TornadoTestBase {
         OCLDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new double[Runtime.getRuntime().availableProcessors()];
                 break;
             case CL_DEVICE_TYPE_GPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new double[numGroups];
                 break;
             default:

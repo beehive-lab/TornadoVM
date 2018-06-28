@@ -121,9 +121,8 @@ public class TestReductionsFloats extends TornadoTestBase {
             case CL_DEVICE_TYPE_CPU:
                 result = new float[Runtime.getRuntime().availableProcessors()];
                 break;
-            case CL_DEVICE_TYPE_DEFAULT:
-                break;
             case CL_DEVICE_TYPE_GPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new float[numGroups];
                 break;
             default:
