@@ -106,7 +106,15 @@ public class TestReductionsDoubles extends TornadoTestBase {
         }
     }
 
-    public static void reductionAddDoubles3(double[] inputA, double[] inputB, @Reduce double[] result) {
+    public static void reductionAddDoubles3(double[] input, @Reduce double[] result) {
+        double error = 2f;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            double v = (error * input[i]);
+            result[0] += v;
+        }
+    }
+
+    public static void reductionAddDoubles4(double[] inputA, double[] inputB, @Reduce double[] result) {
         double error = 2f;
         for (@Parallel int i = 0; i < inputA.length; i++) {
             result[0] += (error * (inputA[i] + inputB[i]));
@@ -187,7 +195,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsDoubles::reductionAddDoubles2, input, result)
+            .task("t0", TestReductionsDoubles::reductionAddDoubles3, input, result)
             .streamOut(result);
         //@formatter:on
 
@@ -234,7 +242,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
             .streamIn(inputA, inputB)
-            .task("t0", TestReductionsDoubles::reductionAddDoubles3, inputA, inputB, result)
+            .task("t0", TestReductionsDoubles::reductionAddDoubles4, inputA, inputB, result)
             .streamOut(result);
         //@formatter:on
 
@@ -245,7 +253,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         }
 
         double[] sequential = new double[1];
-        reductionAddDoubles3(inputA, inputB, sequential);
+        reductionAddDoubles4(inputA, inputB, sequential);
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
