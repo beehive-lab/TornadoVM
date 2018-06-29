@@ -60,8 +60,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     private final OCLKernelScheduler scheduler;
     private final int[] internalEvents = new int[1];
 
-    private final long[] singleThreadGlobalWorkSize = new long[] { 1 };
-    private final long[] singleThreadLocalWorkSize = new long[] { 1 };
+    private  long[] singleThreadGlobalWorkSize = new long[] { 1 };
+    private  long[] singleThreadLocalWorkSize = new long[] { 1 };
 
     public OCLInstalledCode(final String entryPoint, final byte[] code, final OCLDeviceContext deviceContext, final OCLProgram program, final OCLKernel kernel) {
         super(entryPoint);
@@ -278,6 +278,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                     task = scheduler.submit(kernel, meta, null);
                 }
             } else {
+                singleThreadGlobalWorkSize = meta.getGlobalWork();
+                singleThreadLocalWorkSize = meta.getLocalWork();
                 task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
             }
 
