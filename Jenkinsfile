@@ -39,9 +39,7 @@ pipeline {
 		}		
 		stage('build-n-run-kfusion') {
 			steps {
-				sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado'
-				sh 'mvn clean install -DskipTests'
-				sh 'kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado/conf/bm-traj2.settings'
+				sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado && mvn clean install -DskipTests && kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado/conf/bm-traj2.settings'
 			}
 		}
 		stage('tornado-sdk-push') {
