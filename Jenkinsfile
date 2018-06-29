@@ -29,6 +29,7 @@ pipeline {
 		stage('build') {
 			steps {
 				sh 'make'
+				sh 'bash tornadoInstallMaven.sh'
 			}
 		}
 		stage('tornado-unittests') {
@@ -49,18 +50,17 @@ pipeline {
 				sh 'python scripts/updateSDKRepository.py'
 			}
 		}
-	
 	}
 
 	post {
 		success {
-            		slackSend color: '#00CC00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
+				slackSend color: '#00CC00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
 	    		deleteDir() /* clean up our workspace */
-        	}	
-        	failure {
-            		slackSend color: '#CC0000', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
-        	}
-    	}
+ 		}	
+        failure {
+			slackSend color: '#CC0000', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
+		}
+	}
 }
 
 
