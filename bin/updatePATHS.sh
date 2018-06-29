@@ -3,13 +3,15 @@
 ## Update PATHS in Tornado
 
 file=`ls dist/tornado-sdk/`
-echo " ##################################################### "
+echo -e "\n########################################################## "
+echo -e "\e[32mTornado build sucess\e[39m"
 echo "Updating PATH and TORNADO_SDK to $file"
-echo " ##################################################### "
 
 cd bin/
 
-echo $PWD 
+echo -e "Binaries: $PWD "
+echo -e "Version : $(git rev-parse --short HEAD)"
+
 if [ -L bin ]
 then
   unlink bin
@@ -24,4 +26,6 @@ cd ..
 
 ln -s $PWD/dist/tornado-sdk/$file/bin/ bin/bin
 ln -s $PWD/dist/tornado-sdk/$file/ bin/sdk
+
+echo "########################################################## "
 
