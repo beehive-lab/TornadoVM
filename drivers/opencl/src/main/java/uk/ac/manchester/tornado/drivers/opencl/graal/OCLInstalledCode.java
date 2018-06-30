@@ -61,7 +61,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     private final int[] internalEvents = new int[1];
 
     private  long[] singleThreadGlobalWorkSize = new long[] { 1 };
-    private  long[] singleThreadLocalWorkSize = new long[] { 1 };
+    private      long[] singleThreadLocalWorkSize = new long[] { 1 };
 
     public OCLInstalledCode(final String entryPoint, final byte[] code, final OCLDeviceContext deviceContext, final OCLProgram program, final OCLKernel kernel) {
         super(entryPoint);
