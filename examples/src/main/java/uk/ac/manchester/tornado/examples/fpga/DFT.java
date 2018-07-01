@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.runtime.api.*;
 
 public class DFT {
 
-    private static    int size = 4096;
+    private static    int size;
     private static TaskSchedule graph;
     private static   float[] inReal,inImag,outReal,outImag;
 
@@ -42,9 +42,9 @@ public class DFT {
             float sumreal = 0;
             float sumimag = 0;
             for (int t = 0; t < n; t++) { // For each input element
-                float angle =  ((2 * (float) Math.PI * t * k) / n);
-                sumreal +=  (inreal[t] * (float) Math.cos(angle) + inimag[t] * (float) Math.sin(angle));
-                sumimag += -  (inreal[t] * (float) Math.sin(angle) + inimag[t] * (float) Math.cos(angle));
+                float angle =  ((2 * (float) 3.1415926535 * t * k) / (float) n);
+                sumreal += (float) (inreal[t] * ((float) Math.cos(angle)) + inimag[t] * ((float) Math.sin(angle)));
+                sumimag += -  (float) (inreal[t] * ((float) Math.sin(angle)) + inimag[t] * ((float) Math.cos(angle)));
             }
             outreal[k] = sumreal;
             outimag[k] = sumimag;
@@ -63,12 +63,26 @@ public class DFT {
 
         DFT.computeDft(inReal, inImag, outRealTor, outImagTor);
 
+        for(int i = 0;i < 5; i++){
+
+            long t1 = System.nanoTime();
+            DFT.computeDft(inReal, inImag, outRealTor, outImagTor);
+            long t2 = System.nanoTime();
+
+            long seqTime = t2 - t1;
+           System.out.println("Sequential time: " + seqTime + "\n");
+
+        }
+
+
         for (int i = 0; i < size; i++) {
-            if (abs(outImagTor[i] - outImag[i]) > 0.01) {
+            if (abs(outImagTor[i] - outImag[i]) > 10) {
+                System.out.println(outImagTor[i] + " vs " + outImag[i] + "\n");
                 val = false;
                 break;
             }
-            if (abs(outReal[i] - outRealTor[i]) > 0.01) {
+            if (abs(outReal[i] - outRealTor[i]) > 10) {
+                System.out.println(outReal[i] + " vs " + outRealTor[i] + "\n");
                 val = false;
                 break;
             }
@@ -78,6 +92,8 @@ public class DFT {
     }
     
     public static void  main(String[] args){
+
+        size = Integer.parseInt(args[0]);
 
         inReal = new float[size];
         inImag = new float[size];
@@ -89,7 +105,7 @@ public class DFT {
             inImag[i] = 1 / (float) (i + 2);
         }
 
-        graph = new TaskSchedule("benchmark");
+        graph = new TaskSchedule("s0");
         graph.task("t0", DFT::computeDft, inReal, inImag, outReal, outImag);
         graph.streamOut(outReal, outImag);
         graph.warmup();

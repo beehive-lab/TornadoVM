@@ -11,7 +11,7 @@ import uk.ac.manchester.tornado.collections.types.*;
 import uk.ac.manchester.tornado.runtime.api.*;
 
 
-public class ASaxpyVectors {
+public class ASaxpyVectorFloat4 {
 
 
     public static void saxpy(float alpha, VectorFloat4 x, VectorFloat4 y, VectorFloat4 b) {
@@ -44,7 +44,7 @@ public class ASaxpyVectors {
         bb.fill(20);
 
 
-        TaskSchedule s0 = new TaskSchedule("s0").task("t0", ASaxpyVectors::saxpy, alpha, xx, yy,bb).streamOut(yy);
+        TaskSchedule s0 = new TaskSchedule("s0").task("t0", ASaxpyVectorFloat4::saxpy, alpha, xx, yy,bb).streamOut(yy);
 
         for (int idx = 0; idx < 10; idx++) {
             s0.execute();
