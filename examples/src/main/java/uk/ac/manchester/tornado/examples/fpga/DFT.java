@@ -27,6 +27,7 @@
 package uk.ac.manchester.tornado.examples.fpga;
 
 import uk.ac.manchester.tornado.api.*;
+import uk.ac.manchester.tornado.collections.math.*;
 import static uk.ac.manchester.tornado.collections.math.TornadoMath.abs;
 import uk.ac.manchester.tornado.runtime.api.*;
 
@@ -42,9 +43,9 @@ public class DFT {
             float sumreal = 0;
             float sumimag = 0;
             for (int t = 0; t < n; t++) { // For each input element
-                float angle =  ((2 * (float) 3.1415926535 * t * k) / (float) n);
-                sumreal += (float) (inreal[t] * ((float) Math.cos(angle)) + inimag[t] * ((float) Math.sin(angle)));
-                sumimag += -  (float) (inreal[t] * ((float) Math.sin(angle)) + inimag[t] * ((float) Math.cos(angle)));
+                float angle =  ((2 *  TornadoMath.floatPI() * t * k) / (float) n);
+                sumreal +=  (inreal[t] * (TornadoMath.floatCos(angle)) + inimag[t] * (TornadoMath.floatSin(angle)));
+                sumimag += -(inreal[t] * (TornadoMath.floatSin(angle)) + inimag[t] * (TornadoMath.floatCos(angle)));
             }
             outreal[k] = sumreal;
             outimag[k] = sumimag;
@@ -76,12 +77,12 @@ public class DFT {
 
 
         for (int i = 0; i < size; i++) {
-            if (abs(outImagTor[i] - outImag[i]) > 10) {
+            if (abs(outImagTor[i] - outImag[i]) > 0.1) {
                 System.out.println(outImagTor[i] + " vs " + outImag[i] + "\n");
                 val = false;
                 break;
             }
-            if (abs(outReal[i] - outRealTor[i]) > 10) {
+            if (abs(outReal[i] - outRealTor[i]) > 0.1) {
                 System.out.println(outReal[i] + " vs " + outRealTor[i] + "\n");
                 val = false;
                 break;
