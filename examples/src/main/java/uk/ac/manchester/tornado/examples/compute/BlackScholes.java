@@ -126,11 +126,11 @@ public class BlackScholes {
 
          blackScholesKernel(input, seqCall, seqPut);
          long end = System.nanoTime();
-         System.out.println("Seq time: " +  (end-start) + " ns");
+         //System.out.println("Seq time: " +  (end-start) + " ns");
          boolean results = checkResult(seqCall, seqPut, callPrice,putPrice);
 
 
-         System.out.println("Correctness " + results + " \n ");
+        // System.out.println("Correctness " + results + " \n ");
      }
 
 //        new TaskSchedule("s0")

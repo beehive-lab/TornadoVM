@@ -115,15 +115,15 @@ public class DFT {
         graph.streamOut(outReal, outImag);
         graph.warmup();
 
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 10; i++) {
             graph.execute();
         }
 
-        if (validate()) {
-            System.out.println("Validation: " + "SUCCESS " + "\n");
-        } else {
-            System.out.println("Validation: " + " FAIL " + "\n");
-
-        }
+//        if (validate()) {
+//            System.out.println("Validation: " + "SUCCESS " + "\n");
+//        } else {
+//            System.out.println("Validation: " + " FAIL " + "\n");
+//
+//        }
     }
 }
