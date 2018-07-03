@@ -1,10 +1,9 @@
 package uk.ac.manchester.tornado.examples;
 
-import uk.ac.manchester.tornado.api.*;
-import uk.ac.manchester.tornado.examples.vectors.*;
-import uk.ac.manchester.tornado.runtime.api.*;
+import java.util.Arrays;
 
-import java.util.*;
+import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class VectorAddInt {
 
@@ -19,7 +18,7 @@ public class VectorAddInt {
     public static void main(String[] args) {
         int size = Integer.parseInt(args[0]);
 
-//        final int size = 8192;
+        // final int size = 8192;
 
         int[] a = new int[size];
         int[] b = new int[size];
@@ -43,11 +42,11 @@ public class VectorAddInt {
 
             long seqTimeKernel = t2 - t1;
 
-            //System.out.println("Sequential kernel time: " + seqTimeKernel + "ns" + "\n");
+            // System.out.println("Sequential kernel time: " + seqTimeKernel + "ns" + "\n");
             // System.out.printf("result: %d\n", c.toString());
-            //System.out.println(Arrays.toString(c));
+            // System.out.println(Arrays.toString(c));
 
-            System.out.println("Checking result");
+            // System.out.println("Checking result");
             boolean wrongResult = false;
 
             for (int i = 0; i < c.length; i++) {
@@ -57,7 +56,7 @@ public class VectorAddInt {
                 }
             }
             if (!wrongResult) {
-                System.out.println("Test success");
+                // System.out.println("Test success");
             } else {
                 System.out.println("Result is wrong");
             }
