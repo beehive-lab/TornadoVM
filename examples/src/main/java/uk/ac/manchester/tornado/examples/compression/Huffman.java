@@ -1,4 +1,29 @@
-package uk.ac.manchester.tornado.compression;
+/*
+ * This file is part of Tornado: A heterogeneous programming framework: 
+ * https://github.com/beehive-lab/tornado
+ *
+ * Copyright (c) 2013-2018, APT Group, School of Computer Science,
+ * The University of Manchester. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Authors: Juan Fumero
+ *
+ */
+package uk.ac.manchester.tornado.examples.compression;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -15,7 +40,7 @@ import java.util.PriorityQueue;
 
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
-public class HuffmanPlain {
+public class Huffman {
 
     private static HashMap<Integer, String> dictionary = new HashMap<>();
     private static boolean CHECK_RESULT = true;
@@ -200,7 +225,7 @@ public class HuffmanPlain {
 
         // @formatter:off
         new TaskSchedule("s0") 
-              .task("t0", HuffmanPlain::decodeTornadoKernel, input, frequencies, data, left, right, message)
+              .task("t0", Huffman::decodeTornadoKernel, input, frequencies, data, left, right, message)
               .streamOut(message)
               .execute();
         // @formatter:on
@@ -252,7 +277,7 @@ public class HuffmanPlain {
             long ss0 = System.nanoTime();
             // ArrayList<Integer> inputData =
             // InputScanner.getNumbers("/tmp/framesNonCompress.txt");
-            inputData = InputScanner.getNumbers("/tmp/foo.txt");
+            inputData = InputScanner.getIntNumbers("/tmp/foo.txt");
             long ss1 = System.nanoTime();
             System.out.println("Reading time: " + (ss1 - ss0) + " (ns)");
 
