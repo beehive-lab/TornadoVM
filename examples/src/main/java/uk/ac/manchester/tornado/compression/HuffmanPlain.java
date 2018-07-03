@@ -20,6 +20,8 @@ public class HuffmanPlain {
     private static HashMap<Integer, String> dictionary = new HashMap<>();
     private static boolean CHECK_RESULT = true;
 
+    private static boolean CHECK_DECODE_ONLY = false;
+
     private static BitSet convertStringToBinary(String binary) {
         BitSet bitset = new BitSet(binary.length());
         for (int i = 0; i < binary.length(); i++) {
@@ -82,7 +84,11 @@ public class HuffmanPlain {
         long s0 = System.nanoTime();
         // decode2(bitSetCompressed, frequencies, data, left, right, inputData);
         // decode2a(bits, frequencies, data, left, right, inputData);
-        int[] result = new int[inputData.size()];
+        int size = 5000000;
+        if (inputData != null) {
+            size = inputData.size();
+        }
+        int[] result = new int[size];
 
         decodeTornado(bits, frequencies, data, left, right, result, inputData);
         long s1 = System.nanoTime();
@@ -161,14 +167,14 @@ public class HuffmanPlain {
     }
 
     @SuppressWarnings("unused")
-    private static void decode2a(boolean[] input, int[] frequencies, int[] data, int[] left, int[] right, ArrayList<Integer> inputData) {
+    private static void decode2a(byte[] input, int[] frequencies, int[] data, int[] left, int[] right, ArrayList<Integer> inputData) {
         int rootNode = 0;
         int iteratorNode = 0;
 
         int jdx = 0;
         for (int idx = 0; idx < input.length; idx++) {
 
-            boolean bitInput = input[idx];
+            char bitInput = (char) input[idx];
 
             if (left[iteratorNode] == -1 && right[iteratorNode] == -1 && data[iteratorNode] != -1) {
                 int realData = data[iteratorNode];
@@ -182,147 +188,158 @@ public class HuffmanPlain {
                 }
                 idx--;
                 jdx++;
-            } else if (bitInput == false) {
-                // System.out.println("Moving left to index: " +
-                // left[iteratorNode]);
+            } else if (bitInput == 0) {
                 iteratorNode = left[iteratorNode];
             } else {
-                // System.out.println("Moving right to index: " +
-                // right[iteratorNode]);
                 iteratorNode = right[iteratorNode];
             }
         }
     }
 
     private static void decodeTornado(byte[] input, int[] frequencies, int[] data, int[] left, int[] right, int[] message, ArrayList<Integer> inputData) {
-        TaskSchedule s0 = new TaskSchedule("s0");
-        s0.task("t0", HuffmanPlain::decodeTornadoKernel, input, frequencies, data, left, right, message).streamOut(data);
-        s0.execute();
 
-        if (CHECK_RESULT) {
+        // @formatter:off
+        new TaskSchedule("s0") 
+              .task("t0", HuffmanPlain::decodeTornadoKernel, input, frequencies, data, left, right, message)
+              .streamOut(message)
+              .execute();
+        // @formatter:on
+
+        if (CHECK_RESULT && inputData != null) {
             for (int i = 0; i < inputData.size(); i++) {
                 if (message[i] != inputData.get(i)) {
-                    System.out.println("Result is not correct");
+                    System.out.println("Result is not correct: " + inputData.get(i) + " vs " + message[i] + " INDEX: " + i);
                     break;
                 }
             }
         }
     }
 
-    private static void decodeTornadoKernel(byte[] input, int[] frequencies, int[] data, int[] left, int[] right, int[] message) {
-        int rootNode = 0;
+    private static void decodeTornadoKernel(byte[] input, int[] frequencies, int[] data, int[] left, int[] right, int[] output) {
+        final int rootNode = 0;
         int iteratorNode = 0;
-        int jdx = 0;
+        int outIndex = 0;
         for (int idx = 0; idx < input.length; idx++) {
             byte bitInput = input[idx];
-            if ((left[iteratorNode] == -1) && (right[iteratorNode] == -1) && (data[iteratorNode] != -1)) {
-                int realData = data[iteratorNode];
-                message[jdx++] = realData;
-                iteratorNode = rootNode;
-                idx--;
-            } else if (bitInput == 0) {
+            int l = left[iteratorNode];
+            int r = right[iteratorNode];
+            int d = data[iteratorNode];
 
+            if (l == -1) {
+                int realData = data[iteratorNode];
+                output[outIndex] = realData;
+                iteratorNode = rootNode;
+                outIndex++;
+                idx--;
+                continue;
+            } else if (bitInput == 0) {
                 iteratorNode = left[iteratorNode];
-            } else if (bitInput == 1) {
+            } else {
                 iteratorNode = right[iteratorNode];
             }
         }
     }
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-        System.out.println("1. Reading");
 
-        // 1. Read data file
-        long ss0 = System.nanoTime();
-        // ArrayList<Integer> inputData =
-        // InputScanner.getNumbers("/tmp/framesNonCompress.txt");
-        ArrayList<Integer> inputData = InputScanner.getNumbers("/tmp/foo.txt");
-        long ss1 = System.nanoTime();
-        System.out.println("Reading time: " + (ss1 - ss0) + " (ns)");
+        ArrayList<Integer> inputData = null;
 
-        // 2. Compute frequencies
-        System.out.println("2. Computing frequencies");
-        HashMap<Integer, Integer> frequencyHash = getFrequencies(inputData);
-        int[] dataKeyToCompress = frequencyHash.keySet().stream().mapToInt(i -> i).toArray();
-        int n = dataKeyToCompress.length;
-        int[] frequencyArray = frequencyHash.values().stream().mapToInt(i -> i).toArray();
-        System.out.println("3. Compressing");
+        if (!CHECK_DECODE_ONLY) {
 
-        PriorityQueue<HuffmanNode> queue = new PriorityQueue<HuffmanNode>(n, new HuffmanTreeComparator());
+            System.out.println("1. Reading");
 
-        for (int i = 0; i < n; i++) {
-            HuffmanNode hn = new HuffmanNode();
-            hn.realData = dataKeyToCompress[i];
-            hn.frequency = frequencyArray[i];
-            hn.left = null;
-            hn.right = null;
-            queue.add(hn);
+            // 1. Read data file
+            long ss0 = System.nanoTime();
+            // ArrayList<Integer> inputData =
+            // InputScanner.getNumbers("/tmp/framesNonCompress.txt");
+            inputData = InputScanner.getNumbers("/tmp/foo.txt");
+            long ss1 = System.nanoTime();
+            System.out.println("Reading time: " + (ss1 - ss0) + " (ns)");
+
+            // 2. Compute frequencies
+            System.out.println("2. Computing frequencies");
+            HashMap<Integer, Integer> frequencyHash = getFrequencies(inputData);
+            int[] dataKeyToCompress = frequencyHash.keySet().stream().mapToInt(i -> i).toArray();
+            int n = dataKeyToCompress.length;
+            int[] frequencyArray = frequencyHash.values().stream().mapToInt(i -> i).toArray();
+            System.out.println("3. Compressing");
+
+            PriorityQueue<HuffmanNode> queue = new PriorityQueue<HuffmanNode>(n, new HuffmanTreeComparator());
+
+            for (int i = 0; i < n; i++) {
+                HuffmanNode hn = new HuffmanNode();
+                hn.realData = dataKeyToCompress[i];
+                hn.frequency = frequencyArray[i];
+                hn.left = null;
+                hn.right = null;
+                queue.add(hn);
+            }
+
+            HuffmanNode root = null;
+
+            while (queue.size() > 1) {
+                HuffmanNode x = queue.peek();
+                queue.poll();
+
+                HuffmanNode y = queue.peek();
+                queue.poll();
+
+                HuffmanNode f = new HuffmanNode();
+                f.frequency = x.frequency + y.frequency;
+                f.realData = 0;
+
+                f.left = x;
+                f.right = y;
+
+                root = f;
+                queue.add(f);
+            }
+
+            printAndAssignCode(root, "");
+
+            int numNodes = getNumNodes(root);
+            System.out.println("NUM NODES: " + numNodes);
+
+            int[] frequencies = new int[numNodes];
+            int[] data = new int[numNodes];
+            int[] left = new int[numNodes];
+            int[] right = new int[numNodes];
+
+            fillArrays(frequencies, data, left, right, root);
+
+            System.out.println("4. Writing");
+
+            FileOutputStream stream = new FileOutputStream("/tmp/huffman.txt");
+            ObjectOutputStream out = new ObjectOutputStream(stream);
+
+            // 4.1 Write huffman tree
+            // out.writeObject(root);
+            out.writeObject(frequencies);
+            out.writeObject(data);
+            out.writeObject(left);
+            out.writeObject(right);
+
+            StringBuffer compressData = new StringBuffer();
+            System.out.println("SIZE: " + inputData.size());
+            // 4.2 Write compress data in byte[]
+            for (int i = 0; i < inputData.size(); i++) {
+                compressData.append(dictionary.get(inputData.get(i)));
+            }
+
+            // System.out.println("COMPRESS: " + compressData.toString());
+            BitSet compressedBits = convertStringToBinary(compressData.toString());
+
+            // System.out.println(Arrays.toString(compressedBits.toByteArray()));
+
+            try {
+                out.writeObject(compressedBits.toByteArray());
+            } catch (Exception e) {
+
+            }
+
+            stream.close();
+            out.close();
         }
-
-        HuffmanNode root = null;
-
-        while (queue.size() > 1) {
-            HuffmanNode x = queue.peek();
-            queue.poll();
-
-            HuffmanNode y = queue.peek();
-            queue.poll();
-
-            HuffmanNode f = new HuffmanNode();
-            f.frequency = x.frequency + y.frequency;
-            f.realData = 0;
-
-            f.left = x;
-            f.right = y;
-
-            root = f;
-            queue.add(f);
-        }
-
-        printAndAssignCode(root, "");
-
-        int numNodes = getNumNodes(root);
-        System.out.println("NUM NODES: " + numNodes);
-
-        int[] frequencies = new int[numNodes];
-        int[] data = new int[numNodes];
-        int[] left = new int[numNodes];
-        int[] right = new int[numNodes];
-
-        fillArrays(frequencies, data, left, right, root);
-
-        System.out.println("4. Writing");
-
-        FileOutputStream stream = new FileOutputStream("/tmp/huffman.txt");
-        ObjectOutputStream out = new ObjectOutputStream(stream);
-
-        // 4.1 Write huffman tree
-        // out.writeObject(root);
-        out.writeObject(frequencies);
-        out.writeObject(data);
-        out.writeObject(left);
-        out.writeObject(right);
-
-        StringBuffer compressData = new StringBuffer();
-        System.out.println("SIZE: " + inputData.size());
-        // 4.2 Write compress data in byte[]
-        for (int i = 0; i < inputData.size(); i++) {
-            compressData.append(dictionary.get(inputData.get(i)));
-        }
-
-        // System.out.println("COMPRESS: " + compressData.toString());
-        BitSet compressedBits = convertStringToBinary(compressData.toString());
-
-        // System.out.println(Arrays.toString(compressedBits.toByteArray()));
-
-        try {
-            out.writeObject(compressedBits.toByteArray());
-        } catch (Exception e) {
-
-        }
-
-        stream.close();
-        out.close();
 
         decoding(inputData);
     }
