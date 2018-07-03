@@ -44,7 +44,6 @@ public class Huffman {
 
     private static HashMap<Integer, String> dictionary = new HashMap<>();
     private static boolean CHECK_RESULT = true;
-
     private static boolean CHECK_DECODE_ONLY = false;
 
     private static BitSet convertStringToBinary(String binary) {
@@ -80,7 +79,7 @@ public class Huffman {
         return frequencies;
     }
 
-    public static void decoding(ArrayList<Integer> inputData) throws ClassNotFoundException, IOException {
+    public static void huffmanDecoding(ArrayList<Integer> inputData) throws ClassNotFoundException, IOException {
         System.out.println("5. Reading file for decompressing");
         FileInputStream iStream = new FileInputStream("/tmp/huffman.txt");
         @SuppressWarnings("resource") ObjectInputStream inObject = new ObjectInputStream(iStream);
@@ -265,108 +264,116 @@ public class Huffman {
         }
     }
 
+    public static ArrayList<Integer> readInputFile() throws IOException {
+        long ss0 = System.nanoTime();
+        // ArrayList<Integer> inputData =
+        // InputScanner.getNumbers("/tmp/framesNonCompress.txt");
+        ArrayList<Integer> inputData = InputScanner.getIntNumbers("/tmp/foo.txt");
+        long ss1 = System.nanoTime();
+        System.out.println("Reading time: " + (ss1 - ss0) + " (ns)");
+        return inputData;
+    }
+
+    public static HuffmanNode huffmanEncoding(int[] dataKeyToCompress, int[] frequencyArray) {
+        int n = dataKeyToCompress.length;
+        PriorityQueue<HuffmanNode> queue = new PriorityQueue<HuffmanNode>(n, new HuffmanTreeComparator());
+        for (int i = 0; i < n; i++) {
+            HuffmanNode hn = new HuffmanNode();
+            hn.realData = dataKeyToCompress[i];
+            hn.frequency = frequencyArray[i];
+            hn.left = null;
+            hn.right = null;
+            queue.add(hn);
+        }
+
+        HuffmanNode root = null;
+
+        while (queue.size() > 1) {
+            HuffmanNode x = queue.peek();
+            queue.poll();
+
+            HuffmanNode y = queue.peek();
+            queue.poll();
+
+            HuffmanNode f = new HuffmanNode();
+            f.frequency = x.frequency + y.frequency;
+            f.realData = 0;
+
+            f.left = x;
+            f.right = y;
+
+            root = f;
+            queue.add(f);
+        }
+        printAndAssignCode(root, "");
+        return root;
+    }
+
+    public static void writeCompressedHuffmanIntoFile(HuffmanNode root, ArrayList<Integer> inputData) throws IOException {
+        int numNodes = getNumNodes(root);
+        System.out.println("NUM NODES: " + numNodes);
+
+        int[] frequencies = new int[numNodes];
+        int[] data = new int[numNodes];
+        int[] left = new int[numNodes];
+        int[] right = new int[numNodes];
+
+        fillArrays(frequencies, data, left, right, root);
+
+        FileOutputStream stream = new FileOutputStream("/tmp/huffman.txt");
+        ObjectOutputStream out = new ObjectOutputStream(stream);
+
+        // 4.1 Write huffman tree
+        // out.writeObject(root);
+        out.writeObject(frequencies);
+        out.writeObject(data);
+        out.writeObject(left);
+        out.writeObject(right);
+
+        StringBuffer compressData = new StringBuffer();
+        System.out.println("SIZE: " + inputData.size());
+        // 4.2 Write compress data in byte[]
+        for (int i = 0; i < inputData.size(); i++) {
+            compressData.append(dictionary.get(inputData.get(i)));
+        }
+
+        // System.out.println("COMPRESS: " + compressData.toString());
+        BitSet compressedBits = convertStringToBinary(compressData.toString());
+
+        // System.out.println(Arrays.toString(compressedBits.toByteArray()));
+
+        try {
+            out.writeObject(compressedBits.toByteArray());
+        } catch (Exception e) {
+
+        }
+
+        stream.close();
+        out.close();
+
+    }
+
     public static void main(String[] args) throws IOException, ClassNotFoundException {
 
         ArrayList<Integer> inputData = null;
 
         if (!CHECK_DECODE_ONLY) {
-
             System.out.println("1. Reading");
+            inputData = readInputFile();
 
-            // 1. Read data file
-            long ss0 = System.nanoTime();
-            // ArrayList<Integer> inputData =
-            // InputScanner.getNumbers("/tmp/framesNonCompress.txt");
-            inputData = InputScanner.getIntNumbers("/tmp/foo.txt");
-            long ss1 = System.nanoTime();
-            System.out.println("Reading time: " + (ss1 - ss0) + " (ns)");
-
-            // 2. Compute frequencies
             System.out.println("2. Computing frequencies");
             HashMap<Integer, Integer> frequencyHash = getFrequencies(inputData);
             int[] dataKeyToCompress = frequencyHash.keySet().stream().mapToInt(i -> i).toArray();
-            int n = dataKeyToCompress.length;
             int[] frequencyArray = frequencyHash.values().stream().mapToInt(i -> i).toArray();
+
             System.out.println("3. Compressing");
-
-            PriorityQueue<HuffmanNode> queue = new PriorityQueue<HuffmanNode>(n, new HuffmanTreeComparator());
-
-            for (int i = 0; i < n; i++) {
-                HuffmanNode hn = new HuffmanNode();
-                hn.realData = dataKeyToCompress[i];
-                hn.frequency = frequencyArray[i];
-                hn.left = null;
-                hn.right = null;
-                queue.add(hn);
-            }
-
-            HuffmanNode root = null;
-
-            while (queue.size() > 1) {
-                HuffmanNode x = queue.peek();
-                queue.poll();
-
-                HuffmanNode y = queue.peek();
-                queue.poll();
-
-                HuffmanNode f = new HuffmanNode();
-                f.frequency = x.frequency + y.frequency;
-                f.realData = 0;
-
-                f.left = x;
-                f.right = y;
-
-                root = f;
-                queue.add(f);
-            }
-
-            printAndAssignCode(root, "");
-
-            int numNodes = getNumNodes(root);
-            System.out.println("NUM NODES: " + numNodes);
-
-            int[] frequencies = new int[numNodes];
-            int[] data = new int[numNodes];
-            int[] left = new int[numNodes];
-            int[] right = new int[numNodes];
-
-            fillArrays(frequencies, data, left, right, root);
+            HuffmanNode root = huffmanEncoding(dataKeyToCompress, frequencyArray);
 
             System.out.println("4. Writing");
-
-            FileOutputStream stream = new FileOutputStream("/tmp/huffman.txt");
-            ObjectOutputStream out = new ObjectOutputStream(stream);
-
-            // 4.1 Write huffman tree
-            // out.writeObject(root);
-            out.writeObject(frequencies);
-            out.writeObject(data);
-            out.writeObject(left);
-            out.writeObject(right);
-
-            StringBuffer compressData = new StringBuffer();
-            System.out.println("SIZE: " + inputData.size());
-            // 4.2 Write compress data in byte[]
-            for (int i = 0; i < inputData.size(); i++) {
-                compressData.append(dictionary.get(inputData.get(i)));
-            }
-
-            // System.out.println("COMPRESS: " + compressData.toString());
-            BitSet compressedBits = convertStringToBinary(compressData.toString());
-
-            // System.out.println(Arrays.toString(compressedBits.toByteArray()));
-
-            try {
-                out.writeObject(compressedBits.toByteArray());
-            } catch (Exception e) {
-
-            }
-
-            stream.close();
-            out.close();
+            writeCompressedHuffmanIntoFile(root, inputData);
         }
 
-        decoding(inputData);
+        huffmanDecoding(inputData);
     }
 
     private static void fillArrays(int[] frequencies, int[] data, int[] left, int[] right, HuffmanNode root) {
