@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLProgram;
 import uk.ac.manchester.tornado.drivers.opencl.OCLScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCallStack;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 public class OCLInstalledCode extends InstalledCode implements TornadoInstalledCode {
 
@@ -280,7 +281,11 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             } else {
 
                 if (meta.isDebug()) {
-                    meta.printThreadDims();
+                    System.out.println("Running on: ");
+                    System.out.println("\tPlatform: " + meta.getDevice().getPlatformName());
+                    if (meta.getDevice() instanceof OCLTornadoDevice) {
+                        System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getDevice()).getDevice().getName());
+                    }
                 }
 
                 task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
