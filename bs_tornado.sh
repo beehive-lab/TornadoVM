@@ -6,7 +6,7 @@ do
 	echo "**************************************************************************"
 	echo "Running for size $j"
 	echo "**************************************************************************"
-	tornado -Ds0.t0.device=0:0  uk.ac.manchester.tornado.examples.compute.BlackScholes $j
+	tornado -Ds0.t0.device=0:1  uk.ac.manchester.tornado.examples.compute.BlackScholes $j
 	
 
 	echo "**************************************************************************"
