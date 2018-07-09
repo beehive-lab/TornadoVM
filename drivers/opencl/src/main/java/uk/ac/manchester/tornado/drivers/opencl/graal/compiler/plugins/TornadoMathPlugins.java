@@ -139,6 +139,15 @@ public class TornadoMathPlugins {
                 return true;
             }
         });
+
+        r.register1("floatSqrt", type, new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode value) {
+                b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, SQRT, kind)));
+                return true;
+            }
+        });
     }
 
     private static void registerFloatMath2Plugins(Registration r, Class<?> type, JavaKind kind) {
