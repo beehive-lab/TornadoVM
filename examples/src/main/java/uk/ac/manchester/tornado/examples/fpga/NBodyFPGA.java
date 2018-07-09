@@ -23,17 +23,17 @@
  * Authors: Michalis Papadimitriou
  *
  */
-package uk.ac.manchester.tornado.examples.compute;
+package uk.ac.manchester.tornado.examples.fpga;
+
+import uk.ac.manchester.tornado.api.*;
+import uk.ac.manchester.tornado.collections.math.*;
+import static uk.ac.manchester.tornado.collections.math.TornadoMath.*;
+import uk.ac.manchester.tornado.runtime.api.*;
 
 import java.io.*;
 import java.util.*;
 
-import uk.ac.manchester.tornado.api.*;
-import uk.ac.manchester.tornado.collections.math.*;
-import static uk.ac.manchester.tornado.collections.math.TornadoMath.abs;
-import uk.ac.manchester.tornado.runtime.api.*;
-
-public class NBody {
+public class NBodyFPGA {
 
       private  static  float delT,espSqr;
       private  static  float[] posSeq,velSeq;
@@ -106,7 +106,7 @@ public class NBody {
             velSeqSeq[i] = auxVelocityZero[i];
         }
         graph = new TaskSchedule("s0");
-        graph.task("t0", NBody::nBody, numBodies, posSeq, velSeq, delT, espSqr, inputSize);
+        graph.task("t0", NBodyFPGA::nBody, numBodies, posSeq, velSeq, delT, espSqr, inputSize);
         graph.warmup();
         graph.execute();
         graph.syncObjects(posSeq, velSeq);
@@ -177,7 +177,7 @@ public class NBody {
 
         System.out.println(resultsIterations.toString());
 
-        final TaskSchedule t0 = new TaskSchedule("s0").task("t0", NBody::nBody, numBodies, posSeq, velSeq, delT, espSqr,inputSize);
+        final TaskSchedule t0 = new TaskSchedule("s0").task("t0", NBodyFPGA::nBody, numBodies, posSeq, velSeq, delT, espSqr,inputSize);
 
         t0.warmup();
         resultsIterations = null;
