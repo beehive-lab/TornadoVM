@@ -29,6 +29,7 @@ pipeline {
 		stage('build') {
 			steps {
 				sh 'make'
+				sh 'bash tornadoInstallMaven.sh'
 			}
 		}
 		stage('tornado-unittests') {
@@ -38,9 +39,7 @@ pipeline {
 		}		
 		stage('build-n-run-kfusion') {
 			steps {
-				sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado'
-				sh 'mvn clean install -DskipTests'
-				sh 'kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado/conf/bm-traj2.settings'
+				sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado && mvn clean install -DskipTests && kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado/conf/bm-traj2.settings'
 			}
 		}
 		stage('tornado-sdk-push') {
@@ -49,18 +48,17 @@ pipeline {
 				sh 'python scripts/updateSDKRepository.py'
 			}
 		}
-	
 	}
 
 	post {
 		success {
-            		slackSend color: '#00CC00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
+				slackSend color: '#00CC00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
 	    		deleteDir() /* clean up our workspace */
-        	}	
-        	failure {
-            		slackSend color: '#CC0000', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
-        	}
-    	}
+ 		}	
+        failure {
+			slackSend color: '#CC0000', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
+		}
+	}
 }
 
 

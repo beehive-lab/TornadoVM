@@ -56,6 +56,8 @@ public class Hybrid {
     public static final int FPGA_INDEX = 1;
     public static final int MAX_DEVICES = 2;
 
+    public static final int[] DEVICE_INDEXES = new int[] { GPU_INDEX, FPGA_INDEX };
+
     // Task X
     public static void saxpy(int alpha, int[] x, int[] y) {
         for (@Parallel int i = 0; i < y.length; i++) {
@@ -116,23 +118,21 @@ public class Hybrid {
             for (int j = 0; j < MAX_DEVICES; j++) {
                 // We play with 2 devices
                 TaskSchedule s0 = new TaskSchedule("x" + i);
-                Tornado.setProperty("x" + i + ".t" + j + ".device", "0:" + i);
-                System.out.println("x" + i + ".t" + j + ".device" + "0:" + i);
+                Tornado.setProperty("x" + i + ".t" + j + ".device", "0:" + DEVICE_INDEXES[i]);
+                System.out.println("x" + i + ".t" + j + ".device" + "0:" + DEVICE_INDEXES[i]);
                 s0.task("t" + j, Hybrid::saxpy, kernelPackage.alpha, kernelPackage.x, kernelPackage.y);
                 s0.streamOut(kernelPackage.z);
                 s0.execute();
 
                 TaskSchedule s1 = new TaskSchedule("v" + i);
-                Tornado.setProperty("v" + i + ".t" + j + ".device", "0:" + j);
-                System.out.println("v" + i + ".t" + j + ".device" + "0:" + j);
+                Tornado.setProperty("v" + i + ".t" + j + ".device", "0:" + DEVICE_INDEXES[j]);
+                System.out.println("v" + i + ".t" + j + ".device" + "0:" + DEVICE_INDEXES[j]);
                 s1.task("t" + j, Hybrid::vectorAddition, kernelPackage.x, kernelPackage.y, kernelPackage.z);
                 s1.streamOut(kernelPackage.z);
                 s1.execute();
             }
         }
-
         System.out.println(Arrays.toString(kernelPackage.z));
-
     }
 
     public void engineExplorationV2(KernelPackage kernelPackage) {
@@ -205,7 +205,7 @@ public class Hybrid {
                 // Task X
                 TaskSchedule s0 = new TaskSchedule("x" + i);
                 String taskID = "x" + i + ".t" + j + ".device";
-                String location = "0:" + i;
+                String location = "0:" + DEVICE_INDEXES[i];
                 s0.task("t" + j, Hybrid::saxpy, kernelPackage.alpha, kernelPackage.x, kernelPackage.y);
                 s0.streamOut(kernelPackage.z);
                 tasks.add(s0);
@@ -215,7 +215,7 @@ public class Hybrid {
                 // Task V
                 TaskSchedule s1 = new TaskSchedule("v" + i);
                 taskID = "v" + i + ".t" + j + ".device";
-                location = "0:" + j;
+                location = "0:" + DEVICE_INDEXES[j];
                 s1.task("t" + j, Hybrid::vectorAddition, kernelPackage.x, kernelPackage.y, kernelPackage.z);
                 s1.streamOut(kernelPackage.z);
 
