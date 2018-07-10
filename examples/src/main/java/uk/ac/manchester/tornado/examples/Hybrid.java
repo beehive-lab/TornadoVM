@@ -132,9 +132,7 @@ public class Hybrid {
                 s1.execute();
             }
         }
-
         System.out.println(Arrays.toString(kernelPackage.z));
-
     }
 
     public void engineExplorationV2(KernelPackage kernelPackage) {

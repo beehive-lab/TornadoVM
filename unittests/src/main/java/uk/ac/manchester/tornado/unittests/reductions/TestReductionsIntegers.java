@@ -437,6 +437,64 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
+    public static void map02(int[] a, int[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            b[i] = a[i] * a[i];
+        }
+    }
+
+    public static void reduce02(int[] b, @Reduce int[] result) {
+        // reduction
+        result[0] = 0;
+        for (@Parallel int i = 0; i < b.length; i++) {
+            result[0] += b[i];
+        }
+    }
+
+    @Test
+    public void testMapReduce3() {
+        int[] a = new int[BIG_SIZE];
+        int[] b = new int[BIG_SIZE];
+
+        int[] result = null;
+
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+        OCLDeviceType deviceType = getDefaultDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+                result = new int[Runtime.getRuntime().availableProcessors()];
+                break;
+            case CL_DEVICE_TYPE_ACCELERATOR:
+            case CL_DEVICE_TYPE_GPU:
+                result = new int[numGroups];
+                break;
+            default:
+                break;
+        }
+
+        IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
+            a[i] = 10;
+            b[i] = 2;
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(a, b)
+            .task("t0", TestReductionsIntegers::map02, a, b)
+            .task("t1", TestReductionsIntegers::reduce02, b, result)
+            .streamOut(result)
+            .execute();        
+        //@formatter:on
+
+        for (int i = 1; i < result.length; i++) {
+            result[0] += result[i];
+        }
+
+    }
+
     /**
      * Currently we cannot do this due to synchronisation between the first part
      * and the second part, unless an explicit barrier is used.
