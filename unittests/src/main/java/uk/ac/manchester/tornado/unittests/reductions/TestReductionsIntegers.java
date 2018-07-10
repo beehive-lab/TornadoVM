@@ -492,7 +492,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
-
     }
 
     /**

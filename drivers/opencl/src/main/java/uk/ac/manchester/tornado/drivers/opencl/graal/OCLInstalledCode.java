@@ -279,7 +279,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                     task = scheduler.submit(kernel, meta, null);
                 }
             } else {
-
                 if (meta.isDebug()) {
                     System.out.println("Running on: ");
                     System.out.println("\tPlatform: " + meta.getDevice().getPlatformName());
@@ -287,7 +286,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                         System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getDevice()).getDevice().getName());
                     }
                 }
-
                 task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
             }
 

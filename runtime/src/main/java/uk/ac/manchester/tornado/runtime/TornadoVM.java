@@ -279,7 +279,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final TornadoDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
-                System.out.println("STREAM OUT: " + object);
+
                 if (graphContext.meta().isDebug()) {
                     debug("vm: STREAM_OUT [0x%x] %s on %s [event list=%d]", object.hashCode(), object, device, eventList);
                 }

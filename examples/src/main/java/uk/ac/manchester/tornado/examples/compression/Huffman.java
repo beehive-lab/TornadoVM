@@ -85,7 +85,6 @@ public class Huffman {
         @SuppressWarnings("resource") ObjectInputStream inObject = new ObjectInputStream(iStream);
 
         // 1. Read huffman tree
-        // HuffmanNode root = (HuffmanNode) inObject.readObject();
         int[] frequencies = (int[]) inObject.readObject();
         int[] data = (int[]) inObject.readObject();
         int[] left = (int[]) inObject.readObject();
@@ -106,8 +105,6 @@ public class Huffman {
         // 3. decode
         System.out.println("6. Decode");
         long s0 = System.nanoTime();
-        // decode2(bitSetCompressed, frequencies, data, left, right, inputData);
-        // decode2a(bits, frequencies, data, left, right, inputData);
         int size = 5000000;
         if (inputData != null) {
             size = inputData.size();
@@ -118,106 +115,6 @@ public class Huffman {
         long s1 = System.nanoTime();
 
         System.out.println("Decoding time: " + (s1 - s0) + " (ns)");
-    }
-
-    @SuppressWarnings("unused")
-    private static void decode(BitSet input, HuffmanNode root, ArrayList<Integer> inputData) {
-        boolean isData = true;
-        int idx = 0;
-        HuffmanNode aux = root;
-
-        int jdx = 0;
-        while (isData) {
-
-            if (idx >= input.length() - 1) {
-                isData = false;
-            }
-
-            boolean bitInput = input.get(idx);
-
-            if (aux.left == null && aux.right == null && aux.realData != 0) {
-                int realData = aux.realData;
-                aux = root;
-                if (CHECK_RESULT) {
-                    // System.out.println("REAL DATA --> " + realData);
-                    if (realData != inputData.get(jdx)) {
-                        System.out.println("Result is not correct");
-                        break;
-                    }
-                }
-                jdx++;
-            } else if (bitInput == false) {
-                aux = aux.left;
-                idx++;
-            } else {
-                aux = aux.right;
-                idx++;
-            }
-        }
-    }
-
-    @SuppressWarnings("unused")
-    private static void decode2(BitSet input, int[] frequencies, int[] data, int[] left, int[] right, ArrayList<Integer> inputData) {
-        int rootNode = 0;
-        int iteratorNode = 0;
-
-        int jdx = 0;
-        for (int idx = 0; idx < input.length(); idx++) {
-
-            boolean bitInput = input.get(idx);
-
-            if (left[iteratorNode] == -1 && right[iteratorNode] == -1 && data[iteratorNode] != -1) {
-                int realData = data[iteratorNode];
-                iteratorNode = rootNode;
-                if (CHECK_RESULT) {
-                    // System.out.println("REAL DATA --> " + realData);
-                    if (realData != inputData.get(jdx)) {
-                        System.out.println("Result is not correct");
-                        break;
-                    }
-                }
-                idx--;
-                jdx++;
-            } else if (bitInput == false) {
-                // System.out.println("Moving left to index: " +
-                // left[iteratorNode]);
-                iteratorNode = left[iteratorNode];
-            } else {
-                // System.out.println("Moving right to index: " +
-                // right[iteratorNode]);
-                iteratorNode = right[iteratorNode];
-            }
-        }
-    }
-
-    @SuppressWarnings("unused")
-    private static void decode2a(byte[] input, int[] frequencies, int[] data, int[] left, int[] right, ArrayList<Integer> inputData) {
-        int rootNode = 0;
-        int iteratorNode = 0;
-
-        int jdx = 0;
-        for (int idx = 0; idx < input.length; idx++) {
-
-            char bitInput = (char) input[idx];
-
-            if (left[iteratorNode] == -1 && right[iteratorNode] == -1 && data[iteratorNode] != -1) {
-                int realData = data[iteratorNode];
-                iteratorNode = rootNode;
-                if (CHECK_RESULT) {
-                    // System.out.println("REAL DATA --> " + realData);
-                    if (realData != inputData.get(jdx)) {
-                        System.out.println("Result is not correct");
-                        break;
-                    }
-                }
-                idx--;
-                jdx++;
-            } else if (bitInput == 0) {
-                iteratorNode = left[iteratorNode];
-            } else {
-                iteratorNode = right[iteratorNode];
-            }
-        }
     }
 
     private static void decodeTornado(byte[] input, int[] frequencies, int[] data, int[] left, int[] right, int[] message, ArrayList<Integer> inputData) {
@@ -266,9 +163,7 @@ public class Huffman {
 
     public static ArrayList<Integer> readInputFile() throws IOException {
         long ss0 = System.nanoTime();
-        // ArrayList<Integer> inputData =
-        // InputScanner.getNumbers("/tmp/framesNonCompress.txt");
-        ArrayList<Integer> inputData = InputScanner.getIntNumbers("/tmp/foo.txt");
+        ArrayList<Integer> inputData = InputScanner.getIntNumbers("/tmp/framesNonCompress.txt");
         long ss1 = System.nanoTime();
         System.out.println("Reading time: " + (ss1 - ss0) + " (ns)");
         return inputData;
@@ -324,7 +219,6 @@ public class Huffman {
         ObjectOutputStream out = new ObjectOutputStream(stream);
 
         // 4.1 Write huffman tree
-        // out.writeObject(root);
         out.writeObject(frequencies);
         out.writeObject(data);
         out.writeObject(left);
@@ -337,26 +231,18 @@ public class Huffman {
             compressData.append(dictionary.get(inputData.get(i)));
         }
 
-        // System.out.println("COMPRESS: " + compressData.toString());
         BitSet compressedBits = convertStringToBinary(compressData.toString());
-
-        // System.out.println(Arrays.toString(compressedBits.toByteArray()));
-
         try {
             out.writeObject(compressedBits.toByteArray());
         } catch (Exception e) {
 
         }
-
         stream.close();
         out.close();
-
     }
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-
         ArrayList<Integer> inputData = null;
-
         if (!CHECK_DECODE_ONLY) {
             System.out.println("1. Reading");
             inputData = readInputFile();
@@ -372,7 +258,6 @@ public class Huffman {
             System.out.println("4. Writing");
             writeCompressedHuffmanIntoFile(root, inputData);
         }
-
         huffmanDecoding(inputData);
     }
 
@@ -396,7 +281,6 @@ public class Huffman {
         right[0] = -1;
 
         while (!f.isEmpty()) {
-
             HuffmanNode aux = f.poll();
             nodeIndexes.put(nodeIndex, aux);
             nodeIndexes2.put(aux, nodeIndex++);
@@ -416,14 +300,10 @@ public class Huffman {
             data[i] = n.realData;
             left[i] = (n.left != null) ? nodeIndexes2.get(n.left) : -1;
             right[i] = (n.right != null) ? nodeIndexes2.get(n.right) : -1;
-
-            // System.out.println("Node: " + i + " ::DATA: " + data[i] + " L: "
-            // + left[i] + " R: " + right[i] + " FRQ: " + frequencies[i]);
         }
     }
 
     private static int getNumNodes(HuffmanNode root) {
-
         if (root == null) {
             return 0;
         }
@@ -445,7 +325,6 @@ public class Huffman {
                 f.addLast(aux.right);
             }
         }
-
         return visited.size();
     }
 }
