@@ -57,5 +57,4 @@ public class InputScanner {
         }
         return list;
     }
-
 }

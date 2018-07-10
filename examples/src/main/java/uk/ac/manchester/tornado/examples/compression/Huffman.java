@@ -309,20 +309,19 @@ public class Huffman {
         }
 
         HashSet<HuffmanNode> visited = new HashSet<>();
-        Deque<HuffmanNode> f = new LinkedList<>();
-        f.push(root);
+        Deque<HuffmanNode> queue = new LinkedList<>();
+        queue.push(root);
         visited.add(root);
 
-        while (!f.isEmpty()) {
-
-            HuffmanNode aux = f.poll();
+        while (!queue.isEmpty()) {
+            HuffmanNode aux = queue.poll();
             visited.add(aux);
 
             if (aux.left != null && !visited.contains(aux.left)) {
-                f.addLast(aux.left);
+                queue.addLast(aux.left);
             }
             if (aux.right != null && !visited.contains(aux.right)) {
-                f.addLast(aux.right);
+                queue.addLast(aux.right);
             }
         }
         return visited.size();
