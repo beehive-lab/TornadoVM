@@ -278,9 +278,9 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                     task = scheduler.submit(kernel, meta, null);
                 }
             } else {
-                long[] globalDim = meta.getGlobalWork();
-                long[] localDim = meta.getLocalWork();
-                task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, globalDim, localDim, null);
+                singleThreadGlobalWorkSize = meta.getGlobalWork();
+                singleThreadLocalWorkSize = meta.getLocalWork();
+                task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
             }
 
             if (meta.shouldDumpProfiles()) {
