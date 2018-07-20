@@ -280,7 +280,8 @@ public class OCLCodeCache {
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
             if (meta.shouldPrintCompileTimes()) {
-                System.out.printf("compile: kernel %s opencl %.9f\n", entryPoint, (t1 - t0) * 1e-9f);
+                // System.out.printf("compile: kernel %s opencl %.9f\n", entryPoint, (t1 - t0) *
+                // 1e-9f);
             }
             cache.put(id + "-" + entryPoint, code);
 
