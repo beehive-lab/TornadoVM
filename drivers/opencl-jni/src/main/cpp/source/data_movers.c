@@ -33,6 +33,12 @@
 #include "macros.h"
 #include "utils.h"
 
+#define PRINT_DATA_TIMES 0
+
+#ifdef PRINT_DATA_TIMES
+#include "opencl_time_utils.h"
+#endif
+
 #define CREATE_ARRAY(classname,sig,type) \
     JNIEXPORT jlong JNICALL classname ## _createArrayOnDevice__JJ_3 ## sig \
         (JNIEnv *env, jclass clazz, jlong context_id, jlong flags, j ## type ## Array array){  \
