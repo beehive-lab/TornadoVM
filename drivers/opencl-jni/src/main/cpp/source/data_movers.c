@@ -71,7 +71,7 @@ CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, D, double)
             OPENCL_SOFT_ERROR("clEnqueueWriteBuffer (" #TYPE  ")", clEnqueueWriteBuffer((cl_command_queue) queue_id, (cl_mem) device_ptr, blocking_write, (size_t) offset, (size_t) num_bytes, (void *) buffer,(cl_uint) num_events, (cl_event*) events, &event),-1); \
             if(PRINT_DATA_TIMES) { \
                 long writeTime = getTimeEvent(event); \
-                printf("Write time: %ld (ns) \n", writeTime); \
+                printf("H2D time: %ld (ns) \n", writeTime); \
             } \
             JNI_RELEASE_ARRAY(array1,buffer); \
             OPENCL_RELEASE_WAITLIST(array2); \
@@ -98,6 +98,10 @@ WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, D, dou
             debug("uk.ac.manchester.tornado.drivers.opencl> read array 0x%lx (%d bytes) to %p\n",offset, num_bytes, buffer);\
             cl_event event; \
             OPENCL_SOFT_ERROR("clEnqueueReadBuffer (" #TYPE ")", clEnqueueReadBuffer((cl_command_queue) queue_id, (cl_mem) device_ptr, blocking, (size_t) offset, (size_t) num_bytes, (void *) buffer, (cl_uint) num_events, (cl_event*) events, &event), -1); \
+            if(PRINT_DATA_TIMES) { \
+                long readTime = getTimeEvent(event); \
+                printf("D2H time: %ld (ns) \n", readTime); \
+            } \
             JNI_RELEASE_ARRAY(array1, buffer); \
             OPENCL_RELEASE_WAITLIST(array2); \
             return (jlong) event; \
