@@ -4,8 +4,8 @@
 
 | Build Type | Status | SDK |
 | --- | --- | --- |
-| Linux x86 | | |
-| OSx| Show  | |
+| Linux x86 | [![Build Status](http://130.88.192.214:9080/buildStatus/icon?job=Tornado-pipeline)](http://130.88.192.214:9080/job/Tornado-pipeline/)| |
+| OSx| [![Build Status](http://130.88.192.214:9080/buildStatus/icon?job=Tornado-pipeline)](http://130.88.192.214:9080/job/Tornado-pipeline/)  | |
 
 [![Build Status](http://130.88.192.214:9080/buildStatus/icon?job=Tornado-pipeline)](http://130.88.192.214:9080/job/Tornado-pipeline/)
 
