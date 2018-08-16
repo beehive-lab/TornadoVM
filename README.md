@@ -1,5 +1,12 @@
 # Installing Tornado #
 
+### Tornado Builts
+| Build Type | Status | SDK  |
+
+|------------|--------|------|
+| Linux x86  |        |      |
+| OSx        |        |      |
+
 [![Build Status](http://130.88.192.214:9080/buildStatus/icon?job=Tornado-pipeline)](http://130.88.192.214:9080/job/Tornado-pipeline/)
 
 ### Pre-requisites
