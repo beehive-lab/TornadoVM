@@ -4,8 +4,8 @@
 
 | Build Type | Status | SDK |
 | --- | --- | --- |
-| Linux x86 | [![Build Status](http://130.88.192.214:9080/buildStatus/icon?job=Tornado-pipeline)](http://130.88.192.214:9080/job/Tornado-pipeline/)| [tornado_x86_sdk](https://github.com/beehive-lab/tornado-sdk-internal/tree/linux-x86) |
-| OSx| [![Build Status](http://130.88.192.214:9080/buildStatus/icon?job=Tornado-pipeline)](http://130.88.192.214:9080/job/Tornado-pipeline/)  | [tornado_osx_sdk](https://github.com/beehive-lab/tornado-sdk-internal/tree/osx) |
+| **Linux x86** | [![Build Status](http://130.88.192.214:9080/buildStatus/icon?job=Tornado-pipeline)](http://130.88.192.214:9080/job/Tornado-pipeline/)| [tornado_x86_sdk](https://github.com/beehive-lab/tornado-sdk-internal/tree/linux-x86) |
+| **OSx**| [![Build Status](http://130.88.192.214:9080/buildStatus/icon?job=Tornado-pipeline)](http://130.88.192.214:9080/job/Tornado-pipeline/)  | [tornado_osx_sdk](https://github.com/beehive-lab/tornado-sdk-internal/tree/osx) |
 
 
 ### Pre-requisites
