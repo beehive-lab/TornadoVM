@@ -109,12 +109,6 @@ public class TaskSchedule extends AbstractTaskGraph {
         return this;
     }
 
-    @Deprecated
-    public TaskSchedule add(SchedulableTask task) {
-        addInner(task);
-        return this;
-    }
-
     public TaskSchedule task(SchedulableTask task) {
         addInner(task);
         return this;

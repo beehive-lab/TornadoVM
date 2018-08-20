@@ -72,8 +72,7 @@ public class TaskUtils {
             // m.getName(), m.isSynthetic(), m.isBridge(),
             // Modifier.isPublic(m.getModifiers()));
 
-            if (m.getName().equals("apply") && !m.isSynthetic()
-                    && !m.isBridge()) {
+            if (m.getName().equals("apply") && !m.isSynthetic() && !m.isBridge()) {
                 entryPoint = m;
                 break;
             }
@@ -88,7 +87,8 @@ public class TaskUtils {
         // for(Event event : events)
         // event.waitOn();
         // long end = System.nanoTime();
-        // System.out.printf("waitForEvents: %d events took %.8f s\n",events.size(),RuntimeUtilities.elapsedTimeInSeconds(start,
+        // System.out.printf("waitForEvents: %d events took %.8f
+        // s\n",events.size(),RuntimeUtilities.elapsedTimeInSeconds(start,
         // end));
         // events.clear();
     }
@@ -104,33 +104,26 @@ public class TaskUtils {
          */
         Method entryPoint = null;
         for (Method m : type.getDeclaredMethods()) {
-//            System.out.printf("ep m: %s\n",m.getName());
             if (m.getName().equals("apply")) {
                 entryPoint = m;
-//                break;
             }
         }
 
         guarantee(entryPoint != null, "unable to find entry point");
-
         /*
          * Fortunately we can do a bit of JVMCI magic to resolve the function to
          * a Method.
          */
-        final ResolvedJavaMethod resolvedMethod = TornadoRuntime.getVMBackend()
-                .getMetaAccess().lookupJavaMethod(entryPoint);
+        final ResolvedJavaMethod resolvedMethod = TornadoRuntime.getVMBackend().getMetaAccess().lookupJavaMethod(entryPoint);
         final ConstantPool cp = resolvedMethod.getConstantPool();
         final byte[] bc = resolvedMethod.getCode();
 
         for (int i = 0; i < bc.length; i++) {
             if (bc[i] == (byte) Bytecodes.INVOKESTATIC) {
                 cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKESTATIC);
-                JavaMethod jm = cp
-                        .lookupMethod(bc[i + 2], Bytecodes.INVOKESTATIC);
-
+                JavaMethod jm = cp.lookupMethod(bc[i + 2], Bytecodes.INVOKESTATIC);
                 try {
-                    Method toJavaMethod = jm.getClass().getDeclaredMethod(
-                            "toJava");
+                    Method toJavaMethod = jm.getClass().getDeclaredMethod("toJava");
                     toJavaMethod.setAccessible(true);
                     Method m = (Method) toJavaMethod.invoke(jm);
                     m.setAccessible(true);
@@ -139,14 +132,10 @@ public class TaskUtils {
 
                     e.printStackTrace();
                 }
-
                 break;
             } else if (bc[i] == (byte) Bytecodes.INVOKEVIRTUAL) {
                 cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
-                JavaMethod jm = cp
-                        .lookupMethod(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
-//                System.out.println(jm.getName());
-
+                JavaMethod jm = cp.lookupMethod(bc[i + 2], Bytecodes.INVOKEVIRTUAL);
                 switch (jm.getName()) {
                     case "floatValue":
                     case "doubleValue":
@@ -154,21 +143,17 @@ public class TaskUtils {
                         continue;
                 }
                 try {
-                    Method toJavaMethod = jm.getClass().getDeclaredMethod(
-                            "toJava");
+                    Method toJavaMethod = jm.getClass().getDeclaredMethod("toJava");
                     toJavaMethod.setAccessible(true);
                     Method m = (Method) toJavaMethod.invoke(jm);
                     m.setAccessible(true);
                     return m;
                 } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-
                     e.printStackTrace();
                 }
-
                 break;
             }
         }
-
         shouldNotReachHere();
         return null;
     }
@@ -178,80 +163,60 @@ public class TaskUtils {
         return createTask(meta, id, method, code, true, arg);
     }
 
-    public static <T1, T2> CompilableTask createTask(ScheduleMetaData meta, String id, Task2<T1, T2> code,
-            T1 arg1, T2 arg2) {
+    public static <T1, T2> CompilableTask createTask(ScheduleMetaData meta, String id, Task2<T1, T2> code, T1 arg1, T2 arg2) {
         final Method method = resolveMethodHandle(code);
         return createTask(meta, id, method, code, true, arg1, arg2);
     }
 
-    public static <T1, T2, T3> CompilableTask createTask(ScheduleMetaData meta, String id,
-            Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3) {
+    public static <T1, T2, T3> CompilableTask createTask(ScheduleMetaData meta, String id, Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3) {
         final Method method = resolveMethodHandle(code);
         return createTask(meta, id, method, code, true, arg1, arg2, arg3);
     }
 
-    public static <T1, T2, T3, T4> CompilableTask createTask(ScheduleMetaData meta, String id,
-            Task4<T1, T2, T3, T4> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4) {
+    public static <T1, T2, T3, T4> CompilableTask createTask(ScheduleMetaData meta, String id, Task4<T1, T2, T3, T4> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4) {
         final Method method = resolveMethodHandle(code);
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4);
     }
 
-    public static <T1, T2, T3, T4, T5> CompilableTask createTask(ScheduleMetaData meta, String id,
-            Task5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4,
-            T5 arg5) {
+    public static <T1, T2, T3, T4, T5> CompilableTask createTask(ScheduleMetaData meta, String id, Task5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) {
         final Method method = resolveMethodHandle(code);
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5);
     }
 
-    public static <T1, T2, T3, T4, T5, T6> CompilableTask createTask(ScheduleMetaData meta, String id,
-            Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3,
-            T4 arg4, T5 arg5, T6 arg6) {
+    public static <T1, T2, T3, T4, T5, T6> CompilableTask createTask(ScheduleMetaData meta, String id, Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) {
         final Method method = resolveMethodHandle(code);
-        return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5,
-                arg6);
+        return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6);
     }
 
-    public static <T1, T2, T3, T4, T5, T6, T7> CompilableTask createTask(ScheduleMetaData meta, String id,
-            Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3,
-            T4 arg4, T5 arg5, T6 arg6, T7 arg7) {
+    public static <T1, T2, T3, T4, T5, T6, T7> CompilableTask createTask(ScheduleMetaData meta, String id, Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6,
+            T7 arg7) {
         final Method method = resolveMethodHandle(code);
-        return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5,
-                arg6, arg7);
+        return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
     }
 
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> CompilableTask createTask(ScheduleMetaData meta, String id,
-            Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2,
-            T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) {
+    public static <T1, T2, T3, T4, T5, T6, T7, T8> CompilableTask createTask(ScheduleMetaData meta, String id, Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5,
+            T6 arg6, T7 arg7, T8 arg8) {
         final Method method = resolveMethodHandle(code);
-        return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5,
-                arg6, arg7, arg8);
+        return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
     }
 
-    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9> CompilableTask createTask(ScheduleMetaData meta,
-            String id,
-            Task9<T1, T2, T3, T4, T5, T6, T7, T8, T9> code, T1 arg1, T2 arg2,
-            T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) {
+    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9> CompilableTask createTask(ScheduleMetaData meta, String id, Task9<T1, T2, T3, T4, T5, T6, T7, T8, T9> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4,
+            T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) {
         final Method method = resolveMethodHandle(code);
-        return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5,
-                arg6, arg7, arg8, arg9);
+        return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
     }
 
-    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> CompilableTask createTask(ScheduleMetaData meta, String id,
-            Task10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> code, T1 arg1,
-            T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8,
-            T9 arg9, T10 arg10) {
+    public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> CompilableTask createTask(ScheduleMetaData meta, String id, Task10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> code, T1 arg1, T2 arg2, T3 arg3,
+            T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10) {
         final Method method = resolveMethodHandle(code);
-        return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5,
-                arg6, arg7, arg8, arg9, arg10);
+        return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
     }
 
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> CompilableTask createTask(ScheduleMetaData meta, String id,
-            Task15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> code, T1 arg1,
-            T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8,
-            T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15) {
+            Task15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11,
+            T12 arg12, T13 arg13, T14 arg14, T15 arg15) {
         final Method method = resolveMethodHandle(code);
-        return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5,
-                arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
+        return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
     }
 
     public static Object[] extractCapturedVariables(Object code) {
@@ -259,7 +224,8 @@ public class TaskUtils {
 
         int count = 0;
         for (Field field : type.getDeclaredFields()) {
-            //System.out.printf("cv: type=%s, name=%s\n", field.getType().getName(), field.getName());
+            // System.out.printf("cv: type=%s, name=%s\n",
+            // field.getType().getName(), field.getName());
             if (!field.getType().getName().contains("$$Lambda$")) {
                 count++;
             }
@@ -295,8 +261,7 @@ public class TaskUtils {
         return createTask(meta, id, method, runnable, false);
     }
 
-    private static CompilableTask createTask(ScheduleMetaData meta, String id, Method method, Object code,
-            boolean extractCVs, Object... args) {
+    private static CompilableTask createTask(ScheduleMetaData meta, String id, Method method, Object code, boolean extractCVs, Object... args) {
         final int numArgs;
         final Object[] cvs;
 
@@ -307,7 +272,7 @@ public class TaskUtils {
             cvs = null;
             numArgs = args.length;
         }
-//   	        final boolean isStatic = Modifier.isStatic(method.getModifiers());
+        // final boolean isStatic = Modifier.isStatic(method.getModifiers());
 
         final Object[] parameters = new Object[numArgs];
         int index = 0;
@@ -323,7 +288,7 @@ public class TaskUtils {
             index++;
         }
 
-//   	        final Object thisObject = (isStatic) ? null : code;
+        // final Object thisObject = (isStatic) ? null : code;
         return new CompilableTask(meta, id, method, parameters);
     }
 
