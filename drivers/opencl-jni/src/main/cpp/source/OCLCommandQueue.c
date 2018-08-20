@@ -33,7 +33,7 @@
 #include "macros.h"
 #include "utils.h"
 
-#define PRINT_KERNEL_EVENTS 1
+#define PRINT_KERNEL_EVENTS 0
 
 #ifdef PRINT_KERNEL_EVENTS 
 #include "opencl_time_utils.h"

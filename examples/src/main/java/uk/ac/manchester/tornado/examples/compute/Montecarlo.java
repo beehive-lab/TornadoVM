@@ -25,12 +25,12 @@
  */
 package uk.ac.manchester.tornado.examples.compute;
 
-import uk.ac.manchester.tornado.api.Atomic;
 import uk.ac.manchester.tornado.api.Parallel;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 /**
- * Montecarlo algorithm to approximate the PI value. This version has been adapted from Marawacc test-suite. 
+ * Montecarlo algorithm to approximate the PI value. This version has been
+ * adapted from Marawacc test-suite.
  *
  */
 public class Montecarlo {
@@ -53,68 +53,61 @@ public class Montecarlo {
 
             float dist = (float) Math.sqrt(x * x + y * y);
             if (dist <= 1.0f) {
-                //synchronized(output) {
-                //    output[0] += 1.0f;
-                //}
+                // synchronized(output) {
+                // output[0] += 1.0f;
+                // }
                 output[j] = 1.0f;
             } else {
                 output[j] = 0.0f;
             }
         }
         // output[0] = sum;
-        //    sum *= 4;
-        //    output[idx] = sum / (float)iterations;
-        //}
+        // sum *= 4;
+        // output[idx] = sum / (float)iterations;
+        // }
     }
-    
+
     public static void montecarlo(final int size) {
         float[] output = new float[size];
         float[] seq = new float[size];
-        
-        TaskSchedule t0 = new TaskSchedule("s0")
-            .task("t0", Montecarlo::computeMontecarlo, output, size)
-            .streamOut(output);
-        
 
-            long start = System.nanoTime();
-            t0.execute();
-            long end = System.nanoTime();
-            long tornadoTime = (end-start);
+        TaskSchedule t0 = new TaskSchedule("s0").task("t0", Montecarlo::computeMontecarlo, output, size).streamOut(output);
 
-            float sum = 0;
-            for (int j = 0; j < size; j++) {
-                sum += output[j];
-            }
-            //sum = output[0];
-            sum *= 4;
-            System.out.println("Total time (Tornado)   : " + (tornadoTime));
-            System.out.println("Pi value(Tornado)   : " + (sum / size));
-            
-            start = System.nanoTime();
-            computeMontecarlo(seq, size);
-            end = System.nanoTime();
-            long sequentialTime = (end-start);
-            
-            sum = 0;
-            for (int j = 0; j < size; j++) {
-                sum += seq[j];
-            }
-            sum *= 4;
-            
-            System.out.println("Total time (Sequential): " + (sequentialTime));
-            System.out.println("Pi value(seq)   : " + (sum / size));
+        long start = System.nanoTime();
+        t0.execute();
+        long end = System.nanoTime();
+        long tornadoTime = (end - start);
 
-            double speedup = (double)sequentialTime / (double)tornadoTime;
-            System.out.println("Speedup: " + speedup);
+        float sum = 0;
+        for (int j = 0; j < size; j++) {
+            sum += output[j];
         }
-        
+        // sum = output[0];
+        sum *= 4;
+        System.out.println("Total time (Tornado)   : " + (tornadoTime));
+        System.out.println("Pi value(Tornado)   : " + (sum / size));
 
-    
-    
+        start = System.nanoTime();
+        computeMontecarlo(seq, size);
+        end = System.nanoTime();
+        long sequentialTime = (end - start);
+
+        sum = 0;
+        for (int j = 0; j < size; j++) {
+            sum += seq[j];
+        }
+        sum *= 4;
+
+        System.out.println("Total time (Sequential): " + (sequentialTime));
+        System.out.println("Pi value(seq)   : " + (sum / size));
+
+        double speedup = (double) sequentialTime / (double) tornadoTime;
+        System.out.println("Speedup: " + speedup);
+    }
+
     public static void main(String[] args) {
         System.out.println("Compute Montecarlo");
         montecarlo(16777216);
     }
-    
-    
+
 }

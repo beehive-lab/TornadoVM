@@ -322,4 +322,44 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.01f);
     }
 
+    public static void computePi(float[] input, @Reduce float[] result) {
+        for (@Parallel int i = 1; i < input.length; i++) {
+            float value = 0;
+            if (i != 0) {
+                value = (float) (Math.pow(-1, i + 1) / (2 * i - 1));
+                result[0] += value + input[i];
+            }
+        }
+    }
+
+    @Test
+    public void testComputePi() {
+        int N = 512;
+
+        float[] input = new float[N];
+        IntStream.range(0, N).sequential().forEach(i -> {
+            input[i] = 0;
+        });
+
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+        float[] result = new float[32];
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .task("t0", TestReductionsFloats::computePi, input, result)
+            .streamOut(result)
+            .execute();
+        //@formatter:on
+
+        for (int i = 1; i < numGroups; i++) {
+            result[0] *= result[i];
+        }
+
+        System.out.println("Final Result: " + (result[0] * 4));
+
+    }
+
 }
