@@ -84,14 +84,15 @@ public class TornadoHelper {
         for (Method m : methods) {
             Annotation[] annotations = m.getAnnotations();
             boolean testEnabled = false;
+            boolean ignoreTest = false;
             for (Annotation a : annotations) {
-                if (a instanceof org.junit.Test) {
+                if (a instanceof org.junit.Ignore) {
+                    ignoreTest = true;
+                } else if (a instanceof org.junit.Test) {
                     testEnabled = true;
-                } else if (a instanceof org.junit.Ignore) {
-                    testEnabled = false;
                 }
             }
-            if (testEnabled) {
+            if (testEnabled & !ignoreTest) {
                 methodsToTest.add(m);
             }
         }

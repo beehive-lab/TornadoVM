@@ -332,7 +332,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         }
     }
 
-    @Test
+    @Ignore
     public void testComputePi() {
         int N = 512;
 
