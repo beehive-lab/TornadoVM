@@ -89,9 +89,6 @@ public class FunctionalDemo {
             }
         }
 
-//        final CompilableTask times2 = TaskUtils.createTask("t0", Matrix::times2, m);
-//        times2.mapTo(OpenCL.defaultDevice());
-//		times2.execute();
         System.out.println(m);
     }
 }
