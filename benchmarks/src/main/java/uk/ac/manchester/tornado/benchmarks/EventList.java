@@ -28,7 +28,7 @@ package uk.ac.manchester.tornado.benchmarks;
 import java.util.ArrayList;
 import java.util.function.Consumer;
 
-import uk.ac.manchester.tornado.api.ProfiledAction;
+import uk.ac.manchester.tornado.api.annotations.ProfiledAction;
 
 public class EventList<T extends ProfiledAction> extends ArrayList<T> {
 

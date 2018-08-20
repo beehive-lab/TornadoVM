@@ -46,7 +46,7 @@ import java.util.stream.IntStream;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.collections.graphics.Renderer;
 import uk.ac.manchester.tornado.collections.math.TornadoMath;

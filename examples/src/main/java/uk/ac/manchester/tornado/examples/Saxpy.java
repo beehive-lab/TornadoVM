@@ -1,6 +1,6 @@
 package uk.ac.manchester.tornado.examples;
 
-import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class Saxpy {

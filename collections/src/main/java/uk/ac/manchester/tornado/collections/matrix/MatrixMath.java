@@ -30,7 +30,7 @@ import static uk.ac.manchester.tornado.collections.types.Float6.dot;
 import static uk.ac.manchester.tornado.collections.types.MatrixFloat.scale;
 import static uk.ac.manchester.tornado.collections.types.MatrixFloat.transpose;
 
-import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.collections.types.Float6;
 import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
 import uk.ac.manchester.tornado.collections.types.MatrixDouble;

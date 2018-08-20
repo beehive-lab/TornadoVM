@@ -36,7 +36,7 @@ import java.util.List;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.Event;
+import uk.ac.manchester.tornado.api.annotations.Event;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.common.enums.Access;

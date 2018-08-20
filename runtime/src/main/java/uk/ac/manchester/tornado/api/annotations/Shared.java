@@ -23,8 +23,15 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.api;
+package uk.ac.manchester.tornado.api.annotations;
 
-public enum ReductionOp {
-    ADD, SUB, MIN, MAX, BITWISE_OR, BITWISE_AND, LOGICAL_OR, BITWISE_XOR, LOGICAL_AND;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Shared {
+
 }

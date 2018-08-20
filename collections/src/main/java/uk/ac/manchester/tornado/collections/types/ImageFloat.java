@@ -38,7 +38,7 @@ import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.sh
 
 import java.nio.FloatBuffer;
 
-import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 
 public class ImageFloat  implements PrimitiveStorage<FloatBuffer> {

@@ -37,7 +37,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_
 
 import java.nio.ByteBuffer;
 
-import uk.ac.manchester.tornado.api.Event;
+import uk.ac.manchester.tornado.api.annotations.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.common.TornadoLogger;

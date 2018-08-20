@@ -34,7 +34,7 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.runtime.TornadoDriver;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;

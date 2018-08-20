@@ -31,7 +31,7 @@ import java.util.Random;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.collections.types.Int2;
 import uk.ac.manchester.tornado.collections.types.Int3;
 import uk.ac.manchester.tornado.collections.types.Int4;

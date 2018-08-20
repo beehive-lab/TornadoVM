@@ -23,17 +23,30 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.api;
+package uk.ac.manchester.tornado.api.annotations;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 
-@Deprecated
-@Target(ElementType.PARAMETER)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Read {
+public interface ProfiledAction {
 
-    boolean cacheable() default false;
+    public String getName();
+
+    public long getSubmitTime();
+
+    public long getStartTime();
+
+    public long getEndTime();
+
+    public double getExecutionTime();
+
+    public double getQueuedTime();
+
+    public TornadoExecutionStatus getStatus();
+
+    public double getTotalTime();
+
+    public long getExecutionTimeInNanoSeconds();
+
+    public void retain();
+
 }

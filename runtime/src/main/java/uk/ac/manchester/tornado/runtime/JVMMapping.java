@@ -27,7 +27,7 @@ package uk.ac.manchester.tornado.runtime;
 
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
 
-import uk.ac.manchester.tornado.api.Event;
+import uk.ac.manchester.tornado.api.annotations.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.common.*;
 

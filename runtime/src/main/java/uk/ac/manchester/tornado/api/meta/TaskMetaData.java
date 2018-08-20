@@ -38,9 +38,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import uk.ac.manchester.tornado.api.Read;
-import uk.ac.manchester.tornado.api.ReadWrite;
-import uk.ac.manchester.tornado.api.Write;
+import uk.ac.manchester.tornado.api.annotations.Read;
+import uk.ac.manchester.tornado.api.annotations.ReadWrite;
+import uk.ac.manchester.tornado.api.annotations.Write;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.meta.domain.DomainTree;

@@ -44,7 +44,7 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.Vector;
+import uk.ac.manchester.tornado.api.annotations.Vector;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;

@@ -31,7 +31,7 @@ import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 import java.nio.ByteOrder;
 import java.util.List;
 
-import uk.ac.manchester.tornado.api.Event;
+import uk.ac.manchester.tornado.api.annotations.Event;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.Initialisable;
 import uk.ac.manchester.tornado.common.TornadoLogger;

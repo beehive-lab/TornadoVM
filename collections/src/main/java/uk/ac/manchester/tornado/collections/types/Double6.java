@@ -33,7 +33,7 @@ import static uk.ac.manchester.tornado.collections.types.DoubleOps.fmt6;
 
 import java.nio.DoubleBuffer;
 
-import uk.ac.manchester.tornado.api.Payload;
+import uk.ac.manchester.tornado.api.annotations.Payload;
 import uk.ac.manchester.tornado.collections.math.TornadoMath;
 
 /**

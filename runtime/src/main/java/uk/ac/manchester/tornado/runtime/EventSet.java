@@ -27,7 +27,7 @@ package uk.ac.manchester.tornado.runtime;
 
 import java.util.BitSet;
 
-import uk.ac.manchester.tornado.api.Event;
+import uk.ac.manchester.tornado.api.annotations.Event;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 
 /**

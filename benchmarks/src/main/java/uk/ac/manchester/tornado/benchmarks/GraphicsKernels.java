@@ -27,7 +27,7 @@ package uk.ac.manchester.tornado.benchmarks;
 
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.collections.types.*;
 
 import static uk.ac.manchester.tornado.collections.graphics.GraphicsMath.rotate;

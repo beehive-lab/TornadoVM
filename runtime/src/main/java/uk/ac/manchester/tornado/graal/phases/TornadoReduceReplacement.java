@@ -41,7 +41,7 @@ import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.phases.BasePhase;
 
-import uk.ac.manchester.tornado.api.Reduce;
+import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceAddNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.graal.nodes.OCLReduceSubNode;

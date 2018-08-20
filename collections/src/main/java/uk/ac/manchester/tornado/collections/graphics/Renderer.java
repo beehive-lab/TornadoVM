@@ -30,7 +30,7 @@ import static uk.ac.manchester.tornado.collections.types.Float3.add;
 import static uk.ac.manchester.tornado.collections.types.Float3.mult;
 import static uk.ac.manchester.tornado.collections.types.VolumeOps.grad;
 
-import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.collections.types.Byte3;
 import uk.ac.manchester.tornado.collections.types.Byte4;
 import uk.ac.manchester.tornado.collections.types.Float3;

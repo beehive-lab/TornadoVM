@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.common;
 
-import uk.ac.manchester.tornado.api.Event;
+import uk.ac.manchester.tornado.api.annotations.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoSchedulingStrategy;
 
 public interface TornadoDevice {

@@ -28,7 +28,7 @@ package uk.ac.manchester.tornado.examples.compute;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 

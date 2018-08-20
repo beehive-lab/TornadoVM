@@ -29,7 +29,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.collections.types.Float2;
 import uk.ac.manchester.tornado.collections.types.Float3;
 import uk.ac.manchester.tornado.collections.types.Float4;

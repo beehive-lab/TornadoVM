@@ -27,7 +27,7 @@ package uk.ac.manchester.tornado.benchmarks;
 
 import org.apache.lucene.util.*;
 
-import uk.ac.manchester.tornado.api.*;
+import uk.ac.manchester.tornado.api.annotations.*;
 import uk.ac.manchester.tornado.collections.math.*;
 
 public class ComputeKernels {

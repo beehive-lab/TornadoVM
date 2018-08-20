@@ -37,7 +37,7 @@ import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.debug
 import java.util.HashMap;
 import java.util.Map;
 import jdk.vm.ci.meta.ResolvedJavaField;
-import uk.ac.manchester.tornado.api.Vector;
+import uk.ac.manchester.tornado.api.annotations.Vector;
 
 public class TornadoValueTypeReplacement extends BasePhase<TornadoHighTierContext> {
 

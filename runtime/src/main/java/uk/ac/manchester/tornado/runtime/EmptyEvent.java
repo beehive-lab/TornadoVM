@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import uk.ac.manchester.tornado.api.Event;
+import uk.ac.manchester.tornado.api.annotations.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 
 public class EmptyEvent implements Event {

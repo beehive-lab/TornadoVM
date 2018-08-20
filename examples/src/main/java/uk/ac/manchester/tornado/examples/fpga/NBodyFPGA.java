@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.examples.fpga;
 
-import uk.ac.manchester.tornado.api.*;
+import uk.ac.manchester.tornado.api.annotations.*;
 import uk.ac.manchester.tornado.collections.math.*;
 import static uk.ac.manchester.tornado.collections.math.TornadoMath.*;
 import uk.ac.manchester.tornado.runtime.api.*;

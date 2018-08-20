@@ -23,8 +23,8 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.api;
+package uk.ac.manchester.tornado.api.annotations;
 
-public interface SynchronisationPoint {
-	public void waitOn();
+public interface Event extends ProfiledAction, SynchronisationPoint {
+
 }

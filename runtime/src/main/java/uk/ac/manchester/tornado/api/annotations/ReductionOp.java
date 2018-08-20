@@ -23,8 +23,8 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.api;
+package uk.ac.manchester.tornado.api.annotations;
 
-public interface Event extends ProfiledAction, SynchronisationPoint {
-
+public enum ReductionOp {
+    ADD, SUB, MIN, MAX, BITWISE_OR, BITWISE_AND, LOGICAL_OR, BITWISE_XOR, LOGICAL_AND;
 }

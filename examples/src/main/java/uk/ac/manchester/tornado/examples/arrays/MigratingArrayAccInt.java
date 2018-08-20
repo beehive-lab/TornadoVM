@@ -29,7 +29,7 @@ import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.runtime.TornadoDriver;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 

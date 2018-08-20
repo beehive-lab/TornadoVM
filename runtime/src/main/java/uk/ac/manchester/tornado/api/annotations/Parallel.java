@@ -23,16 +23,15 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.api;
+package uk.ac.manchester.tornado.api.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Deprecated
-@Target(ElementType.PARAMETER)
+@Target({ ElementType.LOCAL_VARIABLE, ElementType.TYPE, ElementType.TYPE_USE, ElementType.TYPE_PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ReadWrite {
+public @interface Parallel {
 
 }

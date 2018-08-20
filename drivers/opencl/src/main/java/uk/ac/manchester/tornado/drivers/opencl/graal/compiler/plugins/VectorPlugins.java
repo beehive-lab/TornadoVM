@@ -45,7 +45,7 @@ import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import uk.ac.manchester.tornado.api.Vector;
+import uk.ac.manchester.tornado.api.annotations.Vector;
 import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;

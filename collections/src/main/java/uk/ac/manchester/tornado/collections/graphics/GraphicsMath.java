@@ -36,7 +36,7 @@ import static uk.ac.manchester.tornado.collections.types.Float3.normalise;
 import static uk.ac.manchester.tornado.collections.types.Float3.sub;
 import static uk.ac.manchester.tornado.collections.types.VolumeOps.interp;
 
-import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.collections.types.Float3;
 import uk.ac.manchester.tornado.collections.types.Float4;
 import uk.ac.manchester.tornado.collections.types.ImageFloat;
