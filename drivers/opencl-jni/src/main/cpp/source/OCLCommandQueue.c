@@ -169,7 +169,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
 
     if (PRINT_KERNEL_EVENTS) {
         long kernelTime = getTimeEvent(event);
-        printf("Kernel time: %d (ns) \n", kernelTime);
+        printf("Kernel time: %ld (ns) \n", kernelTime);
     }
 
     if (array != NULL)

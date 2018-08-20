@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.runtime;
 
 import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
 import static uk.ac.manchester.tornado.common.Tornado.ENABLE_PROFILING;
+import static uk.ac.manchester.tornado.common.Tornado.PRINT_COMPILE_TIMES;
 import static uk.ac.manchester.tornado.common.Tornado.USE_VM_FLUSH;
 import static uk.ac.manchester.tornado.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.common.enums.Access.READ_WRITE;
@@ -355,7 +356,9 @@ public class TornadoVM extends TornadoLogger {
                     }
                     final long compileEnd = System.nanoTime();
                     if (graphContext.meta().shouldPrintCompileTimes()) {
-                        System.out.printf("compile: task %s tornado %.9f\n", task.getName(), (compileEnd - compileStart) * 1e-9);
+                        if (PRINT_COMPILE_TIMES) {
+                            System.out.printf("compile: " + task.getName() + "  " + +(compileEnd - compileStart) + "ns" + "\n");
+                        }
                     }
 
                     if (graphContext.meta().isDebug()) {

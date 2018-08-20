@@ -25,6 +25,7 @@
  */
 package uk.ac.manchester.tornado.collections.math;
 
+import static java.lang.Float.MAX_EXPONENT;
 import static java.lang.Float.floatToIntBits;
 import static java.lang.Integer.toBinaryString;
 import static uk.ac.manchester.tornado.collections.types.DoubleOps.compareBits;
@@ -271,6 +272,22 @@ public class TornadoMath {
 
     public static double log2(double value) {
         return Math.log(value) / Math.log(2);
+    }
+
+    public static float floatSin(float value) {
+        return (float) Math.sin(value);
+    }
+
+    public static float floatCos(float value) {
+        return (float) Math.cos(value);
+    }
+
+    public static float floatPI(){
+        return (float) Math.PI;
+    }
+
+    public static float floatSqrt(float value){
+        return (float) Math.sqrt(value);
     }
 
 }

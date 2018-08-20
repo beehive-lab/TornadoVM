@@ -233,7 +233,18 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                     task = scheduler.submit(kernel, meta, waitEvents);
                 }
             } else {
-                task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, waitEvents);
+                if (meta.isDebug()) {
+                    System.out.println("Running on: ");
+                    System.out.println("\tPlatform: " + meta.getDevice().getPlatformName());
+                    if (meta.getDevice() instanceof OCLTornadoDevice) {
+                        System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getDevice()).getDevice().getName());
+                    }
+                }
+                if (meta.getGlobalWork() == null) {
+                    task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, waitEvents);
+                } else {
+                    task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
+                }
             }
 
             if (meta.shouldDumpProfiles()) {
@@ -286,7 +297,11 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                         System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getDevice()).getDevice().getName());
                     }
                 }
-                task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
+                if (meta.getGlobalWork() == null) {
+                    task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
+                } else {
+                    task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, meta.getGlobalWork(), meta.getLocalWork(), null);
+                }
             }
 
             if (meta.shouldDumpProfiles()) {

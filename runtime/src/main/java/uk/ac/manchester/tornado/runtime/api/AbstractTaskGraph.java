@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.runtime.api;
 
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.isBoxedPrimitiveClass;
+import static uk.ac.manchester.tornado.common.Tornado.PRINT_COMPILE_TIMES;
 import static uk.ac.manchester.tornado.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.common.Tornado.warn;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
@@ -50,9 +51,9 @@ import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
+import uk.ac.manchester.tornado.runtime.graph.GraphCompilationResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
-import uk.ac.manchester.tornado.runtime.graph.GraphCompilationResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
@@ -243,7 +244,12 @@ public abstract class AbstractTaskGraph {
     }
 
     protected void scheduleInner() {
+        long t0 = System.nanoTime();
         compileTasks();
+        long t1 = System.nanoTime();
+        if (PRINT_COMPILE_TIMES) {
+            System.out.printf("compile: compileTasks: " + (t1 - t0) + "ns" + "\n");
+        }
         event = vm.execute();
     }
 
