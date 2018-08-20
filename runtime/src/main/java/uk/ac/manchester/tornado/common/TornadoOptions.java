@@ -23,33 +23,10 @@
  * Authors: Juan Fumero
  *
  */
-package uk.ac.manchester.tornado.runtime.utils;
+package uk.ac.manchester.tornado.common;
 
-public class TornadoUtils {
+public class TornadoOptions {
 
-    public enum TornadoDeviceType {
-        CPU, GPU, FPGA
-    }
-
-    public static int getSizeReduction(int inputSize, TornadoDeviceType where) {
-
-        switch (where) {
-            case CPU:
-                // If it is executed on the CPU, we return the number of threads
-                // of the current
-                // CPU
-                return Runtime.getRuntime().availableProcessors();
-            case GPU:
-            case FPGA:
-                // size will be the number of work-groups on the GPU
-                int size = 1;
-                if (inputSize > 256) {
-                    size = inputSize / 256;
-                }
-                return size;
-        }
-
-        return 0;
-    }
+    public static boolean printBytecodes = Boolean.parseBoolean(Tornado.getProperty("tornado.print.bytecodes", "False"));
 
 }

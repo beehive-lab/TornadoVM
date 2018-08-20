@@ -23,33 +23,13 @@
  * Authors: Juan Fumero
  *
  */
-package uk.ac.manchester.tornado.runtime.utils;
+package uk.ac.manchester.tornado.examples.compression;
 
-public class TornadoUtils {
+import java.util.Comparator;
 
-    public enum TornadoDeviceType {
-        CPU, GPU, FPGA
+public class HuffmanTreeComparator implements Comparator<HuffmanNode> {
+
+    public int compare(HuffmanNode x, HuffmanNode y) {
+        return (x.frequency - y.frequency);
     }
-
-    public static int getSizeReduction(int inputSize, TornadoDeviceType where) {
-
-        switch (where) {
-            case CPU:
-                // If it is executed on the CPU, we return the number of threads
-                // of the current
-                // CPU
-                return Runtime.getRuntime().availableProcessors();
-            case GPU:
-            case FPGA:
-                // size will be the number of work-groups on the GPU
-                int size = 1;
-                if (inputSize > 256) {
-                    size = inputSize / 256;
-                }
-                return size;
-        }
-
-        return 0;
-    }
-
 }

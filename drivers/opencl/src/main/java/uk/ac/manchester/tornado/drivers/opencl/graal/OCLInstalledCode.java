@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLProgram;
 import uk.ac.manchester.tornado.drivers.opencl.OCLScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCallStack;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
 public class OCLInstalledCode extends InstalledCode implements TornadoInstalledCode {
 
@@ -60,8 +61,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     private final OCLKernelScheduler scheduler;
     private final int[] internalEvents = new int[1];
 
-    private long[] singleThreadGlobalWorkSize = new long[] { 1 };
-    private long[] singleThreadLocalWorkSize = new long[] { 1 };
+    private final long[] singleThreadGlobalWorkSize = new long[] { 1 };
+    private final long[] singleThreadLocalWorkSize = new long[] { 1 };
 
     public OCLInstalledCode(final String entryPoint, final byte[] code, final OCLDeviceContext deviceContext, final OCLProgram program, final OCLKernel kernel) {
         super(entryPoint);
@@ -232,7 +233,18 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                     task = scheduler.submit(kernel, meta, waitEvents);
                 }
             } else {
-                task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, waitEvents);
+                if (meta.isDebug()) {
+                    System.out.println("Running on: ");
+                    System.out.println("\tPlatform: " + meta.getDevice().getPlatformName());
+                    if (meta.getDevice() instanceof OCLTornadoDevice) {
+                        System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getDevice()).getDevice().getName());
+                    }
+                }
+                if (meta.getGlobalWork() == null) {
+                    task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, waitEvents);
+                } else {
+                    task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
+                }
             }
 
             if (meta.shouldDumpProfiles()) {
@@ -278,6 +290,13 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                     task = scheduler.submit(kernel, meta, null);
                 }
             } else {
+                if (meta.isDebug()) {
+                    System.out.println("Running on: ");
+                    System.out.println("\tPlatform: " + meta.getDevice().getPlatformName());
+                    if (meta.getDevice() instanceof OCLTornadoDevice) {
+                        System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getDevice()).getDevice().getName());
+                    }
+                }
                 if (meta.getGlobalWork() == null) {
                     task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
                 } else {

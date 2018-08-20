@@ -23,33 +23,38 @@
  * Authors: Juan Fumero
  *
  */
-package uk.ac.manchester.tornado.runtime.utils;
+package uk.ac.manchester.tornado.examples.compression;
 
-public class TornadoUtils {
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Locale;
+import java.util.Scanner;
 
-    public enum TornadoDeviceType {
-        CPU, GPU, FPGA
-    }
+public class InputScanner {
 
-    public static int getSizeReduction(int inputSize, TornadoDeviceType where) {
+    public static ArrayList<Integer> getIntNumbers(String fileName) throws IOException {
+        ArrayList<Integer> list = new ArrayList<>();
+        Scanner scanner = null;
+        try {
+            scanner = new Scanner(new BufferedReader(new FileReader(fileName)));
+            scanner.useLocale(Locale.US);
+            scanner.useDelimiter("[,\\n]");
 
-        switch (where) {
-            case CPU:
-                // If it is executed on the CPU, we return the number of threads
-                // of the current
-                // CPU
-                return Runtime.getRuntime().availableProcessors();
-            case GPU:
-            case FPGA:
-                // size will be the number of work-groups on the GPU
-                int size = 1;
-                if (inputSize > 256) {
-                    size = inputSize / 256;
+            while (scanner.hasNext()) {
+                if (scanner.hasNextFloat()) {
+                    float n = scanner.nextFloat();
+                    list.add((int) n);
+                } else {
+                    scanner.next();
                 }
-                return size;
+            }
+        } finally {
+            if (scanner != null) {
+                scanner.close();
+            }
         }
-
-        return 0;
+        return list;
     }
-
 }

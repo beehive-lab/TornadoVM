@@ -29,6 +29,16 @@ package uk.ac.manchester.tornado.drivers.opencl;
 import uk.ac.manchester.tornado.runtime.TornadoDriver;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 
+/**
+ * Run:
+ * 
+ * <p>
+ * <code>
+ * $ tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput
+ * </code>
+ * </p>
+ *
+ */
 public class TornadoDeviceOutput {
 
     public static void main(String[] args) {
