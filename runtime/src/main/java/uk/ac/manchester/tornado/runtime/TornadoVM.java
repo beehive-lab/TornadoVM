@@ -359,8 +359,6 @@ public class TornadoVM extends TornadoLogger {
                         if (PRINT_COMPILE_TIMES) {
                             System.out.printf("compile: " + task.getName() + "  " + +(compileEnd - compileStart) + "ns" + "\n");
                         }
-                        // System.out.printf("compile: task %s tornado %f\n", task.getName(),
-                        // (compileEnd - compileStart));
                     }
 
                     if (graphContext.meta().isDebug()) {

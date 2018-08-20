@@ -34,6 +34,8 @@ import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class DFT {
 
+    public static boolean CHECK_RESULT = true;
+
     private static int size;
     private static TaskSchedule graph;
     private static float[] inReal,inImag,outReal,outImag;
@@ -119,11 +121,12 @@ public class DFT {
             graph.execute();
         }
 
-//        if (validate()) {
-//            System.out.println("Validation: " + "SUCCESS " + "\n");
-//        } else {
-//            System.out.println("Validation: " + " FAIL " + "\n");
-//
-//        }
+        if (CHECK_RESULT) {
+            if (validate()) {
+                System.out.println("Validation: " + "SUCCESS " + "\n");
+            } else {
+                System.out.println("Validation: " + " FAIL " + "\n");
+            }
+        }
     }
 }

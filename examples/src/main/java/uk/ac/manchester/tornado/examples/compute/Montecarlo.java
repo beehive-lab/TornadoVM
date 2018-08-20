@@ -36,7 +36,6 @@ import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 public class Montecarlo {
 
     private static void computeMontecarlo(float[] output, final int iterations) {
-        float sum = 0.0f;
         for (@Parallel int j = 0; j < iterations; j++) {
             long seed = j;
             // generate a pseudo random number (you do need it twice)
@@ -53,18 +52,11 @@ public class Montecarlo {
 
             float dist = (float) Math.sqrt(x * x + y * y);
             if (dist <= 1.0f) {
-                // synchronized(output) {
-                // output[0] += 1.0f;
-                // }
                 output[j] = 1.0f;
             } else {
                 output[j] = 0.0f;
             }
         }
-        // output[0] = sum;
-        // sum *= 4;
-        // output[idx] = sum / (float)iterations;
-        // }
     }
 
     public static void montecarlo(final int size) {
@@ -82,7 +74,6 @@ public class Montecarlo {
         for (int j = 0; j < size; j++) {
             sum += output[j];
         }
-        // sum = output[0];
         sum *= 4;
         System.out.println("Total time (Tornado)   : " + (tornadoTime));
         System.out.println("Pi value(Tornado)   : " + (sum / size));
