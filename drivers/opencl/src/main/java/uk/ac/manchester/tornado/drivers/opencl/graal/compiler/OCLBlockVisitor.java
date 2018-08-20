@@ -30,7 +30,6 @@ import java.util.Set;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StartNode;
@@ -154,7 +153,14 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         if (b.getPostdominator() != null) {
             Block pdom = b.getPostdominator();
             if (!merges.contains(pdom) && isMergeBlock(pdom) && !switches.contains(b)) {
-                asm.endScope();
+
+                // Check also if the current and next blocks are not merges
+                // block with more than 2 predecessors.
+                // In that case, we do not generate end scope.
+                if (!(pdom.getBeginNode() instanceof MergeNode && merges.contains(b) && b.getPredecessorCount() > 2)) {
+                    asm.endScope();
+                }
+
             } else if (!merges.contains(pdom) && isMergeBlock(pdom) && switches.contains(b) && isSwitchBlock(b.getDominator())) {
                 closeSwitchStatement(b);
             } else {

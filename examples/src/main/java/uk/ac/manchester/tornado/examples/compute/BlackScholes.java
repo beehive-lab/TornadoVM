@@ -33,14 +33,15 @@ import uk.ac.manchester.tornado.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 /**
- * BlackScholes implementation adapted from AMD-OpenCL examples and Marawacc compiler framework.
+ * BlackScholes implementation adapted from AMD-OpenCL examples and Marawacc
+ * compiler framework.
  *
  */
 public class BlackScholes {
 
     private static void blackScholesKernel(float[] input, float[] callResult, float[] putResult) {
-        for (@Parallel int idx = 0; idx < callResult.length; idx++) { 
-            float rand = input[idx];      
+        for (@Parallel int idx = 0; idx < callResult.length; idx++) {
+            float rand = input[idx];
             final float S_LOWER_LIMIT = 10.0f;
             final float S_UPPER_LIMIT = 100.0f;
             final float K_LOWER_LIMIT = 10.0f;
@@ -57,7 +58,7 @@ public class BlackScholes {
             final float r = R_LOWER_LIMIT * rand + R_UPPER_LIMIT * (1.0f - rand);
             final float v = SIGMA_LOWER_LIMIT * rand + SIGMA_UPPER_LIMIT * (1.0f - rand);
 
-            float d1 = (float) ((float)(TornadoMath.log(S / K) + ((r + (v * v / 2)) * T)) / v * TornadoMath.sqrt(T));
+            float d1 = (float) ((float) (TornadoMath.log(S / K) + ((r + (v * v / 2)) * T)) / v * TornadoMath.sqrt(T));
             float d2 = (float) ((float) d1 - (v * TornadoMath.sqrt(T)));
             callResult[idx] = (float) (S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2));
             putResult[idx] = (float) (K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1));
@@ -77,58 +78,53 @@ public class BlackScholes {
         final float oneBySqrt2pi = 0.398942280f;
         float absX = TornadoMath.abs(X);
         float t = one / (one + temp4 * absX);
-        float y = (float) (one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t
-                * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5)))));
+        float y = (float) (one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5)))));
         float result = (X < zero) ? (one - y) : y;
         return result;
     }
 
     private static boolean checkResult(float[] call, float[] put, float[] callPrice, float[] putPrice) {
-        double delta = 0.8;
+        double delta = 1.8;
         for (int i = 0; i < call.length; i++) {
             if (Math.abs(call[i] - callPrice[i]) > delta) {
-                System.out.println("call: " + call[i] + " vs gpu " + callPrice[i] );
+                System.out.println("call: " + call[i] + " vs gpu " + callPrice[i]);
                 return false;
             }
             if (Math.abs(put[i] - putPrice[i]) > delta) {
-                System.out.println("put: " + put[i] + " vs gpu " + putPrice[i] );
+                System.out.println("put: " + put[i] + " vs gpu " + putPrice[i]);
                 return false;
             }
         }
         return true;
     }
-    
+
     public static void blackScholes(int size) {
-        
-        Random random = new Random();        
-        float[] input = new float[size];        
+
+        Random random = new Random();
+        float[] input = new float[size];
         float[] callPrice = new float[size];
         float[] putPrice = new float[size];
-        
-        for (int i = 0; i < size; i++) { 
+        float[] seqCall = new float[size];
+        float[] seqPut = new float[size];
+        TaskSchedule graph = new TaskSchedule("s0");
+
+        for (int i = 0; i < size; i++) {
             input[i] = random.nextFloat();
         }
 
         System.gc();
-        long start = System.nanoTime();
-        
-        new TaskSchedule("s0")
-            .task("t0", BlackScholes::blackScholesKernel, input, callPrice, putPrice)
-            .streamOut(callPrice, putPrice)
-            .execute();
-        
-        //blackScholes(input, callPrice, putPrice);
-        long end = System.nanoTime();
-        System.gc();
-        
-        System.out.println("Total time: " +  (end-start) + " ns");
-
+        graph.task("t0", BlackScholes::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
+        for (int i = 0; i < 10; i++) {
+            graph.execute();
+            blackScholesKernel(input, seqCall, seqPut);
+            boolean results = checkResult(seqCall, seqPut, callPrice, putPrice);
+        }
     }
-    
+
     public static void main(String[] args) {
         System.out.println("BlackScholes Tornado");
-        blackScholes(512);
-
+        int size = Integer.parseInt(args[0]);
+        System.out.println("Input size: " + size + " \n");
+        blackScholes(size);
     }
-
 }

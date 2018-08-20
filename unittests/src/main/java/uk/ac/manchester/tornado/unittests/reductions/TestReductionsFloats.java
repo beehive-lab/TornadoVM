@@ -98,7 +98,15 @@ public class TestReductionsFloats extends TornadoTestBase {
         }
     }
 
-    public static void reductionAddFloats3(float[] inputA, float[] inputB, @Reduce float[] result) {
+    public static void reductionAddFloats3(float[] input, @Reduce float[] result) {
+        float error = 2f;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            float v = (error * input[i]);
+            result[0] += v;
+        }
+    }
+
+    public static void reductionAddFloats4(float[] inputA, float[] inputB, @Reduce float[] result) {
         float error = 2f;
         for (@Parallel int i = 0; i < inputA.length; i++) {
             result[0] += (error * (inputA[i] + inputB[i]));
@@ -121,9 +129,8 @@ public class TestReductionsFloats extends TornadoTestBase {
             case CL_DEVICE_TYPE_CPU:
                 result = new float[Runtime.getRuntime().availableProcessors()];
                 break;
-            case CL_DEVICE_TYPE_DEFAULT:
-                break;
             case CL_DEVICE_TYPE_GPU:
+            case CL_DEVICE_TYPE_ACCELERATOR:
                 result = new float[numGroups];
                 break;
             default:
@@ -173,7 +180,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsFloats::reductionAddFloats2, input, result)
+            .task("t0", TestReductionsFloats::reductionAddFloats3, input, result)
             .streamOut(result);
         //@formatter:on
 
@@ -210,7 +217,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
             .streamIn(inputA, inputB)
-            .task("t0", TestReductionsFloats::reductionAddFloats3, inputA, inputB, result)
+            .task("t0", TestReductionsFloats::reductionAddFloats4, inputA, inputB, result)
             .streamOut(result);
         //@formatter:on
 
@@ -221,7 +228,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         }
 
         float[] sequential = new float[1];
-        reductionAddFloats3(inputA, inputB, sequential);
+        reductionAddFloats4(inputA, inputB, sequential);
 
         // Check result
         assertEquals(sequential[0], result[0], 0.1f);
@@ -287,7 +294,6 @@ public class TestReductionsFloats extends TornadoTestBase {
     // This is currently not supported
     @Ignore
     @SuppressWarnings("unused")
-    @Test
     public void testSumFloatsCondition() {
         float[] input = new float[SIZE2];
 
@@ -320,6 +326,46 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         // Check result
         assertEquals(sequential[0], result[0], 0.01f);
+    }
+
+    public static void computePi(float[] input, @Reduce float[] result) {
+        for (@Parallel int i = 1; i < input.length; i++) {
+            float value = 0;
+            if (i != 0) {
+                value = (float) (Math.pow(-1, i + 1) / (2 * i - 1));
+                result[0] += value + input[i];
+            }
+        }
+    }
+
+    @Ignore
+    public void testComputePi() {
+        int N = 512;
+
+        float[] input = new float[N];
+        IntStream.range(0, N).sequential().forEach(i -> {
+            input[i] = 0;
+        });
+
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+        float[] result = new float[32];
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .task("t0", TestReductionsFloats::computePi, input, result)
+            .streamOut(result)
+            .execute();
+        //@formatter:on
+
+        for (int i = 1; i < numGroups; i++) {
+            result[0] *= result[i];
+        }
+
+        System.out.println("Final Result: " + (result[0] * 4));
+
     }
 
 }

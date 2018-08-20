@@ -80,6 +80,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
     OPENCL_PROLOGUE;
 
     cl_command_queue queue;
+
     OPENCL_CHECK_ERROR("clCreateCommandQueue",
             queue = clCreateCommandQueue((cl_context) context_id, (cl_device_id) device_id, (cl_command_queue_properties) properties, &error_id), -1);
 

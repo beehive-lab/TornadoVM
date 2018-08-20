@@ -23,33 +23,27 @@
  * Authors: Juan Fumero
  *
  */
-package uk.ac.manchester.tornado.runtime.utils;
+package uk.ac.manchester.tornado.examples.compression;
 
-public class TornadoUtils {
+import java.io.Serializable;
 
-    public enum TornadoDeviceType {
-        CPU, GPU, FPGA
+public class HuffmanNode implements Serializable {
+
+    public static final int DEFAULT_FREQUENCY = -1;
+
+    private static final long serialVersionUID = 1L;
+    int frequency;
+    int realData;
+
+    public HuffmanNode() {
+        this.frequency = DEFAULT_FREQUENCY;
     }
 
-    public static int getSizeReduction(int inputSize, TornadoDeviceType where) {
+    HuffmanNode left;
+    HuffmanNode right;
 
-        switch (where) {
-            case CPU:
-                // If it is executed on the CPU, we return the number of threads
-                // of the current
-                // CPU
-                return Runtime.getRuntime().availableProcessors();
-            case GPU:
-            case FPGA:
-                // size will be the number of work-groups on the GPU
-                int size = 1;
-                if (inputSize > 256) {
-                    size = inputSize / 256;
-                }
-                return size;
-        }
-
-        return 0;
+    @Override
+    public String toString() {
+        return "REAL DATA --> " + realData;
     }
-
 }
