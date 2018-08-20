@@ -25,18 +25,19 @@
  */
 package uk.ac.manchester.tornado.runtime.api;
 
-import org.graalvm.compiler.bytecode.Bytecodes;
-
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.*;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.List;
+
+import org.graalvm.compiler.bytecode.Bytecodes;
+
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.annotations.Event;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.common.enums.Access;
@@ -59,38 +60,15 @@ public class TaskUtils {
 
     public static CompilableTask scalaTask(String id, Object object, Object... args) {
         Class<?> type = object.getClass();
-        // System.out.printf("lambda: type=%s, %s\n", type.getName(), object);
-        //
-        // for (Object arg : args) {
-        // System.out.printf("arg: type=%s, %s\n", arg.getClass()
-        // .getSimpleName(), arg);
-        // }
-
         Method entryPoint = null;
         for (Method m : type.getDeclaredMethods()) {
-            // System.out.printf("m: %s,syn=%s, bridge=%s, public=%s\n",
-            // m.getName(), m.isSynthetic(), m.isBridge(),
-            // Modifier.isPublic(m.getModifiers()));
-
             if (m.getName().equals("apply") && !m.isSynthetic() && !m.isBridge()) {
                 entryPoint = m;
                 break;
             }
         }
-
         unimplemented("scala task");
         return createTask(null, id, entryPoint, object, false, args);
-    }
-
-    public static void waitForEvents(List<Event> events) {
-        // long start = System.nanoTime();
-        // for(Event event : events)
-        // event.waitOn();
-        // long end = System.nanoTime();
-        // System.out.printf("waitForEvents: %d events took %.8f
-        // s\n",events.size(),RuntimeUtilities.elapsedTimeInSeconds(start,
-        // end));
-        // events.clear();
     }
 
     private static Method resolveMethodHandle(Object task) {
@@ -221,11 +199,8 @@ public class TaskUtils {
 
     public static Object[] extractCapturedVariables(Object code) {
         final Class<?> type = code.getClass();
-
         int count = 0;
         for (Field field : type.getDeclaredFields()) {
-            // System.out.printf("cv: type=%s, name=%s\n",
-            // field.getType().getName(), field.getName());
             if (!field.getType().getName().contains("$$Lambda$")) {
                 count++;
             }
@@ -272,7 +247,6 @@ public class TaskUtils {
             cvs = null;
             numArgs = args.length;
         }
-        // final boolean isStatic = Modifier.isStatic(method.getModifiers());
 
         final Object[] parameters = new Object[numArgs];
         int index = 0;
@@ -287,8 +261,6 @@ public class TaskUtils {
             parameters[index] = arg;
             index++;
         }
-
-        // final Object thisObject = (isStatic) ? null : code;
         return new CompilableTask(meta, id, method, parameters);
     }
 

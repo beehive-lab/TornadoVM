@@ -38,7 +38,6 @@ import uk.ac.manchester.tornado.common.enums.Access;
 public class CompilableTask implements SchedulableTask {
 
     protected final Object[] args;
-//    protected final Access[] argumentsAccess;
 
     protected TaskMetaData meta;
 
@@ -58,22 +57,18 @@ public class CompilableTask implements SchedulableTask {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-
-        sb.append("task: ").append(meta.getId()).append(" ").append(method.getName()).append("()\n");
+        final StringBuilder buffer = new StringBuilder();
+        buffer.append("task: ").append(meta.getId()).append(" ").append(method.getName()).append("()\n");
         Access[] argumentsAccess = meta.getArgumentsAccess();
         for (int i = 0; i < args.length; i++) {
-            sb.append(String.format("arg  : [%s] %s -> %s\n", argumentsAccess[i], args[i], resolvedArgs[i]));
+            buffer.append(String.format("arg  : [%s] %s -> %s\n", argumentsAccess[i], args[i], resolvedArgs[i]));
         }
-
-        sb.append("meta : ").append(meta.toString());
-
-        return sb.toString();
+        buffer.append("meta : ").append(meta.toString());
+        return buffer.toString();
     }
 
     protected Object[] copyToArguments() {
-        final int argOffset = (Modifier.isStatic(method.getModifiers())) ? 0
-                : 1;
+        final int argOffset = (Modifier.isStatic(method.getModifiers())) ? 0 : 1;
         final int numArgs = args.length + argOffset;
         final Object[] arguments = new Object[numArgs];
 
@@ -134,7 +129,6 @@ public class CompilableTask implements SchedulableTask {
             CompilableTask other = (CompilableTask) obj;
             return getId().equals(other.getId());
         }
-
         return false;
     }
 

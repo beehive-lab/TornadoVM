@@ -355,7 +355,6 @@ public abstract class AbstractTaskGraph {
         if (vm == null) {
             return;
         }
-
         graphContext.sync();
     }
 
@@ -382,5 +381,4 @@ public abstract class AbstractTaskGraph {
     public ScheduleMetaData meta() {
         return graphContext.meta();
     }
-
 }
