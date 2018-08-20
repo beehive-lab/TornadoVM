@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.runtime.api.AbstractTaskGraph.TornadoGraphBitcodes;
+import uk.ac.manchester.tornado.runtime.api.TornadoGraphBitcodes;
 import uk.ac.manchester.tornado.runtime.api.CompilableTask;
 import uk.ac.manchester.tornado.runtime.api.LocalObjectState;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;

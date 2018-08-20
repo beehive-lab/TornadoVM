@@ -62,28 +62,6 @@ public abstract class AbstractTaskGraph {
 
     private final ExecutionContext graphContext;
 
-    // @formatter:off
-    public enum TornadoGraphBitcodes {
-        
-        LOAD_REF ((byte)1), 
-        LOAD_PRIM((byte)2), 
-        LAUNCH   ((byte)3), 
-        ARG_LIST ((byte)4),
-        CONTEXT  ((byte)5);
-        
-        private byte index;
-        
-        TornadoGraphBitcodes(byte index) {
-            this.index = index;
-        }
-        
-        public byte index() {
-            return index;
-        }
-        
-    }
-    // @formatter:on
-
     private byte[] hlcode = new byte[2048];
     private ByteBuffer hlBuffer;
 
