@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.common.TornadoInternalError.shouldNotReachHere;
 
 import org.graalvm.compiler.core.common.LIRKind;
 

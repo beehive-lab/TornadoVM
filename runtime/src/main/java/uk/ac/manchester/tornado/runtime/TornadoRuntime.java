@@ -50,8 +50,8 @@ import uk.ac.manchester.tornado.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
 
 import static org.graalvm.compiler.debug.GraalError.guarantee;
+import static uk.ac.manchester.tornado.api.common.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.common.Tornado.SHOULD_LOAD_RMI;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public class TornadoRuntime extends TornadoLogger {
 

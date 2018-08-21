@@ -26,16 +26,16 @@
 package uk.ac.manchester.tornado.collections.matrix;
 
 import static java.lang.Math.abs;
-import static uk.ac.manchester.tornado.collections.types.Float6.dot;
-import static uk.ac.manchester.tornado.collections.types.MatrixFloat.scale;
-import static uk.ac.manchester.tornado.collections.types.MatrixFloat.transpose;
+import static uk.ac.manchester.tornado.api.collections.types.Float6.dot;
+import static uk.ac.manchester.tornado.api.collections.types.MatrixFloat.scale;
+import static uk.ac.manchester.tornado.api.collections.types.MatrixFloat.transpose;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.collections.types.Float6;
-import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.collections.types.MatrixDouble;
-import uk.ac.manchester.tornado.collections.types.MatrixFloat;
-import uk.ac.manchester.tornado.collections.types.VectorFloat;
+import uk.ac.manchester.tornado.api.collections.types.Float6;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.MatrixDouble;
+import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
 
 public final class MatrixMath {
 
@@ -54,8 +54,7 @@ public final class MatrixMath {
      * @param beta
      * @param c
      */
-    public static final void sgemm(boolean transA, boolean transB, float alpha,
-            MatrixFloat a, MatrixFloat b, float beta, MatrixFloat c) {
+    public static final void sgemm(boolean transA, boolean transB, float alpha, MatrixFloat a, MatrixFloat b, float beta, MatrixFloat c) {
         if (transA) {
             transpose(a);
         }
@@ -112,13 +111,13 @@ public final class MatrixMath {
         }
     }
 
-    //SSYTRD in LAPACK, tred2 in EISPACK
+    // SSYTRD in LAPACK, tred2 in EISPACK
     public static void tred2(double[][] V, double[] d, double[] e, int n) {
 
-        //  This is derived from the Algol procedures tred2 by
-        //  Bowdler, Martin, Reinsch, and Wilkinson, Handbook for
-        //  Auto. Comp., Vol.ii-Linear Algebra, and the corresponding
-        //  Fortran subroutine in EISPACK.
+        // This is derived from the Algol procedures tred2 by
+        // Bowdler, Martin, Reinsch, and Wilkinson, Handbook for
+        // Auto. Comp., Vol.ii-Linear Algebra, and the corresponding
+        // Fortran subroutine in EISPACK.
         for (int j = 0; j < n; j++) {
             d[j] = V[n - 1][j];
         }
@@ -225,9 +224,12 @@ public final class MatrixMath {
     /**
      * Matrix-vector multiplication
      *
-     * @param y result
-     * @param m matrix
-     * @param x vector
+     * @param y
+     *            result
+     * @param m
+     *            matrix
+     * @param x
+     *            vector
      */
     public static void multiply(VectorFloat y, MatrixFloat m, VectorFloat x) {
         for (int i = 0; i < m.N(); i++) {
@@ -236,52 +238,12 @@ public final class MatrixMath {
     }
 
     public static void multiply(Float6 y, MatrixFloat m, Float6 x) {
-        //System.out.printf("y: %s\n",y.toString());
-        //System.out.printf("M:\n %s\n",m.toString());
-        //System.out.printf("x: %s\n",x.toString());
         final Float6 row = new Float6();
         for (int i = 0; i < 6; i++) {
             for (int j = 0; j < 6; j++) {
-                //System.out.printf("m[%d,%d]: %f\n",i,j,m.get(i,j));
                 row.set(j, m.get(i, j));
             }
-            //System.out.printf("y[%d] = dot (%s,  %s)\n",i,row.toString(),x.toString());
             y.set(i, dot(row, x));
         }
     }
-
-//	/**
-//     * SGEMV - perform one of the matrix-vector operations
-//     * y = alpha*A*x + beta*y or y = alpha*A'*x + beta*y
-//     * @param transpose
-//     * @param alpha
-//     * @param a
-//     * @param x
-//     * @param beta
-//     * @param y
-//     */
-//    public final static void sgemv(
-//            boolean transpose, float alpha,
-//            MatrixFloat a, VectorFloat x,
-//            float beta, VectorFloat y ){
-//
-//        if(transpose)
-//           a.transpose();
-//
-//        if(alpha!=1f)
-//        	a.scale(alpha);
-//
-//
-//        for(int r = 0; r < a.M(); r++ ){
-//            float sum = 0.0f;
-//            for(int c = 0; c < a.N(); c++){
-//                sum +=a.get(r, c) * x.get(c);
-//            }
-//            y.set(r, sum + (beta*y.get(r)));
-//        }
-//
-//    }
-//    public final static void sgemv(MatrixFloat a,VectorFloat x, VectorFloat y){
-//       sgemv(false,1f,a,x,0f,y);
-//    }
 }

@@ -29,8 +29,8 @@ import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createFilter;
 import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createImage;
 import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.*;
 
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
-import uk.ac.manchester.tornado.collections.types.ImageFloat;
 public class ConvolveImageJava extends BenchmarkDriver {
 
 	private final int imageSizeX, imageSizeY, filterSize;

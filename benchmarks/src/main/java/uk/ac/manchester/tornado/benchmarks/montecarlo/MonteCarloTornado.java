@@ -25,7 +25,7 @@
 
 package uk.ac.manchester.tornado.benchmarks.montecarlo;
 
-import static uk.ac.manchester.tornado.collections.math.TornadoMath.*;
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.*;
 import static uk.ac.manchester.tornado.common.Tornado.*;
 
 import uk.ac.manchester.tornado.api.*;

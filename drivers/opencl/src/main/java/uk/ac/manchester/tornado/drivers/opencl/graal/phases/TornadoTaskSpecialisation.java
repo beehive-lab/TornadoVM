@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.common.TornadoInternalError.unimplemented;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;

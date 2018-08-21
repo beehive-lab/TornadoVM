@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.graal.compiler;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.common.TornadoInternalError.unimplemented;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;

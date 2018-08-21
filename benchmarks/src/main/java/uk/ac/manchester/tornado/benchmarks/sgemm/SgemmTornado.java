@@ -25,8 +25,8 @@
  */
 package uk.ac.manchester.tornado.benchmarks.sgemm;
 
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.*;
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.*;
-import static uk.ac.manchester.tornado.collections.math.TornadoMath.*;
 import static uk.ac.manchester.tornado.common.Tornado.*;
 
 import java.util.*;

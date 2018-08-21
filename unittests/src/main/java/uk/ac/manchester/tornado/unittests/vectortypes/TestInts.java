@@ -33,10 +33,10 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.collections.types.Int2;
-import uk.ac.manchester.tornado.collections.types.Int3;
-import uk.ac.manchester.tornado.collections.types.Int4;
-import uk.ac.manchester.tornado.collections.types.VectorInt;
+import uk.ac.manchester.tornado.api.collections.types.Int2;
+import uk.ac.manchester.tornado.api.collections.types.Int3;
+import uk.ac.manchester.tornado.api.collections.types.Int4;
+import uk.ac.manchester.tornado.api.collections.types.VectorInt;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestInts extends TornadoTestBase {

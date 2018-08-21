@@ -38,9 +38,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import sun.misc.Unsafe;
+import uk.ac.manchester.tornado.api.common.TornadoInternalError;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.common.TornadoLogger;
-import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBufferCreateType;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 

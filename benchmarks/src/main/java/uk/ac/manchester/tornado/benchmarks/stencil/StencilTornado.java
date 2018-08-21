@@ -32,9 +32,9 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
 import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.copy;
 import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.stencil3d;
-import static uk.ac.manchester.tornado.collections.math.TornadoMath.findULPDistance;
 import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
 public class StencilTornado extends BenchmarkDriver {

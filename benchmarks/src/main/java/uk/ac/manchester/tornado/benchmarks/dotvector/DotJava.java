@@ -27,9 +27,9 @@ package uk.ac.manchester.tornado.benchmarks.dotvector;
 
 import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.*;
 
+import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
-import uk.ac.manchester.tornado.collections.types.Float3;
-import uk.ac.manchester.tornado.collections.types.VectorFloat3;
 
 public class DotJava extends BenchmarkDriver {
 

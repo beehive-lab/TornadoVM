@@ -26,9 +26,9 @@
 package uk.ac.manchester.tornado.drivers.opencl.builtins;
 
 import uk.ac.manchester.tornado.api.annotations.ReductionOp;
-import uk.ac.manchester.tornado.collections.types.Float2;
-import uk.ac.manchester.tornado.collections.types.Float4;
-import uk.ac.manchester.tornado.collections.types.VectorFloat4;
+import uk.ac.manchester.tornado.api.collections.types.Float2;
+import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 
 public class ReductionIntrinsic {
 

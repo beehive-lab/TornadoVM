@@ -25,12 +25,12 @@
  */
 package uk.ac.manchester.tornado.runtime.api;
 
+import static uk.ac.manchester.tornado.api.common.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.isBoxedPrimitiveClass;
 import static uk.ac.manchester.tornado.common.Tornado.PRINT_COMPILE_TIMES;
 import static uk.ac.manchester.tornado.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.common.Tornado.warn;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import java.nio.ByteBuffer;

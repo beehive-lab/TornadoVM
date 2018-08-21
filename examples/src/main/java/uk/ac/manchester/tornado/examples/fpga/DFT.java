@@ -26,11 +26,11 @@
 
 package uk.ac.manchester.tornado.examples.fpga;
 
-import static uk.ac.manchester.tornado.collections.math.TornadoMath.abs;
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 public class DFT {
 

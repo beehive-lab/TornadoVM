@@ -25,12 +25,12 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
+import static uk.ac.manchester.tornado.api.common.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.isBoxedPrimitive;
 import static uk.ac.manchester.tornado.common.Tornado.DEBUG;
 import static uk.ac.manchester.tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
 import static uk.ac.manchester.tornado.common.Tornado.debug;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
 
 import uk.ac.manchester.tornado.common.CallStack;
 import uk.ac.manchester.tornado.common.DeviceObjectState;

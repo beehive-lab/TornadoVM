@@ -25,7 +25,7 @@ package uk.ac.manchester.tornado.graal.compiler;
 
 import jdk.vm.ci.meta.JavaKind;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.common.TornadoInternalError.unimplemented;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.LocationIdentity;

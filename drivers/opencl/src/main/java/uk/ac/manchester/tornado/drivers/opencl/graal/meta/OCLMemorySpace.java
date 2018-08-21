@@ -26,7 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.meta;
 import org.graalvm.compiler.core.common.LIRKind;
 
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.common.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 

@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.common.TornadoInternalError.guarantee;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;

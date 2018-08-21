@@ -27,7 +27,7 @@
 package uk.ac.manchester.tornado.unittests.images;
 
 import static org.junit.Assert.assertEquals;
-import static uk.ac.manchester.tornado.collections.math.TornadoMath.clamp;
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.clamp;
 
 import java.util.Random;
 import java.util.stream.IntStream;
@@ -36,8 +36,8 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestResizeImage extends TornadoTestBase {

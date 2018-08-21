@@ -28,7 +28,7 @@ package uk.ac.manchester.tornado.benchmarks;
 import org.apache.lucene.util.*;
 
 import uk.ac.manchester.tornado.api.annotations.*;
-import uk.ac.manchester.tornado.collections.math.*;
+import uk.ac.manchester.tornado.api.collections.math.*;
 
 public class ComputeKernels {
     static final float S_LOWER_LIMIT = 10.0f;

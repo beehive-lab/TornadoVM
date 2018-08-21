@@ -32,17 +32,17 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.collections.types.Byte3;
-import uk.ac.manchester.tornado.collections.types.Byte4;
-import uk.ac.manchester.tornado.collections.types.Float3;
-import uk.ac.manchester.tornado.collections.types.Float4;
-import uk.ac.manchester.tornado.collections.types.Float8;
-import uk.ac.manchester.tornado.collections.types.ImageByte3;
-import uk.ac.manchester.tornado.collections.types.ImageByte4;
-import uk.ac.manchester.tornado.collections.types.ImageFloat;
-import uk.ac.manchester.tornado.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.collections.types.ImageFloat4;
-import uk.ac.manchester.tornado.collections.types.ImageFloat8;
+import uk.ac.manchester.tornado.api.collections.types.Byte3;
+import uk.ac.manchester.tornado.api.collections.types.Byte4;
+import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.Float8;
+import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
+import uk.ac.manchester.tornado.api.collections.types.ImageByte4;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat8;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**

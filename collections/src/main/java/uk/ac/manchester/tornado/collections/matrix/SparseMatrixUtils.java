@@ -141,8 +141,7 @@ public class SparseMatrixUtils {
             }
 
             if (VERBOSE) {
-                System.out.printf("Matrix: rows=%d, cols=%d, elements=%d\n",
-                        nRows, nCols, nElements);
+                System.out.printf("Matrix: rows=%d, cols=%d, elements=%d\n", nRows, nCols, nElements);
             }
 
             List<Coordinate> coords;
@@ -156,10 +155,7 @@ public class SparseMatrixUtils {
             while ((line = br.readLine()) != null) {
                 opts = line.split(" ");
                 if (pattern) {
-                    final Coordinate c = new Coordinate(
-                            parseInt(opts[0]) - 1,
-                            parseInt(opts[1]) - 1,
-                            rand.nextFloat() * 256.0f);
+                    final Coordinate c = new Coordinate(parseInt(opts[0]) - 1, parseInt(opts[1]) - 1, rand.nextFloat() * 256.0f);
                     coords.add(c);
                 } else {
                     coords.add(new Coordinate(opts));
@@ -256,8 +252,6 @@ public class SparseMatrixUtils {
             pattern = true;
             rand = new Random();
             rand.setSeed(7);
-            // System.out.printf("Matrix pattern unimplemented\n");
-            // return;
         }
 
         if (opts[4].equalsIgnoreCase("symmetric")) {
@@ -313,8 +307,7 @@ public class SparseMatrixUtils {
         }
 
         if (VERBOSE) {
-            out.printf("Matrix: rows=%d, cols=%d, elements=%d\n",
-                    nRows, nCols, nElements);
+            out.printf("Matrix: rows=%d, cols=%d, elements=%d\n", nRows, nCols, nElements);
         }
 
         List<Coordinate> coords;
@@ -328,10 +321,7 @@ public class SparseMatrixUtils {
         while ((line = br.readLine()) != null) {
             opts = line.split(" ");
             if (pattern) {
-                final Coordinate c = new Coordinate(
-                        parseInt(opts[0]) - 1,
-                        parseInt(opts[1]) - 1,
-                        rand.nextFloat() * 256.0f);
+                final Coordinate c = new Coordinate(parseInt(opts[0]) - 1, parseInt(opts[1]) - 1, rand.nextFloat() * 256.0f);
                 coords.add(c);
             } else {
                 coords.add(new Coordinate(opts));
@@ -377,9 +367,6 @@ public class SparseMatrixUtils {
         }
 
         coords.clear();
-
         return mat;
-
     }
-
 }

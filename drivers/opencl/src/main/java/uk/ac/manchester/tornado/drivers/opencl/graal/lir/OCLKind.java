@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.common.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.common.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.common.TornadoInternalError.unimplemented;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
@@ -55,34 +55,34 @@ public enum OCLKind implements PlatformKind {
     DOUBLE(8, java.lang.Double.TYPE),
     CHAR2(2, null, CHAR),
     UCHAR2(2, null, UCHAR),
-    SHORT2(2, uk.ac.manchester.tornado.collections.types.Short2.TYPE, SHORT),
+    SHORT2(2, uk.ac.manchester.tornado.api.collections.types.Short2.TYPE, SHORT),
     USHORT2(2, null, USHORT),
-    INT2(2, uk.ac.manchester.tornado.collections.types.Int2.TYPE, INT),
+    INT2(2, uk.ac.manchester.tornado.api.collections.types.Int2.TYPE, INT),
     UINT2(2, null, UINT),
     LONG2(2, null, LONG),
     ULONG2(2, null, ULONG),
-    FLOAT2(2, uk.ac.manchester.tornado.collections.types.Float2.TYPE, FLOAT),
-    DOUBLE2(2, uk.ac.manchester.tornado.collections.types.Double2.TYPE, DOUBLE),
-    CHAR3(3, uk.ac.manchester.tornado.collections.types.Byte3.TYPE, CHAR),
+    FLOAT2(2, uk.ac.manchester.tornado.api.collections.types.Float2.TYPE, FLOAT),
+    DOUBLE2(2, uk.ac.manchester.tornado.api.collections.types.Double2.TYPE, DOUBLE),
+    CHAR3(3, uk.ac.manchester.tornado.api.collections.types.Byte3.TYPE, CHAR),
     UCHAR3(3, null, UCHAR),
-    SHORT3(3, uk.ac.manchester.tornado.collections.types.Short3.TYPE, SHORT),
+    SHORT3(3, uk.ac.manchester.tornado.api.collections.types.Short3.TYPE, SHORT),
     USHORT3(3, null, USHORT),
-    INT3(3, uk.ac.manchester.tornado.collections.types.Int3.TYPE, INT),
+    INT3(3, uk.ac.manchester.tornado.api.collections.types.Int3.TYPE, INT),
     UINT3(3, null, UINT),
     LONG3(3, null, LONG),
     ULONG3(3, null, ULONG),
-    FLOAT3(3, uk.ac.manchester.tornado.collections.types.Float3.TYPE, FLOAT),
-    DOUBLE3(3, uk.ac.manchester.tornado.collections.types.Double3.TYPE, DOUBLE),
-    CHAR4(4, uk.ac.manchester.tornado.collections.types.Byte4.TYPE, CHAR),
+    FLOAT3(3, uk.ac.manchester.tornado.api.collections.types.Float3.TYPE, FLOAT),
+    DOUBLE3(3, uk.ac.manchester.tornado.api.collections.types.Double3.TYPE, DOUBLE),
+    CHAR4(4, uk.ac.manchester.tornado.api.collections.types.Byte4.TYPE, CHAR),
     UCHAR4(4, null, UCHAR),
     SHORT4(4, null, SHORT),
     USHORT4(4, null, USHORT),
-    INT4(4, uk.ac.manchester.tornado.collections.types.Int4.TYPE, INT),
+    INT4(4, uk.ac.manchester.tornado.api.collections.types.Int4.TYPE, INT),
     UINT4(4, null, UINT),
     LONG4(4, null, LONG),
     ULONG4(4, null, ULONG),
-    FLOAT4(4, uk.ac.manchester.tornado.collections.types.Float4.TYPE, FLOAT),
-    DOUBLE4(4, uk.ac.manchester.tornado.collections.types.Double4.TYPE, DOUBLE),
+    FLOAT4(4, uk.ac.manchester.tornado.api.collections.types.Float4.TYPE, FLOAT),
+    DOUBLE4(4, uk.ac.manchester.tornado.api.collections.types.Double4.TYPE, DOUBLE),
     CHAR8(8, null, CHAR),
     UCHAR8(8, null, UCHAR),
     SHORT8(8, null, SHORT),
@@ -91,8 +91,8 @@ public enum OCLKind implements PlatformKind {
     UINT8(8, null, UINT),
     LONG8(8, null, LONG),
     ULONG8(8, null, ULONG),
-    FLOAT8(8, uk.ac.manchester.tornado.collections.types.Float8.TYPE, FLOAT),
-    DOUBLE8(8, uk.ac.manchester.tornado.collections.types.Double8.TYPE, DOUBLE),
+    FLOAT8(8, uk.ac.manchester.tornado.api.collections.types.Float8.TYPE, FLOAT),
+    DOUBLE8(8, uk.ac.manchester.tornado.api.collections.types.Double8.TYPE, DOUBLE),
     CHAR16(16, null, CHAR),
     UCHAR16(16, null, UCHAR),
     SHORT16(16, null, SHORT),

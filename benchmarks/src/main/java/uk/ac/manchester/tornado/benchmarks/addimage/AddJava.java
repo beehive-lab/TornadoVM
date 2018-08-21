@@ -27,9 +27,9 @@ package uk.ac.manchester.tornado.benchmarks.addimage;
 
 import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.addImage;
 
+import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
-import uk.ac.manchester.tornado.collections.types.Float4;
-import uk.ac.manchester.tornado.collections.types.ImageFloat4;
 
 public class AddJava extends BenchmarkDriver {
 

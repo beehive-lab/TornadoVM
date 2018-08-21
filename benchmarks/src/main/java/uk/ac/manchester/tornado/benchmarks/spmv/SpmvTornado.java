@@ -29,9 +29,9 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 import uk.ac.manchester.tornado.collections.matrix.SparseMatrixUtils.CSRMatrix;
 
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.spmv;
 import static uk.ac.manchester.tornado.benchmarks.spmv.Benchmark.populateVector;
-import static uk.ac.manchester.tornado.collections.math.TornadoMath.findULPDistance;
 import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;

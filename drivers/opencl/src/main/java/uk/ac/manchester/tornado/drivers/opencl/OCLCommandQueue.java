@@ -25,13 +25,13 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
+import static uk.ac.manchester.tornado.api.common.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.common.Tornado.ENABLE_OOO_EXECUTION;
 import static uk.ac.manchester.tornado.common.Tornado.EVENT_WINDOW;
 import static uk.ac.manchester.tornado.common.Tornado.FORCE_BLOCKING_API_CALLS;
 import static uk.ac.manchester.tornado.common.Tornado.MARKER_USE_BARRIER;
 import static uk.ac.manchester.tornado.common.Tornado.MAX_WAIT_EVENTS;
 import static uk.ac.manchester.tornado.common.Tornado.getProperty;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_CONTEXT;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_DEVICE;
 

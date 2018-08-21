@@ -26,8 +26,8 @@
 
 package uk.ac.manchester.tornado.benchmarks.nbody;
 
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.*;
 import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.*;
-import static uk.ac.manchester.tornado.collections.math.TornadoMath.*;
 
 import java.util.*;
 

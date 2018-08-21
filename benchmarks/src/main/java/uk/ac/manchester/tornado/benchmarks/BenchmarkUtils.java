@@ -27,7 +27,7 @@ package uk.ac.manchester.tornado.benchmarks;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 
 public final class BenchmarkUtils {
 	

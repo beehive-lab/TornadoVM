@@ -28,8 +28,8 @@ package uk.ac.manchester.tornado.benchmarks.saxpy;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.saxpy;
-import static uk.ac.manchester.tornado.collections.math.TornadoMath.findULPDistance;
 import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
