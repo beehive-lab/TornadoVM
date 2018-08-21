@@ -93,7 +93,7 @@
       <includes>
         <include>tornado:tornado-api</include>
         <include>tornado:tornado-runtime</include>
-        <include>tornado:tornado-collections</include>
+        <include>tornado:tornado-matrices</include>
         <include>tornado:tornado-drivers-opencl</include>
         <include>tornado:tornado-examples</include>
         <include>tornado:tornado-benchmarks</include>

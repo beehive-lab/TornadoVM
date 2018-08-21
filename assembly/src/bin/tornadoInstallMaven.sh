@@ -30,7 +30,8 @@ cd $TORNADO_SDK
 
 cd share/java/tornado/
 
-mvn install:install-file -Dfile=tornado-collections-0.0.2-SNAPSHOT.jar -DgroupId=tornado-collections -DartifactId=tornado-collections -Dversion=0.0.2-SNAPSHOT -Dpackaging=jar
+mvn install:install-file -Dfile=tornado-api-0.0.2-SNAPSHOT.jar -DgroupId=tornado-api -DartifactId=tornado-api -Dversion=0.0.2-SNAPSHOT -Dpackaging=jar
+mvn install:install-file -Dfile=tornado-matrices-0.0.2-SNAPSHOT.jar -DgroupId=tornado-matrices -DartifactId=tornado-matrices -Dversion=0.0.2-SNAPSHOT -Dpackaging=jar
 mvn install:install-file -Dfile=tornado-runtime-0.0.2-SNAPSHOT.jar -DgroupId=tornado-runtime -DartifactId=tornado-runtime -Dversion=0.0.2-SNAPSHOT -Dpackaging=jar
 mvn install:install-file -Dfile=tornado-drivers-opencl-0.0.2-SNAPSHOT.jar -DgroupId=tornado-drivers-opencl -DartifactId=tornado-drivers-opencl -Dversion=0.0.2-SNAPSHOT -Dpackaging=jar
 mvn install:install-file -Dfile=tornado-drivers-opencl-jni-0.0.2-SNAPSHOT-libs.jar -DgroupId=tornado-drivers-opencl-jni -DartifactId=tornado-drivers-opencl-jni -Dversion=0.0.2-SNAPSHOT -Dpackaging=jar

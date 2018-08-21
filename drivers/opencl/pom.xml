@@ -20,7 +20,7 @@
 
         <dependency>
             <groupId>tornado</groupId>
-            <artifactId>tornado-collections</artifactId>
+            <artifactId>tornado-matrices</artifactId>
             <version>${tornado.version}</version>
         </dependency>
         <dependency>

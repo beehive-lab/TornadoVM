@@ -24,7 +24,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tornado-collections</artifactId>
+      <artifactId>tornado-matrices</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

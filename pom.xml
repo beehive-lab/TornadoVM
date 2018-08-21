@@ -398,7 +398,7 @@
   </dependencies>
   <modules>
     <module>runtime</module>
-    <module>collections</module>
+    <module>matrices</module>
     <module>drivers</module>
     <module>examples</module>
     <module>benchmarks</module>

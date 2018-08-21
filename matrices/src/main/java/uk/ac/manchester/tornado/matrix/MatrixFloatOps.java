@@ -23,10 +23,10 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.collections.matrix;
+package uk.ac.manchester.tornado.matrix;
 
-import static uk.ac.manchester.tornado.collections.matrix.EjmlUtil.toMatrix;
-import static uk.ac.manchester.tornado.collections.matrix.EjmlUtil.toMatrix4x4Float;
+import static uk.ac.manchester.tornado.matrix.EjmlUtil.toMatrix;
+import static uk.ac.manchester.tornado.matrix.EjmlUtil.toMatrix4x4Float;
 
 import org.ejml.factory.SingularMatrixException;
 import org.ejml.simple.SimpleMatrix;

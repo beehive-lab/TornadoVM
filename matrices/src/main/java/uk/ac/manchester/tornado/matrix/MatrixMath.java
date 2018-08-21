@@ -23,7 +23,7 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.collections.matrix;
+package uk.ac.manchester.tornado.matrix;
 
 import static java.lang.Math.abs;
 import static uk.ac.manchester.tornado.api.collections.types.Float6.dot;

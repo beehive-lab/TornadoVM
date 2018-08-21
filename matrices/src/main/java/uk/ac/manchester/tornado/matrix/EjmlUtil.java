@@ -23,7 +23,7 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.collections.matrix;
+package uk.ac.manchester.tornado.matrix;
 
 import org.ejml.simple.SimpleMatrix;
 
@@ -33,39 +33,32 @@ import uk.ac.manchester.tornado.api.collections.types.MatrixDouble;
 public class EjmlUtil {
 
     public static Matrix4x4Float toMatrix4x4Float(SimpleMatrix m) {
-
         Matrix4x4Float result = new Matrix4x4Float();
-
         for (int i = 0; i < m.numRows(); i++) {
             for (int j = 0; j < m.numCols(); j++) {
                 result.set(i, j, (float) m.get(i, j));
             }
         }
-
         return result;
     }
 
     public static SimpleMatrix toMatrix(Matrix4x4Float m) {
         SimpleMatrix result = new SimpleMatrix(m.M(), m.N());
-
         for (int i = 0; i < m.M(); i++) {
             for (int j = 0; j < m.N(); j++) {
                 result.set(i, j, (double) m.get(i, j));
             }
         }
-
         return result;
     }
 
     public static SimpleMatrix toMatrix(MatrixDouble m) {
         SimpleMatrix result = new SimpleMatrix(m.M(), m.N());
-
         for (int i = 0; i < m.M(); i++) {
             for (int j = 0; j < m.N(); j++) {
                 result.set(i, j, m.get(i, j));
             }
         }
-
         return result;
     }
 }

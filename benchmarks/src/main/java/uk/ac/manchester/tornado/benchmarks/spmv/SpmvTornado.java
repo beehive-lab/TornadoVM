@@ -27,7 +27,7 @@ package uk.ac.manchester.tornado.benchmarks.spmv;
 
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
-import uk.ac.manchester.tornado.collections.matrix.SparseMatrixUtils.CSRMatrix;
+import uk.ac.manchester.tornado.matrix.SparseMatrixUtils.CSRMatrix;
 
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.spmv;

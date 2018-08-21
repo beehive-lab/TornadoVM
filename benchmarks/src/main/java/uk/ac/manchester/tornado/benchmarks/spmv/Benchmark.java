@@ -29,8 +29,8 @@ import java.util.Random;
 
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkRunner;
-import uk.ac.manchester.tornado.collections.matrix.SparseMatrixUtils;
-import uk.ac.manchester.tornado.collections.matrix.SparseMatrixUtils.CSRMatrix;
+import uk.ac.manchester.tornado.matrix.SparseMatrixUtils;
+import uk.ac.manchester.tornado.matrix.SparseMatrixUtils.CSRMatrix;
 
 public class Benchmark extends BenchmarkRunner {
 

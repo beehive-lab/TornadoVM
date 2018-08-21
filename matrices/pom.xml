@@ -7,8 +7,8 @@
         <artifactId>tornado</artifactId>
         <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>tornado-collections</artifactId>
-    <name>tornado-collections</name>
+    <artifactId>tornado-matrices</artifactId>
+    <name>tornado-matrices</name>
     <dependencies>
         <dependency>
             <groupId>org.ejml</groupId>
