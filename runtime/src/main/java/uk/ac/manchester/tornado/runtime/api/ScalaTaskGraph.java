@@ -25,29 +25,37 @@
  */
 package uk.ac.manchester.tornado.runtime.api;
 
-public class ScalaTaskGraph extends AbstractTaskGraph {
+public class ScalaTaskGraph {
+
+    private AbstractTaskGraph taskGraphImpl;
+    private String taskName;
 
     public ScalaTaskGraph(String name) {
-        super(name);
+        taskName = name;
+        taskGraphImpl = new TornadoTaskSchedule(name);
     }
 
     public ScalaTaskGraph task(String id, Object function, Object... args) {
-        addInner(TaskUtils.scalaTask(id, function, args));
+        taskGraphImpl.addInner(TaskUtils.scalaTask(id, function, args));
         return this;
     }
 
     public ScalaTaskGraph streamIn(Object... objects) {
-        streamInInner(objects);
+        taskGraphImpl.streamInInner(objects);
         return this;
     }
 
     public ScalaTaskGraph streamOut(Object... objects) {
-        streamOutInner(objects);
+        taskGraphImpl.streamOutInner(objects);
         return this;
     }
 
     public ScalaTaskGraph schedule() {
-        scheduleInner();
+        taskGraphImpl.scheduleInner();
         return this;
+    }
+
+    public String getTaskName() {
+        return taskName;
     }
 }
