@@ -25,9 +25,6 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -43,6 +40,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.runtime.Loader;
 
 public class TaskSchedule implements TornadoAPI {
 
@@ -51,15 +49,7 @@ public class TaskSchedule implements TornadoAPI {
 
     public TaskSchedule(String name) {
         this.taskScheduleName = name;
-               
-        try {
-			Class<?> klass = Class.forName("uk.ac.manchester.tornado.runtime.api.TornadoTaskSchedule");
-			Constructor<?> constructor = klass.getConstructor(String.class);
-			taskScheduleImpl = (AbstractTaskGraph) constructor.newInstance(name);
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException e) {
-			e.printStackTrace();
-		}
-        
+        taskScheduleImpl = Loader.loadRuntime(name);
     }
 
     @Override

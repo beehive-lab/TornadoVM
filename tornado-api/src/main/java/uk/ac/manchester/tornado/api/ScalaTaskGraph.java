@@ -25,6 +25,8 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.runtime.Loader;
+
 public class ScalaTaskGraph {
 
     private AbstractTaskGraph taskGraphImpl;
@@ -32,7 +34,7 @@ public class ScalaTaskGraph {
 
     public ScalaTaskGraph(String name) {
         taskName = name;
-        /// XXX: Loading using Reflection
+        taskGraphImpl = Loader.loadRuntime(name);
     }
 
     public ScalaTaskGraph task(String id, Object function, Object... args) {
