@@ -27,9 +27,9 @@ package uk.ac.manchester.tornado.benchmarks.blackscholes;
 
 import static uk.ac.manchester.tornado.common.Tornado.*;
 
+import uk.ac.manchester.tornado.api.*;
 import uk.ac.manchester.tornado.api.annotations.*;
 import uk.ac.manchester.tornado.collections.math.*;
-import uk.ac.manchester.tornado.runtime.api.*;
 
 public class BlackScholes {
 

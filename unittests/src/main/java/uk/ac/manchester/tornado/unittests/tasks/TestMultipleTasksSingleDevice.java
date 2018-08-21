@@ -29,8 +29,8 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 /**
  * Testing Tornado with multiple tasks in the same device. The

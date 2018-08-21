@@ -30,11 +30,12 @@ import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 import uk.ac.manchester.tornado.collections.types.Float3;
 import uk.ac.manchester.tornado.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.rotateImage;
 import static uk.ac.manchester.tornado.collections.types.FloatOps.findMaxULP;
 import static uk.ac.manchester.tornado.common.Tornado.getProperty;
+
+import uk.ac.manchester.tornado.api.TaskSchedule;
 
 public class RotateTornado extends BenchmarkDriver {
 

@@ -29,9 +29,9 @@ import static uk.ac.manchester.tornado.collections.math.TornadoMath.clamp;
 
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.collections.types.ImageFloat;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class ResizeImage {
 

@@ -25,9 +25,9 @@
  */
 package uk.ac.manchester.tornado.examples;
 
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.lang.Debug;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class HelloWorld {
 

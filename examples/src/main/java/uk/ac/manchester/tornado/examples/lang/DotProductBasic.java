@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.examples.lang;
 
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskSchedule;
 
 public class DotProductBasic {
 

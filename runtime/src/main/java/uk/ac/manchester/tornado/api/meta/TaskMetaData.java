@@ -42,10 +42,10 @@ import uk.ac.manchester.tornado.api.annotations.Read;
 import uk.ac.manchester.tornado.api.annotations.ReadWrite;
 import uk.ac.manchester.tornado.api.annotations.Write;
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.meta.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.EventSet;
-import uk.ac.manchester.tornado.runtime.api.TornadoEvents;
 
 @SuppressWarnings("deprecation")
 public class TaskMetaData extends AbstractMetaData {

@@ -23,8 +23,22 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.api.annotations;
+package uk.ac.manchester.tornado.api.common;
 
-public interface SynchronisationPoint {
-	public void waitOn();
+public interface SchedulableTask {
+
+    public Object[] getArguments();
+
+    public Access[] getArgumentsAccess();
+
+    public TaskDataInterface meta();
+
+    public SchedulableTask mapTo(GenericDevice mapping);
+
+    public GenericDevice getDevice();
+
+    public String getName();
+
+    public String getId();
+
 }

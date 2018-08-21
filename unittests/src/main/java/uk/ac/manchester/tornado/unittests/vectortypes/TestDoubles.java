@@ -31,13 +31,13 @@ import java.util.Random;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.collections.types.Double2;
 import uk.ac.manchester.tornado.collections.types.Double3;
 import uk.ac.manchester.tornado.collections.types.Double4;
 import uk.ac.manchester.tornado.collections.types.Double8;
 import uk.ac.manchester.tornado.collections.types.VectorDouble;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestDoubles extends TornadoTestBase {

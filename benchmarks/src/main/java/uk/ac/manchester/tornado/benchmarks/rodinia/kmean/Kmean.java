@@ -27,10 +27,10 @@ package uk.ac.manchester.tornado.benchmarks.rodinia.kmean;
 
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Atomic;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.benchmarks.rodinia.kmean.DataLoader.KmeansData;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class Kmean {
 

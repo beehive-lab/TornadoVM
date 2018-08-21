@@ -30,11 +30,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.runtime.TornadoDriver;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 /**
  * First try: It assumes the first device is a GPU and the second device is an

@@ -27,8 +27,8 @@ package uk.ac.manchester.tornado.benchmarks.dft;
 
 import static uk.ac.manchester.tornado.collections.math.TornadoMath.*;
 
+import uk.ac.manchester.tornado.api.*;
 import uk.ac.manchester.tornado.benchmarks.*;
-import uk.ac.manchester.tornado.runtime.api.*;
 
 public class DftTornado extends BenchmarkDriver {
 

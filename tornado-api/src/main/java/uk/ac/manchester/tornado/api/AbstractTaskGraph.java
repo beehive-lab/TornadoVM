@@ -23,13 +23,15 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.runtime.api;
+package uk.ac.manchester.tornado.api;
 
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskDataInterface;
+import uk.ac.manchester.tornado.api.common.TaskPackage;
 
 public interface AbstractTaskGraph {
 
@@ -89,5 +91,5 @@ public interface AbstractTaskGraph {
 
     public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, GenericDevice device, int[] dimensions);
 
-	public void addScalaTask(String id, Object function, Object[] args);
+    public void addScalaTask(String id, Object function, Object[] args);
 }

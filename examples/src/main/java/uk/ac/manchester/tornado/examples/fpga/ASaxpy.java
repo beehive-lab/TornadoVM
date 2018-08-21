@@ -25,8 +25,8 @@
  */
 package uk.ac.manchester.tornado.examples.fpga;
 
+import uk.ac.manchester.tornado.api.*;
 import uk.ac.manchester.tornado.api.annotations.*;
-import uk.ac.manchester.tornado.runtime.api.*;
 
 public class ASaxpy {
 

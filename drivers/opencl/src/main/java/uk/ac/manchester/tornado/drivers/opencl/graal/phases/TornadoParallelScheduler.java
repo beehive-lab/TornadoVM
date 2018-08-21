@@ -23,8 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import static uk.ac.manchester.tornado.api.enums.TornadoSchedulingStrategy.PER_BLOCK;
-import static uk.ac.manchester.tornado.api.enums.TornadoSchedulingStrategy.PER_ITERATION;
+import static uk.ac.manchester.tornado.common.TornadoSchedulingStrategy.PER_BLOCK;
+import static uk.ac.manchester.tornado.common.TornadoSchedulingStrategy.PER_ITERATION;
 
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -37,7 +37,7 @@ import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.api.enums.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;

@@ -34,10 +34,10 @@ import java.util.stream.IntStream;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils.TornadoDeviceType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;

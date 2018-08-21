@@ -23,30 +23,8 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.api.annotations;
+package uk.ac.manchester.tornado.api.common;
 
-import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
-
-public interface ProfiledAction {
-
-    public String getName();
-
-    public long getSubmitTime();
-
-    public long getStartTime();
-
-    public long getEndTime();
-
-    public double getExecutionTime();
-
-    public double getQueuedTime();
-
-    public TornadoExecutionStatus getStatus();
-
-    public double getTotalTime();
-
-    public long getExecutionTimeInNanoSeconds();
-
-    public void retain();
-
+public interface SynchronisationPoint {
+	public void waitOn();
 }

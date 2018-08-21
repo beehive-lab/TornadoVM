@@ -1,9 +1,6 @@
-package uk.ac.manchester.tornado.runtime.api;
+package uk.ac.manchester.tornado.api.common;
 
 import java.util.BitSet;
-
-import uk.ac.manchester.tornado.api.annotations.Event;
-import uk.ac.manchester.tornado.api.common.GenericDevice;
 
 public interface TornadoEvents {
 

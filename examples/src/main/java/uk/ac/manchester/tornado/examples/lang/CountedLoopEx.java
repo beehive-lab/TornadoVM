@@ -27,7 +27,7 @@ package uk.ac.manchester.tornado.examples.lang;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskSchedule;
 
 public class CountedLoopEx {
 

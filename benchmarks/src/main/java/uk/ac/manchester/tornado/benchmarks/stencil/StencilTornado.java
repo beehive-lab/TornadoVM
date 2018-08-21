@@ -28,9 +28,9 @@ package uk.ac.manchester.tornado.benchmarks.stencil;
 import java.util.Arrays;
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
-import uk.ac.manchester.tornado.runtime.api.SchedulableTask;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.copy;
 import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.stencil3d;

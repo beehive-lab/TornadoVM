@@ -28,7 +28,7 @@ package uk.ac.manchester.tornado.examples.openbitset;
 import java.util.Random;
 import org.apache.lucene.util.OpenBitSet;
 
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskSchedule;
 
 public class OpenBitSetExample {
 

@@ -32,10 +32,10 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.runtime.TornadoDriver;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class HuffmanTornadoDecoder {
 

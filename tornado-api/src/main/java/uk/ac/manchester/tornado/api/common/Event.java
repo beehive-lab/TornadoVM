@@ -23,8 +23,8 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.api.enums;
+package uk.ac.manchester.tornado.api.common;
 
-public enum TornadoSchedulingStrategy {
-	PER_BLOCK, PER_ITERATION;
+public interface Event extends ProfiledAction, SynchronisationPoint {
+
 }

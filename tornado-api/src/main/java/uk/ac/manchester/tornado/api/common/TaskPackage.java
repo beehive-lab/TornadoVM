@@ -23,19 +23,19 @@
  * Authors: Juan Fumero
  *
  */
-package uk.ac.manchester.tornado.runtime.api;
+package uk.ac.manchester.tornado.api.common;
 
-import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task1;
-import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task10;
-import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task15;
-import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task2;
-import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task3;
-import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task4;
-import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task5;
-import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task6;
-import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task7;
-import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task8;
-import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task15;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task2;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task3;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task4;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task5;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 
 public class TaskPackage {
 

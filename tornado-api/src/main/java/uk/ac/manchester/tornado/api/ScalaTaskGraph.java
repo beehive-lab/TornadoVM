@@ -23,8 +23,39 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.api.annotations;
+package uk.ac.manchester.tornado.api;
 
-public interface Event extends ProfiledAction, SynchronisationPoint {
+public class ScalaTaskGraph {
 
+    private AbstractTaskGraph taskGraphImpl;
+    private String taskName;
+
+    public ScalaTaskGraph(String name) {
+        taskName = name;
+        /// XXX: Loading using Reflection
+    }
+
+    public ScalaTaskGraph task(String id, Object function, Object... args) {
+        taskGraphImpl.addScalaTask(id, function, args);
+        return this;
+    }
+
+    public ScalaTaskGraph streamIn(Object... objects) {
+        taskGraphImpl.streamInInner(objects);
+        return this;
+    }
+
+    public ScalaTaskGraph streamOut(Object... objects) {
+        taskGraphImpl.streamOutInner(objects);
+        return this;
+    }
+
+    public ScalaTaskGraph schedule() {
+        taskGraphImpl.scheduleInner();
+        return this;
+    }
+
+    public String getTaskName() {
+        return taskName;
+    }
 }

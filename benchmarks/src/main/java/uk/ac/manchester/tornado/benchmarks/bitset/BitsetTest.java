@@ -29,8 +29,8 @@ import java.util.*;
 
 import org.apache.lucene.util.*;
 
+import uk.ac.manchester.tornado.api.*;
 import uk.ac.manchester.tornado.api.annotations.*;
-import uk.ac.manchester.tornado.runtime.api.*;
 
 public class BitsetTest {
 

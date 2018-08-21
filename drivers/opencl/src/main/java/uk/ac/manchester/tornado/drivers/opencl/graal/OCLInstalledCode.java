@@ -32,7 +32,7 @@ import java.nio.ByteBuffer;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
-import uk.ac.manchester.tornado.api.annotations.Event;
+import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.CallStack;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;

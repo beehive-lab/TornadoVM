@@ -39,8 +39,10 @@ import java.util.List;
 
 import javax.management.RuntimeErrorException;
 
-import uk.ac.manchester.tornado.api.annotations.Event;
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.CallStack;
 import uk.ac.manchester.tornado.common.DeviceObjectState;
@@ -50,8 +52,6 @@ import uk.ac.manchester.tornado.common.TornadoLogger;
 import uk.ac.manchester.tornado.common.TornadoOptions;
 import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
-import uk.ac.manchester.tornado.runtime.api.SchedulableTask;
-import uk.ac.manchester.tornado.runtime.api.TornadoEvents;
 import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.GraphAssembler.TornadoVMBytecodes;
 

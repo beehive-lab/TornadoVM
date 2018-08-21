@@ -25,8 +25,8 @@
  */
 package uk.ac.manchester.tornado.examples.compute;
 
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 /**
  * Montecarlo algorithm to approximate the PI value. This version has been

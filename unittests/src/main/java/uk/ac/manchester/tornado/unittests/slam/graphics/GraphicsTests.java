@@ -46,6 +46,7 @@ import java.util.stream.IntStream;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.collections.graphics.GraphicsMath;
 import uk.ac.manchester.tornado.collections.graphics.Renderer;
@@ -70,7 +71,6 @@ import uk.ac.manchester.tornado.collections.types.VectorFloat3;
 import uk.ac.manchester.tornado.collections.types.VectorFloat4;
 import uk.ac.manchester.tornado.collections.types.VolumeOps;
 import uk.ac.manchester.tornado.collections.types.VolumeShort2;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class GraphicsTests extends TornadoTestBase {

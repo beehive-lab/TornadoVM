@@ -27,11 +27,11 @@ package uk.ac.manchester.tornado.examples.memory;
 
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
 
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class DeviceMemoryTest {
 

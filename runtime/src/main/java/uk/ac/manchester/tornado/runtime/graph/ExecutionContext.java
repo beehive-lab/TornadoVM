@@ -38,13 +38,13 @@ import java.util.function.Consumer;
 import javax.management.RuntimeErrorException;
 
 import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.common.CallStack;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.api.LocalObjectState;
-import uk.ac.manchester.tornado.runtime.api.SchedulableTask;
 
 public class ExecutionContext {
 

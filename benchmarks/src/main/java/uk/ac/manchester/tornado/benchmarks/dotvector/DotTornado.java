@@ -29,10 +29,11 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 import uk.ac.manchester.tornado.collections.types.Float3;
 import uk.ac.manchester.tornado.collections.types.VectorFloat3;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 import static uk.ac.manchester.tornado.collections.math.TornadoMath.findULPDistance;
 import static uk.ac.manchester.tornado.common.Tornado.getProperty;
+
+import uk.ac.manchester.tornado.api.TaskSchedule;
 
 public class DotTornado extends BenchmarkDriver {
 

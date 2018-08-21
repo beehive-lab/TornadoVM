@@ -23,7 +23,7 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.runtime.api;
+package uk.ac.manchester.tornado.api.common;
 
 public final class TornadoFunctions {
 

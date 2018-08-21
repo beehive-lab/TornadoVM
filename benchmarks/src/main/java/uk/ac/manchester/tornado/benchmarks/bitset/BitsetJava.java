@@ -29,8 +29,8 @@ import java.util.*;
 
 import org.apache.lucene.util.*;
 
+import uk.ac.manchester.tornado.api.*;
 import uk.ac.manchester.tornado.benchmarks.*;
-import uk.ac.manchester.tornado.runtime.api.*;
 
 public class BitsetJava extends BenchmarkDriver {
 

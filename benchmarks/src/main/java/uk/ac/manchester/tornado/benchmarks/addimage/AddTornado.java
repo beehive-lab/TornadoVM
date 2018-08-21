@@ -29,11 +29,12 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 import uk.ac.manchester.tornado.collections.types.Float4;
 import uk.ac.manchester.tornado.collections.types.ImageFloat4;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 import static uk.ac.manchester.tornado.benchmarks.BenchmarkDriver.MAX_ULP;
 import static uk.ac.manchester.tornado.collections.types.FloatOps.findMaxULP;
 import static uk.ac.manchester.tornado.common.Tornado.getProperty;
+
+import uk.ac.manchester.tornado.api.TaskSchedule;
 
 public class AddTornado extends BenchmarkDriver {
 

@@ -23,26 +23,8 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.runtime.api;
+package uk.ac.manchester.tornado.common;
 
-import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.common.GenericDevice;
-import uk.ac.manchester.tornado.api.common.TaskDataInterface;
-
-public interface SchedulableTask {
-
-    public Object[] getArguments();
-
-    public Access[] getArgumentsAccess();
-
-    public TaskDataInterface meta();
-
-    public SchedulableTask mapTo(GenericDevice mapping);
-
-    public GenericDevice getDevice();
-
-    public String getName();
-
-    public String getId();
-
+public enum TornadoSchedulingStrategy {
+	PER_BLOCK, PER_ITERATION;
 }

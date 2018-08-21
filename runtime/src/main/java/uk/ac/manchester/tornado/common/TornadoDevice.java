@@ -25,10 +25,9 @@
  */
 package uk.ac.manchester.tornado.common;
 
-import uk.ac.manchester.tornado.api.annotations.Event;
+import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.GenericDevice;
-import uk.ac.manchester.tornado.api.enums.TornadoSchedulingStrategy;
-import uk.ac.manchester.tornado.runtime.api.SchedulableTask;
+import uk.ac.manchester.tornado.api.common.SchedulableTask;
 
 public interface TornadoDevice extends GenericDevice {
 

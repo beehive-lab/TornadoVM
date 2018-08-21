@@ -27,10 +27,11 @@ package uk.ac.manchester.tornado.benchmarks.bandwidth;
 
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.ladd;
 import static uk.ac.manchester.tornado.common.Tornado.getProperty;
+
+import uk.ac.manchester.tornado.api.TaskSchedule;
 
 public class BandwidthTornado extends BenchmarkDriver {
 
