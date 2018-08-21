@@ -27,11 +27,11 @@ package uk.ac.manchester.tornado.runtime.api;
 
 import java.util.Objects;
 
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.meta.domain.DomainTree;
 
 public class PrebuiltTask implements SchedulableTask {
@@ -42,7 +42,7 @@ public class PrebuiltTask implements SchedulableTask {
     protected final Access[] argumentsAccess;
     protected final TaskMetaData meta;
 
-    protected PrebuiltTask(ScheduleMetaData scheduleMeta, String id, String entryPoint, String filename, Object[] args, Access[] access, TornadoDevice device, DomainTree domain) {
+    protected PrebuiltTask(ScheduleMetaData scheduleMeta, String id, String entryPoint, String filename, Object[] args, Access[] access, GenericDevice device, DomainTree domain) {
         this.entryPoint = entryPoint;
         this.filename = filename;
         this.args = args;
@@ -92,7 +92,7 @@ public class PrebuiltTask implements SchedulableTask {
     }
 
     @Override
-    public SchedulableTask mapTo(TornadoDevice mapping) {
+    public SchedulableTask mapTo(GenericDevice mapping) {
         meta.setDevice(mapping);
         return this;
     }

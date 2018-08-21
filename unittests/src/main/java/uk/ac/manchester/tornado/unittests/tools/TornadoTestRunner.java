@@ -31,6 +31,8 @@ public class TornadoTestRunner {
 
         boolean verbose = TornadoHelper.getProperty("tornado.unittests.verbose");
 
+        System.out.println("!!!!!!!!!! HERE");
+
         String[] classAndMethod = args[0].split("#");
         if (!verbose) {
             if (classAndMethod.length > 1) {

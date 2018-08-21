@@ -25,9 +25,11 @@
  */
 package uk.ac.manchester.tornado.runtime.api;
 
-import uk.ac.manchester.tornado.common.SchedulableTask;
-import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.common.enums.Access;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task10;
 import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task15;
@@ -47,7 +49,15 @@ public class TaskSchedule implements TornadoAPI {
 
     public TaskSchedule(String name) {
         this.taskScheduleName = name;
-        taskScheduleImpl = new TornadoTaskSchedule(name);
+               
+        try {
+			Class<?> klass = Class.forName("uk.ac.manchester.tornado.runtime.api.TornadoTaskSchedule");
+			Constructor<?> constructor = klass.getConstructor(String.class);
+			taskScheduleImpl = (AbstractTaskGraph) constructor.newInstance(name);
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException e) {
+			e.printStackTrace();
+		}
+        
     }
 
     @Override
@@ -131,7 +141,7 @@ public class TaskSchedule implements TornadoAPI {
     }
 
     @Override
-    public TaskSchedule prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
+    public TaskSchedule prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, GenericDevice device, int[] dimensions) {
         taskScheduleImpl.addPrebuiltTask(id, entryPoint, filename, args, accesses, device, dimensions);
         return this;
     }
@@ -148,7 +158,7 @@ public class TaskSchedule implements TornadoAPI {
     }
 
     @Override
-    public TaskSchedule mapAllTo(TornadoDevice device) {
+    public TaskSchedule mapAllTo(GenericDevice device) {
         taskScheduleImpl.setDevice(device);
         return this;
     }
@@ -227,17 +237,17 @@ public class TaskSchedule implements TornadoAPI {
     }
 
     @Override
-    public TornadoDevice getDevice() {
+    public GenericDevice getDevice() {
         return taskScheduleImpl.getDevice();
     }
 
     @Override
-    public void setDevice(TornadoDevice device) {
+    public void setDevice(GenericDevice device) {
         taskScheduleImpl.setDevice(device);
     }
 
     @Override
-    public TornadoDevice getDeviceForTask(String id) {
+    public GenericDevice getDeviceForTask(String id) {
         return taskScheduleImpl.getDeviceForTask(id);
     }
 

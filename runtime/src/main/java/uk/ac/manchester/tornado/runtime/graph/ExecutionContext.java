@@ -35,13 +35,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import javax.management.RuntimeErrorException;
+
+import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.common.CallStack;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.api.LocalObjectState;
+import uk.ac.manchester.tornado.runtime.api.SchedulableTask;
 
 public class ExecutionContext {
 
@@ -153,11 +156,16 @@ public class ExecutionContext {
         }
     }
 
-    public void mapAllTo(TornadoDevice mapping) {
-        devices.clear();
-        devices.add(0, mapping);
-        apply(task -> task.mapTo(mapping));
-        Arrays.fill(taskToDevice, 0);
+    public void mapAllTo(GenericDevice mapping) {
+
+        if (mapping instanceof TornadoDevice) {
+            devices.clear();
+            devices.add(0, (TornadoDevice) mapping);
+            apply(task -> task.mapTo(mapping));
+            Arrays.fill(taskToDevice, 0);
+        } else {
+            throw new RuntimeException("Device " + mapping.getClass() + " not supported yet");
+        }
     }
 
     public void addDevice(int deviceId) {
@@ -178,14 +186,21 @@ public class ExecutionContext {
         }
 
         String id = task.getId();
-        TornadoDevice target = task.getDevice();
+        GenericDevice target = task.getDevice();
+        TornadoDevice dev = null;
+
+        if (target instanceof TornadoDevice) {
+            dev = (TornadoDevice) target;
+        } else {
+            throw new RuntimeException("Device " + target.getClass() + " not supported yet");
+        }
 
         info("assigning %s to %s", id, target.getDeviceName());
 
         int deviceIndex = devices.indexOf(target);
         if (deviceIndex == -1) {
             deviceIndex = devices.size();
-            devices.add(target);
+            devices.add(dev);
         }
         taskToDevice[index] = deviceIndex;
     }
@@ -277,7 +292,14 @@ public class ExecutionContext {
     }
 
     public TornadoDevice getDeviceForTask(String id) {
-        return getTask(id) == null ? null : getTask(id).getDevice();
+        GenericDevice device = getTask(id).getDevice();
+        TornadoDevice tornadoDevice = null;
+        if (device instanceof TornadoDevice) {
+            tornadoDevice = (TornadoDevice) device;
+        } else {
+            throw new RuntimeException("Device " + device.getClass() + " not supported yet");
+        }
+        return getTask(id) == null ? null : tornadoDevice;
     }
 
     public String getId() {

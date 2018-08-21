@@ -46,8 +46,8 @@ import org.graalvm.compiler.phases.BasePhase;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.MetaAccessProvider;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.graal.nodes.StoreAtomicIndexedNode;
 

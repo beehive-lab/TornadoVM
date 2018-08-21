@@ -23,10 +23,11 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.common;
+package uk.ac.manchester.tornado.runtime.api;
 
-import uk.ac.manchester.tornado.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.common.enums.Access;
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.TaskDataInterface;
 
 public interface SchedulableTask {
 
@@ -34,11 +35,11 @@ public interface SchedulableTask {
 
     public Access[] getArgumentsAccess();
 
-    public TaskMetaData meta();
+    public TaskDataInterface meta();
 
-    public SchedulableTask mapTo(TornadoDevice mapping);
+    public SchedulableTask mapTo(GenericDevice mapping);
 
-    public TornadoDevice getDevice();
+    public GenericDevice getDevice();
 
     public String getName();
 

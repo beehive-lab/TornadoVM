@@ -404,6 +404,7 @@
     <module>benchmarks</module>
     <module>unittests</module>
     <module>assembly</module>
+    <module>tornado-api</module>
   </modules>
   <reporting>
     <plugins>

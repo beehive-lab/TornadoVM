@@ -43,12 +43,12 @@ import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Event;
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.common.CallStack;
 import uk.ac.manchester.tornado.common.DeviceObjectState;
-import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task1;
@@ -102,12 +102,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public TornadoDevice getDevice() {
+    public GenericDevice getDevice() {
         return meta().getDevice();
     }
 
     @Override
-    public void setDevice(TornadoDevice device) {
+    public void setDevice(GenericDevice device) {
         meta().setDevice(device);
     }
 
@@ -262,7 +262,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public void mapAllToInner(TornadoDevice device) {
+    public void mapAllToInner(GenericDevice device) {
         graphContext.mapAllTo(device);
     }
 
@@ -469,7 +469,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
+    public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, GenericDevice device, int[] dimensions) {
         addInner(TaskUtils.createTask(meta(), id, entryPoint, filename, args, accesses, device, dimensions));
     }
+
+    @Override
+    public void addScalaTask(String id, Object function, Object[] args) {
+        addInner(TaskUtils.scalaTask(id, function, args));
+    }
+
 }

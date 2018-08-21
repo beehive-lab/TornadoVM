@@ -12,6 +12,12 @@
     <name>tornado-drivers-opencl</name>
 
     <dependencies>
+		<dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-collections</artifactId>

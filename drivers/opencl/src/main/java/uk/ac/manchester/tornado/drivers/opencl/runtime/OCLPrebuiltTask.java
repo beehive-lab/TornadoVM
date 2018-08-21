@@ -25,8 +25,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.meta.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.api.PrebuiltTask;

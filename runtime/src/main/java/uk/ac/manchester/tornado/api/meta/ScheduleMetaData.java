@@ -25,10 +25,19 @@
  */
 package uk.ac.manchester.tornado.api.meta;
 
+import java.util.List;
+
+import uk.ac.manchester.tornado.runtime.api.TornadoEvents;
+
 public class ScheduleMetaData extends AbstractMetaData {
 
     public ScheduleMetaData(String id) {
         super(id);
+    }
+
+    @Override
+    public List<TornadoEvents> getProfiles() {
+        return null;
     }
 
 }

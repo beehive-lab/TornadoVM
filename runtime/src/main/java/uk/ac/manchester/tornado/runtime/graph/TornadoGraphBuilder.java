@@ -29,13 +29,13 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.common.SchedulableTask;
-import uk.ac.manchester.tornado.common.enums.Access;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.runtime.api.TornadoGraphBitcodes;
 import uk.ac.manchester.tornado.runtime.api.CompilableTask;
 import uk.ac.manchester.tornado.runtime.api.LocalObjectState;
+import uk.ac.manchester.tornado.runtime.api.SchedulableTask;
+import uk.ac.manchester.tornado.runtime.api.TornadoGraphBitcodes;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ConstantNode;

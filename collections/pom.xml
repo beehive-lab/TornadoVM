@@ -15,6 +15,12 @@
             <artifactId>all</artifactId>
             <version>0.28</version>
         </dependency>
+		<dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>tornado-runtime</artifactId>

@@ -29,12 +29,14 @@ import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static uk.ac.manchester.tornado.api.meta.MetaDataUtils.resolveDevice;
 
+import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.TaskDataInterface;
 import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoDriver;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 
-public abstract class AbstractMetaData {
+public abstract class AbstractMetaData implements TaskDataInterface {
 
     private String id;
     private TornadoDevice device;
@@ -57,7 +59,7 @@ public abstract class AbstractMetaData {
         return device;
     }
 
-    private int getDeviceIndex(int driverIndex, TornadoDevice device) {
+    private int getDeviceIndex(int driverIndex, GenericDevice device) {
         TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
         int devs = driver.getDeviceCount();
         int index = 0;
@@ -75,11 +77,13 @@ public abstract class AbstractMetaData {
      * 
      * @param device
      */
-    public void setDevice(TornadoDevice device) {
+    public void setDevice(GenericDevice device) {
         this.driverIndex = DEFAULT_DRIVER_INDEX;
         int index = getDeviceIndex(0, device);
         this.deviceIndex = index;
-        this.device = device;
+        if (device instanceof TornadoDevice) {
+            this.device = (TornadoDevice) device;
+        }
     }
 
     /**

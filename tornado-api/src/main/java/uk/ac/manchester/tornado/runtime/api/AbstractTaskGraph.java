@@ -27,20 +27,19 @@ package uk.ac.manchester.tornado.runtime.api;
 
 import java.util.function.Consumer;
 
-import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.common.SchedulableTask;
-import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.common.enums.Access;
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.TaskDataInterface;
 
 public interface AbstractTaskGraph {
 
     public SchedulableTask getTask(String i);
 
-    public TornadoDevice getDevice();
+    public GenericDevice getDevice();
 
-    public void setDevice(TornadoDevice device);
+    public void setDevice(GenericDevice device);
 
-    public TornadoDevice getDeviceForTask(String id);
+    public GenericDevice getDeviceForTask(String id);
 
     public long getReturnValue(String id);
 
@@ -52,7 +51,7 @@ public interface AbstractTaskGraph {
 
     public void apply(Consumer<SchedulableTask> consumer);
 
-    public void mapAllToInner(TornadoDevice device);
+    public void mapAllToInner(GenericDevice device);
 
     public void dumpTimes();
 
@@ -82,11 +81,13 @@ public interface AbstractTaskGraph {
 
     public String getId();
 
-    public ScheduleMetaData meta();
+    public TaskDataInterface meta();
 
     public abstract AbstractTaskGraph schedule();
 
     public void addTask(TaskPackage taskPackage);
 
-    public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
+    public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, GenericDevice device, int[] dimensions);
+
+	public void addScalaTask(String id, Object function, Object[] args);
 }

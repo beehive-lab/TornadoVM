@@ -41,10 +41,11 @@ import java.util.Map;
 import uk.ac.manchester.tornado.api.annotations.Read;
 import uk.ac.manchester.tornado.api.annotations.ReadWrite;
 import uk.ac.manchester.tornado.api.annotations.Write;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.meta.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.EventSet;
+import uk.ac.manchester.tornado.runtime.api.TornadoEvents;
 
 @SuppressWarnings("deprecation")
 public class TaskMetaData extends AbstractMetaData {
@@ -349,8 +350,8 @@ public class TaskMetaData extends AbstractMetaData {
         return privateSize;
     }
 
-    public List<EventSet> getProfiles() {
-        final List<EventSet> result = new ArrayList<>(profiles.keySet().size());
+    public List<TornadoEvents> getProfiles() {
+        final List<TornadoEvents> result = new ArrayList<>(profiles.keySet().size());
         for (TornadoDevice device : profiles.keySet()) {
             result.add(new EventSet(device, profiles.get(device)));
         }

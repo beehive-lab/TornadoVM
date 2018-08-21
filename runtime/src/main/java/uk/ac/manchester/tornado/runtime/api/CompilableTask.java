@@ -29,11 +29,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
 
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.common.enums.Access;
 
 public class CompilableTask implements SchedulableTask {
 
@@ -104,7 +104,7 @@ public class CompilableTask implements SchedulableTask {
     }
 
     @Override
-    public CompilableTask mapTo(final TornadoDevice mapping) {
+    public CompilableTask mapTo(final GenericDevice mapping) {
         meta.setDevice(mapping);
         return this;
     }

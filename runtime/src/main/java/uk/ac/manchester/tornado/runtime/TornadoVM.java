@@ -30,8 +30,6 @@ import static uk.ac.manchester.tornado.common.Tornado.ENABLE_PROFILING;
 import static uk.ac.manchester.tornado.common.Tornado.PRINT_COMPILE_TIMES;
 import static uk.ac.manchester.tornado.common.Tornado.USE_VM_FLUSH;
 import static uk.ac.manchester.tornado.common.Tornado.VM_USE_DEPS;
-import static uk.ac.manchester.tornado.common.enums.Access.READ_WRITE;
-import static uk.ac.manchester.tornado.common.enums.Access.WRITE;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -39,18 +37,21 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 
+import javax.management.RuntimeErrorException;
+
 import uk.ac.manchester.tornado.api.annotations.Event;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.CallStack;
 import uk.ac.manchester.tornado.common.DeviceObjectState;
-import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.common.TornadoLogger;
 import uk.ac.manchester.tornado.common.TornadoOptions;
-import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.api.SchedulableTask;
+import uk.ac.manchester.tornado.runtime.api.TornadoEvents;
 import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.GraphAssembler.TornadoVMBytecodes;
 
@@ -399,7 +400,7 @@ public class TornadoVM extends TornadoLogger {
                         TornadoInternalError.guarantee(objectState.isValid(), "object is not valid: %s %s", objects.get(argIndex), objectState);
 
                         stack.push(objects.get(argIndex), objectState);
-                        if (accesses[i] == WRITE || accesses[i] == READ_WRITE) {
+                        if (accesses[i] == Access.WRITE || accesses[i] == Access.READ_WRITE) {
                             globalState.setOwner(device);
                             objectState.setContents(true);
                             objectState.setModified(true);
@@ -409,10 +410,17 @@ public class TornadoVM extends TornadoLogger {
                     }
                 }
 
-                if (useDependencies) {
-                    lastEvent = installedCode.launchWithDeps(stack, task.meta(), waitList);
+                TaskMetaData metadata = null;
+                if (task.meta() instanceof TaskMetaData) {
+                    metadata = (TaskMetaData) task.meta();
                 } else {
-                    lastEvent = installedCode.launchWithoutDeps(stack, task.meta());
+                    throw new RuntimeException("task.meta is not instanceof TaskMetada");
+                }
+
+                if (useDependencies) {
+                    lastEvent = installedCode.launchWithDeps(stack, metadata, waitList);
+                } else {
+                    lastEvent = installedCode.launchWithoutDeps(stack, metadata);
                 }
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
@@ -533,15 +541,20 @@ public class TornadoVM extends TornadoLogger {
         }
 
         for (final SchedulableTask task : tasks) {
-            final TaskMetaData meta = task.meta();
-            for (final EventSet eventset : meta.getProfiles()) {
+            final TaskMetaData meta = (TaskMetaData) task.meta();
+            for (final TornadoEvents eventset : meta.getProfiles()) {
                 final BitSet profiles = eventset.getProfiles();
                 for (int i = profiles.nextSetBit(0); i != -1; i = profiles.nextSetBit(i + 1)) {
-                    final Event profile = eventset.getDevice().resolveEvent(i);
 
+                    if (!(eventset.getDevice() instanceof TornadoDevice)) {
+                        throw new RuntimeException("TornadoDevice not found");
+                    }
+
+                    TornadoDevice device = (TornadoDevice) eventset.getDevice();
+                    final Event profile = device.resolveEvent(i);
                     if (profile.getStatus() == COMPLETE) {
-                        System.out.printf("task: %s %s %.9f %9d %9d %9d\n", eventset.getDevice().getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getSubmitTime(),
-                                profile.getStartTime(), profile.getEndTime());
+                        System.out.printf("task: %s %s %.9f %9d %9d %9d\n", device.getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(),
+                                profile.getEndTime());
                     }
                 }
 

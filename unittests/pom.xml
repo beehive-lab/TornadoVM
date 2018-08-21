@@ -28,6 +28,14 @@
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
+
+		<dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-api</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
         <dependency>
             <groupId>jvmci</groupId>
             <artifactId>api</artifactId>

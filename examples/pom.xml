@@ -10,6 +10,14 @@
     <artifactId>tornado-examples</artifactId>
     <name>tornado-examples</name>
     <dependencies>
+
+		<dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-api</artifactId>
+            <version>${project.version}</version>
+			<scope>compile</scope>
+        </dependency>
+
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>tornado-collections</artifactId>

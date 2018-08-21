@@ -38,9 +38,9 @@ import org.graalvm.compiler.bytecode.Bytecodes;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.meta.domain.DomainTree;
 import uk.ac.manchester.tornado.meta.domain.IntDomain;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
@@ -222,7 +222,7 @@ public class TaskUtils {
         return cvs;
     }
 
-    public static PrebuiltTask createTask(ScheduleMetaData meta, String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dims) {
+    public static PrebuiltTask createTask(ScheduleMetaData meta, String id, String entryPoint, String filename, Object[] args, Access[] accesses, GenericDevice device, int[] dims) {
         final DomainTree domain = new DomainTree(dims.length);
         for (int i = 0; i < dims.length; i++) {
             domain.set(i, new IntDomain(0, 1, dims[i]));

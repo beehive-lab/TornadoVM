@@ -28,8 +28,14 @@ package uk.ac.manchester.tornado.runtime;
 import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
 
 import uk.ac.manchester.tornado.api.annotations.Event;
+import uk.ac.manchester.tornado.api.common.*;
 import uk.ac.manchester.tornado.api.enums.TornadoSchedulingStrategy;
-import uk.ac.manchester.tornado.common.*;
+import uk.ac.manchester.tornado.common.CallStack;
+import uk.ac.manchester.tornado.common.DeviceObjectState;
+import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.common.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.runtime.api.SchedulableTask;
 
 public class JVMMapping implements TornadoDevice {
 

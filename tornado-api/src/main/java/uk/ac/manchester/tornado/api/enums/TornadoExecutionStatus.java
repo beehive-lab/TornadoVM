@@ -23,8 +23,8 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.common.enums;
+package uk.ac.manchester.tornado.api.enums;
 
-public enum Access {
-	READ,WRITE,READ_WRITE,UNKNOWN,NONE;
+public enum TornadoExecutionStatus {
+    UNKNOWN, COMPLETE, RUNNING, SUBMITTED, QUEUED, ERROR;
 }

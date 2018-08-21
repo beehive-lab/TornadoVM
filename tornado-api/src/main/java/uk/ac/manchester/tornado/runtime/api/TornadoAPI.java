@@ -25,9 +25,8 @@
  */
 package uk.ac.manchester.tornado.runtime.api;
 
-import uk.ac.manchester.tornado.common.SchedulableTask;
-import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.common.enums.Access;
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task10;
 import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task15;
@@ -67,13 +66,13 @@ public interface TornadoAPI {
     public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> TaskSchedule task(String id, Task15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> code, T1 arg1,
             T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15);
 
-    public TaskSchedule prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
+    public TaskSchedule prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, GenericDevice device, int[] dimensions);
 
     public String getTaskScheduleName();
 
     public TaskSchedule task(SchedulableTask task);
 
-    public TaskSchedule mapAllTo(TornadoDevice device);
+    public TaskSchedule mapAllTo(GenericDevice device);
 
     public TaskSchedule streamIn(Object... objects);
 
@@ -103,11 +102,11 @@ public interface TornadoAPI {
 
     public SchedulableTask getTask(String id);
 
-    public TornadoDevice getDevice();
+    public GenericDevice getDevice();
 
-    public void setDevice(TornadoDevice device);
+    public void setDevice(GenericDevice device);
 
-    public TornadoDevice getDeviceForTask(String id);
+    public GenericDevice getDeviceForTask(String id);
 
     public void waitOn();
 
