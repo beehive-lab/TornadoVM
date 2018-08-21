@@ -84,4 +84,6 @@ public interface AbstractTaskGraph {
     public ScheduleMetaData meta();
 
     public abstract AbstractTaskGraph schedule();
+
+    public void addTask(TaskPackage taskPackage);
 }
