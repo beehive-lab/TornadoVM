@@ -5,7 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import uk.ac.manchester.tornado.api.AbstractTaskGraph;
 
-public class Loader {
+public class TornadoAPIProvider {
 
     public static AbstractTaskGraph loadRuntime(String name) {
         AbstractTaskGraph taskGraphImpl = null;

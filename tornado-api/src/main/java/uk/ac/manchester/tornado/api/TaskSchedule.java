@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
-import uk.ac.manchester.tornado.api.runtime.Loader;
+import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
 
 public class TaskSchedule implements TornadoAPI {
 
@@ -49,7 +49,7 @@ public class TaskSchedule implements TornadoAPI {
 
     public TaskSchedule(String name) {
         this.taskScheduleName = name;
-        taskScheduleImpl = Loader.loadRuntime(name);
+        taskScheduleImpl = TornadoAPIProvider.loadRuntime(name);
     }
 
     @Override
