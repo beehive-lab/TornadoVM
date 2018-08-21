@@ -48,6 +48,7 @@ import uk.ac.manchester.tornado.common.CallStack;
 import uk.ac.manchester.tornado.common.DeviceObjectState;
 import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.common.enums.Access;
 import uk.ac.manchester.tornado.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.api.TornadoFunctions.Task1;
@@ -465,6 +466,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             default:
                 throw new RuntimeException("Task not supported yet");
         }
+    }
 
+    @Override
+    public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
+        addInner(TaskUtils.createTask(meta(), id, entryPoint, filename, args, accesses, device, dimensions));
     }
 }

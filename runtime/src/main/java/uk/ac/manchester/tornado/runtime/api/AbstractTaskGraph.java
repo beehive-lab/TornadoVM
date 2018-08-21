@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.common.SchedulableTask;
 import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.common.enums.Access;
 
 public interface AbstractTaskGraph {
 
@@ -86,4 +87,6 @@ public interface AbstractTaskGraph {
     public abstract AbstractTaskGraph schedule();
 
     public void addTask(TaskPackage taskPackage);
+
+    public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
 }
