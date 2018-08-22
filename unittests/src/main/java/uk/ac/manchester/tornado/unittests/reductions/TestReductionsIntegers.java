@@ -122,7 +122,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
                 result = new int[Runtime.getRuntime().availableProcessors()];
@@ -176,7 +176,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
                 result = new int[Runtime.getRuntime().availableProcessors()];
@@ -270,7 +270,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
                 result = new int[Runtime.getRuntime().availableProcessors()];
@@ -321,7 +321,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
                 result = new int[Runtime.getRuntime().availableProcessors()];
@@ -400,7 +400,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
                 result = new int[Runtime.getRuntime().availableProcessors()];
@@ -462,7 +462,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
                 result = new int[Runtime.getRuntime().availableProcessors()];
@@ -510,7 +510,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
                 result = new int[Runtime.getRuntime().availableProcessors()];
@@ -578,7 +578,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
                 result = new int[Runtime.getRuntime().availableProcessors()];
@@ -678,7 +678,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
                 result = new int[Runtime.getRuntime().availableProcessors()];
@@ -725,7 +725,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
                 result = new int[Runtime.getRuntime().availableProcessors()];

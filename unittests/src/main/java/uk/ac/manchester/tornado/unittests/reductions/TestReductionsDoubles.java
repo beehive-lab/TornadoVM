@@ -62,7 +62,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         }
         double[] result = null;
 
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
                 result = new double[Runtime.getRuntime().availableProcessors()];
@@ -130,7 +130,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
                 result = new double[Runtime.getRuntime().availableProcessors()];
@@ -175,7 +175,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
                 result = new double[Runtime.getRuntime().availableProcessors()];
@@ -221,7 +221,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
                 result = new double[Runtime.getRuntime().availableProcessors()];
@@ -272,7 +272,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
                 result = new double[Runtime.getRuntime().availableProcessors()];

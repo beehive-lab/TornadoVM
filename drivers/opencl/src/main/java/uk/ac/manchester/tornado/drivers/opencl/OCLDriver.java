@@ -32,11 +32,13 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import uk.ac.manchester.tornado.api.TargetDeviceType;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.common.TornadoLogger;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLSuitesProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoDriver;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 
@@ -178,5 +180,10 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
     @Override
     public String getName() {
         return "OpenCL Driver";
+    }
+
+    @Override
+    public TargetDeviceType getDeviceType() {
+        return ((OCLTornadoDevice) getDefaultDevice()).getDevice().getDeviceType();
     }
 }

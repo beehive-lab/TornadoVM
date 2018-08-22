@@ -124,7 +124,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         }
         float[] result = null;
 
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:
                 result = new float[Runtime.getRuntime().availableProcessors()];
