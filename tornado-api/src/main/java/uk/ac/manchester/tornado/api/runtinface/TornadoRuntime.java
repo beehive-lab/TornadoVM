@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.api.runtinface;
 
 import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
 
 public class TornadoRuntime {
 
@@ -8,7 +9,7 @@ public class TornadoRuntime {
 
     public static TornadoRuntimeInterface getTornadoRuntime() {
         if (runtimeImpl == null) {
-            // Use reflection to call TornadoRuntime in core
+            runtimeImpl = TornadoAPIProvider.loadRuntime();
         }
         return runtimeImpl;
     }

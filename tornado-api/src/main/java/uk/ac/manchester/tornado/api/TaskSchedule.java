@@ -49,7 +49,7 @@ public class TaskSchedule implements TornadoAPI {
 
     public TaskSchedule(String name) {
         this.taskScheduleName = name;
-        taskScheduleImpl = TornadoAPIProvider.loadRuntime(name);
+        taskScheduleImpl = TornadoAPIProvider.loadScheduleRuntime(name);
     }
 
     @Override

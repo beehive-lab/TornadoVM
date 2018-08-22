@@ -28,6 +28,7 @@ package uk.ac.manchester.tornado.unittests.common;
 
 import org.junit.Before;
 
+import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
@@ -39,7 +40,7 @@ public abstract class TornadoTestBase {
     @Before
     public void before() {
         for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumDrivers(); i++) {
-            final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(i);
+            final TornadoGenericDriver driver = uk.ac.manchester.tornado.api.runtinface.TornadoRuntime.getTornadoRuntime().getDriver(i);
             driver.getDefaultDevice().reset();
         }
     }
