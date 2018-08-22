@@ -29,9 +29,10 @@ import java.nio.Buffer;
 
 public interface PrimitiveStorage<T extends Buffer> {
 
-	public void loadFromBuffer(T buffer);
-	public T asBuffer();
-	
-	public int size();
-	
+    public void loadFromBuffer(T buffer);
+
+    public T asBuffer();
+
+    public int size();
+
 }

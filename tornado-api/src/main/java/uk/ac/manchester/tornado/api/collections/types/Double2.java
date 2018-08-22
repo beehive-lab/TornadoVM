@@ -49,8 +49,7 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * backing array
      */
-    @Payload
-    final protected double[] storage;
+    @Payload final protected double[] storage;
 
     /**
      * number of elements in the storage
@@ -148,8 +147,7 @@ public final class Double2 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * *
-     * Operations on Double2 vectors
+     * * Operations on Double2 vectors
      */
     /*
      * vector = op( vector, vector )

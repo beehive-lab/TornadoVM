@@ -48,57 +48,42 @@ public class GraphicsMath {
 
     private static final float INVALID = -2;
 
-    public static void vertex2normal(ImageFloat3 normals,
-            ImageFloat3 verticies) {
-
+    public static void vertex2normal(ImageFloat3 normals, ImageFloat3 verticies) {
         for (@Parallel int y = 0; y < normals.Y(); y++) {
             for (@Parallel int x = 0; x < normals.X(); x++) {
-
                 final Float3 left = verticies.get(Math.max(x - 1, 0), y);
-                final Float3 right = verticies.get(
-                        Math.min(x + 1, verticies.X() - 1), y);
+                final Float3 right = verticies.get(Math.min(x + 1, verticies.X() - 1), y);
                 final Float3 up = verticies.get(x, Math.max(y - 1, 0));
-                final Float3 down = verticies.get(x,
-                        Math.min(y + 1, verticies.Y() - 1));
+                final Float3 down = verticies.get(x, Math.min(y + 1, verticies.Y() - 1));
 
                 final Float3 dxv = sub(right, left);
                 final Float3 dyv = sub(down, up);
 
-                boolean invalidNormal = left.getZ() == 0 || right.getZ() == 0
-                        || up.getZ() == 0 || down.getZ() == 0;
+                boolean invalidNormal = left.getZ() == 0 || right.getZ() == 0 || up.getZ() == 0 || down.getZ() == 0;
                 final Float3 normal;
                 if (invalidNormal) {
                     normal = new Float3(INVALID, 0f, 0f);
                 } else {
                     normal = normalise(cross(dyv, dxv));
                 }
-
                 normals.set(x, y, normal);
             }
         }
     }
 
-    public static void depth2vertex(ImageFloat3 verticies,
-            ImageFloat depths, Matrix4x4Float invK) {
-
+    public static void depth2vertex(ImageFloat3 verticies, ImageFloat depths, Matrix4x4Float invK) {
         for (@Parallel int y = 0; y < depths.Y(); y++) {
             for (@Parallel int x = 0; x < depths.X(); x++) {
-
                 final float depth = depths.get(x, y);
                 final Float3 pix = new Float3(x, y, 1f);
-
-                final Float3 vertex = (depth > 0)
-                        ? mult(rotate(invK, pix), depth)
-                        : new Float3();
-
+                final Float3 vertex = (depth > 0) ? mult(rotate(invK, pix), depth) : new Float3();
                 verticies.set(x, y, vertex);
             }
         }
     }
 
     public static final Float3 rotate(Matrix4x4Float m, Float3 x) {
-        final Float3 result = new Float3(dot(m.row(0).asFloat3(), x), dot(m
-                .row(1).asFloat3(), x), dot(m.row(2).asFloat3(), x));
+        final Float3 result = new Float3(dot(m.row(0).asFloat3(), x), dot(m.row(1).asFloat3(), x), dot(m.row(2).asFloat3(), x));
         return result;
     }
 
@@ -112,7 +97,6 @@ public class GraphicsMath {
 
     public static final void getInverseCameraMatrix(Float4 k, Matrix4x4Float m) {
         m.fill(0f);
-
         m.set(0, 0, 1f / k.getX());
         m.set(0, 2, -k.getZ() / k.getX());
         m.set(1, 1, 1f / k.getY());
@@ -122,12 +106,14 @@ public class GraphicsMath {
     }
 
     /**
-     * *
-     * Creates a 4x4 matrix representing the intrinsic camera matrix
+     * * Creates a 4x4 matrix representing the intrinsic camera matrix
      *
-     * @param k - camera parameters {f_x,f_y,x_0,y_0} where {f_x,f_y} specifies
-     *          the focal length of the camera and {x_0,y_0} the principle point
-     * @param m - returned matrix
+     * @param k
+     *            - camera parameters {f_x,f_y,x_0,y_0} where {f_x,f_y}
+     *            specifies the focal length of the camera and {x_0,y_0} the
+     *            principle point
+     * @param m
+     *            - returned matrix
      */
     public static final void getCameraMatrix(Float4 k, Matrix4x4Float m) {
         m.fill(0f);
@@ -156,16 +142,12 @@ public class GraphicsMath {
      */
     public static final Float3 rigidTransform(Matrix4x4Float T, Float3 point) {
         final Float3 translation = T.column(3).asFloat3();
-        final Float3 rotation = new Float3(dot(T.row(0).asFloat3(), point),
-                dot(T.row(1).asFloat3(), point),
-                dot(T.row(2).asFloat3(), point));
+        final Float3 rotation = new Float3(dot(T.row(0).asFloat3(), point), dot(T.row(1).asFloat3(), point), dot(T.row(2).asFloat3(), point));
         return add(rotation, translation);
     }
 
-    public static final Float4 raycastPoint(final VolumeShort2 volume,
-            final Float3 dim, final int x, final int y,
-            final Matrix4x4Float view, float nearPlane, float farPlane,
-            float smallStep, float largeStep) {
+    public static final Float4 raycastPoint(final VolumeShort2 volume, final Float3 dim, final int x, final int y, final Matrix4x4Float view, float nearPlane, float farPlane, float smallStep,
+            float largeStep) {
 
         final Float3 position = new Float3(x, y, 1f);
 
@@ -220,10 +202,7 @@ public class GraphicsMath {
                     return new Float4(pos.getX(), pos.getY(), pos.getZ(), t);
                 }
             }
-
         }
-
         return new Float4();
     }
-
 }

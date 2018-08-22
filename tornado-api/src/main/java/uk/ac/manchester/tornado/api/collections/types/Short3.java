@@ -50,8 +50,7 @@ public final class Short3 implements PrimitiveStorage<ShortBuffer> {
     /**
      * backing array
      */
-    @Payload
-    final protected short[] storage;
+    @Payload final protected short[] storage;
 
     /**
      * number of elements in the storage
@@ -222,10 +221,7 @@ public final class Short3 implements PrimitiveStorage<ShortBuffer> {
      * misc inplace vector ops
      */
     public static Short3 clamp(Short3 x, short min, short max) {
-        return new Short3(
-                TornadoMath.clamp(x.getX(), min, max),
-                TornadoMath.clamp(x.getY(), min, max),
-                TornadoMath.clamp(x.getZ(), min, max));
+        return new Short3(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max));
     }
 
     /*

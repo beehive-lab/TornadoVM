@@ -50,8 +50,7 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
     /**
      * backing array
      */
-    @Payload
-    final protected int[] storage;
+    @Payload final protected int[] storage;
 
     /**
      * number of elements in the storage
@@ -242,11 +241,7 @@ public final class Int4 implements PrimitiveStorage<IntBuffer> {
      * misc inplace vector ops
      */
     public static Int4 clamp(Int4 x, int min, int max) {
-        return new Int4(
-                TornadoMath.clamp(x.getX(), min, max),
-                TornadoMath.clamp(x.getY(), min, max),
-                TornadoMath.clamp(x.getZ(), min, max),
-                TornadoMath.clamp(x.getW(), min, max));
+        return new Int4(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max), TornadoMath.clamp(x.getW(), min, max));
     }
 
     /*

@@ -50,8 +50,7 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
     /**
      * backing array
      */
-    @Payload
-    final protected byte[] storage;
+    @Payload final protected byte[] storage;
 
     /**
      * number of elements in the storage
@@ -221,10 +220,7 @@ public final class Byte3 implements PrimitiveStorage<ByteBuffer> {
      * misc inplace vector ops
      */
     public static Byte3 clamp(Byte3 x, byte min, byte max) {
-        return new Byte3(
-                TornadoMath.clamp(x.getX(), min, max),
-                TornadoMath.clamp(x.getY(), min, max),
-                TornadoMath.clamp(x.getZ(), min, max));
+        return new Byte3(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max));
     }
 
     /*

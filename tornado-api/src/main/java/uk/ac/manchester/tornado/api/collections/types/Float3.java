@@ -48,8 +48,7 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    @Payload
-    final protected float[] storage;
+    @Payload final protected float[] storage;
 
     /**
      * number of elements in the storage
@@ -192,8 +191,7 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * *
-     * Operations on Float3 vectors
+     * * Operations on Float3 vectors
      */
     /*
      * vector = op( vector, vector )
@@ -223,10 +221,7 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public static Float3 cross(Float3 a, Float3 b) {
-        return new Float3(
-                a.getY() * b.getZ() - a.getZ() * b.getY(),
-                a.getZ() * b.getX() - a.getX() * b.getZ(),
-                a.getX() * b.getY() - a.getY() * b.getX());
+        return new Float3(a.getY() * b.getZ() - a.getZ() * b.getY(), a.getZ() * b.getX() - a.getX() * b.getZ(), a.getX() * b.getY() - a.getY() * b.getX());
     }
 
     /*
@@ -249,15 +244,11 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public static Float3 inc(Float3 a, float value) {
-        return new Float3(a.getX() + value,
-                a.getY() + value,
-                a.getZ() + value);
+        return new Float3(a.getX() + value, a.getY() + value, a.getZ() + value);
     }
 
     public static Float3 dec(Float3 a, float value) {
-        return new Float3(a.getX() - value,
-                a.getY() - value,
-                a.getZ() - value);
+        return new Float3(a.getX() - value, a.getY() - value, a.getZ() - value);
     }
 
     public static Float3 scaleByInverse(Float3 a, float value) {
@@ -287,16 +278,9 @@ public final class Float3 implements PrimitiveStorage<FloatBuffer> {
      * misc inplace vector ops
      */
     public static Float3 clamp(Float3 x, float min, float max) {
-        return new Float3(
-                TornadoMath.clamp(x.getX(), min, max),
-                TornadoMath.clamp(x.getY(), min, max),
-                TornadoMath.clamp(x.getZ(), min, max));
+        return new Float3(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max));
     }
 
-//	public static void normalise(Float3 value){
-//		final float len = length(value);
-//		scaleByInverse(value, len);
-//	}
     public static Float3 normalise(Float3 value) {
         final float len = 1f / length(value);
         return mult(value, len);

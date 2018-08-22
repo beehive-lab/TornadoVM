@@ -49,8 +49,7 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * backing array
      */
-    @Payload
-    final protected double[] storage;
+    @Payload final protected double[] storage;
 
     /**
      * number of elements in the storage
@@ -198,8 +197,7 @@ public final class Double6 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * *
-     * Operations on Double6 vectors
+     * * Operations on Double6 vectors
      */
     /*
      * vector = op( vector, vector )

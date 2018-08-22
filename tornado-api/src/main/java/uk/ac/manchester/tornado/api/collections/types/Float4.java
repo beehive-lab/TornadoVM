@@ -48,8 +48,7 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    @Payload
-    final protected float[] storage;
+    @Payload final protected float[] storage;
 
     /**
      * number of elements in the storage
@@ -198,42 +197,33 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
 
     }
 
-    /**
-     * *
-     * Operations on Float4 vectors
-     */
+    // ===================================
+    // Operations on Float4 vectors
+    // vector = op( vector, vector )
+    // ===================================
 
-    /*
-     * vector = op( vector, vector )
-     */
     public static Float4 add(Float4 a, Float4 b) {
-        return new Float4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW()
-                + b.getW());
+        return new Float4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW() + b.getW());
     }
 
     public static Float4 sub(Float4 a, Float4 b) {
-        return new Float4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW()
-                - b.getW());
+        return new Float4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW() - b.getW());
     }
 
     public static Float4 div(Float4 a, Float4 b) {
-        return new Float4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW()
-                / b.getW());
+        return new Float4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW() / b.getW());
     }
 
     public static Float4 mult(Float4 a, Float4 b) {
-        return new Float4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW()
-                * b.getW());
+        return new Float4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW() * b.getW());
     }
 
     public static Float4 min(Float4 a, Float4 b) {
-        return new Float4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(
-                a.getZ(), b.getZ()), Math.min(a.getW(), b.getW()));
+        return new Float4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()), Math.min(a.getW(), b.getW()));
     }
 
     public static Float4 max(Float4 a, Float4 b) {
-        return new Float4(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(
-                a.getZ(), b.getZ()), Math.max(a.getW(), b.getW()));
+        return new Float4(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()), Math.max(a.getW(), b.getW()));
     }
 
     /*
@@ -275,29 +265,22 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
      * vector = op(vector)
      */
     public static Float4 sqrt(Float4 a) {
-        return new Float4(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()),
-                TornadoMath.sqrt(a.getZ()), TornadoMath.sqrt(a.getW()));
+        return new Float4(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()), TornadoMath.sqrt(a.getZ()), TornadoMath.sqrt(a.getW()));
     }
 
     public static Float4 floor(Float4 a) {
-        return new Float4(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()),
-                TornadoMath.floor(a.getZ()), TornadoMath.floor(a.getW()));
+        return new Float4(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()), TornadoMath.floor(a.getZ()), TornadoMath.floor(a.getW()));
     }
 
     public static Float4 fract(Float4 a) {
-        return new Float4(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()),
-                TornadoMath.fract(a.getZ()), TornadoMath.fract(a.getW()));
+        return new Float4(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()), TornadoMath.fract(a.getZ()), TornadoMath.fract(a.getW()));
     }
 
     /*
      * misc inplace vector ops
      */
     public static Float4 clamp(Float4 x, float min, float max) {
-        return new Float4(
-                TornadoMath.clamp(x.getX(), min, max),
-                TornadoMath.clamp(x.getY(), min, max),
-                TornadoMath.clamp(x.getZ(), min, max),
-                TornadoMath.clamp(x.getW(), min, max));
+        return new Float4(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max), TornadoMath.clamp(x.getW(), min, max));
     }
 
     public static void normalise(Float4 value) {

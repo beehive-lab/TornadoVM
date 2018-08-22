@@ -49,8 +49,7 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
     /**
      * backing array
      */
-    @Payload
-    final protected short[] storage;
+    @Payload final protected short[] storage;
 
     /**
      * number of elements in the storage
@@ -206,9 +205,7 @@ public final class Short2 implements PrimitiveStorage<ShortBuffer> {
     }
 
     public static Short2 clamp(Short2 x, short min, short max) {
-        return new Short2(
-                TornadoMath.clamp(x.getX(), min, max),
-                TornadoMath.clamp(x.getY(), min, max));
+        return new Short2(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max));
     }
 
     /*

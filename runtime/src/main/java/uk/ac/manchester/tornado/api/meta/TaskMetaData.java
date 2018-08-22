@@ -28,7 +28,6 @@ package uk.ac.manchester.tornado.api.meta;
 import static uk.ac.manchester.tornado.api.common.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.common.Tornado.EVENT_WINDOW;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -38,9 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import uk.ac.manchester.tornado.api.annotations.Read;
-import uk.ac.manchester.tornado.api.annotations.ReadWrite;
-import uk.ac.manchester.tornado.api.annotations.Write;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.common.TornadoDevice;
@@ -52,9 +48,6 @@ public class TaskMetaData extends AbstractMetaData {
 
     public static TaskMetaData create(ScheduleMetaData scheduleMeta, String id, Method method, boolean readMetaData) {
         final TaskMetaData meta = new TaskMetaData(scheduleMeta, id, Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1);
-        if (readMetaData) {
-            meta.readTaskMetadata(method);
-        }
         return meta;
     }
 
@@ -449,81 +442,9 @@ public class TaskMetaData extends AbstractMetaData {
         return super.shouldCoarsenWithCpuConfig() || scheduleMetaData.shouldCoarsenWithCpuConfig();
     }
 
-    private void readStaticMethodMetadata(Method method) {
-
-        final int paramCount = method.getParameterCount();
-
-        final Annotation[][] paramAnnotations = method.getParameterAnnotations();
-
-        for (int i = 0; i < paramCount; i++) {
-            Access access = Access.UNKNOWN;
-            for (final Annotation an : paramAnnotations[i]) {
-                if (an instanceof Read) {
-                    access = Access.READ;
-                } else if (an instanceof ReadWrite) {
-                    access = Access.READ_WRITE;
-                } else if (an instanceof Write) {
-                    access = Access.WRITE;
-                }
-                if (access != Access.UNKNOWN) {
-                    break;
-                }
-            }
-            argumentsAccess[i] = access;
-        }
-    }
-
     @Override
     public boolean isCpuConfigDefined() {
         return super.isCpuConfigDefined() || scheduleMetaData.isCpuConfigDefined();
-    }
-
-    private void readTaskMetadata(Method method) {
-        if (Modifier.isStatic(method.getModifiers())) {
-            readStaticMethodMetadata(method);
-        } else {
-            readVirtualMethodMetadata(method);
-        }
-    }
-
-    private void readVirtualMethodMetadata(Method method) {
-        final int paramCount = method.getParameterCount();
-
-        Access thisAccess = Access.NONE;
-        for (final Annotation an : method.getAnnotatedReceiverType().getAnnotations()) {
-            if (an instanceof Read) {
-                thisAccess = Access.READ;
-            } else if (an instanceof ReadWrite) {
-                thisAccess = Access.READ_WRITE;
-            } else if (an instanceof Write) {
-                thisAccess = Access.WRITE;
-            }
-            if (thisAccess != Access.UNKNOWN) {
-                break;
-            }
-        }
-
-        argumentsAccess[0] = thisAccess;
-
-        final Annotation[][] paramAnnotations = method.getParameterAnnotations();
-
-        for (int i = 0; i < paramCount; i++) {
-            Access access = Access.UNKNOWN;
-            for (final Annotation an : paramAnnotations[i]) {
-                if (an instanceof Read) {
-                    access = Access.READ;
-                } else if (an instanceof ReadWrite) {
-                    access = Access.READ_WRITE;
-                } else if (an instanceof Write) {
-                    access = Access.WRITE;
-                }
-                if (access != Access.UNKNOWN) {
-                    break;
-                }
-            }
-            argumentsAccess[i + 1] = access;
-        }
-
     }
 
     @Override

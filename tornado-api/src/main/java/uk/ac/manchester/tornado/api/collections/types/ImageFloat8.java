@@ -62,9 +62,12 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>, Container<Flo
     /**
      * Storage format for matrix
      *
-     * @param height number of columns
-     * @param width  number of rows
-     * @param data   array reference which contains data
+     * @param height
+     *            number of columns
+     * @param width
+     *            number of rows
+     * @param data
+     *            array reference which contains data
      */
     public ImageFloat8(int width, int height, float[] array) {
         storage = array;
@@ -76,8 +79,10 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>, Container<Flo
     /**
      * Storage format for matrix
      *
-     * @param height number of columns
-     * @param width  number of rows
+     * @param height
+     *            number of columns
+     * @param width
+     *            number of rows
      */
     public ImageFloat8(int width, int height) {
         this(width, height, new float[width * height * elementSize]);

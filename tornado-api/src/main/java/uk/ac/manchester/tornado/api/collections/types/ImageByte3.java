@@ -59,9 +59,12 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     /**
      * Storage format for matrix
      *
-     * @param height number of columns
-     * @param width  number of rows
-     * @param data   array reference which contains data
+     * @param height
+     *            number of columns
+     * @param width
+     *            number of rows
+     * @param data
+     *            array reference which contains data
      */
     public ImageByte3(int width, int height, byte[] array) {
         storage = array;
@@ -73,8 +76,10 @@ public class ImageByte3 implements PrimitiveStorage<ByteBuffer> {
     /**
      * Storage format for matrix
      *
-     * @param height number of columns
-     * @param width  number of rows
+     * @param height
+     *            number of columns
+     * @param width
+     *            number of rows
      */
     public ImageByte3(int width, int height) {
         this(width, height, new byte[width * height * elementSize]);

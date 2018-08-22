@@ -48,8 +48,7 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * backing array
      */
-    @Payload
-    final protected double[] storage;
+    @Payload final protected double[] storage;
 
     /**
      * number of elements in the storage
@@ -199,41 +198,34 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * *
-     * Operations on Double4 vectors
+     * * Operations on Double4 vectors
      */
 
     /*
      * vector = op( vector, vector )
      */
     public static Double4 add(Double4 a, Double4 b) {
-        return new Double4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW()
-                + b.getW());
+        return new Double4(a.getX() + b.getX(), a.getY() + b.getY(), a.getZ() + b.getZ(), a.getW() + b.getW());
     }
 
     public static Double4 sub(Double4 a, Double4 b) {
-        return new Double4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW()
-                - b.getW());
+        return new Double4(a.getX() - b.getX(), a.getY() - b.getY(), a.getZ() - b.getZ(), a.getW() - b.getW());
     }
 
     public static Double4 div(Double4 a, Double4 b) {
-        return new Double4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW()
-                / b.getW());
+        return new Double4(a.getX() / b.getX(), a.getY() / b.getY(), a.getZ() / b.getZ(), a.getW() / b.getW());
     }
 
     public static Double4 mult(Double4 a, Double4 b) {
-        return new Double4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW()
-                * b.getW());
+        return new Double4(a.getX() * b.getX(), a.getY() * b.getY(), a.getZ() * b.getZ(), a.getW() * b.getW());
     }
 
     public static Double4 min(Double4 a, Double4 b) {
-        return new Double4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(
-                a.getZ(), b.getZ()), Math.min(a.getW(), b.getW()));
+        return new Double4(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()), Math.min(a.getW(), b.getW()));
     }
 
     public static Double4 max(Double4 a, Double4 b) {
-        return new Double4(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(
-                a.getZ(), b.getZ()), Math.max(a.getW(), b.getW()));
+        return new Double4(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()), Math.max(a.getW(), b.getW()));
     }
 
     /*
@@ -275,29 +267,22 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
      * vector = op(vector)
      */
     public static Double4 sqrt(Double4 a) {
-        return new Double4(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()),
-                TornadoMath.sqrt(a.getZ()), TornadoMath.sqrt(a.getW()));
+        return new Double4(TornadoMath.sqrt(a.getX()), TornadoMath.sqrt(a.getY()), TornadoMath.sqrt(a.getZ()), TornadoMath.sqrt(a.getW()));
     }
 
     public static Double4 floor(Double4 a) {
-        return new Double4(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()),
-                TornadoMath.floor(a.getZ()), TornadoMath.floor(a.getW()));
+        return new Double4(TornadoMath.floor(a.getX()), TornadoMath.floor(a.getY()), TornadoMath.floor(a.getZ()), TornadoMath.floor(a.getW()));
     }
 
     public static Double4 fract(Double4 a) {
-        return new Double4(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()),
-                TornadoMath.fract(a.getZ()), TornadoMath.fract(a.getW()));
+        return new Double4(TornadoMath.fract(a.getX()), TornadoMath.fract(a.getY()), TornadoMath.fract(a.getZ()), TornadoMath.fract(a.getW()));
     }
 
     /*
      * misc inplace vector ops
      */
     public static Double4 clamp(Double4 x, double min, double max) {
-        return new Double4(
-                TornadoMath.clamp(x.getX(), min, max),
-                TornadoMath.clamp(x.getY(), min, max),
-                TornadoMath.clamp(x.getZ(), min, max),
-                TornadoMath.clamp(x.getW(), min, max));
+        return new Double4(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max), TornadoMath.clamp(x.getW(), min, max));
     }
 
     public static void normalise(Double4 value) {

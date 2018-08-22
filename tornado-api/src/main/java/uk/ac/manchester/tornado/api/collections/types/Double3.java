@@ -48,8 +48,7 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * backing array
      */
-    @Payload
-    final protected double[] storage;
+    @Payload final protected double[] storage;
 
     /**
      * number of elements in the storage
@@ -192,8 +191,7 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * *
-     * Operations on Double3 vectors
+     * * Operations on Double3 vectors
      */
     /*
      * vector = op( vector, vector )
@@ -223,10 +221,7 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public static Double3 cross(Double3 a, Double3 b) {
-        return new Double3(
-                a.getY() * b.getZ() - a.getZ() * b.getY(),
-                a.getZ() * b.getX() - a.getX() * b.getZ(),
-                a.getX() * b.getY() - a.getY() * b.getX());
+        return new Double3(a.getY() * b.getZ() - a.getZ() * b.getY(), a.getZ() * b.getX() - a.getX() * b.getZ(), a.getX() * b.getY() - a.getY() * b.getX());
     }
 
     /*
@@ -249,15 +244,11 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public static Double3 inc(Double3 a, double value) {
-        return new Double3(a.getX() + value,
-                a.getY() + value,
-                a.getZ() + value);
+        return new Double3(a.getX() + value, a.getY() + value, a.getZ() + value);
     }
 
     public static Double3 dec(Double3 a, double value) {
-        return new Double3(a.getX() - value,
-                a.getY() - value,
-                a.getZ() - value);
+        return new Double3(a.getX() - value, a.getY() - value, a.getZ() - value);
     }
 
     public static Double3 scaleByInverse(Double3 a, double value) {
@@ -287,16 +278,9 @@ public final class Double3 implements PrimitiveStorage<DoubleBuffer> {
      * misc inplace vector ops
      */
     public static Double3 clamp(Double3 x, double min, double max) {
-        return new Double3(
-                TornadoMath.clamp(x.getX(), min, max),
-                TornadoMath.clamp(x.getY(), min, max),
-                TornadoMath.clamp(x.getZ(), min, max));
+        return new Double3(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max));
     }
 
-//	public static void normalise(Double3 value){
-//		final double len = length(value);
-//		scaleByInverse(value, len);
-//	}
     public static Double3 normalise(Double3 value) {
         final double len = 1f / length(value);
         return mult(value, len);

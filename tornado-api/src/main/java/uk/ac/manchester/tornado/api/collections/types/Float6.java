@@ -49,8 +49,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    @Payload
-    final protected float[] storage;
+    @Payload final protected float[] storage;
 
     /**
      * number of elements in the storage
@@ -198,8 +197,7 @@ public final class Float6 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * *
-     * Operations on Float6 vectors
+     * * Operations on Float6 vectors
      */
     /*
      * vector = op( vector, vector )

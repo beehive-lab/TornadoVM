@@ -51,8 +51,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * backing array
      */
-    @Payload
-    final protected double[] storage;
+    @Payload final protected double[] storage;
 
     /**
      * number of elements in the storage
@@ -216,8 +215,7 @@ public final class Double8 implements PrimitiveStorage<DoubleBuffer> {
     }
 
     /**
-     * *
-     * Operations on Double8 vectors
+     * * Operations on Double8 vectors
      */
     public static Double8 add(Double8 a, Double8 b) {
         final Double8 result = new Double8();

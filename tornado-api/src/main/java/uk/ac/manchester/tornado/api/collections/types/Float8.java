@@ -52,8 +52,7 @@ public final class Float8 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    @Payload
-    final protected float[] storage;
+    @Payload final protected float[] storage;
 
     /**
      * number of elements in the storage

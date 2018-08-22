@@ -131,8 +131,10 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Returns slice of this vector
      *
-     * @param start       starting index
-     * @param numElements number of elements
+     * @param start
+     *            starting index
+     * @param numElements
+     *            number of elements
      *
      * @return
      */
@@ -172,226 +174,228 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
         return result;
     }
 
-//	/**
-//	 * Adds value to each element
-//	 * @param value
-//	 */
-//	public void add(double value){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, get(i) + value);
-//	}
-//
-//	/**
-//	 * Pairwise vector addition
-//	 * @param values
-//	 */
-//	public void add(VectorDouble values){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, get(i) + values.get(i));
-//	}
-//
-//	/**
-//	 * Sets this vector to the result of adding two vectors
-//	 * @param values
-//	 */
-//	public void add(VectorDouble a, VectorDouble b){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, a.get(i) + b.get(i));
-//	}
-//
-//	/**
-//	 * Subtracts value from each element
-//	 * @param value
-//	 */
-//	public void sub(double value){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, get(i) - value);
-//	}
-//
-//	/**
-//	 * Pairwise vector subtraction
-//	 * @param values
-//	 */
-//	public void sub(VectorDouble values){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, get(i) - values.get(i));
-//	}
-//
-//	/**
-//	 * Sets this vector to the result of subtracting two vectors
-//	 * @param values
-//	 */
-//	public void sub(VectorDouble a, VectorDouble b){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, a.get(i) - b.get(i));
-//	}
-//
-//
-//	/**
-//	 * Pairwise vector multiplication
-//	 * @param values
-//	 */
-//	public void mult(VectorDouble values){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, get(i) * values.get(i));
-//	}
-//
-//	/**
-//	 * Pairwise vector multiplication
-//	 * @param values
-//	 */
-//	public void mult(VectorDouble values, double value){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, values.get(i) * value);
-//	}
-//
-//	/**
-//	 * Multiplies each element by value
-//	 * @param value
-//	 */
-//	public void mult(double value){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, get(i) * value);
-//	}
-//
-//	/**
-//	 * Sets this vector to the result of multiplying two vectors
-//	 * @param values
-//	 */
-//	public void mult(VectorDouble a, VectorDouble b){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, a.get(i) * b.get(i));
-//	}
-//
-//	/**
-//	 * Pairwise vector division
-//	 * @param values
-//	 */
-//	public void div(VectorDouble values){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, get(i) / values.get(i));
-//	}
-//
-//	/**
-//	 * Divides each element by value
-//	 * @param value
-//	 */
-//	public void div(double value){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, get(i) / value);
-//	}
-//
-//	/**
-//	 * Sets this vector to the result of dividing two vectors
-//	 * @param values
-//	 */
-//	public void div(VectorDouble a, VectorDouble b){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, a.get(i) / b.get(i));
-//	}
-//
-//	/**
-//	 * Returns the value of the smallest element
-//	 */
-//	public double min(){
-//		double result = get(0);
-//		for(int i=1;i<getNumElements();i++)
-//			result = Math.min(result , get(i));
-//		return result;
-//	}
-//
-//	/**
-//	 * Pairwise vector minimum
-//	 * Sets vector equal to this[i] = min(element[i],values[i]) for all elements
-//	 * @param values
-//	 */
-//	public void min(VectorDouble values){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, Math.min(get(i) , values.get(i)));
-//	}
-//
-//	/**
-//	 * Sets vector equal to this[i] = min(element[i],value) for all elements
-//	 * @param value
-//	 */
-//	public void min(double value){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, Math.min(get(i) , value));
-//	}
-//
-//	/**
-//	 * Sets this vector to the minimum value from each vector
-//	 * Sets vector equal to this[i] = min(a[i],b[i]) for all elements
-//	 * @param values
-//	 */
-//	public void min(VectorDouble a, VectorDouble b){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, Math.min(a.get(i) ,b.get(i)));
-//	}
-//
-//	/**
-//	 * Returns the value of the largest element
-//	 */
-//	public double max(){
-//		double result = get(0);
-//		for(int i=1;i<getNumElements();i++)
-//			result = Math.max(result , get(i));
-//		return result;
-//	}
-//
-//	/**
-//	 * Pairwise vector maximum
-//	 * Sets vector equal to this[i] = max(element[i],values[i]) for all elements
-//	 * @param values
-//	 */
-//	public void max(VectorDouble values){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, Math.max(get(i) , values.get(i)));
-//	}
-//
-//	/**
-//	 * Sets vector equal to this[i] = max(element[i],value) for all elements
-//	 * @param value
-//	 */
-//	public void max(double value){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, Math.max(get(i) , value));
-//	}
-//
-//	/**
-//	 * Sets this vector to the minimum value from each vector
-//	 * Sets vector equal to this[i] = max(a[i],b[i]) for all elements
-//	 * @param values
-//	 */
-//	public void max(VectorDouble a, VectorDouble b){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, Math.max(a.get(i) ,b.get(i)));
-//	}
-//
-//	public void floor(){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, TornadoMath.floor(get(i)));
-//	}
-//
-//	public void frac(){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, get(i) - TornadoMath.floor(get(i)));
-//	}
-//
-//	public void clamp(double min, double max){
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, GraphicsMath.clamp(get(i), min, max));
-//
-//
-//	}
-//
-//	/**
-//	 * Scales vector according to value
-//	 * @param value
-//	 */
-//	public void scale(double value){
-//		mult(value);
-//	}
+    // /**
+    // * Adds value to each element
+    // * @param value
+    // */
+    // public void add(double value){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, get(i) + value);
+    // }
+    //
+    // /**
+    // * Pairwise vector addition
+    // * @param values
+    // */
+    // public void add(VectorDouble values){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, get(i) + values.get(i));
+    // }
+    //
+    // /**
+    // * Sets this vector to the result of adding two vectors
+    // * @param values
+    // */
+    // public void add(VectorDouble a, VectorDouble b){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, a.get(i) + b.get(i));
+    // }
+    //
+    // /**
+    // * Subtracts value from each element
+    // * @param value
+    // */
+    // public void sub(double value){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, get(i) - value);
+    // }
+    //
+    // /**
+    // * Pairwise vector subtraction
+    // * @param values
+    // */
+    // public void sub(VectorDouble values){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, get(i) - values.get(i));
+    // }
+    //
+    // /**
+    // * Sets this vector to the result of subtracting two vectors
+    // * @param values
+    // */
+    // public void sub(VectorDouble a, VectorDouble b){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, a.get(i) - b.get(i));
+    // }
+    //
+    //
+    // /**
+    // * Pairwise vector multiplication
+    // * @param values
+    // */
+    // public void mult(VectorDouble values){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, get(i) * values.get(i));
+    // }
+    //
+    // /**
+    // * Pairwise vector multiplication
+    // * @param values
+    // */
+    // public void mult(VectorDouble values, double value){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, values.get(i) * value);
+    // }
+    //
+    // /**
+    // * Multiplies each element by value
+    // * @param value
+    // */
+    // public void mult(double value){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, get(i) * value);
+    // }
+    //
+    // /**
+    // * Sets this vector to the result of multiplying two vectors
+    // * @param values
+    // */
+    // public void mult(VectorDouble a, VectorDouble b){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, a.get(i) * b.get(i));
+    // }
+    //
+    // /**
+    // * Pairwise vector division
+    // * @param values
+    // */
+    // public void div(VectorDouble values){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, get(i) / values.get(i));
+    // }
+    //
+    // /**
+    // * Divides each element by value
+    // * @param value
+    // */
+    // public void div(double value){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, get(i) / value);
+    // }
+    //
+    // /**
+    // * Sets this vector to the result of dividing two vectors
+    // * @param values
+    // */
+    // public void div(VectorDouble a, VectorDouble b){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, a.get(i) / b.get(i));
+    // }
+    //
+    // /**
+    // * Returns the value of the smallest element
+    // */
+    // public double min(){
+    // double result = get(0);
+    // for(int i=1;i<getNumElements();i++)
+    // result = Math.min(result , get(i));
+    // return result;
+    // }
+    //
+    // /**
+    // * Pairwise vector minimum
+    // * Sets vector equal to this[i] = min(element[i],values[i]) for all
+    // elements
+    // * @param values
+    // */
+    // public void min(VectorDouble values){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, Math.min(get(i) , values.get(i)));
+    // }
+    //
+    // /**
+    // * Sets vector equal to this[i] = min(element[i],value) for all elements
+    // * @param value
+    // */
+    // public void min(double value){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, Math.min(get(i) , value));
+    // }
+    //
+    // /**
+    // * Sets this vector to the minimum value from each vector
+    // * Sets vector equal to this[i] = min(a[i],b[i]) for all elements
+    // * @param values
+    // */
+    // public void min(VectorDouble a, VectorDouble b){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, Math.min(a.get(i) ,b.get(i)));
+    // }
+    //
+    // /**
+    // * Returns the value of the largest element
+    // */
+    // public double max(){
+    // double result = get(0);
+    // for(int i=1;i<getNumElements();i++)
+    // result = Math.max(result , get(i));
+    // return result;
+    // }
+    //
+    // /**
+    // * Pairwise vector maximum
+    // * Sets vector equal to this[i] = max(element[i],values[i]) for all
+    // elements
+    // * @param values
+    // */
+    // public void max(VectorDouble values){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, Math.max(get(i) , values.get(i)));
+    // }
+    //
+    // /**
+    // * Sets vector equal to this[i] = max(element[i],value) for all elements
+    // * @param value
+    // */
+    // public void max(double value){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, Math.max(get(i) , value));
+    // }
+    //
+    // /**
+    // * Sets this vector to the minimum value from each vector
+    // * Sets vector equal to this[i] = max(a[i],b[i]) for all elements
+    // * @param values
+    // */
+    // public void max(VectorDouble a, VectorDouble b){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, Math.max(a.get(i) ,b.get(i)));
+    // }
+    //
+    // public void floor(){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, TornadoMath.floor(get(i)));
+    // }
+    //
+    // public void frac(){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, get(i) - TornadoMath.floor(get(i)));
+    // }
+    //
+    // public void clamp(double min, double max){
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, GraphicsMath.clamp(get(i), min, max));
+    //
+    //
+    // }
+    //
+    // /**
+    // * Scales vector according to value
+    // * @param value
+    // */
+    // public void scale(double value){
+    // mult(value);
+    // }
     /**
      * Vector equality test
      *
@@ -415,26 +419,26 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
         }
         return sum;
     }
-//
-//	/**
-//	 * Returns the vector length
-//	 * e.g. the sqrt of all elements squared
-//	 * @return
-//	 */
-//	public double length(){
-//		return TornadoMath.sqrt(dot());
-//	}
-//
-//	/**
-//	 * Normalises the vector
-//	 */
-//	public void normalise(){
-//		double len = length();
-//
-//		for(int i=0;i<getNumElements();i++)
-//			set(i, get(i) / len);
-//
-//	}
+    //
+    // /**
+    // * Returns the vector length
+    // * e.g. the sqrt of all elements squared
+    // * @return
+    // */
+    // public double length(){
+    // return TornadoMath.sqrt(dot());
+    // }
+    //
+    // /**
+    // * Normalises the vector
+    // */
+    // public void normalise(){
+    // double len = length();
+    //
+    // for(int i=0;i<getNumElements();i++)
+    // set(i, get(i) / len);
+    //
+    // }
 
     /**
      * Prints the vector using the specified format string
@@ -482,14 +486,14 @@ public class VectorDouble implements PrimitiveStorage<DoubleBuffer> {
         return numElements;
     }
 
-//	public double mean() {
-//		return sum() / (double) getNumElements();
-//	}
-//
-//	public double sum() {
-//		double result = 0f;
-//		for(int i=0;i<getNumElements();i++)
-//			result += get(i);
-//		return result;
-//	}
+    // public double mean() {
+    // return sum() / (double) getNumElements();
+    // }
+    //
+    // public double sum() {
+    // double result = 0f;
+    // for(int i=0;i<getNumElements();i++)
+    // result += get(i);
+    // return result;
+    // }
 }

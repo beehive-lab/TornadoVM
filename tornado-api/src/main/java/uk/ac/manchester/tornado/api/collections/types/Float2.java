@@ -49,8 +49,7 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    @Payload
-    final protected float[] storage;
+    @Payload final protected float[] storage;
 
     /**
      * number of elements in the storage
@@ -148,8 +147,7 @@ public final class Float2 implements PrimitiveStorage<FloatBuffer> {
     }
 
     /**
-     * *
-     * Operations on Float2 vectors
+     * * Operations on Float2 vectors
      */
     /*
      * vector = op( vector, vector )
