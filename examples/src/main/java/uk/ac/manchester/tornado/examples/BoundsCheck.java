@@ -58,9 +58,7 @@ public class BoundsCheck {
          * involves finding the methods called and the arguments used in each
          * call.
          */
-        TaskSchedule graph = new TaskSchedule("s0")
-                .task("t0", BoundsCheck::add, a, b, c)
-                .streamOut(c);
+        TaskSchedule graph = new TaskSchedule("s0").task("t0", BoundsCheck::add, a, b, c).streamOut(c);
 
         /*
          * Calculate a (3) + b (2) = c (5)
