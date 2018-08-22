@@ -53,7 +53,7 @@ import org.graalvm.compiler.options.OptionValues;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.api.common.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopConditionOp;

@@ -46,7 +46,7 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 
 import static org.graalvm.compiler.debug.Debug.INFO_LEVEL;
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.debug;
 
 public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext> {

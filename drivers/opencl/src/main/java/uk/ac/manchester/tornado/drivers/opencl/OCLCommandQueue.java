@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.common.Tornado.ENABLE_OOO_EXECUTION;
 import static uk.ac.manchester.tornado.common.Tornado.EVENT_WINDOW;
 import static uk.ac.manchester.tornado.common.Tornado.FORCE_BLOCKING_API_CALLS;

@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import java.util.BitSet;
 import java.util.List;
@@ -45,7 +45,7 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Vector;
-import uk.ac.manchester.tornado.api.common.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;

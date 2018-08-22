@@ -36,8 +36,6 @@ import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRo
 
 import java.nio.FloatBuffer;
 
-import uk.ac.manchester.tornado.api.common.TornadoInternalError;
-
 public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
 
     /**
@@ -124,45 +122,10 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
         return Y;
     }
 
-    @Deprecated
-    public VectorFloat4 row(int row) {
-        TornadoInternalError.shouldNotReachHere();
-        return null;
-    }
-
-    @Deprecated
-    public VectorFloat4 column(int col) {
-        TornadoInternalError.shouldNotReachHere();
-        return null;
-    }
-
-    @Deprecated
-    public VectorFloat4 diag() {
-        TornadoInternalError.shouldNotReachHere();
-        return null;
-    }
-
-    @Deprecated
-    public ImageFloat4 subImage(int x0, int y0, int x1, int y1) {
-        TornadoInternalError.shouldNotReachHere();
-        return null;
-    }
-
     public void fill(float value) {
         for (int i = 0; i < storage.length; i++) {
             storage[i] = value;
         }
-    }
-
-    /**
-     * Transposes the matrix in-place
-     *
-     * @param m
-     *            matrix to transpose
-     */
-    @Deprecated
-    public void transpose() {
-        TornadoInternalError.shouldNotReachHere();
     }
 
     public ImageFloat4 duplicate() {
@@ -196,11 +159,6 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
             result += "\n" + toString(fmt3);
         }
         return result;
-    }
-
-    @Deprecated
-    public void scale(float alpha) {
-        TornadoInternalError.shouldNotReachHere();
     }
 
     public Float4 mean() {
@@ -297,17 +255,10 @@ public class ImageFloat4 implements PrimitiveStorage<FloatBuffer> {
 
                 if (ulpFactor > 5f) {
                     errors++;
-                    // if(i==317 && j==239)
-                    // System.out.printf("[%d, %d]: %f -> error %s != %s\n", i,
-                    // j, ulpFactor, v.toString(FloatOps.fmt3e),
-                    // r.toString(FloatOps.fmt3e));
                 }
-
             }
         }
-
         averageULP /= (float) X * Y;
-
         return new FloatingPointError(averageULP, minULP, maxULP, -1f, errors);
     }
 

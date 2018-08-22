@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
 import java.util.HashMap;
 import java.util.HashSet;

@@ -25,9 +25,9 @@
  */
 package uk.ac.manchester.tornado.runtime.api;
 
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;

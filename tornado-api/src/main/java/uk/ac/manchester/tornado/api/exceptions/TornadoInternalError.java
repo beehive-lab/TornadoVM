@@ -23,7 +23,7 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.api.common;
+package uk.ac.manchester.tornado.api.exceptions;
 
 import java.util.ArrayList;
 

@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
 import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;

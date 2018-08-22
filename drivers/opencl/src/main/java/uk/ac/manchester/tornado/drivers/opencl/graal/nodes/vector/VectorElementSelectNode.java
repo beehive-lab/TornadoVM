@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector;
 
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;

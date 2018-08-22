@@ -23,8 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.trace;
 
 import org.graalvm.compiler.core.common.CompressEncoding;

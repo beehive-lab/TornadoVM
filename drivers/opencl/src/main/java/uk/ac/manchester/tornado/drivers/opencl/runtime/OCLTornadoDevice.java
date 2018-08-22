@@ -25,9 +25,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.isPrimitiveArray;
 import static uk.ac.manchester.tornado.common.Tornado.FORCE_ALL_TO_GPU;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler.compileSketchForDevice;

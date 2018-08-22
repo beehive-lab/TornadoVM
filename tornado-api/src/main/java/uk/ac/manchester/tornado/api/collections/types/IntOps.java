@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 public class IntOps {
+
     public static final float EPSILON = 1e-7f;
     public static final String fmt = "%d";
     public static final String fmt2 = "{%d,%d}";

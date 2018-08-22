@@ -37,7 +37,7 @@ import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt4m;
 
 import java.nio.FloatBuffer;
 
-import uk.ac.manchester.tornado.api.common.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 
 public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
 
@@ -143,22 +143,6 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
             storage[i] = value;
     }
 
-    @Deprecated
-    public void multiply(Matrix4x4Float a, Matrix4x4Float b) {
-        TornadoInternalError.shouldNotReachHere();
-    }
-
-    /**
-     * Transposes the matrix in-place
-     * 
-     * @param m
-     *            matrix to transpose
-     */
-    @Deprecated
-    public void transpose() {
-        TornadoInternalError.shouldNotReachHere();
-    }
-
     public Matrix4x4Float duplicate() {
         Matrix4x4Float matrix = new Matrix4x4Float();
         matrix.set(this);
@@ -170,12 +154,6 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
             int offset = M * i;
             m.row(i).storeToArray(storage, offset);
         }
-    }
-
-    @Deprecated
-    public void inverse2() {
-        TornadoInternalError.shouldNotReachHere();
-
     }
 
     public String toString(String fmt) {
@@ -195,15 +173,9 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
         return result;
     }
 
-    @Deprecated
-    public void scale(float alpha) {
-        TornadoInternalError.shouldNotReachHere();
-    }
-
     /**
      * Turns this matrix into an identity matrix
      */
-    @Deprecated
     public void identity() {
         fill(0f);
         set(0, 1f);

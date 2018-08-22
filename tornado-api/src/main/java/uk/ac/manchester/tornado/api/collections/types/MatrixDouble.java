@@ -123,13 +123,6 @@ public class MatrixDouble implements PrimitiveStorage<DoubleBuffer> {
             v.set(i, storage[i * (N + 1)]);
         return v;
     }
-    //
-    // public MatrixDouble subMatrix(int i, int j, int m, int n){
-    // int index = getOffset() + StorageFormats.toRowMajor(i, j, LDA);
-    // MatrixDouble subM = new
-    // MatrixDouble(m,n,LDA,index,getStep(),getElementSize(),storage);
-    // return subM;
-    // }
 
     public void fill(double value) {
         for (int i = 0; i < storage.length; i++)
@@ -155,7 +148,6 @@ public class MatrixDouble implements PrimitiveStorage<DoubleBuffer> {
      *            matrix to transpose
      */
     public static void transpose(MatrixDouble matrix) {
-
         if (matrix.N == matrix.M) {
             // transpose square matrix
             for (int i = 0; i < matrix.M; i++) {
@@ -165,11 +157,6 @@ public class MatrixDouble implements PrimitiveStorage<DoubleBuffer> {
                     matrix.set(j, i, tmp);
                 }
             }
-        } else {
-            // transpose rectangular matrix
-
-            // not implemented
-
         }
     }
 
@@ -183,44 +170,6 @@ public class MatrixDouble implements PrimitiveStorage<DoubleBuffer> {
         for (int i = 0; i < m.storage.length; i++)
             storage[i] = m.storage[i];
     }
-
-    // @Deprecated
-    // public void inverse2()
-    // {
-    // MatrixDouble rref = duplicate();
-    // MatrixDouble ident = this;
-    //
-    // ident.identity();
-    //
-    // for (int p = 0; p < rref.N(); ++p)
-    // {
-    // /* Make this pivot 1 */
-    // final double pv = rref.get(p, p);
-    // if (pv != 0)
-    // {
-    // final double pvInv = 1.0f / pv;
-    // for (int i = 0; i < rref.M(); ++i)
-    // {
-    // rref.set(i,p,rref.get(i, p) * pvInv);
-    // ident.set(i, p, ident.get(i,p) * pvInv);
-    // }
-    // }
-    //
-    // /* Make other rows zero */
-    // for (int r = 0; r < rref.M(); ++r)
-    // {
-    // if (r != p)
-    // {
-    // final double f = rref.get(p, r);
-    // for (int i = 0; i < rref.N(); ++i)
-    // {
-    // rref.set(i, r, rref.get(i,r) - (f * rref.get(i, p)));
-    // ident.set(i, r, ident.get(i,r) - (f * ident.get(i, p)));
-    // }
-    // }
-    // }
-    // }
-    // }
 
     public String toString(String fmt) {
         String str = "";
@@ -246,20 +195,6 @@ public class MatrixDouble implements PrimitiveStorage<DoubleBuffer> {
         for (int i = 0; i < matrix.storage.length; i++)
             matrix.storage[i] *= value;
     }
-    //
-    // @Override
-    // public StorageDouble subVector(int start, int size) {
-    // // TODO Auto-generated method stub
-    // return null;
-    // }
-
-    // /**
-    // * Turns this matrix into an identity matrix
-    // */
-    // public void identity() {
-    // fill(0f);
-    // diag().fill(1f);
-    // }
 
     @Override
     public void loadFromBuffer(DoubleBuffer buffer) {
@@ -275,5 +210,4 @@ public class MatrixDouble implements PrimitiveStorage<DoubleBuffer> {
     public int size() {
         return numElements;
     }
-
 }

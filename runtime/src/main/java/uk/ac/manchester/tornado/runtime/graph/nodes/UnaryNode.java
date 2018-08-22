@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graph.nodes;
 
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
 public abstract class UnaryNode extends AbstractNode {
 

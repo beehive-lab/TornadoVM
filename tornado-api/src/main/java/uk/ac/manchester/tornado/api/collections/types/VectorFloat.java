@@ -167,229 +167,6 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
         return result;
     }
 
-    // /**
-    // * Adds value to each element
-    // * @param value
-    // */
-    // public void add(float value){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, get(i) + value);
-    // }
-    //
-    // /**
-    // * Pairwise vector addition
-    // * @param values
-    // */
-    // public void add(VectorFloat values){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, get(i) + values.get(i));
-    // }
-    //
-    // /**
-    // * Sets this vector to the result of adding two vectors
-    // * @param values
-    // */
-    // public void add(VectorFloat a, VectorFloat b){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, a.get(i) + b.get(i));
-    // }
-    //
-    // /**
-    // * Subtracts value from each element
-    // * @param value
-    // */
-    // public void sub(float value){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, get(i) - value);
-    // }
-    //
-    // /**
-    // * Pairwise vector subtraction
-    // * @param values
-    // */
-    // public void sub(VectorFloat values){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, get(i) - values.get(i));
-    // }
-    //
-    // /**
-    // * Sets this vector to the result of subtracting two vectors
-    // * @param values
-    // */
-    // public void sub(VectorFloat a, VectorFloat b){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, a.get(i) - b.get(i));
-    // }
-    //
-    //
-    // /**
-    // * Pairwise vector multiplication
-    // * @param values
-    // */
-    // public void mult(VectorFloat values){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, get(i) * values.get(i));
-    // }
-    //
-    // /**
-    // * Pairwise vector multiplication
-    // * @param values
-    // */
-    // public void mult(VectorFloat values, float value){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, values.get(i) * value);
-    // }
-    //
-    // /**
-    // * Multiplies each element by value
-    // * @param value
-    // */
-    // public void mult(float value){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, get(i) * value);
-    // }
-    //
-    // /**
-    // * Sets this vector to the result of multiplying two vectors
-    // * @param values
-    // */
-    // public void mult(VectorFloat a, VectorFloat b){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, a.get(i) * b.get(i));
-    // }
-    //
-    // /**
-    // * Pairwise vector division
-    // * @param values
-    // */
-    // public void div(VectorFloat values){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, get(i) / values.get(i));
-    // }
-    //
-    // /**
-    // * Divides each element by value
-    // * @param value
-    // */
-    // public void div(float value){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, get(i) / value);
-    // }
-    //
-    // /**
-    // * Sets this vector to the result of dividing two vectors
-    // * @param values
-    // */
-    // public void div(VectorFloat a, VectorFloat b){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, a.get(i) / b.get(i));
-    // }
-    //
-    // /**
-    // * Returns the value of the smallest element
-    // */
-    // public float min(){
-    // float result = get(0);
-    // for(int i=1;i<getNumElements();i++)
-    // result = Math.min(result , get(i));
-    // return result;
-    // }
-    //
-    // /**
-    // * Pairwise vector minimum
-    // * Sets vector equal to this[i] = min(element[i],values[i]) for all
-    // elements
-    // * @param values
-    // */
-    // public void min(VectorFloat values){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, Math.min(get(i) , values.get(i)));
-    // }
-    //
-    // /**
-    // * Sets vector equal to this[i] = min(element[i],value) for all elements
-    // * @param value
-    // */
-    // public void min(float value){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, Math.min(get(i) , value));
-    // }
-    //
-    // /**
-    // * Sets this vector to the minimum value from each vector
-    // * Sets vector equal to this[i] = min(a[i],b[i]) for all elements
-    // * @param values
-    // */
-    // public void min(VectorFloat a, VectorFloat b){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, Math.min(a.get(i) ,b.get(i)));
-    // }
-    //
-    // /**
-    // * Returns the value of the largest element
-    // */
-    // public float max(){
-    // float result = get(0);
-    // for(int i=1;i<getNumElements();i++)
-    // result = Math.max(result , get(i));
-    // return result;
-    // }
-    //
-    // /**
-    // * Pairwise vector maximum
-    // * Sets vector equal to this[i] = max(element[i],values[i]) for all
-    // elements
-    // * @param values
-    // */
-    // public void max(VectorFloat values){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, Math.max(get(i) , values.get(i)));
-    // }
-    //
-    // /**
-    // * Sets vector equal to this[i] = max(element[i],value) for all elements
-    // * @param value
-    // */
-    // public void max(float value){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, Math.max(get(i) , value));
-    // }
-    //
-    // /**
-    // * Sets this vector to the minimum value from each vector
-    // * Sets vector equal to this[i] = max(a[i],b[i]) for all elements
-    // * @param values
-    // */
-    // public void max(VectorFloat a, VectorFloat b){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, Math.max(a.get(i) ,b.get(i)));
-    // }
-    //
-    // public void floor(){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, TornadoMath.floor(get(i)));
-    // }
-    //
-    // public void frac(){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, get(i) - TornadoMath.floor(get(i)));
-    // }
-    //
-    // public void clamp(float min, float max){
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, GraphicsMath.clamp(get(i), min, max));
-    //
-    //
-    // }
-    //
-    // /**
-    // * Scales vector according to value
-    // * @param value
-    // */
-    // public void scale(float value){
-    // mult(value);
-    // }
-
     /**
      * Vector equality test
      * 
@@ -412,26 +189,6 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
         }
         return sum;
     }
-    //
-    // /**
-    // * Returns the vector length
-    // * e.g. the sqrt of all elements squared
-    // * @return
-    // */
-    // public float length(){
-    // return TornadoMath.sqrt(dot());
-    // }
-    //
-    // /**
-    // * Normalises the vector
-    // */
-    // public void normalise(){
-    // float len = length();
-    //
-    // for(int i=0;i<getNumElements();i++)
-    // set(i, get(i) / len);
-    //
-    // }
 
     /**
      * Prints the vector using the specified format string
@@ -445,15 +202,10 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
         for (int i = 0; i < numElements; i++) {
             str += format(fmt, get(i)) + " ";
         }
-
         str += "]";
-
         return str;
     }
 
-    /**
-     * 
-     */
     public String toString() {
         String str = format("VectorFloat <%d>", numElements);
         if (numElements < 32)
@@ -476,15 +228,4 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
     public int size() {
         return numElements;
     }
-
-    // public float mean() {
-    // return sum() / (float) getNumElements();
-    // }
-    //
-    // public float sum() {
-    // float result = 0f;
-    // for(int i=0;i<getNumElements();i++)
-    // result += get(i);
-    // return result;
-    // }
 }

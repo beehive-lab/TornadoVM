@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;

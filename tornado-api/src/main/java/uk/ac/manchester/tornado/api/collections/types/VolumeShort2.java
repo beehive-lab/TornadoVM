@@ -83,14 +83,6 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
         return (z * X * Y * elementSize) + (y * elementSize * X) + (x * elementSize);
     }
 
-    // public Short2 get(int i){
-    // return new Short2(toIndex(i,0),storage);
-    // }
-
-    // public void set(int i, Short2 value){
-    // get(i).set(value);
-    // }
-
     public Short2 get(int x, int y, int z) {
         final int index = toIndex(x, y, z);
         return loadFromArray(storage, index);
@@ -112,32 +104,6 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     public int Z() {
         return Z;
     }
-
-    // public VectorShort2 row(int row){
-    // int index = toIndex(row,0);
-    // VectorShort2 v = new VectorShort2(X,index,1,getElementSize(),storage);
-    // return v;
-    // }
-    //
-    // public VectorShort2 column(int col){
-    // int index = toIndex(0, col);
-    // VectorShort2 v = new
-    // VectorShort2(Y,index,getStep(),getElementSize(),storage );
-    // return v;
-    // }
-
-    // public VectorShort2 diag(){
-    // VectorShort2 v = new VectorShort2(Math.min(Y,X), getOffset(), getStep() +
-    // 1,getElementSize(),storage);
-    // return v;
-    // }
-
-    // public VolumeShort2 subMatrix(int i, int j, int m, int n){
-    // int index = get(i,j).getOffset();
-    // VolumeShort2 subM = new
-    // VolumeShort2(m,n,index,getStep(),getElementSize(),storage);
-    // return subM;
-    // }
 
     public void fill(short value) {
         for (int i = 0; i < storage.length; i++)

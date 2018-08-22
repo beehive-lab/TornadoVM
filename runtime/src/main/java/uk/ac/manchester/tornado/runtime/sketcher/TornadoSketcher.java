@@ -44,14 +44,14 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
 
-import uk.ac.manchester.tornado.api.common.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.graal.compiler.TornadoCompilerIdentifier;
 import uk.ac.manchester.tornado.graal.compiler.TornadoSketchTier;
 import uk.ac.manchester.tornado.graal.phases.TornadoSketchTierContext;
 
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.common.Tornado.info;
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoExecutor;

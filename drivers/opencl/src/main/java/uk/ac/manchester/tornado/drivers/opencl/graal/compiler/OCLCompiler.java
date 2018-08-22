@@ -24,8 +24,8 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.common.Tornado.DUMP_COMPILED_METHODS;
 import static uk.ac.manchester.tornado.common.Tornado.error;
 import static uk.ac.manchester.tornado.common.Tornado.info;
@@ -84,7 +84,7 @@ import jdk.vm.ci.meta.DefaultProfilingInfo;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.TriState;
-import uk.ac.manchester.tornado.api.common.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;

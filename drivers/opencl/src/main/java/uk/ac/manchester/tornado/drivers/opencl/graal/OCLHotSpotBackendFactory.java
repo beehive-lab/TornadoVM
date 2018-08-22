@@ -24,7 +24,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal;
 
 import static jdk.vm.ci.common.InitTimer.timer;
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;

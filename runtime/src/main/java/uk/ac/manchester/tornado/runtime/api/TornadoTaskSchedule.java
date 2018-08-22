@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.api;
 
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.isBoxedPrimitiveClass;
 import static uk.ac.manchester.tornado.common.Tornado.PRINT_COMPILE_TIMES;

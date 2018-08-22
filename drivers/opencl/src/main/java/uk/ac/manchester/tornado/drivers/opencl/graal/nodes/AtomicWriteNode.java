@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.graph.NodeClass;

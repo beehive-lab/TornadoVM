@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 public class ShortOps {
+
     public static final String fmt = "%3d";
     public static final String fmt2 = "{%3d,%3d}";
     public static final String fmt3 = "{%3d,%3d,%.3d}";

@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal;
 
-import static uk.ac.manchester.tornado.api.common.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.common.Tornado.DEBUG;
 import static uk.ac.manchester.tornado.common.Tornado.debug;
 import static uk.ac.manchester.tornado.common.Tornado.info;

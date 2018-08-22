@@ -123,13 +123,6 @@ public class MatrixFloat implements PrimitiveStorage<FloatBuffer> {
             v.set(i, storage[i * (N + 1)]);
         return v;
     }
-    //
-    // public MatrixFloat subMatrix(int i, int j, int m, int n){
-    // int index = getOffset() + StorageFormats.toRowMajor(i, j, LDA);
-    // MatrixFloat subM = new
-    // MatrixFloat(m,n,LDA,index,getStep(),getElementSize(),storage);
-    // return subM;
-    // }
 
     public void fill(float value) {
         for (int i = 0; i < storage.length; i++)
@@ -165,11 +158,6 @@ public class MatrixFloat implements PrimitiveStorage<FloatBuffer> {
                     matrix.set(j, i, tmp);
                 }
             }
-        } else {
-            // transpose rectangular matrix
-
-            // not implemented
-
         }
     }
 
@@ -183,44 +171,6 @@ public class MatrixFloat implements PrimitiveStorage<FloatBuffer> {
         for (int i = 0; i < m.storage.length; i++)
             storage[i] = m.storage[i];
     }
-
-    // @Deprecated
-    // public void inverse2()
-    // {
-    // MatrixFloat rref = duplicate();
-    // MatrixFloat ident = this;
-    //
-    // ident.identity();
-    //
-    // for (int p = 0; p < rref.N(); ++p)
-    // {
-    // /* Make this pivot 1 */
-    // final float pv = rref.get(p, p);
-    // if (pv != 0)
-    // {
-    // final float pvInv = 1.0f / pv;
-    // for (int i = 0; i < rref.M(); ++i)
-    // {
-    // rref.set(i,p,rref.get(i, p) * pvInv);
-    // ident.set(i, p, ident.get(i,p) * pvInv);
-    // }
-    // }
-    //
-    // /* Make other rows zero */
-    // for (int r = 0; r < rref.M(); ++r)
-    // {
-    // if (r != p)
-    // {
-    // final float f = rref.get(p, r);
-    // for (int i = 0; i < rref.N(); ++i)
-    // {
-    // rref.set(i, r, rref.get(i,r) - (f * rref.get(i, p)));
-    // ident.set(i, r, ident.get(i,r) - (f * ident.get(i, p)));
-    // }
-    // }
-    // }
-    // }
-    // }
 
     public String toString(String fmt) {
         String str = "";
@@ -247,20 +197,6 @@ public class MatrixFloat implements PrimitiveStorage<FloatBuffer> {
         for (int i = 0; i < matrix.storage.length; i++)
             matrix.storage[i] *= value;
     }
-    //
-    // @Override
-    // public StorageFloat subVector(int start, int size) {
-    // // TODO Auto-generated method stub
-    // return null;
-    // }
-
-    // /**
-    // * Turns this matrix into an identity matrix
-    // */
-    // public void identity() {
-    // fill(0f);
-    // diag().fill(1f);
-    // }
 
     @Override
     public void loadFromBuffer(FloatBuffer buffer) {
@@ -276,5 +212,4 @@ public class MatrixFloat implements PrimitiveStorage<FloatBuffer> {
     public int size() {
         return numElements;
     }
-
 }

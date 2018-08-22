@@ -33,7 +33,7 @@ import static uk.ac.manchester.tornado.api.collections.types.Float3.cross;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.dot;
 import static uk.ac.manchester.tornado.api.collections.types.Float3.mult;
 
-import uk.ac.manchester.tornado.api.common.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 
 public class FloatSE3 {
 

@@ -38,7 +38,6 @@ import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRo
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.common.TornadoInternalError;
 
 public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
 
@@ -142,77 +141,11 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
         return X;
     }
 
-    // public VectorFloat row(int row){
-    // int index = getOffset() + StorageFormats.toRowMajor(row,0, LDA);
-    // VectorFloat v = new
-    // VectorFloat(X,index,getStep(),getElementSize(),storage );
-    // return v;
-    // }
-    //
-    // public VectorFloat column(int col){
-    // int index = getOffset() + StorageFormats.toRowMajor(0, col, LDA);
-    // VectorFloat v = new VectorFloat(Y,index,LDA,getElementSize(),storage );
-    // return v;
-    // }
-    //
-    // public VectorFloat diag(){
-    // VectorFloat v = new VectorFloat(Math.min(Y,X), getOffset(), LDA +
-    // 1,getElementSize(),storage);
-    // return v;
-    // }
-    //
-    // public ImageFloat subImage(int x0, int y0, int x1, int y1){
-    // int index = getOffset() + StorageFormats.toRowMajor(y0, x0, LDA);
-    // ImageFloat subM = new
-    // ImageFloat(x1,y1,LDA,index,getStep(),getElementSize(),storage);
-    // return subM;
-    // }
-
     public void fill(float value) {
         for (@Parallel int i = 0; i < Y; i++) {
             for (@Parallel int j = 0; j < X; j++) {
                 set(j, i, value);
             }
-        }
-    }
-
-    @Deprecated
-    public void multiply(ImageFloat a, ImageFloat b) {
-        TornadoInternalError.shouldNotReachHere();
-        int i,j,k;
-        for (i = 0; i < Y; i++)
-            for (j = 0; j < X; j++) {
-                float sum = 0.0f;
-                for (k = 0; k < a.Y; k++) {
-                    sum += a.get(i, k) * b.get(k, j);
-                }
-                set(i, j, sum);
-            }
-    }
-
-    /**
-     * Transposes the matrix in-place
-     * 
-     * @param m
-     *            matrix to transpose
-     */
-    @Deprecated
-    public void transpose() {
-        TornadoInternalError.shouldNotReachHere();
-        if (X == Y) {
-            // transpose square matrix
-            for (int i = 0; i < Y; i++) {
-                for (int j = 0; j < i; j++) {
-                    float tmp = get(i, j);
-                    set(i, j, get(j, i));
-                    set(j, i, tmp);
-                }
-            }
-        } else {
-            // transpose rectangular matrix
-
-            // not implemented
-
         }
     }
 
@@ -320,49 +253,13 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
             for (int i = 0; i < X; i++) {
                 final float v = get(i, j);
                 final float r = ref.get(i, j);
-
                 final float ulpFactor = findMaxULP(v, r);
                 averageULP += ulpFactor;
                 minULP = Math.min(ulpFactor, minULP);
                 maxULP = Math.max(ulpFactor, maxULP);
-
             }
         }
-
         averageULP /= (float) X * Y;
-
         return new FloatingPointError(averageULP, minULP, maxULP, -1f);
     }
-
-    // public void map(ImageFloat dest, FloatToFloatFunction function){
-    // for(@Parallel int i=0;i<Y;i++)
-    // for(@Parallel int j=0;j<X;j++)
-    // dest.set(i,j,function.apply(get(i,j)));
-    // }
-    //
-    // public void apply(FloatToFloatFunction function){
-    // map(this,function);
-    // }
-    //
-    // /*
-    // * maps an image patch to a float
-    // */
-    // public void stencilMap(ImageFloat dest, int rx, int ry,
-    // ToFloatFunction<ImageFloat> function){
-    // for(@Parallel int i=0;i<Y;i++)
-    // for(@Parallel int j=0;j<X;j++){
-    // int x0 = Math.max(j-rx,0);
-    // int y0 = Math.max(i-ry,0);
-    // int sx = (j - x0) + Math.min(j+rx,X) - j;
-    // int sy = (i - y0) + Math.min(i+ry,Y) - i;
-    // final ImageFloat patch = subImage(x0,y0, sx,sy);
-    // dest.set(i,j,function.apply(patch));
-    // }
-    // }
-    //
-    // public void stencilApply(int rx, int ry, ToFloatFunction<ImageFloat>
-    // function){
-    // stencilMap(this,rx,ry,function);
-    // }
-
 }
