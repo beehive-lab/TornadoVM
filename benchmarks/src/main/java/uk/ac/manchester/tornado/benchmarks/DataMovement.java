@@ -59,7 +59,7 @@ public class DataMovement {
     private static TornadoDevice resolveDevice(TornadoRuntime runtime, String device) {
         final String[] ids = device.split(":");
         final TornadoDriver driver = runtime.getDriver(Integer.parseInt(ids[0]));
-        return driver.getDevice(Integer.parseInt(ids[1]));
+        return (TornadoDevice) driver.getDevice(Integer.parseInt(ids[1]));
     }
 
     public static void main(String args[]) {

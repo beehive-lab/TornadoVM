@@ -169,7 +169,7 @@ public class ExecutionContext {
     }
 
     public void addDevice(int deviceId) {
-        devices.add(TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceId));
+        devices.add((TornadoDevice) TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceId));
     }
 
     public void addDevice(TornadoDevice device) {

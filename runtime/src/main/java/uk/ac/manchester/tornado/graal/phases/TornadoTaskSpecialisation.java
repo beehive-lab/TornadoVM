@@ -67,7 +67,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     }
 
     private Field lookupField(Class<?> type, String field) {
-//		Tornado.debug("lookup field: class=%s, field=%s", type.toString(), field);
+        // Tornado.debug("lookup field: class=%s, field=%s", type.toString(),
+        // field);
         Field f = null;
         try {
             f = type.getDeclaredField(field);
@@ -90,8 +91,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         R apply(T t) throws IllegalArgumentException, IllegalAccessException;
     }
 
-    private <T> T lookup(Object object, FunctionThatThrows<Object, T> function)
-            throws IllegalArgumentException, IllegalAccessException {
+    private <T> T lookup(Object object, FunctionThatThrows<Object, T> function) throws IllegalArgumentException, IllegalAccessException {
         return function.apply(object);
     }
 
@@ -109,8 +109,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         return result;
     }
 
-    private ConstantNode lookupPrimField(StructuredGraph graph, Node node, Object obj,
-            String field, JavaKind kind) {
+    private ConstantNode lookupPrimField(StructuredGraph graph, Node node, Object obj, String field, JavaKind kind) {
         final Class<?> type = obj.getClass();
         final Field f = lookupField(type, field);
         ConstantNode constant = null;
@@ -147,10 +146,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                      */
                     if (Modifier.isFinal(f.getModifiers())) {
                         final Object value = lookup(obj, f::get);
-                        node.usages().filter(LoadFieldNode.class)
-                                .forEach(load -> evaluate(graph, load, value));
-                        node.usages().filter(ArrayLengthNode.class)
-                                .forEach(arrayLength -> evaluate(graph, arrayLength, value));
+                        node.usages().filter(LoadFieldNode.class).forEach(load -> evaluate(graph, load, value));
+                        node.usages().filter(ArrayLengthNode.class).forEach(arrayLength -> evaluate(graph, arrayLength, value));
                     }
                     break;
                 case Illegal:
@@ -169,9 +166,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
     private void evaluate(final StructuredGraph graph, final Node node, final Object param) {
 
-        final Object value = (param instanceof WeakReference) ? ((WeakReference<?>) param)
-                .get() : param;
-        //Tornado.debug("evaluate: node=%s, object=%s", node, value);
+        final Object value = (param instanceof WeakReference) ? ((WeakReference<?>) param).get() : param;
+        // Tornado.debug("evaluate: node=%s, object=%s", node, value);
 
         if (node instanceof ArrayLengthNode) {
             ArrayLengthNode arrayLength = (ArrayLengthNode) node;
@@ -183,19 +179,20 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         } else if (node instanceof LoadFieldNode) {
             final LoadFieldNode loadField = (LoadFieldNode) node;
             final ResolvedJavaField field = loadField.field();
-//			Tornado.debug("load field: name=%s, type=%s, declaring class=%s", field.getName(),
-//					field.getType().toJavaName(), field.getDeclaringClass().getName());
+            // Tornado.debug("load field: name=%s, type=%s, declaring class=%s",
+            // field.getName(),
+            // field.getType().toJavaName(),
+            // field.getDeclaringClass().getName());
             if (field.getType().getJavaKind().isPrimitive()) {
-                ConstantNode constant = lookupPrimField(graph, node, value, field.getName(),
-                        field.getJavaKind());
+                ConstantNode constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());
                 constant = graph.addOrUnique(constant);
-//				Tornado.debug("Replaced %s with %s", node, constant);
+                // Tornado.debug("Replaced %s with %s", node, constant);
                 node.replaceAtUsages(constant);
                 loadField.clearInputs();
                 graph.removeFixed(loadField);
-//				Tornado.debug("removed %s", loadField);
+                // Tornado.debug("removed %s", loadField);
             } else if (field.isFinal()) {
-//				Tornado.debug("propagating final fields...");
+                // Tornado.debug("propagating final fields...");
                 Object object = lookupRefField(graph, node, value, field.getName());
                 node.usages().forEach(n -> evaluate(graph, n, object));
             }
@@ -208,7 +205,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 isNullNode.replaceAtUsages(LogicConstantNode.contradiction(graph));
             }
             isNullNode.safeDelete();
-            //graph.removeFloating(isNullNode);
+            // graph.removeFloating(isNullNode);
         }
     }
 
@@ -223,16 +220,13 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         return result;
     }
 
-    private void propagateParameters(StructuredGraph graph, ParameterNode parameterNode,
-            Object[] args) {
-        if (args[parameterNode.index()] != null
-                && RuntimeUtilities.isBoxedPrimitiveClass(args[parameterNode.index()].getClass())) {
+    private void propagateParameters(StructuredGraph graph, ParameterNode parameterNode, Object[] args) {
+        if (args[parameterNode.index()] != null && RuntimeUtilities.isBoxedPrimitiveClass(args[parameterNode.index()].getClass())) {
             ConstantNode constant = createConstantFromObject(args[parameterNode.index()]);
             graph.addWithoutUnique(constant);
             parameterNode.replaceAtUsages(constant);
         } else {
-            parameterNode.usages().snapshot()
-                    .forEach(n -> evaluate(graph, n, args[parameterNode.index()]));
+            parameterNode.usages().snapshot().forEach(n -> evaluate(graph, n, args[parameterNode.index()]));
         }
     }
 
@@ -260,19 +254,15 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             canonicalizer.apply(graph, context);
 
-            graph.getNewNodes(mark)
-                    .filter(PiNode.class)
-                    .forEach(
-                            pi -> {
-                                if (pi.stamp() instanceof ObjectStamp
-                                && pi.object().stamp() instanceof ObjectStamp) {
-                                    pi.replaceAtUsages(pi.object());
+            graph.getNewNodes(mark).filter(PiNode.class).forEach(pi -> {
+                if (pi.stamp() instanceof ObjectStamp && pi.object().stamp() instanceof ObjectStamp) {
+                    pi.replaceAtUsages(pi.object());
 
-                                    pi.clearInputs();
-                                    pi.safeDelete();
-//                                    graph.removeFloating(pi);
-                                }
-                            });
+                    pi.clearInputs();
+                    pi.safeDelete();
+                    // graph.removeFloating(pi);
+                }
+            });
 
             Debug.dump(INFO_LEVEL, graph, "After Phase Pi Node Removal");
 
@@ -286,9 +276,10 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             Debug.dump(INFO_LEVEL, graph, "After TaskSpecialisation iteration=" + iterations);
 
-//            boolean hasGuardingPiNodes = graph.getNodes().filter(n -> n instanceof GuardingPiNode).isNotEmpty();
-            hasWork = (lastNodeCount != graph.getNodeCount()
-                    || graph.getNewNodes(mark).isNotEmpty()) // || hasGuardingPiNodes)
+            // boolean hasGuardingPiNodes = graph.getNodes().filter(n -> n
+            // instanceof GuardingPiNode).isNotEmpty();
+            hasWork = (lastNodeCount != graph.getNodeCount() || graph.getNewNodes(mark).isNotEmpty()) // ||
+                                                                                                      // hasGuardingPiNodes)
                     && (iterations < MAX_ITERATIONS);
             lastNodeCount = graph.getNodeCount();
             iterations++;
@@ -306,10 +297,12 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     private void assumeNonNull(StructuredGraph graph, ParameterNode param) {
         if (param.getStackKind().isObject() && param.usages().filter(IsNullNode.class).count() > 0) {
             unimplemented("assumeNonNull: param %s", param);
-//            final IsNullNode isNullNode = (IsNullNode) param.usages().filter(IsNullNode.class).first();
-//            for (final GuardingPiNode guardingPiNode : isNullNode.usages().filter(GuardingPiNode.class)) {
-//                guardingPiNode.replaceAtUsages(param);
-//            }
+            // final IsNullNode isNullNode = (IsNullNode)
+            // param.usages().filter(IsNullNode.class).first();
+            // for (final GuardingPiNode guardingPiNode :
+            // isNullNode.usages().filter(GuardingPiNode.class)) {
+            // guardingPiNode.replaceAtUsages(param);
+            // }
 
         }
 

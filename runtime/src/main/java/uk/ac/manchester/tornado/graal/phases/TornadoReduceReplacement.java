@@ -62,7 +62,8 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
      * then load index. As soon as we discover more cases, new nodes should be
      * inspected here.
      * 
-     * Cover all the cases here as soon as we discover more reductions use-cases.
+     * Cover all the cases here as soon as we discover more reductions
+     * use-cases.
      * 
      * @param arrayToStore
      * @param indexToStore

@@ -27,20 +27,13 @@ package uk.ac.manchester.tornado.runtime;
 
 import org.graalvm.compiler.phases.util.Providers;
 
-import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
 import uk.ac.manchester.tornado.graal.compiler.TornadoSuitesProvider;
 
-public interface TornadoDriver {
-
-    public TornadoDevice getDefaultDevice();
-
-    public int getDeviceCount();
-
-    public TornadoDevice getDevice(int index);
+public interface TornadoDriver extends TornadoGenericDriver {
 
     public Providers getProviders();
 
     public TornadoSuitesProvider getSuitesProvider();
 
-    public String getName();
 }

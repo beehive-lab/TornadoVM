@@ -59,20 +59,22 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
     private void replaceParameterAnnotations(StructuredGraph graph, TornadoSketchTierContext context) {
         final Annotation[][] parameterAnnotations = graph.method().getParameterAnnotations();
-        
+
         for (int i = 0; i < parameterAnnotations.length; i++) {
-            
+
             for (Annotation an : parameterAnnotations[i]) {
-                //System.out.printf("annotation: param[%d]: %s\n",i,an);
+                // System.out.printf("annotation: param[%d]: %s\n",i,an);
                 if (an instanceof Atomic) {
                     final ParameterNode param = graph.getParameter(i);
                     final AtomicAccessNode atomicAccess = graph.addOrUnique(new AtomicAccessNode(param));
-                    //param.replaceAtMatchingUsages(atomicAccess, usage -> usage instanceof StoreIndexedNode);
-                    
-                    // Partial solution to create an atomic node. 
-                    // TODO: replace for an ATOMIC_ADD node etc, depending on the operation.
+                    // param.replaceAtMatchingUsages(atomicAccess, usage ->
+                    // usage instanceof StoreIndexedNode);
+
+                    // Partial solution to create an atomic node.
+                    // TODO: replace for an ATOMIC_ADD node etc, depending on
+                    // the operation.
                     NodeIterable<Node> usages = param.usages();
-                    for (Node n: usages) {
+                    for (Node n : usages) {
                         if (n instanceof ValuePhiNode) {
                             param.replaceAtMatchingUsages(atomicAccess, usage -> usage instanceof ValuePhiNode);
                             break;
@@ -81,7 +83,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                             break;
                         }
                     }
-                    
+
                 }
             }
         }
@@ -98,8 +100,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
         for (ResolvedJavaMethod inlinee : graph.getMethods()) {
 
             if (inlinee.getLocalAnnotations().length > 0) {
-                methodToAnnotations.put(inlinee,
-                        inlinee.getLocalAnnotations());
+                methodToAnnotations.put(inlinee, inlinee.getLocalAnnotations());
             }
         }
 
@@ -113,7 +114,8 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                         Node localNode = fs.localAt(an.getIndex());
 
                         if (!parallelNodes.containsKey(localNode)) {
-                            // Tornado.info("found parallel node: %s",localNode);
+                            // Tornado.info("found parallel node:
+                            // %s",localNode);
                             parallelNodes.put(localNode, an);
                         }
                     }
@@ -131,7 +133,8 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
             if (TORNADO_LOOPS_REVERSE) {
                 Collections.reverse(loops);
             }
-//            final List<LoopEx> loops = (TORNADO_LOOPS_REVERSE) ? data.innerFirst() : data.outerFirst() Collections.reverse(loops);
+            // final List<LoopEx> loops = (TORNADO_LOOPS_REVERSE) ?
+            // data.innerFirst() : data.outerFirst() Collections.reverse(loops);
             for (LoopEx loop : loops) {
 
                 for (InductionVariable iv : loop.getInductionVariables().getValues()) {
@@ -140,8 +143,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                     }
 
                     ValueNode maxIterations = null;
-                    List<IntegerLessThanNode> conditions = iv.valueNode().usages()
-                            .filter(IntegerLessThanNode.class).snapshot();
+                    List<IntegerLessThanNode> conditions = iv.valueNode().usages().filter(IntegerLessThanNode.class).snapshot();
                     if (conditions.size() == 1) {
                         final IntegerLessThanNode lessThan = conditions.get(0);
                         maxIterations = lessThan.getY();
@@ -152,37 +154,32 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
                     if (iv.isConstantInit() && iv.isConstantStride()) {
 
-                        final ConstantNode newInit = graph.addWithoutUnique(ConstantNode
-                                .forInt((int) iv.constantInit()));
-                        final ConstantNode newStride = graph.addWithoutUnique(ConstantNode
-                                .forInt((int) iv.constantStride()));
+                        final ConstantNode newInit = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantInit()));
+                        final ConstantNode newStride = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantStride()));
 
-                        final ParallelOffsetNode offset = graph
-                                .addWithoutUnique(new ParallelOffsetNode(loopIndex, newInit));
+                        final ParallelOffsetNode offset = graph.addWithoutUnique(new ParallelOffsetNode(loopIndex, newInit));
 
-                        final ParallelStrideNode stride = graph
-                                .addWithoutUnique(new ParallelStrideNode(loopIndex, newStride));
+                        final ParallelStrideNode stride = graph.addWithoutUnique(new ParallelStrideNode(loopIndex, newStride));
 
-                        final ParallelRangeNode range = graph
-                                .addWithoutUnique(new ParallelRangeNode(loopIndex, maxIterations,
-                                        offset, stride));
+                        final ParallelRangeNode range = graph.addWithoutUnique(new ParallelRangeNode(loopIndex, maxIterations, offset, stride));
 
                         final ValuePhiNode phi = (ValuePhiNode) iv.valueNode();
-                        final ValueNode oldStride = phi.singleBackValueOrThis(); // was singleBackValue()
+                        final ValueNode oldStride = phi.singleBackValueOrThis(); // was
+                                                                                 // singleBackValue()
 
-                        //System.out.printf("oldStride: %s\n",oldStride.toString());
+                        // System.out.printf("oldStride:
+                        // %s\n",oldStride.toString());
                         if (oldStride.usages().count() > 1) {
                             final ValueNode duplicateStride = (ValueNode) oldStride.copyWithInputs(true);
 
                             oldStride.replaceAtMatchingUsages(duplicateStride, usage -> !usage.equals(phi));
 
-                            //duplicateStride.removeUsage(phi);
-                            //oldStride.removeUsage(node)
+                            // duplicateStride.removeUsage(phi);
+                            // oldStride.removeUsage(node)
                         }
 
                         iv.initNode().replaceAtMatchingUsages(offset, node -> node.equals(phi));
-                        iv.strideNode().replaceAtMatchingUsages(stride,
-                                node -> node.equals(oldStride));
+                        iv.strideNode().replaceAtMatchingUsages(stride, node -> node.equals(oldStride));
 
                         // only replace this node in the loop condition
                         maxIterations.replaceAtMatchingUsages(range, node -> node.equals(conditions.get(0)));

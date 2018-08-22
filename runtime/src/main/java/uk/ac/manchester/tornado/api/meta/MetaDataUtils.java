@@ -35,11 +35,11 @@ public final class MetaDataUtils {
     public static TornadoDevice resolveDevice(String device) {
         final String[] ids = device.split(":");
         final TornadoDriver driver = getTornadoRuntime().getDriver(Integer.parseInt(ids[0]));
-        return driver.getDevice(Integer.parseInt(ids[1]));
+        return (TornadoDevice) driver.getDevice(Integer.parseInt(ids[1]));
     }
-    
+
     public static int[] resolveDriverDeviceIndexes(String device) {
         final String[] ids = device.split(":");
-        return new int[] { Integer.parseInt(ids[0]), Integer.parseInt(ids[1]) };  
+        return new int[] { Integer.parseInt(ids[0]), Integer.parseInt(ids[1]) };
     }
 }

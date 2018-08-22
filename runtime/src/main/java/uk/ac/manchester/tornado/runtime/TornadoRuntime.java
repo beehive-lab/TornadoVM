@@ -25,17 +25,16 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
+import static org.graalvm.compiler.debug.GraalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.common.Tornado.SHOULD_LOAD_RMI;
+
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.WeakHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.runtime.JVMCI;
-import jdk.vm.ci.runtime.JVMCIBackend;
 
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
@@ -45,15 +44,18 @@ import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.util.EconomicMap;
 
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.runtime.JVMCI;
+import jdk.vm.ci.runtime.JVMCIBackend;
+import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntimeInterface;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
 
-import static org.graalvm.compiler.debug.GraalError.guarantee;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.common.Tornado.SHOULD_LOAD_RMI;
-
-public class TornadoRuntime extends TornadoLogger {
+public class TornadoRuntime extends TornadoLogger implements TornadoRuntimeInterface {
 
     private static final Executor EXECUTOR = Executors.newCachedThreadPool();
 
@@ -161,11 +163,13 @@ public class TornadoRuntime extends TornadoLogger {
         return getMetaAccess().lookupJavaMethod(method);
     }
 
+    @Override
     public TornadoDriver getDriver(int index) {
         return drivers[index];
     }
 
-    public <D extends TornadoDriver> D getDriver(Class<D> type) {
+    @Override
+    public <D extends TornadoGenericDriver> D getDriver(Class<D> type) {
         for (TornadoDriver driver : drivers) {
             if (driver.getClass() == type) {
                 return (D) driver;
@@ -174,11 +178,18 @@ public class TornadoRuntime extends TornadoLogger {
         return null;
     }
 
+    @Override
     public int getNumDrivers() {
         return driverCount;
     }
 
+    @Override
     public TornadoDevice getDefaultDevice() {
-        return (drivers == null || drivers[defaultDriver] == null) ? JVM : drivers[defaultDriver].getDefaultDevice();
+        return (drivers == null || drivers[defaultDriver] == null) ? JVM : (TornadoDevice) drivers[defaultDriver].getDefaultDevice();
+    }
+
+    @Override
+    public TornadoRuntimeInterface callRuntime() {
+        return runtime;
     }
 }
