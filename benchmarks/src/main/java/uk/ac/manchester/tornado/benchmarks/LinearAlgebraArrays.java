@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.benchmarks;
 
 import uk.ac.manchester.tornado.api.annotations.*;
+import uk.ac.manchester.tornado.api.type.annotations.Atomic;
 
 public class LinearAlgebraArrays {
 

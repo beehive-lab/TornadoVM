@@ -23,17 +23,15 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.api.annotations;
+package uk.ac.manchester.tornado.api.type.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.FIELD)
+@Target({ ElementType.FIELD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Private {
-
-	int length() default 0;
+public @interface Constant {
 
 }

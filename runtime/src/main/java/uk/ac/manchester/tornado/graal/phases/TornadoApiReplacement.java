@@ -42,7 +42,7 @@ import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.phases.BasePhase;
 
-import uk.ac.manchester.tornado.api.annotations.Atomic;
+import uk.ac.manchester.tornado.api.type.annotations.Atomic;
 import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.graal.nodes.AtomicAccessNode;
 import uk.ac.manchester.tornado.graal.nodes.ParallelOffsetNode;

@@ -33,9 +33,9 @@ import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt8;
 
 import java.nio.FloatBuffer;
 
-import uk.ac.manchester.tornado.api.annotations.Payload;
-import uk.ac.manchester.tornado.api.annotations.Vector;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.type.annotations.Payload;
+import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
 /**
  * Class that represents a vector of 8x floats e.g.

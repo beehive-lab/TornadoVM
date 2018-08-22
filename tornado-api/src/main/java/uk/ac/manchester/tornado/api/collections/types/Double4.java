@@ -31,9 +31,9 @@ import static uk.ac.manchester.tornado.api.collections.types.DoubleOps.fmt4;
 
 import java.nio.DoubleBuffer;
 
-import uk.ac.manchester.tornado.api.annotations.Payload;
-import uk.ac.manchester.tornado.api.annotations.Vector;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.type.annotations.Payload;
+import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
 /**
  * Class that represents a vector of 4x doubles e.g. <double,double,double>

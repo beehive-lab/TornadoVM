@@ -31,7 +31,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import uk.ac.manchester.tornado.api.annotations.Vector;
+import uk.ac.manchester.tornado.api.type.annotations.Vector;
 
 public enum OCLKind implements PlatformKind {
 

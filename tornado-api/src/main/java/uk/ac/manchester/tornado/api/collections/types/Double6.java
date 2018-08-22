@@ -33,8 +33,8 @@ import static uk.ac.manchester.tornado.api.collections.types.DoubleOps.fmt6;
 
 import java.nio.DoubleBuffer;
 
-import uk.ac.manchester.tornado.api.annotations.Payload;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.type.annotations.Payload;
 
 /**
  * Class that represents a vector of 3x doubles e.g. <double,double,double>
