@@ -30,13 +30,13 @@ import static java.lang.Integer.parseInt;
 import static uk.ac.manchester.tornado.runtime.api.meta.MetaDataUtils.resolveDevice;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.mm.TaskDataInterface;
+import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
-public abstract class AbstractMetaData implements TaskDataInterface {
+public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     private String id;
     private TornadoAcceleratorDevice device;
@@ -151,19 +151,19 @@ public abstract class AbstractMetaData implements TaskDataInterface {
         shouldRecompile = false;
     }
 
-    public String getOpenclCompilerFlags() {
+    public String getCompilerFlags() {
         return openclCompilerFlags;
     }
 
-    public int getOpenclGpuBlockX() {
+    public int getOpenCLGpuBlockX() {
         return openclGpuBlockX;
     }
 
-    public int getOpenclGpuBlock2DX() {
+    public int getOpenCLGpuBlock2DX() {
         return openclGpuBlock2DX;
     }
 
-    public int getOpenclGpuBlock2DY() {
+    public int getOpenCLGpuBlock2DY() {
         return openclGpuBlock2DY;
     }
 

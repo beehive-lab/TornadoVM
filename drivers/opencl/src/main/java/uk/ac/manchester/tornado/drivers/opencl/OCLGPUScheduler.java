@@ -75,12 +75,12 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
                 localWork[2] = 1;
 
             case 2:
-                localWork[1] = calculateGroupSize(maxWorkItemSizes[1], meta.getOpenclGpuBlock2DY(), meta.getGlobalWork()[1]);
-                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenclGpuBlock2DX(), meta.getGlobalWork()[0]);
+                localWork[1] = calculateGroupSize(maxWorkItemSizes[1], meta.getOpenCLGpuBlock2DY(), meta.getGlobalWork()[1]);
+                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenCLGpuBlock2DX(), meta.getGlobalWork()[0]);
 
                 break;
             case 1:
-                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenclGpuBlockX(), meta.getGlobalWork()[0]);
+                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenCLGpuBlockX(), meta.getGlobalWork()[0]);
                 break;
             default:
                 break;

@@ -43,25 +43,7 @@ import uk.ac.manchester.tornado.runtime.EventSet;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.meta.domain.DomainTree;
 
-@SuppressWarnings("deprecation")
 public class TaskMetaData extends AbstractMetaData {
-
-    public static TaskMetaData create(ScheduleMetaData scheduleMeta, String id, Method method, boolean readMetaData) {
-        final TaskMetaData meta = new TaskMetaData(scheduleMeta, id, Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1);
-        return meta;
-    }
-
-    private static String formatArray(final long[] array) {
-        final StringBuilder sb = new StringBuilder();
-
-        sb.append("[");
-        for (final long value : array) {
-            sb.append(" ").append(value);
-        }
-        sb.append(" ]");
-
-        return sb.toString();
-    }
 
     private String idTask;
     private Coarseness coarseness;
@@ -115,6 +97,23 @@ public class TaskMetaData extends AbstractMetaData {
 
         this.schedule = !(globalWorkDefined && localWorkDefined);
         this.canAssumeExact = Boolean.parseBoolean(getDefault("coarsener.exact", getId(), "False"));
+    }
+
+    public static TaskMetaData create(ScheduleMetaData scheduleMeta, String id, Method method, boolean readMetaData) {
+        final TaskMetaData meta = new TaskMetaData(scheduleMeta, id, Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1);
+        return meta;
+    }
+
+    private static String formatArray(final long[] array) {
+        final StringBuilder sb = new StringBuilder();
+
+        sb.append("[");
+        for (final long value : array) {
+            sb.append(" ").append(value);
+        }
+        sb.append(" ]");
+
+        return sb.toString();
     }
 
     private static String getProperty(String key) {
@@ -320,23 +319,23 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public String getOpenclCompilerFlags() {
-        return isOpenclCompilerFlagsDefined() ? super.getOpenclCompilerFlags() : scheduleMetaData.getOpenclCompilerFlags();
+    public String getCompilerFlags() {
+        return isOpenclCompilerFlagsDefined() ? super.getCompilerFlags() : scheduleMetaData.getCompilerFlags();
     }
 
     @Override
-    public int getOpenclGpuBlock2DX() {
-        return isOpenclGpuBlock2DXDefined() ? super.getOpenclGpuBlock2DX() : scheduleMetaData.getOpenclGpuBlock2DX();
+    public int getOpenCLGpuBlock2DX() {
+        return isOpenclGpuBlock2DXDefined() ? super.getOpenCLGpuBlock2DX() : scheduleMetaData.getOpenCLGpuBlock2DX();
     }
 
     @Override
-    public int getOpenclGpuBlock2DY() {
-        return isOpenclGpuBlock2DXDefined() ? super.getOpenclGpuBlock2DY() : scheduleMetaData.getOpenclGpuBlock2DY();
+    public int getOpenCLGpuBlock2DY() {
+        return isOpenclGpuBlock2DXDefined() ? super.getOpenCLGpuBlock2DY() : scheduleMetaData.getOpenCLGpuBlock2DY();
     }
 
     @Override
-    public int getOpenclGpuBlockX() {
-        return isOpenclGpuBlockXDefined() ? super.getOpenclGpuBlockX() : scheduleMetaData.getOpenclGpuBlockX();
+    public int getOpenCLGpuBlockX() {
+        return isOpenclGpuBlockXDefined() ? super.getOpenCLGpuBlockX() : scheduleMetaData.getOpenCLGpuBlockX();
     }
 
     public int getPrivateSize() {

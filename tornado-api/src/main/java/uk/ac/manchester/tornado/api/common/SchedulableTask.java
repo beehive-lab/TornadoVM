@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.api.common;
 
-import uk.ac.manchester.tornado.api.mm.TaskDataInterface;
+import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 
 public interface SchedulableTask {
 
@@ -33,7 +33,7 @@ public interface SchedulableTask {
 
     public Access[] getArgumentsAccess();
 
-    public TaskDataInterface meta();
+    public TaskMetaDataInterface meta();
 
     public SchedulableTask mapTo(TornadoDevice mapping);
 

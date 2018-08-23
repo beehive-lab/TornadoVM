@@ -239,7 +239,7 @@ public class OCLCodeCache {
 
         // TODO add support for passing compiler optimisation flags here
         final long t0 = System.nanoTime();
-        program.build(meta.getOpenclCompilerFlags());
+        program.build(meta.getCompilerFlags());
         final long t1 = System.nanoTime();
 
         final OCLBuildStatus status = program.getStatus(deviceContext.getDeviceId());

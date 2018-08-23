@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
-import uk.ac.manchester.tornado.api.mm.TaskDataInterface;
+import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 
 public interface AbstractTaskGraph {
 
@@ -83,7 +83,7 @@ public interface AbstractTaskGraph {
 
     public String getId();
 
-    public TaskDataInterface meta();
+    public TaskMetaDataInterface meta();
 
     public abstract AbstractTaskGraph schedule();
 

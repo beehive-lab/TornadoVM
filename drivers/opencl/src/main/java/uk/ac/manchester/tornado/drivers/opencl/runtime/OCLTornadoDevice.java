@@ -46,7 +46,7 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
-import uk.ac.manchester.tornado.api.mm.TaskDataInterface;
+import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
@@ -277,7 +277,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private String getFullTaskIdDevice(SchedulableTask task) {
-        TaskDataInterface meta = task.meta();
+        TaskMetaDataInterface meta = task.meta();
         if (meta instanceof TaskMetaData) {
             TaskMetaData stask = (TaskMetaData) task.meta();
             return task.getId() + ".device=" + stask.getDriverIndex() + ":" + stask.getDeviceIndex();

@@ -15,4 +15,6 @@ public interface TornadoDriver {
 
     public String getName();
 
+    public int getNumPlatforms();
+
 }

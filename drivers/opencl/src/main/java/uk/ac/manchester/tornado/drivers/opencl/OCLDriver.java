@@ -154,6 +154,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         }
     }
 
+    @Override
     public int getNumPlatforms() {
         return backends.length;
     }
