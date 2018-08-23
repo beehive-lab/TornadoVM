@@ -30,8 +30,8 @@ import java.util.function.Consumer;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.common.TaskDataInterface;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
+import uk.ac.manchester.tornado.api.mm.TaskDataInterface;
 
 public interface AbstractTaskGraph {
 

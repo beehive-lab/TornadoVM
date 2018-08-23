@@ -1,8 +1,8 @@
 package uk.ac.manchester.tornado.api.common;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.api.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
+import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 
 public interface GenericDevice {
 

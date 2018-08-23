@@ -27,9 +27,9 @@ package uk.ac.manchester.tornado.benchmarks;
 
 import static java.lang.Math.toIntExact;
 import static java.util.Arrays.sort;
-import static uk.ac.manchester.tornado.api.common.TornadoUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.humanReadableByteCount;
 
-import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public abstract class BenchmarkDriver {
 

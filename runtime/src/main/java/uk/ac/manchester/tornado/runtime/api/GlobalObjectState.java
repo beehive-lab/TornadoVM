@@ -28,8 +28,8 @@ package uk.ac.manchester.tornado.runtime.api;
 import java.util.HashMap;
 import java.util.Map;
 
-import uk.ac.manchester.tornado.api.TornadoObjectState;
 import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.mm.TornadoObjectState;
 import uk.ac.manchester.tornado.common.DeviceObjectState;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 

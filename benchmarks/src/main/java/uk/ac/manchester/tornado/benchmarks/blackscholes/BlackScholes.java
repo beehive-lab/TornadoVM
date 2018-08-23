@@ -28,7 +28,7 @@ package uk.ac.manchester.tornado.benchmarks.blackscholes;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class BlackScholes {
 

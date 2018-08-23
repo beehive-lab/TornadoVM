@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.ladd;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class BandwidthTornado extends BenchmarkDriver {
 

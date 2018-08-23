@@ -27,8 +27,8 @@ package uk.ac.manchester.tornado.common;
 
 import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
 
-import uk.ac.manchester.tornado.api.ObjectBuffer;
-import uk.ac.manchester.tornado.api.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
+import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 
 public class DeviceObjectState implements TornadoDeviceObjectState {
 

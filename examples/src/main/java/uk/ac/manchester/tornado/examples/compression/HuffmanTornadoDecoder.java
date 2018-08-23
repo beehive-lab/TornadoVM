@@ -33,8 +33,8 @@ import java.util.BitSet;
 import java.util.HashMap;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
-import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
+import uk.ac.manchester.tornado.api.TornadoGenericDriver;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class HuffmanTornadoDecoder {
 

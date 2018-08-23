@@ -1,4 +1,4 @@
-package uk.ac.manchester.tornado.api;
+package uk.ac.manchester.tornado.api.mm;
 
 import uk.ac.manchester.tornado.api.common.GenericDevice;
 

@@ -1,4 +1,4 @@
-package uk.ac.manchester.tornado.api.runtinface;
+package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;

@@ -34,10 +34,10 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TornadoGenericDriver;
+import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
-import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
-import uk.ac.manchester.tornado.api.runtinface.TornadoRuntimeCI;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class TestsVirtualLayer {
 

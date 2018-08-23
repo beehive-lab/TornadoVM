@@ -26,5 +26,6 @@
 package uk.ac.manchester.tornado.api.common;
 
 public interface SynchronisationPoint {
-	public void waitOn();
+
+    public void waitOn();
 }

@@ -30,7 +30,7 @@ import static java.lang.Integer.parseInt;
 import static uk.ac.manchester.tornado.api.meta.MetaDataUtils.resolveDevice;
 
 import uk.ac.manchester.tornado.api.common.GenericDevice;
-import uk.ac.manchester.tornado.api.common.TaskDataInterface;
+import uk.ac.manchester.tornado.api.mm.TaskDataInterface;
 import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoDriver;

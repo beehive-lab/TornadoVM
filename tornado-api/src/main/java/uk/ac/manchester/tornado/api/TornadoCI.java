@@ -1,4 +1,4 @@
-package uk.ac.manchester.tornado.api.runtinface;
+package uk.ac.manchester.tornado.api;
 
 public interface TornadoCI {
 

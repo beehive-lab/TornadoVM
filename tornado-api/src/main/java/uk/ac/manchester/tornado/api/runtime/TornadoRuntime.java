@@ -1,6 +1,7 @@
-package uk.ac.manchester.tornado.api.runtinface;
+package uk.ac.manchester.tornado.api.runtime;
 
-import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
+import uk.ac.manchester.tornado.api.TornadoCI;
+import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
 
 public class TornadoRuntime {
 

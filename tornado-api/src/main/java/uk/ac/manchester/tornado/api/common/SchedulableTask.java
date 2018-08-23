@@ -25,6 +25,8 @@
  */
 package uk.ac.manchester.tornado.api.common;
 
+import uk.ac.manchester.tornado.api.mm.TaskDataInterface;
+
 public interface SchedulableTask {
 
     public Object[] getArguments();

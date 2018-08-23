@@ -28,9 +28,9 @@ package uk.ac.manchester.tornado.unittests.common;
 
 import org.junit.Before;
 
+import uk.ac.manchester.tornado.api.TornadoGenericDriver;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
-import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
-import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public abstract class TornadoTestBase {
 

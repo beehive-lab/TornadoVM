@@ -32,7 +32,7 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
-import uk.ac.manchester.tornado.api.runtinface.TornadoCI;
+import uk.ac.manchester.tornado.api.TornadoCI;
 
 public final class Tornado implements TornadoCI {
 

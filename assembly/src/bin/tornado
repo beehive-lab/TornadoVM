@@ -117,7 +117,8 @@ fi
 TORNADO_FLAGS="${TORNADO_FLAGS}  -Dlog4j.configurationFile=${LOG4J_CONFIG}"
 
 JAVA_CMD=${JAVA_HOME}/bin/java
-JAVA_FLAGS="-server -XX:-UseJVMCIClassLoader -XX:-UseCompressedOops ${TORNADO_FLAGS} -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.api.TornadoTaskSchedule -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoRuntime "
+PROVIDERS="-Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.api.TornadoTaskSchedule -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoRuntime -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.common.Tornado "
+JAVA_FLAGS="-server -XX:-UseJVMCIClassLoader -XX:-UseCompressedOops ${TORNADO_FLAGS} ${PROVIDERS} "
 
 if [ $printflags -eq 1 ] ; then
 	echo $JAVA_CMD

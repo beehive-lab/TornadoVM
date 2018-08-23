@@ -27,10 +27,10 @@ package uk.ac.manchester.tornado.examples.memory;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.TornadoDeviceObjectState;
-import uk.ac.manchester.tornado.api.TornadoObjectState;
 import uk.ac.manchester.tornado.api.common.GenericDevice;
-import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
+import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.mm.TornadoObjectState;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class DataMovementTest {
 

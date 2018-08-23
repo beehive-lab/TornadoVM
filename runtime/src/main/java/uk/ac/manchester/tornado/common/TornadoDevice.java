@@ -25,9 +25,9 @@
  */
 package uk.ac.manchester.tornado.common;
 
-import uk.ac.manchester.tornado.api.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 
 public interface TornadoDevice extends GenericDevice {
 
