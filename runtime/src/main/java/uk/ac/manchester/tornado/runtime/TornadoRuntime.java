@@ -50,12 +50,12 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
-import uk.ac.manchester.tornado.api.runtinface.TornadoRuntimeInterface;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntimeCI;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
 
-public class TornadoRuntime extends TornadoLogger implements TornadoRuntimeInterface {
+public class TornadoRuntime extends TornadoLogger implements TornadoRuntimeCI {
 
     private static final Executor EXECUTOR = Executors.newCachedThreadPool();
 
@@ -189,7 +189,7 @@ public class TornadoRuntime extends TornadoLogger implements TornadoRuntimeInter
     }
 
     @Override
-    public TornadoRuntimeInterface callRuntime() {
+    public TornadoRuntimeCI callRuntime() {
         return runtime;
     }
 }

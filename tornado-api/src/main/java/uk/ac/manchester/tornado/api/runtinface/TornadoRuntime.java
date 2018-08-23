@@ -5,9 +5,9 @@ import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
 
 public class TornadoRuntime {
 
-    private static TornadoRuntimeInterface runtimeImpl;
+    private static TornadoRuntimeCI runtimeImpl;
 
-    public static TornadoRuntimeInterface getTornadoRuntime() {
+    public static TornadoRuntimeCI getTornadoRuntime() {
         if (runtimeImpl == null) {
             runtimeImpl = TornadoAPIProvider.loadRuntime();
         }

@@ -2,9 +2,9 @@ package uk.ac.manchester.tornado.api.runtinface;
 
 import uk.ac.manchester.tornado.api.common.GenericDevice;
 
-public interface TornadoRuntimeInterface {
+public interface TornadoRuntimeCI {
 
-    public TornadoRuntimeInterface callRuntime();
+    public TornadoRuntimeCI callRuntime();
 
     public void clearObjectState();
 
