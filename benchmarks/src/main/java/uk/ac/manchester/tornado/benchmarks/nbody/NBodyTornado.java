@@ -26,13 +26,14 @@
 
 package uk.ac.manchester.tornado.benchmarks.nbody;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.*;
-import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.*;
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
+import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.nBody;
 
-import java.util.*;
+import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.*;
-import uk.ac.manchester.tornado.benchmarks.*;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class NBodyTornado extends BenchmarkDriver {
     private float delT,espSqr;

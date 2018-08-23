@@ -25,12 +25,12 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import static uk.ac.manchester.tornado.common.Tornado.*;
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
-import java.util.*;
-
-import uk.ac.manchester.tornado.runtime.*;
+import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 
 public abstract class BenchmarkRunner {
 
@@ -38,7 +38,7 @@ public abstract class BenchmarkRunner {
 
     private static final boolean SKIP_STREAMS = Boolean.parseBoolean(System.getProperty("tornado.benchmarks.skipstreams", "True"));
 
-    private static final boolean TORNADO_ENABLED = Boolean.parseBoolean(getProperty("tornado.enable", "True"));
+    private static final boolean TORNADO_ENABLED = Boolean.parseBoolean(TornadoRuntime.getProperty("tornado.enable", "True"));
 
     protected abstract String getName();
 
@@ -85,7 +85,7 @@ public abstract class BenchmarkRunner {
         }
 
         if (TORNADO_ENABLED) {
-            final String selectedDevices = getProperty("devices");
+            final String selectedDevices = TornadoRuntime.getProperty("devices");
             if (selectedDevices == null || selectedDevices.isEmpty()) {
                 benchmarkAll(id, refElapsed, refElapsedMedian, refFirstIteration);
             } else {
@@ -101,13 +101,13 @@ public abstract class BenchmarkRunner {
         findBlacklisted(blacklistedDrivers, "tornado.blacklist.drivers");
         findBlacklisted(blacklistedDevices, "tornado.blacklist.devices");
 
-        final int numDrivers = getTornadoRuntime().getNumDrivers();
+        final int numDrivers = TornadoRuntime.getTornadoRuntime().getNumDrivers();
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
             if (blacklistedDrivers.contains(driverIndex)) {
                 continue;
             }
 
-            final TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
+            final TornadoGenericDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
             final int numDevices = driver.getDeviceCount();
 
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
@@ -115,7 +115,7 @@ public abstract class BenchmarkRunner {
                     continue;
                 }
 
-                setProperty("benchmark.device", driverIndex + ":" + deviceIndex);
+                TornadoRuntime.setProperty("benchmark.device", driverIndex + ":" + deviceIndex);
                 final BenchmarkDriver deviceTest = getTornadoDriver();
 
                 deviceTest.benchmark();
@@ -135,9 +135,9 @@ public abstract class BenchmarkRunner {
             final int driverIndex = Integer.parseInt(indicies[0]);
             final int deviceIndex = Integer.parseInt(indicies[1]);
 
-            setProperty("benchmark.device", driverIndex + ":" + deviceIndex);
+            TornadoRuntime.setProperty("benchmark.device", driverIndex + ":" + deviceIndex);
             final BenchmarkDriver deviceTest = getTornadoDriver();
-            final TornadoDriver driver = getTornadoRuntime().getDriver(driverIndex);
+            final TornadoGenericDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
             deviceTest.benchmark();
 
             System.out.printf("bm=%-15s, device=%-5s, %s, speedupAvg=%.4f, speedupMedian=%.4f, speedupFirstIteration=%.4f, CV=%.4f, deviceName=%s\n", id, driverIndex + ":" + deviceIndex,
@@ -155,7 +155,7 @@ public abstract class BenchmarkRunner {
             final String[] bmArgs = Arrays.copyOfRange(args, 1, args.length);
 
             if (System.getProperty("config") != null) {
-                loadSettings(System.getProperty("config"));
+                TornadoRuntime.loadSettings(System.getProperty("config"));
             }
 
             bm.parseArgs(bmArgs);

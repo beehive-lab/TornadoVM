@@ -25,27 +25,25 @@
  */
 package uk.ac.manchester.tornado.benchmarks.convolveimage;
 
-import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
-import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
-
 import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createFilter;
 import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createImage;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 public class ConvolveImageTornado extends BenchmarkDriver {
 
-    private final int imageSizeX, imageSizeY, filterSize;
+    private final int imageSizeX,imageSizeY,filterSize;
 
-    private ImageFloat input, output, filter;
+    private ImageFloat input,output,filter;
 
     private TaskSchedule graph;
 
-    public ConvolveImageTornado(int iterations, int imageSizeX, int imageSizeY,
-            int filterSize) {
+    public ConvolveImageTornado(int iterations, int imageSizeX, int imageSizeY, int filterSize) {
         super(iterations);
         this.imageSizeX = imageSizeX;
         this.imageSizeY = imageSizeY;
@@ -63,18 +61,17 @@ public class ConvolveImageTornado extends BenchmarkDriver {
 
         graph = new TaskSchedule("benchmark");
 
-        if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
             graph.streamIn(input);
         }
 
-        graph.task("convolveImage", GraphicsKernels::convolveImage, input,
-                filter, output);
+        graph.task("convolveImage", GraphicsKernels::convolveImage, input, filter, output);
 
-        if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
             graph.streamOut(output);
         }
 
-        if (Boolean.parseBoolean(getProperty("benchmark.warmup", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
             graph.warmup();
         }
     }
@@ -122,13 +119,9 @@ public class ConvolveImageTornado extends BenchmarkDriver {
 
     public void printSummary() {
         if (isValid()) {
-            System.out.printf(
-                    "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("benchmark.device"), getElapsed(),
-                    getElapsedPerIteration());
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
         } else {
-            System.out.printf("id=%s produced invalid result\n",
-                    getProperty("benchmark.device"));
+            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("benchmark.device"));
         }
     }
 

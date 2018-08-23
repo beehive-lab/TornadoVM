@@ -30,21 +30,20 @@ import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createFilter;
 import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createImage;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 
 public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
-    private final int imageSizeX, imageSizeY, filterSize;
+    private final int imageSizeX,imageSizeY,filterSize;
 
-    private float[] input, output, filter;
+    private float[] input,output,filter;
 
     private TaskSchedule graph;
 
-    public ConvolveImageArrayTornado(int iterations, int imageSizeX,
-            int imageSizeY, int filterSize) {
+    public ConvolveImageArrayTornado(int iterations, int imageSizeX, int imageSizeY, int filterSize) {
         super(iterations);
         this.imageSizeX = imageSizeX;
         this.imageSizeY = imageSizeY;
@@ -61,17 +60,15 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         createFilter(filter, filterSize, filterSize);
 
         graph = new TaskSchedule("benchmark");
-        if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
             graph.streamIn(input);
         }
-        graph.task("convolveImageArray", GraphicsKernels::convolveImageArray,
-                input, filter, output, imageSizeX, imageSizeY, filterSize,
-                filterSize);
-        if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
+        graph.task("convolveImageArray", GraphicsKernels::convolveImageArray, input, filter, output, imageSizeX, imageSizeY, filterSize, filterSize);
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
             graph.streamOut(output);
         }
 
-        if (Boolean.parseBoolean(getProperty("benchmark.warmup", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
             graph.warmup();
         }
 
@@ -103,8 +100,7 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
         graph.syncObject(output);
         graph.clearProfiles();
 
-        GraphicsKernels.convolveImageArray(input, filter, result, imageSizeX,
-                imageSizeY, filterSize, filterSize);
+        GraphicsKernels.convolveImageArray(input, filter, result, imageSizeX, imageSizeY, filterSize, filterSize);
 
         float maxULP = 0f;
         for (int i = 0; i < output.length; i++) {
@@ -119,13 +115,9 @@ public class ConvolveImageArrayTornado extends BenchmarkDriver {
 
     public void printSummary() {
         if (isValid()) {
-            System.out.printf(
-                    "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("s0.device"), getElapsed(),
-                    getElapsedPerIteration());
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("s0.device"), getElapsed(), getElapsedPerIteration());
         } else {
-            System.out.printf("id=%s produced invalid result\n",
-                    getProperty("s0.device"));
+            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("s0.device"));
         }
     }
 }

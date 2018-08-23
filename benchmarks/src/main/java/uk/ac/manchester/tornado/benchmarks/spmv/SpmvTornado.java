@@ -25,22 +25,20 @@
  */
 package uk.ac.manchester.tornado.benchmarks.spmv;
 
-import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
-import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
-import uk.ac.manchester.tornado.matrix.SparseMatrixUtils.CSRMatrix;
-
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.spmv;
 import static uk.ac.manchester.tornado.benchmarks.spmv.Benchmark.populateVector;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
+import uk.ac.manchester.tornado.matrix.SparseMatrixUtils.CSRMatrix;
 
 public class SpmvTornado extends BenchmarkDriver {
 
     private final CSRMatrix<float[]> matrix;
 
-    private float[] v, y;
+    private float[] v,y;
 
     private TaskSchedule graph;
 
@@ -56,10 +54,7 @@ public class SpmvTornado extends BenchmarkDriver {
 
         populateVector(v);
 
-        graph = new TaskSchedule("benchmark")
-                .task("spmv", LinearAlgebraArrays::spmv, matrix.vals,
-                        matrix.cols, matrix.rows, v, matrix.size, y)
-                .streamOut(y);
+        graph = new TaskSchedule("benchmark").task("spmv", LinearAlgebraArrays::spmv, matrix.vals, matrix.cols, matrix.rows, v, matrix.size, y).streamOut(y);
 
         graph.warmup();
     }
@@ -97,13 +92,9 @@ public class SpmvTornado extends BenchmarkDriver {
 
     public void printSummary() {
         if (isValid()) {
-            System.out.printf(
-                    "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("benchmark.device"), getElapsed(),
-                    getElapsedPerIteration());
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
         } else {
-            System.out.printf("id=%s produced invalid result\n",
-                    getProperty("benchmark.device"));
+            System.out.printf("id=%s produced invalid result\n", getProperty("benchmark.device"));
         }
     }
 }

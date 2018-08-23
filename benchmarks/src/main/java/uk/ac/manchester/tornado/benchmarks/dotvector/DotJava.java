@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.dotvector;
 
-import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.*;
+import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.dotVector;
 
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
@@ -33,55 +33,55 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class DotJava extends BenchmarkDriver {
 
-	private final int numElements;
-	
-	private VectorFloat3 a, b;
-	private float[] c;
-	
-	public DotJava(int iterations, int numElements){
-		super(iterations);
-		this.numElements = numElements;
-	}
-	
-	@Override
-	public void setUp() {
-		a = new VectorFloat3(numElements);
-		b = new VectorFloat3(numElements);
-		c = new float[numElements];
-		
-		final Float3 valueA = new Float3(1f,1f,1f);
-		final Float3 valueB = new Float3(2f,2f,2f);
-		for(int i=0;i<numElements;i++){
-			a.set(i,valueA);
-			b.set(i,valueB);
-		}
-	}
-	
-	@Override
-	public void tearDown() {
-		a = null;
-		b = null;
-		c = null;
-		super.tearDown();
-	}
+    private final int numElements;
 
-	@Override
-	public void code() {
-			dotVector(a, b, c);
-	}
-	
-	@Override
-	public void barrier(){
-		
-	}
+    private VectorFloat3 a,b;
+    private float[] c;
 
-	@Override
-	public boolean validate() {
-		return true;
-	}
-	
-	public void printSummary(){
-		System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n",getElapsed(),getElapsedPerIteration());
-	}
+    public DotJava(int iterations, int numElements) {
+        super(iterations);
+        this.numElements = numElements;
+    }
+
+    @Override
+    public void setUp() {
+        a = new VectorFloat3(numElements);
+        b = new VectorFloat3(numElements);
+        c = new float[numElements];
+
+        final Float3 valueA = new Float3(1f, 1f, 1f);
+        final Float3 valueB = new Float3(2f, 2f, 2f);
+        for (int i = 0; i < numElements; i++) {
+            a.set(i, valueA);
+            b.set(i, valueB);
+        }
+    }
+
+    @Override
+    public void tearDown() {
+        a = null;
+        b = null;
+        c = null;
+        super.tearDown();
+    }
+
+    @Override
+    public void code() {
+        dotVector(a, b, c);
+    }
+
+    @Override
+    public void barrier() {
+
+    }
+
+    @Override
+    public boolean validate() {
+        return true;
+    }
+
+    public void printSummary() {
+        System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n", getElapsed(), getElapsedPerIteration());
+    }
 
 }

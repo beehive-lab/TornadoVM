@@ -27,58 +27,59 @@ package uk.ac.manchester.tornado.benchmarks.convolveimage;
 
 import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createFilter;
 import static uk.ac.manchester.tornado.benchmarks.BenchmarkUtils.createImage;
-import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.*;
+import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.convolveImage;
 
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+
 public class ConvolveImageJava extends BenchmarkDriver {
 
-	private final int imageSizeX, imageSizeY, filterSize;
-	
-	private ImageFloat input, output, filter;
-	
-	public ConvolveImageJava(int iterations, int imageSizeX, int imageSizeY, int filterSize){
-		super(iterations);
-		this.imageSizeX = imageSizeX;
-		this.imageSizeY = imageSizeY;
-		this.filterSize = filterSize;
-	}
-	
-	@Override
-	public void setUp() {
-		input = new ImageFloat(imageSizeX,imageSizeY);
-        output = new ImageFloat(imageSizeX,imageSizeY);
-        filter = new ImageFloat(filterSize,filterSize);
+    private final int imageSizeX,imageSizeY,filterSize;
+
+    private ImageFloat input,output,filter;
+
+    public ConvolveImageJava(int iterations, int imageSizeX, int imageSizeY, int filterSize) {
+        super(iterations);
+        this.imageSizeX = imageSizeX;
+        this.imageSizeY = imageSizeY;
+        this.filterSize = filterSize;
+    }
+
+    @Override
+    public void setUp() {
+        input = new ImageFloat(imageSizeX, imageSizeY);
+        output = new ImageFloat(imageSizeX, imageSizeY);
+        filter = new ImageFloat(filterSize, filterSize);
 
         createImage(input);
         createFilter(filter);
-	}
-	
-	@Override
-	public void tearDown() {
-		input = null;
-		output = null;
-		filter = null;
-		super.tearDown();
-	}
+    }
 
-	@Override
-	public void code() {
-			convolveImage(input,filter,output);
-	}
-	
-	@Override
-	public void barrier(){
-		
-	}
+    @Override
+    public void tearDown() {
+        input = null;
+        output = null;
+        filter = null;
+        super.tearDown();
+    }
 
-	@Override
-	public boolean validate() {
-		return true;
-	}
-	
-	public void printSummary(){
-		System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n",getElapsed(),getElapsedPerIteration());
-	}
+    @Override
+    public void code() {
+        convolveImage(input, filter, output);
+    }
+
+    @Override
+    public void barrier() {
+
+    }
+
+    @Override
+    public boolean validate() {
+        return true;
+    }
+
+    public void printSummary() {
+        System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n", getElapsed(), getElapsedPerIteration());
+    }
 
 }

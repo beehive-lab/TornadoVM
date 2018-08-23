@@ -25,9 +25,9 @@
 //
 package uk.ac.manchester.tornado.benchmarks.montecarlo;
 
-import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.*;
+import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.monteCarlo;
 
-import uk.ac.manchester.tornado.benchmarks.*;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class MonteCarloJava extends BenchmarkDriver {
 

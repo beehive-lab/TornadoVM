@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.sgemm;
 
-import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.*;
+import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sgemm;
 
 import java.util.Random;
 
@@ -33,60 +33,60 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class SgemmJava extends BenchmarkDriver {
 
-	private final int m, n;
-	
-	private float[] a, b, c;
-	
-	public SgemmJava(int iterations, int m, int n){
-		super(iterations);
-		this.m = m;
-		this.n = n;
-	}
-	
-	@Override
-	public void setUp() {
-		a = new float[m * n];
-		b = new float[m * n];
-		c = new float[m * n];
-		
-		final Random random = new Random();
-		
-		for(int i=0;i<m;i++){
-			a[i*(m+1)] = 1;
-		}
-		
-		for(int i=0;i<m*n;i++){
-			b[i] = random.nextFloat();
-		}
+    private final int m,n;
 
-	}
-	
-	@Override
-	public void tearDown() {
-		a = null;
-		b = null;
-		c = null;
-		super.tearDown();
-	}
+    private float[] a,b,c;
 
-	@Override
-	public void code() {
-			sgemm(m,n,m, a, b, c);
-	}
-	
-	@Override
-	public void barrier(){
-		
-	}
+    public SgemmJava(int iterations, int m, int n) {
+        super(iterations);
+        this.m = m;
+        this.n = n;
+    }
 
-	@Override
-	public boolean validate() {
-		
-		return true;
-	}
-	
-	public void printSummary(){
-		System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n",getElapsed(),getElapsedPerIteration());
-	}
+    @Override
+    public void setUp() {
+        a = new float[m * n];
+        b = new float[m * n];
+        c = new float[m * n];
+
+        final Random random = new Random();
+
+        for (int i = 0; i < m; i++) {
+            a[i * (m + 1)] = 1;
+        }
+
+        for (int i = 0; i < m * n; i++) {
+            b[i] = random.nextFloat();
+        }
+
+    }
+
+    @Override
+    public void tearDown() {
+        a = null;
+        b = null;
+        c = null;
+        super.tearDown();
+    }
+
+    @Override
+    public void code() {
+        sgemm(m, n, m, a, b, c);
+    }
+
+    @Override
+    public void barrier() {
+
+    }
+
+    @Override
+    public boolean validate() {
+
+        return true;
+    }
+
+    public void printSummary() {
+        System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n", getElapsed(), getElapsedPerIteration());
+    }
 
 }

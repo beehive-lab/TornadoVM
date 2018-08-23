@@ -25,11 +25,10 @@
  */
 package uk.ac.manchester.tornado.benchmarks.blackscholes;
 
-import static uk.ac.manchester.tornado.common.Tornado.*;
-
-import uk.ac.manchester.tornado.api.*;
-import uk.ac.manchester.tornado.api.annotations.*;
-import uk.ac.manchester.tornado.api.collections.math.*;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 
 public class BlackScholes {
 
@@ -39,9 +38,9 @@ public class BlackScholes {
     /*
      * For a description of the algorithm and the terms used, please see the
      * documentation for this sample. On invocation of kernel blackScholes, each
-     * work thread calculates call price and put price values for given stock price,
-     * option strike price, time to expiration date, risk free interest and
-     * volatility factor.
+     * work thread calculates call price and put price values for given stock
+     * price, option strike price, time to expiration date, risk free interest
+     * and volatility factor.
      */
     public static void main(final String[] args) {
 
@@ -83,7 +82,7 @@ public class BlackScholes {
             System.out.printf("%s, id=java-reference, elapsed=%.9f, per iteration=%.9f \n", id, elapsed, elapsed / iterations);
 
         } else {
-            System.out.printf("%s, id=%s, elapsed=%.9f, per iteration=%.9f \n", id, getProperty("benchmark.device"), elapsed, elapsed / iterations);
+            System.out.printf("%s, id=%s, elapsed=%.9f, per iteration=%.9f \n", id, TornadoRuntime.getProperty("benchmark.device"), elapsed, elapsed / iterations);
             tasks.dumpProfiles();
         }
 
@@ -163,15 +162,15 @@ public class BlackScholes {
      * @brief Calculates the call and put prices by using Black Scholes model
      * 
      * @param s
-     *            Array of random values of current option price @param sigma Array
-     *            of random values sigma @param k Array of random values strike
-     *            price
+     *            Array of random values of current option price @param sigma
+     *            Array of random values sigma @param k Array of random values
+     *            strike price
      * 
      * @param t
-     *            Array of random values of expiration time @param r Array of random
-     *            values of risk free interest rate @param width Width of call price
-     *            or put price array @param call Array of calculated call price
-     *            values
+     *            Array of random values of expiration time @param r Array of
+     *            random values of risk free interest rate @param width Width of
+     *            call price or put price array @param call Array of calculated
+     *            call price values
      * 
      * @param put
      *            Array of calculated put price values

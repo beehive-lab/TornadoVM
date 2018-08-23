@@ -168,13 +168,18 @@ public final class Tornado implements TornadoCI {
     }
 
     @Override
-    public String getTorandoProperty(String key) {
+    public String getTornadoProperty(String key) {
         return Tornado.getProperty(key);
     }
 
     @Override
     public String getTornadoProperty(String key, String defaultValue) {
         return Tornado.getProperty(key, defaultValue);
+    }
+
+    @Override
+    public void loadTornadoSettngs(String filename) {
+        loadSettings(filename);
     }
 
 }

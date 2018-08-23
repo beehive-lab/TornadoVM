@@ -25,11 +25,12 @@
 
 package uk.ac.manchester.tornado.benchmarks.montecarlo;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.*;
-import static uk.ac.manchester.tornado.common.Tornado.*;
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 
-import uk.ac.manchester.tornado.api.*;
-import uk.ac.manchester.tornado.benchmarks.*;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class MonteCarloTornado extends BenchmarkDriver {
 
@@ -97,9 +98,9 @@ public class MonteCarloTornado extends BenchmarkDriver {
 
     public void printSummary() {
         if (isValid()) {
-            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
         } else {
-            System.out.printf("id=%s produced invalid result\n", getProperty("benchmark.device"));
+            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("benchmark.device"));
         }
     }
 }

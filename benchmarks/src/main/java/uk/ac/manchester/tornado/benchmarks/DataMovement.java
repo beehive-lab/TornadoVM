@@ -25,13 +25,12 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
-
-import uk.ac.manchester.tornado.common.DeviceObjectState;
-import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
+import uk.ac.manchester.tornado.api.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.TornadoObjectState;
+import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntimeCI;
 
 public class DataMovement {
 
@@ -56,10 +55,10 @@ public class DataMovement {
         return null;
     }
 
-    private static TornadoDevice resolveDevice(TornadoRuntime runtime, String device) {
+    private static GenericDevice resolveDevice(TornadoRuntimeCI runtime, String device) {
         final String[] ids = device.split(":");
-        final TornadoDriver driver = runtime.getDriver(Integer.parseInt(ids[0]));
-        return (TornadoDevice) driver.getDevice(Integer.parseInt(ids[1]));
+        final TornadoGenericDriver driver = runtime.getDriver(Integer.parseInt(ids[0]));
+        return driver.getDevice(Integer.parseInt(ids[1]));
     }
 
     public static void main(String args[]) {
@@ -73,15 +72,15 @@ public class DataMovement {
         System.out.println("device,type,numelements,numbytes,iterations,streamInElapsed,streamOutElapsed");
 
         for (final String deviceStr : devices) {
-            TornadoRuntime runtime = getTornadoRuntime();
-            final TornadoDevice device = resolveDevice(runtime, deviceStr);
+            TornadoRuntimeCI runtime = TornadoRuntime.getTornadoRuntime();
+            final GenericDevice device = resolveDevice(runtime, deviceStr);
 
             for (final String type : types) {
                 for (int size = startSize; size <= endSize; size <<= 1) {
 
                     final Object array = createArray(type, size);
-                    final GlobalObjectState globalState = runtime.resolveObject(array);
-                    final DeviceObjectState deviceState = globalState.getDeviceState(device);
+                    final TornadoObjectState globalState = runtime.resolveObject(array);
+                    final TornadoDeviceObjectState deviceState = globalState.getDeviceState(device);
 
                     device.ensureAllocated(array, deviceState);
 

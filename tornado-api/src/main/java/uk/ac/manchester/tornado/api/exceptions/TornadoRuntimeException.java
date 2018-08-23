@@ -23,31 +23,25 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.common;
+package uk.ac.manchester.tornado.api.exceptions;
 
-public class TimedEvent {
-	protected final long start;
-	protected final long stop;
-	
-	public TimedEvent(final long t0, final long t1) {
-		start = t0;
-		stop = t1;
-	}
+public class TornadoRuntimeException extends Exception {
 
-	public long getNanoTime() {
-		return stop - start;
-	}
+    private static final long serialVersionUID = -7515308573010965892L;
+    private final String message;
 
-	public long getStart() {
-		return start;
-	}
+    public TornadoRuntimeException(final String msg) {
+        message = msg;
+    }
 
-	public long getStop() {
-		return stop;
-	}
+    public TornadoRuntimeException(Exception e) {
+        message = e.getMessage();
+        this.initCause(e.getCause());
+    }
 
-	public double getTime() {
-		return 1e-9 * getNanoTime();
-	}
-	
+    @Override
+    public String getMessage() {
+        return message;
+    }
+
 }

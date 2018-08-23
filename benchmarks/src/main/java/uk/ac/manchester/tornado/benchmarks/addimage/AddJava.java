@@ -25,18 +25,17 @@
  */
 package uk.ac.manchester.tornado.benchmarks.addimage;
 
-import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.addImage;
-
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 public class AddJava extends BenchmarkDriver {
 
     private final int numElementsX;
     private final int numElementsY;
 
-    private ImageFloat4 a, b, c;
+    private ImageFloat4 a,b,c;
 
     public AddJava(int iterations, int numElementsX, int numElementsY) {
         super(iterations);
@@ -50,8 +49,8 @@ public class AddJava extends BenchmarkDriver {
         b = new ImageFloat4(numElementsX, numElementsY);
         c = new ImageFloat4(numElementsX, numElementsY);
 
-        final Float4 valueA = new Float4(new float[]{1f, 1f, 1f, 1f});
-        final Float4 valueB = new Float4(new float[]{2f, 2f, 2f, 2f});
+        final Float4 valueA = new Float4(new float[] { 1f, 1f, 1f, 1f });
+        final Float4 valueB = new Float4(new float[] { 2f, 2f, 2f, 2f });
         for (int j = 0; j < numElementsY; j++) {
             for (int i = 0; i < numElementsX; i++) {
                 a.set(i, j, valueA);
@@ -70,7 +69,7 @@ public class AddJava extends BenchmarkDriver {
 
     @Override
     public void code() {
-        addImage(a, b, c);
+        GraphicsKernels.addImage(a, b, c);
     }
 
     @Override

@@ -25,58 +25,57 @@
  */
 package uk.ac.manchester.tornado.benchmarks.spmv;
 
-import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.*;
+import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.spmv;
 
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.matrix.SparseMatrixUtils.CSRMatrix;
 
 public class SpmvJava extends BenchmarkDriver {
 
-	private final CSRMatrix<float[]> matrix;
-	
-	private float[] v, y;
-	
-	public SpmvJava(int iterations, CSRMatrix<float[]> matrix){
-		super(iterations);
-		this.matrix = matrix;
-	}
-	
-	@Override
-	public void setUp() {
+    private final CSRMatrix<float[]> matrix;
 
-		v = new float[matrix.size];
-		y = new float[matrix.size];
+    private float[] v,y;
 
-		Benchmark.populateVector(v);
+    public SpmvJava(int iterations, CSRMatrix<float[]> matrix) {
+        super(iterations);
+        this.matrix = matrix;
+    }
 
-	}
-	
-	@Override
-	public void tearDown() {
-		v = null;
-		y = null;
-		
-		super.tearDown();
-	}
+    @Override
+    public void setUp() {
 
-	@Override
-	public void code() {
-			spmv(matrix.vals, matrix.cols, matrix.rows, v,
-					matrix.size, y);
-	}
-	
-	@Override
-	public void barrier(){
-		
-	}
+        v = new float[matrix.size];
+        y = new float[matrix.size];
 
-	@Override
-	public boolean validate() {
-		return true;
-	}
-	
-	public void printSummary(){
-		System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n",getElapsed(),getElapsedPerIteration());
-	}
+        Benchmark.populateVector(v);
+
+    }
+
+    @Override
+    public void tearDown() {
+        v = null;
+        y = null;
+
+        super.tearDown();
+    }
+
+    @Override
+    public void code() {
+        spmv(matrix.vals, matrix.cols, matrix.rows, v, matrix.size, y);
+    }
+
+    @Override
+    public void barrier() {
+
+    }
+
+    @Override
+    public boolean validate() {
+        return true;
+    }
+
+    public void printSummary() {
+        System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n", getElapsed(), getElapsedPerIteration());
+    }
 
 }

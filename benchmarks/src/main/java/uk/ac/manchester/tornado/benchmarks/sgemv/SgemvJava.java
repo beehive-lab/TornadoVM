@@ -33,9 +33,9 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class SgemvJava extends BenchmarkDriver {
 
-    private final int m, n;
+    private final int m,n;
 
-    private float[] a, x, y;
+    private float[] a,x,y;
 
     public SgemvJava(int iterations, int m, int n) {
         super(iterations);

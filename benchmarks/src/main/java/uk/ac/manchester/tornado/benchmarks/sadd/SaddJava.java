@@ -25,60 +25,60 @@
  */
 package uk.ac.manchester.tornado.benchmarks.sadd;
 
-import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.*;
+import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sadd;
 
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class SaddJava extends BenchmarkDriver {
 
-	private final int numElements;
-	
-	private float[] a, b, c;
-	
-	public SaddJava(int iterations, int numElements){
-		super(iterations);
-		this.numElements = numElements;
-	}
-	
-	@Override
-	public void setUp() {
-		a = new float[numElements];
-		b = new float[numElements];
-		c = new float[numElements];
-		
-		for(int i=0;i<numElements;i++){
-			a[i] = 1;
-			b[i] = 2;
-			c[i] = 0;
-		}
+    private final int numElements;
 
-	}
-	
-	@Override
-	public void tearDown() {
-		a = null;
-		b = null;
-		c = null;
-		super.tearDown();
-	}
+    private float[] a,b,c;
 
-	@Override
-	public void code() {
-			sadd(a,b,c);
-	}
-	
-	@Override
-	public void barrier(){
-		
-	}
+    public SaddJava(int iterations, int numElements) {
+        super(iterations);
+        this.numElements = numElements;
+    }
 
-	@Override
-	public boolean validate() {
-		return true;
-	}
-	
-	public void printSummary(){
-		System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n",getElapsed(),getElapsedPerIteration());
-	}
+    @Override
+    public void setUp() {
+        a = new float[numElements];
+        b = new float[numElements];
+        c = new float[numElements];
+
+        for (int i = 0; i < numElements; i++) {
+            a[i] = 1;
+            b[i] = 2;
+            c[i] = 0;
+        }
+
+    }
+
+    @Override
+    public void tearDown() {
+        a = null;
+        b = null;
+        c = null;
+        super.tearDown();
+    }
+
+    @Override
+    public void code() {
+        sadd(a, b, c);
+    }
+
+    @Override
+    public void barrier() {
+
+    }
+
+    @Override
+    public boolean validate() {
+        return true;
+    }
+
+    public void printSummary() {
+        System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n", getElapsed(), getElapsedPerIteration());
+    }
 
 }

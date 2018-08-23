@@ -25,23 +25,20 @@
  */
 package uk.ac.manchester.tornado.benchmarks.addimage;
 
-import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
-import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
-
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.findMaxULP;
-import static uk.ac.manchester.tornado.benchmarks.BenchmarkDriver.MAX_ULP;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
-
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 public class AddTornado extends BenchmarkDriver {
 
     private final int numElementsX;
     private final int numElementsY;
 
-    private ImageFloat4 a, b, c;
+    private ImageFloat4 a,b,c;
 
     private TaskSchedule graph;
 
@@ -57,8 +54,8 @@ public class AddTornado extends BenchmarkDriver {
         b = new ImageFloat4(numElementsX, numElementsY);
         c = new ImageFloat4(numElementsX, numElementsY);
 
-        final Float4 valueA = new Float4(new float[]{1f, 1f, 1f, 1f});
-        final Float4 valueB = new Float4(new float[]{2f, 2f, 2f, 2f});
+        final Float4 valueA = new Float4(new float[] { 1f, 1f, 1f, 1f });
+        final Float4 valueB = new Float4(new float[] { 2f, 2f, 2f, 2f });
         for (int j = 0; j < numElementsY; j++) {
             for (int i = 0; i < numElementsX; i++) {
                 a.set(i, j, valueA);
@@ -67,15 +64,15 @@ public class AddTornado extends BenchmarkDriver {
         }
 
         graph = new TaskSchedule("benchmark");
-        if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
             graph.streamIn(a, b);
         }
         graph.task("addvector", GraphicsKernels::addImage, a, b, c);
-        if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
             graph.streamOut(c);
         }
 
-        if (Boolean.parseBoolean(getProperty("benchmark.warmup", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
             graph.warmup();
         }
     }
@@ -111,8 +108,7 @@ public class AddTornado extends BenchmarkDriver {
         float maxULP = 0f;
         for (int i = 0; i < c.Y(); i++) {
             for (int j = 0; j < c.X(); j++) {
-                final float ulp = findMaxULP(c.get(j, i),
-                        result.get(j, i));
+                final float ulp = FloatOps.findMaxULP(c.get(j, i), result.get(j, i));
 
                 if (ulp > maxULP) {
                     maxULP = ulp;
@@ -124,13 +120,9 @@ public class AddTornado extends BenchmarkDriver {
 
     public void printSummary() {
         if (isValid()) {
-            System.out.printf(
-                    "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("benchmark.device"), getElapsed(),
-                    getElapsedPerIteration());
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
         } else {
-            System.out.printf("id=%s produced invalid result\n",
-                    getProperty("benchmark.device"));
+            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("benchmark.device"));
         }
     }
 

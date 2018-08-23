@@ -25,21 +25,21 @@
  */
 package uk.ac.manchester.tornado.benchmarks.dgemm;
 
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
+import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.dgemm;
+
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
-import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.dgemm;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
-
 public class DgemmTornado extends BenchmarkDriver {
 
-    private final int m, n;
+    private final int m,n;
 
-    private double[] a, b, c;
+    private double[] a,b,c;
 
     private TaskSchedule graph;
 
@@ -65,10 +65,7 @@ public class DgemmTornado extends BenchmarkDriver {
             b[i] = random.nextFloat();
         }
 
-        graph = new TaskSchedule("benchmark")
-                .task("dgemm", LinearAlgebraArrays::dgemm, m, n, n, a, b,
-                        c)
-                .streamOut(c);
+        graph = new TaskSchedule("benchmark").task("dgemm", LinearAlgebraArrays::dgemm, m, n, n, a, b, c).streamOut(c);
 
         graph.warmup();
     }
@@ -106,13 +103,9 @@ public class DgemmTornado extends BenchmarkDriver {
 
     public void printSummary() {
         if (isValid()) {
-            System.out.printf(
-                    "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("benchmark.device"), getElapsed(),
-                    getElapsedPerIteration());
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
         } else {
-            System.out.printf("id=%s produced invalid result\n",
-                    getProperty("benchmark.device"));
+            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("benchmark.device"));
         }
     }
 

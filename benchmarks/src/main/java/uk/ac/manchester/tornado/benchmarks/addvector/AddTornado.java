@@ -25,12 +25,11 @@
  */
 package uk.ac.manchester.tornado.benchmarks.addvector;
 
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
-
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
@@ -38,7 +37,7 @@ public class AddTornado extends BenchmarkDriver {
 
     private final int numElements;
 
-    private VectorFloat4 a, b, c;
+    private VectorFloat4 a,b,c;
 
     private TaskSchedule graph;
 
@@ -53,23 +52,23 @@ public class AddTornado extends BenchmarkDriver {
         b = new VectorFloat4(numElements);
         c = new VectorFloat4(numElements);
 
-        final Float4 valueA = new Float4(new float[]{1f, 1f, 1f, 1f});
-        final Float4 valueB = new Float4(new float[]{2f, 2f, 2f, 2f});
+        final Float4 valueA = new Float4(new float[] { 1f, 1f, 1f, 1f });
+        final Float4 valueB = new Float4(new float[] { 2f, 2f, 2f, 2f });
         for (int i = 0; i < numElements; i++) {
             a.set(i, valueA);
             b.set(i, valueB);
         }
 
         graph = new TaskSchedule("benchmark");
-        if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
             graph.streamIn(a, b);
         }
         graph.task("addvector", GraphicsKernels::addVector, a, b, c);
-        if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
             graph.streamOut(c);
         }
 
-        if (Boolean.parseBoolean(getProperty("benchmark.warmup", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
             graph.warmup();
         }
     }
@@ -115,13 +114,9 @@ public class AddTornado extends BenchmarkDriver {
 
     public void printSummary() {
         if (isValid()) {
-            System.out.printf(
-                    "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("benchmark.device"), getElapsed(),
-                    getElapsedPerIteration());
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
         } else {
-            System.out.printf("id=%s produced invalid result\n",
-                    getProperty("benchmark.device"));
+            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("benchmark.device"));
         }
     }
 

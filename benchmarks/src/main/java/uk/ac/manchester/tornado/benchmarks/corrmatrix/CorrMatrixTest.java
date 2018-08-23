@@ -31,14 +31,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.lucene.util.OpenBitSet;
 import org.junit.Before;
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.common.TimedEvent;
-import uk.ac.manchester.tornado.common.TornadoLogger;
+import uk.ac.manchester.tornado.api.common.TimedEvent;
+import uk.ac.manchester.tornado.benchmarks.BenchLogger;
 
 /**
  * This test class performs the following functions:
@@ -52,13 +53,12 @@ import uk.ac.manchester.tornado.common.TornadoLogger;
  * @author ryan.lamothe at gmail.com
  *
  */
-public class CorrMatrixTest extends TornadoLogger {
+public class CorrMatrixTest extends BenchLogger {
 
     // private static final Logger LOG = Logger.getLogger(CorrMatrixTest.class);
-    private final List<Pair<OpenBitSet, OpenBitSet>> obsPairs = new ArrayList<>();
-    ;
+    private final List<Pair<OpenBitSet, OpenBitSet>> obsPairs = new ArrayList<>();;
 
-	private final Random rand = new Random();
+    private final Random rand = new Random();
 
     private int[][] obsResultMatrix;
 
@@ -96,9 +96,7 @@ public class CorrMatrixTest extends TornadoLogger {
                 bits[j] = rand.nextLong();
             }
 
-            obsPairs.add(i, new ImmutablePair<>(
-                    new OpenBitSet(bits, numLongs), new OpenBitSet(bits,
-                            numLongs)));
+            obsPairs.add(i, new ImmutablePair<>(new OpenBitSet(bits, numLongs), new OpenBitSet(bits, numLongs)));
         }
 
         /*
@@ -115,17 +113,13 @@ public class CorrMatrixTest extends TornadoLogger {
             // FIXME This entire loop needs to be parallelized to show an
             // apples-to-apples comparison to Aparapi
             for (int i = 0; i < obsPairs.size(); i++) {
-                final Pair<OpenBitSet, OpenBitSet> docFreqVector1 = obsPairs
-                        .get(i);
+                final Pair<OpenBitSet, OpenBitSet> docFreqVector1 = obsPairs.get(i);
 
                 for (int j = 0; j < obsPairs.size(); j++) {
-                    final Pair<OpenBitSet, OpenBitSet> docFreqVector2 = obsPairs
-                            .get(j);
+                    final Pair<OpenBitSet, OpenBitSet> docFreqVector2 = obsPairs.get(j);
 
                     // # of matches in both sets of documents
-                    final int result = (int) OpenBitSet
-                            .intersectionCount(docFreqVector1.getLeft(),
-                                    docFreqVector2.getRight());
+                    final int result = (int) OpenBitSet.intersectionCount(docFreqVector1.getLeft(), docFreqVector2.getRight());
                     obsResultMatrix[i][j] = result;
                 }
             }
@@ -133,8 +127,7 @@ public class CorrMatrixTest extends TornadoLogger {
             final long endTime = System.nanoTime();
             TimedEvent event = new TimedEvent(startTime, endTime);
 
-            System.out.println("OpenBitSet Gross Execution Time: "
-                    + event.getTime() + " s <------OpenBitSet");
+            System.out.println("OpenBitSet Gross Execution Time: " + event.getTime() + " s <------OpenBitSet");
             System.out.println("----------");
         }
     }
@@ -186,8 +179,7 @@ public class CorrMatrixTest extends TornadoLogger {
         final long endTime = System.nanoTime();
         TimedEvent event = new TimedEvent(startTime, endTime);
 
-        System.out.println("OpenBitSet Gross Execution Time: "
-                + event.getTime() + " s <------OpenBitSet");
+        System.out.println("OpenBitSet Gross Execution Time: " + event.getTime() + " s <------OpenBitSet");
         System.out.println("----------");
         boolean printResults = false;
         if (printResults) {
@@ -217,27 +209,21 @@ public class CorrMatrixTest extends TornadoLogger {
             }
 
             if (errors > 0) {
-                warn("found %d errors (%.2f %%)\n",
-                        errors,
-                        ((double) errors / (double) (obsResultMatrix.length * obsResultMatrix[0].length)) * 100.0);
+                warn("found %d errors (%.2f %%)\n", errors, ((double) errors / (double) (obsResultMatrix.length * obsResultMatrix[0].length)) * 100.0);
             }
         }
         // Visually compare/third-party tool compare if desired
         if (traceEnabled) {
             // We're not using "try with resources" because Aparapi currently
             // targets JDK 6
-            final PrintWriter cpuOut = new PrintWriter(new File(
-                    System.getProperty("user.dir"), "trace/cpuOut.txt"));
-            final PrintWriter gpuOut = new PrintWriter(new File(
-                    System.getProperty("user.dir"), "trace/gpuOut.txt"));
+            final PrintWriter cpuOut = new PrintWriter(new File(System.getProperty("user.dir"), "trace/cpuOut.txt"));
+            final PrintWriter gpuOut = new PrintWriter(new File(System.getProperty("user.dir"), "trace/gpuOut.txt"));
 
             try {
                 for (int i = 0; i < obsResultMatrix.length; i++) {
                     if (traceEnabled) {
-                        trace("obsResultMatrix length: "
-                                + obsResultMatrix.length);
-                        trace("gpuResultMatrix length: "
-                                + gpuResultMatrix.length);
+                        trace("obsResultMatrix length: " + obsResultMatrix.length);
+                        trace("gpuResultMatrix length: " + gpuResultMatrix.length);
 
                         cpuOut.println(Arrays.toString(obsResultMatrix[i]));
                         gpuOut.println(Arrays.toString(gpuResultMatrix[i]));

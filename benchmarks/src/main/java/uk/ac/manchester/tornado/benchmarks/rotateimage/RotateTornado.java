@@ -25,23 +25,22 @@
  */
 package uk.ac.manchester.tornado.benchmarks.rotateimage;
 
-import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
-import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
-
 import static uk.ac.manchester.tornado.api.collections.types.FloatOps.findMaxULP;
 import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.rotateImage;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 public class RotateTornado extends BenchmarkDriver {
 
-    private final int numElementsX, numElementsY;
+    private final int numElementsX,numElementsY;
 
-    private ImageFloat3 input, output;
+    private ImageFloat3 input,output;
     private Matrix4x4Float m;
 
     private TaskSchedule graph;
@@ -68,16 +67,15 @@ public class RotateTornado extends BenchmarkDriver {
         }
 
         graph = new TaskSchedule("benchmark");
-        if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
             graph.streamIn(input);
         }
-        graph.task("rotateImage", GraphicsKernels::rotateImage, output, m,
-                input);
-        if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
+        graph.task("rotateImage", GraphicsKernels::rotateImage, output, m, input);
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
             graph.streamOut(output);
         }
 
-        if (Boolean.parseBoolean(getProperty("benchmark.warmup", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
             graph.warmup();
         }
     }
@@ -113,8 +111,7 @@ public class RotateTornado extends BenchmarkDriver {
         float maxULP = 0f;
         for (int i = 0; i < input.Y(); i++) {
             for (int j = 0; j < input.X(); j++) {
-                final float ulp = findMaxULP(output.get(j, i),
-                        result.get(j, i));
+                final float ulp = findMaxULP(output.get(j, i), result.get(j, i));
 
                 if (ulp > maxULP) {
                     maxULP = ulp;
@@ -126,13 +123,9 @@ public class RotateTornado extends BenchmarkDriver {
 
     public void printSummary() {
         if (isValid()) {
-            System.out.printf(
-                    "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("benchmark.device"), getElapsed(),
-                    getElapsedPerIteration());
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
         } else {
-            System.out.printf("id=%s produced invalid result\n",
-                    getProperty("benchmark.device"));
+            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("benchmark.device"));
         }
     }
 

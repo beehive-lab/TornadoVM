@@ -25,10 +25,10 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import org.apache.lucene.util.*;
+import org.apache.lucene.util.LongBitSet;
 
-import uk.ac.manchester.tornado.api.annotations.*;
-import uk.ac.manchester.tornado.api.collections.math.*;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 public class ComputeKernels {
     static final float S_LOWER_LIMIT = 10.0f;
@@ -52,8 +52,8 @@ public class ComputeKernels {
     static final float SIGMA_UPPER_LIMIT = 0.10f;
 
     /**
-     * Parallel Implementation of the MonteCarlo computation: this is based on the
-     * Marawacc compiler framework.
+     * Parallel Implementation of the MonteCarlo computation: this is based on
+     * the Marawacc compiler framework.
      * 
      * @author Juan Fumero
      *
@@ -73,7 +73,8 @@ public class ComputeKernels {
                 seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
                 seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
 
-                // this generates a number between 0 and 1 (with an awful entropy)
+                // this generates a number between 0 and 1 (with an awful
+                // entropy)
                 float x = ((float) (seed & 0x0FFFFFFF)) / 268435455f;
 
                 // repeat for y
@@ -178,12 +179,12 @@ public class ComputeKernels {
     /*
      * @brief Calculates the call and put prices by using Black Scholes model
      * 
-     * @param s Array of random values of current option price @param sigma Array of
-     * random values sigma @param k Array of random values strike price
+     * @param s Array of random values of current option price @param sigma
+     * Array of random values sigma @param k Array of random values strike price
      * 
-     * @param t Array of random values of expiration time @param r Array of random
-     * values of risk free interest rate @param width Width of call price or put
-     * price array @param call Array of calculated call price values
+     * @param t Array of random values of expiration time @param r Array of
+     * random values of risk free interest rate @param width Width of call price
+     * or put price array @param call Array of calculated call price values
      * 
      * @param put Array of calculated put price values
      */

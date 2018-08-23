@@ -26,12 +26,13 @@
 
 package uk.ac.manchester.tornado.benchmarks.bitset;
 
-import java.util.*;
+import java.util.Random;
 
-import org.apache.lucene.util.*;
+import org.apache.lucene.util.LongBitSet;
 
-import uk.ac.manchester.tornado.api.*;
-import uk.ac.manchester.tornado.benchmarks.*;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class BitsetTornado extends BenchmarkDriver {
     private int numWords;

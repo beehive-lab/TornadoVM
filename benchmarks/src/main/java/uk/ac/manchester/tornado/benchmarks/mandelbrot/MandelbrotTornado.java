@@ -1,7 +1,8 @@
 package uk.ac.manchester.tornado.benchmarks.mandelbrot;
 
-import uk.ac.manchester.tornado.api.*;
-import uk.ac.manchester.tornado.benchmarks.*;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class MandelbrotTornado extends BenchmarkDriver {
     int size;

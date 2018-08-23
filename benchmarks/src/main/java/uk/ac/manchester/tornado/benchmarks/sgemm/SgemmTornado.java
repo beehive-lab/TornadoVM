@@ -25,14 +25,15 @@
  */
 package uk.ac.manchester.tornado.benchmarks.sgemm;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.*;
-import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.*;
-import static uk.ac.manchester.tornado.common.Tornado.*;
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
+import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sgemm;
 
-import java.util.*;
+import java.util.Random;
 
-import uk.ac.manchester.tornado.api.*;
-import uk.ac.manchester.tornado.benchmarks.*;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
 public class SgemmTornado extends BenchmarkDriver {
 
@@ -65,16 +66,16 @@ public class SgemmTornado extends BenchmarkDriver {
         }
 
         graph = new TaskSchedule("benchmark");
-        if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
             graph.streamIn(a, b);
         }
         graph.task("sgemm", LinearAlgebraArrays::sgemm, m, n, n, a, b, c);
 
-        if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
             graph.streamOut(c);
         }
 
-        if (Boolean.parseBoolean(getProperty("benchmark.warmup", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
             graph.warmup();
         }
     }
@@ -122,9 +123,9 @@ public class SgemmTornado extends BenchmarkDriver {
 
     public void printSummary() {
         if (isValid()) {
-            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
         } else {
-            System.out.printf("id=%s produced invalid result\n", getProperty("benchmark.device"));
+            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("benchmark.device"));
         }
     }
 

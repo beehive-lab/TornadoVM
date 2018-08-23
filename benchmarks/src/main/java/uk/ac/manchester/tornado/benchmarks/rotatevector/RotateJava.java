@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.rotatevector;
 
-import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.*;
+import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.rotateVector;
 
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
@@ -34,56 +34,56 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class RotateJava extends BenchmarkDriver {
 
-	private final int numElements;
-	
-	private VectorFloat3 input, output;
-	private Matrix4x4Float m;
-	
-	public RotateJava(int iterations, int numElements){
-		super(iterations);
-		this.numElements = numElements;
-	}
-	
-	@Override
-	public void setUp() {
-		input = new VectorFloat3(numElements);
-		output = new VectorFloat3(numElements);
-		
-		m = new Matrix4x4Float();
-		m.identity();
-		
-		final Float3 value = new Float3(1f,2f,3f);
-		for(int i=0;i<numElements;i++){
-			input.set(i,value);
-		}
+    private final int numElements;
 
-	}
-	
-	@Override
-	public void tearDown() {
-		input = null;
-		output = null;
-		m = null;
-		super.tearDown();
-	}
+    private VectorFloat3 input,output;
+    private Matrix4x4Float m;
 
-	@Override
-	public void code() {
-			rotateVector(output,m,input);
-	}
-	
-	@Override
-	public void barrier(){
-		
-	}
+    public RotateJava(int iterations, int numElements) {
+        super(iterations);
+        this.numElements = numElements;
+    }
 
-	@Override
-	public boolean validate() {
-		return true;
-	}
-	
-	public void printSummary(){
-		System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n",getElapsed(),getElapsedPerIteration());
-	}
+    @Override
+    public void setUp() {
+        input = new VectorFloat3(numElements);
+        output = new VectorFloat3(numElements);
+
+        m = new Matrix4x4Float();
+        m.identity();
+
+        final Float3 value = new Float3(1f, 2f, 3f);
+        for (int i = 0; i < numElements; i++) {
+            input.set(i, value);
+        }
+
+    }
+
+    @Override
+    public void tearDown() {
+        input = null;
+        output = null;
+        m = null;
+        super.tearDown();
+    }
+
+    @Override
+    public void code() {
+        rotateVector(output, m, input);
+    }
+
+    @Override
+    public void barrier() {
+
+    }
+
+    @Override
+    public boolean validate() {
+        return true;
+    }
+
+    public void printSummary() {
+        System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n", getElapsed(), getElapsedPerIteration());
+    }
 
 }

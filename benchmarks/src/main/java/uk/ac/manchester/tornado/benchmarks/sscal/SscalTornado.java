@@ -25,14 +25,12 @@
  */
 package uk.ac.manchester.tornado.benchmarks.sscal;
 
-import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
-import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
-
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sscal;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
 public class SscalTornado extends BenchmarkDriver {
 
@@ -103,13 +101,9 @@ public class SscalTornado extends BenchmarkDriver {
 
     public void printSummary() {
         if (isValid()) {
-            System.out.printf(
-                    "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("benchmark.device"), getElapsed(),
-                    getElapsedPerIteration());
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
         } else {
-            System.out.printf("id=%s produced invalid result\n",
-                    getProperty("benchmark.device"));
+            System.out.printf("id=%s produced invalid result\n", getProperty("benchmark.device"));
         }
     }
 }

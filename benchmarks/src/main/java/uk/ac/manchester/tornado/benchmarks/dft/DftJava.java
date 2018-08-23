@@ -25,7 +25,8 @@
  */
 package uk.ac.manchester.tornado.benchmarks.dft;
 
-import uk.ac.manchester.tornado.benchmarks.*;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class DftJava extends BenchmarkDriver {
     private int size;

@@ -25,21 +25,20 @@
  */
 package uk.ac.manchester.tornado.benchmarks.sgemv;
 
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
+import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sgemv;
+
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
-import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sgemv;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
-
 public class SgemvTornado extends BenchmarkDriver {
 
-    private final int m, n;
+    private final int m,n;
 
-    private float[] a, x, y;
+    private float[] a,x,y;
 
     private TaskSchedule graph;
 
@@ -70,8 +69,7 @@ public class SgemvTornado extends BenchmarkDriver {
             graph.streamIn(a, x);
         }
 
-        graph.task("sgemv", LinearAlgebraArrays::sgemv,
-                m, n, a, x, y);
+        graph.task("sgemv", LinearAlgebraArrays::sgemv, m, n, a, x, y);
 
         if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
             graph.streamOut(y);
@@ -116,13 +114,9 @@ public class SgemvTornado extends BenchmarkDriver {
 
     public void printSummary() {
         if (isValid()) {
-            System.out.printf(
-                    "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("benchmark.device"), getElapsed(),
-                    getElapsedPerIteration());
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
         } else {
-            System.out.printf("id=%s produced invalid result\n",
-                    getProperty("benchmark.device"));
+            System.out.printf("id=%s produced invalid result\n", getProperty("benchmark.device"));
         }
     }
 

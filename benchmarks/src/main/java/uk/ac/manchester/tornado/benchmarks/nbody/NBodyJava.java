@@ -26,11 +26,11 @@
 
 package uk.ac.manchester.tornado.benchmarks.nbody;
 
-import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.*;
+import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.nBody;
 
-import java.util.*;
+import java.util.Arrays;
 
-import uk.ac.manchester.tornado.benchmarks.*;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class NBodyJava extends BenchmarkDriver {
     private float delT,espSqr;

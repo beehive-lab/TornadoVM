@@ -37,6 +37,7 @@ public class NW {
 
     private static final int LIMIT = -999;
 
+    // @formatter:off
     static final int[] blosum62 = new int[]{
         4, -1, -2, -2, 0, -1, -1, 0, -2, -1, -1, -1, -1, -2, -1, 1, 0, -3, -2, 0, -2, -1, 0, -4,
         -1, 5, 0, -2, -3, 1, 0, -2, 0, -3, -2, 2, -1, -3, -2, -1, -1, -3, -2, -3, -1, 0, -1, -4,
@@ -63,6 +64,7 @@ public class NW {
         0, -1, -1, -1, -2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -2, 0, 0, -2, -1, -1, -1, -1, -1, -4,
         -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, 1
     };
+    // @formatter:on
 
     private static void usage(String[] args) {
         System.err.printf("Usage: NW <max_rows/max_cols> <penalty> <num_threads>\n");
@@ -87,9 +89,12 @@ public class NW {
             int i = max_rows - 2;
             int j = max_rows - 2;
             for (; i >= 0 && j >= 0;) {
-                int nw = 0, n = 0, w = 0, traceback;
+                int nw = 0,n = 0,w = 0,traceback;
                 if (i == max_rows - 2 && j == max_rows - 2) {
-                    out.printf("%d ", input_itemsets[i * max_cols + j]); //print the first element
+                    out.printf("%d ", input_itemsets[i * max_cols + j]); // print
+                                                                         // the
+                                                                         // first
+                                                                         // element
                 }
                 if (i == 0 && j == 0) {
                     break;
@@ -107,8 +112,8 @@ public class NW {
                 } else {
                 }
 
-                //traceback = maximum(nw, w, n);
-                int new_nw, new_w, new_n;
+                // traceback = maximum(nw, w, n);
+                int new_nw,new_w,new_n;
                 new_nw = nw + referrence[i * max_cols + j];
                 new_w = w - penalty;
                 new_n = n - penalty;
@@ -137,7 +142,7 @@ public class NW {
                     i--;
                     continue;
                 } else
-		;
+                    ;
             }
 
         } catch (IOException ex) {
@@ -146,11 +151,11 @@ public class NW {
     }
 
     public static void main(String[] args) {
-        int idx, index;
-        int input_itemsets[], output_itemsets[], referrence[];
+        int idx,index;
+        int input_itemsets[],output_itemsets[],referrence[];
 
         // the lengths of the two sequences should be able to divided by 16.
-        // And at current stage  max_rows needs to equal max_cols
+        // And at current stage max_rows needs to equal max_cols
         if (args.length != 3) {
             usage(args);
         }
@@ -165,21 +170,15 @@ public class NW {
 
         Random random = new Random();
         random.setSeed(7);
-//        srand(7);
         Arrays.fill(input_itemsets, 0);
-//        for (int i = 0; i < max_cols; i++) {
-//            for (int j = 0; j < max_rows; j++) {
-//                input_itemsets[i * max_cols + j] = 0;
-//            }
-//        }
 
         System.out.printf("Start Needleman-Wunsch\n");
 
         final long t0 = System.nanoTime();
-        for (int i = 1; i < max_rows; i++) {    //please define your own sequence.
+        for (int i = 1; i < max_rows; i++) { // please define your own sequence.
             input_itemsets[i * max_cols] = Math.abs(random.nextInt()) % 10 + 1;
         }
-        for (int j = 1; j < max_cols; j++) {    //please define your own sequence.
+        for (int j = 1; j < max_cols; j++) { // please define your own sequence.
             input_itemsets[j] = Math.abs(random.nextInt()) % 10 + 1;
         }
 
@@ -197,29 +196,25 @@ public class NW {
             input_itemsets[j] = -j * penalty;
         }
 
-        //Compute top-left matrix
+        // Compute top-left matrix
         System.out.printf("Processing top-left matrix\n");
 
         for (int i = 0; i < max_cols - 2; i++) {
 
             for (idx = 0; idx <= i; idx++) {
                 index = (idx + 1) * max_cols + (i + 1 - idx);
-                input_itemsets[index] = max(input_itemsets[index - 1 - max_cols] + referrence[index],
-                        input_itemsets[index - 1] - penalty,
-                        input_itemsets[index - max_cols] - penalty);
+                input_itemsets[index] = max(input_itemsets[index - 1 - max_cols] + referrence[index], input_itemsets[index - 1] - penalty, input_itemsets[index - max_cols] - penalty);
 
             }
         }
 
-        //Compute bottom-right matrix
+        // Compute bottom-right matrix
         System.out.printf("Processing bottom-right matrix\n");
 
         for (int i = max_cols - 4; i >= 0; i--) {
             for (idx = 0; idx <= i; idx++) {
                 index = (max_cols - idx - 2) * max_cols + idx + max_cols - i - 2;
-                input_itemsets[index] = max(input_itemsets[index - 1 - max_cols] + referrence[index],
-                        input_itemsets[index - 1] - penalty,
-                        input_itemsets[index - max_cols] - penalty);
+                input_itemsets[index] = max(input_itemsets[index - 1 - max_cols] + referrence[index], input_itemsets[index - 1] - penalty, input_itemsets[index - max_cols] - penalty);
             }
 
         }

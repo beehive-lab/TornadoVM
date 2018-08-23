@@ -29,15 +29,15 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
 
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.ladd;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 
 public class BandwidthTornado extends BenchmarkDriver {
 
     private final int numElements;
 
-    private long[] a, b, c;
+    private long[] a,b,c;
 
     private TaskSchedule graph;
 
@@ -58,9 +58,7 @@ public class BandwidthTornado extends BenchmarkDriver {
             c[i] = 0;
         }
 
-        graph = new TaskSchedule("benchmark")
-                .task("ladd", LinearAlgebraArrays::ladd, a, b, c)
-                .streamOut(c);
+        graph = new TaskSchedule("benchmark").task("ladd", LinearAlgebraArrays::ladd, a, b, c).streamOut(c);
 
         graph.warmup();
     }
@@ -104,13 +102,9 @@ public class BandwidthTornado extends BenchmarkDriver {
 
     public void printSummary() {
         if (isValid()) {
-            System.out.printf(
-                    "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("benchmark.device"), getElapsed(),
-                    getElapsedPerIteration());
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
         } else {
-            System.out.printf("id=%s produced invalid result\n",
-                    getProperty("benchmark.device"));
+            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("benchmark.device"));
         }
     }
 }

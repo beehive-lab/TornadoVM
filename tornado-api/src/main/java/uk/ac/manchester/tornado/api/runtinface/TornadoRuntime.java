@@ -1,6 +1,5 @@
 package uk.ac.manchester.tornado.api.runtinface;
 
-import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
 
 public class TornadoRuntime {
@@ -8,37 +7,43 @@ public class TornadoRuntime {
     private static TornadoRuntimeCI runtimeImpl;
     private static TornadoCI tornadoImpl;
 
-    public static TornadoRuntimeCI getTornadoRuntime() {
+    private static void init() {
         if (runtimeImpl == null) {
             runtimeImpl = TornadoAPIProvider.loadRuntime();
         }
         if (tornadoImpl == null) {
             tornadoImpl = TornadoAPIProvider.loadTornado();
         }
+    }
+
+    public static TornadoRuntimeCI getTornadoRuntime() {
+        init();
         return runtimeImpl;
     }
 
     public void clearObjectState() {
+        init();
         runtimeImpl.clearObjectState();
     }
 
-    public TornadoGenericDriver getDriver(int index) {
-        return runtimeImpl.getDriver(index);
-    }
-
-    public <D extends TornadoGenericDriver> D getDriver(Class<D> type) {
-        return runtimeImpl.getDriver(type);
-    }
-
-    public int getNumDrivers() {
-        return runtimeImpl.getNumDrivers();
-    }
-
-    public GenericDevice getDefaultDevice() {
-        return runtimeImpl.getDefaultDevice();
-    }
-
     public static void setProperty(String key, String value) {
+        init();
         tornadoImpl.setTornadoProperty(key, value);
     }
+
+    public static String getProperty(String key, String value) {
+        init();
+        return tornadoImpl.getTornadoProperty(key, value);
+    }
+
+    public static String getProperty(String key) {
+        init();
+        return tornadoImpl.getTornadoProperty(key);
+    }
+
+    public static void loadSettings(String property) {
+        init();
+        tornadoImpl.loadTornadoSettngs(property);
+    }
+
 }

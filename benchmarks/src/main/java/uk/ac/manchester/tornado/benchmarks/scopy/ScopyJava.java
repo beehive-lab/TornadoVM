@@ -33,7 +33,7 @@ public class ScopyJava extends BenchmarkDriver {
 
     private final int numElements;
 
-    private float[] x, y;
+    private float[] x,y;
 
     public ScopyJava(int iterations, int numElements) {
         super(iterations);

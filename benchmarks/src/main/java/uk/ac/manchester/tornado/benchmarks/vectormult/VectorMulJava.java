@@ -26,9 +26,10 @@
 
 package uk.ac.manchester.tornado.benchmarks.vectormult;
 
-import java.util.*;
+import java.util.Arrays;
 
-import uk.ac.manchester.tornado.benchmarks.*;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class VectorMulJava extends BenchmarkDriver {
 

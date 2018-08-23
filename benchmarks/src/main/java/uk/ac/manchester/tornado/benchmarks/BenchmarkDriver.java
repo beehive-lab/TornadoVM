@@ -25,9 +25,11 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import static java.lang.Math.*;
-import static java.util.Arrays.*;
-import static uk.ac.manchester.tornado.common.RuntimeUtilities.*;
+import static java.lang.Math.toIntExact;
+import static java.util.Arrays.sort;
+import static uk.ac.manchester.tornado.api.common.TornadoUtilities.humanReadableByteCount;
+
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 
 public abstract class BenchmarkDriver {
 
@@ -65,6 +67,14 @@ public abstract class BenchmarkDriver {
 
     protected void barrier() {
 
+    }
+
+    public String getProperty(String key, String value) {
+        return TornadoRuntime.getProperty(key, value);
+    }
+
+    public String getProperty(String key) {
+        return TornadoRuntime.getProperty(key);
     }
 
     public void benchmark() {

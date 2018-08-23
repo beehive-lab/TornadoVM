@@ -33,9 +33,9 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class DgemmJava extends BenchmarkDriver {
 
-    private final int m, n;
+    private final int m,n;
 
-    private double[] a, b, c;
+    private double[] a,b,c;
 
     public DgemmJava(int iterations, int m, int n) {
         super(iterations);

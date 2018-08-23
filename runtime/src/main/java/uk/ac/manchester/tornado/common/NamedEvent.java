@@ -25,6 +25,8 @@
  */
 package uk.ac.manchester.tornado.common;
 
+import uk.ac.manchester.tornado.api.common.TimedEvent;
+
 public class NamedEvent extends TimedEvent {
 
 	private final String	name;

@@ -37,6 +37,7 @@ public class Stencil {
         for (@Parallel int i = 1; i < n + 1; i++) {
             for (@Parallel int j = 1; j < n + 1; j++) {
                 for (int k = 1; k < n + 1; k++) {
+                    // @formatter:off
                     a1[i * sz * sz + j * sz + k] = (a0[i * sz * sz + (j - 1) * sz + k] + a0[i * sz * sz + (j + 1) * sz + k]
                             + a0[(i - 1) * sz * sz + j * sz + k] + a0[(i + 1) * sz * sz + j * sz + k]
                             + a0[(i - 1) * sz * sz + (j - 1) * sz + k] + a0[(i - 1) * sz * sz + (j + 1) * sz + k]
@@ -50,6 +51,7 @@ public class Stencil {
                             + a0[(i - 1) * sz * sz + (j - 1) * sz + (k + 1)] + a0[(i - 1) * sz * sz + (j + 1) * sz + (k + 1)]
                             + a0[(i + 1) * sz * sz + (j - 1) * sz + (k + 1)] + a0[(i + 1) * sz * sz + (j + 1) * sz + (k + 1)]
                             + a0[i * sz * sz + j * sz + (k - 1)] + a0[i * sz * sz + j * sz + (k + 1)]) * fac;
+                    // @formatter:on
                 }
             }
         }

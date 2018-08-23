@@ -26,9 +26,9 @@
 
 package uk.ac.manchester.tornado.benchmarks.blackscholes;
 
-import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.*;
+import static uk.ac.manchester.tornado.benchmarks.ComputeKernels.blackscholes;
 
-import uk.ac.manchester.tornado.benchmarks.*;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class BlackScholesJava extends BenchmarkDriver {
     private int size;

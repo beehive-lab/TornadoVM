@@ -33,7 +33,7 @@ public class BandwidthJava extends BenchmarkDriver {
 
     private final int numElements;
 
-    private long[] a, b, c;
+    private long[] a,b,c;
 
     public BandwidthJava(int iterations, int numElements) {
         super(iterations);

@@ -26,7 +26,8 @@
 
 package uk.ac.manchester.tornado.benchmarks.blackscholes;
 
-import uk.ac.manchester.tornado.benchmarks.*;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkRunner;
 
 public class Benchmark extends BenchmarkRunner {
     private int size;

@@ -25,23 +25,22 @@
  */
 package uk.ac.manchester.tornado.benchmarks.dotimage;
 
-import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
-import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
-
 import static uk.ac.manchester.tornado.api.collections.types.FloatOps.findMaxULP;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.benchmarks.GraphicsKernels;
 
 public class DotTornado extends BenchmarkDriver {
 
     private final int numElementsX;
     private final int numElementsY;
 
-    private ImageFloat3 a, b;
+    private ImageFloat3 a,b;
     private ImageFloat c;
 
     private TaskSchedule graph;
@@ -69,17 +68,17 @@ public class DotTornado extends BenchmarkDriver {
         }
 
         graph = new TaskSchedule("benchmark");
-        if (Boolean.parseBoolean(getProperty("benchmark.streamin", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamin", "True"))) {
             graph.streamIn(a, b);
         }
 
         graph.task("dotVector", GraphicsKernels::dotImage, a, b, c);
 
-        if (Boolean.parseBoolean(getProperty("benchmark.streamout", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.streamout", "True"))) {
             graph.streamOut(c);
         }
 
-        if (Boolean.parseBoolean(getProperty("benchmark.warmup", "True"))) {
+        if (Boolean.parseBoolean(TornadoRuntime.getProperty("benchmark.warmup", "True"))) {
             graph.warmup();
         }
     }
@@ -115,8 +114,7 @@ public class DotTornado extends BenchmarkDriver {
         float maxULP = 0f;
         for (int i = 0; i < c.Y(); i++) {
             for (int j = 0; j < c.X(); j++) {
-                final float ulp = findMaxULP(c.get(j, i),
-                        result.get(j, i));
+                final float ulp = findMaxULP(c.get(j, i), result.get(j, i));
 
                 if (ulp > maxULP) {
                     maxULP = ulp;
@@ -128,13 +126,9 @@ public class DotTornado extends BenchmarkDriver {
 
     public void printSummary() {
         if (isValid()) {
-            System.out.printf(
-                    "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("benchmark.device"), getElapsed(),
-                    getElapsedPerIteration());
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", TornadoRuntime.getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
         } else {
-            System.out.printf("id=%s produced invalid result\n",
-                    getProperty("benchmark.device"));
+            System.out.printf("id=%s produced invalid result\n", TornadoRuntime.getProperty("benchmark.device"));
         }
     }
 }

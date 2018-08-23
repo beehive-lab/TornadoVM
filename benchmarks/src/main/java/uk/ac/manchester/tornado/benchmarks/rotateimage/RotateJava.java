@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.benchmarks.rotateimage;
 
-import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.*;
+import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.rotateImage;
 
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
@@ -34,58 +34,58 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class RotateJava extends BenchmarkDriver {
 
-	private final int numElementsX, numElementsY;
-	
-	private ImageFloat3 input, output;
-	private Matrix4x4Float m;
-	
-	public RotateJava(int iterations, int numElementsX, int numElementsY){
-		super(iterations);
-		this.numElementsX = numElementsX;
-		this.numElementsY = numElementsY;
-	}
-	
-	@Override
-	public void setUp() {
-		input = new ImageFloat3(numElementsX, numElementsY);
-		output = new ImageFloat3(numElementsX, numElementsY);
-		
-		m = new Matrix4x4Float();
-		m.identity();
-		
-		final Float3 value = new Float3(1f,2f,3f);
-		for(int i=0;i<input.Y();i++){
-			for(int j=0;j<input.X();j++)
-				input.set(j,i,value);
-		}
+    private final int numElementsX,numElementsY;
 
-	}
-	
-	@Override
-	public void tearDown() {
-		input = null;
-		output = null;
-		m = null;
-		super.tearDown();
-	}
-	
-	@Override
-	public void code() {
-			rotateImage(output,m,input);
-	}
-	
-	@Override
-	public void barrier(){
-		
-	}
+    private ImageFloat3 input,output;
+    private Matrix4x4Float m;
 
-	@Override
-	public boolean validate() {
-		return true;
-	}
-	
-	public void printSummary(){
-		System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n",getElapsed(),getElapsedPerIteration());
-	}
+    public RotateJava(int iterations, int numElementsX, int numElementsY) {
+        super(iterations);
+        this.numElementsX = numElementsX;
+        this.numElementsY = numElementsY;
+    }
+
+    @Override
+    public void setUp() {
+        input = new ImageFloat3(numElementsX, numElementsY);
+        output = new ImageFloat3(numElementsX, numElementsY);
+
+        m = new Matrix4x4Float();
+        m.identity();
+
+        final Float3 value = new Float3(1f, 2f, 3f);
+        for (int i = 0; i < input.Y(); i++) {
+            for (int j = 0; j < input.X(); j++)
+                input.set(j, i, value);
+        }
+
+    }
+
+    @Override
+    public void tearDown() {
+        input = null;
+        output = null;
+        m = null;
+        super.tearDown();
+    }
+
+    @Override
+    public void code() {
+        rotateImage(output, m, input);
+    }
+
+    @Override
+    public void barrier() {
+
+    }
+
+    @Override
+    public boolean validate() {
+        return true;
+    }
+
+    public void printSummary() {
+        System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n", getElapsed(), getElapsedPerIteration());
+    }
 
 }

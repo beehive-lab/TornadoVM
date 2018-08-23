@@ -35,11 +35,9 @@ import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class StencilJava extends BenchmarkDriver {
 
-    private final int sz, n;
+    private final int sz,n;
     private final float FAC = 1 / 26;
-    private float[] a0, a1;
-
-    private static final double TOLERANCE = 1.0e-15;
+    private float[] a0,a1;
 
     public StencilJava(int iterations, int dataSize) {
         super(iterations);

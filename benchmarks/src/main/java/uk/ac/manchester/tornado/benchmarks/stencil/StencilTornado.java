@@ -25,6 +25,10 @@
  */
 package uk.ac.manchester.tornado.benchmarks.stencil;
 
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
+import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.copy;
+import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.stencil3d;
+
 import java.util.Arrays;
 import java.util.Random;
 
@@ -32,16 +36,11 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
-import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.copy;
-import static uk.ac.manchester.tornado.benchmarks.stencil.Stencil.stencil3d;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
-
 public class StencilTornado extends BenchmarkDriver {
 
-    private final int sz, n;
+    private final int sz,n;
     private final float FAC = 1 / 26;
-    private float[] a0, a1, ainit;
+    private float[] a0,a1,ainit;
 
     private static final double TOLERANCE = 1.0e-15;
 
@@ -73,10 +72,8 @@ public class StencilTornado extends BenchmarkDriver {
 
         copy(sz, ainit, a0);
 
-        graph = new TaskSchedule("benchmark")
-                .task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC)
-                .task("copy", Stencil::copy, sz, a1, a0);
-//                .streamOut(a0);
+        graph = new TaskSchedule("benchmark").task("stencil", Stencil::stencil3d, n, sz, a0, a1, FAC).task("copy", Stencil::copy, sz, a1, a0);
+        // .streamOut(a0);
 
         stencilTask = graph.getTask("stencil");
 
@@ -91,7 +88,7 @@ public class StencilTornado extends BenchmarkDriver {
         a1 = null;
         ainit = null;
 
-//        graph.getDefaultDevice().reset();
+        // graph.getDefaultDevice().reset();
         super.tearDown();
     }
 
@@ -132,13 +129,9 @@ public class StencilTornado extends BenchmarkDriver {
 
     public void printSummary() {
         if (isValid()) {
-            System.out.printf(
-                    "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("benchmark.device"), getElapsed(),
-                    getElapsedPerIteration());
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
         } else {
-            System.out.printf("id=%s produced invalid result\n",
-                    getProperty("benchmark.device"));
+            System.out.printf("id=%s produced invalid result\n", getProperty("benchmark.device"));
         }
     }
 }
