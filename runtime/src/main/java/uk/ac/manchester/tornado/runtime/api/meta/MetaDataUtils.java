@@ -27,15 +27,15 @@ package uk.ac.manchester.tornado.runtime.api.meta;
 
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
-import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
 public final class MetaDataUtils {
 
-    public static TornadoDevice resolveDevice(String device) {
+    public static TornadoAcceleratorDevice resolveDevice(String device) {
         final String[] ids = device.split(":");
-        final TornadoDriver driver = getTornadoRuntime().getDriver(Integer.parseInt(ids[0]));
-        return (TornadoDevice) driver.getDevice(Integer.parseInt(ids[1]));
+        final TornadoAcceleratorDriver driver = getTornadoRuntime().getDriver(Integer.parseInt(ids[0]));
+        return (TornadoAcceleratorDevice) driver.getDevice(Integer.parseInt(ids[1]));
     }
 
     public static int[] resolveDriverDeviceIndexes(String device) {

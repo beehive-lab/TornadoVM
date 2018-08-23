@@ -28,19 +28,19 @@ package uk.ac.manchester.tornado.runtime.api;
 import java.util.HashMap;
 import java.util.Map;
 
-import uk.ac.manchester.tornado.api.common.GenericDevice;
-import uk.ac.manchester.tornado.api.mm.TornadoObjectState;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.mm.TornadoGlobalObjectState;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
-public class GlobalObjectState implements TornadoObjectState {
+public class GlobalObjectState implements TornadoGlobalObjectState {
 
     private boolean shared;
     private boolean exclusive;
 
-    private TornadoDevice owner;
+    private TornadoAcceleratorDevice owner;
 
-    private final Map<TornadoDevice, DeviceObjectState> deviceStates;
+    private final Map<TornadoAcceleratorDevice, DeviceObjectState> deviceStates;
 
     public GlobalObjectState() {
         shared = false;
@@ -57,7 +57,7 @@ public class GlobalObjectState implements TornadoObjectState {
         return exclusive;
     }
 
-    public TornadoDevice getOwner() {
+    public TornadoAcceleratorDevice getOwner() {
         return owner;
     }
 
@@ -65,28 +65,28 @@ public class GlobalObjectState implements TornadoObjectState {
         return getDeviceState(getOwner());
     }
 
-    public DeviceObjectState getDeviceState(GenericDevice device) {
-        if (!(device instanceof TornadoDevice)) {
+    public DeviceObjectState getDeviceState(TornadoDevice device) {
+        if (!(device instanceof TornadoAcceleratorDevice)) {
             throw new RuntimeException("Device not compatible");
         }
         if (!deviceStates.containsKey(device)) {
-            deviceStates.put((TornadoDevice) device, new DeviceObjectState());
+            deviceStates.put((TornadoAcceleratorDevice) device, new DeviceObjectState());
         }
         return deviceStates.get(device);
     }
 
-    public void setOwner(GenericDevice device) {
-        if (!(device instanceof TornadoDevice)) {
+    public void setOwner(TornadoDevice device) {
+        if (!(device instanceof TornadoAcceleratorDevice)) {
             throw new RuntimeException("Device not compatible");
         }
-        owner = (TornadoDevice) device;
+        owner = (TornadoAcceleratorDevice) device;
         if (!deviceStates.containsKey(owner)) {
-            deviceStates.put((TornadoDevice) device, new DeviceObjectState());
+            deviceStates.put((TornadoAcceleratorDevice) device, new DeviceObjectState());
         }
     }
 
     public void invalidate() {
-        for (TornadoDevice device : deviceStates.keySet()) {
+        for (TornadoAcceleratorDevice device : deviceStates.keySet()) {
             final DeviceObjectState deviceState = deviceStates.get(device);
             deviceState.invalidate();
         }
@@ -108,7 +108,7 @@ public class GlobalObjectState implements TornadoObjectState {
             sb.append("owner=").append(owner.toString()).append(", devices=[");
         }
 
-        for (TornadoDevice device : deviceStates.keySet()) {
+        for (TornadoAcceleratorDevice device : deviceStates.keySet()) {
             if (device != owner) {
                 sb.append(device.toString()).append(" ");
             }

@@ -36,7 +36,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.TornadoGenericDriver;
+import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
@@ -55,7 +55,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     public void testReductionAnnotationCPUSimple() {
 
         // This test has to be executed on CPU
-        TornadoGenericDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDeviceType deviceType = driver.getTypeDefaultDevice();
         if (deviceType != TornadoDeviceType.CPU) {
             return;

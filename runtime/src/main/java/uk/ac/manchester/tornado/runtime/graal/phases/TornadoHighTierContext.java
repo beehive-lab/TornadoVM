@@ -29,7 +29,7 @@ import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.runtime.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
 public class TornadoHighTierContext extends HighTierContext {
 
@@ -77,7 +77,7 @@ public class TornadoHighTierContext extends HighTierContext {
         return meta;
     }
 
-    public TornadoDevice getDeviceMapping() {
+    public TornadoAcceleratorDevice getDeviceMapping() {
         return meta.getDevice();
     }
 

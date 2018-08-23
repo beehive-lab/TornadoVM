@@ -38,12 +38,12 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLSuitesProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
+import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
-import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public final class OCLDriver extends TornadoLogger implements TornadoDriver {
+public final class OCLDriver extends TornadoLogger implements TornadoAcceleratorDriver {
 
     private final OCLBackend[] flatBackends;
     private final OCLBackend[][] backends;
@@ -65,12 +65,12 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
     }
 
     @Override
-    public TornadoDevice getDefaultDevice() {
+    public TornadoAcceleratorDevice getDefaultDevice() {
         return getDefaultBackend().getDeviceContext().asMapping();
     }
 
     @Override
-    public TornadoDevice getDevice(int index) {
+    public TornadoAcceleratorDevice getDevice(int index) {
         return flatBackends[index].getDeviceContext().asMapping();
     }
 

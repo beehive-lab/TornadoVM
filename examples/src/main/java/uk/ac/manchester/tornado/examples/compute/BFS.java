@@ -32,7 +32,7 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
@@ -169,7 +169,7 @@ public class BFS {
 
         currentDepth = new int[] { 0 };
 
-        GenericDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
         TaskSchedule s1 = new TaskSchedule("s1");
         s1.streamIn(vertices, adjacencyMatrix, modify, currentDepth).mapAllTo(device);
         s1.task("t1", BFS::runBFS, vertices, adjacencyMatrix, numNodes, modify, currentDepth);

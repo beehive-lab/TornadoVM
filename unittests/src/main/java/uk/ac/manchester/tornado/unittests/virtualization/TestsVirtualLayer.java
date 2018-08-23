@@ -34,7 +34,7 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.TornadoGenericDriver;
+import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -68,7 +68,7 @@ public class TestsVirtualLayer {
      */
     @Test
     public void testDevices() {
-        TornadoGenericDriver driver = getTornadoRuntime().getDriver(0);
+        TornadoDriver driver = getTornadoRuntime().getDriver(0);
         assertNotNull(driver.getDevice(0));
         assertNotNull(driver.getDevice(1));
     }
@@ -77,7 +77,7 @@ public class TestsVirtualLayer {
     public void testDriverAndDevices() {
         int numDrivers = getTornadoRuntime().getNumDrivers();
         for (int i = 0; i < numDrivers; i++) {
-            TornadoGenericDriver driver = getTornadoRuntime().getDriver(i);
+            TornadoDriver driver = getTornadoRuntime().getDriver(i);
             assertNotNull(driver);
             int numDevices = driver.getDeviceCount();
             for (int j = 0; j < numDevices; j++) {
@@ -106,7 +106,7 @@ public class TestsVirtualLayer {
         }
         s0.streamOut(data);
 
-        TornadoGenericDriver driver = getTornadoRuntime().getDriver(0);
+        TornadoDriver driver = getTornadoRuntime().getDriver(0);
 
         if (driver.getDeviceCount() < 2) {
             assertFalse("The current driver has less than 2 devices", true);
@@ -131,7 +131,7 @@ public class TestsVirtualLayer {
 
     @Test
     public void testVirtualLayer01() {
-        TornadoGenericDriver driver = getTornadoRuntime().getDriver(0);
+        TornadoDriver driver = getTornadoRuntime().getDriver(0);
         if (driver.getDeviceCount() < 2) {
             return;
         }
@@ -164,7 +164,7 @@ public class TestsVirtualLayer {
     @Test
     public void testVirtualLayer02() {
 
-        TornadoGenericDriver driver = getTornadoRuntime().getDriver(0);
+        TornadoDriver driver = getTornadoRuntime().getDriver(0);
         if (driver.getDeviceCount() < 2) {
             return;
         }
@@ -194,7 +194,7 @@ public class TestsVirtualLayer {
      */
     @Test
     public void testVirtualLayer03() {
-        TornadoGenericDriver driver = getTornadoRuntime().getDriver(0);
+        TornadoDriver driver = getTornadoRuntime().getDriver(0);
         if (driver.getDeviceCount() < 2) {
             return;
         }
@@ -228,7 +228,7 @@ public class TestsVirtualLayer {
      */
     @Test
     public void testDynamicDeviceSwitch() {
-        TornadoGenericDriver driver = getTornadoRuntime().getDriver(0);
+        TornadoDriver driver = getTornadoRuntime().getDriver(0);
         if (driver.getDeviceCount() <= 2) {
             return;
         }
@@ -287,7 +287,7 @@ public class TestsVirtualLayer {
      */
     @Test
     public void testSchedulerDevices() {
-        TornadoGenericDriver tornadoDriver = getTornadoRuntime().getDriver(0);
+        TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(0);
         if (tornadoDriver.getDeviceCount() < 2) {
             return;
         }

@@ -37,14 +37,14 @@ import java.util.function.Consumer;
 
 import javax.management.RuntimeErrorException;
 
-import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.api.LocalObjectState;
 import uk.ac.manchester.tornado.runtime.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
 public class ExecutionContext {
 
@@ -57,12 +57,12 @@ public class ExecutionContext {
     private final Map<Integer, Integer> objectMap;
     private final List<Object> objects;
     private final List<LocalObjectState> objectState;
-    private final List<TornadoDevice> devices;
+    private final List<TornadoAcceleratorDevice> devices;
     private CallStack[] stacks;
     private final int[] taskToDevice;
     private int nextTask;
 
-    private HashSet<TornadoDevice> lastDevices;
+    private HashSet<TornadoAcceleratorDevice> lastDevices;
 
     private boolean redeployOnDevice;
 
@@ -138,11 +138,11 @@ public class ExecutionContext {
         return taskToDevice[index];
     }
 
-    public TornadoDevice getDeviceForTask(int index) {
+    public TornadoAcceleratorDevice getDeviceForTask(int index) {
         return getDevice(taskToDevice[index]);
     }
 
-    public TornadoDevice getDevice(int index) {
+    public TornadoAcceleratorDevice getDevice(int index) {
         return devices.get(index);
     }
 
@@ -156,11 +156,11 @@ public class ExecutionContext {
         }
     }
 
-    public void mapAllTo(GenericDevice mapping) {
+    public void mapAllTo(TornadoDevice mapping) {
 
-        if (mapping instanceof TornadoDevice) {
+        if (mapping instanceof TornadoAcceleratorDevice) {
             devices.clear();
-            devices.add(0, (TornadoDevice) mapping);
+            devices.add(0, (TornadoAcceleratorDevice) mapping);
             apply(task -> task.mapTo(mapping));
             Arrays.fill(taskToDevice, 0);
         } else {
@@ -169,14 +169,14 @@ public class ExecutionContext {
     }
 
     public void addDevice(int deviceId) {
-        devices.add((TornadoDevice) TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceId));
+        devices.add((TornadoAcceleratorDevice) TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceId));
     }
 
-    public void addDevice(TornadoDevice device) {
+    public void addDevice(TornadoAcceleratorDevice device) {
         devices.add(device);
     }
 
-    public void setDevice(int index, TornadoDevice device) {
+    public void setDevice(int index, TornadoAcceleratorDevice device) {
         devices.set(index, device);
     }
 
@@ -186,11 +186,11 @@ public class ExecutionContext {
         }
 
         String id = task.getId();
-        GenericDevice target = task.getDevice();
-        TornadoDevice dev = null;
+        TornadoDevice target = task.getDevice();
+        TornadoAcceleratorDevice dev = null;
 
-        if (target instanceof TornadoDevice) {
-            dev = (TornadoDevice) target;
+        if (target instanceof TornadoAcceleratorDevice) {
+            dev = (TornadoAcceleratorDevice) target;
         } else {
             throw new RuntimeException("Device " + target.getClass() + " not supported yet");
         }
@@ -247,7 +247,7 @@ public class ExecutionContext {
         return tasks;
     }
 
-    public List<TornadoDevice> getDevices() {
+    public List<TornadoAcceleratorDevice> getDevices() {
         return devices;
     }
 
@@ -255,9 +255,9 @@ public class ExecutionContext {
      * Default device inspects the driver 0 and device 0 of the internal OpenCL
      * list.
      * 
-     * @return {@link TornadoDevice}
+     * @return {@link TornadoAcceleratorDevice}
      */
-    public TornadoDevice getDefaultDevice() {
+    public TornadoAcceleratorDevice getDefaultDevice() {
         return meta.getDevice();
     }
 
@@ -291,11 +291,11 @@ public class ExecutionContext {
         return null;
     }
 
-    public TornadoDevice getDeviceForTask(String id) {
-        GenericDevice device = getTask(id).getDevice();
-        TornadoDevice tornadoDevice = null;
-        if (device instanceof TornadoDevice) {
-            tornadoDevice = (TornadoDevice) device;
+    public TornadoAcceleratorDevice getDeviceForTask(String id) {
+        TornadoDevice device = getTask(id).getDevice();
+        TornadoAcceleratorDevice tornadoDevice = null;
+        if (device instanceof TornadoAcceleratorDevice) {
+            tornadoDevice = (TornadoAcceleratorDevice) device;
         } else {
             throw new RuntimeException("Device " + device.getClass() + " not supported yet");
         }
@@ -320,11 +320,11 @@ public class ExecutionContext {
         }
     }
 
-    public void addLastDevice(TornadoDevice device) {
+    public void addLastDevice(TornadoAcceleratorDevice device) {
         lastDevices.add(device);
     }
 
-    public HashSet<TornadoDevice> getLastDevices() {
+    public HashSet<TornadoAcceleratorDevice> getLastDevices() {
         return lastDevices;
     }
 

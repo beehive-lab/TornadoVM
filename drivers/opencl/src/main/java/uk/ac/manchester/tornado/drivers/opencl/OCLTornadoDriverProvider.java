@@ -28,7 +28,7 @@ package uk.ac.manchester.tornado.drivers.opencl;
 import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
+import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoDriverProvider;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 
@@ -40,7 +40,7 @@ public class OCLTornadoDriverProvider implements TornadoDriverProvider {
     }
 
     @Override
-    public TornadoDriver createDriver(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
+    public TornadoAcceleratorDriver createDriver(OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
         return new OCLDriver(options, vmRuntime, vmConfig);
     }
 

@@ -49,10 +49,10 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
-import uk.ac.manchester.tornado.api.TornadoGenericDriver;
+import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
 import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
-import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class TornadoRuntime extends TornadoLogger implements TornadoRuntimeCI {
@@ -84,7 +84,7 @@ public class TornadoRuntime extends TornadoLogger implements TornadoRuntimeCI {
     }
 
     private final Map<Object, GlobalObjectState> objectMappings;
-    private TornadoDriver[] drivers;
+    private TornadoAcceleratorDriver[] drivers;
     private int driverCount;
     private final JVMCIBackend vmBackend;
     private final HotSpotJVMCIRuntime vmRuntime;
@@ -126,9 +126,9 @@ public class TornadoRuntime extends TornadoLogger implements TornadoRuntimeCI {
         objectMappings.clear();
     }
 
-    private TornadoDriver[] loadDrivers() {
+    private TornadoAcceleratorDriver[] loadDrivers() {
         ServiceLoader<TornadoDriverProvider> loader = ServiceLoader.load(TornadoDriverProvider.class);
-        drivers = new TornadoDriver[2];
+        drivers = new TornadoAcceleratorDriver[2];
         int index = 0;
         for (TornadoDriverProvider provider : loader) {
             boolean isRMI = provider.getName().equalsIgnoreCase("RMI Driver");
@@ -164,13 +164,13 @@ public class TornadoRuntime extends TornadoLogger implements TornadoRuntimeCI {
     }
 
     @Override
-    public TornadoDriver getDriver(int index) {
+    public TornadoAcceleratorDriver getDriver(int index) {
         return drivers[index];
     }
 
     @Override
-    public <D extends TornadoGenericDriver> D getDriver(Class<D> type) {
-        for (TornadoDriver driver : drivers) {
+    public <D extends TornadoDriver> D getDriver(Class<D> type) {
+        for (TornadoAcceleratorDriver driver : drivers) {
             if (driver.getClass() == type) {
                 return (D) driver;
             }
@@ -184,8 +184,8 @@ public class TornadoRuntime extends TornadoLogger implements TornadoRuntimeCI {
     }
 
     @Override
-    public TornadoDevice getDefaultDevice() {
-        return (drivers == null || drivers[defaultDriver] == null) ? JVM : (TornadoDevice) drivers[defaultDriver].getDefaultDevice();
+    public TornadoAcceleratorDevice getDefaultDevice() {
+        return (drivers == null || drivers[defaultDriver] == null) ? JVM : (TornadoAcceleratorDevice) drivers[defaultDriver].getDefaultDevice();
     }
 
     @Override

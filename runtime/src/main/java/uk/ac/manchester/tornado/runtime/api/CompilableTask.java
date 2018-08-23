@@ -30,11 +30,11 @@ import java.lang.reflect.Modifier;
 import java.util.Objects;
 
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.runtime.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
 public class CompilableTask implements SchedulableTask {
 
@@ -91,7 +91,7 @@ public class CompilableTask implements SchedulableTask {
     }
 
     @Override
-    public TornadoDevice getDevice() {
+    public TornadoAcceleratorDevice getDevice() {
         return meta.getDevice();
     }
 
@@ -105,7 +105,7 @@ public class CompilableTask implements SchedulableTask {
     }
 
     @Override
-    public CompilableTask mapTo(final GenericDevice mapping) {
+    public CompilableTask mapTo(final TornadoDevice mapping) {
         meta.setDevice(mapping);
         return this;
     }

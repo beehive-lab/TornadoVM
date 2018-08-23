@@ -35,7 +35,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class PrebuiltTest {
@@ -59,7 +59,7 @@ public class PrebuiltTest {
         Arrays.fill(a, 1);
         Arrays.fill(b, 2);
 
-        GenericDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
 
         // @formatter:off
         new TaskSchedule("s0")

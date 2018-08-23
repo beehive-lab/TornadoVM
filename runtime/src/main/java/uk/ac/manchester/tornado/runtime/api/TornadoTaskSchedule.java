@@ -45,7 +45,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.AbstractTaskGraph;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
-import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
@@ -63,7 +63,7 @@ import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.GraphCompilationResult;
@@ -105,17 +105,17 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public GenericDevice getDevice() {
+    public TornadoDevice getDevice() {
         return meta().getDevice();
     }
 
     @Override
-    public void setDevice(GenericDevice device) {
+    public void setDevice(TornadoDevice device) {
         meta().setDevice(device);
     }
 
     @Override
-    public TornadoDevice getDeviceForTask(String id) {
+    public TornadoAcceleratorDevice getDeviceForTask(String id) {
         return graphContext.getDeviceForTask(id);
     }
 
@@ -199,7 +199,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private boolean compareDevices(HashSet<TornadoDevice> lastDevices, TornadoDevice device2) {
+    private boolean compareDevices(HashSet<TornadoAcceleratorDevice> lastDevices, TornadoAcceleratorDevice device2) {
         return lastDevices.contains(device2);
     }
 
@@ -265,7 +265,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public void mapAllToInner(GenericDevice device) {
+    public void mapAllToInner(TornadoDevice device) {
         graphContext.mapAllTo(device);
     }
 
@@ -294,7 +294,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (VM_USE_DEPS && event != null) {
             event.waitOn();
         } else {
-            graphContext.getDevices().forEach((TornadoDevice device) -> device.sync());
+            graphContext.getDevices().forEach((TornadoAcceleratorDevice device) -> device.sync());
         }
     }
 
@@ -365,7 +365,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         final LocalObjectState localState = graphContext.getObjectState(object);
         final GlobalObjectState globalState = localState.getGlobalState();
         final DeviceObjectState deviceState = globalState.getDeviceState();
-        final TornadoDevice device = globalState.getOwner();
+        final TornadoAcceleratorDevice device = globalState.getOwner();
         final Event event = device.resolveEvent(device.streamOut(object, deviceState, null));
         return event;
     }
@@ -472,7 +472,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, GenericDevice device, int[] dimensions) {
+    public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions) {
         addInner(TaskUtils.createTask(meta(), id, entryPoint, filename, args, accesses, device, dimensions));
     }
 

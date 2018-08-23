@@ -27,9 +27,9 @@ package uk.ac.manchester.tornado.examples.memory;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
-import uk.ac.manchester.tornado.api.mm.TornadoObjectState;
+import uk.ac.manchester.tornado.api.mm.TornadoGlobalObjectState;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class DataMovementTest3 {
@@ -49,8 +49,8 @@ public class DataMovementTest3 {
         }
         printArray(array);
 
-        GenericDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
-        TornadoObjectState state = TornadoRuntime.getTornadoRuntime().resolveObject(array);
+        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+        TornadoGlobalObjectState state = TornadoRuntime.getTornadoRuntime().resolveObject(array);
         TornadoDeviceObjectState deviceState = state.getDeviceState(device);
 
         int writeEvent = device.ensurePresent(array, deviceState);

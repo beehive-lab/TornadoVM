@@ -3,8 +3,9 @@ package uk.ac.manchester.tornado.api.common;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 
-public interface GenericDevice {
+public interface TornadoDevice {
 
     public boolean isDistibutedMemory();
 
@@ -61,5 +62,7 @@ public interface GenericDevice {
     public TornadoDeviceContext getDeviceContext();
 
     public TornadoTargetDevice getDevice();
+
+    public TornadoMemoryProvider getMemoryProvider();
 
 }

@@ -25,11 +25,11 @@
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import uk.ac.manchester.tornado.api.TornadoGenericDriver;
+import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
-import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
-import uk.ac.manchester.tornado.api.mm.TornadoObjectState;
+import uk.ac.manchester.tornado.api.mm.TornadoGlobalObjectState;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class DataMovement {
@@ -55,9 +55,9 @@ public class DataMovement {
         return null;
     }
 
-    private static GenericDevice resolveDevice(TornadoRuntimeCI runtime, String device) {
+    private static TornadoDevice resolveDevice(TornadoRuntimeCI runtime, String device) {
         final String[] ids = device.split(":");
-        final TornadoGenericDriver driver = runtime.getDriver(Integer.parseInt(ids[0]));
+        final TornadoDriver driver = runtime.getDriver(Integer.parseInt(ids[0]));
         return driver.getDevice(Integer.parseInt(ids[1]));
     }
 
@@ -73,13 +73,13 @@ public class DataMovement {
 
         for (final String deviceStr : devices) {
             TornadoRuntimeCI runtime = TornadoRuntime.getTornadoRuntime();
-            final GenericDevice device = resolveDevice(runtime, deviceStr);
+            final TornadoDevice device = resolveDevice(runtime, deviceStr);
 
             for (final String type : types) {
                 for (int size = startSize; size <= endSize; size <<= 1) {
 
                     final Object array = createArray(type, size);
-                    final TornadoObjectState globalState = runtime.resolveObject(array);
+                    final TornadoGlobalObjectState globalState = runtime.resolveObject(array);
                     final TornadoDeviceObjectState deviceState = globalState.getDeviceState(device);
 
                     device.ensureAllocated(array, deviceState);

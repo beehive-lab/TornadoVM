@@ -35,9 +35,9 @@ public interface SchedulableTask {
 
     public TaskDataInterface meta();
 
-    public SchedulableTask mapTo(GenericDevice mapping);
+    public SchedulableTask mapTo(TornadoDevice mapping);
 
-    public GenericDevice getDevice();
+    public TornadoDevice getDevice();
 
     public String getName();
 

@@ -14,6 +14,6 @@ public interface TornadoEvents {
     
     public BitSet getProfiles();
     
-    public GenericDevice getDevice();
+    public TornadoDevice getDevice();
 
 }

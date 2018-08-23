@@ -38,7 +38,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.api.CompilableTask;
-import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graph.GraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
@@ -72,7 +72,7 @@ public class TornadoGraphCompiler {
     /*
      * Simplest case where all tasks are executed on the same device
      */
-    private static GraphCompilationResult compileSingleContext(TornadoGraph graph, ExecutionContext context, TornadoDevice device) {
+    private static GraphCompilationResult compileSingleContext(TornadoGraph graph, ExecutionContext context, TornadoAcceleratorDevice device) {
 
         final GraphCompilationResult result = new GraphCompilationResult();
 

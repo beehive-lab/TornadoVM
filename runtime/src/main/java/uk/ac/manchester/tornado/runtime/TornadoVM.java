@@ -48,7 +48,7 @@ import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -68,7 +68,7 @@ public class TornadoVM extends TornadoLogger {
     private final CallStack[] stacks;
     private final int[][] events;
     private final int[] eventsIndicies;
-    private final List<TornadoDevice> contexts;
+    private final List<TornadoAcceleratorDevice> contexts;
     private final TornadoInstalledCode[] installedCodes;
 
     private final List<Object> constants;
@@ -149,7 +149,7 @@ public class TornadoVM extends TornadoLogger {
         return globalStates[index].getDeviceState(contexts.get(device));
     }
 
-    private CallStack resolveStack(int index, int numArgs, CallStack[] stacks, TornadoDevice device, boolean setNewDevice) {
+    private CallStack resolveStack(int index, int numArgs, CallStack[] stacks, TornadoAcceleratorDevice device, boolean setNewDevice) {
         if (graphContext.meta().isDebug() && setNewDevice) {
             debug("Recompiling task on device " + device);
         }
@@ -195,7 +195,7 @@ public class TornadoVM extends TornadoLogger {
                     continue;
                 }
 
-                final TornadoDevice device = contexts.get(contextIndex);
+                final TornadoAcceleratorDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
 
                 if (graphContext.meta().isDebug()) {
@@ -215,7 +215,7 @@ public class TornadoVM extends TornadoLogger {
                     continue;
                 }
 
-                final TornadoDevice device = contexts.get(contextIndex);
+                final TornadoAcceleratorDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
 
                 if (graphContext.meta().isDebug()) {
@@ -247,7 +247,7 @@ public class TornadoVM extends TornadoLogger {
                     continue;
                 }
 
-                final TornadoDevice device = contexts.get(contextIndex);
+                final TornadoAcceleratorDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
                 if (graphContext.meta().isDebug()) {
                     debug("vm: STREAM_IN [0x%x] %s on %s [event list=%d]", object.hashCode(), object, device, eventList);
@@ -279,7 +279,7 @@ public class TornadoVM extends TornadoLogger {
                     continue;
                 }
 
-                final TornadoDevice device = contexts.get(contextIndex);
+                final TornadoAcceleratorDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
 
                 if (graphContext.meta().isDebug()) {
@@ -307,7 +307,7 @@ public class TornadoVM extends TornadoLogger {
                     continue;
                 }
 
-                final TornadoDevice device = contexts.get(contextIndex);
+                final TornadoAcceleratorDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
 
                 if (graphContext.meta().isDebug()) {
@@ -333,7 +333,7 @@ public class TornadoVM extends TornadoLogger {
                 final int numArgs = buffer.getInt();
                 final int eventList = buffer.getInt();
 
-                final TornadoDevice device = contexts.get(contextIndex);
+                final TornadoAcceleratorDevice device = contexts.get(contextIndex);
                 boolean redeployOnDevice = graphContext.redeployOnDevice();
 
                 final CallStack stack = resolveStack(gtid, numArgs, stacks, device, redeployOnDevice);
@@ -455,7 +455,7 @@ public class TornadoVM extends TornadoLogger {
                 bytecodesList.append(String.format("BARRIER event list %d\n", eventList));
 
                 if (contexts.size() == 1) {
-                    final TornadoDevice device = contexts.get(0);
+                    final TornadoAcceleratorDevice device = contexts.get(0);
                     lastEvent = device.enqueueMarker(waitList);
                 } else if (contexts.size() > 1) {
                     TornadoInternalError.shouldNotReachHere("unimplemented multi-context barrier");
@@ -481,7 +481,7 @@ public class TornadoVM extends TornadoLogger {
 
         Event barrier = EMPTY_EVENT;
         if (!isWarmup) {
-            for (TornadoDevice dev : contexts) {
+            for (TornadoAcceleratorDevice dev : contexts) {
                 if (useDependencies) {
                     final int event = dev.enqueueMarker();
                     barrier = dev.resolveEvent(event);
@@ -529,7 +529,7 @@ public class TornadoVM extends TornadoLogger {
             return;
         }
 
-        for (final TornadoDevice device : contexts) {
+        for (final TornadoAcceleratorDevice device : contexts) {
             device.dumpEvents();
         }
     }
@@ -546,11 +546,11 @@ public class TornadoVM extends TornadoLogger {
                 final BitSet profiles = eventset.getProfiles();
                 for (int i = profiles.nextSetBit(0); i != -1; i = profiles.nextSetBit(i + 1)) {
 
-                    if (!(eventset.getDevice() instanceof TornadoDevice)) {
+                    if (!(eventset.getDevice() instanceof TornadoAcceleratorDevice)) {
                         throw new RuntimeException("TornadoDevice not found");
                     }
 
-                    TornadoDevice device = (TornadoDevice) eventset.getDevice();
+                    TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) eventset.getDevice();
                     final Event profile = device.resolveEvent(i);
                     if (profile.getStatus() == COMPLETE) {
                         System.out.printf("task: %s %s %.9f %9d %9d %9d\n", device.getDeviceName(), meta.getId(), profile.getExecutionTime(), profile.getSubmitTime(), profile.getStartTime(),

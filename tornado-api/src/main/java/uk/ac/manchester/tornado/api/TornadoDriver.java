@@ -1,15 +1,15 @@
 package uk.ac.manchester.tornado.api;
 
-import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 
-public interface TornadoGenericDriver {
+public interface TornadoDriver {
 
-    public GenericDevice getDefaultDevice();
+    public TornadoDevice getDefaultDevice();
 
     public int getDeviceCount();
 
-    public GenericDevice getDevice(int index);
+    public TornadoDevice getDevice(int index);
 
     public TornadoDeviceType getTypeDefaultDevice();
 

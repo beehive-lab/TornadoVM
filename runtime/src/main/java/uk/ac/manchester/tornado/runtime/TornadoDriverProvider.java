@@ -32,6 +32,6 @@ public interface TornadoDriverProvider {
 
     public String getName();
 
-    public TornadoDriver createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfig config);
+    public TornadoAcceleratorDriver createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfig config);
 
 }

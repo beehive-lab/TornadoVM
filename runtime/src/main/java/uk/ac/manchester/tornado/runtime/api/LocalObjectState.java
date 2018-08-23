@@ -30,7 +30,7 @@ import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
-import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
 public class LocalObjectState {
 
@@ -87,7 +87,7 @@ public class LocalObjectState {
         return global.isExclusive();
     }
 
-    public TornadoDevice getOwner() {
+    public TornadoAcceleratorDevice getOwner() {
         return global.getOwner();
     }
 
@@ -95,13 +95,13 @@ public class LocalObjectState {
         return global;
     }
 
-    public void setOwner(TornadoDevice owner) {
+    public void setOwner(TornadoAcceleratorDevice owner) {
         global.setOwner(owner);
     }
 
     public Event sync(Object object) {
         if (isModified()) {
-            TornadoDevice owner = getOwner();
+            TornadoAcceleratorDevice owner = getOwner();
             int eventId = owner.streamOut(object, global.getDeviceState(owner), null);
             setModified(false);
             return owner.resolveEvent(eventId);

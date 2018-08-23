@@ -29,16 +29,16 @@ import java.util.BitSet;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
-import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
 public class EventSet implements TornadoEvents {
 
-    private final TornadoDevice device;
+    private final TornadoAcceleratorDevice device;
     private final BitSet profiles;
     private int index;
     private Event event;
 
-    public EventSet(TornadoDevice device, BitSet profiles) {
+    public EventSet(TornadoAcceleratorDevice device, BitSet profiles) {
         this.device = device;
         this.profiles = profiles;
         index = profiles.nextSetBit(0);
@@ -66,7 +66,7 @@ public class EventSet implements TornadoEvents {
         return event;
     }
 
-    public TornadoDevice getDevice() {
+    public TornadoAcceleratorDevice getDevice() {
         return device;
     }
 

@@ -40,7 +40,7 @@ import java.util.Map;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.runtime.EventSet;
-import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.meta.domain.DomainTree;
 
 @SuppressWarnings("deprecation")
@@ -76,7 +76,7 @@ public class TaskMetaData extends AbstractMetaData {
     private final ScheduleMetaData scheduleMetaData;
     protected Access[] argumentsAccess;
     protected DomainTree domain;
-    protected final Map<TornadoDevice, BitSet> profiles;
+    protected final Map<TornadoAcceleratorDevice, BitSet> profiles;
     private boolean schedule;
     private boolean localWorkDefined;
     private boolean globalWorkDefined;
@@ -166,7 +166,7 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public void addProfile(int id) {
-        final TornadoDevice device = getDevice();
+        final TornadoAcceleratorDevice device = getDevice();
         BitSet events = null;
         if (!profiles.containsKey(device)) {
             events = new BitSet(EVENT_WINDOW);
@@ -265,7 +265,7 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public TornadoDevice getDevice() {
+    public TornadoAcceleratorDevice getDevice() {
         return scheduleMetaData.isDeviceDefined() && !isDeviceDefined() ? scheduleMetaData.getDevice() : super.getDevice();
     }
 
@@ -345,7 +345,7 @@ public class TaskMetaData extends AbstractMetaData {
 
     public List<TornadoEvents> getProfiles() {
         final List<TornadoEvents> result = new ArrayList<>(profiles.keySet().size());
-        for (TornadoDevice device : profiles.keySet()) {
+        for (TornadoAcceleratorDevice device : profiles.keySet()) {
             result.add(new EventSet(device, profiles.get(device)));
         }
         return result;

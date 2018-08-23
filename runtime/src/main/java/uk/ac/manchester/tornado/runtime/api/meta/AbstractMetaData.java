@@ -29,17 +29,17 @@ import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static uk.ac.manchester.tornado.runtime.api.meta.MetaDataUtils.resolveDevice;
 
-import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.mm.TaskDataInterface;
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
+import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
 public abstract class AbstractMetaData implements TaskDataInterface {
 
     private String id;
-    private TornadoDevice device;
+    private TornadoAcceleratorDevice device;
     private boolean shouldRecompile;
     private final boolean isDeviceDefined;
     private int driverIndex;
@@ -52,15 +52,15 @@ public abstract class AbstractMetaData implements TaskDataInterface {
         return System.getProperty(key);
     }
 
-    public TornadoDevice getDevice() {
+    public TornadoAcceleratorDevice getDevice() {
         if (device == null) {
             device = resolveDevice(Tornado.getProperty(id + ".device", driverIndex + ":" + deviceIndex));
         }
         return device;
     }
 
-    private int getDeviceIndex(int driverIndex, GenericDevice device) {
-        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
+    private int getDeviceIndex(int driverIndex, TornadoDevice device) {
+        TornadoAcceleratorDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
         int devs = driver.getDeviceCount();
         int index = 0;
         for (int i = 0; i < devs; i++) {
@@ -77,12 +77,12 @@ public abstract class AbstractMetaData implements TaskDataInterface {
      * 
      * @param device
      */
-    public void setDevice(GenericDevice device) {
+    public void setDevice(TornadoDevice device) {
         this.driverIndex = DEFAULT_DRIVER_INDEX;
         int index = getDeviceIndex(0, device);
         this.deviceIndex = index;
-        if (device instanceof TornadoDevice) {
-            this.device = (TornadoDevice) device;
+        if (device instanceof TornadoAcceleratorDevice) {
+            this.device = (TornadoAcceleratorDevice) device;
         }
     }
 
@@ -92,7 +92,7 @@ public abstract class AbstractMetaData implements TaskDataInterface {
      * @param driverIndex
      * @param device
      */
-    public void setDriverDevice(int driverIndex, TornadoDevice device) {
+    public void setDriverDevice(int driverIndex, TornadoAcceleratorDevice device) {
         this.driverIndex = deviceIndex;
         int index = getDeviceIndex(driverIndex, device);
         this.deviceIndex = index;

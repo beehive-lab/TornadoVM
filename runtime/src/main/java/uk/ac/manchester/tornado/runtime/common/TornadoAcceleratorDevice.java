@@ -25,50 +25,15 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
-import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 
-public interface TornadoDevice extends GenericDevice {
+public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     public TornadoSchedulingStrategy getPreferedSchedule();
-
-    public boolean isDistibutedMemory();
-
-    public void ensureLoaded();
 
     public CallStack createStack(int numArgs);
 
     public TornadoInstalledCode installCode(SchedulableTask task);
-
-    public void markEvent();
-
-    public void flushEvents();
-
-    public int enqueueBarrier();
-
-    public int enqueueBarrier(int[] events);
-
-    public int enqueueMarker();
-
-    public int enqueueMarker(int[] events);
-
-    public void sync();
-
-    public void flush();
-
-    public String getDeviceName();
-
-    public String getDescription();
-
-    public TornadoMemoryProvider getMemoryProvider();
-
-    public void reset();
-
-    public void dumpEvents();
-
-    public void dumpMemory(String file);
-
-    public String getPlatformName();
 
 }

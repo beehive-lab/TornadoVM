@@ -28,9 +28,9 @@ package uk.ac.manchester.tornado.examples.memory;
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
-import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
-import uk.ac.manchester.tornado.api.mm.TornadoObjectState;
+import uk.ac.manchester.tornado.api.mm.TornadoGlobalObjectState;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class DataMovementTest2 {
@@ -52,8 +52,8 @@ public class DataMovementTest2 {
         System.out.println("Before: ");
         System.out.printf(image.toString());
 
-        GenericDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
-        TornadoObjectState state = TornadoRuntime.getTornadoRuntime().resolveObject(image);
+        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+        TornadoGlobalObjectState state = TornadoRuntime.getTornadoRuntime().resolveObject(image);
         TornadoDeviceObjectState deviceState = state.getDeviceState(device);
 
         int writeEvent = device.ensurePresent(image, deviceState);

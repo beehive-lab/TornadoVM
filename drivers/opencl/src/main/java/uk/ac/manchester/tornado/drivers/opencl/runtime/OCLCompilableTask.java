@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 import uk.ac.manchester.tornado.api.common.Event;
-import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.runtime.api.CompilableTask;
@@ -59,7 +59,7 @@ public class OCLCompilableTask extends CompilableTask {
     }
 
     @Override
-    public CompilableTask mapTo(final GenericDevice mapping) {
+    public CompilableTask mapTo(final TornadoDevice mapping) {
         super.mapTo(mapping);
 
         activeBackend = ((OCLTornadoDevice) mapping).getBackend();

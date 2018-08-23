@@ -27,7 +27,7 @@ package uk.ac.manchester.tornado.examples.memory;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
@@ -46,7 +46,7 @@ public class DeviceMemoryTest {
 
     public static void main(final String[] args) {
 
-        GenericDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
         final TornadoMemoryProvider mm = device.getDeviceContext().getMemoryManager();
 
         final long heapSize = mm.getHeapSize() - 1024;
