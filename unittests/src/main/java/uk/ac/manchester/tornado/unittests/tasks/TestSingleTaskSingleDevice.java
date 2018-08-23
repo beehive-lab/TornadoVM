@@ -33,8 +33,8 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 
 /**
  * Testing Tornado with one task in the same device. The {@link TaskSchedule}
@@ -88,7 +88,7 @@ public class TestSingleTaskSingleDevice {
         });
 
         TaskSchedule s0 = new TaskSchedule("s0");
-        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        TornadoGenericDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
 
         int deviceNumber = 0;
         s0.setDevice(driver.getDevice(deviceNumber));
@@ -118,7 +118,7 @@ public class TestSingleTaskSingleDevice {
         });
 
         TaskSchedule s0 = new TaskSchedule("s0");
-        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        TornadoGenericDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
 
         // select device 1 it is available
         int deviceNumber = 0;

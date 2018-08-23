@@ -30,20 +30,20 @@ import org.junit.Before;
 
 import uk.ac.manchester.tornado.api.TargetDeviceType;
 import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 
 public abstract class TornadoTestBase {
 
     @Before
     public void before() {
         for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumDrivers(); i++) {
-            final TornadoGenericDriver driver = uk.ac.manchester.tornado.api.runtinface.TornadoRuntime.getTornadoRuntime().getDriver(i);
+            final TornadoGenericDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(i);
             driver.getDefaultDevice().reset();
         }
     }
 
     public TargetDeviceType getDefaultDeviceType() {
-        final TornadoGenericDriver driver = uk.ac.manchester.tornado.api.runtinface.TornadoRuntime.getTornadoRuntime().getDriver(0);
+        final TornadoGenericDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         return driver.getDeviceType();
         // TornadoDriver driver =
         // TornadoRuntime.getTornadoRuntime().getDriver(0);

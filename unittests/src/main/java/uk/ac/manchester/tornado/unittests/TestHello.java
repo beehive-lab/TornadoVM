@@ -36,7 +36,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.lang.Debug;
+import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestHello extends TornadoTestBase {
