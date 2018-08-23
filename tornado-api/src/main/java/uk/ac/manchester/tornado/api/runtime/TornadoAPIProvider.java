@@ -44,7 +44,7 @@ public class TornadoAPIProvider {
             Constructor<?> constructor = klass.getConstructor();
             tornado = (TornadoCI) constructor.newInstance();
         } catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException | InstantiationException e) {
-            throw new RuntimeException("[ERROR] Tornado API Implementation class not found");
+            throw new RuntimeException("[ERROR] Tornado Implementation class not found");
         }
         return tornado;
     }
