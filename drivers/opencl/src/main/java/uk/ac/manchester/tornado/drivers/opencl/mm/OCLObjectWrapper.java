@@ -27,14 +27,14 @@ package uk.ac.manchester.tornado.drivers.opencl.mm;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.common.Tornado.DEBUG;
-import static uk.ac.manchester.tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
-import static uk.ac.manchester.tornado.common.Tornado.debug;
-import static uk.ac.manchester.tornado.common.Tornado.trace;
-import static uk.ac.manchester.tornado.common.Tornado.warn;
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getVMRuntime;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.trace;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -47,8 +47,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
-import uk.ac.manchester.tornado.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 public class OCLObjectWrapper implements ObjectBuffer {
 

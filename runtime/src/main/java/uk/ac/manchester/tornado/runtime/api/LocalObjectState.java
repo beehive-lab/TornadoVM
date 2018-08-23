@@ -28,9 +28,9 @@ package uk.ac.manchester.tornado.runtime.api;
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
 
 import uk.ac.manchester.tornado.api.common.Event;
-import uk.ac.manchester.tornado.common.DeviceObjectState;
-import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
 
 public class LocalObjectState {
 

@@ -46,7 +46,7 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalOrNode;
-import uk.ac.manchester.tornado.graal.phases.TornadoMidTierContext;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMidTierContext;
 
 public class TornadoIfCanonicalization extends BasePhase<TornadoMidTierContext> {
 

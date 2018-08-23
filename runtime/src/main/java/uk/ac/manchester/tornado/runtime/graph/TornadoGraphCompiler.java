@@ -36,10 +36,10 @@ import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.StructuredGraph;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.api.CompilableTask;
+import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graph.GraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;

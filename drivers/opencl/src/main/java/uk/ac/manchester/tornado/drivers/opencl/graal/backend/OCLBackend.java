@@ -26,10 +26,10 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.backend;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.common.Tornado.DEBUG_KERNEL_ARGS;
-import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.trace;
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG_KERNEL_ARGS;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import java.lang.reflect.Method;
 import java.nio.file.Path;
@@ -78,10 +78,7 @@ import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
-import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
@@ -112,9 +109,12 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLReferenceMapBui
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.graal.backend.TornadoBackend;
-import uk.ac.manchester.tornado.lang.CompilerInternals;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.runtime.api.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.runtime.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
+import uk.ac.manchester.tornado.runtime.lang.CompilerInternals;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 

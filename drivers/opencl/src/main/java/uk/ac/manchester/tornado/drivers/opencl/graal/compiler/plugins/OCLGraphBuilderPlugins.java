@@ -60,7 +60,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicN
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.SlotsBaseAddressNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TPrintfNode;
-import uk.ac.manchester.tornado.lang.CompilerInternals;
+import uk.ac.manchester.tornado.runtime.lang.CompilerInternals;
 
 public class OCLGraphBuilderPlugins {
 

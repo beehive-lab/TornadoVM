@@ -26,12 +26,12 @@
 package uk.ac.manchester.tornado.runtime.api;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.common.RuntimeUtilities.isBoxedPrimitiveClass;
-import static uk.ac.manchester.tornado.common.Tornado.PRINT_COMPILE_TIMES;
-import static uk.ac.manchester.tornado.common.Tornado.VM_USE_DEPS;
-import static uk.ac.manchester.tornado.common.Tornado.warn;
 import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitiveClass;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.PRINT_COMPILE_TIMES;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -59,12 +59,12 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
-import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.common.CallStack;
-import uk.ac.manchester.tornado.common.DeviceObjectState;
-import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
+import uk.ac.manchester.tornado.runtime.api.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.GraphCompilationResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;

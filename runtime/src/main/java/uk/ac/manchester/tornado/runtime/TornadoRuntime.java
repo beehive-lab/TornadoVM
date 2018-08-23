@@ -27,7 +27,7 @@ package uk.ac.manchester.tornado.runtime;
 
 import static org.graalvm.compiler.debug.GraalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.common.Tornado.SHOULD_LOAD_RMI;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.SHOULD_LOAD_RMI;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -51,9 +51,9 @@ import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.api.TornadoGenericDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
-import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class TornadoRuntime extends TornadoLogger implements TornadoRuntimeCI {
 

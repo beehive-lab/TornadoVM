@@ -48,12 +48,12 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilerConfigu
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins.OCLGraphBuilderPlugins;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLAddressLowering;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
-import uk.ac.manchester.tornado.graal.DummySnippetFactory;
-import uk.ac.manchester.tornado.graal.compiler.TornadoConstantFieldProvider;
-import uk.ac.manchester.tornado.graal.compiler.TornadoForeignCallsProvider;
-import uk.ac.manchester.tornado.graal.compiler.TornadoReplacements;
-import uk.ac.manchester.tornado.graal.compiler.TornadoSnippetReflectionProvider;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.graal.DummySnippetFactory;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoConstantFieldProvider;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoForeignCallsProvider;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoReplacements;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 
 public class OCLHotSpotBackendFactory {
 

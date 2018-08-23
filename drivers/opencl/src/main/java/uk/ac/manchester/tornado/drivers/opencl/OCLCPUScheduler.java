@@ -25,9 +25,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
-import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.api.meta.TaskMetaData;
 
 public class OCLCPUScheduler extends OCLKernelScheduler {
 

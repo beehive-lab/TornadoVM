@@ -24,19 +24,15 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.common.Tornado.DEBUG;
-import static uk.ac.manchester.tornado.common.Tornado.debug;
-import static uk.ac.manchester.tornado.common.Tornado.info;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 import java.nio.ByteBuffer;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import uk.ac.manchester.tornado.api.common.Event;
-import uk.ac.manchester.tornado.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.common.CallStack;
-import uk.ac.manchester.tornado.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLGPUScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
@@ -46,6 +42,10 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCallStack;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.runtime.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 
 public class OCLInstalledCode extends InstalledCode implements TornadoInstalledCode {
 

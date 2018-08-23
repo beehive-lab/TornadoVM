@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
-import static uk.ac.manchester.tornado.common.Tornado.info;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,12 +39,12 @@ import javax.management.RuntimeErrorException;
 
 import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.common.CallStack;
-import uk.ac.manchester.tornado.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.api.LocalObjectState;
+import uk.ac.manchester.tornado.runtime.api.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
 
 public class ExecutionContext {
 

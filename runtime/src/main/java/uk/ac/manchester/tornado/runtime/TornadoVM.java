@@ -26,10 +26,10 @@
 package uk.ac.manchester.tornado.runtime;
 
 import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
-import static uk.ac.manchester.tornado.common.Tornado.ENABLE_PROFILING;
-import static uk.ac.manchester.tornado.common.Tornado.PRINT_COMPILE_TIMES;
-import static uk.ac.manchester.tornado.common.Tornado.USE_VM_FLUSH;
-import static uk.ac.manchester.tornado.common.Tornado.VM_USE_DEPS;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.PRINT_COMPILE_TIMES;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -44,14 +44,14 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.common.CallStack;
-import uk.ac.manchester.tornado.common.DeviceObjectState;
-import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.common.TornadoLogger;
-import uk.ac.manchester.tornado.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.GraphAssembler.TornadoVMBytecodes;
 

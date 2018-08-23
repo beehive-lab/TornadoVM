@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import static uk.ac.manchester.tornado.graal.TornadoLIRGenerator.trace;
+import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
 
 import java.util.ArrayList;
 import java.util.EnumSet;

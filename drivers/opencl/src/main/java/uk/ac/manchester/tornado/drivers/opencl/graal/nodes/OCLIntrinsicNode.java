@@ -47,7 +47,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
-import uk.ac.manchester.tornado.graal.nodes.Floatable;
+import uk.ac.manchester.tornado.runtime.graal.nodes.Floatable;
 
 public class OCLIntrinsicNode {
 

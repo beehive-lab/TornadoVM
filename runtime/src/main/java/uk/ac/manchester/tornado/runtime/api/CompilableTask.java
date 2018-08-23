@@ -32,9 +32,9 @@ import java.util.Objects;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.api.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.runtime.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
 
 public class CompilableTask implements SchedulableTask {
 

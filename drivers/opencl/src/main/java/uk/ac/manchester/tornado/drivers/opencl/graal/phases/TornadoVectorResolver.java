@@ -56,7 +56,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadElem
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreElementProxyNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
-import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class TornadoVectorResolver extends BasePhase<TornadoHighTierContext> {
 

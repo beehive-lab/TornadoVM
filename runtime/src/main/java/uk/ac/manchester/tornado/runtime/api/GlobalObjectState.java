@@ -30,8 +30,8 @@ import java.util.Map;
 
 import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.api.mm.TornadoObjectState;
-import uk.ac.manchester.tornado.common.DeviceObjectState;
-import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
 
 public class GlobalObjectState implements TornadoObjectState {
 

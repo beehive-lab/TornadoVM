@@ -29,7 +29,7 @@ import java.util.BitSet;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
-import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoDevice;
 
 public class EventSet implements TornadoEvents {
 

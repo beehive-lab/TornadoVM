@@ -48,11 +48,11 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
-import uk.ac.manchester.tornado.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.common.Tornado;
-import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
-import uk.ac.manchester.tornado.graal.phases.TornadoLoopUnroller;
-import uk.ac.manchester.tornado.graal.phases.TornadoValueTypeReplacement;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopUnroller;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeReplacement;
 
 public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext> {
 

@@ -27,7 +27,7 @@ import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
 
-import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 @Deprecated
 public class TornadoInvokeCleanup extends BasePhase<TornadoHighTierContext> {

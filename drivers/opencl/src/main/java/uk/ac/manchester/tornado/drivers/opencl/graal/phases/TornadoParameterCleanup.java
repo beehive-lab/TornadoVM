@@ -33,7 +33,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadElementProxyNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
-import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 @Deprecated
 public class TornadoParameterCleanup extends BasePhase<TornadoHighTierContext> {

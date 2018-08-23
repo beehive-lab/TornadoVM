@@ -25,12 +25,12 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.common.Tornado.DEBUG;
-import static uk.ac.manchester.tornado.common.Tornado.ENABLE_OOO_EXECUTION;
-import static uk.ac.manchester.tornado.common.Tornado.ENABLE_PROFILING;
 import static uk.ac.manchester.tornado.drivers.opencl.OpenCL.DUMP_OPENCL_EVENTS;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_OOO_EXECUTION;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -39,10 +39,10 @@ import java.util.List;
 
 import sun.misc.Unsafe;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.common.TornadoLogger;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBufferCreateType;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class OCLContext extends TornadoLogger {
 

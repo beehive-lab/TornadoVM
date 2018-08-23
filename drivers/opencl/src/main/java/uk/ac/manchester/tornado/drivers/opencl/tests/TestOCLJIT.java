@@ -30,8 +30,6 @@ import java.util.Arrays;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
@@ -40,6 +38,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.runtime.api.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.runtime.api.meta.TaskMetaData;
 
 /**
  * Test the OpenCL JIT Compiler and connection with the Tornado Runtime

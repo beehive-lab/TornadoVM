@@ -25,8 +25,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import static uk.ac.manchester.tornado.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
-import static uk.ac.manchester.tornado.common.Tornado.fatal;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 
 import java.lang.reflect.Array;
 import java.util.function.Function;

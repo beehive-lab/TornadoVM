@@ -26,7 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ILLEGAL;
-import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import java.util.Collection;
 import java.util.List;

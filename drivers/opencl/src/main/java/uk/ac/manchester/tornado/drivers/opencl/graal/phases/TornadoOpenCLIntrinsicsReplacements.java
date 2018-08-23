@@ -44,7 +44,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIDFixedNod
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.NewLocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OpenCLPrintf;
-import uk.ac.manchester.tornado.graal.phases.TornadoHighTierContext;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTierContext> {
 

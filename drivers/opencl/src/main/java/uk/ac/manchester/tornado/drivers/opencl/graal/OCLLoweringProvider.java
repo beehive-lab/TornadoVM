@@ -99,12 +99,12 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
-import uk.ac.manchester.tornado.graal.nodes.OCLReduceAddNode;
-import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
-import uk.ac.manchester.tornado.graal.nodes.OCLReduceSubNode;
-import uk.ac.manchester.tornado.graal.nodes.StoreAtomicIndexedNode;
-import uk.ac.manchester.tornado.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceAddNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceMulNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceSubNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 

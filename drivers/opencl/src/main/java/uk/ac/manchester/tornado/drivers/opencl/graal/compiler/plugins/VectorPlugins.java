@@ -24,8 +24,8 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.common.Tornado.ENABLE_VECTORS;
-import static uk.ac.manchester.tornado.common.Tornado.TORNADO_ENABLE_BIFS;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_VECTORS;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.TORNADO_ENABLE_BIFS;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampPair;

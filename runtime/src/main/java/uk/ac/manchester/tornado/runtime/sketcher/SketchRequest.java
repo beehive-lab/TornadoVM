@@ -36,8 +36,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.graal.compiler.TornadoSketchTier;
+import uk.ac.manchester.tornado.runtime.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 
 public class SketchRequest implements Future<Sketch>, Runnable {
 

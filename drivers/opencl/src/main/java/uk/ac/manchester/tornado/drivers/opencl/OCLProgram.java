@@ -40,9 +40,9 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 
-import uk.ac.manchester.tornado.common.TornadoLogger;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class OCLProgram extends TornadoLogger {
 

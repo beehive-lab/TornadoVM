@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.runtime.graph.nodes.*;
 
