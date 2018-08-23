@@ -32,7 +32,9 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
-public final class Tornado {
+import uk.ac.manchester.tornado.api.runtinface.TornadoCI;
+
+public final class Tornado implements TornadoCI {
 
     private final static Properties settings = System.getProperties();
 
@@ -157,6 +159,22 @@ public final class Tornado {
 
     public static final void warn(final String pattern, final Object... args) {
         warn(String.format(pattern, args));
+    }
+
+    @Override
+    public void setTornadoProperty(String key, String value) {
+        Tornado.setProperty(key, value);
+
+    }
+
+    @Override
+    public String getTorandoProperty(String key) {
+        return Tornado.getProperty(key);
+    }
+
+    @Override
+    public String getTornadoProperty(String key, String defaultValue) {
+        return Tornado.getProperty(key, defaultValue);
     }
 
 }

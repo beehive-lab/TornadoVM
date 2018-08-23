@@ -38,7 +38,6 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
 import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 import uk.ac.manchester.tornado.api.runtinface.TornadoRuntimeCI;
-import uk.ac.manchester.tornado.common.Tornado;
 
 public class TestsVirtualLayer {
 
@@ -305,14 +304,14 @@ public class TestsVirtualLayer {
         }
 
         TaskSchedule s0 = new TaskSchedule("s0");
-        Tornado.setProperty("s0.t0.device", "0:0");
+        TornadoRuntime.setProperty("s0.t0.device", "0:0");
         // s0.setDevice(tornadoDriver.getDevice(1)); /// XXX: fix this call
         s0.task("t0", TestsVirtualLayer::testA, dataA, 1);
         s0.streamOut(dataA);
         s0.execute();
 
         TaskSchedule s1 = new TaskSchedule("s1");
-        Tornado.setProperty("s1.t1.device", "0:1");
+        TornadoRuntime.setProperty("s1.t1.device", "0:1");
         // s1.setDevice(tornadoDriver.getDevice(0));
         s1.task("t1", TestsVirtualLayer::testA, dataB, 1);
         s1.streamOut(dataB);

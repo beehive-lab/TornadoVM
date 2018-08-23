@@ -6,10 +6,14 @@ import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
 public class TornadoRuntime {
 
     private static TornadoRuntimeCI runtimeImpl;
+    private static TornadoCI tornadoImpl;
 
     public static TornadoRuntimeCI getTornadoRuntime() {
         if (runtimeImpl == null) {
             runtimeImpl = TornadoAPIProvider.loadRuntime();
+        }
+        if (tornadoImpl == null) {
+            tornadoImpl = TornadoAPIProvider.loadTornado();
         }
         return runtimeImpl;
     }
@@ -32,5 +36,9 @@ public class TornadoRuntime {
 
     public GenericDevice getDefaultDevice() {
         return runtimeImpl.getDefaultDevice();
+    }
+
+    public static void setProperty(String key, String value) {
+        tornadoImpl.setTornadoProperty(key, value);
     }
 }
