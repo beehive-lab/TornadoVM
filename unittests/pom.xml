@@ -10,25 +10,6 @@
     <artifactId>tornado-unittests</artifactId>
     <name>tornado-unittests</name>
     <dependencies>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tornado-matrices</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tornado-runtime</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tornado-drivers-opencl</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
-
 		<dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>tornado-api</artifactId>
