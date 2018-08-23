@@ -28,7 +28,6 @@ package uk.ac.manchester.tornado.examples;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.common.exceptions.TornadoRuntimeException;
 
 public class BoundsCheck {
 
@@ -41,7 +40,7 @@ public class BoundsCheck {
         }
     }
 
-    public static void main(final String[] args) throws TornadoRuntimeException {
+    public static void main(final String[] args) {
 
         final int numElements = 16;
 

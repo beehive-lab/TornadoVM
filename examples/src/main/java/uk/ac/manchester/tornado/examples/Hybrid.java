@@ -32,9 +32,8 @@ import java.util.Random;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.common.Tornado;
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 
 /**
  * First try: It assumes the first device is a GPU and the second device is an
@@ -118,14 +117,14 @@ public class Hybrid {
             for (int j = 0; j < MAX_DEVICES; j++) {
                 // We play with 2 devices
                 TaskSchedule s0 = new TaskSchedule("x" + i);
-                Tornado.setProperty("x" + i + ".t" + j + ".device", "0:" + DEVICE_INDEXES[i]);
+                TornadoRuntime.setProperty("x" + i + ".t" + j + ".device", "0:" + DEVICE_INDEXES[i]);
                 System.out.println("x" + i + ".t" + j + ".device" + "0:" + DEVICE_INDEXES[i]);
                 s0.task("t" + j, Hybrid::saxpy, kernelPackage.alpha, kernelPackage.x, kernelPackage.y);
                 s0.streamOut(kernelPackage.z);
                 s0.execute();
 
                 TaskSchedule s1 = new TaskSchedule("v" + i);
-                Tornado.setProperty("v" + i + ".t" + j + ".device", "0:" + DEVICE_INDEXES[j]);
+                TornadoRuntime.setProperty("v" + i + ".t" + j + ".device", "0:" + DEVICE_INDEXES[j]);
                 System.out.println("v" + i + ".t" + j + ".device" + "0:" + DEVICE_INDEXES[j]);
                 s1.task("t" + j, Hybrid::vectorAddition, kernelPackage.x, kernelPackage.y, kernelPackage.z);
                 s1.streamOut(kernelPackage.z);
@@ -178,14 +177,14 @@ public class Hybrid {
                 String key = tasksKey.get(i);
                 String locX = tasksLocation.get(key);
                 System.out.println(key + "=" + locX);
-                Tornado.setProperty(key, locX);
+                TornadoRuntime.setProperty(key, locX);
                 t0.execute();
 
                 TaskSchedule t1 = tasks.get(i + 1);
                 key = tasksKey.get(i + 1);
                 String locY = tasksLocation.get(key);
                 System.out.println(key + "=" + locY);
-                Tornado.setProperty(key, locY);
+                TornadoRuntime.setProperty(key, locY);
                 t1.execute();
             }
         }
@@ -233,7 +232,7 @@ public class Hybrid {
             String key = tasksKey.get(i);
             String locX = tasksLocation.get(key);
             System.out.println(key + "=" + locX);
-            Tornado.setProperty(key, locX);
+            TornadoRuntime.setProperty(key, locX);
 
             for (int j = 0; j < MAX_INNER; j++) {
                 long start = System.nanoTime();
@@ -246,7 +245,7 @@ public class Hybrid {
             key = tasksKey.get(i + 1);
             String locY = tasksLocation.get(key);
             System.out.println(key + "=" + locY);
-            Tornado.setProperty(key, locY);
+            TornadoRuntime.setProperty(key, locY);
 
             for (int j = 0; j < MAX_INNER; j++) {
                 long start = System.nanoTime();
@@ -277,7 +276,7 @@ public class Hybrid {
     }
 
     public static void main(String[] args) {
-        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        TornadoGenericDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         if (driver.getDeviceCount() < 2) {
             return;
         }
