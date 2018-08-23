@@ -32,7 +32,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.api.CompilableTask;
 import uk.ac.manchester.tornado.runtime.api.LocalObjectState;
 import uk.ac.manchester.tornado.runtime.api.TornadoGraphBitcodes;
@@ -164,7 +164,7 @@ public class TornadoGraphBuilder {
                 context = graph.addUnique(new ContextNode(graphContext.getDeviceIndexForTask(globalTaskId)));
 
                 if (task instanceof CompilableTask) {
-                    final ResolvedJavaMethod resolvedMethod = TornadoRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
+                    final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
                     Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
                     accesses = sketch.getMeta().getArgumentsAccess();
                 } else {

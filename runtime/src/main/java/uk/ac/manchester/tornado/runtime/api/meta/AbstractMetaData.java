@@ -32,7 +32,7 @@ import static uk.ac.manchester.tornado.runtime.api.meta.MetaDataUtils.resolveDev
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
@@ -60,7 +60,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     }
 
     private int getDeviceIndex(int driverIndex, TornadoDevice device) {
-        TornadoAcceleratorDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
+        TornadoAcceleratorDriver driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex);
         int devs = driver.getDeviceCount();
         int index = 0;
         for (int i = 0; i < devs; i++) {

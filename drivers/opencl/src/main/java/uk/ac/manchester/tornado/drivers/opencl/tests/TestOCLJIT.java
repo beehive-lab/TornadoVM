@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.api.meta.TaskMetaData;
 
@@ -85,7 +85,7 @@ public class TestOCLJIT {
         Method methodToCompile = getMethodForName(TestOCLJIT.class, "testMethodToCompile");
 
         // Test Tornado Runtime
-        TornadoRuntime tornadoRuntime = TornadoRuntime.getTornadoRuntime();
+        TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
 
         ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
 

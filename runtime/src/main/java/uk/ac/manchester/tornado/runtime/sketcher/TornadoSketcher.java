@@ -52,8 +52,8 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoExecutor;
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoExecutor;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 

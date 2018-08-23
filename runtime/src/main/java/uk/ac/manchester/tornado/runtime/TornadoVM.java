@@ -118,7 +118,7 @@ public class TornadoVM extends TornadoLogger {
         for (int i = 0; i < objects.size(); i++) {
             final Object object = objects.get(i);
             TornadoInternalError.guarantee(object != null, "null object found in TornadoVM");
-            globalStates[i] = TornadoRuntime.getTornadoRuntime().resolveObject(object);
+            globalStates[i] = TornadoCoreRuntime.getTornadoRuntime().resolveObject(object);
             debug("\tobject[%d]: [0x%x] %s %s", i, object.hashCode(), object.getClass().getTypeName(), globalStates[i]);
         }
 

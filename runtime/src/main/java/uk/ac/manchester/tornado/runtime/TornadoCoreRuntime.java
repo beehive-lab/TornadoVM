@@ -55,15 +55,15 @@ import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class TornadoRuntime extends TornadoLogger implements TornadoRuntimeCI {
+public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeCI {
 
     private static final Executor EXECUTOR = Executors.newCachedThreadPool();
 
-    private static final TornadoRuntime runtime = new TornadoRuntime();
+    private static final TornadoCoreRuntime runtime = new TornadoCoreRuntime();
 
     private static final JVMMapping JVM = new JVMMapping();
 
-    public static TornadoRuntime getTornadoRuntime() {
+    public static TornadoCoreRuntime getTornadoRuntime() {
         return runtime;
     }
 
@@ -92,7 +92,7 @@ public class TornadoRuntime extends TornadoLogger implements TornadoRuntimeCI {
     private final int defaultDriver = 0;
     private final OptionValues options;
 
-    public TornadoRuntime() {
+    public TornadoCoreRuntime() {
         objectMappings = new WeakHashMap<>();
 
         EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();

@@ -51,7 +51,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.meta.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.meta.domain.IntDomain;
@@ -92,7 +92,7 @@ public class TaskUtils {
          * Fortunately we can do a bit of JVMCI magic to resolve the function to
          * a Method.
          */
-        final ResolvedJavaMethod resolvedMethod = TornadoRuntime.getVMBackend().getMetaAccess().lookupJavaMethod(entryPoint);
+        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getVMBackend().getMetaAccess().lookupJavaMethod(entryPoint);
         final ConstantPool cp = resolvedMethod.getConstantPool();
         final byte[] bc = resolvedMethod.getCode();
 

@@ -39,7 +39,7 @@ import javax.management.RuntimeErrorException;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.api.LocalObjectState;
 import uk.ac.manchester.tornado.runtime.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
@@ -169,7 +169,7 @@ public class ExecutionContext {
     }
 
     public void addDevice(int deviceId) {
-        devices.add((TornadoAcceleratorDevice) TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceId));
+        devices.add((TornadoAcceleratorDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceId));
     }
 
     public void addDevice(TornadoAcceleratorDevice device) {

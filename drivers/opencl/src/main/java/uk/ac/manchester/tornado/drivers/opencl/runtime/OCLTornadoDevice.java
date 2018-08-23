@@ -29,7 +29,7 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guara
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler.compileSketchForDevice;
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isPrimitiveArray;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.FORCE_ALL_TO_GPU;
 

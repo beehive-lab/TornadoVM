@@ -36,7 +36,7 @@ import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.StructuredGraph;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.api.CompilableTask;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
@@ -143,8 +143,8 @@ public class TornadoGraphCompiler {
 
                 CompilableTask t1 = (CompilableTask) context.getTask(firstTask.getTaskIndex());
                 CompilableTask t2 = (CompilableTask) context.getTask(dependentTask.getTaskIndex());
-                ResolvedJavaMethod rm1 = TornadoRuntime.getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
-                ResolvedJavaMethod rm2 = TornadoRuntime.getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
+                ResolvedJavaMethod rm1 = TornadoCoreRuntime.getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
+                ResolvedJavaMethod rm2 = TornadoCoreRuntime.getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
                 Sketch sketch1 = TornadoSketcher.lookup(rm1);
                 Sketch sketch2 = TornadoSketcher.lookup(rm2);
                 StructuredGraph g1 = (StructuredGraph) sketch1.getGraph().getReadonlyCopy();

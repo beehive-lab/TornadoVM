@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.api;
 
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;

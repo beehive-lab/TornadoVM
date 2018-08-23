@@ -33,7 +33,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.serviceprovider.GraalServices;
 
 import static org.graalvm.compiler.debug.GraalDebugConfig.Options.*;
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
 public class TornadoDebugEnvironment {
 

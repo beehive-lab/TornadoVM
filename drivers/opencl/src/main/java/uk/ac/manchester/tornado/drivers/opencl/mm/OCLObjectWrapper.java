@@ -27,8 +27,8 @@ package uk.ac.manchester.tornado.drivers.opencl.mm;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getVMConfig;
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getVMRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMRuntime;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
