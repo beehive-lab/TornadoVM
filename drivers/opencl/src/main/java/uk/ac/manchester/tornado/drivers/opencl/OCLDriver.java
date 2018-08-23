@@ -32,9 +32,10 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import uk.ac.manchester.tornado.api.TargetDeviceType;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.common.TornadoLogger;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLSuitesProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
@@ -183,7 +184,23 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
     }
 
     @Override
-    public TargetDeviceType getDeviceType() {
-        return ((OCLTornadoDevice) getDefaultDevice()).getDevice().getDeviceType();
+    public TornadoDeviceType getDeviceType() {
+        OCLDeviceType deviceType = ((OCLTornadoDevice) getDefaultDevice()).getDevice().getDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+                return TornadoDeviceType.CPU;
+            case CL_DEVICE_TYPE_GPU:
+                return TornadoDeviceType.GPU;
+            case CL_DEVICE_TYPE_ACCELERATOR:
+                return TornadoDeviceType.ACCELERATOR;
+            case CL_DEVICE_TYPE_CUSTOM:
+                return TornadoDeviceType.CUSTOM;
+            case CL_DEVICE_TYPE_ALL:
+                return TornadoDeviceType.ALL;
+            case CL_DEVICE_TYPE_DEFAULT:
+                return TornadoDeviceType.DEFAULT;
+            default:
+                throw new RuntimeException("Device not supported");
+        }
     }
 }

@@ -25,9 +25,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.enums;
 
-import uk.ac.manchester.tornado.api.TargetDeviceType;
-
-public enum OCLDeviceType implements TargetDeviceType {
+public enum OCLDeviceType {
 
     // @formatter:off
     Unknown (-1),
@@ -45,7 +43,6 @@ public enum OCLDeviceType implements TargetDeviceType {
         value = v;
     }
 
-    @Override
     public long getValue() {
         return value;
     }

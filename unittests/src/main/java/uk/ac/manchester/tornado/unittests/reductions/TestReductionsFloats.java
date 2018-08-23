@@ -37,9 +37,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
-import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
-import uk.ac.manchester.tornado.runtime.utils.TornadoUtils.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsFloats extends TornadoTestBase {
@@ -58,10 +56,25 @@ public class TestReductionsFloats extends TornadoTestBase {
     @Test
     public void testSumFloats() {
         float[] input = new float[SIZE];
+        float[] result = null;
 
-        int numGroups = TornadoUtils.getSizeReduction(SIZE, TornadoDeviceType.GPU);
-
-        float[] result = new float[numGroups];
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+        TornadoDeviceType deviceType = getDefaultDeviceType();
+        switch (deviceType) {
+            case CPU:
+                result = new float[Runtime.getRuntime().availableProcessors()];
+                numGroups = Runtime.getRuntime().availableProcessors();
+                break;
+            case GPU:
+            case ACCELERATOR:
+                result = new float[numGroups];
+                break;
+            default:
+                break;
+        }
 
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
@@ -124,13 +137,13 @@ public class TestReductionsFloats extends TornadoTestBase {
         }
         float[] result = null;
 
-        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
+        TornadoDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
-            case CL_DEVICE_TYPE_CPU:
+            case CPU:
                 result = new float[Runtime.getRuntime().availableProcessors()];
                 break;
-            case CL_DEVICE_TYPE_GPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
+            case GPU:
+            case ACCELERATOR:
                 result = new float[numGroups];
                 break;
             default:

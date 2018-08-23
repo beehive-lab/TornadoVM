@@ -28,7 +28,7 @@ package uk.ac.manchester.tornado.unittests.common;
 
 import org.junit.Before;
 
-import uk.ac.manchester.tornado.api.TargetDeviceType;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
 import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 
@@ -42,14 +42,8 @@ public abstract class TornadoTestBase {
         }
     }
 
-    public TargetDeviceType getDefaultDeviceType() {
+    public TornadoDeviceType getDefaultDeviceType() {
         final TornadoGenericDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         return driver.getDeviceType();
-        // TornadoDriver driver =
-        // TornadoRuntime.getTornadoRuntime().getDriver(0);
-        // OCLTornadoDevice defaultDevice = (OCLTornadoDevice)
-        // driver.getDefaultDevice();
-        // OCLDevice device = defaultDevice.getDevice();
-        // return device.getDeviceType();
     }
 }

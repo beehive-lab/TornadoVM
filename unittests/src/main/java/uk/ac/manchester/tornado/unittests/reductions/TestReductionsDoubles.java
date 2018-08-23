@@ -36,7 +36,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsDoubles extends TornadoTestBase {
@@ -62,13 +62,14 @@ public class TestReductionsDoubles extends TornadoTestBase {
         }
         double[] result = null;
 
-        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
+        TornadoDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
-            case CL_DEVICE_TYPE_CPU:
+            case CPU:
                 result = new double[Runtime.getRuntime().availableProcessors()];
+                numGroups = Runtime.getRuntime().availableProcessors();
                 break;
-            case CL_DEVICE_TYPE_GPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
+            case GPU:
+            case ACCELERATOR:
                 result = new double[numGroups];
                 break;
             default:
@@ -130,13 +131,14 @@ public class TestReductionsDoubles extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
+        TornadoDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
-            case CL_DEVICE_TYPE_CPU:
+            case CPU:
                 result = new double[Runtime.getRuntime().availableProcessors()];
+                numGroups = Runtime.getRuntime().availableProcessors();
                 break;
-            case CL_DEVICE_TYPE_GPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
+            case GPU:
+            case ACCELERATOR:
                 result = new double[numGroups];
                 break;
             default:
@@ -175,13 +177,14 @@ public class TestReductionsDoubles extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
+        TornadoDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
-            case CL_DEVICE_TYPE_CPU:
+            case CPU:
                 result = new double[Runtime.getRuntime().availableProcessors()];
+                numGroups = Runtime.getRuntime().availableProcessors();
                 break;
-            case CL_DEVICE_TYPE_GPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
+            case GPU:
+            case ACCELERATOR:
                 result = new double[numGroups];
                 break;
             default:
@@ -221,13 +224,14 @@ public class TestReductionsDoubles extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
+        TornadoDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
-            case CL_DEVICE_TYPE_CPU:
+            case CPU:
                 result = new double[Runtime.getRuntime().availableProcessors()];
+                numGroups = Runtime.getRuntime().availableProcessors();
                 break;
-            case CL_DEVICE_TYPE_GPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
+            case GPU:
+            case ACCELERATOR:
                 result = new double[numGroups];
                 break;
             default:
@@ -272,13 +276,14 @@ public class TestReductionsDoubles extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        OCLDeviceType deviceType = (OCLDeviceType) getDefaultDeviceType();
+        TornadoDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
-            case CL_DEVICE_TYPE_CPU:
+            case CPU:
                 result = new double[Runtime.getRuntime().availableProcessors()];
+                numGroups = Runtime.getRuntime().availableProcessors();
                 break;
-            case CL_DEVICE_TYPE_GPU:
-            case CL_DEVICE_TYPE_ACCELERATOR:
+            case GPU:
+            case ACCELERATOR:
                 result = new double[numGroups];
                 break;
             default:
