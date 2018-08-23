@@ -184,7 +184,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
     }
 
     @Override
-    public TornadoDeviceType getDeviceType() {
+    public TornadoDeviceType getTypeDefaultDevice() {
         OCLDeviceType deviceType = ((OCLTornadoDevice) getDefaultDevice()).getDevice().getDeviceType();
         switch (deviceType) {
             case CL_DEVICE_TYPE_CPU:

@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.common;
 
-import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 
@@ -39,27 +39,7 @@ public interface TornadoDevice extends GenericDevice {
 
     public CallStack createStack(int numArgs);
 
-    public int ensureAllocated(Object object, DeviceObjectState state);
-
-    public int ensurePresent(Object object, DeviceObjectState objectState);
-
-    public int ensurePresent(Object object, DeviceObjectState objectState, int[] events);
-
-    public int streamIn(Object object, DeviceObjectState objectState);
-
-    public int streamIn(Object object, DeviceObjectState objectState, int[] events);
-
-    public int streamOut(Object object, DeviceObjectState objectState);
-
-    public int streamOut(Object object, DeviceObjectState objectState, int[] list);
-
-    public void streamOutBlocking(Object object, DeviceObjectState objectState);
-
-    public void streamOutBlocking(Object object, DeviceObjectState objectState, int[] list);
-
     public TornadoInstalledCode installCode(SchedulableTask task);
-
-    public Event resolveEvent(int event);
 
     public void markEvent();
 

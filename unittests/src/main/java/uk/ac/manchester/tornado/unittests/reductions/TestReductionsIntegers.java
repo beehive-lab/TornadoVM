@@ -56,7 +56,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         // This test has to be executed on CPU
         TornadoGenericDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
-        TornadoDeviceType deviceType = driver.getDeviceType();
+        TornadoDeviceType deviceType = driver.getTypeDefaultDevice();
         if (deviceType != TornadoDeviceType.CPU) {
             return;
         }

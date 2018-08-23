@@ -25,9 +25,10 @@
  */
 package uk.ac.manchester.tornado.examples.fpga;
 
-import uk.ac.manchester.tornado.api.*;
-import uk.ac.manchester.tornado.api.annotations.*;
-import uk.ac.manchester.tornado.api.collections.types.*;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 
 public class ASaxpyVectorFloat4 {
 

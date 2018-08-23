@@ -11,7 +11,7 @@ public interface TornadoGenericDriver {
 
     public GenericDevice getDevice(int index);
 
-    public TornadoDeviceType getDeviceType();
+    public TornadoDeviceType getTypeDefaultDevice();
 
     public String getName();
 

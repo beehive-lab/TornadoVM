@@ -25,8 +25,6 @@
  */
 package uk.ac.manchester.tornado.examples.vectors;
 
-import static uk.ac.manchester.tornado.api.collections.types.Float3.add;
-
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
@@ -34,10 +32,9 @@ import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 
 public class VectorAddTest {
 
-    private static void test(VectorFloat3 a, VectorFloat3 b,
-            VectorFloat3 results) {
+    private static void test(VectorFloat3 a, VectorFloat3 b, VectorFloat3 results) {
         for (@Parallel int i = 0; i < a.getLength(); i++) {
-            results.set(i, add(a.get(i), b.get(i)));
+            results.set(i, Float3.add(a.get(i), b.get(i)));
         }
     }
 

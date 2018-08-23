@@ -27,12 +27,12 @@ package uk.ac.manchester.tornado.drivers.opencl.mm;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
+import uk.ac.manchester.tornado.api.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.common.TornadoLogger;
-import uk.ac.manchester.tornado.common.TornadoMemoryProvider;
-import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLMemFlags;

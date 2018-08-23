@@ -25,17 +25,14 @@
  */
 package uk.ac.manchester.tornado.examples.vectors;
 
-import static uk.ac.manchester.tornado.api.collections.types.Float3.add;
-
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 
 public class VectorTest {
 
-    private static void test(Float3 a, Float3 b,
-            VectorFloat3 results) {
-        results.set(0, add(a, b));
+    private static void test(Float3 a, Float3 b, VectorFloat3 results) {
+        results.set(0, Float3.add(a, b));
     }
 
     public static void main(String[] args) {

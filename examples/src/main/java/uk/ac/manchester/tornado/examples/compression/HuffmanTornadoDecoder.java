@@ -33,9 +33,8 @@ import java.util.BitSet;
 import java.util.HashMap;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.common.Tornado;
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 
 public class HuffmanTornadoDecoder {
 
@@ -115,7 +114,7 @@ public class HuffmanTornadoDecoder {
             String key = tasksKey.get(i);
             String locX = tasksLocation.get(key);
             System.out.println(key + "=" + locX);
-            Tornado.setProperty(key, locX);
+            TornadoRuntime.setProperty(key, locX);
 
             System.out.println("RUNNING: " + key);
 
@@ -175,7 +174,7 @@ public class HuffmanTornadoDecoder {
     }
 
     public static void main(String[] args) throws ClassNotFoundException, IOException {
-        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        TornadoGenericDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         if (driver.getDeviceCount() < 2) {
             return;
         }

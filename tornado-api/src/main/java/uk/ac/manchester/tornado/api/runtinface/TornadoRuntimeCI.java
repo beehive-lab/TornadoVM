@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.api.runtinface;
 
+import uk.ac.manchester.tornado.api.TornadoObjectState;
 import uk.ac.manchester.tornado.api.common.GenericDevice;
 
 public interface TornadoRuntimeCI {
@@ -15,5 +16,7 @@ public interface TornadoRuntimeCI {
     public int getNumDrivers();
 
     public GenericDevice getDefaultDevice();
+
+    public TornadoObjectState resolveObject(Object object);
 
 }

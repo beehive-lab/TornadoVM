@@ -31,6 +31,7 @@ import static uk.ac.manchester.tornado.common.Tornado.getProperty;
 import java.nio.ByteOrder;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.Initialisable;
@@ -41,7 +42,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResu
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 
-public class OCLDeviceContext extends TornadoLogger implements Initialisable {
+public class OCLDeviceContext extends TornadoLogger implements Initialisable, TornadoDeviceContext {
 
     private static final long BUMP_BUFFER_SIZE = Long.decode(getProperty("tornado.opencl.bump.size", "0x100000"));
     private static final String[] BUMP_DEVICES = parseDevices(getProperty("tornado.opencl.bump.devices", "Iris Pro"));
@@ -104,6 +105,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable {
         return context;
     }
 
+    @Override
     public OCLMemoryManager getMemoryManager() {
         return memoryManager;
     }

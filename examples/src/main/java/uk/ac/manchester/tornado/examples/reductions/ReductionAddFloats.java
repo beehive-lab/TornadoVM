@@ -34,11 +34,9 @@ import java.util.stream.IntStream;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
-import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;;
 
 public class ReductionAddFloats {
 
@@ -59,11 +57,9 @@ public class ReductionAddFloats {
         return middle;
     }
 
-    public OCLDeviceType getDefaultDeviceType() {
-        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
-        OCLTornadoDevice defaultDevice = (OCLTornadoDevice) driver.getDefaultDevice();
-        OCLDevice device = defaultDevice.getDevice();
-        return device.getDeviceType();
+    public TornadoDeviceType getDefaultDeviceType() {
+        TornadoGenericDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        return driver.getTypeDefaultDevice();
     }
 
     public void run(int size) {
@@ -75,14 +71,15 @@ public class ReductionAddFloats {
         }
         float[] result = null;
 
-        OCLDeviceType deviceType = getDefaultDeviceType();
+        TornadoDeviceType deviceType = getDefaultDeviceType();
         switch (deviceType) {
-            case CL_DEVICE_TYPE_CPU:
+            case CPU:
                 result = new float[Runtime.getRuntime().availableProcessors()];
+                numGroups = Runtime.getRuntime().availableProcessors();
                 break;
-            case CL_DEVICE_TYPE_DEFAULT:
+            case DEFAULT:
                 break;
-            case CL_DEVICE_TYPE_GPU:
+            case GPU:
                 result = new float[numGroups];
                 break;
             default:

@@ -33,9 +33,9 @@ import static uk.ac.manchester.tornado.common.Tornado.warn;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-import uk.ac.manchester.tornado.common.ObjectBuffer;
+import uk.ac.manchester.tornado.api.ObjectBuffer;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
 
 public class FieldBuffer {
 

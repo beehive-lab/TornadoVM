@@ -25,11 +25,11 @@
  */
 package uk.ac.manchester.tornado.examples.compute;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
+import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.*;
-import uk.ac.manchester.tornado.api.annotations.*;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class NBody {
 

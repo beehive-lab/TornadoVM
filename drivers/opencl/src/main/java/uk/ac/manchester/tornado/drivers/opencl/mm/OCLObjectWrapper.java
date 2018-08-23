@@ -43,11 +43,11 @@ import java.util.Arrays;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
+import uk.ac.manchester.tornado.api.ObjectBuffer;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
-import uk.ac.manchester.tornado.common.ObjectBuffer;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 
 public class OCLObjectWrapper implements ObjectBuffer {

@@ -25,25 +25,15 @@
  */
 package uk.ac.manchester.tornado.examples.memory;
 
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
-
 import java.util.Random;
 
+import uk.ac.manchester.tornado.api.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.TornadoObjectState;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
-import uk.ac.manchester.tornado.common.DeviceObjectState;
-import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
-import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
+import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 
 public class DataMovementTest2 {
-
-    private static void printArray(int[] array) {
-        System.out.printf("array = [");
-        for (int value : array) {
-            System.out.printf("%d ", value);
-        }
-        System.out.println("]");
-    }
 
     public static void main(String[] args) {
 
@@ -62,10 +52,9 @@ public class DataMovementTest2 {
         System.out.println("Before: ");
         System.out.printf(image.toString());
 
-        OCLTornadoDevice device = OpenCL.defaultDevice();
-
-        GlobalObjectState state = getTornadoRuntime().resolveObject(image);
-        DeviceObjectState deviceState = state.getDeviceState(device);
+        GenericDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+        TornadoObjectState state = TornadoRuntime.getTornadoRuntime().resolveObject(image);
+        TornadoDeviceObjectState deviceState = state.getDeviceState(device);
 
         int writeEvent = device.ensurePresent(image, deviceState);
         if (writeEvent != -1) {
@@ -82,8 +71,6 @@ public class DataMovementTest2 {
         System.out.println("After: ");
         System.out.printf(image.toString());
 
-//		System.out.printf("write: %.4e s\n",writeTask.getExecutionTime());
-//		System.out.printf("read : %.4e s\n",readTask.getExecutionTime());
     }
 
 }

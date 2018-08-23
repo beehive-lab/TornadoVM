@@ -25,13 +25,12 @@
  */
 package uk.ac.manchester.tornado.examples.arrays;
 
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
-
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
+import uk.ac.manchester.tornado.api.runtinface.TornadoGenericDriver;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 
 public class MigratingArrayAccInt {
 
@@ -57,7 +56,7 @@ public class MigratingArrayAccInt {
         s0.streamOut(a);
         //@formatter:on
 
-        TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        TornadoGenericDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         s0.mapAllTo(driver.getDevice(0));
         s0.execute();
 

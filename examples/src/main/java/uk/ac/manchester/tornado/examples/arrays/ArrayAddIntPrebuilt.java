@@ -30,7 +30,8 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
+import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 
 public class ArrayAddIntPrebuilt {
 
@@ -53,12 +54,14 @@ public class ArrayAddIntPrebuilt {
 
         String tornadoSDK = System.getenv("TORNADO_SDK");
 
+        GenericDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+
         // @formatter:off
         new TaskSchedule("s0")
                 .prebuiltTask("t0", "add", tornadoSDK + "/examples/generated/add.cl", 
                         new Object[] { a, b, c }, 
                         new Access[] { Access.READ, Access.READ, Access.WRITE },
-                        OpenCL.defaultDevice(), 
+                        device, 
                         new int[] { numElements })
                 .streamOut(c)
                 .execute();

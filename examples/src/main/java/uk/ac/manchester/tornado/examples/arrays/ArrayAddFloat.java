@@ -29,9 +29,27 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.math.SimpleMath;
-import uk.ac.manchester.tornado.common.RuntimeUtilities;
 
 public class ArrayAddFloat {
+
+    public static final int ONE_GIGABYTE = 1 * 1024 * 1024 * 1024;
+    public static final int ONE_MEGABYTE = 1 * 1024 * 1024;
+    public static final int ONE_KILOBYTE = 1 * 1024;
+
+    public static final String formatBytesPerSecond(final double bytes) {
+        String out = "";
+
+        if (bytes >= ONE_GIGABYTE) {
+            out = String.format("%.2f GB/s", (bytes / ONE_GIGABYTE));
+        } else if (bytes >= ONE_MEGABYTE) {
+            out = String.format("%.2f MB/s", (bytes / ONE_MEGABYTE));
+        } else if (bytes >= ONE_KILOBYTE) {
+            out = String.format("%.2f KB/s", (bytes / ONE_KILOBYTE));
+        } else {
+            out = String.format("%f B/s", bytes);
+        }
+        return out;
+    }
 
     public static void main(final String[] args) {
 
@@ -61,7 +79,7 @@ public class ArrayAddFloat {
         double megaBytes = (((double) numElements * 4)) * 3 * iterations;
         double bw = megaBytes / elapsed;
 
-        System.out.printf("Overall  : time = %f seconds, bw = %s\n", elapsed, RuntimeUtilities.formatBytesPerSecond(bw));
+        System.out.printf("Overall  : time = %f seconds, bw = %s\n", elapsed, formatBytesPerSecond(bw));
 
         /*
          * Check results

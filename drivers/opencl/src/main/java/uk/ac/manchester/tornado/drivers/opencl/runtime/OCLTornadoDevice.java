@@ -41,19 +41,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.ObjectBuffer;
+import uk.ac.manchester.tornado.api.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskDataInterface;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.common.CallStack;
 import uk.ac.manchester.tornado.common.DeviceObjectState;
-import uk.ac.manchester.tornado.common.ObjectBuffer;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 import uk.ac.manchester.tornado.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.common.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.common.TornadoSchedulingStrategy;
-import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
@@ -118,6 +119,7 @@ public class OCLTornadoDevice implements TornadoDevice {
         return platformName;
     }
 
+    @Override
     public OCLDevice getDevice() {
         return device;
     }
@@ -135,6 +137,7 @@ public class OCLTornadoDevice implements TornadoDevice {
         return platformIndex;
     }
 
+    @Override
     public OCLDeviceContext getDeviceContext() {
         return getBackend().getDeviceContext();
     }
@@ -350,7 +353,7 @@ public class OCLTornadoDevice implements TornadoDevice {
     }
 
     @Override
-    public int ensureAllocated(Object object, DeviceObjectState state) {
+    public int ensureAllocated(Object object, TornadoDeviceObjectState state) {
         if (!state.hasBuffer()) {
             try {
                 final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext());
@@ -384,13 +387,13 @@ public class OCLTornadoDevice implements TornadoDevice {
     }
 
     @Override
-    public int ensurePresent(Object object, DeviceObjectState state) {
+    public int ensurePresent(Object object, TornadoDeviceObjectState state) {
         ensurePresent(object, state, null);
         return -1;
     }
 
     @Override
-    public int ensurePresent(Object object, DeviceObjectState state, int[] events) {
+    public int ensurePresent(Object object, TornadoDeviceObjectState state, int[] events) {
         if (!state.isValid()) {
             ensureAllocated(object, state);
         }
@@ -403,13 +406,13 @@ public class OCLTornadoDevice implements TornadoDevice {
     }
 
     @Override
-    public int streamIn(Object object, DeviceObjectState state) {
+    public int streamIn(Object object, TornadoDeviceObjectState state) {
         streamIn(object, state, null);
         return -1;
     }
 
     @Override
-    public int streamIn(Object object, DeviceObjectState state, int[] events) {
+    public int streamIn(Object object, TornadoDeviceObjectState state, int[] events) {
         if (!state.isValid()) {
             ensureAllocated(object, state);
         }
@@ -419,24 +422,24 @@ public class OCLTornadoDevice implements TornadoDevice {
     }
 
     @Override
-    public int streamOut(Object object, DeviceObjectState state) {
+    public int streamOut(Object object, TornadoDeviceObjectState state) {
         streamOut(object, state, null);
         return -1;
     }
 
     @Override
-    public int streamOut(Object object, DeviceObjectState state, int[] list) {
+    public int streamOut(Object object, TornadoDeviceObjectState state, int[] list) {
         guarantee(state.isValid(), "invalid variable");
         return state.getBuffer().enqueueRead(object, list, list == null);
     }
 
     @Override
-    public void streamOutBlocking(Object object, DeviceObjectState state) {
+    public void streamOutBlocking(Object object, TornadoDeviceObjectState state) {
         streamOutBlocking(object, state, null);
     }
 
     @Override
-    public void streamOutBlocking(Object object, DeviceObjectState state, int[] events) {
+    public void streamOutBlocking(Object object, TornadoDeviceObjectState state, int[] events) {
         guarantee(state.isValid(), "invalid variable");
 
         state.getBuffer().read(object, events, events == null);

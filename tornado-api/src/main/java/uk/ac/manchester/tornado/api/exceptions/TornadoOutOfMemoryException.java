@@ -23,22 +23,19 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.common;
+package uk.ac.manchester.tornado.api.exceptions;
 
-public interface TornadoMemoryProvider {
+public class TornadoOutOfMemoryException extends Exception {
 
-    public long getCallStackSize();
+    private static final long serialVersionUID = 1609608023741117577L;
+    private final String message;
 
-    public long getCallStackAllocated();
+    public TornadoOutOfMemoryException(final String msg) {
+        message = msg;
+    }
 
-    public long getCallStackRemaining();
-
-    public long getHeapSize();
-
-    public long getHeapRemaining();
-
-    public long getHeapAllocated();
-
-    public boolean isInitialised();
-
+    @Override
+    public String getMessage() {
+        return message;
+    }
 }

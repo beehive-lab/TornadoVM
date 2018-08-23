@@ -34,13 +34,14 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.common.TornadoLogger;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceInfo;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLLocalMemType;
 
-public class OCLDevice extends TornadoLogger {
+public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
 
     private final long id;
     private final int index;
@@ -132,6 +133,7 @@ public class OCLDevice extends TornadoLogger {
         return (buffer.getInt() == 1) ? true : false;
     }
 
+    @Override
     public String getName() {
         if (name == null) {
             Arrays.fill(buffer.array(), (byte) 0);

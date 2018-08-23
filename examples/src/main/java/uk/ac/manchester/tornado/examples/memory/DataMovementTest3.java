@@ -25,14 +25,12 @@
  */
 package uk.ac.manchester.tornado.examples.memory;
 
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
-
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.common.DeviceObjectState;
-import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
-import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
+import uk.ac.manchester.tornado.api.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.TornadoObjectState;
+import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 
 public class DataMovementTest3 {
 
@@ -51,10 +49,9 @@ public class DataMovementTest3 {
         }
         printArray(array);
 
-        OCLTornadoDevice device = OpenCL.defaultDevice();
-
-        GlobalObjectState state = getTornadoRuntime().resolveObject(array);
-        DeviceObjectState deviceState = state.getDeviceState(device);
+        GenericDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+        TornadoObjectState state = TornadoRuntime.getTornadoRuntime().resolveObject(array);
+        TornadoDeviceObjectState deviceState = state.getDeviceState(device);
 
         int writeEvent = device.ensurePresent(array, deviceState);
         if (writeEvent != -1) {
@@ -71,8 +68,8 @@ public class DataMovementTest3 {
 
         printArray(array);
 
-//		System.out.printf("write: %.4e s\n",writeTask.getExecutionTime());
-//		System.out.printf("read : %.4e s\n",readTask.getExecutionTime());
+        // System.out.printf("write: %.4e s\n",writeTask.getExecutionTime());
+        // System.out.printf("read : %.4e s\n",readTask.getExecutionTime());
     }
 
 }

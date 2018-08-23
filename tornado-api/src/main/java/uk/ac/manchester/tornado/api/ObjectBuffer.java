@@ -23,9 +23,9 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.common;
+package uk.ac.manchester.tornado.api;
 
-import uk.ac.manchester.tornado.common.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 
 public interface ObjectBuffer {
 

@@ -26,16 +26,20 @@
 
 package uk.ac.manchester.tornado.examples.compute;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
-import java.io.*;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
+import java.io.File;
 
-import javax.imageio.*;
-import javax.swing.*;
+import javax.imageio.ImageIO;
+import javax.swing.JFrame;
 
-import uk.ac.manchester.tornado.api.*;
-import uk.ac.manchester.tornado.api.annotations.*;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class Mandelbrot {
 

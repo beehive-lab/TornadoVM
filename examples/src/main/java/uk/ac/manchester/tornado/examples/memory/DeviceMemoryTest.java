@@ -25,20 +25,29 @@
  */
 package uk.ac.manchester.tornado.examples.memory;
 
-import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
-
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
-import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.api.common.GenericDevice;
+import uk.ac.manchester.tornado.api.runtinface.TornadoRuntime;
 
 public class DeviceMemoryTest {
 
+    public static String humanReadableByteCount(long bytes, boolean si) {
+        final int unit = si ? 1000 : 1024;
+        if (bytes < unit) {
+            return bytes + " B";
+        }
+        final int exp = (int) (Math.log(bytes) / Math.log(unit));
+        final String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
+
+        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+    }
+
     public static void main(final String[] args) {
 
-        final OCLTornadoDevice device = OpenCL.defaultDevice();
-        final OCLMemoryManager mm = device.getDeviceContext().getMemoryManager();
+        GenericDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+        final TornadoMemoryProvider mm = device.getDeviceContext().getMemoryManager();
 
         final long heapSize = mm.getHeapSize() - 1024;
 
@@ -48,10 +57,7 @@ public class DeviceMemoryTest {
 
         final int[] data = new int[numWords];
 
-        final TaskSchedule schedule = new TaskSchedule("s0")
-                .streamIn(data)
-                .task("t0", DeviceMemoryTest::fill, data)
-                .streamOut(data);
+        final TaskSchedule schedule = new TaskSchedule("s0").streamIn(data).task("t0", DeviceMemoryTest::fill, data).streamOut(data);
 
         schedule.warmup();
 

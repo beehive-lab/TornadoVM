@@ -1,5 +1,9 @@
 package uk.ac.manchester.tornado.api.common;
 
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import uk.ac.manchester.tornado.api.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.TornadoTargetDevice;
+
 public interface GenericDevice {
 
     public boolean isDistibutedMemory();
@@ -33,5 +37,29 @@ public interface GenericDevice {
     public void dumpMemory(String file);
 
     public String getPlatformName();
+
+    public int ensureAllocated(Object object, TornadoDeviceObjectState state);
+
+    public int ensurePresent(Object object, TornadoDeviceObjectState objectState);
+
+    public int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events);
+
+    public int streamIn(Object object, TornadoDeviceObjectState objectState);
+
+    public int streamIn(Object object, TornadoDeviceObjectState objectState, int[] events);
+
+    public int streamOut(Object object, TornadoDeviceObjectState objectState);
+
+    public int streamOut(Object object, TornadoDeviceObjectState objectState, int[] list);
+
+    public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState);
+
+    public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState, int[] list);
+
+    public Event resolveEvent(int event);
+
+    public TornadoDeviceContext getDeviceContext();
+
+    public TornadoTargetDevice getDevice();
 
 }

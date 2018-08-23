@@ -28,10 +28,12 @@ package uk.ac.manchester.tornado.runtime.api;
 import java.util.HashMap;
 import java.util.Map;
 
+import uk.ac.manchester.tornado.api.TornadoObjectState;
+import uk.ac.manchester.tornado.api.common.GenericDevice;
 import uk.ac.manchester.tornado.common.DeviceObjectState;
 import uk.ac.manchester.tornado.common.TornadoDevice;
 
-public class GlobalObjectState {
+public class GlobalObjectState implements TornadoObjectState {
 
     private boolean shared;
     private boolean exclusive;
@@ -63,17 +65,23 @@ public class GlobalObjectState {
         return getDeviceState(getOwner());
     }
 
-    public DeviceObjectState getDeviceState(TornadoDevice device) {
+    public DeviceObjectState getDeviceState(GenericDevice device) {
+        if (!(device instanceof TornadoDevice)) {
+            throw new RuntimeException("Device not compatible");
+        }
         if (!deviceStates.containsKey(device)) {
-            deviceStates.put(device, new DeviceObjectState());
+            deviceStates.put((TornadoDevice) device, new DeviceObjectState());
         }
         return deviceStates.get(device);
     }
 
-    public void setOwner(TornadoDevice device) {
-        owner = device;
+    public void setOwner(GenericDevice device) {
+        if (!(device instanceof TornadoDevice)) {
+            throw new RuntimeException("Device not compatible");
+        }
+        owner = (TornadoDevice) device;
         if (!deviceStates.containsKey(owner)) {
-            deviceStates.put(device, new DeviceObjectState());
+            deviceStates.put((TornadoDevice) device, new DeviceObjectState());
         }
     }
 
