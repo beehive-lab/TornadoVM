@@ -23,14 +23,10 @@
  * Authors: Juan Fumero, Michalis Papadimitriou
  *
  */
-package uk.ac.manchester.tornado.unittests.ocljit;
-
-import static org.junit.Assert.assertNotNull;
+package uk.ac.manchester.tornado.drivers.opencl.tests;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-
-import org.junit.Test;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -50,7 +46,7 @@ import uk.ac.manchester.tornado.runtime.TornadoRuntime;
  * Environment.
  *
  */
-public class TestOpenCLJIT {
+public class TestOCLJIT {
 
     /**
      * Method to be compile by Tornado into OpenCL
@@ -75,7 +71,6 @@ public class TestOpenCLJIT {
         return method;
     }
 
-    @Test
     public void testJIT01() {
 
         // input data
@@ -87,19 +82,15 @@ public class TestOpenCLJIT {
         Arrays.fill(a, -10);
         Arrays.fill(b, 10);
 
-        Method methodToCompile = getMethodForName(TestOpenCLJIT.class, "testMethodToCompile");
-        assertNotNull(methodToCompile);
+        Method methodToCompile = getMethodForName(TestOCLJIT.class, "testMethodToCompile");
 
         // Test Tornado Runtime
         TornadoRuntime tornadoRuntime = TornadoRuntime.getTornadoRuntime();
-        assertNotNull(tornadoRuntime);
 
         ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
-        assertNotNull(resolvedJavaMethod);
 
         // Get the backend from Tornado
         OCLBackend openCLBackend = tornadoRuntime.getDriver(OCLDriver.class).getDefaultBackend();
-        assertNotNull(openCLBackend);
 
         // Create a new task for Tornado
         TaskMetaData task = TaskMetaData.create(new ScheduleMetaData("ID0"), methodToCompile.getName(), methodToCompile, false);
@@ -110,9 +101,10 @@ public class TestOpenCLJIT {
         // Obtain the code
         OCLInstalledCode openCLCode = OpenCL.defaultDevice().getDeviceContext().installCode(compilationResult);
 
-        assertNotNull(openCLCode);
-
-        // XXX: Check the code is correct
-
     }
+
+    public static void main(String[] args) {
+        new TestOCLJIT().testJIT01();
+    }
+
 }
