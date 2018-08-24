@@ -23,28 +23,24 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.runtime.sketcher;
+package uk.ac.manchester.tornado.runtime.domain;
 
-import org.graalvm.compiler.graph.CachedGraph;
+public interface Domain {
 
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+    /***
+     * Returns the number of elements in a domain.
+     * 
+     * @return
+     */
+    public int cardinality();
 
-public class Sketch {
-
-    private final CachedGraph graph;
-    private final TaskMetaData meta;
-
-    public Sketch(CachedGraph graph, TaskMetaData meta) {
-        this.graph = graph;
-        this.meta = meta;
-    }
-
-    public CachedGraph getGraph() {
-        return graph;
-    }
-
-    public TaskMetaData getMeta() {
-        return meta;
-    }
-
+    /***
+     * Maps the given index onto the ith element in the domain. e.g. for a
+     * domain with cardinality=3 {2,4,6} map(1) = 4;
+     * 
+     * @param index
+     *            (0...cardninality())
+     * @return
+     */
+    public int map(int index);
 }

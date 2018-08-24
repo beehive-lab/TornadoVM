@@ -20,28 +20,26 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: Juan Fumero
+ * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.runtime.api;
+package uk.ac.manchester.tornado.runtime.tasks.meta;
 
-public enum TornadoGraphBitcodes {
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
-    // @formatter:off
-    LOAD_REF ((byte)1), 
-    LOAD_PRIM((byte)2), 
-    LAUNCH   ((byte)3), 
-    ARG_LIST ((byte)4),
-    CONTEXT  ((byte)5);
-    // @formatter:on
+import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
-    private byte index;
+public final class MetaDataUtils {
 
-    TornadoGraphBitcodes(byte index) {
-        this.index = index;
+    public static TornadoAcceleratorDevice resolveDevice(String device) {
+        final String[] ids = device.split(":");
+        final TornadoAcceleratorDriver driver = getTornadoRuntime().getDriver(Integer.parseInt(ids[0]));
+        return (TornadoAcceleratorDevice) driver.getDevice(Integer.parseInt(ids[1]));
     }
 
-    public byte index() {
-        return index;
+    public static int[] resolveDriverDeviceIndexes(String device) {
+        final String[] ids = device.split(":");
+        return new int[] { Integer.parseInt(ids[0]), Integer.parseInt(ids[1]) };
     }
 }

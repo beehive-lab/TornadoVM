@@ -80,7 +80,6 @@ public class DeviceObjectState implements TornadoDeviceObjectState {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-
         sb.append((isValid()) ? "V" : "-");
         sb.append((isModified()) ? "M" : "-");
         sb.append((hasContents()) ? "C" : "-");

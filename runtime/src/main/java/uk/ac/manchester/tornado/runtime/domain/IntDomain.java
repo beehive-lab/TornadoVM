@@ -23,36 +23,61 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.runtime.api.meta;
+package uk.ac.manchester.tornado.runtime.domain;
 
-import java.util.Arrays;
+public class IntDomain implements Domain {
 
-public class Coarseness {
+    private int offset;
+    private int step;
+    private int length;
 
-    private final int[] values;
-
-    public Coarseness(int depth) {
-        values = new int[depth];
-        Arrays.fill(values, 1);
+    public IntDomain(int offset, int step, int length) {
+        this.offset = offset;
+        this.step = step;
+        this.length = length;
     }
 
-    public void applyConfig(String config) {
-        String str[] = config.split(",");
-        for (int i = 0; i < values.length; i++) {
-            values[i] = Integer.parseInt(str[i]);
-        }
+    public IntDomain(int length) {
+        this(0, 1, length);
     }
 
-    public int getCoarseness(int index) {
-        return values[index];
+    @Override
+    public int cardinality() {
+        return length;
     }
 
-    public void setCoarseness(int index, int value) {
-        values[index] = value;
+    @Override
+    public int map(int index) {
+        return (index * step) + offset;
     }
 
     @Override
     public String toString() {
-        return Arrays.toString(values);
+        return String.format("IntDomain: {offset=%d, step=%d, length=%d}", offset, step, length);
     }
+
+    public int getOffset() {
+        return offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
+
+    public int getStep() {
+        return step;
+    }
+
+    public void setStep(int step) {
+        this.step = step;
+    }
+
+    public int getLength() {
+        return length;
+    }
+
+    public void setLength(int length) {
+        this.length = length;
+    }
+
 }

@@ -23,11 +23,11 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.runtime.api.meta;
+package uk.ac.manchester.tornado.runtime.tasks.meta;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
-import static uk.ac.manchester.tornado.runtime.api.meta.MetaDataUtils.resolveDevice;
+import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
 
 import java.util.List;
 

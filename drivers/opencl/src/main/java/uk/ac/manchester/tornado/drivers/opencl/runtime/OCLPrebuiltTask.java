@@ -26,10 +26,10 @@
 package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.domain.DomainTree;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
-import uk.ac.manchester.tornado.runtime.api.PrebuiltTask;
-import uk.ac.manchester.tornado.runtime.api.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.runtime.domain.DomainTree;
+import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 public class OCLPrebuiltTask extends PrebuiltTask {
 

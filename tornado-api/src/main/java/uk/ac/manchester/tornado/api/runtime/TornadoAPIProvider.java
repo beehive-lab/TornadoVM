@@ -53,8 +53,8 @@ public class TornadoAPIProvider {
     public static AbstractFactoryDevice loadDeviceImpl() {
         AbstractFactoryDevice device = null;
         try {
-            String tornadoRuntimeimplementation = System.getProperty("tornado.load.device.implementation");
-            Class<?> klass = Class.forName("uk.ac.manchester.tornado.drivers.opencl.runtime.TornadoDeviceFactory");
+            String tornadoDeviceimplementation = System.getProperty("tornado.load.device.implementation");
+            Class<?> klass = Class.forName(tornadoDeviceimplementation);
             Constructor<?> constructor = klass.getConstructor();
             device = (AbstractFactoryDevice) constructor.newInstance();
         } catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException | InstantiationException e) {

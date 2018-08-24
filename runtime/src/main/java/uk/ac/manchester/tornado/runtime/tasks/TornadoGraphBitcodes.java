@@ -20,19 +20,28 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: Juan Fumero
  *
  */
-package uk.ac.manchester.tornado.runtime.api.meta;
+package uk.ac.manchester.tornado.runtime.tasks;
 
-import java.util.List;
+public enum TornadoGraphBitcodes {
 
-import uk.ac.manchester.tornado.api.common.TornadoEvents;
+    // @formatter:off
+    LOAD_REF ((byte)1), 
+    LOAD_PRIM((byte)2), 
+    LAUNCH   ((byte)3), 
+    ARG_LIST ((byte)4),
+    CONTEXT  ((byte)5);
+    // @formatter:on
 
-public class ScheduleMetaData extends AbstractMetaData {
+    private byte index;
 
-    public ScheduleMetaData(String id) {
-        super(id);
+    TornadoGraphBitcodes(byte index) {
+        this.index = index;
     }
 
+    public byte index() {
+        return index;
+    }
 }

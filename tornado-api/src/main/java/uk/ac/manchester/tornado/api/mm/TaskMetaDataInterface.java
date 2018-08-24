@@ -8,7 +8,6 @@ public interface TaskMetaDataInterface {
 
     public List<TornadoEvents> getProfiles();
 
-    // Think a better place for these methods
     public String getCompilerFlags();
 
     public void setCompilerFlags(String flags);

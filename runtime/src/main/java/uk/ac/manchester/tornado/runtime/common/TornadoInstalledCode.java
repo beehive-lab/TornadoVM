@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
-import uk.ac.manchester.tornado.runtime.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public interface TornadoInstalledCode {
 

@@ -36,9 +36,9 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.phases.BasePhase;
 
-import uk.ac.manchester.tornado.api.domain.DomainTree;
-import uk.ac.manchester.tornado.api.domain.IntDomain;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.domain.DomainTree;
+import uk.ac.manchester.tornado.runtime.domain.IntDomain;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 
 /**

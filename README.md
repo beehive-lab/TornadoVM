@@ -256,10 +256,10 @@ Each Tornado module is licensed as follows:
 * Tornado-Runtime : GNU-GPLv2
 * Tornado-Assembly: GNU-GPLv2
 * Tornado-Drivers : GNU-GPLv2 
-* Torando-API     : MIT
-* Tornado-Unittests : MIT
-* Tornado-Benchmarks: MIT
-* Tornado-Examples: MIT
-* Tornado-Matrices: MIT
+* Torando-API     : Under discussion
+* Tornado-Unittests : Under discussion
+* Tornado-Benchmarks: Under discussion
+* Tornado-Examples: Under discussion
+* Tornado-Matrices: Under discussion
 
 

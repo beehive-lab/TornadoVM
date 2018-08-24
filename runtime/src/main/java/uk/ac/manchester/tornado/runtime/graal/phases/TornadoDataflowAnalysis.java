@@ -47,9 +47,9 @@ import org.graalvm.compiler.phases.BasePhase;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.runtime.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext> {
 

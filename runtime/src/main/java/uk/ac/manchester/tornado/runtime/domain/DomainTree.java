@@ -23,23 +23,40 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.runtime.api.meta;
+package uk.ac.manchester.tornado.runtime.domain;
 
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
+public class DomainTree {
 
-import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+    private final Domain[] domains;
 
-public final class MetaDataUtils {
-
-    public static TornadoAcceleratorDevice resolveDevice(String device) {
-        final String[] ids = device.split(":");
-        final TornadoAcceleratorDriver driver = getTornadoRuntime().getDriver(Integer.parseInt(ids[0]));
-        return (TornadoAcceleratorDevice) driver.getDevice(Integer.parseInt(ids[1]));
+    public DomainTree(final int depth) {
+        this.domains = new Domain[depth];
     }
 
-    public static int[] resolveDriverDeviceIndexes(String device) {
-        final String[] ids = device.split(":");
-        return new int[] { Integer.parseInt(ids[0]), Integer.parseInt(ids[1]) };
+    public void set(int index, final Domain domain) {
+        domains[index] = domain;
     }
+
+    public Domain get(int index) {
+        return domains[index];
+    }
+
+    public int getDepth() {
+        return domains.length;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append(String.format("num domains=%d :", domains.length));
+        sb.append("{ ");
+        for (Domain dom : domains) {
+            sb.append(String.format("%s, ", dom.toString()));
+        }
+        sb.setLength(sb.length() - 1);
+        sb.append(" }");
+
+        return sb.toString().trim();
+    }
+
 }

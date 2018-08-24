@@ -23,22 +23,36 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.api.domain;
+package uk.ac.manchester.tornado.runtime.tasks.meta;
 
-public interface Domain {
+import java.util.Arrays;
 
-	/***
-	 * Returns the number of elements in this domain.
-	 * @return
-	 */
-	public int cardinality();
-	
-	/***
-	 * Maps the given index onto the ith element in the domain. 
-	 * e.g. for a domain with cardinality=3 
-	 *      {2,4,6} map(1) = 4;
-	 * @param index (0...cardninality())
-	 * @return
-	 */
-	public int map(int index);
+public class Coarseness {
+
+    private final int[] values;
+
+    public Coarseness(int depth) {
+        values = new int[depth];
+        Arrays.fill(values, 1);
+    }
+
+    public void applyConfig(String config) {
+        String str[] = config.split(",");
+        for (int i = 0; i < values.length; i++) {
+            values[i] = Integer.parseInt(str[i]);
+        }
+    }
+
+    public int getCoarseness(int index) {
+        return values[index];
+    }
+
+    public void setCoarseness(int index, int value) {
+        values[index] = value;
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(values);
+    }
 }

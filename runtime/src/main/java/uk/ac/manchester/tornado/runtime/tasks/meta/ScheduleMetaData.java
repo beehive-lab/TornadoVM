@@ -23,8 +23,16 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.runtime.api;
+package uk.ac.manchester.tornado.runtime.tasks.meta;
 
-public interface SynchronisationTask  {
-	
+import java.util.List;
+
+import uk.ac.manchester.tornado.api.common.TornadoEvents;
+
+public class ScheduleMetaData extends AbstractMetaData {
+
+    public ScheduleMetaData(String id) {
+        super(id);
+    }
+
 }
