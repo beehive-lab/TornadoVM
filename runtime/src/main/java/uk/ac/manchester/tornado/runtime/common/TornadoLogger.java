@@ -25,15 +25,19 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 public class TornadoLogger {
 
-    private final Logger logger;
+    private Logger LOGGER;
 
     public TornadoLogger(Class<?> clazz) {
-        logger = LogManager.getLogger(clazz == null ? this.getClass() : clazz);
+        LOGGER = Logger.getLogger(clazz == null ? this.getClass().getName() : clazz.getName());
+        if (!Tornado.FULL_DEBUG) {
+            LogManager.getLogManager().reset();
+        }
     }
 
     public TornadoLogger() {
@@ -41,7 +45,8 @@ public class TornadoLogger {
     }
 
     public final void debug(final String msg) {
-        logger.debug(msg);
+        LOGGER.setLevel(Level.INFO);
+        LOGGER.info(msg);
     }
 
     public final void debug(final String pattern, final Object... args) {
@@ -49,7 +54,8 @@ public class TornadoLogger {
     }
 
     public final void error(final String msg) {
-        logger.error(msg);
+        LOGGER.setLevel(Level.SEVERE);
+        LOGGER.severe(msg);
     }
 
     public final void error(final String pattern, final Object... args) {
@@ -57,7 +63,8 @@ public class TornadoLogger {
     }
 
     public final void fatal(final String msg) {
-        logger.fatal(msg);
+        LOGGER.setLevel(Level.SEVERE);
+        LOGGER.severe(msg);
     }
 
     public final void fatal(final String pattern, final Object... args) {
@@ -65,7 +72,7 @@ public class TornadoLogger {
     }
 
     public final void info(final String msg) {
-        logger.info(msg);
+        LOGGER.info(msg);
     }
 
     public final void info(final String pattern, final Object... args) {
@@ -73,7 +80,8 @@ public class TornadoLogger {
     }
 
     public final void trace(final String msg) {
-        logger.trace(msg);
+        LOGGER.setLevel(Level.INFO);
+        LOGGER.info(msg);
     }
 
     public final void trace(final String pattern, final Object... args) {
@@ -81,7 +89,8 @@ public class TornadoLogger {
     }
 
     public final void warn(final String msg) {
-        logger.warn(msg);
+        LOGGER.setLevel(Level.WARNING);
+        LOGGER.warning(msg);
     }
 
     public final void warn(final String pattern, final Object... args) {

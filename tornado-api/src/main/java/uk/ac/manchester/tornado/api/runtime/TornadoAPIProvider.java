@@ -31,7 +31,7 @@ public class TornadoAPIProvider {
             Method method = klass.getDeclaredMethod("getTornadoRuntime");
             runtime = (TornadoRuntimeCI) method.invoke(null);
         } catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException e) {
-            throw new RuntimeException("[ERROR] Tornado API Implementation class not found");
+            throw new RuntimeException("[ERROR] Tornado Runtime Implementation class not found");
         }
         return runtime;
     }
