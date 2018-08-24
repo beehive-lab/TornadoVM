@@ -21,10 +21,7 @@
             <groupId>jvmci</groupId>
             <artifactId>api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>graal</groupId>
-            <artifactId>graal</artifactId>
-        </dependency>
+        
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
