@@ -248,3 +248,18 @@ Then :
  2. Set Eclipse Java Formatter config file to the XML file stored in /scripts/templates/eclise-settings/Tornado.xml
  3. Set Java formatter profile to Tornado
 
+
+## License
+
+Each Tornado module is licensed as follows:
+
+* Tornado-Runtime : GNU-GPLv2
+* Tornado-Assembly: GNU-GPLv2
+* Tornado-Drivers : GNU-GPLv2 
+* Torando-API     : MIT
+* Tornado-Unittests : MIT
+* Tornado-Benchmarks: MIT
+* Tornado-Examples: MIT
+* Tornado-Matrices: MIT
+
+
