@@ -187,10 +187,4 @@ public final class Tornado implements TornadoCI {
         loadSettings(filename);
     }
 
-    @Override
-    public TornadoDevice createDevice(int platformIndex, int deviceIndex) {
-        TornadoAcceleratorDriver driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(0);
-        return driver.getDevice(platformIndex + deviceIndex);
-    }
-
 }
