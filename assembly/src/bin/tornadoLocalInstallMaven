@@ -30,12 +30,13 @@ cd $TORNADO_SDK
 
 cd share/java/tornado/
 
-mvn install:install-file -Dfile=tornado-api-0.0.2-SNAPSHOT.jar -DgroupId=tornado-api -DartifactId=tornado-api -Dversion=0.0.2-SNAPSHOT -Dpackaging=jar
-mvn install:install-file -Dfile=tornado-matrices-0.0.2-SNAPSHOT.jar -DgroupId=tornado-matrices -DartifactId=tornado-matrices -Dversion=0.0.2-SNAPSHOT -Dpackaging=jar
-mvn install:install-file -Dfile=tornado-runtime-0.0.2-SNAPSHOT.jar -DgroupId=tornado-runtime -DartifactId=tornado-runtime -Dversion=0.0.2-SNAPSHOT -Dpackaging=jar
-mvn install:install-file -Dfile=tornado-drivers-opencl-0.0.2-SNAPSHOT.jar -DgroupId=tornado-drivers-opencl -DartifactId=tornado-drivers-opencl -Dversion=0.0.2-SNAPSHOT -Dpackaging=jar
-mvn install:install-file -Dfile=tornado-drivers-opencl-jni-0.0.2-SNAPSHOT-libs.jar -DgroupId=tornado-drivers-opencl-jni -DartifactId=tornado-drivers-opencl-jni -Dversion=0.0.2-SNAPSHOT -Dpackaging=jar
+tornadoVersion="0.1.0-SNAPSHOT"
 
+mvn install:install-file -Dfile=tornado-api-${tornadoVersion}.jar -DgroupId=tornado -DartifactId=tornado-api -Dversion=${tornadoVersion} -Dpackaging=jar
+mvn install:install-file -Dfile=tornado-matrices-${tornadoVersion}.jar -DgroupId=tornado -DartifactId=tornado-matrices -Dversion=${tornadoVersion} -Dpackaging=jar
+mvn install:install-file -Dfile=tornado-runtime-${tornadoVersion}.jar -DgroupId=tornado -DartifactId=tornado-runtime -Dversion=${tornadoVersion} -Dpackaging=jar
+mvn install:install-file -Dfile=tornado-drivers-opencl-${tornadoVersion}.jar -DgroupId=tornado -DartifactId=tornado-drivers-opencl -Dversion=${tornadoVersion} -Dpackaging=jar
+mvn install:install-file -Dfile=tornado-drivers-opencl-jni-${tornadoVersion}-libs.jar -DgroupId=tornado -DartifactId=tornado-drivers-opencl-jni -Dversion=${tornadoVersion} -Dpackaging=jar
 
 echo "Torando SDK installed locally"
 
