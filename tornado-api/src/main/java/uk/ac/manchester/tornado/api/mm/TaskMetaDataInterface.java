@@ -8,4 +8,16 @@ public interface TaskMetaDataInterface {
 
     public List<TornadoEvents> getProfiles();
 
+    // Think a better place for these methods
+    public String getCompilerFlags();
+
+    public void setOpenclCompilerFlags(String flags);
+
+    public void setGlobalWork(long[] global);
+
+    public void setLocalWork(long[] local);
+
+    public long[] getGlobalWork();
+
+    public long[] getLocalWork();
 }

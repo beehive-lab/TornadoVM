@@ -6,4 +6,6 @@ public interface TornadoDeviceContext {
 
     TornadoMemoryProvider getMemoryManager();
 
+    public boolean needsBump();
+
 }

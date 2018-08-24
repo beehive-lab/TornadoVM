@@ -339,6 +339,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
 
     }
 
+    @Override
     public boolean needsBump() {
         return needsBump;
     }

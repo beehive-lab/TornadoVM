@@ -1,5 +1,7 @@
 package uk.ac.manchester.tornado.api;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+
 public interface TornadoCI {
 
     public void setTornadoProperty(String key, String value);
@@ -9,5 +11,7 @@ public interface TornadoCI {
     public String getTornadoProperty(String key, String defaultValue);
 
     public void loadTornadoSettngs(String filename);
+
+    public TornadoDevice createDevice(int platformIndex, int deviceIndex);
 
 }

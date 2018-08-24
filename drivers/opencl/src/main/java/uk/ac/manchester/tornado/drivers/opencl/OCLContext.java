@@ -307,23 +307,6 @@ public class OCLContext extends TornadoLogger {
         return devicePtr;
     }
 
-    @Deprecated
-    public long createSubBuffer(long bufferId, long flags, long offset, long bytes) {
-        long devicePtr = 0;
-        try {
-
-            buffer.clear();
-            buffer.putLong(offset);
-            buffer.putLong(bytes);
-
-            devicePtr = createSubBuffer(bufferId, flags, OCLBufferCreateType.CL_BUFFER_CREATE_TYPE_REGION.getValue(), buffer.array());
-            debug("sub-buffer allocated %s @ 0x%x", RuntimeUtilities.humanReadableByteCount(bytes, true), devicePtr);
-        } catch (OCLException e) {
-            error(e.getMessage());
-        }
-        return devicePtr;
-    }
-
     public int getPlatformIndex() {
         return platform.getIndex();
     }

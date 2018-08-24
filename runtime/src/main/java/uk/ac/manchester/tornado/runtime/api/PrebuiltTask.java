@@ -29,11 +29,11 @@ import java.util.Objects;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.domain.DomainTree;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.runtime.api.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-import uk.ac.manchester.tornado.runtime.meta.domain.DomainTree;
 
 public class PrebuiltTask implements SchedulableTask {
 

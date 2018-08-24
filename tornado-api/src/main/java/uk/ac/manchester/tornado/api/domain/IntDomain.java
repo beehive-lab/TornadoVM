@@ -23,7 +23,7 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.runtime.meta.domain;
+package uk.ac.manchester.tornado.api.domain;
 
 public class IntDomain implements Domain {
 

@@ -40,4 +40,28 @@ public class ScheduleMetaData extends AbstractMetaData {
         return null;
     }
 
+    @Override
+    public void setGlobalWork(long[] global) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void setLocalWork(long[] local) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public long[] getGlobalWork() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public long[] getLocalWork() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

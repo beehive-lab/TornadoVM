@@ -39,9 +39,9 @@ import java.util.Map;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
+import uk.ac.manchester.tornado.api.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.EventSet;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-import uk.ac.manchester.tornado.runtime.meta.domain.DomainTree;
 
 public class TaskMetaData extends AbstractMetaData {
 
@@ -132,6 +132,7 @@ public class TaskMetaData extends AbstractMetaData {
         return globalWorkDefined;
     }
 
+    @Override
     public void setGlobalWork(long[] values) {
         if (globalWorkDefined) {
             return;
@@ -144,6 +145,7 @@ public class TaskMetaData extends AbstractMetaData {
         schedule = !(globalWorkDefined && localWorkDefined);
     }
 
+    @Override
     public void setLocalWork(long[] values) {
         for (int i = 0; i < values.length; i++) {
             localWork[i] = values[i];
@@ -306,6 +308,7 @@ public class TaskMetaData extends AbstractMetaData {
         return globalSize;
     }
 
+    @Override
     public long[] getGlobalWork() {
         return globalWork;
     }
@@ -314,6 +317,7 @@ public class TaskMetaData extends AbstractMetaData {
         return localSize;
     }
 
+    @Override
     public long[] getLocalWork() {
         return localWork;
     }

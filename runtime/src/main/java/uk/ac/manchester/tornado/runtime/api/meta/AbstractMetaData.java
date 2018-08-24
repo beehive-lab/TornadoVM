@@ -285,6 +285,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return isOpenclCompilerFlagsDefined;
     }
 
+    @Override
     public void setOpenclCompilerFlags(String value) {
         openclCompilerFlags = value;
         isOpenclCompilerFlagsDefined = true;

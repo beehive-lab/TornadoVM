@@ -36,10 +36,10 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.phases.BasePhase;
 
+import uk.ac.manchester.tornado.api.domain.DomainTree;
+import uk.ac.manchester.tornado.api.domain.IntDomain;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
-import uk.ac.manchester.tornado.runtime.meta.domain.DomainTree;
-import uk.ac.manchester.tornado.runtime.meta.domain.IntDomain;
 
 /**
  * It analyses the loop index space and determines the correct indices using

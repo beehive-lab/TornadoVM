@@ -223,6 +223,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return name.trim();
     }
 
+    @Override
     public int getMaxComputeUnits() {
         if (maxComputeUnits != -1) {
             return maxComputeUnits;
@@ -258,6 +259,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return maxAllocationSize;
     }
 
+    @Override
     public long getGlobalMemorySize() {
         if (globalMemorySize != -1) {
             return globalMemorySize;
@@ -271,6 +273,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return globalMemorySize;
     }
 
+    @Override
     public long getLocalMemorySize() {
         if (localMemorySize != -1) {
             return localMemorySize;
