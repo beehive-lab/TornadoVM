@@ -11,7 +11,7 @@ public interface TaskMetaDataInterface {
     // Think a better place for these methods
     public String getCompilerFlags();
 
-    public void setOpenclCompilerFlags(String flags);
+    public void setCompilerFlags(String flags);
 
     public void setGlobalWork(long[] global);
 

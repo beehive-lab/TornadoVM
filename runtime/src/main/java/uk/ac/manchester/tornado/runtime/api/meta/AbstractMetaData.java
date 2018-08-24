@@ -29,7 +29,10 @@ import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static uk.ac.manchester.tornado.runtime.api.meta.MetaDataUtils.resolveDevice;
 
+import java.util.List;
+
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
@@ -228,7 +231,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     }
 
     /*
-     * Forces the executing kernel to output its arguements before execution
+     * Forces the executing kernel to output its arguments before execution
      */
     private final boolean debug;
     private final boolean dumpEvents;
@@ -272,7 +275,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private final boolean isCpuConfigDefined;
     private final String cpuConfig;
 
-    // private final boolean useThreadCoarsening;
     public boolean isDeviceDefined() {
         return isDeviceDefined;
     }
@@ -286,7 +288,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     }
 
     @Override
-    public void setOpenclCompilerFlags(String value) {
+    public void setCompilerFlags(String value) {
         openclCompilerFlags = value;
         isOpenclCompilerFlagsDefined = true;
     }
@@ -309,6 +311,31 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     public boolean shouldCoarsenWithCpuConfig() {
         return coarsenWithCpuConfig;
+    }
+
+    @Override
+    public List<TornadoEvents> getProfiles() {
+        return null;
+    }
+
+    @Override
+    public void setGlobalWork(long[] global) {
+
+    }
+
+    @Override
+    public void setLocalWork(long[] local) {
+
+    }
+
+    @Override
+    public long[] getGlobalWork() {
+        return null;
+    }
+
+    @Override
+    public long[] getLocalWork() {
+        return null;
     }
 
     protected static String getDefault(String keySuffix, String id, String defaultValue) {
