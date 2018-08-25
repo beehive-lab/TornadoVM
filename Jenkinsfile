@@ -21,7 +21,7 @@ pipeline {
             steps {
                     step([$class: 'WsCleanup'])
                     checkout scm
-                                sh 'git checkout master'
+                        sh 'git checkout master'
                         checkout([$class: 'GitSCM', branches: [[name: '**']], doGenerateSubmoduleConfigurations: false, extensions:[[$class: 'LocalBranch']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '9bca499b-bd08-4fb2-9762-12105b44890e', url: 'https://github.com/beehive-lab/Tornado-Internal.git']]])
             }
         }
