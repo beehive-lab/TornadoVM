@@ -3,6 +3,7 @@ pipeline {
     options {
         timestamps()
         timeout(time: 1, unit: 'HOURS')
+<<<<<<< HEAD
     }
     environment {
          JAVA_HOME="/opt/jenkins/jdk1.8.0_131"
