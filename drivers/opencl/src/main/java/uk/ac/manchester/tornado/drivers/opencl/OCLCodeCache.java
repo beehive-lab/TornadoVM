@@ -340,8 +340,8 @@ public class OCLCodeCache {
         info("Installing code for %s into code cache", entryPoint);
         final OCLProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
 
-        if (OPENCL_DUMP_SOURCE || OpenCL.ACCELERATOR_IS_FPGA) {
-            final Path outDir = OpenCL.ACCELERATOR_IS_FPGA ? resolveFPGADir() : resolveSourceDir();
+        if (OPENCL_DUMP_SOURCE) {
+            final Path outDir = resolveSourceDir();
             File file = new File(outDir + "/" + id + "-" + entryPoint + OPENCL_SOURCE_SUFFIX);
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 fos.write(source);
