@@ -190,7 +190,7 @@ public class OCLCodeCache {
     private Path resolveDir(String dir) {
         final String tornadoRoot = (OpenCL.ACCELERATOR_IS_FPGA) ? System.getenv("TORNADO_ROOT") : System.getenv("TORNADO_SDK");
         final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
-        final Path outDir = Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
+        final Path outDir = (OpenCL.ACCELERATOR_IS_FPGA) ? Paths.get(tornadoRoot + "/" + dir) : Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
         if (!Files.exists(outDir)) {
             try {
                 Files.createDirectories(outDir);
@@ -229,14 +229,38 @@ public class OCLCodeCache {
         info("Installing code for %s into code cache", entryPoint);
         final OCLProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
 
-        if (OPENCL_DUMP_SOURCE || OpenCL.ACCELERATOR_IS_FPGA) {
-            final Path outDir = OpenCL.ACCELERATOR_IS_FPGA ? resolveFPGADir() : resolveSourceDir();
+        if (OPENCL_DUMP_SOURCE) {
+            final Path outDir = resolveSourceDir();
             File file = new File(outDir + "/" + id + "-" + entryPoint + OPENCL_SOURCE_SUFFIX);
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 fos.write(source);
             } catch (IOException e) {
                 error("unable to dump source: ", e.getMessage());
             }
+        }
+
+        if (OpenCL.ACCELERATOR_IS_FPGA) {
+            final Path outDir = OpenCL.ACCELERATOR_IS_FPGA ? resolveFPGADir() : resolveSourceDir();
+            System.out.println("Entrypoint: " + entryPoint + "\n");
+            System.out.println("ID: " + id + "\n");
+            if (entryPoint.equals("lookupBufferAddress")) {
+                File file = new File(outDir + "/" + entryPoint + OPENCL_SOURCE_SUFFIX);
+                try (FileOutputStream fos = new FileOutputStream(file)) {
+                    fos.write(source);
+                    fos.close();
+                } catch (IOException e) {
+                    error("unable to dump source: ", e.getMessage());
+                }
+            } else {
+                File file = new File(outDir + "/" + "lookupBufferAddress" + OPENCL_SOURCE_SUFFIX);
+                try (FileOutputStream fos = new FileOutputStream(file, true)) {
+                    fos.write(source);
+                    fos.close();
+                } catch (IOException e) {
+                    error("unable to dump source: ", e.getMessage());
+                }
+            }
+
         }
 
         if (OPENCL_PRINT_SOURCE) {
