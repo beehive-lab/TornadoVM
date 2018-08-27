@@ -47,6 +47,8 @@ public class OpenCL {
 
     public final static boolean ACCELERATOR_IS_GPU = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.asgpu", "True"));
 
+    public final static boolean ACCELERATOR_IS_FPGA = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.fpga", "False"));
+
     public final static int OCL_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.opencl.callstack.limit", "8192"));
 
     public static final ByteOrder BYTE_ORDER = ByteOrder.LITTLE_ENDIAN;
