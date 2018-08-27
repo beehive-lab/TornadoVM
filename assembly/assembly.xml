@@ -23,6 +23,8 @@
       <includes>
         <include>LICENSE_APACHE2</include>
         <include>LICENSE_GPLv2CE</include>
+        <include>CONTRIBUTORS</include>
+        <include>CHANGELOG.md</include>
       </includes>
       <outputDirectory>./</outputDirectory>
       <fileMode>0444</fileMode>
