@@ -29,23 +29,21 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 
-@NodeInfo(shortName="Atomic")
+@NodeInfo(shortName = "Atomic")
 public class AtomicAccessNode extends FloatingNode {
-	
 
-	public static final NodeClass<AtomicAccessNode>	TYPE	= NodeClass
-																		.create(AtomicAccessNode.class);
+    public static final NodeClass<AtomicAccessNode> TYPE = NodeClass.create(AtomicAccessNode.class);
 
-	@Input(InputType.Association) protected ValueNode									value;
+    @Input(InputType.Association) protected ValueNode value;
 
-	public AtomicAccessNode(ValueNode value) {
-		super(TYPE, value.stamp());
-		assert stamp != null;
-		this.value = value;
-	}
+    public AtomicAccessNode(ValueNode value) {
+        super(TYPE, value.stamp());
+        assert stamp != null;
+        this.value = value;
+    }
 
-	public ValueNode value() {
-		return value;
-	}
+    public ValueNode value() {
+        return value;
+    }
 
 }

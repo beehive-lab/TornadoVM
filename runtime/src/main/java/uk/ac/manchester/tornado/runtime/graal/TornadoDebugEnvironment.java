@@ -48,16 +48,8 @@ public class TornadoDebugEnvironment {
         List<DebugVerifyHandler> verifyHandlers = new ArrayList<>();
         OptionValues options = getTornadoRuntime().getOptions();
 
-        GraalDebugConfig debugConfig = new GraalDebugConfig(options,
-                Log.getValue(options),
-                Count.getValue(options),
-                TrackMemUse.getValue(options),
-                Time.getValue(options),
-                Dump.getValue(options),
-                Verify.getValue(options),
-                MethodFilter.getValue(options),
-                MethodMeter.getValue(options),
-                TTY.out, dumpHandlers, verifyHandlers);
+        GraalDebugConfig debugConfig = new GraalDebugConfig(options, Log.getValue(options), Count.getValue(options), TrackMemUse.getValue(options), Time.getValue(options), Dump.getValue(options),
+                Verify.getValue(options), MethodFilter.getValue(options), MethodMeter.getValue(options), TTY.out, dumpHandlers, verifyHandlers);
 
         for (DebugConfigCustomizer customizer : GraalServices.load(DebugConfigCustomizer.class)) {
             if (!customizer.getClass().getSimpleName().startsWith("Truffle")) {

@@ -40,8 +40,7 @@ public abstract class UnaryLogicalNode extends LogicNode implements IterableNode
 
     public static final NodeClass<UnaryLogicalNode> TYPE = NodeClass.create(UnaryLogicalNode.class);
 
-    @Input(InputType.Condition)
-    LogicNode value;
+    @Input(InputType.Condition) LogicNode value;
 
     protected UnaryLogicalNode(NodeClass<? extends UnaryLogicalNode> type, LogicNode value) {
         super(type);

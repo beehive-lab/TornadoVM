@@ -35,10 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import javax.management.RuntimeErrorException;
-
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;

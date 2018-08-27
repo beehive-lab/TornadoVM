@@ -33,7 +33,6 @@ public class TornadoConstantFieldProvider implements ConstantFieldProvider {
     public <T> T readConstantField(ResolvedJavaField resolvedField, ConstantFieldTool<T> tool) {
         JavaConstant ret = tool.readValue();
         return tool.foldConstant(ret);
-
     }
 
 }

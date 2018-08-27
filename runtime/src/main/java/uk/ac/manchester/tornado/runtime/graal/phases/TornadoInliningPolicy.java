@@ -45,23 +45,13 @@ public class TornadoInliningPolicy implements InliningPolicy {
     }
 
     @Override
-    public boolean isWorthInlining(Replacements replacements, MethodInvocation invocation,
-            int inliningDepth, boolean fullyProcessed) {
+    public boolean isWorthInlining(Replacements replacements, MethodInvocation invocation, int inliningDepth, boolean fullyProcessed) {
         boolean doInline = true;
-
         final InlineInfo info = invocation.callee();
-        final double probability = invocation.probability();
-        final double relevance = invocation.relevance();
-
         int nodes = info.determineNodeCount();
-        int methodCount = info.numberOfMethods();
-
         if (nodes > MaximumInliningSize.getValue(info.graph().getOptions()) && !invocation.isRoot()) {
             doInline = false;
         }
-
-        //	System.out.printf("inliner: %s (%s) -> nodes=%d, count=%d\n",info.toString(),doInline, nodes,methodCount);
         return doInline;
     }
-
 }

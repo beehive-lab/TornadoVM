@@ -53,7 +53,8 @@ class TornadoTaskUtil {
                 for (Node n : parRange.offset().usages()) {
                     if (loop.getInductionVariables().containsKey(n)) {
                         BasicInductionVariable iv = (BasicInductionVariable) loop.getInductionVariables().get(n);
-                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(), parRange.stride(), iv.getOp());
+                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(),
+                                parRange.stride(), iv.getOp());
                         return loop;
                     }
                 }

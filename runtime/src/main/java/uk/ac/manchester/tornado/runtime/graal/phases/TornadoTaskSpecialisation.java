@@ -63,7 +63,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         this.valueTypeReplacement = new TornadoValueTypeReplacement();
         this.deadCodeElimination = new DeadCodeEliminationPhase();
         this.loopUnroller = new TornadoLoopUnroller(canonicalizer);
-
     }
 
     private Field lookupField(Class<?> type, String field) {

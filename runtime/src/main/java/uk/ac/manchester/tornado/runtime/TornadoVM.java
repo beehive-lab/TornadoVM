@@ -37,8 +37,6 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 
-import javax.management.RuntimeErrorException;
-
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;

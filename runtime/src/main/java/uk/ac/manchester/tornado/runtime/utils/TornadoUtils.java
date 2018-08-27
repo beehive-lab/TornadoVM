@@ -25,11 +25,9 @@
  */
 package uk.ac.manchester.tornado.runtime.utils;
 
-public class TornadoUtils {
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 
-    public enum TornadoDeviceType {
-        CPU, GPU, FPGA
-    }
+public class TornadoUtils {
 
     public static int getSizeReduction(int inputSize, TornadoDeviceType where) {
 
@@ -47,8 +45,9 @@ public class TornadoUtils {
                     size = inputSize / 256;
                 }
                 return size;
+            default:
+                break;
         }
-
         return 0;
     }
 

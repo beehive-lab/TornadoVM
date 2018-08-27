@@ -28,5 +28,7 @@ package uk.ac.manchester.tornado.runtime.graal.nodes;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 
 public interface Floatable {
-	public FloatingNode asFloating();
+
+    public FloatingNode asFloating();
+
 }

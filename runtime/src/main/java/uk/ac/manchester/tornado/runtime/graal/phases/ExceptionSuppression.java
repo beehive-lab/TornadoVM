@@ -65,15 +65,12 @@ public class ExceptionSuppression extends BasePhase<TornadoHighTierContext> {
         guards.forEach(guard -> {
             guard.clearInputs();
             guard.safeDelete();
-//            graph.removeFloating(guard);
         });
 
         conditions.forEach(condition -> {
             condition.clearInputs();
             condition.safeDelete();
-//            graph.removeFloating(condition);
         });
-
     }
 
 }

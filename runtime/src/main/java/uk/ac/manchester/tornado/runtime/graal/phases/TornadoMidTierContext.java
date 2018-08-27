@@ -37,12 +37,8 @@ public class TornadoMidTierContext extends MidTierContext {
     protected final Object[] args;
     protected final TaskMetaData meta;
 
-    public TornadoMidTierContext(
-            Providers copyFrom,
-            TargetProvider target,
-            OptimisticOptimizations optimisticOpts,
-            ProfilingInfo profilingInfo,
-            ResolvedJavaMethod method, Object[] args, TaskMetaData meta) {
+    public TornadoMidTierContext(Providers copyFrom, TargetProvider target, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, ResolvedJavaMethod method, Object[] args,
+            TaskMetaData meta) {
         super(copyFrom, target, optimisticOpts, profilingInfo);
         this.method = method;
         this.args = args;

@@ -35,12 +35,7 @@ public class TornadoSketchTierContext extends HighTierContext {
     protected final ResolvedJavaMethod method;
     protected final TaskMetaData meta;
 
-    public TornadoSketchTierContext(
-            Providers providers,
-            PhaseSuite<HighTierContext> graphBuilderSuite,
-            OptimisticOptimizations optimisticOpts,
-            ResolvedJavaMethod method,
-            TaskMetaData meta) {
+    public TornadoSketchTierContext(Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ResolvedJavaMethod method, TaskMetaData meta) {
         super(providers, graphBuilderSuite, optimisticOpts);
         this.method = method;
         this.meta = meta;

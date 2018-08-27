@@ -31,20 +31,16 @@ import org.graalvm.compiler.phases.BasePhase;
 
 public class TornadoMemoryPhiElimination extends BasePhase<TornadoMidTierContext> {
 
+    @Override
+    protected void run(StructuredGraph graph, TornadoMidTierContext context) {
+        graph.getNodes().filter(MemoryPhiNode.class).forEach(memoryPhi -> {
+            memoryPhi.usages().forEach(usage -> {
+                if (usage instanceof FloatingReadNode)
+                    ((FloatingReadNode) usage).setLastLocationAccess(null);
+            });
+            GraphUtil.tryKillUnused(memoryPhi);
+        });
 
-
-	@Override
-	protected void run(StructuredGraph graph, TornadoMidTierContext context) {
-		
-		graph.getNodes().filter(MemoryPhiNode.class)
-				.forEach(memoryPhi -> {
-					memoryPhi.usages().forEach(usage -> {
-						if(usage instanceof FloatingReadNode)
-							((FloatingReadNode) usage).setLastLocationAccess(null);
-					});
-					GraphUtil.tryKillUnused(memoryPhi);
-				});
-
-	}
+    }
 
 }

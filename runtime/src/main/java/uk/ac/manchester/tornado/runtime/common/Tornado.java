@@ -33,10 +33,6 @@ import java.util.Properties;
 import java.util.Set;
 
 import uk.ac.manchester.tornado.api.TornadoCI;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 
 public final class Tornado implements TornadoCI {
 

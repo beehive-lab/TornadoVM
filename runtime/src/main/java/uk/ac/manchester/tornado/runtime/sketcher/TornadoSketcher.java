@@ -103,14 +103,8 @@ public class TornadoSketcher {
         builder.name("sketch-" + resolvedMethod.getName());
         final StructuredGraph graph = builder.build();
 
-//        TaskMetaData meta = new TaskMetaData(resolvedMethod.isStatic() ? resolvedMethod.getParameters().length : resolvedMethod.getParameters().length + 1);
-        // may need to deprecate this...?
-        //providers.getSuitesProvider().setContext(null, resolvedMethod, null, meta);
-        try (Scope s = Debug.scope("Sketcher", new DebugDumpScope("Sketcher"));
-                DebugCloseable a = Sketcher.start()) {
-//            PhaseSuite<HighTierContext> graphBuilderSuite = providers.g.getDefaultGraphBuilderSuite();
-            final TornadoSketchTierContext highTierContext = new TornadoSketchTierContext(providers,
-                    graphBuilderSuite, optimisticOpts, resolvedMethod, meta);
+        try (Scope s = Debug.scope("Sketcher", new DebugDumpScope("Sketcher")); DebugCloseable a = Sketcher.start()) {
+            final TornadoSketchTierContext highTierContext = new TornadoSketchTierContext(providers, graphBuilderSuite, optimisticOpts, resolvedMethod, meta);
             if (graph.start().next() == null) {
                 graphBuilderSuite.apply(graph, highTierContext);
                 new DeadCodeEliminationPhase(Optional).apply(graph);
@@ -118,11 +112,9 @@ public class TornadoSketcher {
                 Debug.dump(Debug.BASIC_LEVEL, graph, "initial state");
             }
 
-//            graph.getMethods().forEach(System.out::println);
             sketchTier.apply(graph, highTierContext);
             graph.maybeCompress();
 
-//            graph.getMethods().forEach(System.out::println);
             // compile any non-inlined call targets
             graph.getInvokes().forEach(invoke -> getTornadoExecutor().execute(new SketchRequest(meta, invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier)));
 

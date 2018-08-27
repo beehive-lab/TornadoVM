@@ -33,12 +33,10 @@ import org.graalvm.compiler.nodes.calc.FloatingNode;
 @NodeInfo
 public abstract class AbstractParallelNode extends FloatingNode implements Comparable<AbstractParallelNode> {
 
-    public static final NodeClass<AbstractParallelNode> TYPE = NodeClass
-            .create(AbstractParallelNode.class);
+    public static final NodeClass<AbstractParallelNode> TYPE = NodeClass.create(AbstractParallelNode.class);
 
     protected int index;
-    @Input
-    protected ValueNode value;
+    @Input protected ValueNode value;
 
     protected AbstractParallelNode(NodeClass<? extends AbstractParallelNode> type, int index, ValueNode value) {
         super(type, StampFactory.forKind(JavaKind.Int));

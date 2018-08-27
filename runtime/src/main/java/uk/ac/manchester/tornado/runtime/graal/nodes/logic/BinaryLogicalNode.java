@@ -40,10 +40,8 @@ public abstract class BinaryLogicalNode extends LogicNode implements IterableNod
 
     public static final NodeClass<BinaryLogicalNode> TYPE = NodeClass.create(BinaryLogicalNode.class);
 
-    @Input(InputType.Condition)
-    LogicNode x;
-    @Input(InputType.Condition)
-    LogicNode y;
+    @Input(InputType.Condition) LogicNode x;
+    @Input(InputType.Condition) LogicNode y;
 
     protected BinaryLogicalNode(NodeClass<? extends BinaryLogicalNode> type, LogicNode x, LogicNode y) {
         super(type);

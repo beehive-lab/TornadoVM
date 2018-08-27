@@ -25,14 +25,9 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
-import java.util.List;
-
-import uk.ac.manchester.tornado.api.common.TornadoEvents;
-
 public class ScheduleMetaData extends AbstractMetaData {
 
     public ScheduleMetaData(String id) {
         super(id);
     }
-
 }

@@ -26,9 +26,9 @@
 package uk.ac.manchester.tornado.runtime.lang;
 
 public class CompilerInternals {
-	
-	public static final Object getSlotsAddress(){
-		return null;
-	}
+
+    public static final Object getSlotsAddress() {
+        return null;
+    }
 
 }

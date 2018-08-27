@@ -28,9 +28,6 @@ import org.graalvm.compiler.lir.phases.LIRPhaseSuite;
 
 public class TornadoAllocationStage extends LIRPhaseSuite<AllocationContext> {
 
-	public TornadoAllocationStage() {
-		//appendPhase(new PhiValueAssociationPhase());
-		//appendPhase(new ControlFlowOptimization());
-		//appendPhase(new VirtualRegisterAllocationPhase());
-	}
+    public TornadoAllocationStage() {
+    }
 }

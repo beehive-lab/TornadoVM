@@ -27,16 +27,16 @@ package uk.ac.manchester.tornado.runtime.common.exceptions;
 
 public class TornadoUnimplementedException extends Exception {
 
-	private static final long	serialVersionUID	= -7515308573010965892L;
-	private final String		message;
+    private static final long serialVersionUID = -7515308573010965892L;
+    private final String message;
 
-	public TornadoUnimplementedException(final String msg) {
-		message = msg;
-	}
+    public TornadoUnimplementedException(final String msg) {
+        message = msg;
+    }
 
-	@Override
-	public String getMessage() {
-		return message;
-	}
+    @Override
+    public String getMessage() {
+        return message;
+    }
 
 }

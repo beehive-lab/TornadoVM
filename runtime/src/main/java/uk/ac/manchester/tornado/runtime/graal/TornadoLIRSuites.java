@@ -33,29 +33,26 @@ import uk.ac.manchester.tornado.runtime.graal.phases.lir.TornadoAllocationStage;
 
 public class TornadoLIRSuites {
 
-	private final LIRPhaseSuite<PreAllocationOptimizationContext> preAllocStage;
-	private final TornadoAllocationStage allocStage;
-	private final LIRPhaseSuite<PostAllocationOptimizationContext> postAllocStage;
-	
-	public TornadoLIRSuites(
-			LIRPhaseSuite<PreAllocationOptimizationContext> preAllocStage,
-			TornadoAllocationStage allocStage,
-			LIRPhaseSuite<PostAllocationOptimizationContext> postAllocStage) {
-		this.preAllocStage = preAllocStage;
-		this.allocStage = allocStage;
-		this.postAllocStage = postAllocStage;
-	}
+    private final LIRPhaseSuite<PreAllocationOptimizationContext> preAllocStage;
+    private final TornadoAllocationStage allocStage;
+    private final LIRPhaseSuite<PostAllocationOptimizationContext> postAllocStage;
 
-	public LIRPhaseSuite<PreAllocationOptimizationContext> getPreAllocationStage() {
-		return preAllocStage;
-	}
+    public TornadoLIRSuites(LIRPhaseSuite<PreAllocationOptimizationContext> preAllocStage, TornadoAllocationStage allocStage, LIRPhaseSuite<PostAllocationOptimizationContext> postAllocStage) {
+        this.preAllocStage = preAllocStage;
+        this.allocStage = allocStage;
+        this.postAllocStage = postAllocStage;
+    }
 
-	public TornadoAllocationStage getAllocationStage() {
-		return allocStage;
-	}
+    public LIRPhaseSuite<PreAllocationOptimizationContext> getPreAllocationStage() {
+        return preAllocStage;
+    }
 
-	public LIRPhaseSuite<PostAllocationOptimizationContext> getPostAllocationStage() {
-		return postAllocStage;
-	}
+    public TornadoAllocationStage getAllocationStage() {
+        return allocStage;
+    }
+
+    public LIRPhaseSuite<PostAllocationOptimizationContext> getPostAllocationStage() {
+        return postAllocStage;
+    }
 
 }
