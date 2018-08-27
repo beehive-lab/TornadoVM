@@ -94,10 +94,6 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
         }
     }
 
-    public void calculateGlobalWorkTemp(final TaskMetaData task, boolean isFPGA) {
-        // to be implemented
-    }
-
     private int calculateGroupSize(long maxWorkItemSizes, long sizes2, long l) {
         int value = (int) Math.min(Math.min(maxWorkItemSizes, sizes2), l);
         while (l % value != 0) {
