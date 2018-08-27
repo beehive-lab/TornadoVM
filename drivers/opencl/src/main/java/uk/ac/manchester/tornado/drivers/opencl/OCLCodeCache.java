@@ -58,9 +58,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class OCLCodeCache {
 
     public static final String LOOKUP_BUFFER_KERNEL_NAME = "lookupBufferAddress";
-
     private final String OPENCL_SOURCE_SUFFIX = ".cl";
-    private final String INTEL_FPGA_SUFFIX = ".aocx";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", "False"));
     private final boolean OPENCL_LOAD_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.loadbin", "False"));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", "False"));
@@ -72,8 +70,6 @@ public class OCLCodeCache {
     private final boolean PRINT_LOAD_TIME = false;
     private final String FPGA_SOURCE_DIR = getProperty("tornado.fpga.source.dir", "fpga-source-comp/");
     private final String FPGA_BIN_LOCATION = getProperty("tornado.fpga.bin", "./fpga-source-comp/lookupBufferAddress");
-    // private final String[] FPGA_FLAGS = { "v", "fast-compile", "high-effort",
-    // "fp-relaxed", "high-effort", "report", "incremental", "profile" };
     private final HashSet<String> FPGA_FLAGS = new HashSet<>(Arrays.asList("v", "fast-compile", "high-effort", "fp-relaxed", "high-effort", "report", "incremental", "profile"));
     private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
 
@@ -344,8 +340,8 @@ public class OCLCodeCache {
         info("Installing code for %s into code cache", entryPoint);
         final OCLProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
 
-        if (OPENCL_DUMP_SOURCE) {
-            final Path outDir = resolveSourceDir();
+        if (OPENCL_DUMP_SOURCE || OpenCL.ACCELERATOR_IS_FPGA) {
+            final Path outDir = OpenCL.ACCELERATOR_IS_FPGA ? resolveFPGADir() : resolveSourceDir();
             File file = new File(outDir + "/" + id + "-" + entryPoint + OPENCL_SOURCE_SUFFIX);
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 fos.write(source);
