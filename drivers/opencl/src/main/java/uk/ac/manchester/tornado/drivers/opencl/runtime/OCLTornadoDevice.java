@@ -257,7 +257,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return null;
     }
 
-    private TornadoInstalledCode compileJavaToAccelertor(SchedulableTask task) {
+    private TornadoInstalledCode compileJavaToAccelerator(SchedulableTask task) {
         if (task instanceof CompilableTask) {
             return compileTask(task);
         } else if (task instanceof PrebuiltTask) {
@@ -292,7 +292,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
         if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName)) {
-            return compileJavaToAccelertor(task);
+            return compileJavaToAccelerator(task);
         } else {
             return loadPreCompiledBinaryFromCache(task);
         }
