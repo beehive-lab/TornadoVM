@@ -253,13 +253,13 @@ Then :
 
 Each Tornado module is licensed as follows:
 
-* Tornado-Runtime : GNU-GPLv2
-* Tornado-Assembly: GNU-GPLv2
-* Tornado-Drivers : GNU-GPLv2 
-* Torando-API     : Under discussion
-* Tornado-Unittests : Under discussion
-* Tornado-Benchmarks: Under discussion
-* Tornado-Examples: Under discussion
-* Tornado-Matrices: Under discussion
+* Tornado-Runtime : GNU-GPLv2 + CLASSPATH Exception
+* Tornado-Assembly: GNU-GPLv2 + CLASSPATH Exception
+* Tornado-Drivers : GNU-GPLv2 + CLASSPATH Exception 
+* Torando-API     : GNU-GPLv2 + CLASSPATH Exception
+* Tornado-Unittests : Apache 2
+* Tornado-Benchmarks: Apache 2
+* Tornado-Examples:   Apache 2
+* Tornado-Matrices:   Apache 2
 
 

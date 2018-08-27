@@ -1,27 +1,19 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
- *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
- *
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
  */
 package uk.ac.manchester.tornado.benchmarks.corrmatrix;
 
@@ -34,7 +26,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 /**
  * GPU calculations using OpenBitSet Intersection for OpenBitSets
  *
- * Based on code from: <br/> null {@link http
+ * Based on code from: <br/>
+ * null {@link http
  * ://grepcode.com/file/repo1.maven.org/maven2/org.apache.lucene/lucene
  * -core/3.1.0/org/apache/lucene/util/BitUtil.java}
  *
@@ -43,22 +36,22 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
  */
 public class CorrMatrixHost {
 
-    private static final Logger LOG = LogManager
-            .getLogger(CorrMatrixHost.class);
+    private static final Logger LOG = LogManager.getLogger(CorrMatrixHost.class);
 
     /**
      * Perform matrix intersection for two lists of Lucene OpenBitSet-based
      * packed longs
      *
-     * @param matrixA The first term-document matrix
-     * @param matrixB The second term-document matrix
+     * @param matrixA
+     *            The first term-document matrix
+     * @param matrixB
+     *            The second term-document matrix
      *
      * @return result Matrix
      *
      * @throws Exception
      */
-    public static int[][] intersectionMatrix(final long[][] matrixA,
-            final long[][] matrixB) throws Exception {
+    public static int[][] intersectionMatrix(final long[][] matrixA, final long[][] matrixB) throws Exception {
 
         // Basic validation
         if (matrixA == null) {
@@ -86,12 +79,10 @@ public class CorrMatrixHost {
         }
 
         final long matrixA_BytesPerRow = matrixA_numLongs * 8L;
-        final long matrixA_TotalBytes = (matrixA_numTerms * matrixA_BytesPerRow)
-                + arrayMemOverhead;
+        final long matrixA_TotalBytes = (matrixA_numTerms * matrixA_BytesPerRow) + arrayMemOverhead;
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("MatrixA Total Memory Size: "
-                    + humanReadableByteCount(matrixA_TotalBytes, true));
+            LOG.debug("MatrixA Total Memory Size: " + humanReadableByteCount(matrixA_TotalBytes, true));
         }
 
         final int matrixB_numTerms = matrixB.length;
@@ -105,27 +96,19 @@ public class CorrMatrixHost {
         }
 
         final long matrixB_BytesPerRow = matrixB_numLongs * 8L;
-        final long matrixB_TotalBytes = (matrixB_numTerms * matrixB_BytesPerRow)
-                + arrayMemOverhead;
+        final long matrixB_TotalBytes = (matrixB_numTerms * matrixB_BytesPerRow) + arrayMemOverhead;
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("MatrixB Total Memory Size: "
-                    + humanReadableByteCount(matrixB_TotalBytes, true));
+            LOG.debug("MatrixB Total Memory Size: " + humanReadableByteCount(matrixB_TotalBytes, true));
             LOG.debug("----------");
         }
 
         final int[][] resultMatrix = new int[matrixA_numTerms][matrixB_numTerms];
 
         if (LOG.isDebugEnabled()) {
-            final long resultMatrix_TotalBytes = (matrixA_numTerms
-                    * matrixB_numTerms * 4L)
-                    + arrayMemOverhead;
-            LOG.debug("ResultMatrix Memory Size: "
-                    + humanReadableByteCount(resultMatrix_TotalBytes, true));
-            LOG.debug("Total Requested Memory Size: "
-                    + humanReadableByteCount(matrixA_TotalBytes
-                            + matrixB_TotalBytes + resultMatrix_TotalBytes,
-                            true));
+            final long resultMatrix_TotalBytes = (matrixA_numTerms * matrixB_numTerms * 4L) + arrayMemOverhead;
+            LOG.debug("ResultMatrix Memory Size: " + humanReadableByteCount(resultMatrix_TotalBytes, true));
+            LOG.debug("Total Requested Memory Size: " + humanReadableByteCount(matrixA_TotalBytes + matrixB_TotalBytes + resultMatrix_TotalBytes, true));
             LOG.debug("----------");
         }
 
@@ -139,8 +122,7 @@ public class CorrMatrixHost {
         // available memory
         final int maxNumTerms = Math.max(matrixA_numTerms, matrixB_numTerms);
 
-        final long maxMemAllocSize
-                = (long) (128.6 * 1024 * 1024);
+        final long maxMemAllocSize = (long) (128.6 * 1024 * 1024);
         // final long maxMemAllocSize = device.getMaxMemAllocSize();
 
         // 1048576 bytes in a megabyte (1024*1024)
@@ -151,8 +133,7 @@ public class CorrMatrixHost {
         // incorrectly/inconsistently reported depending on
         // os/drivers/hardware***
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Available OpenCL maxMemAllocSize: "
-                    + humanReadableByteCount(maxMemAllocSize, true));
+            LOG.debug("Available OpenCL maxMemAllocSize: " + humanReadableByteCount(maxMemAllocSize, true));
         }
 
         // Maybe there is a more clever way to do this :)
@@ -169,49 +150,32 @@ public class CorrMatrixHost {
 
         do {
             if (subRowsCounterA < matrixA_numTerms) {
-                subRowsMemSizeA = subRowsCounterA != 0 ? (subRowsCounterA
-                        * matrixA_numLongs * 8L)
-                        + arrayMemOverhead : 0;
+                subRowsMemSizeA = subRowsCounterA != 0 ? (subRowsCounterA * matrixA_numLongs * 8L) + arrayMemOverhead : 0;
                 subRowsCounterA += 1;
             } else if (subRowsCounterA == matrixA_numTerms) {
-                subRowsMemSizeA = subRowsCounterA != 0 ? (subRowsCounterA
-                        * matrixA_numLongs * 8L)
-                        + arrayMemOverhead : 0;
+                subRowsMemSizeA = subRowsCounterA != 0 ? (subRowsCounterA * matrixA_numLongs * 8L) + arrayMemOverhead : 0;
             }
 
             if (subRowsCounterB < matrixB_numTerms) {
-                subRowsMemSizeB = subRowsCounterB != 0 ? (subRowsCounterB
-                        * matrixB_numLongs * 8L)
-                        + arrayMemOverhead : 0;
+                subRowsMemSizeB = subRowsCounterB != 0 ? (subRowsCounterB * matrixB_numLongs * 8L) + arrayMemOverhead : 0;
                 subRowsCounterB += 1;
             } else if (subRowsCounterB == matrixB_numTerms) {
-                subRowsMemSizeB = subRowsCounterB != 0 ? (subRowsCounterB
-                        * matrixB_numLongs * 8L)
-                        + arrayMemOverhead : 0;
+                subRowsMemSizeB = subRowsCounterB != 0 ? (subRowsCounterB * matrixB_numLongs * 8L) + arrayMemOverhead : 0;
             }
 
             // This is 4 bytes since the sub-result matrix is an int array
-            subResultMatrixMemSize = ((subRowsCounterA * subRowsCounterB) * 4L)
-                    + arrayMemOverhead;
+            subResultMatrixMemSize = ((subRowsCounterA * subRowsCounterB) * 4L) + arrayMemOverhead;
 
-            subTotalMemSize = subRowsMemSizeA + subRowsMemSizeB
-                    + subResultMatrixMemSize;
-        } while ((Math.max(subRowsCounterA, subRowsCounterB) < maxNumTerms)
-                && (subTotalMemSize <= maxMemAllocSize));
+            subTotalMemSize = subRowsMemSizeA + subRowsMemSizeB + subResultMatrixMemSize;
+        } while ((Math.max(subRowsCounterA, subRowsCounterB) < maxNumTerms) && (subTotalMemSize <= maxMemAllocSize));
 
         // If using OpenCL override the default number of subrows
         NUM_SUB_ROWS = Math.max(subRowsCounterA, subRowsCounterB);
 
         if (NUM_SUB_ROWS < maxNumTerms) {
-            final long subMatrixA_memSize = (NUM_SUB_ROWS
-                    * matrixA_numLongs * 8L)
-                    + arrayMemOverhead;
-            final long subMatrixB_memSize = (NUM_SUB_ROWS
-                    * matrixB_numLongs * 8L)
-                    + arrayMemOverhead;
-            final long subResultMatrix_memSize = (NUM_SUB_ROWS
-                    * NUM_SUB_ROWS * 4L)
-                    + arrayMemOverhead;
+            final long subMatrixA_memSize = (NUM_SUB_ROWS * matrixA_numLongs * 8L) + arrayMemOverhead;
+            final long subMatrixB_memSize = (NUM_SUB_ROWS * matrixB_numLongs * 8L) + arrayMemOverhead;
+            final long subResultMatrix_memSize = (NUM_SUB_ROWS * NUM_SUB_ROWS * 4L) + arrayMemOverhead;
 
             LOG.warn("****************************************************************");
             LOG.warn("Requested matrix computation is larger than available OpenCL memory");
@@ -220,66 +184,47 @@ public class CorrMatrixHost {
             LOG.warn("Number rows requested: " + maxNumTerms);
             LOG.warn("Number rows that fit: " + NUM_SUB_ROWS);
             LOG.warn("");
-            LOG.warn("SubMatrixA Memory Size: "
-                    + humanReadableByteCount(subMatrixA_memSize, true));
-            LOG.warn("SubMatrixB Memory Size: "
-                    + humanReadableByteCount(subMatrixB_memSize, true));
-            LOG.warn("SubResultMatrix Memory Size: "
-                    + humanReadableByteCount(subResultMatrix_memSize, true));
-            LOG.warn("SubMatrix Total Memory Size: "
-                    + humanReadableByteCount(subMatrixA_memSize
-                            + subMatrixB_memSize + subResultMatrix_memSize,
-                            true));
+            LOG.warn("SubMatrixA Memory Size: " + humanReadableByteCount(subMatrixA_memSize, true));
+            LOG.warn("SubMatrixB Memory Size: " + humanReadableByteCount(subMatrixB_memSize, true));
+            LOG.warn("SubResultMatrix Memory Size: " + humanReadableByteCount(subResultMatrix_memSize, true));
+            LOG.warn("SubMatrix Total Memory Size: " + humanReadableByteCount(subMatrixA_memSize + subMatrixB_memSize + subResultMatrix_memSize, true));
             LOG.warn("****************************************************************");
         }
 
-        final int numSubBlocksA = ((matrixA_numTerms + NUM_SUB_ROWS) - 1)
-                / NUM_SUB_ROWS;
-        final int numSubBlocksB = ((matrixB_numTerms + NUM_SUB_ROWS) - 1)
-                / NUM_SUB_ROWS;
+        final int numSubBlocksA = ((matrixA_numTerms + NUM_SUB_ROWS) - 1) / NUM_SUB_ROWS;
+        final int numSubBlocksB = ((matrixB_numTerms + NUM_SUB_ROWS) - 1) / NUM_SUB_ROWS;
 
         final long[] subMatrixA = new long[NUM_SUB_ROWS * matrixA_numLongs];
         final long[] subMatrixB = new long[NUM_SUB_ROWS * matrixB_numLongs];
         final int[] subResultMatrix = new int[NUM_SUB_ROWS * NUM_SUB_ROWS];
 
-        final TaskSchedule s0 = new TaskSchedule("benchmark")
-                .streamIn(subMatrixA, subMatrixB)
-                .task("corrmatrix", CorrMatrixKernel::run, subMatrixA, NUM_SUB_ROWS, subMatrixB,
-                        NUM_SUB_ROWS, matrixA_numLongs, subResultMatrix)
-                .streamOut(subResultMatrix);
+        final TaskSchedule s0 = new TaskSchedule("benchmark").streamIn(subMatrixA, subMatrixB)
+                .task("corrmatrix", CorrMatrixKernel::run, subMatrixA, NUM_SUB_ROWS, subMatrixB, NUM_SUB_ROWS, matrixA_numLongs, subResultMatrix).streamOut(subResultMatrix);
 
-//        s0.warmup();
+        // s0.warmup();
         try {
             for (int a = 0; a < numSubBlocksA; a++) {
                 for (int b = 0; b < numSubBlocksB; b++) {
                     final int aSubRowStart = a * NUM_SUB_ROWS;
-                    final int aSubRowEnd = Math.min(matrixA_numTerms,
-                            aSubRowStart + NUM_SUB_ROWS);
+                    final int aSubRowEnd = Math.min(matrixA_numTerms, aSubRowStart + NUM_SUB_ROWS);
 
                     for (int i = aSubRowStart; i < aSubRowEnd; i++) {
                         if (matrixA_numLongs != matrixA[i].length) {
-                            throw new Exception(
-                                    "All rows in the matrix need be the same length");
+                            throw new Exception("All rows in the matrix need be the same length");
                         }
 
-                        System.arraycopy(matrixA[i], 0, subMatrixA,
-                                (i - aSubRowStart) * matrixA_numLongs,
-                                matrixA_numLongs);
+                        System.arraycopy(matrixA[i], 0, subMatrixA, (i - aSubRowStart) * matrixA_numLongs, matrixA_numLongs);
                     }
 
                     final int bSubRowStart = b * NUM_SUB_ROWS;
-                    final int bSubRowEnd = Math.min(matrixB_numTerms,
-                            bSubRowStart + NUM_SUB_ROWS);
+                    final int bSubRowEnd = Math.min(matrixB_numTerms, bSubRowStart + NUM_SUB_ROWS);
 
                     for (int i = bSubRowStart; i < bSubRowEnd; i++) {
                         if (matrixA_numLongs != matrixB[i].length) {
-                            throw new Exception(
-                                    "All rows in the matrix need be the same length");
+                            throw new Exception("All rows in the matrix need be the same length");
                         }
 
-                        System.arraycopy(matrixB[i], 0, subMatrixB,
-                                (i - bSubRowStart) * matrixB_numLongs,
-                                matrixB_numLongs);
+                        System.arraycopy(matrixB[i], 0, subMatrixB, (i - bSubRowStart) * matrixB_numLongs, matrixB_numLongs);
                     }
 
                     // Since matrixA_NumLongs == matrixB_NumLongs we're only
@@ -290,9 +235,7 @@ public class CorrMatrixHost {
                     // the expected output ordering
                     for (int i = 0; i < NUM_SUB_ROWS; i++) {
                         if ((i + aSubRowStart) < aSubRowEnd) {
-                            System.arraycopy(subResultMatrix, i * NUM_SUB_ROWS,
-                                    resultMatrix[i + aSubRowStart],
-                                    bSubRowStart, bSubRowEnd - bSubRowStart);
+                            System.arraycopy(subResultMatrix, i * NUM_SUB_ROWS, resultMatrix[i + aSubRowStart], bSubRowStart, bSubRowEnd - bSubRowStart);
                         }
                     }
                 }
@@ -322,37 +265,37 @@ public class CorrMatrixHost {
      *
      * @return resultMatrix
      */
-//    private static void executeKernel(final long[] subMatrixA,
-//            final int matrixA_NumTerms, final long[] subMatrixB,
-//            final int matrixB_NumTerms, final int numLongs,
-//            final int[] subResultMatrix, final Task kernel,
-//            final NewTaskGraph tasks) {
-//
-//        // Power of Two for best performance
-//        // int matrixA_NumTermsRnd = matrixA_NumTerms;
-//        // while (!isPowerOfTwo(matrixA_NumTermsRnd)) {
-//        // matrixA_NumTermsRnd += 1;
-//        // }
-//        // int matrixB_NumTermsRnd = matrixB_NumTerms;
-//        // while (!isPowerOfTwo(matrixB_NumTermsRnd)) {
-//        // matrixB_NumTermsRnd += 1;
-//        // }
-//        final Dims range = new Dims(matrixA_NumTerms, matrixB_NumTerms);
-//        kernel.getMeta().setThreadDimensions(range);
-//
-//        // kernel.setParameters(subMatrixA, matrixA_NumTerms, subMatrixB,
-//        // matrixB_NumTerms, numLongs, subResultMatrix);
-//        if (LOG.isDebugEnabled()) {
-//            LOG.debug("Range: " + range);
-//        }
-//
-//        try {
-//            tasks.executeOnly();
-//        } catch (JaccRuntimeException e) {
-//            e.printStackTrace();
-//        }
-//
-//    }
+    // private static void executeKernel(final long[] subMatrixA,
+    // final int matrixA_NumTerms, final long[] subMatrixB,
+    // final int matrixB_NumTerms, final int numLongs,
+    // final int[] subResultMatrix, final Task kernel,
+    // final NewTaskGraph tasks) {
+    //
+    // // Power of Two for best performance
+    // // int matrixA_NumTermsRnd = matrixA_NumTerms;
+    // // while (!isPowerOfTwo(matrixA_NumTermsRnd)) {
+    // // matrixA_NumTermsRnd += 1;
+    // // }
+    // // int matrixB_NumTermsRnd = matrixB_NumTerms;
+    // // while (!isPowerOfTwo(matrixB_NumTermsRnd)) {
+    // // matrixB_NumTermsRnd += 1;
+    // // }
+    // final Dims range = new Dims(matrixA_NumTerms, matrixB_NumTerms);
+    // kernel.getMeta().setThreadDimensions(range);
+    //
+    // // kernel.setParameters(subMatrixA, matrixA_NumTerms, subMatrixB,
+    // // matrixB_NumTerms, numLongs, subResultMatrix);
+    // if (LOG.isDebugEnabled()) {
+    // LOG.debug("Range: " + range);
+    // }
+    //
+    // try {
+    // tasks.executeOnly();
+    // } catch (JaccRuntimeException e) {
+    // e.printStackTrace();
+    // }
+    //
+    // }
     /**
      * Highly efficient means to compute whether a number is a power of 2<br>
      * Based on code from
@@ -398,8 +341,7 @@ public class CorrMatrixHost {
             return bytes + " B";
         }
         final int exp = (int) (Math.log(bytes) / Math.log(unit));
-        final String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1)
-                + (si ? "" : "i");
+        final String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
 
         return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
     }

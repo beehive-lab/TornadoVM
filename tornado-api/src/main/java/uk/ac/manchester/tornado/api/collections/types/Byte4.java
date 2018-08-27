@@ -6,21 +6,37 @@
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * GNU Classpath is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ * 
+ * GNU Classpath is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with GNU Classpath; see the file COPYING.  If not, write to the
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301 USA.
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
+ * Linking this library statically or dynamically with other modules is
+ * making a combined work based on this library.  Thus, the terms and
+ * conditions of the GNU General Public License cover the whole
+ * combination.
+ * 
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent
+ * modules, and to copy and distribute the resulting executable under
+ * terms of your choice, provided that you also meet, for each linked
+ * independent module, the terms and conditions of the license of that
+ * module.  An independent module is a module which is not derived from
+ * or based on this library.  If you modify this library, you may extend
+ * this exception to your version of the library, but you are not
+ * obligated to do so.  If you do not wish to do so, delete this
+ * exception statement from your version.
  *
  */
 package uk.ac.manchester.tornado.api.collections.types;
@@ -49,8 +65,7 @@ public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
     /**
      * backing array
      */
-    @Payload
-    final protected byte[] storage;
+    @Payload final protected byte[] storage;
 
     /**
      * number of elements in the storage
@@ -175,56 +190,46 @@ public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
      * vector = op( vector, vector )
      */
     public static Byte4 add(Byte4 a, Byte4 b) {
-        return new Byte4((byte) (a.getX() + b.getX()), (byte) (a.getY() + b.getY()),
-                (byte) (a.getZ() + b.getZ()), (byte) (a.getW() + b.getW()));
+        return new Byte4((byte) (a.getX() + b.getX()), (byte) (a.getY() + b.getY()), (byte) (a.getZ() + b.getZ()), (byte) (a.getW() + b.getW()));
     }
 
     public static Byte4 sub(Byte4 a, Byte4 b) {
-        return new Byte4((byte) (a.getX() - b.getX()), (byte) (a.getY() - b.getY()),
-                (byte) (a.getZ() - b.getZ()), (byte) (a.getW() - b.getW()));
+        return new Byte4((byte) (a.getX() - b.getX()), (byte) (a.getY() - b.getY()), (byte) (a.getZ() - b.getZ()), (byte) (a.getW() - b.getW()));
     }
 
     public static Byte4 div(Byte4 a, Byte4 b) {
-        return new Byte4((byte) (a.getX() / b.getX()), (byte) (a.getY() / b.getY()),
-                (byte) (a.getZ() / b.getZ()), (byte) (a.getW() / b.getW()));
+        return new Byte4((byte) (a.getX() / b.getX()), (byte) (a.getY() / b.getY()), (byte) (a.getZ() / b.getZ()), (byte) (a.getW() / b.getW()));
     }
 
     public static Byte4 mult(Byte4 a, Byte4 b) {
-        return new Byte4((byte) (a.getX() * b.getX()), (byte) (a.getY() * b.getY()),
-                (byte) (a.getZ() * b.getZ()), (byte) (a.getW() * b.getW()));
+        return new Byte4((byte) (a.getX() * b.getX()), (byte) (a.getY() * b.getY()), (byte) (a.getZ() * b.getZ()), (byte) (a.getW() * b.getW()));
     }
 
     public static Byte4 min(Byte4 a, Byte4 b) {
-        return new Byte4(TornadoMath.min(a.getX(), b.getX()), TornadoMath.min(a.getY(), b.getY()),
-                TornadoMath.min(a.getZ(), b.getZ()), TornadoMath.min(a.getW(), b.getW()));
+        return new Byte4(TornadoMath.min(a.getX(), b.getX()), TornadoMath.min(a.getY(), b.getY()), TornadoMath.min(a.getZ(), b.getZ()), TornadoMath.min(a.getW(), b.getW()));
     }
 
     public static Byte4 max(Byte4 a, Byte4 b) {
-        return new Byte4(TornadoMath.max(a.getX(), b.getX()), TornadoMath.max(a.getY(), b.getY()),
-                TornadoMath.max(a.getZ(), b.getZ()), TornadoMath.max(a.getW(), b.getW()));
+        return new Byte4(TornadoMath.max(a.getX(), b.getX()), TornadoMath.max(a.getY(), b.getY()), TornadoMath.max(a.getZ(), b.getZ()), TornadoMath.max(a.getW(), b.getW()));
     }
 
     /*
      * vector = op (vector, scalar)
      */
     public static Byte4 add(Byte4 a, byte b) {
-        return new Byte4((byte) (a.getX() + b), (byte) (a.getY() + b), (byte) (a.getZ() + b),
-                (byte) (a.getW() + b));
+        return new Byte4((byte) (a.getX() + b), (byte) (a.getY() + b), (byte) (a.getZ() + b), (byte) (a.getW() + b));
     }
 
     public static Byte4 sub(Byte4 a, byte b) {
-        return new Byte4((byte) (a.getX() - b), (byte) (a.getY() - b), (byte) (a.getZ() - b),
-                (byte) (a.getW() - b));
+        return new Byte4((byte) (a.getX() - b), (byte) (a.getY() - b), (byte) (a.getZ() - b), (byte) (a.getW() - b));
     }
 
     public static Byte4 mult(Byte4 a, byte b) {
-        return new Byte4((byte) (a.getX() * b), (byte) (a.getY() * b), (byte) (a.getZ() * b),
-                (byte) (a.getW() * b));
+        return new Byte4((byte) (a.getX() * b), (byte) (a.getY() * b), (byte) (a.getZ() * b), (byte) (a.getW() * b));
     }
 
     public static Byte4 div(Byte4 a, byte b) {
-        return new Byte4((byte) (a.getX() / b), (byte) (a.getY() / b), (byte) (a.getZ() / b),
-                (byte) (a.getW() / b));
+        return new Byte4((byte) (a.getX() / b), (byte) (a.getY() / b), (byte) (a.getZ() / b), (byte) (a.getW() / b));
     }
 
     public static Byte4 inc(Byte4 a, byte value) {
@@ -243,24 +248,18 @@ public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
      * misc inplace vector ops
      */
     public static Byte4 clamp(Byte4 x, byte min, byte max) {
-        return new Byte4(
-                TornadoMath.clamp(x.getX(), min, max),
-                TornadoMath.clamp(x.getY(), min, max),
-                TornadoMath.clamp(x.getZ(), min, max),
-                TornadoMath.clamp(x.getW(), min, max));
+        return new Byte4(TornadoMath.clamp(x.getX(), min, max), TornadoMath.clamp(x.getY(), min, max), TornadoMath.clamp(x.getZ(), min, max), TornadoMath.clamp(x.getW(), min, max));
     }
 
     /*
      * vector wide operations
      */
     public static byte min(Byte4 value) {
-        return TornadoMath.min(TornadoMath.min(value.getX(), value.getY()),
-                TornadoMath.min(value.getZ(), value.getW()));
+        return TornadoMath.min(TornadoMath.min(value.getX(), value.getY()), TornadoMath.min(value.getZ(), value.getW()));
     }
 
     public static byte max(Byte4 value) {
-        return TornadoMath.max(TornadoMath.max(value.getX(), value.getY()),
-                TornadoMath.max(value.getZ(), value.getW()));
+        return TornadoMath.max(TornadoMath.max(value.getX(), value.getY()), TornadoMath.max(value.getZ(), value.getW()));
     }
 
     public static boolean isEqual(Byte4 a, Byte4 b) {
