@@ -340,6 +340,10 @@ Public License instead of this License.
 
 CLASSPATH EXCEPTION TO THE GPL
 
+Certain source files distributed within the Tornado compiler by the University 
+of Manchester are subjet to the following clarification and special exception to 
+the GPL, but only when the following clarification is included in the file's header.
+
     Linking this library statically or dynamically with other modules is making 
     a combined work based on this library. Thus, the terms and conditions of the 
     GNU General Public License cover the whole combination.
