@@ -50,7 +50,6 @@ import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLCodeCache {
@@ -67,6 +66,7 @@ public class OCLCodeCache {
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-logs");
     private final boolean PRINT_LOAD_TIME = false;
+    private final String FPGA_SOURCE_DIR = getProperty("tornado.fpga.source.dir", "fpga-source-comp/");
 
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
@@ -188,7 +188,7 @@ public class OCLCodeCache {
     }
 
     private Path resolveDir(String dir) {
-        final String tornadoRoot = System.getenv("TORNADO_SDK");
+        final String tornadoRoot = (OpenCL.ACCELERATOR_IS_FPGA) ? System.getenv("TORNADO_ROOT") : System.getenv("TORNADO_SDK");
         final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
         final Path outDir = Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
         if (!Files.exists(outDir)) {
@@ -202,6 +202,10 @@ public class OCLCodeCache {
 
         guarantee(Files.isDirectory(outDir), "target directory is not a directory: %s", outDir.toAbsolutePath().toString());
         return outDir;
+    }
+
+    private Path resolveFPGADir() {
+        return resolveDir(FPGA_SOURCE_DIR);
     }
 
     private Path resolveCacheDir() {
@@ -225,8 +229,8 @@ public class OCLCodeCache {
         info("Installing code for %s into code cache", entryPoint);
         final OCLProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
 
-        if (OPENCL_DUMP_SOURCE) {
-            final Path outDir = resolveSourceDir();
+        if (OPENCL_DUMP_SOURCE || OpenCL.ACCELERATOR_IS_FPGA) {
+            final Path outDir = OpenCL.ACCELERATOR_IS_FPGA ? resolveFPGADir() : resolveSourceDir();
             File file = new File(outDir + "/" + id + "-" + entryPoint + OPENCL_SOURCE_SUFFIX);
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 fos.write(source);
