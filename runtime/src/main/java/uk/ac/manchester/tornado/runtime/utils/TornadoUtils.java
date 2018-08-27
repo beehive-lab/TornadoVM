@@ -30,7 +30,6 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 public class TornadoUtils {
 
     public static int getSizeReduction(int inputSize, TornadoDeviceType where) {
-
         switch (where) {
             case CPU:
                 // If it is executed on the CPU, we return the number of threads
@@ -46,9 +45,8 @@ public class TornadoUtils {
                 }
                 return size;
             default:
-                break;
+                return 0;
         }
-        return 0;
     }
 
 }
