@@ -54,7 +54,7 @@ These two jar files include a patch to execute Tornado. If you want to build Gra
 Then you will need to copy `graal.jar` and `truffle-api.jar` into the Tornado project.
 
 
-### 2. Compile Tornado
+### 2. Download Tornado
 
 ```bash
  $ git clone https://github.com/beehive-lab/tornado.git tornado
@@ -144,6 +144,8 @@ $ cmake -version
 cmake version 3.10.1
 ``` 
 
+NOTE: the tornado `Makefile` automatically sets the `cmake.root.dir` based on the variable `CMAKE_ROOT` set in `etc/tornado.env`
+
 ### 5. Compile Tornado
 
 ```bash
@@ -152,8 +154,6 @@ $ . etc/tornado.env
 $ make 
 ```
 and done!! 
-
-NOTE: the Makefile automatically sets the `cmake.root.dir` based on the variable `CMAKE_ROOT` set in `etc/tornado.env`
 
 
 ## Running Examples #
