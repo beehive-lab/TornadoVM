@@ -21,7 +21,7 @@
 Tornado has been tested on:
 
   * OSx 10.13.2 (High Sierra)
-  * CentOS 7.4
+  * CentOS >= 7.3
   * Fedora 21
   * Ubuntu 16.4 
 
@@ -141,7 +141,7 @@ $ mvn -Dcmake.root.dir=$HOME/opt/cmake-3.10.1/ package
 
 and done!! 
 
-NOTE: the Makefile autoamtically sets the `cmake.root.dir` based on the variable `CMAKE_ROOT` set in `etc/tornado.env`
+NOTE: the Makefile automatically sets the `cmake.root.dir` based on the variable `CMAKE_ROOT` set in `etc/tornado.env`
 
 
 
@@ -257,9 +257,9 @@ Each Tornado module is licensed as follows:
 * Tornado-Assembly: GNU-GPLv2 + CLASSPATH Exception
 * Tornado-Drivers : GNU-GPLv2 + CLASSPATH Exception 
 * Torando-API     : GNU-GPLv2 + CLASSPATH Exception
+* Tornado-scripts (scripts) : GNU-GPLv2
 * Tornado-Unittests : Apache 2
 * Tornado-Benchmarks: Apache 2
 * Tornado-Examples:   Apache 2
 * Tornado-Matrices:   Apache 2
-
 
