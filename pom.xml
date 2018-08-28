@@ -18,8 +18,8 @@
 
   <repositories>
     <repository>
-      <id>uom-graal-core</id>
-      <url>https://raw.github.com/beehive-lab/graal-core/maven-repo/repository/</url>
+      <id>universityOfManchester-graal</id>
+      <url>https://raw.githubusercontent.com/beehive-lab/graal/maven-tornado-repos</url>
     </repository>
   </repositories>
 
