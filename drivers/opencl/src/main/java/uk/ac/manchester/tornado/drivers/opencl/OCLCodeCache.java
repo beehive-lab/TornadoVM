@@ -291,6 +291,7 @@ public class OCLCodeCache {
 
     }
 
+<<<<<<< HEAD
     public OCLInstalledCode installSource(String id, String entryPoint, byte[] source, boolean isFPGA) {
 
         appendSourceToFile(id, entryPoint, source);
