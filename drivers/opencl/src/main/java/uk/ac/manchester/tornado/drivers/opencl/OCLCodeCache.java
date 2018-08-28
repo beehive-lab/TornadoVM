@@ -224,20 +224,7 @@ public class OCLCodeCache {
         return kernelAvailable;
     }
 
-    public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
-
-        info("Installing code for %s into code cache", entryPoint);
-        final OCLProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
-
-        if (OPENCL_DUMP_SOURCE) {
-            final Path outDir = resolveSourceDir();
-            File file = new File(outDir + "/" + id + "-" + entryPoint + OPENCL_SOURCE_SUFFIX);
-            try (FileOutputStream fos = new FileOutputStream(file)) {
-                fos.write(source);
-            } catch (IOException e) {
-                error("unable to dump source: ", e.getMessage());
-            }
-        }
+    public void appendSourceToFile(String id, String entryPoint, byte[] source) {
 
         if (OpenCL.ACCELERATOR_IS_FPGA) {
             final Path outDir = OpenCL.ACCELERATOR_IS_FPGA ? resolveFPGADir() : resolveSourceDir();
@@ -261,6 +248,27 @@ public class OCLCodeCache {
                 }
             }
 
+        }
+
+    }
+
+    public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
+
+        info("Installing code for %s into code cache", entryPoint);
+        final OCLProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
+
+        if (OPENCL_DUMP_SOURCE) {
+            final Path outDir = resolveSourceDir();
+            File file = new File(outDir + "/" + id + "-" + entryPoint + OPENCL_SOURCE_SUFFIX);
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                fos.write(source);
+            } catch (IOException e) {
+                error("unable to dump source: ", e.getMessage());
+            }
+        }
+
+        if (OpenCL.ACCELERATOR_IS_FPGA) {
+            appendSourceToFile(id, entryPoint, source);
         }
 
         if (OPENCL_PRINT_SOURCE) {
