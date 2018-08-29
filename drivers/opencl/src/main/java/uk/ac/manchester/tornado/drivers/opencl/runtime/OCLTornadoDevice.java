@@ -47,6 +47,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
+import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
@@ -229,7 +230,9 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
                 return deviceContext.getCode(task.getId(), resolvedMethod.getName());
             }
-            return deviceContext.installCode(result);
+            System.out.print("OCLTornadoDevice: <---> \n");
+            return OpenCL.ACCELERATOR_IS_FPGA ? deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), OpenCL.ACCELERATOR_IS_FPGA) : deviceContext.installCode(result);
+            // return deviceContext.installCode(result);
         } catch (Exception e) {
             driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
             driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
@@ -250,6 +253,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
         try {
             final byte[] source = Files.readAllBytes(path);
+            System.out.print("OCLTornadoDevice:   <-> \n");
             return deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(), source);
         } catch (IOException e) {
             e.printStackTrace();
@@ -262,6 +266,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             return compileTask(task);
         } else if (task instanceof PrebuiltTask) {
             return compilePreBuiltTask(task);
+        } else if (task instanceof CompilableTask && OpenCL.ACCELERATOR_IS_FPGA) {
+            return compileTask(task);
         }
         TornadoInternalError.shouldNotReachHere("task of unknown type: " + task.getClass().getSimpleName());
         return null;
@@ -291,7 +297,9 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     public TornadoInstalledCode installCode(SchedulableTask task) {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
-        if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName)) {
+        if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !OpenCL.ACCELERATOR_IS_FPGA) {
+            return compileJavaToAccelerator(task);
+        } else if (OpenCL.ACCELERATOR_IS_FPGA) {
             return compileJavaToAccelerator(task);
         } else {
             return loadPreCompiledBinaryFromCache(task);

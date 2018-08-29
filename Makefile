@@ -1,10 +1,12 @@
 all: build
 
 build: 
+	rm -rf fpga-source-comp/
 	./bin/compile.sh
 
 clean: 
 	mvn clean
+	rm -rf fpga-source-comp/
 
 example:
 	tornado uk.ac.manchester.tornado.examples.HelloWorld

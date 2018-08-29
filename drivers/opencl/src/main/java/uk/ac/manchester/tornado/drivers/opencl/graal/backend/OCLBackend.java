@@ -84,6 +84,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
+import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeProvider;
@@ -226,8 +227,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     /**
-     * It allocates the smallest of the requested heap size or the max global
-     * memory size.
+     * It allocates the smallest of the requested heap size or the max global memory
+     * size.
      */
     public void allocateHeapMemoryOnDevice() {
 
@@ -317,7 +318,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
             OCLProviders providers = (OCLProviders) getProviders();
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
-            lookupCode = deviceContext.installCode(result);
+            lookupCode = OpenCL.ACCELERATOR_IS_FPGA ? deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), OpenCL.ACCELERATOR_IS_FPGA)
+                    : deviceContext.installCode(result);
             if (deviceContext.isKernelAvailable()) {
                 lookupCodeAvailable = true;
             }
@@ -448,12 +450,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         if (crb.isKernel()) {
             /*
-             * BUG There is a bug on some OpenCL devices which requires us to
-             * insert an extra OpenCL buffer into the kernel arguments. This has
-             * the effect of shifting the devices address mappings, which allows
-             * us to avoid the heap starting at address 0x0. (I assume that this
-             * is a interesting case that leads to a few issues.) Iris Pro is
-             * the only culprit at the moment.
+             * BUG There is a bug on some OpenCL devices which requires us to insert an
+             * extra OpenCL buffer into the kernel arguments. This has the effect of
+             * shifting the devices address mappings, which allows us to avoid the heap
+             * starting at address 0x0. (I assume that this is a interesting case that leads
+             * to a few issues.) Iris Pro is the only culprit at the moment.
              */
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
 
