@@ -329,6 +329,7 @@ public class OCLCodeCache {
             f = new File(FPGA_BIN_LOCATION);
 
             Path path = Paths.get(FPGA_BIN_LOCATION);
+
             if (RuntimeUtilities.ifFileExists(f)) {
                 return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
             } else {
