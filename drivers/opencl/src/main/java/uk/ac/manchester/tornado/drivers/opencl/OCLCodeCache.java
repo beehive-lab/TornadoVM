@@ -59,6 +59,7 @@ public class OCLCodeCache {
 
     public static final String LOOKUP_BUFFER_KERNEL_NAME = "lookupBufferAddress";
     private final String OPENCL_SOURCE_SUFFIX = ".cl";
+    private final String INTEL_FPGA_SUFFIX = ".aocx";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", "False"));
     private final boolean OPENCL_LOAD_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.loadbin", "False"));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", "False"));
@@ -291,7 +292,6 @@ public class OCLCodeCache {
 
     }
 
-<<<<<<< HEAD
     public OCLInstalledCode installSource(String id, String entryPoint, byte[] source, boolean isFPGA) {
 
         appendSourceToFile(id, entryPoint, source);
