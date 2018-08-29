@@ -277,8 +277,10 @@ public class OCLCodeCache {
 
             String[] cmd;
 
-            cmd = new String[] { "aoc", "-march=p385a_sch_ax115 ", "-v", inputFile, "-o", outputFile };
+            // cmd = new String[] { "aoc", inputFile, "-v", "-march=p385a_sch_ax115 ", "-o",
+            // outputFile };
 
+            cmd = new String[] { "aoc", inputFile, "-v", "-march=p385a_sch_ax115 ", "-report" };
             // System.out.println(Arrays.toString(cmd));
 
             try {
