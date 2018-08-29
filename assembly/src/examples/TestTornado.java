@@ -29,39 +29,38 @@ package examples;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.Parallel;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class TestTornado { 
 
   public static void main(String[] args) {
-	testVectorAdditionDouble(4096);
+	testVectorAddition(4096);
   }
 	
 
   // Method to be executed on the parallel device (eg. GPU)
-  public static void vectorAddDouble(double[] a, double[] b, double[] c) {
+  public static void vectorAdd(float[] a, float[] b, float[] c) {
     for (@Parallel int i = 0; i < c.length; i++) {
     	c[i] = a[i] + b[i];
     }
   }
 
-  public static void testVectorAdditionDouble(int size) {
+  public static void testVectorAddition(int size) {
 
-    double[] a = new double[size];
-    double[] b = new double[size];
-    double[] c = new double[size];
+    float[] a = new float[size];
+    float[] b = new float[size];
+    float[] c = new float[size];
 
     Random r = new Random();
     IntStream.range(0, size).sequential().forEach(i -> {
-        a[i] = r.nextDouble();
-        b[i] = r.nextDouble();
+        a[i] = r.nextFloat();
+        b[i] = r.nextFloat();
     });
 
     // Tornado Task API 
     new TaskSchedule("s0")     // new group of Tasks
-        .streamIn(a, b)        // copy in from the host to the device (a and b arrays)
-        .task("t0", TestTornado::vectorAddDouble, a, b, c)   // task 0 
+        .task("t0", TestTornado::vectorAdd, a, b, c)   // task 0 
         .streamOut(c)          // copy out from the device to host
         .execute();            // run the task (Tornado bytecode generation, Tornado tasks graph, 
                                // OpenCL JIT compilation and execution)
