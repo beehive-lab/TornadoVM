@@ -22,12 +22,10 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 /**
  * This kernel attempts to re-implement the Lucene OpenBitSet functionality on a
  * GPU
- *
+ * 
  * Based on code from: <br/>
- * null {@link http
- * ://grepcode.com/file/repo1.maven.org/maven2/org.apache.lucene/lucene
- * -core/3.1.0/org/apache/lucene/util/BitUtil.java}
- *
+ * {@link http://grepcode.com/file/repo1.maven.org/maven2/org.apache.lucene/lucene-core/3.1.0/org/apache/lucene/util/BitUtil.java}
+ * 
  * @author ryan.lamothe at gmail.com
  * @author sedillard at gmail.com
  */
@@ -37,11 +35,6 @@ public class CorrMatrixKernel {
 
         for (@Parallel int i = 0; i < matrixA_NumTerms; i++) {
             for (@Parallel int j = 0; j < matrixB_NumTerms; j++) {
-
-                // For testing purposes, you can use the naive implementation to
-                // compare performance
-                // resultMatrix[(i * matrixB_NumTerms) + j] = pop_intersect(
-                // matrixA, i * numLongs, matrixB, j * numLongs, numLongs);
                 resultMatrix[(i * matrixB_NumTerms) + j] = naive_pop_intersect(matrixA, i * numLongs, matrixB, j * numLongs, numLongs);
             }
         }
