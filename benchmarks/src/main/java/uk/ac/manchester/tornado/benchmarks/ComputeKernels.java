@@ -169,13 +169,13 @@ public class ComputeKernels {
     }
 
     /*
-     * @brief Calculates the call and put prices by using Black Scholes model
+     * @brief Computes the call and put prices by using Black Scholes model
      * 
-     * @param randArray array of random values of current option price
+     * @param randArray input array of random values of current option price
      * 
-     * @param out array of calculated put price values
+     * @param out output array of calculated put price values
      * 
-     * @param call array of calculated call price values
+     * @param call output array of calculated call price values
      */
     public static void blackscholes(final float[] randArray, final float[] put, final float[] call) {
         for (@Parallel int gid = 0; gid < call.length; gid++) {
