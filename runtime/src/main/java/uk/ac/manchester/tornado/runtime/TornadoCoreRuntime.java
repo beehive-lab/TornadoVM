@@ -168,6 +168,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
         return drivers[index];
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <D extends TornadoDriver> D getDriver(Class<D> type) {
         for (TornadoAcceleratorDriver driver : drivers) {
