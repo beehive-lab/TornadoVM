@@ -57,6 +57,7 @@ public class OCLCodeCache {
     public static final String LOOKUP_BUFFER_KERNEL_NAME = "lookupBufferAddress";
 
     private final String OPENCL_SOURCE_SUFFIX = ".cl";
+    private final String INTEL_FPGA_SUFFIX = ".aocx";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", "False"));
     private final boolean OPENCL_LOAD_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.loadbin", "False"));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", "False"));
@@ -249,6 +250,57 @@ public class OCLCodeCache {
             }
 
         }
+
+    }
+
+    public OCLInstalledCode installSource(String id, String entryPoint, byte[] source, boolean isFPGA) {
+
+        appendSourceToFile(id, entryPoint, source);
+
+        System.out.println("New install " + "\n");
+
+        if (!entryPoint.equals("lookupBufferAddress")) {
+
+            // String outDirString = outDir.toString();
+            // String filename = id + "-" + entryPoint + OPENCL_SOURCE_SUFFIX;
+            // String fileLocation = outDirString + "/" + id + "-" + entryPoint +
+            // INTEL_FPGA_SUFFIX;
+            // String aoc = "aoc " + "-march=emulator " + "-v " + outDirString + "/" +
+            // filename + " -o " + fileLocation;
+
+            String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
+
+            String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + INTEL_FPGA_SUFFIX;
+
+            System.out.println("Input file and location: " + inputFile + "\n");
+            System.out.println("Output file and location: " + outputFile + "\n");
+
+            String[] cmd;
+
+            cmd = new String[] { "aoc", "-march=p385a_sch_ax115 ", "-v", inputFile, "-o", outputFile };
+
+            // System.out.println(Arrays.toString(cmd));
+
+            try {
+                Runtime rt = Runtime.getRuntime();
+                Process p = rt.exec(cmd);
+                int exitVal = p.waitFor();
+                System.out.println("ExitValue: " + exitVal);
+            } catch (IOException e) {
+                error("Unable to compile with Altera tools", e);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+
+            System.exit(0);
+            // return 1;
+
+        }
+
+        // System.exit(1);
+        return null;
 
     }
 
