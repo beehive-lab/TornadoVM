@@ -29,49 +29,52 @@ Once the method `execute` is invoked, Tornado builds the data dependency graph, 
 
 
 ```java
-package examples;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 
-import java.util.Random;
-import java.util.stream.IntStream;
+public class VectorAddFloat {
 
-import uk.ac.manchester.tornado.api.Parallel;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
-
-public class TestTornado { 
-
-  public static void main(String[] args) {
-	testVectorAdditionDouble(4096);
-  }
-	
-
-  // Method to be executed on the parallel device (eg. GPU)
-  public static void vectorAddDouble(double[] a, double[] b, double[] c) {
-    for (@Parallel int i = 0; i < c.length; i++) {
-    	c[i] = a[i] + b[i];
+ private static void vectorAdd(float[] a, float[] b, float[] c) {
+        for (@Parallel int i = 0; i < c.length; i++) {
+            c[i] = a[i] + b[i];
+        }
     }
-  }
 
-  public static void testVectorAdditionDouble(int size) {
+    public static void main(String[] args) {
+        int size = Integer.parseInt(args[0]);
 
-    double[] a = new double[size];
-    double[] b = new double[size];
-    double[] c = new double[size];
+        float[] a = new float[size];
+        float[] b = new float[size];
+        float[] c = new float[size];
+        float[] result = new float[size];
 
-    Random r = new Random();
-    IntStream.range(0, size).sequential().forEach(i -> {
-        a[i] = r.nextDouble();
-        b[i] = r.nextDouble();
-    });
+        Arrays.fill(a, 450f);
+        Arrays.fill(b, 20f);
 
-    // Tornado Task API 
-	new TaskSchedule("s0") // new group of Tasks
-        .streamIn(a, b)        // copy in from the host to the device (a and b arrays)
-        .task("t0", TestTornado::vectorAddDouble, a, b, c)   // task 0 
-        .streamOut(c)          // copy out from the device to host
-        .execute();            // run the task (Tornado bytecode generation, Tornado 
-                               // tasks graph, OpenCL JIT compilation and execution)
-  }
+        //@formatter:off
+        TaskSchedule task = new TaskSchedule("s0")
+                .task("t0", VectorAddFloat::vectorAdd, a, b, c)
+        .streamOut(c);
+        //@formatter:on
+       
+        task.execute();
+        vectorAdd(a, b, result);
+        boolean wrongResult = false;
+        for (int i = 0; i < c.length; i++) {
+            if (c[i] != result[i]) {
+                wrongResult = true;
+                break;
+            }
+        }
+        if (!wrongResult) {
+            System.out.println("Test success");
+            } else {
+                System.out.println("Result is wrong");
+            }
+        }
+    }
 }
+
 
 ```
 
@@ -110,12 +113,11 @@ Number of Tornado drivers: 1
 Number of devices: 3
 
 Tornado device=0:0
-NVIDIA CUDA -- GeForce GTX 1050
+    NVIDIA CUDA -- GeForce GTX 1050
 Tornado device=0:1
-Intel(R) OpenCL -- Intel(R) HD Graphics
+    Intel(R) OpenCL -- Intel(R) HD Graphics
 Tornado device=0:2
-Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
-
+    Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
 ```
 
 To run on a specific device user the following option:

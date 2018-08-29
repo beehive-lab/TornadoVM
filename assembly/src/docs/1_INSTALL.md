@@ -1,52 +1,152 @@
 # Installation Process of Tornado SDK
 
+### Pre-requisites
 
-### Prerequisites
+  * Maven Version 3
+  * CMake 3.6 (or newer)
+  * OpenCL (preferably v1.2 or newer)
+  * GCC or clang/LLVM
+  * Python 2.7 (>= 2.7.5)
 
-* Java 8 with JVMCI Support; we created the following prebuilt versions:
-  * [For Linux x64_64](https://www.dropbox.com/s/nvtpsviqc6u8vnv/jdk1.8.0_131_x86.tgz?dl=0)
-  * [For OSX](https://www.dropbox.com/s/2aguj98jg5b5yh4/jdk1.8.0_131-osx-10.11.6.tgxz?dl=0)
-* OpenCL >= 1.2
+### Tested OS
+Tornado has been tested on:
+
+  * OSx 10.13.2 (High Sierra)
+  * CentOS >= 7.3
+  * Fedora 21
+  * Ubuntu 16.4 
 
 
-### Configuration
+## Installation
 
-
-__1. Obtain the Tornado SDK for:__
-* [For Linux x64_64](https://drive.google.com/open?id=1cHjtAOLwZH_ou9REK6O7vTiiYykbbQID)
-* [For OSX](https://drive.google.com/open?id=1RMKZqoVWhA5nJXyUcC6X28oeRHw0stzu)
-
-__2. Set up the Tornado working directory:__
-
-```bash
-$ mkdir <your_work_dir>
-$ cd <your_work_dir>
-$ cp tornado-sdk-<linux|osx>.tar.gz <your_work_dir>
-$ tar xvzf tornado-sdk-<linux|osx>.tar.gz
-$ cd tornado-sdk-0.0.2-SNAPSHOT-*
-```
-
-__3. We need to set the following 3 env variables (JAVA_HOME, PATH, TORNADO_SDK):__
-
-1. Set `JAVA_HOME` to JDK
-
+### 1. Compile Java with JVMCI-8
 
 ```bash
-export JAVA_HOME=path/to/jdk1.8.0_131
+ $ git clone -b tornado https://github.com/beehive-lab/graal-jvmci-8
+ $ git clone -b tornado https://github.com/beehive-lab/mx 
+ $ export PATH=`pwd`/mx:$PATH 
+ $ cd graal-jvmci-8
+ $ mx build  
 ```
 
+This will generate a new Java binary into the `jdk1.8.0_<your_version>/product`, e.g., `jdk1.8.0_181/product`.
 
-2. Set a new `PATH` and `TORNADO_SDK`
+### 1.2 Building Graal (optional) 
+
+The Tornado maven installer will download `graal.jar` and `truffle-api.jar` dependencies automatically. 
+These two jar files include a patch to execute Tornado. If you want to build Graal yourself, you can build it 
 
 ```bash
-export PATH=<workdir>/tornado-sdk-0.0.2-SNAPSHOT-<ID>/bin/:$PATH
-export TORNADO_SDK=<workdir>/tornado-sdk-0.0.2-SNAPSHOT-<ID>
+ $ git clone -b tornado https://github.com/beehive-lab/graal 
+ $ export PATH=`pwd`/mx:$PATH 
+ $ export JAVA_HOME=<path/to/JDK-JVMCI>
+ $ mx build  
 ```
 
-Note, the ID is the git-version in Tornado. 
+Then you will need to copy `graal.jar` and `truffle-api.jar` into the Tornado project.
 
 
-and done!
+### 2. Download Tornado
+
+```bash
+ $ git clone https://github.com/beehive-lab/tornado.git tornado
+ $ cd tornado
+ $ vim etc/tornado.env
+```
+
+Copy and paste the following - but update paths into the etc/tornado.env file:
+
+```bash
+#!/bin/bash
+export JAVA_HOME=<path to jvmci 8 jdk with JVMCI>
+export PATH=$PWD/bin/bin:$PATH    ## We will create this directory during Tornado compilation
+export TORNADO_SDK=$PWD/bin/sdk   ## We will create this directory during Tornado compilation
+
+## If CMAKE is needed (See step 4)
+export CMAKE_ROOT=<path/to/cmake/cmake-3.10.2>
+```
+
+Then execute:
+
+```bash
+$ . etc/tornado.env
+```
+
+
+### 3. Setting default maven configuration
+
+Create (or update) the file in `~/.m2/settings.xml` with the following content. Modify the `jvmci.root` with your path to JDK 1.8.0 that was compiled
+in step 1. 
+
+```bash
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+	https://maven.apache.org/xsd/settings-1.0.0.xsd">
+ <interactiveMode/>
+ <usePluginRegistry/>
+ 	<offline/>
+		 <pluginGroups/>
+	 <servers/>
+ 	<mirrors/>
+	 <proxies/>
+	 <profiles>
+	 <profile>
+		 <id>tornado-jvmci</id>
+		 <activation>
+		 <activeByDefault>true</activeByDefault>
+		 </activation>
+		 <properties>
+
+			 <!-- Your PATH TO JDK1.8-JVMCI-->
+			 <jvmci.root>/home/user/jdk1.8.0_181/product</jvmci.root>
+		 	 <jvmci.version>1.8.0_181</jvmci.version>
+
+		 </properties>
+	 </profile>
+	 </profiles>
+	 <activeProfiles/>
+</settings>
+
+```
+
+
+### 4. Install CMAKE (if cmake < 3.6) 
+
+```
+$ cmake -version
+```
+
+If the version of cmake is > 3.6 then skip the rest of this step and to to step 5.
+Otherwise try in install cmake.
+
+For simplicity it might be easier to install cmake in your home
+directory.
+  * Redhat Enterprise Linux / CentOS use cmake v2.8 
+  * We need a newer version so that OpenCL is configured properly.
+
+```bash
+$ cd ~/Downloads
+$ wget https://cmake.org/files/v3.10/cmake-3.10.1-Linux-x86_64.tar.gz
+$ cd ~/opt
+$ tar -tvf ~/Downloads/cmake-3.10.1-Linux-x86_64.tar.gz
+$ mv cmake-3.10.1-Linux-x86_64 cmake-3.10.1
+$ export PATH=$HOME/opt/cmake-3.10.1/bin/:$PATH
+$ cmake -version
+cmake version 3.10.1
+``` 
+
+NOTE: the tornado `Makefile` automatically sets the `cmake.root.dir` based on the variable `CMAKE_ROOT` set in `etc/tornado.env`
+
+### 5. Compile Tornado
+
+```bash
+$ cd ~/tornado
+$ . etc/tornado.env
+$ make 
+```
+and done!! 
+
 
 # Check Installation 
 
