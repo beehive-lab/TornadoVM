@@ -266,23 +266,23 @@ public class OCLCodeCache {
             String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
 
             String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + INTEL_FPGA_SUFFIX;
-
-            System.out.println("Input file and location: " + inputFile + "\n");
-            System.out.println("Output file and location: " + outputFile + "\n");
-
             String[] cmd;
 
-            cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115 ", "-o", outputFile };
+            cmd = new String[] { "aoc", inputFile, "-v","-report" ,"-march=emulator", "-o", outputFile};
+            //cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115", "-o", outputFile };
 
             System.out.println(Arrays.toString(cmd));
+		
+            System.out.println("Input file and location: " + inputFile + "\n");
+            System.out.println("Output file and location: " + outputFile + "\n");
 
             String s = null;
 
             try {
 
-                // run the Unix "ps -ef" command
-                // using the Runtime exec method:
-                Process p = Runtime.getRuntime().exec("ls -lt");
+                Process p = Runtime.getRuntime().exec(cmd);
+		
+		p.waitFor();
 
                 BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
 
