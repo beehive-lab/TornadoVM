@@ -307,13 +307,19 @@ public class OCLCodeCache {
                 t.printStackTrace();
             }
 
-            System.exit(0);
-            // return 1;
+            // final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source,
+            // deviceContext, program, kernel, true);
+            final OCLProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
+            // final OCLProgram program1 = deviceContext.installEntryPointForBinaryForFPGAs
 
+            return installEntryPointForBinaryForFPGAs(resolveFPGADir(), LOOKUP_BUFFER_KERNEL_NAME);
+            // System.exit(0);
+
+        } else {
+
+            return null;
         }
-
         // System.exit(1);
-        return null;
 
     }
 
