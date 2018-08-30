@@ -1,13 +1,5 @@
 # Installing Tornado #
 
-### Continuous build status
-
-| Build Type | Status | SDK |
-| --- | --- | --- |
-| **Linux x86** | [![Build Status](http://130.88.192.214:9080/buildStatus/icon?job=Tornado-pipeline)](http://130.88.192.214:9080/job/Tornado-pipeline/)| [tornado_x86_sdk](https://github.com/beehive-lab/tornado-sdk-internal/tree/linux-x86) |
-| **OSx**| [![Build Status](http://130.88.192.214:9080/buildStatus/icon?job=Tornado-pipeline)](http://130.88.192.214:9080/job/Tornado-pipeline/)  | [tornado_osx_sdk](https://github.com/beehive-lab/tornado-sdk-internal/tree/osx) |
-
-
 ### Pre-requisites
 
   * Maven Version 3
@@ -20,9 +12,9 @@
 Tornado has been tested on:
 
   * OSx 10.13.2 (High Sierra)
-  * CentOS >= 7.3
+  * CentOS 7.3, 7.4 and 7.5
   * Fedora 21
-  * Ubuntu 16.4 
+  * Ubuntu 16.4 and 18.4 
 
 
 ## Installation
@@ -30,9 +22,9 @@ Tornado has been tested on:
 ### 1. Compile Java with JVMCI-8
 
 ```bash
- $ git clone -b tornado https://github.com/beehive-lab/graal-jvmci-8
  $ git clone -b tornado https://github.com/beehive-lab/mx 
  $ export PATH=`pwd`/mx:$PATH 
+ $ git clone -b tornado https://github.com/beehive-lab/graal-jvmci-8
  $ cd graal-jvmci-8
  $ mx build  
 ```
