@@ -75,6 +75,17 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         buffer.order(deviceContext.getByteOrder());
     }
 
+    public OCLInstalledCode(final String entryPoint, final byte[] code, final OCLDeviceContext deviceContext, final OCLProgram program, final OCLKernel kernel, boolean isFPGA) {
+        super(entryPoint);
+        this.code = code;
+        this.deviceContext = deviceContext;
+        this.scheduler = OCLScheduler.create(deviceContext);
+        this.DEFAULT_SCHEDULER = new OCLGPUScheduler(deviceContext);
+        this.kernel = kernel;
+        valid = kernel != null;
+        buffer.order(deviceContext.getByteOrder());
+    }
+
     @Override
     public void invalidate() {
         if (valid) {
@@ -208,8 +219,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
 
         /*
-         * Only set the kernel arguments if they are either: - not set or - have
-         * changed
+         * Only set the kernel arguments if they are either: - not set or - have changed
          */
         final int[] waitEvents;
         if (!stack.isOnDevice()) {
@@ -269,8 +279,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
 
         /*
-         * Only set the kernel arguments if they are either: - not set or - have
-         * changed
+         * Only set the kernel arguments if they are either: - not set or - have changed
          */
         if (!stack.isOnDevice()) {
             setKernelArgs(stack, meta);
