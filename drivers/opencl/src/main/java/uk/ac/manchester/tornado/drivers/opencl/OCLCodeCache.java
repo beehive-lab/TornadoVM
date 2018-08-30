@@ -43,6 +43,7 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -281,13 +282,15 @@ public class OCLCodeCache {
             // outputFile };
 
             cmd = new String[] { "aoc", inputFile, "-v", "-march=p385a_sch_ax115 ", "-report" };
-            // System.out.println(Arrays.toString(cmd));
+            System.out.println(Arrays.toString(cmd));
 
             try {
-                Runtime rt = Runtime.getRuntime();
-                Process p = rt.exec(cmd);
-                int exitVal = p.waitFor();
-                System.out.println("ExitValue: " + exitVal);
+                Process p = new ProcessBuilder(cmd).start();
+                int rc = p.waitFor();
+                // Runtime rt = Runtime.getRuntime();
+                // Process p = rt.exec(cmd);
+                // int exitVal = p.waitFor();
+                System.out.println("ExitValue: " + rc);
             } catch (IOException e) {
                 error("Unable to compile with Altera tools", e);
             } catch (InterruptedException e) {
