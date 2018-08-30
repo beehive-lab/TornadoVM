@@ -315,11 +315,6 @@ public class OCLCodeCache {
             String str2 = String.join(" ", cmdRename);
 
             Path path = Paths.get(FPGA_BIN_LOCATION);
-            // cmd = new String[] { "aoc", inputFile, "-v", "-march=p385a_sch_ax115 ", "-o",
-            // outputFile };
-
-            cmd = new String[] { "aoc", inputFile, "-v", "-march=p385a_sch_ax115 ", "-report" };
-            // System.out.println(Arrays.toString(cmd));
 
             if (RuntimeUtilities.ifFileExists(f)) {
                 return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
