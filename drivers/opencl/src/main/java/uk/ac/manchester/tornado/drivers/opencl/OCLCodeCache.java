@@ -268,11 +268,12 @@ public class OCLCodeCache {
             String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + INTEL_FPGA_SUFFIX;
             String[] cmd;
 
-            cmd = new String[] { "aoc", inputFile, "-v","-report" ,"-march=emulator", "-o", outputFile};
-            //cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115", "-o", outputFile };
+            cmd = new String[] { "aoc", inputFile, "-v", "-report", "-march=emulator", "-o", outputFile };
+            // cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115", "-o",
+            // outputFile };
 
             System.out.println(Arrays.toString(cmd));
-		
+
             System.out.println("Input file and location: " + inputFile + "\n");
             System.out.println("Output file and location: " + outputFile + "\n");
 
@@ -281,8 +282,8 @@ public class OCLCodeCache {
             try {
 
                 Process p = Runtime.getRuntime().exec(cmd);
-		
-		p.waitFor();
+
+                p.waitFor();
 
                 BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
 
@@ -300,20 +301,9 @@ public class OCLCodeCache {
                     System.out.println(s);
                 }
 
-                System.exit(0);
-
-                // Process p = new ProcessBuilder(cmd).start();
-                // int rc = p.waitFor();
-                // Runtime rt = Runtime.getRuntime();
-                // Process p = rt.exec(cmd);
-                // int exitVal = p.waitFor();
-                // System.out.println("ExitValue: " + rc);
             } catch (IOException e) {
                 error("Unable to compile with Altera tools", e);
-            } // catch (InterruptedException t) {
-              // t.printStackTrace();
-              // }
-            catch (Throwable t) {
+            } catch (Throwable t) {
                 t.printStackTrace();
             }
 
