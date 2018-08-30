@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -262,13 +263,6 @@ public class OCLCodeCache {
 
         if (!entryPoint.equals("lookupBufferAddress")) {
 
-            // String outDirString = outDir.toString();
-            // String filename = id + "-" + entryPoint + OPENCL_SOURCE_SUFFIX;
-            // String fileLocation = outDirString + "/" + id + "-" + entryPoint +
-            // INTEL_FPGA_SUFFIX;
-            // String aoc = "aoc " + "-march=emulator " + "-v " + outDirString + "/" +
-            // filename + " -o " + fileLocation;
-
             String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
 
             String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + INTEL_FPGA_SUFFIX;
@@ -278,24 +272,48 @@ public class OCLCodeCache {
 
             String[] cmd;
 
-            // cmd = new String[] { "aoc", inputFile, "-v", "-march=p385a_sch_ax115 ", "-o",
-            // outputFile };
+            cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115 ", "-o", outputFile };
 
-            cmd = new String[] { "aoc", inputFile, "-v", "-march=p385a_sch_ax115 ", "-report" };
             System.out.println(Arrays.toString(cmd));
 
+            String s = null;
+
             try {
-                Process p = new ProcessBuilder(cmd).start();
-                int rc = p.waitFor();
+
+                // run the Unix "ps -ef" command
+                // using the Runtime exec method:
+                Process p = Runtime.getRuntime().exec("ls -lt");
+
+                BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+                BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+
+                // read the output from the command
+                System.out.println("Here is the standard output of the command:\n");
+                while ((s = stdInput.readLine()) != null) {
+                    System.out.println(s);
+                }
+
+                // read any errors from the attempted command
+                System.out.println("Here is the standard error of the command (if any):\n");
+                while ((s = stdError.readLine()) != null) {
+                    System.out.println(s);
+                }
+
+                System.exit(0);
+
+                // Process p = new ProcessBuilder(cmd).start();
+                // int rc = p.waitFor();
                 // Runtime rt = Runtime.getRuntime();
                 // Process p = rt.exec(cmd);
                 // int exitVal = p.waitFor();
-                System.out.println("ExitValue: " + rc);
+                // System.out.println("ExitValue: " + rc);
             } catch (IOException e) {
                 error("Unable to compile with Altera tools", e);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (Throwable t) {
+            } // catch (InterruptedException t) {
+              // t.printStackTrace();
+              // }
+            catch (Throwable t) {
                 t.printStackTrace();
             }
 
