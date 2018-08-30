@@ -310,11 +310,12 @@ public class OCLCodeCache {
             String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + INTEL_FPGA_SUFFIX;
             String[] cmd;
 
-            cmd = new String[] { "aoc", inputFile, "-v","-report" ,"-march=emulator", "-o", outputFile};
-            //cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115", "-o", outputFile };
+            cmd = new String[] { "aoc", inputFile, "-v", "-report", "-march=emulator", "-o", outputFile };
+            // cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115", "-o",
+            // outputFile };
 
             System.out.println(Arrays.toString(cmd));
-		
+
             System.out.println("Input file and location: " + inputFile + "\n");
             System.out.println("Output file and location: " + outputFile + "\n");
 
@@ -323,6 +324,7 @@ public class OCLCodeCache {
 
             String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
             String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
+
 
 
 
@@ -337,6 +339,7 @@ public class OCLCodeCache {
             f = new File(FPGA_BIN_LOCATION);
 
             cmd = new String[] { "aoc", inputFile, "-v", "-march=p385a_sch_ax115 ", "-report" };
+
 
             Path path = Paths.get(FPGA_BIN_LOCATION);
             if (RuntimeUtilities.ifFileExists(f)) {
