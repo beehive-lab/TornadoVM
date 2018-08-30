@@ -265,7 +265,9 @@ public class OCLCodeCache {
 
             String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
 
-            String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + INTEL_FPGA_SUFFIX;
+            String tempSuffix = ",s0.t0.device=0:2";
+
+            String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + tempSuffix;
             String[] cmd;
 
             cmd = new String[] { "aoc", inputFile, "-v", "-report", "-march=emulator", "-o", outputFile };
