@@ -39,11 +39,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLTPrintf;
 @NodeInfo(shortName = "tprintf")
 public class TPrintfNode extends FixedWithNextNode implements LIRLowerable {
 
-    public static final NodeClass<TPrintfNode> TYPE = NodeClass
-            .create(TPrintfNode.class);
+    public static final NodeClass<TPrintfNode> TYPE = NodeClass.create(TPrintfNode.class);
 
-    @Input
-    private NodeInputList<ValueNode> inputs;
+    @Input private NodeInputList<ValueNode> inputs;
 
     public TPrintfNode(ValueNode... values) {
         super(TYPE, StampFactory.forVoid());

@@ -41,13 +41,10 @@ public class OCLDirectCall extends OCLLIROp {
 
     protected DirectCallTargetNode target;
     protected LIRFrameState frameState;
-    @Def
-    protected Value result;
-    @Use
-    protected Value[] parameters;
+    @Def protected Value result;
+    @Use protected Value[] parameters;
 
-    public OCLDirectCall(DirectCallTargetNode target, Value result,
-            Value[] parameters, LIRFrameState frameState) {
+    public OCLDirectCall(DirectCallTargetNode target, Value result, Value[] parameters, LIRFrameState frameState) {
         super(LIRKind.value(result.getPlatformKind()));
         this.result = result;
         this.parameters = parameters;
@@ -58,8 +55,7 @@ public class OCLDirectCall extends OCLLIROp {
     @Override
     public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
 
-        final String methodName = OCLUtils
-                .makeMethodName(target.targetMethod());
+        final String methodName = OCLUtils.makeMethodName(target.targetMethod());
 
         asm.emit(methodName);
         asm.emit("(");
@@ -77,7 +73,8 @@ public class OCLDirectCall extends OCLLIROp {
         }
         asm.emit(")");
 
-        // System.out.printf("direct call: method=%s, frameState=%s\n",target.targetMethod(),frameState);
+        // System.out.printf("direct call: method=%s,
+        // frameState=%s\n",target.targetMethod(),frameState);
         crb.addNonInlinedMethod(target.targetMethod());
 
     }

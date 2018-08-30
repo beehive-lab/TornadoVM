@@ -72,15 +72,14 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
         config.withEagerResolving(true);
 
-//        config.setUseProfiling(false);
+        // config.setUseProfiling(false);
         suite.appendPhase(new GraphBuilderPhase(config));
 
         return suite;
     }
 
     public final TornadoLIRSuites createLIRSuites() {
-        return new TornadoLIRSuites(suites.getPreAllocationOptimizationStage(),
-                suites.getAllocationStage(), suites.getPostAllocationOptimizationStage());
+        return new TornadoLIRSuites(suites.getPreAllocationOptimizationStage(), suites.getAllocationStage(), suites.getPostAllocationOptimizationStage());
     }
 
     public TornadoSuites createSuites() {

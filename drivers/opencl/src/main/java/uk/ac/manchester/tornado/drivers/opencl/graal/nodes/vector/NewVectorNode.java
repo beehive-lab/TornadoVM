@@ -50,9 +50,12 @@ public class NewVectorNode extends FixedWithNextNode implements LIRLowerable {
     /**
      * Creates a new LoadIndexedNode.
      *
-     * @param array       the instruction producing the array
-     * @param index       the instruction producing the index
-     * @param elementKind the element type
+     * @param array
+     *            the instruction producing the array
+     * @param index
+     *            the instruction producing the index
+     * @param elementKind
+     *            the element type
      */
     public NewVectorNode(OCLKind kind) {
         super(TYPE, OCLStampFactory.getStampFor(kind));

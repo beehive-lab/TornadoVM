@@ -45,7 +45,6 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
     private OCLLongArrayWrapper tableWrapper;
     private long[] addresses;
     private OCLArrayWrapper<E>[] wrappers;
-    private boolean allocated;
 
     public OCLMultiDimArrayWrapper(OCLDeviceContext device, Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> factory) {
         this(device, factory, false);
@@ -55,7 +54,6 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
         super(device, JavaKind.Object, isFinal);
         innerWrapperFactory = factory;
         tableWrapper = new OCLLongArrayWrapper(device, false);
-        allocated = false;
     }
 
     @Override
@@ -107,11 +105,8 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
             for (int i = 0; i < elements.length; i++) {
                 wrappers[i] = innerWrapperFactory.apply(deviceContext);
                 wrappers[i].allocate(elements[i]);
-                addresses[i] = (OPENCL_USE_RELATIVE_ADDRESSES)
-                        ? wrappers[i].toRelativeAddress()
-                        : wrappers[i].toAbsoluteAddress();
+                addresses[i] = (OPENCL_USE_RELATIVE_ADDRESSES) ? wrappers[i].toRelativeAddress() : wrappers[i].toAbsoluteAddress();
             }
-            allocated = true;
         } catch (TornadoOutOfMemoryException e) {
             fatal("OOM: multi-dim array: %s", e.getMessage());
             System.exit(-1);
@@ -152,7 +147,8 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
     @Override
     protected void readArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents) {
         readElements(value);
-        //tableWrapper.writeArrayData(bufferId, offset, bytes, addresses, waitEvents);
+        // tableWrapper.writeArrayData(bufferId, offset, bytes, addresses,
+        // waitEvents);
     }
 
     @Override

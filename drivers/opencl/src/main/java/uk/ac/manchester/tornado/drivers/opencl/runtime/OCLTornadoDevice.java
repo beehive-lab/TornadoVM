@@ -25,14 +25,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler.compileSketchForDevice;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
-import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isPrimitiveArray;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.FORCE_ALL_TO_GPU;
-
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -44,6 +36,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
@@ -56,6 +49,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
+import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCharArrayWrapper;
@@ -67,8 +61,11 @@ import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMultiDimArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLObjectWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLShortArrayWrapper;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
@@ -88,8 +85,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     private static OCLDriver findDriver() {
         if (driver == null) {
-            driver = getTornadoRuntime().getDriver(OCLDriver.class);
-            guarantee(driver != null, "unable to find OpenCL driver");
+            driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class);
+            TornadoInternalError.guarantee(driver != null, "unable to find OpenCL driver");
         }
         return driver;
     }
@@ -160,7 +157,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     public TornadoSchedulingStrategy getPreferedSchedule() {
         if (null != device.getDeviceType()) {
 
-            if (FORCE_ALL_TO_GPU) {
+            if (Tornado.FORCE_ALL_TO_GPU) {
                 return TornadoSchedulingStrategy.PER_ITERATION;
             }
 
@@ -173,7 +170,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                     return TornadoSchedulingStrategy.PER_ITERATION;
             }
         }
-        shouldNotReachHere();
+        TornadoInternalError.shouldNotReachHere();
         return TornadoSchedulingStrategy.PER_ITERATION;
     }
 
@@ -208,7 +205,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
         final CompilableTask executable = (CompilableTask) task;
         // final long t0 = System.nanoTime();
-        final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(executable.getMethod());
+        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
 
         // final long t1 = System.nanoTime();
         final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
@@ -224,7 +221,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
         try {
             OCLProviders providers = (OCLProviders) getBackend().getProviders();
-            final OCLCompilationResult result = compileSketchForDevice(sketch, executable, providers, getBackend());
+            final OCLCompilationResult result = OCLCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
             if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
                 return deviceContext.getCode(task.getId(), resolvedMethod.getName());
             }
@@ -246,7 +243,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         }
 
         final Path path = Paths.get(executable.getFilename());
-        guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
+        TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
         try {
             final byte[] source = Files.readAllBytes(path);
             return deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(), source);
@@ -262,7 +259,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         } else if (task instanceof PrebuiltTask) {
             return compilePreBuiltTask(task);
         }
-        shouldNotReachHere("task of unknown type: " + task.getClass().getSimpleName());
+        TornadoInternalError.shouldNotReachHere("task of unknown type: " + task.getClass().getSimpleName());
         return null;
     }
 
@@ -317,11 +314,11 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 } else if (type == char[].class) {
                     result = new OCLCharArrayWrapper(device);
                 } else {
-                    unimplemented("array of type %s", type.getName());
+                    TornadoInternalError.unimplemented("array of type %s", type.getName());
                 }
             } else {
                 final Class<?> componentType = type.getComponentType();
-                if (isPrimitiveArray(componentType)) {
+                if (RuntimeUtilities.isPrimitiveArray(componentType)) {
                     if (componentType == int[].class) {
                         result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLIntArrayWrapper(context));
                     } else if (componentType == short[].class) {
@@ -337,10 +334,10 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                     } else if (componentType == long[].class) {
                         result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLLongArrayWrapper(context));
                     } else {
-                        unimplemented("array of type %s", type.getName());
+                        TornadoInternalError.unimplemented("array of type %s", type.getName());
                     }
                 } else {
-                    unimplemented("multi-dimensional array of type %s", type.getName());
+                    TornadoInternalError.unimplemented("multi-dimensional array of type %s", type.getName());
                 }
             }
 
@@ -348,7 +345,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             result = new OCLObjectWrapper(device, arg);
         }
 
-        guarantee(result != null, "Unable to create buffer for object: " + type);
+        TornadoInternalError.guarantee(result != null, "Unable to create buffer for object: " + type);
         return result;
     }
 
@@ -429,7 +426,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public int streamOut(Object object, TornadoDeviceObjectState state, int[] list) {
-        guarantee(state.isValid(), "invalid variable");
+        TornadoInternalError.guarantee(state.isValid(), "invalid variable");
         return state.getBuffer().enqueueRead(object, list, list == null);
     }
 
@@ -440,7 +437,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public void streamOutBlocking(Object object, TornadoDeviceObjectState state, int[] events) {
-        guarantee(state.isValid(), "invalid variable");
+        TornadoInternalError.guarantee(state.isValid(), "invalid variable");
 
         state.getBuffer().read(object, events, events == null);
     }
@@ -452,7 +449,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     public void sync(Object object) {
-        final DeviceObjectState state = getTornadoRuntime().resolveObject(object).getDeviceState(this);
+        final DeviceObjectState state = TornadoCoreRuntime.getTornadoRuntime().resolveObject(object).getDeviceState(this);
         resolveEvent(streamOut(object, state)).waitOn();
     }
 

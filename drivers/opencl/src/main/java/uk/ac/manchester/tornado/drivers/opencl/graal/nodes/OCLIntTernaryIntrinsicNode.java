@@ -55,15 +55,11 @@ public class OCLIntTernaryIntrinsicNode extends TernaryNode implements Arithmeti
         this.operation = op;
     }
 
-    public static final NodeClass<OCLIntTernaryIntrinsicNode> TYPE = NodeClass
-            .create(OCLIntTernaryIntrinsicNode.class);
+    public static final NodeClass<OCLIntTernaryIntrinsicNode> TYPE = NodeClass.create(OCLIntTernaryIntrinsicNode.class);
     protected final Operation operation;
 
     public enum Operation {
-        CLAMP,
-        MAD_HI,
-        MAD_SAT,
-        MAD24
+        CLAMP, MAD_HI, MAD_SAT, MAD24
     }
 
     public Operation operation() {

@@ -69,7 +69,9 @@ public class OCLGenTool {
 
         trace("emitParameterLoad: stamp=%s", paramNode.stamp());
 
-        // assert !(paramValue instanceof Variable) : "Creating a copy of a variable via this method is not supported (and potentially a bug): " + paramValue;
+        // assert !(paramValue instanceof Variable) : "Creating a copy of a
+        // variable via this method is not supported (and potentially a bug): "
+        // + paramValue;
         LIRKind lirKind = gen.getLIRKind(paramNode.stamp());
 
         OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();

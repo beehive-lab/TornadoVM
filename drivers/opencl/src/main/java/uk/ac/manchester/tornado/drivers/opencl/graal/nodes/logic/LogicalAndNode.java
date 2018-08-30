@@ -41,7 +41,6 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.logic.BinaryLogicalNode;
 @NodeInfo(shortName = "&&")
 public class LogicalAndNode extends BinaryLogicalNode {
 
-    @SuppressWarnings("FieldNameHidesFieldInSuperclass")
     public static final NodeClass<LogicalAndNode> TYPE = NodeClass.create(LogicalAndNode.class);
 
     public LogicalAndNode(LogicNode x, LogicNode y) {

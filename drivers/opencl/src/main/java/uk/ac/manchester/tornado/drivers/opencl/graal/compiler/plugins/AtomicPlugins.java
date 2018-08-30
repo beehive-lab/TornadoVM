@@ -48,9 +48,7 @@ public class AtomicPlugins {
         r.register3("atomicAdd", float[].class, int.class, float.class, new InvocationPlugin() {
 
             @Override
-            public boolean apply(GraphBuilderContext b,
-                    ResolvedJavaMethod targetMethod, Receiver receiver,
-                    ValueNode array, ValueNode index, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode value) {
 
                 final AtomicAddNode atomicAddNode = new AtomicAddNode(array, index, JavaKind.Float, value);
                 b.append(atomicAddNode);

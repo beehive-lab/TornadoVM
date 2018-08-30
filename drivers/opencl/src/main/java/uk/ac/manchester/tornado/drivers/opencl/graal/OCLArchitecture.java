@@ -100,7 +100,7 @@ public class OCLArchitecture extends Architecture {
     public OCLArchitecture(final OCLKind wordKind, final ByteOrder byteOrder) {
         super("Tornado OpenCL", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, 0, 0);
         sp = new OCLRegister(1, FRAME_BASE_NAME, wordKind);
-        abiRegisters = new OCLRegister[]{hp, sp, cp, lp, pp};
+        abiRegisters = new OCLRegister[] { hp, sp, cp, lp, pp };
     }
 
     @Override

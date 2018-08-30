@@ -135,8 +135,7 @@ public enum OCLKind implements PlatformKind {
     private final OCLKind elementKind;
     private final Class<?> javaClass;
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private final EnumKey key = new EnumKey(this);
+    @SuppressWarnings({ "unchecked", "rawtypes" }) private final EnumKey key = new EnumKey(this);
 
     OCLKind(int size, Class<?> javaClass) {
         this(size, javaClass, null);

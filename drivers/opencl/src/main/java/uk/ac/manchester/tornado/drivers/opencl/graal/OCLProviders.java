@@ -42,9 +42,10 @@ public class OCLProviders extends Providers {
     private final Plugins graphBuilderPlugins;
     private final SnippetReflectionProvider snippetReflection;
 
-    public OCLProviders(MetaAccessProvider metaAccess, CodeCacheProvider codeCache, ConstantReflectionProvider constantReflection, SnippetReflectionProvider snippetReflection, ConstantFieldProvider constantFieldProvider, ForeignCallsProvider foreignCalls, LoweringProvider lowerer, Replacements replacements, StampProvider stampProvider, Plugins plugins, OCLSuitesProvider suitesProvider) {
-        super(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer,
-                replacements, stampProvider);
+    public OCLProviders(MetaAccessProvider metaAccess, CodeCacheProvider codeCache, ConstantReflectionProvider constantReflection, SnippetReflectionProvider snippetReflection,
+            ConstantFieldProvider constantFieldProvider, ForeignCallsProvider foreignCalls, LoweringProvider lowerer, Replacements replacements, StampProvider stampProvider, Plugins plugins,
+            OCLSuitesProvider suitesProvider) {
+        super(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider);
         this.suites = suitesProvider;
         this.graphBuilderPlugins = plugins;
         this.snippetReflection = snippetReflection;

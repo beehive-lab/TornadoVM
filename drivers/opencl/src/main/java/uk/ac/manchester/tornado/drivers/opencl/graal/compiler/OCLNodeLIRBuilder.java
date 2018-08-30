@@ -214,7 +214,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
             final List<Node> nodes = blockMap.get(block);
 
-            // Allow NodeLIRBuilder subclass to specialise code generation of any
+            // Allow NodeLIRBuilder subclass to specialise code generation of
+            // any
             // interesting groups of instructions
             matchComplexExpressions(nodes);
 
@@ -252,8 +253,10 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                             }
                         } else if (valueNode instanceof VectorValueNode) {
                             // There can be cases in which the result of an
-                            // instruction is already set before by other instructions.
-                            // case where vector value is used as an input to a phi
+                            // instruction is already set before by other
+                            // instructions.
+                            // case where vector value is used as an input to a
+                            // phi
                             // node before it is assigned to
                             final VectorValueNode vectorNode = (VectorValueNode) valueNode;
                             vectorNode.generate(this);
@@ -446,8 +449,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         trace("emitIf: %s, condition=%s\n", x, x.condition().getClass().getName());
 
         /**
-         * test to see if this is an exception check need to implement this properly? or
-         * omit!
+         * test to see if this is an exception check need to implement this
+         * properly? or omit!
          */
         final LabelRef falseBranch = getLIRBlock(x.falseSuccessor());
         if (falseBranch.getTargetBlock().isExceptionEntry()) {

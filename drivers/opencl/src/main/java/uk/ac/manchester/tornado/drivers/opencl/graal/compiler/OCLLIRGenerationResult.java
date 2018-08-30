@@ -43,11 +43,7 @@ public class OCLLIRGenerationResult extends LIRGenerationResult {
 
     private final Map<OCLKind, Set<Variable>> variableTable;
 
-    public OCLLIRGenerationResult(
-            CompilationIdentifier identifier,
-            LIR lir,
-            FrameMapBuilder frameMapBuilder,
-            CallingConvention callingConvention) {
+    public OCLLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, CallingConvention callingConvention) {
         super(identifier, lir, frameMapBuilder, callingConvention);
         variableTable = new HashMap<>();
     }

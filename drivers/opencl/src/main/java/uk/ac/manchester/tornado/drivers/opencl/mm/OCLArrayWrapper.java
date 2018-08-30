@@ -34,7 +34,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 import java.lang.reflect.Array;
-import java.util.Arrays;
 
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
@@ -95,9 +94,8 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
             bufferOffset = deviceContext.getMemoryManager().tryAllocate(ref.getClass(), bytes, arrayHeaderSize, getAlignment());
 
-            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x",
-                    kind.getJavaName(), humanReadableByteCount(bytes, true),
-                    arrayLengthOffset, arrayHeaderSize, bufferOffset);
+            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x", kind.getJavaName(), humanReadableByteCount(bytes, true), arrayLengthOffset, arrayHeaderSize,
+                    bufferOffset);
             info("allocated: %s", toString());
         }
     }
@@ -130,17 +128,18 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         if (isFinal) {
             returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
         } else {
-//            int index = 0;
+            // int index = 0;
             internalEvents[1] = -1;
-//            internalEvents[0] = prepareArrayHeader().enqueueRead(null);
+            // internalEvents[0] = prepareArrayHeader().enqueueRead(null);
             internalEvents[0] = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
-            returnEvent = internalEvents[0]; //(index == 0) ? internalEvents[0] : deviceContext.enqueueMarker(internalEvents);
+            returnEvent = internalEvents[0]; // (index == 0) ? internalEvents[0]
+                                             // :
+                                             // deviceContext.enqueueMarker(internalEvents);
         }
         return useDeps ? returnEvent : -1;
     }
 
-    abstract protected int enqueueReadArrayData(long bufferId, long offset, long bytes,
-            T value, int[] waitEvents);
+    abstract protected int enqueueReadArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents);
 
     @Override
     public int enqueueWrite(final Object value, final int[] events, boolean useDeps) {
@@ -152,8 +151,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
             int index = 0;
             internalEvents[0] = -1;
             if (!onDevice || !isFinal) {
-                internalEvents[0] = buildArrayHeader(array).enqueueWrite(
-                        (useDeps) ? events : null);
+                internalEvents[0] = buildArrayHeader(array).enqueueWrite((useDeps) ? events : null);
                 index++;
             }
             internalEvents[index] = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
@@ -164,8 +162,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         return useDeps ? returnEvent : -1;
     }
 
-    abstract protected int enqueueWriteArrayData(long bufferId, long offset, long bytes,
-            T value, int[] waitEvents);
+    abstract protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents);
 
     @Override
     public int getAlignment() {
@@ -173,8 +170,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     private OCLByteBuffer getArrayHeader() {
-        final OCLByteBuffer header = deviceContext.getMemoryManager().getSubBuffer(
-                (int) bufferOffset, arrayHeaderSize);
+        final OCLByteBuffer header = deviceContext.getMemoryManager().getSubBuffer((int) bufferOffset, arrayHeaderSize);
         header.buffer.clear();
         return header;
     }
@@ -215,19 +211,16 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
         if (VALIDATE_ARRAY_HEADERS) {
             if (validateArrayHeader(array)) {
-                readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize,
-                        array, (useDeps) ? events : null);
+                readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
             } else {
                 shouldNotReachHere("Array header is invalid");
             }
         } else {
-            readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize,
-                    array, (useDeps) ? events : null);
+            readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
         }
     }
 
-    abstract protected void readArrayData(long bufferId, long offset, long bytes, T value,
-            int[] waitEvents);
+    abstract protected void readArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents);
 
     private int sizeOf(final T array) {
         return arrayHeaderSize + (Array.getLength(array) * kind.getByteCount());
@@ -250,9 +243,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public String toString() {
-        return String.format("buffer<%s> %s @ 0x%x (0x%x)", kind.getJavaName(),
-                humanReadableByteCount(bytes, true), toAbsoluteAddress(),
-                toRelativeAddress());
+        return String.format("buffer<%s> %s @ 0x%x (0x%x)", kind.getJavaName(), humanReadableByteCount(bytes, true), toAbsoluteAddress(), toRelativeAddress());
     }
 
     @Override
@@ -282,13 +273,11 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     public void write(final Object value) {
         final T array = cast(value);
         buildArrayHeader(array).write();
-        writeArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array,
-                null);
+        writeArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, null);
         onDevice = true;
 
     }
 
-    abstract protected void writeArrayData(long bufferId, long offset, long bytes, T value,
-            int[] waitEvents);
+    abstract protected void writeArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents);
 
 }

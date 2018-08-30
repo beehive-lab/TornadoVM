@@ -45,14 +45,11 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 @NodeInfo(nameTemplate = ".{p#selection}")
 public class VectorElementSelectNode extends FloatingNode implements LIRLowerable {
 
-    public static final NodeClass<VectorElementSelectNode> TYPE = NodeClass
-            .create(VectorElementSelectNode.class);
+    public static final NodeClass<VectorElementSelectNode> TYPE = NodeClass.create(VectorElementSelectNode.class);
 
-    @Input(InputType.Extension)
-    ValueNode vector;
+    @Input(InputType.Extension) ValueNode vector;
 
-    @Input
-    ValueNode selection;
+    @Input ValueNode selection;
 
     public VectorElementSelectNode(OCLKind kind, ValueNode vector, ValueNode selection) {
         super(TYPE, StampFactory.forKind(kind.asJavaKind()));
@@ -63,7 +60,7 @@ public class VectorElementSelectNode extends FloatingNode implements LIRLowerabl
     @Override
     public boolean inferStamp() {
         return true;
-        //return updateStamp(createStamp(vector, kind.getElementKind()));
+        // return updateStamp(createStamp(vector, kind.getElementKind()));
     }
 
     public ValueNode getSelection() {

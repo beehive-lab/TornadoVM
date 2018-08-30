@@ -53,14 +53,11 @@ public class OCLIntUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIR
         this.operation = op;
     }
 
-    public static final NodeClass<OCLIntUnaryIntrinsicNode> TYPE = NodeClass
-            .create(OCLIntUnaryIntrinsicNode.class);
+    public static final NodeClass<OCLIntUnaryIntrinsicNode> TYPE = NodeClass.create(OCLIntUnaryIntrinsicNode.class);
     protected final Operation operation;
 
     public enum Operation {
-        ABS,
-        CLZ,
-        POPCOUNT
+        ABS, CLZ, POPCOUNT
     }
 
     public Operation operation() {

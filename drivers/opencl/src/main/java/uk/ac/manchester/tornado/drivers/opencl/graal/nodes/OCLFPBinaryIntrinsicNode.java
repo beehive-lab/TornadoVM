@@ -53,8 +53,7 @@ public class OCLFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
         this.operation = op;
     }
 
-    public static final NodeClass<OCLFPBinaryIntrinsicNode> TYPE = NodeClass
-            .create(OCLFPBinaryIntrinsicNode.class);
+    public static final NodeClass<OCLFPBinaryIntrinsicNode> TYPE = NodeClass.create(OCLFPBinaryIntrinsicNode.class);
     protected final Operation operation;
 
     public enum Operation {

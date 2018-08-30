@@ -42,21 +42,14 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 @NodeInfo(nameTemplate = "Load .s{p#lane}")
 public final class VectorLoadElementProxyNode extends FixedWithNextNode {
 
-    public static final NodeClass<VectorLoadElementProxyNode> TYPE = NodeClass
-            .create(VectorLoadElementProxyNode.class);
+    public static final NodeClass<VectorLoadElementProxyNode> TYPE = NodeClass.create(VectorLoadElementProxyNode.class);
 
-    @OptionalInput(InputType.Association)
-    ValueNode origin;
-    @OptionalInput(InputType.Association)
-    ValueNode laneOrigin;
+    @OptionalInput(InputType.Association) ValueNode origin;
+    @OptionalInput(InputType.Association) ValueNode laneOrigin;
 
     protected final OCLKind kind;
 
-    protected VectorLoadElementProxyNode(
-            NodeClass<? extends VectorLoadElementProxyNode> c,
-            OCLKind kind,
-            ValueNode origin,
-            ValueNode lane) {
+    protected VectorLoadElementProxyNode(NodeClass<? extends VectorLoadElementProxyNode> c, OCLKind kind, ValueNode origin, ValueNode lane) {
         super(c, OCLStampFactory.getStampFor(kind));
         this.kind = kind;
         this.origin = origin;
@@ -71,11 +64,12 @@ public final class VectorLoadElementProxyNode extends FixedWithNextNode {
              * applied to the vector node and this node should be discarded.
              */
             VectorValueNode vector = null;
-//				System.out.printf("origin: %s\n",origin);
+            // System.out.printf("origin: %s\n",origin);
             if (origin instanceof VectorValueNode) {
                 vector = (VectorValueNode) origin;
-            } //				else if(origin instanceof ParameterNode){
-            //					vector = origin.graph().addOrUnique(new VectorValueNode(kind, origin));
+            } // else if(origin instanceof ParameterNode){
+              // vector = origin.graph().addOrUnique(new VectorValueNode(kind,
+              // origin));
             else {
                 shouldNotReachHere();
             }
@@ -91,17 +85,14 @@ public final class VectorLoadElementProxyNode extends FixedWithNextNode {
         this(TYPE, vector.getOCLKind(), vector, lane);
     }
 
-    public VectorLoadElementProxyNode(
-            OCLKind vectorKind,
-            ValueNode origin,
-            ValueNode lane) {
+    public VectorLoadElementProxyNode(OCLKind vectorKind, ValueNode origin, ValueNode lane) {
         this(TYPE, vectorKind, origin, lane);
     }
 
     @Override
     public boolean inferStamp() {
         return true;
-//return updateStamp(createStamp(origin, kind.getElementKind()));
+        // return updateStamp(createStamp(origin, kind.getElementKind()));
     }
 
     public OCLKind getOCLKind() {

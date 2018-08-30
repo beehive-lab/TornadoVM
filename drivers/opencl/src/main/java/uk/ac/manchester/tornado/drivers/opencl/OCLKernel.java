@@ -55,8 +55,7 @@ public class OCLKernel extends TornadoLogger {
 
     native static void clReleaseKernel(long kernelId) throws OCLException;
 
-    native static void clSetKernelArg(long kernelId, int index, long size,
-            byte[] buffer) throws OCLException;
+    native static void clSetKernelArg(long kernelId, int index, long size, byte[] buffer) throws OCLException;
 
     native static void clGetKernelInfo(long kernelId, int info, byte[] buffer) throws OCLException;
 
@@ -108,8 +107,7 @@ public class OCLKernel extends TornadoLogger {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
         try {
-            clGetKernelInfo(id, OCLKernelInfo.CL_KERNEL_FUNCTION_NAME.getValue(),
-                    buffer.array());
+            clGetKernelInfo(id, OCLKernelInfo.CL_KERNEL_FUNCTION_NAME.getValue(), buffer.array());
             kernelName = new String(buffer.array(), "ASCII").trim();
         } catch (UnsupportedEncodingException | OCLException e) {
             e.printStackTrace();

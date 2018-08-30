@@ -42,7 +42,8 @@ public class OCLStampFactory {
             stamps[index] = new OCLStamp(kind);
         }
 
-//        System.out.printf("OCLStampFactory: kind=%s -> stamp=%s\n", kind, stamps[index]);
+        // System.out.printf("OCLStampFactory: kind=%s -> stamp=%s\n", kind,
+        // stamps[index]);
         return stamps[index];
     }
 

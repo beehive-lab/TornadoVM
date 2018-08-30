@@ -140,9 +140,12 @@ public class OCLGraphBuilderPlugins {
                 b.add(b.append(printfNode));
                 while (newArrayNode.hasUsages()) {
                     Node n = newArrayNode.getUsageAt(0);
-                    // need to remove all nodes from the graph that operate on the new array,
-                    // however, we cannot remove all inputs as they may be used by the currently
-                    // unbuilt part of the graph. We also need to ensure that we do not leave any
+                    // need to remove all nodes from the graph that operate on
+                    // the new array,
+                    // however, we cannot remove all inputs as they may be used
+                    // by the currently
+                    // unbuilt part of the graph. We also need to ensure that we
+                    // do not leave any
                     // gaps inbetween fixed nodes
                     if (n instanceof FixedWithNextNode) {
                         GraphUtil.unlinkFixedNode((FixedWithNextNode) n);
@@ -199,10 +202,13 @@ public class OCLGraphBuilderPlugins {
 
                 while (newArrayNode.hasUsages()) {
                     Node n = newArrayNode.getUsageAt(0);
-                    // need to remove all nodes from the graph that operate on the new array,
+                    // need to remove all nodes from the graph that operate on
+                    // the new array,
                     // however, we cannot remove all inputs as they
-                    // may be used by the currently unbuilt part of the graph. We also need to
-                    // ensure that we do not leave any gaps inbetween fixed nodes
+                    // may be used by the currently unbuilt part of the graph.
+                    // We also need to
+                    // ensure that we do not leave any gaps inbetween fixed
+                    // nodes
                     if (n instanceof FixedWithNextNode) {
                         GraphUtil.unlinkFixedNode((FixedWithNextNode) n);
                     }

@@ -844,7 +844,8 @@ public final class OCLAssembler extends Assembler {
     }
 
     /**
-     * Used to emit instructions within a method. i.e. ones that terminal with a ';'
+     * Used to emit instructions within a method. i.e. ones that terminal with a
+     * ';'
      *
      * @param fmt
      * @param args
@@ -857,8 +858,8 @@ public final class OCLAssembler extends Assembler {
     }
 
     /**
-     * Used to emit function defs and control flow statements. i.e. strings that do
-     * not terminate with a ';'
+     * Used to emit function defs and control flow statements. i.e. strings that
+     * do not terminate with a ';'
      *
      * @param fmt
      * @param args

@@ -100,7 +100,7 @@ public class OCLStamp extends ObjectStamp {
 
     @Override
     public boolean hasValues() {
-        //shouldNotReachHere();
+        // shouldNotReachHere();
         return true;
     }
 

@@ -79,8 +79,7 @@ public class TornadoMathPlugins {
     private static void registerFloatMath1Plugins(Registration r, Class<?> type, JavaKind kind) {
         r.register1("sqrt", type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, SQRT, kind)));
                 return true;
             }
@@ -88,8 +87,7 @@ public class TornadoMathPlugins {
 
         r.register1("exp", type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, EXP, kind)));
                 return true;
             }
@@ -97,8 +95,7 @@ public class TornadoMathPlugins {
 
         r.register1("abs", type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, FABS, kind)));
                 return true;
             }
@@ -106,8 +103,7 @@ public class TornadoMathPlugins {
 
         r.register1("floor", type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, FLOOR, kind)));
                 return true;
             }
@@ -115,8 +111,7 @@ public class TornadoMathPlugins {
 
         r.register1("log", type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, LOG, kind)));
                 return true;
             }
@@ -124,8 +119,7 @@ public class TornadoMathPlugins {
 
         r.register1("floatSin", type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                                 Receiver receiver, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, SIN, kind)));
                 return true;
             }
@@ -133,8 +127,7 @@ public class TornadoMathPlugins {
 
         r.register1("floatCos", type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                                 Receiver receiver, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, COS, kind)));
                 return true;
             }
@@ -142,8 +135,7 @@ public class TornadoMathPlugins {
 
         r.register1("floatSqrt", type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                                 Receiver receiver, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(OCLFPUnaryIntrinsicNode.create(value, SQRT, kind)));
                 return true;
             }
@@ -154,8 +146,7 @@ public class TornadoMathPlugins {
 
         r.register2("min", type, type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode x, ValueNode y) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 b.push(kind, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMIN, kind)));
                 return true;
             }
@@ -163,8 +154,7 @@ public class TornadoMathPlugins {
 
         r.register2("max", type, type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode x, ValueNode y) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 b.push(kind, b.append(OCLFPBinaryIntrinsicNode.create(x, y, FMAX, kind)));
                 return true;
             }
@@ -179,8 +169,7 @@ public class TornadoMathPlugins {
     private static void registerIntMath1Plugins(Registration r, Class<?> type, JavaKind kind) {
         r.register1("abs", type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
                 b.push(kind, b.append(OCLIntUnaryIntrinsicNode.create(value, ABS, kind)));
                 return true;
             }
@@ -190,8 +179,7 @@ public class TornadoMathPlugins {
     private static void registerIntMath2Plugins(Registration r, Class<?> type, JavaKind kind) {
         r.register2("min", type, type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode x, ValueNode y) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 b.push(kind, b.append(OCLIntBinaryIntrinsicNode.create(x, y, MIN, kind)));
                 return true;
             }
@@ -199,8 +187,7 @@ public class TornadoMathPlugins {
 
         r.register2("max", type, type, new InvocationPlugin() {
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode x, ValueNode y) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
                 b.push(kind, b.append(OCLIntBinaryIntrinsicNode.create(x, y, MAX, kind)));
                 return true;
             }
@@ -211,10 +198,8 @@ public class TornadoMathPlugins {
         r.register3("clamp", type, type, type, new InvocationPlugin() {
 
             @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
-                    Receiver receiver, ValueNode x, ValueNode y, ValueNode z) {
-                b.push(kind,
-                        b.append(OCLIntTernaryIntrinsicNode.create(x, y, z, CLAMP, kind)));
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y, ValueNode z) {
+                b.push(kind, b.append(OCLIntTernaryIntrinsicNode.create(x, y, z, CLAMP, kind)));
                 return true;
             }
 

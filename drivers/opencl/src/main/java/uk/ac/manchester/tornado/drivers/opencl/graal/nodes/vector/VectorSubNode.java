@@ -46,10 +46,8 @@ public class VectorSubNode extends FloatingNode implements LIRLowerable, VectorO
 
     public static final NodeClass<VectorSubNode> TYPE = NodeClass.create(VectorSubNode.class);
 
-    @Input
-    ValueNode x;
-    @Input
-    ValueNode y;
+    @Input ValueNode x;
+    @Input ValueNode y;
 
     public VectorSubNode(OCLKind kind, ValueNode x, ValueNode y) {
         this(TYPE, kind, x, y);

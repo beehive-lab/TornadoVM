@@ -46,10 +46,8 @@ public class VectorDivNode extends FloatingNode implements LIRLowerable, VectorO
 
     public static final NodeClass<VectorDivNode> TYPE = NodeClass.create(VectorDivNode.class);
 
-    @Input
-    ValueNode x;
-    @Input
-    ValueNode y;
+    @Input ValueNode x;
+    @Input ValueNode y;
 
     public VectorDivNode(OCLKind kind, ValueNode x, ValueNode y) {
         this(TYPE, kind, x, y);

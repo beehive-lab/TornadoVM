@@ -39,7 +39,6 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.logic.BinaryLogicalNode;
 @NodeInfo(shortName = "||")
 public class LogicalOrNode extends BinaryLogicalNode {
 
-    @SuppressWarnings("FieldNameHidesFieldInSuperclass")
     public static final NodeClass<LogicalOrNode> TYPE = NodeClass.create(LogicalOrNode.class);
 
     public LogicalOrNode(LogicNode x, LogicNode y) {

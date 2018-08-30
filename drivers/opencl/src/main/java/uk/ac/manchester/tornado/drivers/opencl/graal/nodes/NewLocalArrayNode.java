@@ -40,10 +40,8 @@ public class NewLocalArrayNode extends FixedWithNextNode implements LIRLowerable
 
     public static final NodeClass<NewLocalArrayNode> TYPE = NodeClass.create(NewLocalArrayNode.class);
 
-    @Input
-    protected ConstantNode size;
-    @Input
-    protected FixedArrayNode array;
+    @Input protected ConstantNode size;
+    @Input protected FixedArrayNode array;
 
     public NewLocalArrayNode(ConstantNode size, JavaKind kind, OCLMemoryBase base, OCLKind oclKind, FixedArrayNode array) {
         super(TYPE, StampFactory.forKind(kind));

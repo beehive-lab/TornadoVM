@@ -46,10 +46,8 @@ public class VectorMulNode extends FloatingNode implements LIRLowerable, VectorO
 
     public static final NodeClass<VectorMulNode> TYPE = NodeClass.create(VectorMulNode.class);
 
-    @Input
-    ValueNode x;
-    @Input
-    ValueNode y;
+    @Input ValueNode x;
+    @Input ValueNode y;
 
     public VectorMulNode(OCLKind kind, ValueNode x, ValueNode y) {
         this(TYPE, kind, x, y);

@@ -55,11 +55,11 @@ public class OCLMidTier extends TornadoMidTier {
             canonicalizer.disableReadCanonicalization();
         }
 
-//        if (OptCanonicalizer.getValue()) {
+        // if (OptCanonicalizer.getValue()) {
         appendPhase(canonicalizer);
-//        }
+        // }
 
-        //if(!OpenCLTornadoBackend.ENABLE_EXCEPTIONS)
+        // if(!OpenCLTornadoBackend.ENABLE_EXCEPTIONS)
         appendPhase(new ExceptionCheckingElimination());
 
         // appendPhase(new LockEliminationPhase());
@@ -67,15 +67,15 @@ public class OCLMidTier extends TornadoMidTier {
             appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new FloatingReadPhase()));
         }
 
-//        if (OptReadElimination.getValue(options)) {
-//            appendPhase(new EarlyReadEliminationPhase(canonicalizer));
-//        }
+        // if (OptReadElimination.getValue(options)) {
+        // appendPhase(new EarlyReadEliminationPhase(canonicalizer));
+        // }
         appendPhase(new TornadoMemoryPhiElimination());
         appendPhase(new RemoveValueProxyPhase());
 
-//        if (OptCanonicalizer.getValue()) {
+        // if (OptCanonicalizer.getValue()) {
         appendPhase(canonicalizer);
-//        }
+        // }
 
         if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, true));
@@ -83,17 +83,19 @@ public class OCLMidTier extends TornadoMidTier {
 
         appendPhase(new GuardLoweringPhase());
 
-//        if (OptCanonicalizer.getValue()) {
+        // if (OptCanonicalizer.getValue()) {
         appendPhase(canonicalizer);
-//        }
+        // }
 
-//TODO disable as it introduces loop limit checks
-//        appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new LoopSafepointEliminationPhase()));
-        //appendPhase(new LoopSafepointInsertionPhase());
-//        appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new GuardLoweringPhase()));
-        //if (VerifyHeapAtReturn.getValue()) {
-        //    appendPhase(new VerifyHeapAtReturnPhase());
-        //}
+        // TODO disable as it introduces loop limit checks
+        // appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new
+        // LoopSafepointEliminationPhase()));
+        // appendPhase(new LoopSafepointInsertionPhase());
+        // appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new
+        // GuardLoweringPhase()));
+        // if (VerifyHeapAtReturn.getValue()) {
+        // appendPhase(new VerifyHeapAtReturnPhase());
+        // }
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.MID_TIER));
 
         appendPhase(new FrameStateAssignmentPhase());
@@ -102,7 +104,7 @@ public class OCLMidTier extends TornadoMidTier {
             appendPhase(new ReassociateInvariantPhase());
         }
 
-        //appendPhase(new TornadoIfCanonicalization());
+        // appendPhase(new TornadoIfCanonicalization());
         appendPhase(canonicalizer);
     }
 }

@@ -71,7 +71,7 @@ public class OCLJIT {
 
             TaskMetaData meta = TaskMetaData.create(new ScheduleMetaData("s0"), methodName, method, false);
 
-            OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolvedMethod, new Object[]{}, meta, (OCLProviders) backend.getProviders(), backend);
+            OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolvedMethod, new Object[] {}, meta, (OCLProviders) backend.getProviders(), backend);
             OCLInstalledCode code = OpenCL.defaultDevice().getDeviceContext().installCode(result);
             System.out.printf("Installed Code:\n");
             for (byte b : code.getCode()) {

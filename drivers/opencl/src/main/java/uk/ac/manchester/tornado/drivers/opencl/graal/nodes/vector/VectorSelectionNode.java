@@ -34,27 +34,27 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLConstantValue;
 
 @NodeInfo(nameTemplate = "{p#selection}")
 public class VectorSelectionNode extends FloatingNode implements LIRLowerable {
-    
+
     public static final NodeClass<VectorSelectionNode> TYPE = NodeClass.create(VectorSelectionNode.class);
 
     @Override
     public void generate(NodeLIRBuilderTool tool) {
         tool.setResult(this, new OCLConstantValue(selection.name().toLowerCase()));
     }
-    
+
     public static enum VectorSelection {
         LO, Hi, ODD, EVEN;
     }
-    
+
     private VectorSelection selection;
-    
+
     public VectorSelectionNode(VectorSelection selection) {
         super(TYPE, StampFactory.forVoid());
         this.selection = selection;
     }
-    
-    public VectorSelection getSelection(){
+
+    public VectorSelection getSelection() {
         return selection;
     }
-    
+
 }

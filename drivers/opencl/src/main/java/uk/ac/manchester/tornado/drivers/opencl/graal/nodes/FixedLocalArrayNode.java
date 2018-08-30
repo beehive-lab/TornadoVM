@@ -47,8 +47,7 @@ public class FixedLocalArrayNode extends FloatingNode implements LIRLowerable {
 
     public static final NodeClass<FixedLocalArrayNode> TYPE = NodeClass.create(FixedLocalArrayNode.class);
 
-    @Input
-    protected ConstantNode length;
+    @Input protected ConstantNode length;
 
     protected OCLKind elementKind;
     protected OCLMemoryBase memoryRegister;

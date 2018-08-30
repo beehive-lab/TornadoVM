@@ -33,12 +33,9 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
     public static final double GPU_COMPUTE_UNIT_QUEUE_COEFF = 128;
     public static final double GPU_WORK_GROUP_COEFF = .125;
 
-    @SuppressWarnings("unused")
-    private long maxComputeUnits;
-    @SuppressWarnings("unused")
-    private double workGroupUtil;
-    @SuppressWarnings("unused")
-    private long maxWorkGroupSize;
+    @SuppressWarnings("unused") private long maxComputeUnits;
+    @SuppressWarnings("unused") private double workGroupUtil;
+    @SuppressWarnings("unused") private long maxWorkGroupSize;
 
     private final long[] maxWorkItemSizes;
 

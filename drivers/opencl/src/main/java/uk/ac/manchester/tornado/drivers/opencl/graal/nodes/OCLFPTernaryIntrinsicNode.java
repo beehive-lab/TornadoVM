@@ -53,8 +53,7 @@ public class OCLFPTernaryIntrinsicNode extends TernaryNode implements Arithmetic
         this.operation = op;
     }
 
-    public static final NodeClass<OCLFPTernaryIntrinsicNode> TYPE = NodeClass
-            .create(OCLFPTernaryIntrinsicNode.class);
+    public static final NodeClass<OCLFPTernaryIntrinsicNode> TYPE = NodeClass.create(OCLFPTernaryIntrinsicNode.class);
     protected final Operation operation;
 
     public enum Operation {

@@ -66,13 +66,10 @@ public class OCLIntrinsicNode {
     @NodeInfo(nameTemplate = "{p#operation/s}")
     public static final class FixedBinaryGeometricOp extends FixedNode implements Floatable {
 
-        public static final NodeClass<FixedBinaryGeometricOp> TYPE = NodeClass
-                .create(FixedBinaryGeometricOp.class);
+        public static final NodeClass<FixedBinaryGeometricOp> TYPE = NodeClass.create(FixedBinaryGeometricOp.class);
         private final GeometricOp operation;
-        @Input
-        private ValueNode x;
-        @Input
-        private ValueNode y;
+        @Input private ValueNode x;
+        @Input private ValueNode y;
 
         public FixedBinaryGeometricOp(OCLKind kind, GeometricOp op, ValueNode x, ValueNode y) {
             super(TYPE, OCLStampFactory.getStampFor(kind.getElementKind()));
@@ -90,8 +87,7 @@ public class OCLIntrinsicNode {
     @NodeInfo(nameTemplate = "{p#operation/s}")
     public static class BinaryGeometricOp extends BinaryNode implements ArithmeticLIRLowerable {
 
-        public static final NodeClass<BinaryGeometricOp> TYPE = NodeClass
-                .create(BinaryGeometricOp.class);
+        public static final NodeClass<BinaryGeometricOp> TYPE = NodeClass.create(BinaryGeometricOp.class);
         protected final GeometricOp operation;
 
         public BinaryGeometricOp(Stamp stamp, GeometricOp op, ValueNode x, ValueNode y) {
@@ -147,10 +143,7 @@ public class OCLIntrinsicNode {
 
             Variable var = builder.getLIRGeneratorTool().newVariable(result.getValueKind());
             builder.getLIRGeneratorTool().append(new AssignStmt(var, result));
-
-            //System.out.printf("result: kind=%s, kind=%s\n",result.getKind(), vectorKind.getElementKind());
             builder.setResult(this, var);
-
         }
 
         @Override

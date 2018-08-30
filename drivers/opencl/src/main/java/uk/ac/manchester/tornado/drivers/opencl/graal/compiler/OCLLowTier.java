@@ -54,7 +54,7 @@ public class OCLLowTier extends TornadoLowTier {
 
         appendPhase(new RemoveValueProxyPhase());
 
-//        appendPhase(new ExpandLogicPhase());
+        // appendPhase(new ExpandLogicPhase());
 
         /*
          * Cleanup IsNull checks resulting from MID_TIER/LOW_TIER lowering and
@@ -66,7 +66,7 @@ public class OCLLowTier extends TornadoLowTier {
              * Canonicalizer may create some new ShortCircuitOrNodes so clean
              * them up.
              */
-//            appendPhase(new ExpandLogicPhase());
+            // appendPhase(new ExpandLogicPhase());
         }
 
         appendPhase(new AddressLoweringPhase(addressLowering));

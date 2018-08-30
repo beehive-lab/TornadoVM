@@ -43,7 +43,6 @@ public class OCLPrebuiltTask extends PrebuiltTask {
         for (byte b : code.getCode()) {
             System.out.printf("%c", b);
         }
-
     }
 
     public OCLInstalledCode getCode() {

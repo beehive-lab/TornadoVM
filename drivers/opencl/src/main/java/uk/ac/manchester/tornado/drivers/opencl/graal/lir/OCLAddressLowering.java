@@ -51,7 +51,7 @@ public class OCLAddressLowering extends AddressLowering {
             TornadoInternalError.unimplemented("address origin unimplemented: %s", base.getClass().getName());
         }
 
-        OCLAddressNode result = new OCLAddressNode(base, offset, memoryRegister);        
+        OCLAddressNode result = new OCLAddressNode(base, offset, memoryRegister);
         OCLAddressNode unique = base.graph().unique(result);
         return unique;
     }

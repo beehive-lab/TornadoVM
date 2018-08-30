@@ -39,7 +39,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 @NodeInfo(shortName = "!")
 public class LogicalNotNode extends UnaryLogicalNode {
 
-    @SuppressWarnings("FieldNameHidesFieldInSuperclass")
     public static final NodeClass<LogicalNotNode> TYPE = NodeClass.create(LogicalNotNode.class);
 
     public LogicalNotNode(LogicNode value) {

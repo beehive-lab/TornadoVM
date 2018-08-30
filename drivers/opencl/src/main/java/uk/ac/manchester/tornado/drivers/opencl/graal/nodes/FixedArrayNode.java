@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
 import org.graalvm.compiler.core.common.LIRKind;
+
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.graph.NodeClass;
@@ -48,8 +49,7 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
 
     public static final NodeClass<FixedArrayNode> TYPE = NodeClass.create(FixedArrayNode.class);
 
-    @Input
-    protected ConstantNode length;
+    @Input protected ConstantNode length;
 
     protected OCLKind elementKind;
     protected OCLMemoryBase memoryRegister;
@@ -88,8 +88,8 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         /*
-         * using as_T reinterprets the data as type T - consider: float x = (float) 1;
-         * and int value = 1, float x = &(value);
+         * using as_T reinterprets the data as type T - consider: float x =
+         * (float) 1; and int value = 1, float x = &(value);
          */
         final Value lengthValue = gen.operand(length);
 
