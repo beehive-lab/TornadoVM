@@ -28,28 +28,11 @@ package uk.ac.manchester.tornado.drivers.opencl;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLFPGAScheduler extends OCLKernelScheduler {
-    public static final double FPGA_COMPUTE_UNIT_COEFF = 1;
-    public static final double FPGA_COMPUTE_UNIT_QUEUE_COEFF = 128;
-    public static final double FPGA_WORK_GROUP_COEFF = .125;
-
-    @SuppressWarnings("unused")
-    private long maxComputeUnits;
-    @SuppressWarnings("unused")
-    private double workGroupUtil;
-    @SuppressWarnings("unused")
-    private long maxWorkGroupSize;
-
-    private final long[] maxWorkItemSizes;
 
     public OCLFPGAScheduler(final OCLDeviceContext context) {
         super(context);
         OCLDevice device = context.getDevice();
 
-        maxWorkItemSizes = device.getMaxWorkItemSizes();
-        maxComputeUnits = device.getMaxComputeUnits();
-        maxWorkGroupSize = device.getMaxWorkGroupSize();
-
-        workGroupUtil = FPGA_WORK_GROUP_COEFF;
     }
 
     @Override
@@ -76,17 +59,11 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
                 localWork[0] = 16;
 
             case 2:
-                // localWork[1] = calculateGroupSize(maxWorkItemSizes[1],
-                // meta.getOpenclGpuBlock2DY(), meta.getGlobalWork()[1]);
                 localWork[1] = 16;
-                // localWork[0] = calculateGroupSize(maxWorkItemSizes[0],
-                // meta.getOpenclGpuBlock2DX(), meta.getGlobalWork()[0]);
                 localWork[0] = 16;
 
                 break;
             case 1:
-                // localWork[0] = calculateGroupSize(maxWorkItemSizes[0],
-                // meta.getOpenclGpuBlockX(), meta.getGlobalWork()[0]);
                 localWork[0] = 64;
                 break;
             default:
