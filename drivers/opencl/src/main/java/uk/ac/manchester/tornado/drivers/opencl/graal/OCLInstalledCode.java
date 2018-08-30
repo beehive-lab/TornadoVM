@@ -34,7 +34,6 @@ import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.OCLFPGAScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLGPUScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernelScheduler;
@@ -81,7 +80,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         this.code = code;
         this.deviceContext = deviceContext;
         this.scheduler = OCLScheduler.create(deviceContext);
-        this.DEFAULT_SCHEDULER = new OCLFPGAScheduler(deviceContext);
+        this.DEFAULT_SCHEDULER = new OCLGPUScheduler(deviceContext);
         this.kernel = kernel;
         valid = kernel != null;
         buffer.order(deviceContext.getByteOrder());
