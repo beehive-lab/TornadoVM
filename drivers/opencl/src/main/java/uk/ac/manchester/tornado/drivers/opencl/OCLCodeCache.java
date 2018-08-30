@@ -329,6 +329,7 @@ public class OCLCodeCache {
             } else {
                 RuntimeUtilities.sysCall(cmd, true);
                 RuntimeUtilities.sysCall(cmdRename, true);
+
             }
             return installEntryPointForBinaryForFPGAs(resolveFPGADir(), LOOKUP_BUFFER_KERNEL_NAME);
         } else {
