@@ -23,7 +23,7 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.runtime.lang;
+package uk.ac.manchester.tornado.runtime.directives;
 
 public class CompilerInternals {
 
