@@ -136,7 +136,11 @@ $ cmake -version
 cmake version 3.10.1
 ``` 
 
-NOTE: the tornado `Makefile` automatically sets the `cmake.root.dir` based on the variable `CMAKE_ROOT` set in `etc/tornado.env`
+Then export `CMAKE_ROOT` variable to the cmake installation. You can add it to the `etc/tornado.env` file.
+
+```bash
+export CMAKE_ROOT=/opt/cmake-3.10.2
+```
 
 ### 5. Compile Tornado
 
@@ -151,7 +155,6 @@ and done!!
 ## Running Examples #
 
 ```bash
-$ . etc/tornado.env
 $ tornado uk.ac.manchester.tornado.examples.HelloWorld
 ```
 
@@ -170,11 +173,11 @@ Number of Tornado drivers: 1
 Number of devices: 3
 
 Tornado device=0:0
-NVIDIA CUDA -- GeForce GTX 1050
+  NVIDIA CUDA -- GeForce GTX 1050
 Tornado device=0:1
-Intel(R) OpenCL -- Intel(R) HD Graphics
+  Intel(R) OpenCL -- Intel(R) HD Graphics
 Tornado device=0:2
-Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
+  Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
 ```
 
 To run on a specific device user the following option:
