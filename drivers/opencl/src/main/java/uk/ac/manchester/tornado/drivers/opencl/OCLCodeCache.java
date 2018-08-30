@@ -53,7 +53,6 @@ import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLCodeCache {
 
@@ -303,13 +302,29 @@ public class OCLCodeCache {
                 System.out.println(sourceCode);
             }
 
+
+        if (!entryPoint.equals("lookupBufferAddress")) {
+
+            String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
+
+            String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + INTEL_FPGA_SUFFIX;
+            String[] cmd;
+
+            cmd = new String[] { "aoc", inputFile, "-v","-report" ,"-march=emulator", "-o", outputFile};
+            //cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115", "-o", outputFile };
+
+            System.out.println(Arrays.toString(cmd));
+		
+            System.out.println("Input file and location: " + inputFile + "\n");
+            System.out.println("Output file and location: " + outputFile + "\n");
+
             String[] cmd,cmdRename;
             File f;
 
             String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
             String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
 
-            String hlsFlags = INTEL_FPGA_COMPILATION_FLAGS.equals(null) ? "-v" : String.join(" ", processFPGAFlags());
+
 
             if (OpenCL.FPGA_EMULATION) {
                 cmd = new String[] { "aoc", inputFile, "-march=emulator", "-o", outputFile };
