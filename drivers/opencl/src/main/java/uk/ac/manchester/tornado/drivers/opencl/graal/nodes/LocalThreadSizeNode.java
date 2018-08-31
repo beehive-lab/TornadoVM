@@ -44,8 +44,7 @@ public class LocalThreadSizeNode extends FloatingNode implements LIRLowerable {
 
     public static final NodeClass<LocalThreadSizeNode> TYPE = NodeClass.create(LocalThreadSizeNode.class);
 
-    @Node.Input
-    protected ConstantNode index;
+    @Node.Input protected ConstantNode index;
 
     public LocalThreadSizeNode(ConstantNode value) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));

@@ -36,10 +36,9 @@ import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.StructuredGraph;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.graal.nodes.ParallelRangeNode;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.runtime.api.CompilableTask;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graph.GraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
@@ -48,6 +47,7 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.DependentReadNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
+import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 
 public class TornadoGraphCompiler {
 
@@ -72,7 +72,7 @@ public class TornadoGraphCompiler {
     /*
      * Simplest case where all tasks are executed on the same device
      */
-    private static GraphCompilationResult compileSingleContext(TornadoGraph graph, ExecutionContext context, TornadoDevice device) {
+    private static GraphCompilationResult compileSingleContext(TornadoGraph graph, ExecutionContext context, TornadoAcceleratorDevice device) {
 
         final GraphCompilationResult result = new GraphCompilationResult();
 
@@ -143,8 +143,8 @@ public class TornadoGraphCompiler {
 
                 CompilableTask t1 = (CompilableTask) context.getTask(firstTask.getTaskIndex());
                 CompilableTask t2 = (CompilableTask) context.getTask(dependentTask.getTaskIndex());
-                ResolvedJavaMethod rm1 = TornadoRuntime.getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
-                ResolvedJavaMethod rm2 = TornadoRuntime.getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
+                ResolvedJavaMethod rm1 = TornadoCoreRuntime.getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
+                ResolvedJavaMethod rm2 = TornadoCoreRuntime.getTornadoRuntime().getMetaAccess().lookupJavaMethod(t1.getMethod());
                 Sketch sketch1 = TornadoSketcher.lookup(rm1);
                 Sketch sketch2 = TornadoSketcher.lookup(rm2);
                 StructuredGraph g1 = (StructuredGraph) sketch1.getGraph().getReadonlyCopy();

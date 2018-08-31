@@ -30,7 +30,7 @@ import org.graalvm.compiler.nodes.memory.FloatingReadNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
 
-import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
@@ -51,7 +51,7 @@ public class OCLAddressLowering extends AddressLowering {
             TornadoInternalError.unimplemented("address origin unimplemented: %s", base.getClass().getName());
         }
 
-        OCLAddressNode result = new OCLAddressNode(base, offset, memoryRegister);        
+        OCLAddressNode result = new OCLAddressNode(base, offset, memoryRegister);
         OCLAddressNode unique = base.graph().unique(result);
         return unique;
     }

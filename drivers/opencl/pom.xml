@@ -6,17 +6,18 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>0.0.2-SNAPSHOT</version>
+        <version>0.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>tornado-drivers-opencl</artifactId>
     <name>tornado-drivers-opencl</name>
 
     <dependencies>
-        <dependency>
-            <groupId>tornado</groupId>
-            <artifactId>tornado-collections</artifactId>
-            <version>${tornado.version}</version>
+		<dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-api</artifactId>
+            <version>${project.version}</version>
         </dependency>
+
         <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-runtime</artifactId>

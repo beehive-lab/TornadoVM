@@ -33,13 +33,12 @@ import org.graalvm.compiler.nodes.LogicNode;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
+import uk.ac.manchester.tornado.runtime.graal.nodes.logic.UnaryLogicalNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
-import uk.ac.manchester.tornado.graal.nodes.logic.UnaryLogicalNode;
 
 @NodeInfo(shortName = "!")
 public class LogicalNotNode extends UnaryLogicalNode {
 
-    @SuppressWarnings("FieldNameHidesFieldInSuperclass")
     public static final NodeClass<LogicalNotNode> TYPE = NodeClass.create(LogicalNotNode.class);
 
     public LogicalNotNode(LogicNode value) {

@@ -1,42 +1,40 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
- *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
- *
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
  */
 package uk.ac.manchester.tornado.benchmarks;
 
+import static uk.ac.manchester.tornado.api.collections.graphics.GraphicsMath.rotate;
+import static uk.ac.manchester.tornado.api.collections.types.Float4.add;
+
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.Parallel;
-import uk.ac.manchester.tornado.collections.types.*;
-
-import static uk.ac.manchester.tornado.collections.graphics.GraphicsMath.rotate;
-import static uk.ac.manchester.tornado.collections.types.Float4.add;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.types.Float3;
+import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat4;
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
+import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 
 public final class GraphicsKernels {
 
-    public static void rotateVector(VectorFloat3 output,
-            Matrix4x4Float m, VectorFloat3 input) {
+    public static void rotateVector(VectorFloat3 output, Matrix4x4Float m, VectorFloat3 input) {
 
         for (@Parallel int i = 0; i < output.getLength(); i++) {
             final Float3 x = input.get(i);
@@ -45,8 +43,7 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void dotVector(VectorFloat3 A, VectorFloat3 B,
-            float[] c) {
+    public static void dotVector(VectorFloat3 A, VectorFloat3 B, float[] c) {
 
         for (@Parallel int i = 0; i < c.length; i++) {
             final Float3 a = A.get(i);
@@ -56,16 +53,14 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void addVector(VectorFloat4 a, VectorFloat4 b,
-            VectorFloat4 c) {
+    public static void addVector(VectorFloat4 a, VectorFloat4 b, VectorFloat4 c) {
 
         for (@Parallel int i = 0; i < c.getLength(); i++) {
             c.set(i, Float4.add(a.get(i), b.get(i)));
         }
     }
 
-    public static void rotateImage(ImageFloat3 output,
-            Matrix4x4Float m, ImageFloat3 input) {
+    public static void rotateImage(ImageFloat3 output, Matrix4x4Float m, ImageFloat3 input) {
 
         for (@Parallel int i = 0; i < output.Y(); i++) {
             for (@Parallel int j = 0; j < output.X(); j++) {
@@ -78,8 +73,7 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void rotateImageStreams(ImageFloat3 output,
-            Matrix4x4Float m, ImageFloat3 input) {
+    public static void rotateImageStreams(ImageFloat3 output, Matrix4x4Float m, ImageFloat3 input) {
 
         IntStream.range(0, output.X() * output.Y()).parallel().forEach((int index) -> {
             final int j = index % output.X();
@@ -93,8 +87,7 @@ public final class GraphicsKernels {
         });
     }
 
-    public static void dotImage(ImageFloat3 A, ImageFloat3 B,
-            ImageFloat C) {
+    public static void dotImage(ImageFloat3 A, ImageFloat3 B, ImageFloat C) {
 
         for (@Parallel int i = 0; i < C.Y(); i++) {
             for (@Parallel int j = 0; j < C.X(); j++) {
@@ -106,8 +99,7 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void addImage(ImageFloat4 a, ImageFloat4 b,
-            ImageFloat4 c) {
+    public static void addImage(ImageFloat4 a, ImageFloat4 b, ImageFloat4 c) {
 
         for (@Parallel int i = 0; i < c.Y(); i++) {
             for (@Parallel int j = 0; j < c.X(); j++) {
@@ -116,11 +108,8 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void convolveImageArray(final float[] input,
-            final float[] filter, final float[] output,
-            final int iW, final int iH, final int fW,
-            final int fH) {
-        int u, v;
+    public static void convolveImageArray(final float[] input, final float[] filter, final float[] output, final int iW, final int iH, final int fW, final int fH) {
+        int u,v;
 
         final int filterX2 = fW / 2;
         final int filterY2 = fH / 2;
@@ -133,9 +122,7 @@ public final class GraphicsKernels {
 
                         if ((((y - filterY2) + v) >= 0) && ((y + v) < iH)) {
                             if ((((x - filterX2) + u) >= 0) && ((x + u) < iW)) {
-                                sum += filter[(v * fW) + u]
-                                        * input[(((y - filterY2) + v) * iW)
-                                        + ((x - filterX2) + u)];
+                                sum += filter[(v * fW) + u] * input[(((y - filterY2) + v) * iW) + ((x - filterX2) + u)];
                             }
                         }
                     }
@@ -147,9 +134,8 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void convolveImage(final ImageFloat input,
-            final ImageFloat filter, final ImageFloat output) {
-        int u, v;
+    public static void convolveImage(final ImageFloat input, final ImageFloat filter, final ImageFloat output) {
+        int u,v;
 
         final int filterX2 = filter.X() / 2;
         final int filterY2 = filter.Y() / 2;
@@ -160,13 +146,9 @@ public final class GraphicsKernels {
                 for (v = 0; v < filter.Y(); v++) {
                     for (u = 0; u < filter.X(); u++) {
 
-                        if ((((y - filterY2) + v) >= 0)
-                                && ((y + v) < output.Y())) {
-                            if ((((x - filterX2) + u) >= 0)
-                                    && ((x + u) < output.X())) {
-                                sum += filter.get(u, v)
-                                        * input.get(x - filterX2 + u, y
-                                                - filterY2 + v);
+                        if ((((y - filterY2) + v) >= 0) && ((y + v) < output.Y())) {
+                            if ((((x - filterX2) + u) >= 0) && ((x + u) < output.X())) {
+                                sum += filter.get(u, v) * input.get(x - filterX2 + u, y - filterY2 + v);
                             }
                         }
                     }
@@ -176,8 +158,7 @@ public final class GraphicsKernels {
         }
     }
 
-    public static void convolveImageStreams(final ImageFloat input,
-            final ImageFloat filter, final ImageFloat output) {
+    public static void convolveImageStreams(final ImageFloat input, final ImageFloat filter, final ImageFloat output) {
 
         final int filterX2 = filter.X() / 2;
         final int filterY2 = filter.Y() / 2;
@@ -190,13 +171,9 @@ public final class GraphicsKernels {
             for (int v = 0; v < filter.Y(); v++) {
                 for (int u = 0; u < filter.X(); u++) {
 
-                    if ((((y - filterY2) + v) >= 0)
-                            && ((y + v) < output.Y())) {
-                        if ((((x - filterX2) + u) >= 0)
-                                && ((x + u) < output.X())) {
-                            sum += filter.get(u, v)
-                                    * input.get(x - filterX2 + u, y
-                                            - filterY2 + v);
+                    if ((((y - filterY2) + v) >= 0) && ((y + v) < output.Y())) {
+                        if ((((x - filterX2) + u) >= 0) && ((x + u) < output.X())) {
+                            sum += filter.get(u, v) * input.get(x - filterX2 + u, y - filterY2 + v);
                         }
                     }
                 }

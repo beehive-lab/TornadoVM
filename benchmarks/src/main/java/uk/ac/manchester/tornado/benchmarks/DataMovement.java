@@ -1,37 +1,28 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
- *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
- *
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import static uk.ac.manchester.tornado.runtime.TornadoRuntime.getTornadoRuntime;
-
-import uk.ac.manchester.tornado.common.DeviceObjectState;
-import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.runtime.api.GlobalObjectState;
+import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.mm.TornadoGlobalObjectState;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class DataMovement {
 
@@ -56,7 +47,7 @@ public class DataMovement {
         return null;
     }
 
-    private static TornadoDevice resolveDevice(TornadoRuntime runtime, String device) {
+    private static TornadoDevice resolveDevice(TornadoRuntimeCI runtime, String device) {
         final String[] ids = device.split(":");
         final TornadoDriver driver = runtime.getDriver(Integer.parseInt(ids[0]));
         return driver.getDevice(Integer.parseInt(ids[1]));
@@ -73,15 +64,15 @@ public class DataMovement {
         System.out.println("device,type,numelements,numbytes,iterations,streamInElapsed,streamOutElapsed");
 
         for (final String deviceStr : devices) {
-            TornadoRuntime runtime = getTornadoRuntime();
+            TornadoRuntimeCI runtime = TornadoRuntime.getTornadoRuntime();
             final TornadoDevice device = resolveDevice(runtime, deviceStr);
 
             for (final String type : types) {
                 for (int size = startSize; size <= endSize; size <<= 1) {
 
                     final Object array = createArray(type, size);
-                    final GlobalObjectState globalState = runtime.resolveObject(array);
-                    final DeviceObjectState deviceState = globalState.getDeviceState(device);
+                    final TornadoGlobalObjectState globalState = runtime.resolveObject(array);
+                    final TornadoDeviceObjectState deviceState = globalState.getDeviceState(device);
 
                     device.ensureAllocated(array, deviceState);
 

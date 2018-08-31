@@ -29,5 +29,5 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 
 public interface OCLValue {
 
-	public String toValueString(OCLAssembler asm);
+    public String toValueString(OCLAssembler asm);
 }

@@ -42,13 +42,10 @@ public class OCLBinary {
      */
     protected static class BinaryConsumer extends OCLLIROp {
 
-        @Opcode
-        protected final OCLBinaryOp opcode;
+        @Opcode protected final OCLBinaryOp opcode;
 
-        @Use
-        protected Value x;
-        @Use
-        protected Value y;
+        @Use protected Value x;
+        @Use protected Value y;
 
         protected BinaryConsumer(OCLBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
             super(lirKind);

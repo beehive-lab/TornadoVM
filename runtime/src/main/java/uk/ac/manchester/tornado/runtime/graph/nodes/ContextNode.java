@@ -32,7 +32,7 @@ public class ContextNode extends AbstractNode {
     public ContextNode(int index) {
         deviceIndex = index;
     }
-    
+
     @Override
     public int compareTo(AbstractNode o) {
         if (!(o instanceof ContextNode)) {
@@ -45,9 +45,9 @@ public class ContextNode extends AbstractNode {
     public int getDeviceIndex() {
         return deviceIndex;
     }
-    
+
     public void setDeviceIndex(int deviceIndex) {
-    	this.deviceIndex = deviceIndex;
+        this.deviceIndex = deviceIndex;
     }
 
     @Override

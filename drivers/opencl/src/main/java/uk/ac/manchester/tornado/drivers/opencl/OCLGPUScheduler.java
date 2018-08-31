@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLGPUScheduler extends OCLKernelScheduler {
 
@@ -33,12 +33,9 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
     public static final double GPU_COMPUTE_UNIT_QUEUE_COEFF = 128;
     public static final double GPU_WORK_GROUP_COEFF = .125;
 
-    @SuppressWarnings("unused")
-    private long maxComputeUnits;
-    @SuppressWarnings("unused")
-    private double workGroupUtil;
-    @SuppressWarnings("unused")
-    private long maxWorkGroupSize;
+    @SuppressWarnings("unused") private long maxComputeUnits;
+    @SuppressWarnings("unused") private double workGroupUtil;
+    @SuppressWarnings("unused") private long maxWorkGroupSize;
 
     private final long[] maxWorkItemSizes;
 
@@ -75,12 +72,12 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
                 localWork[2] = 1;
 
             case 2:
-                localWork[1] = calculateGroupSize(maxWorkItemSizes[1], meta.getOpenclGpuBlock2DY(), meta.getGlobalWork()[1]);
-                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenclGpuBlock2DX(), meta.getGlobalWork()[0]);
+                localWork[1] = calculateGroupSize(maxWorkItemSizes[1], meta.getOpenCLGpuBlock2DY(), meta.getGlobalWork()[1]);
+                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenCLGpuBlock2DX(), meta.getGlobalWork()[0]);
 
                 break;
             case 1:
-                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenclGpuBlockX(), meta.getGlobalWork()[0]);
+                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenCLGpuBlockX(), meta.getGlobalWork()[0]);
                 break;
             default:
                 break;

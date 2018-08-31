@@ -45,8 +45,7 @@ public class LocalThreadIDFixedNode extends FixedWithNextNode implements LIRLowe
 
     public static final NodeClass<LocalThreadIDFixedNode> TYPE = NodeClass.create(LocalThreadIDFixedNode.class);
 
-    @Input
-    protected ConstantNode index;
+    @Input protected ConstantNode index;
 
     public LocalThreadIDFixedNode(ConstantNode value) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));

@@ -5,26 +5,22 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado</artifactId>
-        <version>0.0.2-SNAPSHOT</version>
+        <version>0.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>tornado-examples</artifactId>
     <name>tornado-examples</name>
     <dependencies>
-        <dependency>
+
+		<dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>tornado-collections</artifactId>
+            <artifactId>tornado-api</artifactId>
             <version>${project.version}</version>
-            <scope>compile</scope>
+			<scope>compile</scope>
         </dependency>
+
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>tornado-runtime</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tornado-drivers-opencl</artifactId>
+            <artifactId>tornado-matrices</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>

@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.CompiledCode;
@@ -72,7 +72,7 @@ public class OCLCodeProvider implements CodeCacheProvider {
     @Override
     public InstalledCode installCode(ResolvedJavaMethod rjm, CompiledCode cc, InstalledCode ic, SpeculationLog sl, boolean bln) {
         unimplemented("waiting for CompiledCode to be implemented first");
-//  return addMethod(method, method.getName(), result.);
+        // return addMethod(method, method.getName(), result.);
         return null;
     }
 

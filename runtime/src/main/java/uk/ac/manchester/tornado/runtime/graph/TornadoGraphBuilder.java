@@ -29,13 +29,10 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.common.SchedulableTask;
-import uk.ac.manchester.tornado.common.enums.Access;
-import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.runtime.api.AbstractTaskGraph.TornadoGraphBitcodes;
-import uk.ac.manchester.tornado.runtime.api.CompilableTask;
-import uk.ac.manchester.tornado.runtime.api.LocalObjectState;
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ConstantNode;
@@ -49,6 +46,9 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
+import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
+import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.TornadoGraphBitcodes;
 
 public class TornadoGraphBuilder {
 
@@ -164,7 +164,7 @@ public class TornadoGraphBuilder {
                 context = graph.addUnique(new ContextNode(graphContext.getDeviceIndexForTask(globalTaskId)));
 
                 if (task instanceof CompilableTask) {
-                    final ResolvedJavaMethod resolvedMethod = TornadoRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
+                    final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
                     Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
                     accesses = sketch.getMeta().getArgumentsAccess();
                 } else {

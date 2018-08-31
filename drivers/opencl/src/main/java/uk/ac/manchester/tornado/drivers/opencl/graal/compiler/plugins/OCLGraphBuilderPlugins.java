@@ -52,6 +52,7 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
@@ -59,8 +60,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicN
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PrintfNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.SlotsBaseAddressNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TPrintfNode;
-import uk.ac.manchester.tornado.lang.CompilerInternals;
-import uk.ac.manchester.tornado.lang.Debug;
+import uk.ac.manchester.tornado.runtime.directives.CompilerInternals;
 
 public class OCLGraphBuilderPlugins {
 
@@ -140,9 +140,12 @@ public class OCLGraphBuilderPlugins {
                 b.add(b.append(printfNode));
                 while (newArrayNode.hasUsages()) {
                     Node n = newArrayNode.getUsageAt(0);
-                    // need to remove all nodes from the graph that operate on the new array,
-                    // however, we cannot remove all inputs as they may be used by the currently
-                    // unbuilt part of the graph. We also need to ensure that we do not leave any
+                    // need to remove all nodes from the graph that operate on
+                    // the new array,
+                    // however, we cannot remove all inputs as they may be used
+                    // by the currently
+                    // unbuilt part of the graph. We also need to ensure that we
+                    // do not leave any
                     // gaps inbetween fixed nodes
                     if (n instanceof FixedWithNextNode) {
                         GraphUtil.unlinkFixedNode((FixedWithNextNode) n);
@@ -199,10 +202,13 @@ public class OCLGraphBuilderPlugins {
 
                 while (newArrayNode.hasUsages()) {
                     Node n = newArrayNode.getUsageAt(0);
-                    // need to remove all nodes from the graph that operate on the new array,
+                    // need to remove all nodes from the graph that operate on
+                    // the new array,
                     // however, we cannot remove all inputs as they
-                    // may be used by the currently unbuilt part of the graph. We also need to
-                    // ensure that we do not leave any gaps inbetween fixed nodes
+                    // may be used by the currently unbuilt part of the graph.
+                    // We also need to
+                    // ensure that we do not leave any gaps inbetween fixed
+                    // nodes
                     if (n instanceof FixedWithNextNode) {
                         GraphUtil.unlinkFixedNode((FixedWithNextNode) n);
                     }

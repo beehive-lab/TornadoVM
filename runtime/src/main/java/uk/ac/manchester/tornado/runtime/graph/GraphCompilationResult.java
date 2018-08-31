@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.runtime.graph.nodes.*;
 
@@ -59,10 +59,9 @@ public class GraphCompilationResult {
         asm.end();
     }
 
-    public void emitAsyncNode(TornadoGraph graph, ExecutionContext context,
-            AbstractNode node, int ctx, int depIn) {
+    public void emitAsyncNode(TornadoGraph graph, ExecutionContext context, AbstractNode node, int ctx, int depIn) {
 
-//		System.out.printf("emit: %s\n",node);
+        // System.out.printf("emit: %s\n",node);
         if (node instanceof CopyInNode) {
             asm.copyToContext(((CopyInNode) node).getValue().getIndex(), ctx, depIn);
         } else if (node instanceof AllocateNode) {
@@ -81,8 +80,7 @@ public class GraphCompilationResult {
         }
     }
 
-    private void emitArgList(TornadoGraph graph, ExecutionContext context,
-            TaskNode taskNode) {
+    private void emitArgList(TornadoGraph graph, ExecutionContext context, TaskNode taskNode) {
 
         final int numArgs = taskNode.getNumArgs();
         for (int i = 0; i < numArgs; i++) {

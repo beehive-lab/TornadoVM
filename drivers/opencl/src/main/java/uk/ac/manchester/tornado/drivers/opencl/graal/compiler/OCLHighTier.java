@@ -49,11 +49,11 @@ import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoOpenCLIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoTaskSpecialisation;
-import uk.ac.manchester.tornado.graal.compiler.TornadoHighTier;
-import uk.ac.manchester.tornado.graal.phases.ExceptionSuppression;
-import uk.ac.manchester.tornado.graal.phases.TornadoInliningPolicy;
-import uk.ac.manchester.tornado.graal.phases.TornadoShapeAnalysis;
-import uk.ac.manchester.tornado.graal.phases.TornadoValueTypeCleanup;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
+import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionSuppression;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoShapeAnalysis;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 
 public class OCLHighTier extends TornadoHighTier {
 

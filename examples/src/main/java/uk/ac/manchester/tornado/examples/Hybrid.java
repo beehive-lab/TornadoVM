@@ -1,28 +1,21 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
- *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: Juan Fumero
- *
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
  */
+
 package uk.ac.manchester.tornado.examples;
 
 import java.util.ArrayList;
@@ -30,11 +23,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.Parallel;
-import uk.ac.manchester.tornado.common.Tornado;
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
  * First try: It assumes the first device is a GPU and the second device is an
@@ -118,14 +110,14 @@ public class Hybrid {
             for (int j = 0; j < MAX_DEVICES; j++) {
                 // We play with 2 devices
                 TaskSchedule s0 = new TaskSchedule("x" + i);
-                Tornado.setProperty("x" + i + ".t" + j + ".device", "0:" + DEVICE_INDEXES[i]);
+                TornadoRuntime.setProperty("x" + i + ".t" + j + ".device", "0:" + DEVICE_INDEXES[i]);
                 System.out.println("x" + i + ".t" + j + ".device" + "0:" + DEVICE_INDEXES[i]);
                 s0.task("t" + j, Hybrid::saxpy, kernelPackage.alpha, kernelPackage.x, kernelPackage.y);
                 s0.streamOut(kernelPackage.z);
                 s0.execute();
 
                 TaskSchedule s1 = new TaskSchedule("v" + i);
-                Tornado.setProperty("v" + i + ".t" + j + ".device", "0:" + DEVICE_INDEXES[j]);
+                TornadoRuntime.setProperty("v" + i + ".t" + j + ".device", "0:" + DEVICE_INDEXES[j]);
                 System.out.println("v" + i + ".t" + j + ".device" + "0:" + DEVICE_INDEXES[j]);
                 s1.task("t" + j, Hybrid::vectorAddition, kernelPackage.x, kernelPackage.y, kernelPackage.z);
                 s1.streamOut(kernelPackage.z);
@@ -178,14 +170,14 @@ public class Hybrid {
                 String key = tasksKey.get(i);
                 String locX = tasksLocation.get(key);
                 System.out.println(key + "=" + locX);
-                Tornado.setProperty(key, locX);
+                TornadoRuntime.setProperty(key, locX);
                 t0.execute();
 
                 TaskSchedule t1 = tasks.get(i + 1);
                 key = tasksKey.get(i + 1);
                 String locY = tasksLocation.get(key);
                 System.out.println(key + "=" + locY);
-                Tornado.setProperty(key, locY);
+                TornadoRuntime.setProperty(key, locY);
                 t1.execute();
             }
         }
@@ -233,7 +225,7 @@ public class Hybrid {
             String key = tasksKey.get(i);
             String locX = tasksLocation.get(key);
             System.out.println(key + "=" + locX);
-            Tornado.setProperty(key, locX);
+            TornadoRuntime.setProperty(key, locX);
 
             for (int j = 0; j < MAX_INNER; j++) {
                 long start = System.nanoTime();
@@ -246,7 +238,7 @@ public class Hybrid {
             key = tasksKey.get(i + 1);
             String locY = tasksLocation.get(key);
             System.out.println(key + "=" + locY);
-            Tornado.setProperty(key, locY);
+            TornadoRuntime.setProperty(key, locY);
 
             for (int j = 0; j < MAX_INNER; j++) {
                 long start = System.nanoTime();

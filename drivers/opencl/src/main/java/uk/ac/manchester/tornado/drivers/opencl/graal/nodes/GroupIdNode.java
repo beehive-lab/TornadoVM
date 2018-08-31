@@ -41,11 +41,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 @NodeInfo
 public class GroupIdNode extends FloatingNode implements LIRLowerable {
 
-    public static final NodeClass<GroupIdNode> TYPE = NodeClass
-            .create(GroupIdNode.class);
+    public static final NodeClass<GroupIdNode> TYPE = NodeClass.create(GroupIdNode.class);
 
-    @Input
-    protected ConstantNode index;
+    @Input protected ConstantNode index;
 
     public GroupIdNode(ConstantNode value) {
         super(TYPE, StampFactory.forKind(JavaKind.Int));

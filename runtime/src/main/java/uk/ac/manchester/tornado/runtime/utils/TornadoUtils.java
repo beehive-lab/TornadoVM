@@ -25,14 +25,11 @@
  */
 package uk.ac.manchester.tornado.runtime.utils;
 
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+
 public class TornadoUtils {
 
-    public enum TornadoDeviceType {
-        CPU, GPU, FPGA
-    }
-
     public static int getSizeReduction(int inputSize, TornadoDeviceType where) {
-
         switch (where) {
             case CPU:
                 // If it is executed on the CPU, we return the number of threads
@@ -47,9 +44,9 @@ public class TornadoUtils {
                     size = inputSize / 256;
                 }
                 return size;
+            default:
+                return 0;
         }
-
-        return 0;
     }
 
 }

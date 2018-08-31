@@ -25,22 +25,23 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.common.RuntimeUtilities.humanReadableFreq;
 import static uk.ac.manchester.tornado.drivers.opencl.OpenCL.CL_TRUE;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableFreq;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.common.TornadoLogger;
+import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceInfo;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLLocalMemType;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public class OCLDevice extends TornadoLogger {
+public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
 
     private final long id;
     private final int index;
@@ -132,6 +133,7 @@ public class OCLDevice extends TornadoLogger {
         return (buffer.getInt() == 1) ? true : false;
     }
 
+    @Override
     public String getName() {
         if (name == null) {
             Arrays.fill(buffer.array(), (byte) 0);
@@ -221,6 +223,7 @@ public class OCLDevice extends TornadoLogger {
         return name.trim();
     }
 
+    @Override
     public int getMaxComputeUnits() {
         if (maxComputeUnits != -1) {
             return maxComputeUnits;
@@ -256,6 +259,7 @@ public class OCLDevice extends TornadoLogger {
         return maxAllocationSize;
     }
 
+    @Override
     public long getGlobalMemorySize() {
         if (globalMemorySize != -1) {
             return globalMemorySize;
@@ -269,6 +273,7 @@ public class OCLDevice extends TornadoLogger {
         return globalMemorySize;
     }
 
+    @Override
     public long getLocalMemorySize() {
         if (localMemorySize != -1) {
             return localMemorySize;

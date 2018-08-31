@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.asm;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CONSTANT_REGION_NAME;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_REF_NAME;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.GLOBAL_REGION_NAME;
@@ -844,7 +844,8 @@ public final class OCLAssembler extends Assembler {
     }
 
     /**
-     * Used to emit instructions within a method. i.e. ones that terminal with a ';'
+     * Used to emit instructions within a method. i.e. ones that terminal with a
+     * ';'
      *
      * @param fmt
      * @param args
@@ -857,8 +858,8 @@ public final class OCLAssembler extends Assembler {
     }
 
     /**
-     * Used to emit function defs and control flow statements. i.e. strings that do
-     * not terminate with a ';'
+     * Used to emit function defs and control flow statements. i.e. strings that
+     * do not terminate with a ';'
      *
      * @param fmt
      * @param args

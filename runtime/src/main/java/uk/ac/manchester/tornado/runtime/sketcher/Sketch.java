@@ -27,19 +27,19 @@ package uk.ac.manchester.tornado.runtime.sketcher;
 
 import org.graalvm.compiler.graph.CachedGraph;
 
-import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class Sketch {
 
-    private final CachedGraph graph;
+    private final CachedGraph<?> graph;
     private final TaskMetaData meta;
 
-    public Sketch(CachedGraph graph, TaskMetaData meta) {
+    public Sketch(CachedGraph<?> graph, TaskMetaData meta) {
         this.graph = graph;
         this.meta = meta;
     }
 
-    public CachedGraph getGraph() {
+    public CachedGraph<?> getGraph() {
         return graph;
     }
 

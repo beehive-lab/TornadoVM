@@ -41,11 +41,9 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
 
     public static final NodeClass<OCLAddressNode> TYPE = NodeClass.create(OCLAddressNode.class);
 
-    @OptionalInput
-    private ValueNode base;
+    @OptionalInput private ValueNode base;
 
-    @OptionalInput
-    private ValueNode index;
+    @OptionalInput private ValueNode index;
 
     private OCLMemoryBase memoryRegister;
 

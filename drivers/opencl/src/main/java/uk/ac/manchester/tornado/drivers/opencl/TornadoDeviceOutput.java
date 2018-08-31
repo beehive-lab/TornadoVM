@@ -26,8 +26,8 @@
 
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 
 /**
  * Run:
@@ -45,11 +45,11 @@ public class TornadoDeviceOutput {
 
         StringBuffer bufferDriversAndPlatforms = new StringBuffer().append("\n");
         StringBuffer bufferDevices = new StringBuffer();
-        final int numDrivers = TornadoRuntime.getTornadoRuntime().getNumDrivers();
+        final int numDrivers = TornadoCoreRuntime.getTornadoRuntime().getNumDrivers();
         bufferDriversAndPlatforms.append("Number of Tornado drivers: " + numDrivers + "\n");
 
         for (int driverIndex = 0; driverIndex < numDrivers; driverIndex++) {
-            final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
+            final TornadoAcceleratorDriver driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex);
             final int numDevices = driver.getDeviceCount();
             bufferDriversAndPlatforms.append("Total number of devices  : " + numDevices + "\n");
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {

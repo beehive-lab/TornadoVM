@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,11 +43,7 @@ public class OCLLIRGenerationResult extends LIRGenerationResult {
 
     private final Map<OCLKind, Set<Variable>> variableTable;
 
-    public OCLLIRGenerationResult(
-            CompilationIdentifier identifier,
-            LIR lir,
-            FrameMapBuilder frameMapBuilder,
-            CallingConvention callingConvention) {
+    public OCLLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, CallingConvention callingConvention) {
         super(identifier, lir, frameMapBuilder, callingConvention);
         variableTable = new HashMap<>();
     }

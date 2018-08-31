@@ -1,84 +1,76 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
- *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
- *
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
  */
 package uk.ac.manchester.tornado.benchmarks.sadd;
 
-import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.*;
+import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.sadd;
 
 import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
 
 public class SaddJava extends BenchmarkDriver {
 
-	private final int numElements;
-	
-	private float[] a, b, c;
-	
-	public SaddJava(int iterations, int numElements){
-		super(iterations);
-		this.numElements = numElements;
-	}
-	
-	@Override
-	public void setUp() {
-		a = new float[numElements];
-		b = new float[numElements];
-		c = new float[numElements];
-		
-		for(int i=0;i<numElements;i++){
-			a[i] = 1;
-			b[i] = 2;
-			c[i] = 0;
-		}
+    private final int numElements;
 
-	}
-	
-	@Override
-	public void tearDown() {
-		a = null;
-		b = null;
-		c = null;
-		super.tearDown();
-	}
+    private float[] a,b,c;
 
-	@Override
-	public void code() {
-			sadd(a,b,c);
-	}
-	
-	@Override
-	public void barrier(){
-		
-	}
+    public SaddJava(int iterations, int numElements) {
+        super(iterations);
+        this.numElements = numElements;
+    }
 
-	@Override
-	public boolean validate() {
-		return true;
-	}
-	
-	public void printSummary(){
-		System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n",getElapsed(),getElapsedPerIteration());
-	}
+    @Override
+    public void setUp() {
+        a = new float[numElements];
+        b = new float[numElements];
+        c = new float[numElements];
+
+        for (int i = 0; i < numElements; i++) {
+            a[i] = 1;
+            b[i] = 2;
+            c[i] = 0;
+        }
+
+    }
+
+    @Override
+    public void tearDown() {
+        a = null;
+        b = null;
+        c = null;
+        super.tearDown();
+    }
+
+    @Override
+    public void code() {
+        sadd(a, b, c);
+    }
+
+    @Override
+    public void barrier() {
+
+    }
+
+    @Override
+    public boolean validate() {
+        return true;
+    }
+
+    public void printSummary() {
+        System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n", getElapsed(), getElapsedPerIteration());
+    }
 
 }

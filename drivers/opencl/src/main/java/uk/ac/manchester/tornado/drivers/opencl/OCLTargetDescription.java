@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
 import org.graalvm.compiler.core.common.LIRKind;
 
@@ -51,7 +51,7 @@ public class OCLTargetDescription extends TargetDescription {
     }
 
     //@formatter:off
-    private static final OCLKind[][] VECTOR_LOOKUP_TABLE = new OCLKind[][]{
+    private static final OCLKind[][] VECTOR_LOOKUP_TABLE = new OCLKind[][] {
         {OCLKind.UCHAR2, OCLKind.UCHAR3, OCLKind.UCHAR4, OCLKind.UCHAR8, OCLKind.UCHAR16},
         {OCLKind.CHAR2, OCLKind.CHAR3, OCLKind.CHAR4, OCLKind.CHAR8, OCLKind.CHAR16},
         {OCLKind.USHORT2, OCLKind.USHORT3, OCLKind.USHORT4, OCLKind.USHORT8, OCLKind.USHORT16},

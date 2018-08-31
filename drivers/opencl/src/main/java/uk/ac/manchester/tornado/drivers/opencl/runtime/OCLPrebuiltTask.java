@@ -25,11 +25,11 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
-import uk.ac.manchester.tornado.api.meta.ScheduleMetaData;
-import uk.ac.manchester.tornado.common.enums.Access;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
-import uk.ac.manchester.tornado.meta.domain.DomainTree;
-import uk.ac.manchester.tornado.runtime.api.PrebuiltTask;
+import uk.ac.manchester.tornado.runtime.domain.DomainTree;
+import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 public class OCLPrebuiltTask extends PrebuiltTask {
 
@@ -43,7 +43,6 @@ public class OCLPrebuiltTask extends PrebuiltTask {
         for (byte b : code.getCode()) {
             System.out.printf("%c", b);
         }
-
     }
 
     public OCLInstalledCode getCode() {

@@ -23,8 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -52,14 +52,11 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLVectorElementSelect;
 @NodeInfo(nameTemplate = "Op .s{p#lane}")
 public abstract class VectorElementOpNode extends FloatingNode implements LIRLowerable, Comparable<VectorElementOpNode> {
 
-    public static final NodeClass<VectorElementOpNode> TYPE = NodeClass
-            .create(VectorElementOpNode.class);
+    public static final NodeClass<VectorElementOpNode> TYPE = NodeClass.create(VectorElementOpNode.class);
 
-    @Input(InputType.Extension)
-    ValueNode vector;
+    @Input(InputType.Extension) ValueNode vector;
 
-    @Input
-    ValueNode lane;
+    @Input ValueNode lane;
 
     protected final OCLKind oclKind;
 
@@ -73,7 +70,7 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
         OCLKind vectorKind = OCLKind.ILLEGAL;
         if (vstamp instanceof ObjectStamp) {
             ObjectStamp ostamp = (ObjectStamp) vector.stamp();
-//            System.out.printf("ostamp: type=%s\n", ostamp.type());
+            // System.out.printf("ostamp: type=%s\n", ostamp.type());
 
             if (ostamp.type() != null) {
                 vectorKind = OCLKind.fromResolvedJavaType(ostamp.type());
@@ -98,7 +95,7 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
 
     @Override
     public boolean inferStamp() {
-//        return false;
+        // return false;
         return updateStamp(StampFactory.forKind(oclKind.asJavaKind()));
     }
 
@@ -118,14 +115,16 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         guarantee(vector != null, "vector is null");
-//		System.out.printf("vector = %s, origin=%s\n",vector,vector.getOrigin());
+        // System.out.printf("vector = %s,
+        // origin=%s\n",vector,vector.getOrigin());
         Value targetVector = gen.operand(getVector());
-//        if (targetVector == null && vector.getOrigin() instanceof Invoke) {
-//            targetVector = gen.operand(vector.getOrigin());
-//        }
+        // if (targetVector == null && vector.getOrigin() instanceof Invoke) {
+        // targetVector = gen.operand(vector.getOrigin());
+        // }
 
         guarantee(targetVector != null, "vector is null 2");
-        final OCLVectorElementSelect element = new OCLVectorElementSelect(gen.getLIRGeneratorTool().getLIRKind(stamp), targetVector, new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(laneId())));
+        final OCLVectorElementSelect element = new OCLVectorElementSelect(gen.getLIRGeneratorTool().getLIRKind(stamp), targetVector,
+                new ConstantValue(LIRKind.value(OCLKind.INT), JavaConstant.forInt(laneId())));
         gen.setResult(this, element);
 
     }

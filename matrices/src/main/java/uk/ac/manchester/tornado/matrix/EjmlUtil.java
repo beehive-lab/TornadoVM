@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2013-2018, APT Group, School of Computer Science,
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ */
+
+package uk.ac.manchester.tornado.matrix;
+
+import org.ejml.simple.SimpleMatrix;
+
+import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
+import uk.ac.manchester.tornado.api.collections.types.MatrixDouble;
+
+public class EjmlUtil {
+
+    public static Matrix4x4Float toMatrix4x4Float(SimpleMatrix m) {
+        Matrix4x4Float result = new Matrix4x4Float();
+        for (int i = 0; i < m.numRows(); i++) {
+            for (int j = 0; j < m.numCols(); j++) {
+                result.set(i, j, (float) m.get(i, j));
+            }
+        }
+        return result;
+    }
+
+    public static SimpleMatrix toMatrix(Matrix4x4Float m) {
+        SimpleMatrix result = new SimpleMatrix(m.M(), m.N());
+        for (int i = 0; i < m.M(); i++) {
+            for (int j = 0; j < m.N(); j++) {
+                result.set(i, j, (double) m.get(i, j));
+            }
+        }
+        return result;
+    }
+
+    public static SimpleMatrix toMatrix(MatrixDouble m) {
+        SimpleMatrix result = new SimpleMatrix(m.M(), m.N());
+        for (int i = 0; i < m.M(); i++) {
+            for (int j = 0; j < m.N(); j++) {
+                result.set(i, j, m.get(i, j));
+            }
+        }
+        return result;
+    }
+}

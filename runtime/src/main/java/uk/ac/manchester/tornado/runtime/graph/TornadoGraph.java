@@ -29,7 +29,7 @@ import java.util.BitSet;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 
 public class TornadoGraph {

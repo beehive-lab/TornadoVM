@@ -23,9 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -139,19 +139,19 @@ public class OCLLIRGenerator extends LIRGenerator {
         ValueKind<?> actualLIRKind = lirKind;
         OCLKind oclKind = OCLKind.ILLEGAL;
         if (pk instanceof OCLKind) {
-//        if (pk instanceof Kind) {
-//            OCLTargetDescription target = (OCLTargetDescription) getCodeCache().getTarget();
-//            oclKind = target.getOCLKind((Kind) pk);
-//            actualLIRKind = LIRKind.value(oclKind);
-//        } else if (pk instanceof OCLKind) {
+            // if (pk instanceof Kind) {
+            // OCLTargetDescription target = (OCLTargetDescription)
+            // getCodeCache().getTarget();
+            // oclKind = target.getOCLKind((Kind) pk);
+            // actualLIRKind = LIRKind.value(oclKind);
+            // } else if (pk instanceof OCLKind) {
             oclKind = (OCLKind) pk;
         } else {
             shouldNotReachHere();
         }
 
         final Variable var = super.newVariable(actualLIRKind);
-        trace("newVariable: %s <- %s (%s)", var.toString(),
-                actualLIRKind.toString(), actualLIRKind.getClass().getName());
+        trace("newVariable: %s <- %s (%s)", var.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
 
         var.setName(oclKind.getTypePrefix() + "_" + var.index);
         OCLLIRGenerationResult res = (OCLLIRGenerationResult) getResult();
@@ -238,14 +238,10 @@ public class OCLLIRGenerator extends LIRGenerator {
         trace("emitConditionalMove?");
 
         final OCLBinaryOp condOp = getConditionalOp(cond);
-        final OCLBinary.Expr condExpr = new OCLBinary.Expr(condOp, LIRKind.value(cmpKind), left,
-                right);
-        final OCLTernary.Select selectExpr = new OCLTernary.Select(
-                LIRKind.combine(
-                        trueValue, falseValue), condExpr, trueValue, falseValue);
+        final OCLBinary.Expr condExpr = new OCLBinary.Expr(condOp, LIRKind.value(cmpKind), left, right);
+        final OCLTernary.Select selectExpr = new OCLTernary.Select(LIRKind.combine(trueValue, falseValue), condExpr, trueValue, falseValue);
 
-        final Variable variable = newVariable(LIRKind.combine(
-                trueValue, falseValue));
+        final Variable variable = newVariable(LIRKind.combine(trueValue, falseValue));
         final AssignStmt assignStmt = new AssignStmt(variable, selectExpr);
         append(assignStmt);
 
@@ -317,9 +313,10 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitStrategySwitch(SwitchStrategy ss, Variable value, LabelRef[] keyTargets, LabelRef defaultTarget) {
-//        @Override
-//    public void emitStrategySwitch(JavaConstant[] keyConstants, double[] keyProbabilities,
-//            LabelRef[] keyTargets, LabelRef defaultTarget, Variable value) {
+        // @Override
+        // public void emitStrategySwitch(JavaConstant[] keyConstants, double[]
+        // keyProbabilities,
+        // LabelRef[] keyTargets, LabelRef defaultTarget, Variable value) {
         trace("emitStrategySwitch: key=%s", value);
         append(new OCLControlFlow.SwitchOp(value, ss.getKeyConstants(), keyTargets, defaultTarget));
     }
@@ -340,7 +337,9 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public LIRKind getValueKind(JavaKind javaKind) {
-        return super.getValueKind(javaKind); //To change body of generated methods, choose Tools | Templates.
+        return super.getValueKind(javaKind); // To change body of generated
+                                             // methods, choose Tools |
+                                             // Templates.
     }
 
     @Override

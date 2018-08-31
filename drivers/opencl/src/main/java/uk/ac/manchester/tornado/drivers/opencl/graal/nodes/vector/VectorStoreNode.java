@@ -42,8 +42,7 @@ public final class VectorStoreNode extends AccessIndexedNode {
 
     public static final NodeClass<VectorStoreNode> TYPE = NodeClass.create(VectorStoreNode.class);
 
-    @Input
-    ValueNode value;
+    @Input ValueNode value;
 
     public boolean hasSideEffect() {
         return true;
