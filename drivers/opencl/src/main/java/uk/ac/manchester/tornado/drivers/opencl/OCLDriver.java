@@ -32,15 +32,18 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.common.TornadoLogger;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLSuitesProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
-import uk.ac.manchester.tornado.runtime.TornadoDriver;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-public final class OCLDriver extends TornadoLogger implements TornadoDriver {
+public final class OCLDriver extends TornadoLogger implements TornadoAcceleratorDriver {
 
     private final OCLBackend[] flatBackends;
     private final OCLBackend[][] backends;
@@ -62,12 +65,12 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
     }
 
     @Override
-    public TornadoDevice getDefaultDevice() {
+    public TornadoAcceleratorDevice getDefaultDevice() {
         return getDefaultBackend().getDeviceContext().asMapping();
     }
 
     @Override
-    public TornadoDevice getDevice(int index) {
+    public TornadoAcceleratorDevice getDevice(int index) {
         return flatBackends[index].getDeviceContext().asMapping();
     }
 
@@ -151,6 +154,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
         }
     }
 
+    @Override
     public int getNumPlatforms() {
         return backends.length;
     }
@@ -178,5 +182,26 @@ public final class OCLDriver extends TornadoLogger implements TornadoDriver {
     @Override
     public String getName() {
         return "OpenCL Driver";
+    }
+
+    @Override
+    public TornadoDeviceType getTypeDefaultDevice() {
+        OCLDeviceType deviceType = ((OCLTornadoDevice) getDefaultDevice()).getDevice().getDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+                return TornadoDeviceType.CPU;
+            case CL_DEVICE_TYPE_GPU:
+                return TornadoDeviceType.GPU;
+            case CL_DEVICE_TYPE_ACCELERATOR:
+                return TornadoDeviceType.ACCELERATOR;
+            case CL_DEVICE_TYPE_CUSTOM:
+                return TornadoDeviceType.CUSTOM;
+            case CL_DEVICE_TYPE_ALL:
+                return TornadoDeviceType.ALL;
+            case CL_DEVICE_TYPE_DEFAULT:
+                return TornadoDeviceType.DEFAULT;
+            default:
+                throw new RuntimeException("Device not supported");
+        }
     }
 }

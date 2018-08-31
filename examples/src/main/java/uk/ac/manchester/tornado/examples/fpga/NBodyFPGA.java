@@ -1,52 +1,46 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework:
- * https://github.com/beehive-lab/tornado
- *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: Michalis Papadimitriou
- *
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
  */
+
 package uk.ac.manchester.tornado.examples.fpga;
 
-import uk.ac.manchester.tornado.api.*;
-import uk.ac.manchester.tornado.collections.math.*;
-import static uk.ac.manchester.tornado.collections.math.TornadoMath.*;
-import uk.ac.manchester.tornado.runtime.api.*;
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
+import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 public class NBodyFPGA {
 
-      private  static  float delT,espSqr;
-      private  static  float[] posSeq,velSeq;
-      private  static      int[] inputSize;
-      private  static  int numBodies;
-      private static  TaskSchedule graph;
+    private static float delT,espSqr;
+    private static float[] posSeq,velSeq;
+    private static int[] inputSize;
+    private static int numBodies;
+    private static TaskSchedule graph;
 
     private static void usage(String[] args) {
         final PrintStream printf = System.err.printf("Usage: Number of bodies is missing or number of iterations\n");
         System.exit(1);
     }
 
-    private static void nBody(int numBodies, float[] refPos, float[] refVel, float delT, float espSqr,int[] inputSize) {
+    private static void nBody(int numBodies, float[] refPos, float[] refVel, float delT, float espSqr, int[] inputSize) {
         for (@Parallel int i = 0; i < numBodies; i++) {
             int body = 4 * i;
             float[] acc = new float[] { 0.0f, 0.0f, 0.0f };
@@ -59,7 +53,7 @@ public class NBodyFPGA {
                     r[k] = refPos[index + k] - refPos[body + k];
                     distSqr += r[k] * r[k];
                 }
-    
+
                 float invDist = (float) (1.0f / (float) TornadoMath.floatSqrt(distSqr + espSqr));
 
                 float invDistCube = invDist * invDist * invDist;
@@ -76,8 +70,7 @@ public class NBodyFPGA {
         }
     }
 
-
-    public static  boolean validate() {
+    public static boolean validate() {
         boolean val = true;
         float[] posSeqSeq,velSeqSeq;
         delT = 0.005f;
@@ -112,7 +105,7 @@ public class NBodyFPGA {
         graph.syncObjects(posSeq, velSeq);
         graph.clearProfiles();
 
-        nBody(numBodies, posSeqSeq, velSeqSeq, delT, espSqr,inputSize);
+        nBody(numBodies, posSeqSeq, velSeqSeq, delT, espSqr, inputSize);
 
         for (int i = 0; i < numBodies * 4; i++) {
             if (abs(posSeqSeq[i] - posSeq[i]) > 0.01) {
@@ -130,7 +123,6 @@ public class NBodyFPGA {
 
     public static void main(String[] args) {
 
-
         StringBuffer resultsIterations = new StringBuffer();
 
         if (args.length != 2) {
@@ -142,7 +134,6 @@ public class NBodyFPGA {
 
         inputSize = new int[1];
         inputSize[0] = numBodies;
-
 
         delT = 0.005f;
         espSqr = 500.0f;
@@ -169,7 +160,7 @@ public class NBodyFPGA {
         for (int i = 0; i < iterations; i++) {
             System.gc();
             long start = System.nanoTime();
-            nBody(numBodies, posSeq, velSeq, delT, espSqr,inputSize);
+            nBody(numBodies, posSeq, velSeq, delT, espSqr, inputSize);
             long end = System.nanoTime();
             resultsIterations.append("Sequential execution time of iteration " + i + " is: " + (end - start) + " ns");
             resultsIterations.append("\n");
@@ -177,7 +168,7 @@ public class NBodyFPGA {
 
         System.out.println(resultsIterations.toString());
 
-        final TaskSchedule t0 = new TaskSchedule("s0").task("t0", NBodyFPGA::nBody, numBodies, posSeq, velSeq, delT, espSqr,inputSize);
+        final TaskSchedule t0 = new TaskSchedule("s0").task("t0", NBodyFPGA::nBody, numBodies, posSeq, velSeq, delT, espSqr, inputSize);
 
         t0.warmup();
         resultsIterations = null;

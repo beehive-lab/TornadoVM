@@ -43,244 +43,238 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 
-import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalOrNode;
-import uk.ac.manchester.tornado.graal.phases.TornadoMidTierContext;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMidTierContext;
 
 public class TornadoIfCanonicalization extends BasePhase<TornadoMidTierContext> {
 
-	@Override
-	protected void run(StructuredGraph graph, TornadoMidTierContext context) {
+    @Override
+    protected void run(StructuredGraph graph, TornadoMidTierContext context) {
+        graph.getNodes(IfNode.TYPE).forEach(ifNode -> canonicalize(graph, ifNode));
+    }
 
-		graph.getNodes(IfNode.TYPE).forEach(ifNode -> canonicalize(graph, ifNode));
+    private boolean isMerge(AbstractBeginNode begin) {
+        if (begin.next() instanceof AbstractEndNode && ((AbstractEndNode) begin.next()).merge() instanceof AbstractMergeNode)
+            return true;
+        return false;
+    }
 
-	}
+    private boolean isIf(EndNode end) {
+        if (end.predecessor() instanceof BeginNode && ((BeginNode) end.predecessor()).predecessor() instanceof IfNode)
+            return true;
+        return false;
+    }
 
-	private boolean isMerge(AbstractBeginNode begin) {
-		if (begin.next() instanceof AbstractEndNode
-				&& ((AbstractEndNode) begin.next()).merge() instanceof AbstractMergeNode) return true;
-		return false;
-	}
+    private boolean isIf(LoopEndNode end) {
+        if (end.predecessor() instanceof BeginNode && ((BeginNode) end.predecessor()).predecessor() instanceof IfNode)
+            return true;
+        return false;
+    }
 
-	private boolean isIf(EndNode end) {
-		if (end.predecessor() instanceof BeginNode
-				&& ((BeginNode) end.predecessor()).predecessor() instanceof IfNode) return true;
-		return false;
-	}
+    private IfNode getIf(EndNode end) {
+        return (IfNode) end.predecessor().predecessor();
+    }
 
-	private boolean isIf(LoopEndNode end) {
-		if (end.predecessor() instanceof BeginNode
-				&& ((BeginNode) end.predecessor()).predecessor() instanceof IfNode) return true;
-		return false;
-	}
+    private IfNode getIf(LoopEndNode end) {
+        return (IfNode) end.predecessor().predecessor();
+    }
 
-	private IfNode getIf(EndNode end) {
-		return (IfNode) end.predecessor().predecessor();
-	}
+    private boolean getBranchTaken(IfNode ifNode, EndNode end) {
+        return (ifNode.trueSuccessor().next().equals(end));
+    }
 
-	private IfNode getIf(LoopEndNode end) {
-		return (IfNode) end.predecessor().predecessor();
-	}
+    private boolean getBranchTaken(IfNode ifNode, LoopEndNode end) {
+        return (ifNode.trueSuccessor().next().equals(end));
+    }
 
-	private boolean getBranchTaken(IfNode ifNode, EndNode end) {
-		return (ifNode.trueSuccessor().next().equals(end));
-	}
+    private AbstractMergeNode getMerge(AbstractBeginNode begin) {
+        return (AbstractMergeNode) ((AbstractEndNode) begin.next()).merge();
+    }
 
-	private boolean getBranchTaken(IfNode ifNode, LoopEndNode end) {
-		return (ifNode.trueSuccessor().next().equals(end));
-	}
+    private void canonicalize(StructuredGraph graph, IfNode ifNode) {
+        System.out.printf("if-canonicalize: ifNode=%s\n", ifNode);
+        if (ifNode.predecessor() instanceof LoopBeginNode)
+            return;
 
-	private AbstractMergeNode getMerge(AbstractBeginNode begin) {
-		return (AbstractMergeNode) ((AbstractEndNode) begin.next()).merge();
-	}
+        final AbstractBeginNode trueBranch = ifNode.trueSuccessor();
+        final AbstractBeginNode falseBranch = ifNode.falseSuccessor();
 
-	private void canonicalize(StructuredGraph graph, IfNode ifNode) {
-		System.out.printf("if-canonicalize: ifNode=%s\n",ifNode);
-		if(ifNode.predecessor() instanceof LoopBeginNode) return;
-		
-		final AbstractBeginNode trueBranch = ifNode.trueSuccessor();
-		final AbstractBeginNode falseBranch = ifNode.falseSuccessor();
+        if (isMerge(trueBranch)) {
+            tryMergeClauses(graph, ifNode, trueBranch);
+        } else if (isMerge(falseBranch)) {
+            tryMergeClauses(graph, ifNode, falseBranch);
+        }
 
-		if (isMerge(trueBranch)) {
-			tryMergeClauses(graph,ifNode,trueBranch);
-		} else if (isMerge(falseBranch)) {
-			tryMergeClauses(graph,ifNode,falseBranch);
-		}
+    }
 
-	}
-	
-	private void tryMergeClauses(StructuredGraph graph, IfNode ifNode, AbstractBeginNode branch){
-		System.out.printf("if-canonicalize: trying merge for ifNode=%s\n",ifNode);
-		final AbstractMergeNode merge = getMerge(branch);
-		System.out.printf("if-canonicalize: merge=%s\n",merge);
-		
-		if(merge instanceof LoopBeginNode){
-			final LoopBeginNode loopBegin = (LoopBeginNode) merge;
-			final int endCount = loopBegin.loopEnds().count();
-		
-			final IfNode[] clauses = new IfNode[endCount];
-			final boolean[] branchTaken = new boolean[endCount];
+    private void tryMergeClauses(StructuredGraph graph, IfNode ifNode, AbstractBeginNode branch) {
+        System.out.printf("if-canonicalize: trying merge for ifNode=%s\n", ifNode);
+        final AbstractMergeNode merge = getMerge(branch);
+        System.out.printf("if-canonicalize: merge=%s\n", merge);
 
-			int i = 0;
-			for (LoopEndNode end : loopBegin.orderedLoopEnds()) {
-				System.out.printf("if-canonicalize: search end=%s\n",end);
-				if (isIf(end)) {
-					clauses[i] = getIf(end);
-					if(i==0 || !clauses[i].equals(clauses[i-1])){
-						branchTaken[i] = getBranchTaken(clauses[i], end);
-						System.out.printf("if-canonicalize: found clause %s on branch %s\n",clauses[i],branchTaken[i]);
-						i++;
-					}
-				}
-			}
-			
-			/*
-			 * TODO check that all clauses are directly connected here!
-			 */
-			boolean clausesValid = checkClauses(ifNode,clauses, branchTaken);
+        if (merge instanceof LoopBeginNode) {
+            final LoopBeginNode loopBegin = (LoopBeginNode) merge;
+            final int endCount = loopBegin.loopEnds().count();
 
-			if (clausesValid) {
-				System.out.printf("check-clauses: passed\n");
-			
-			}
-		
-		} else {
-			final IfNode[] clauses = new IfNode[merge.forwardEndCount()];
-			final boolean[] branchTaken = new boolean[merge.forwardEndCount()];
+            final IfNode[] clauses = new IfNode[endCount];
+            final boolean[] branchTaken = new boolean[endCount];
 
-			int i = 0;
-			for (EndNode end : merge.forwardEnds()) {
-				System.out.printf("if-canonicalize: search end=%s\n",end);
-				if (isIf(end)) {
-					clauses[i] = getIf(end);
-					branchTaken[i] = getBranchTaken(clauses[i], end);
-					System.out.printf("if-canonicalize: found clause %s on branch %s\n",clauses[i],branchTaken[i]);
-					i++;
-				}
-			}
-			
-			/*
-			 * TODO check that all clauses are directly connected here!
-			 */
-			boolean clausesValid = checkClauses(ifNode,clauses, branchTaken);
+            int i = 0;
+            for (LoopEndNode end : loopBegin.orderedLoopEnds()) {
+                System.out.printf("if-canonicalize: search end=%s\n", end);
+                if (isIf(end)) {
+                    clauses[i] = getIf(end);
+                    if (i == 0 || !clauses[i].equals(clauses[i - 1])) {
+                        branchTaken[i] = getBranchTaken(clauses[i], end);
+                        System.out.printf("if-canonicalize: found clause %s on branch %s\n", clauses[i], branchTaken[i]);
+                        i++;
+                    }
+                }
+            }
 
-			if (clausesValid) {
-				System.out.printf("check-clauses: passed\n");
-				final int lastIndex = clauses.length - 1;
-				final LogicNode newCondition = mergeClauses(graph, clauses, branchTaken);
+            /*
+             * TODO check that all clauses are directly connected here!
+             */
+            boolean clausesValid = checkClauses(ifNode, clauses, branchTaken);
 
-				clauses[lastIndex].setCondition(newCondition);
+            if (clausesValid) {
+                System.out.printf("check-clauses: passed\n");
 
-				cleanupClauses(graph, clauses, branchTaken, merge);
-				
-				
-				new DeadCodeEliminationPhase().apply(graph);
-		}
+            }
 
-		
-		}
+        } else {
+            final IfNode[] clauses = new IfNode[merge.forwardEndCount()];
+            final boolean[] branchTaken = new boolean[merge.forwardEndCount()];
 
-	}
+            int i = 0;
+            for (EndNode end : merge.forwardEnds()) {
+                System.out.printf("if-canonicalize: search end=%s\n", end);
+                if (isIf(end)) {
+                    clauses[i] = getIf(end);
+                    branchTaken[i] = getBranchTaken(clauses[i], end);
+                    System.out.printf("if-canonicalize: found clause %s on branch %s\n", clauses[i], branchTaken[i]);
+                    i++;
+                }
+            }
 
-	private AbstractBeginNode getNode(IfNode ifNode, boolean branch) {
-		return (branch) ? ifNode.trueSuccessor() : ifNode.falseSuccessor();
-	}
+            /*
+             * TODO check that all clauses are directly connected here!
+             */
+            boolean clausesValid = checkClauses(ifNode, clauses, branchTaken);
 
-	private boolean checkClauses(IfNode root, IfNode[] clauses, boolean[] branchTaken) {
-		boolean result = true;
-		
-		final Set<IfNode> ifNodes = new HashSet<IfNode>();
-		final Map<IfNode,Boolean> branches = new HashMap<IfNode,Boolean>();
-		for(int i=0;i<clauses.length;i++){
-			ifNodes.add(clauses[i]);
-			branches.put(clauses[i],branchTaken[i]);
-		}
+            if (clausesValid) {
+                System.out.printf("check-clauses: passed\n");
+                final int lastIndex = clauses.length - 1;
+                final LogicNode newCondition = mergeClauses(graph, clauses, branchTaken);
 
-		IfNode current = root;
-		System.out.printf("check-clauses: start=%s\n", current);
-		for (int i = 0; i < clauses.length && result; i++) {
-			if(ifNodes.remove(current)){
-				clauses[i] = current;
-				branchTaken[i] = branches.get(current);
-				
-				if(current.predecessor() instanceof LoopBeginNode)
-					result = false;
-				
-				if(!ifNodes.isEmpty()){
-					final AbstractBeginNode begin = getNode(current, !branchTaken[i]);
-					System.out.printf("check-clauses: current=%s, branch=%s -> begin=%s\n", current,
-							!branchTaken[i], begin);
-					if (begin.next() instanceof IfNode) 
-						current = (IfNode) begin.next();
-					else
-						System.out.printf("check-clauses: next != ifNode (%s)\n",begin.next());
-				} 
-				
-				
-			} else {
-				System.out.printf("check-clauses: ifNode=%s not in set\n",current);
-				result = false;
-			}
-		}
-		
+                clauses[lastIndex].setCondition(newCondition);
 
-		return result;
-	}
+                cleanupClauses(graph, clauses, branchTaken, merge);
 
-	private void cleanupClauses(final StructuredGraph graph, final IfNode[] clauses, final boolean[] branchTaken, final AbstractMergeNode merge) {
+                new DeadCodeEliminationPhase().apply(graph);
+            }
 
-		for (int i = 0; i < clauses.length - 1; i++) {
-			cleanupBranch(clauses[i], branchTaken[i]);
-			merge.forwardEnds().remove(clauses[i]);
-			clauses[i].replaceAndDelete(clauses[i + 1]);
-		}
-		
-		EndNode validEnd = null;
-		for(EndNode e : merge.forwardEnds()){
-			System.out.printf("merge-cleanup: forward end=%s\n",e);
-			if(e.isAlive())
-				validEnd = e;
-		}
-		
-		for(PhiNode phi : merge.phis()){
-			System.out.printf("merge-cleanup: phi=%s\n",phi);
-		}
-		
-		TornadoInternalError.guarantee(merge.phis().count() == 0, "phi values exist on merge node that is to be removed");
-		
-		FixedNode current = merge.next();
-		validEnd.replaceAtPredecessor(current);
+        }
 
-	}
+    }
 
-	private void cleanupBranch(IfNode ifNode, boolean b) {
-		final AbstractBeginNode begin = getNode(ifNode, b);
-		begin.next().markDeleted();
-		begin.markDeleted();
-		
-	}
-	
-	private LogicNode createClause(final StructuredGraph graph, final LogicNode left, boolean negateLeft, final LogicNode right, boolean negateRight){
-		
-		final LogicNode lhs = (negateLeft) ? graph.addOrUnique(new LogicalNotNode(left)) : left;
-		final LogicNode rhs = (negateRight) ? graph.addOrUnique(new LogicalNotNode(right)) : right;
-		
-		
-		return graph.addOrUnique(new LogicalOrNode(lhs,rhs));
-	}
+    private AbstractBeginNode getNode(IfNode ifNode, boolean branch) {
+        return (branch) ? ifNode.trueSuccessor() : ifNode.falseSuccessor();
+    }
 
-	private LogicNode mergeClauses(final StructuredGraph graph, final IfNode[] clauses, final boolean[] branchTaken) {
+    private boolean checkClauses(IfNode root, IfNode[] clauses, boolean[] branchTaken) {
+        boolean result = true;
 
-		LogicNode leftCondition = clauses[0].condition();
-		for (int i = 1; i < clauses.length; i++) {
-			System.out.printf("i=%d\n", i);
-			final LogicNode rightCondition = clauses[i].condition();
-			System.out.printf("merge-clauses: left=%s, right=%s\n", leftCondition, rightCondition);
-			leftCondition = createClause(graph, leftCondition, false, rightCondition, !branchTaken[i]);
-		}
+        final Set<IfNode> ifNodes = new HashSet<IfNode>();
+        final Map<IfNode, Boolean> branches = new HashMap<IfNode, Boolean>();
+        for (int i = 0; i < clauses.length; i++) {
+            ifNodes.add(clauses[i]);
+            branches.put(clauses[i], branchTaken[i]);
+        }
 
-		return leftCondition;
-	}
+        IfNode current = root;
+        System.out.printf("check-clauses: start=%s\n", current);
+        for (int i = 0; i < clauses.length && result; i++) {
+            if (ifNodes.remove(current)) {
+                clauses[i] = current;
+                branchTaken[i] = branches.get(current);
+
+                if (current.predecessor() instanceof LoopBeginNode)
+                    result = false;
+
+                if (!ifNodes.isEmpty()) {
+                    final AbstractBeginNode begin = getNode(current, !branchTaken[i]);
+                    System.out.printf("check-clauses: current=%s, branch=%s -> begin=%s\n", current, !branchTaken[i], begin);
+                    if (begin.next() instanceof IfNode)
+                        current = (IfNode) begin.next();
+                    else
+                        System.out.printf("check-clauses: next != ifNode (%s)\n", begin.next());
+                }
+
+            } else {
+                System.out.printf("check-clauses: ifNode=%s not in set\n", current);
+                result = false;
+            }
+        }
+
+        return result;
+    }
+
+    @SuppressWarnings("unlikely-arg-type")
+    private void cleanupClauses(final StructuredGraph graph, final IfNode[] clauses, final boolean[] branchTaken, final AbstractMergeNode merge) {
+
+        for (int i = 0; i < clauses.length - 1; i++) {
+            cleanupBranch(clauses[i], branchTaken[i]);
+            merge.forwardEnds().remove(clauses[i]);
+            clauses[i].replaceAndDelete(clauses[i + 1]);
+        }
+
+        EndNode validEnd = null;
+        for (EndNode e : merge.forwardEnds()) {
+            System.out.printf("merge-cleanup: forward end=%s\n", e);
+            if (e.isAlive())
+                validEnd = e;
+        }
+
+        for (PhiNode phi : merge.phis()) {
+            System.out.printf("merge-cleanup: phi=%s\n", phi);
+        }
+
+        TornadoInternalError.guarantee(merge.phis().count() == 0, "phi values exist on merge node that is to be removed");
+
+        FixedNode current = merge.next();
+        validEnd.replaceAtPredecessor(current);
+
+    }
+
+    private void cleanupBranch(IfNode ifNode, boolean b) {
+        final AbstractBeginNode begin = getNode(ifNode, b);
+        begin.next().markDeleted();
+        begin.markDeleted();
+
+    }
+
+    private LogicNode createClause(final StructuredGraph graph, final LogicNode left, boolean negateLeft, final LogicNode right, boolean negateRight) {
+
+        final LogicNode lhs = (negateLeft) ? graph.addOrUnique(new LogicalNotNode(left)) : left;
+        final LogicNode rhs = (negateRight) ? graph.addOrUnique(new LogicalNotNode(right)) : right;
+
+        return graph.addOrUnique(new LogicalOrNode(lhs, rhs));
+    }
+
+    private LogicNode mergeClauses(final StructuredGraph graph, final IfNode[] clauses, final boolean[] branchTaken) {
+
+        LogicNode leftCondition = clauses[0].condition();
+        for (int i = 1; i < clauses.length; i++) {
+            System.out.printf("i=%d\n", i);
+            final LogicNode rightCondition = clauses[i].condition();
+            System.out.printf("merge-clauses: left=%s, right=%s\n", leftCondition, rightCondition);
+            leftCondition = createClause(graph, leftCondition, false, rightCondition, !branchTaken[i]);
+        }
+
+        return leftCondition;
+    }
 
 }

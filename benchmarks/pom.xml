@@ -5,25 +5,20 @@
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado</artifactId>
-        <version>0.0.2-SNAPSHOT</version>
+        <version>0.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>tornado-benchmarks</artifactId>
     <name>tornado-benchmarks</name>
     <url>http://maven.apache.org</url>
     <dependencies>
-        <dependency>
+		<dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>tornado-runtime</artifactId>
+            <artifactId>tornado-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>tornado-drivers-opencl</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tornado-collections</artifactId>
+            <artifactId>tornado-matrices</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

@@ -31,10 +31,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import uk.ac.manchester.tornado.common.TornadoLogger;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLPlatformInfo;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class OCLPlatform extends TornadoLogger {
 
@@ -49,8 +49,7 @@ public class OCLPlatform extends TornadoLogger {
         this.devices = new ArrayList<>();
         this.contexts = new HashSet<>();
 
-        final int deviceCount = clGetDeviceCount(id,
-                OCLDeviceType.CL_DEVICE_TYPE_ALL.getValue());
+        final int deviceCount = clGetDeviceCount(id, OCLDeviceType.CL_DEVICE_TYPE_ALL.getValue());
 
         final long[] ids = new long[deviceCount];
         clGetDeviceIDs(id, OCLDeviceType.CL_DEVICE_TYPE_ALL.getValue(), ids);
@@ -66,8 +65,7 @@ public class OCLPlatform extends TornadoLogger {
 
     native static int clGetDeviceIDs(long id, long type, long[] devices);
 
-    native static long clCreateContext(long platform, long[] devices)
-            throws OCLException;
+    native static long clCreateContext(long platform, long[] devices) throws OCLException;
 
     public OCLContext createContext() {
         OCLContext result = null;
@@ -94,36 +92,30 @@ public class OCLPlatform extends TornadoLogger {
     }
 
     public String getProfile() {
-        return clGetPlatformInfo(id,
-                OCLPlatformInfo.CL_PLATFORM_PROFILE.getValue());
+        return clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_PROFILE.getValue());
     }
 
     public String getVersion() {
-        return clGetPlatformInfo(id,
-                OCLPlatformInfo.CL_PLATFORM_VERSION.getValue());
+        return clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_VERSION.getValue());
     }
 
     public String getName() {
-        return clGetPlatformInfo(id,
-                OCLPlatformInfo.CL_PLATFORM_NAME.getValue());
+        return clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_NAME.getValue());
     }
 
     public String getVendor() {
-        return clGetPlatformInfo(id,
-                OCLPlatformInfo.CL_PLATFORM_VENDOR.getValue());
+        return clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_VENDOR.getValue());
     }
 
     public String getExtensions() {
-        return clGetPlatformInfo(id,
-                OCLPlatformInfo.CL_PLATFORM_EXTENSIONS.getValue());
+        return clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_EXTENSIONS.getValue());
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(String.format("name=%s, num. devices=%d, ", getName(),
-                devices.size()));
+        sb.append(String.format("name=%s, num. devices=%d, ", getName(), devices.size()));
         sb.append(String.format("version=%s", getVersion()));
 
         return sb.toString().trim();

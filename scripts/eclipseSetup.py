@@ -19,6 +19,7 @@ __TORNADO_PROJECTS__ = [
 			"examples",
 			"runtime",
 			"unittests",
+			"tornado-api",
 		   ]
 
 __PATH_TO_ECLIPSE_SETTINGS__ = "scripts/templates/eclipse-settings/files/"

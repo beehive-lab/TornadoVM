@@ -42,11 +42,9 @@ public class OCLAtomicAddLIR extends FixedNode implements LIRLowerable {
 
     public static final String ATOMIC_ADD = "atomic_add";
 
-    @Input
-    protected AddressNode address;
+    @Input protected AddressNode address;
 
-    @Input
-    protected ValueNode value;
+    @Input protected ValueNode value;
 
     public OCLAtomicAddLIR(AddressNode address, Stamp stamp, ValueNode value) {
         super(TYPE, stamp);

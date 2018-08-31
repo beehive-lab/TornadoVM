@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
@@ -40,7 +40,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
@@ -53,8 +53,7 @@ public class OCLFPTernaryIntrinsicNode extends TernaryNode implements Arithmetic
         this.operation = op;
     }
 
-    public static final NodeClass<OCLFPTernaryIntrinsicNode> TYPE = NodeClass
-            .create(OCLFPTernaryIntrinsicNode.class);
+    public static final NodeClass<OCLFPTernaryIntrinsicNode> TYPE = NodeClass.create(OCLFPTernaryIntrinsicNode.class);
     protected final Operation operation;
 
     public enum Operation {

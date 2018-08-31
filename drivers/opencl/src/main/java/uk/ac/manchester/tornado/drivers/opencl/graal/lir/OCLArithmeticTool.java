@@ -23,10 +23,10 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;

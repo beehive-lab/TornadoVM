@@ -25,7 +25,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.builtins;
 
-import uk.ac.manchester.tornado.api.ReductionOp;
+import uk.ac.manchester.tornado.api.annotations.ReductionOp;
 
 public class OpenCLIntrinsics {
 

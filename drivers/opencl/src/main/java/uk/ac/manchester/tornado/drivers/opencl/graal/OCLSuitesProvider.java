@@ -34,14 +34,14 @@ import org.graalvm.compiler.phases.tiers.HighTierContext;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCanonicalizer;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilerConfiguration;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins.OCLGraphBuilderPlugins;
-import uk.ac.manchester.tornado.graal.TornadoLIRSuites;
-import uk.ac.manchester.tornado.graal.TornadoSuites;
-import uk.ac.manchester.tornado.graal.compiler.TornadoSketchTier;
-import uk.ac.manchester.tornado.graal.compiler.TornadoSuitesProvider;
+import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
+import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLSuitesProvider implements TornadoSuitesProvider {
 
@@ -72,15 +72,14 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
         config.withEagerResolving(true);
 
-//        config.setUseProfiling(false);
+        // config.setUseProfiling(false);
         suite.appendPhase(new GraphBuilderPhase(config));
 
         return suite;
     }
 
     public final TornadoLIRSuites createLIRSuites() {
-        return new TornadoLIRSuites(suites.getPreAllocationOptimizationStage(),
-                suites.getAllocationStage(), suites.getPostAllocationOptimizationStage());
+        return new TornadoLIRSuites(suites.getPreAllocationOptimizationStage(), suites.getAllocationStage(), suites.getPostAllocationOptimizationStage());
     }
 
     public TornadoSuites createSuites() {

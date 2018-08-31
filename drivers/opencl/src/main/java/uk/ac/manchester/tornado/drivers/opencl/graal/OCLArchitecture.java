@@ -25,7 +25,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal;
 
 import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
 import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CONSTANT_REGION_NAME;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.FRAME_BASE_NAME;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.HEAP_REF_NAME;
@@ -100,7 +100,7 @@ public class OCLArchitecture extends Architecture {
     public OCLArchitecture(final OCLKind wordKind, final ByteOrder byteOrder) {
         super("Tornado OpenCL", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, 0, 0);
         sp = new OCLRegister(1, FRAME_BASE_NAME, wordKind);
-        abiRegisters = new OCLRegister[]{hp, sp, cp, lp, pp};
+        abiRegisters = new OCLRegister[] { hp, sp, cp, lp, pp };
     }
 
     @Override

@@ -1,28 +1,21 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
- *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
- *
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
  */
+
 package uk.ac.manchester.tornado.examples;
 
 import java.util.Random;
@@ -32,7 +25,7 @@ import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.dense.row.RandomMatrices_DDRM;
 import org.ejml.dense.row.mult.MatrixMatrixMult_DDRM;
 
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskSchedule;
 
 public class EJMLMatrixMult {
 
@@ -48,8 +41,6 @@ public class EJMLMatrixMult {
 
     public static void mult_small(DMatrix1Row a, DMatrix1Row b, DMatrix1Row c) {
 
-//        int aIndexStart = 0;
-//        int cIndex = 0;
         for (int i = 0; i < a.numRows; i++) {
             for (int j = 0; j < b.numCols; j++) {
                 double total = 0;
@@ -65,7 +56,6 @@ public class EJMLMatrixMult {
 
                 c.set(cIndex, total);
             }
-//            aIndexStart += a.numCols;
         }
     }
 
@@ -80,15 +70,13 @@ public class EJMLMatrixMult {
 
         CommonOps_DDRM.fill(c, 0);
 
-//        CommonOps_DDRM.mult(a, b, c);
-        TaskSchedule s0 = new TaskSchedule("s0")
-                .task("mult", MatrixMatrixMult_DDRM::mult_small, a, b, c)
-                .streamOut(c);
+        // CommonOps_DDRM.mult(a, b, c);
+        TaskSchedule s0 = new TaskSchedule("s0").task("mult", MatrixMatrixMult_DDRM::mult_small, a, b, c).streamOut(c);
 
         s0.execute();
 
         print(c);
-        //MatrixMatrixMult_DDRM.mult_small(a, b, c);
+        // MatrixMatrixMult_DDRM.mult_small(a, b, c);
     }
 
 }

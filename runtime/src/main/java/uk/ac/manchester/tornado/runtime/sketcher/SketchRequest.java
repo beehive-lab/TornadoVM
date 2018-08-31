@@ -29,15 +29,15 @@ import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.meta.TaskMetaData;
-import uk.ac.manchester.tornado.graal.compiler.TornadoSketchTier;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class SketchRequest implements Future<Sketch>, Runnable {
 

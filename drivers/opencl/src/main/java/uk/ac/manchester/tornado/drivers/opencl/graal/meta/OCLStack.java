@@ -32,9 +32,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 
 public class OCLStack extends Value {
 
-    // @formatter:off
     public static final OCLStack STACK = new OCLStack(OCLAssemblerConstants.FRAME_REF_NAME);
-    // @formatter:on
 
     private final String name;
 

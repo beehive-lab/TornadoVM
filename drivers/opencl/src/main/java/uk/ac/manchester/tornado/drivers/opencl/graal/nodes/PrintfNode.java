@@ -41,8 +41,7 @@ public class PrintfNode extends FixedWithNextNode implements LIRLowerable {
 
     public static final NodeClass<PrintfNode> TYPE = NodeClass.create(PrintfNode.class);
 
-    @Input
-    private NodeInputList<ValueNode> inputs;
+    @Input private NodeInputList<ValueNode> inputs;
 
     public PrintfNode(ValueNode... values) {
         super(TYPE, StampFactory.forVoid());

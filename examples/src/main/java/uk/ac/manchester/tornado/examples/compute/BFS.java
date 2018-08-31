@@ -1,28 +1,21 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
- *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: Juan Fumero
- *
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
  */
+
 package uk.ac.manchester.tornado.examples.compute;
 
 import java.io.IOException;
@@ -30,32 +23,33 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.Parallel;
-import uk.ac.manchester.tornado.common.TornadoDevice;
-import uk.ac.manchester.tornado.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
- * Parallel Implementation of the BFS: this is based on the Marawacc compiler framework.
+ * Parallel Implementation of the BFS: this is based on the Marawacc compiler
+ * framework.
+ * 
  * @author Juan Fumero
  *
  */
 public class BFS {
 
-	private static final boolean BIDIRECTIONAL = false;
-	private static final boolean PRINT_SOLUTION = false;
+    private static final boolean BIDIRECTIONAL = false;
+    private static final boolean PRINT_SOLUTION = false;
 
-	
     int[] vertices;
-    int[] adjacencyMatrix;    
+    int[] adjacencyMatrix;
     int[] modify;
     int[] currentDepth;
 
     public static final boolean SAMPLE = false;
-    
-    
+
     /**
-     * Set to one the connection between node from and node to into the adjacency matrix.
+     * Set to one the connection between node from and node to into the
+     * adjacency matrix.
      *
      * @param from
      * @param to
@@ -83,7 +77,7 @@ public class BFS {
         connect(2, 4, adjacencyMatrix, numNodes);
         connect(3, 4, adjacencyMatrix, numNodes);
     }
-    
+
     private static int[] generateIntRandomArray(int numNodes) {
         Random r = new Random();
         int bound = r.nextInt(numNodes);
@@ -91,20 +85,19 @@ public class BFS {
         int[] array = streamArray.toArray();
         return array;
     }
-    
-    
+
     public static void generateRandomGraph(int[] adjacencyMatrix, int numNodes, int root) {
         Random r = new Random();
         int bound = r.nextInt(numNodes);
         IntStream fromStream = r.ints(bound, 0, numNodes);
         int[] f = fromStream.toArray();
         for (int k = 0; k < f.length; k++) {
-            
+
             int from = f[k];
             if (k == 0) {
                 from = root;
             }
-            
+
             int[] toArray = generateIntRandomArray(numNodes);
 
             for (int i = 0; i < toArray.length; i++) {
@@ -122,7 +115,7 @@ public class BFS {
             }
         }
     }
-    
+
     private static void runBFS(int[] vertices, int[] adjacencyMatrix, int numNodes, int[] h_true, int[] currentDepth) {
         for (@Parallel int from = 0; from < numNodes; from++) {
             for (@Parallel int to = 0; to < numNodes; to++) {
@@ -135,20 +128,20 @@ public class BFS {
                         vertices[to] = dfirst + 1;
                         h_true[0] = 0;
                     }
-                    
+
                     if (BIDIRECTIONAL) {
-                    	if ((currentDepth[0] == dsecond) && (dfirst == -1)) {
-                    		vertices[from] = dsecond + 1;
-                    		h_true[0] = 0;
-                    	}
+                        if ((currentDepth[0] == dsecond) && (dfirst == -1)) {
+                            vertices[from] = dsecond + 1;
+                            h_true[0] = 0;
+                        }
                     }
                 }
             }
         }
     }
-    
+
     public void tornadoBFS(int rootNode, int numNodes) throws IOException {
-        
+
         vertices = new int[numNodes];
         adjacencyMatrix = new int[numNodes * numNodes];
 
@@ -163,28 +156,29 @@ public class BFS {
         TaskSchedule s0 = new TaskSchedule("s0");
         s0.task("t0", BFS::initializeVertices, numNodes, vertices, rootNode);
         s0.streamOut(vertices).execute();
-        
+
         modify = new int[] { 1 };
         Arrays.fill(modify, 1);
-        
+
         currentDepth = new int[] { 0 };
-        
+
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
         TaskSchedule s1 = new TaskSchedule("s1");
-        s1.streamIn(vertices, adjacencyMatrix, modify,currentDepth).mapAllTo(device);
+        s1.streamIn(vertices, adjacencyMatrix, modify, currentDepth).mapAllTo(device);
         s1.task("t1", BFS::runBFS, vertices, adjacencyMatrix, numNodes, modify, currentDepth);
         s1.streamOut(vertices, modify);
-        
+
         boolean done = false;
-        
+
         while (!done) {
             // 2. Parallel BFS
             boolean allDone = true;
             System.out.println("Current Depth: " + currentDepth[0]);
-            //runBFS(vertices, adjacencyMatrix, numNodes, modify, currentDepth);
+            // runBFS(vertices, adjacencyMatrix, numNodes, modify,
+            // currentDepth);
             s1.execute();
             currentDepth[0]++;
-            for(int i = 0; i < modify.length; i++) {
+            for (int i = 0; i < modify.length; i++) {
                 if (modify[i] == 0) {
                     allDone &= false;
                     break;
@@ -196,12 +190,12 @@ public class BFS {
             }
             Arrays.fill(modify, 1);
         }
-        
+
         if (PRINT_SOLUTION) {
-        	System.out.println("Solution: " + Arrays.toString(vertices));
+            System.out.println("Solution: " + Arrays.toString(vertices));
         }
     }
-    
+
     public static void main(String[] args) throws IOException {
         int size = 10000;
         if (SAMPLE) {
@@ -209,5 +203,5 @@ public class BFS {
         }
         new BFS().tornadoBFS(0, size);
     }
-        
+
 }

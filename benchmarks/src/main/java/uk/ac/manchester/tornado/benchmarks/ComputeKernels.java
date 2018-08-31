@@ -1,34 +1,26 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework:
- * https://github.com/beehive-lab/tornado
- *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: Michalis Papadimitriou,Juan Fumero
- *
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
  */
 package uk.ac.manchester.tornado.benchmarks;
 
-import org.apache.lucene.util.*;
+import org.apache.lucene.util.LongBitSet;
 
-import uk.ac.manchester.tornado.api.*;
-import uk.ac.manchester.tornado.collections.math.*;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 public class ComputeKernels {
     static final float S_LOWER_LIMIT = 10.0f;
@@ -52,8 +44,8 @@ public class ComputeKernels {
     static final float SIGMA_UPPER_LIMIT = 0.10f;
 
     /**
-     * Parallel Implementation of the MonteCarlo computation: this is based on the
-     * Marawacc compiler framework.
+     * Parallel Implementation of the MonteCarlo computation: this is based on
+     * the Marawacc compiler framework.
      * 
      * @author Juan Fumero
      *
@@ -73,7 +65,8 @@ public class ComputeKernels {
                 seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
                 seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
 
-                // this generates a number between 0 and 1 (with an awful entropy)
+                // this generates a number between 0 and 1 (with an awful
+                // entropy)
                 float x = ((float) (seed & 0x0FFFFFFF)) / 268435455f;
 
                 // repeat for y
@@ -176,16 +169,13 @@ public class ComputeKernels {
     }
 
     /*
-     * @brief Calculates the call and put prices by using Black Scholes model
+     * @brief Computes the call and put prices by using Black Scholes model
      * 
-     * @param s Array of random values of current option price @param sigma Array of
-     * random values sigma @param k Array of random values strike price
+     * @param randArray input array of random values of current option price
      * 
-     * @param t Array of random values of expiration time @param r Array of random
-     * values of risk free interest rate @param width Width of call price or put
-     * price array @param call Array of calculated call price values
+     * @param out output array of calculated put price values
      * 
-     * @param put Array of calculated put price values
+     * @param call output array of calculated call price values
      */
     public static void blackscholes(final float[] randArray, final float[] put, final float[] call) {
         for (@Parallel int gid = 0; gid < call.length; gid++) {

@@ -25,14 +25,14 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.common.Tornado.PRINT_COMPILE_TIMES;
-import static uk.ac.manchester.tornado.common.Tornado.debug;
-import static uk.ac.manchester.tornado.common.Tornado.error;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
-import static uk.ac.manchester.tornado.common.Tornado.info;
-import static uk.ac.manchester.tornado.common.Tornado.warn;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.PRINT_COMPILE_TIMES;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -46,10 +46,10 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
-import uk.ac.manchester.tornado.api.meta.TaskMetaData;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLCodeCache {
 
@@ -239,7 +239,7 @@ public class OCLCodeCache {
 
         // TODO add support for passing compiler optimisation flags here
         final long t0 = System.nanoTime();
-        program.build(meta.getOpenclCompilerFlags());
+        program.build(meta.getCompilerFlags());
         final long t1 = System.nanoTime();
 
         final OCLBuildStatus status = program.getStatus(deviceContext.getDeviceId());

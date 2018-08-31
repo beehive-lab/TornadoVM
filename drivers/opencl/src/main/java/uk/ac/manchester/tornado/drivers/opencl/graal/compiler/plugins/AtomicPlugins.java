@@ -31,7 +31,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registratio
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.collections.types.FloatOps;
+import uk.ac.manchester.tornado.api.collections.types.FloatOps;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNode;
 
 public class AtomicPlugins {
@@ -48,9 +48,7 @@ public class AtomicPlugins {
         r.register3("atomicAdd", float[].class, int.class, float.class, new InvocationPlugin() {
 
             @Override
-            public boolean apply(GraphBuilderContext b,
-                    ResolvedJavaMethod targetMethod, Receiver receiver,
-                    ValueNode array, ValueNode index, ValueNode value) {
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode index, ValueNode value) {
 
                 final AtomicAddNode atomicAddNode = new AtomicAddNode(array, index, JavaKind.Float, value);
                 b.append(atomicAddNode);

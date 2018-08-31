@@ -1,27 +1,19 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
- *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * The University of Manchester.
  * 
- * Authors: Juan Fumero, Michalis Papadimitriou
- *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
  */
 
 package uk.ac.manchester.tornado.unittests.prebuilt;
@@ -32,10 +24,11 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.Parallel;
-import uk.ac.manchester.tornado.common.enums.Access;
-import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class PrebuiltTest {
 
@@ -58,6 +51,8 @@ public class PrebuiltTest {
         Arrays.fill(a, 1);
         Arrays.fill(b, 2);
 
+        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+
         // @formatter:off
         new TaskSchedule("s0")
             .prebuiltTask("t0", 
@@ -65,7 +60,7 @@ public class PrebuiltTest {
                         tornadoSDK + "/examples/generated/add.cl",
                         new Object[] { a, b, c },
                         new Access[] { Access.READ, Access.READ, Access.WRITE }, 
-                        OpenCL.defaultDevice(),
+                        defaultDevice,
                         new int[] { numElements })
             .streamOut(c)
             .execute();

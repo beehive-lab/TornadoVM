@@ -39,8 +39,8 @@ import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.common.UseTrappingNullChecksPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
-import uk.ac.manchester.tornado.graal.compiler.TornadoLowTier;
-import uk.ac.manchester.tornado.graal.phases.TornadoLoopCanonicalization;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopCanonicalization;
 
 public class OCLLowTier extends TornadoLowTier {
 
@@ -54,7 +54,7 @@ public class OCLLowTier extends TornadoLowTier {
 
         appendPhase(new RemoveValueProxyPhase());
 
-//        appendPhase(new ExpandLogicPhase());
+        // appendPhase(new ExpandLogicPhase());
 
         /*
          * Cleanup IsNull checks resulting from MID_TIER/LOW_TIER lowering and
@@ -66,7 +66,7 @@ public class OCLLowTier extends TornadoLowTier {
              * Canonicalizer may create some new ShortCircuitOrNodes so clean
              * them up.
              */
-//            appendPhase(new ExpandLogicPhase());
+            // appendPhase(new ExpandLogicPhase());
         }
 
         appendPhase(new AddressLoweringPhase(addressLowering));

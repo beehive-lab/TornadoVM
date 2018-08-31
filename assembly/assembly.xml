@@ -21,7 +21,10 @@
       <directory>src</directory>
       <!-- License file in root directory -->
       <includes>
-        <include>LICENSE</include>
+        <include>LICENSE_APACHE2</include>
+        <include>LICENSE_GPLv2CE</include>
+        <include>CONTRIBUTORS</include>
+        <include>CHANGELOG.md</include>
       </includes>
       <outputDirectory>./</outputDirectory>
       <fileMode>0444</fileMode>
@@ -91,8 +94,9 @@
       <useAllReactorProjects>true</useAllReactorProjects>
       <!-- Now, select which projects to include in this module-set. -->
       <includes>
+        <include>tornado:tornado-api</include>
         <include>tornado:tornado-runtime</include>
-        <include>tornado:tornado-collections</include>
+        <include>tornado:tornado-matrices</include>
         <include>tornado:tornado-drivers-opencl</include>
         <include>tornado:tornado-examples</include>
         <include>tornado:tornado-benchmarks</include>

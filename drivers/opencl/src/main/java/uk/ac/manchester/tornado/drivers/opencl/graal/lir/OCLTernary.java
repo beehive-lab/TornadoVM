@@ -45,15 +45,11 @@ public class OCLTernary {
      */
     protected static class TernaryConsumer extends OCLLIROp {
 
-        @Opcode
-        protected final OCLTernaryOp opcode;
+        @Opcode protected final OCLTernaryOp opcode;
 
-        @Use
-        protected Value x;
-        @Use
-        protected Value y;
-        @Use
-        protected Value z;
+        @Use protected Value x;
+        @Use protected Value y;
+        @Use protected Value z;
 
         protected TernaryConsumer(OCLTernaryOp opcode, LIRKind lirKind, Value x, Value y, Value z) {
             super(lirKind);

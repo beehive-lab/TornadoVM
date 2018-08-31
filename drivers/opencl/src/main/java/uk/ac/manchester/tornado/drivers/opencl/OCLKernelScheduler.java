@@ -25,8 +25,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import uk.ac.manchester.tornado.api.Event;
-import uk.ac.manchester.tornado.api.meta.TaskMetaData;
+import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public abstract class OCLKernelScheduler {
 

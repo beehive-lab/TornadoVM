@@ -101,7 +101,8 @@ public class OCLFrameMap extends FrameMap {
     }
 
     public StackSlot allocateDeoptimizationRescueSlot() {
-        assert spillSize == initialSpillSize || spillSize == initialSpillSize + spillSlotSize(LIRKind.value(OCLKind.ULONG)) : "Deoptimization rescue slot must be the first or second (if there is an RBP spill slot) stack slot";
+        assert spillSize == initialSpillSize
+                || spillSize == initialSpillSize + spillSlotSize(LIRKind.value(OCLKind.ULONG)) : "Deoptimization rescue slot must be the first or second (if there is an RBP spill slot) stack slot";
         return allocateSpillSlot(LIRKind.value(OCLKind.ULONG));
     }
 }

@@ -1,27 +1,19 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
- *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
- *
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
  */
 package uk.ac.manchester.tornado.benchmarks.rodinia.nw;
 
@@ -33,13 +25,14 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import uk.ac.manchester.tornado.api.Parallel;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class NWTornado {
 
     private static final int LIMIT = -999;
 
+    // @formatter:off
     static final int[] blosum62 = new int[]{
         4, -1, -2, -2, 0, -1, -1, 0, -2, -1, -1, -1, -1, -2, -1, 1, 0, -3, -2, 0, -2, -1, 0, -4,
         -1, 5, 0, -2, -3, 1, 0, -2, 0, -3, -2, 2, -1, -3, -2, -1, -1, -3, -2, -3, -1, 0, -1, -4,
@@ -66,6 +59,7 @@ public class NWTornado {
         0, -1, -1, -1, -2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -2, 0, 0, -2, -1, -1, -1, -1, -1, -4,
         -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, 1
     };
+    // @formatter:on
 
     private static void usage(String[] args) {
         System.err.printf("Usage: NW <max_rows/max_cols> <penalty> <num_threads>\n");
@@ -101,9 +95,7 @@ public class NWTornado {
         for (int i = 0; i < max_cols - 2; i++) {
             for (@Parallel int idx = 0; idx <= i; idx++) {
                 final int index = (idx + 1) * max_cols + (i + 1 - idx);
-                input_itemsets[index] = max(input_itemsets[index - 1 - max_cols] + referrence[index],
-                        input_itemsets[index - 1] - penalty,
-                        input_itemsets[index - max_cols] - penalty);
+                input_itemsets[index] = max(input_itemsets[index - 1 - max_cols] + referrence[index], input_itemsets[index - 1] - penalty, input_itemsets[index - max_cols] - penalty);
 
             }
         }
@@ -112,12 +104,10 @@ public class NWTornado {
     private static void processBottomRight(int max_rows, int max_cols, int penalty, int[] input_itemsets, int[] referrence) {
         for (@Parallel int t = 0; t < max_cols - 4; t++) {
             int i = max_cols - 4;
-//        for (int i = max_cols - 4; i >= 0; i--) {
+            // for (int i = max_cols - 4; i >= 0; i--) {
             for (int idx = 0; idx <= i; idx++) {
                 final int index = (max_cols - idx - 2) * max_cols + idx + max_cols - i - 2;
-                input_itemsets[index] = max(input_itemsets[index - 1 - max_cols] + referrence[index],
-                        input_itemsets[index - 1] - penalty,
-                        input_itemsets[index - max_cols] - penalty);
+                input_itemsets[index] = max(input_itemsets[index - 1 - max_cols] + referrence[index], input_itemsets[index - 1] - penalty, input_itemsets[index - max_cols] - penalty);
             }
             i--;
 
@@ -131,9 +121,12 @@ public class NWTornado {
             int i = max_rows - 2;
             int j = max_rows - 2;
             for (; i >= 0 && j >= 0;) {
-                int nw = 0, n = 0, w = 0, traceback;
+                int nw = 0,n = 0,w = 0,traceback;
                 if (i == max_rows - 2 && j == max_rows - 2) {
-                    out.printf("%d ", input_itemsets[i * max_cols + j]); //print the first element
+                    out.printf("%d ", input_itemsets[i * max_cols + j]); // print
+                                                                         // the
+                                                                         // first
+                                                                         // element
                 }
                 if (i == 0 && j == 0) {
                     break;
@@ -151,8 +144,8 @@ public class NWTornado {
                 } else {
                 }
 
-                //traceback = maximum(nw, w, n);
-                int new_nw, new_w, new_n;
+                // traceback = maximum(nw, w, n);
+                int new_nw,new_w,new_n;
                 new_nw = nw + referrence[i * max_cols + j];
                 new_w = w - penalty;
                 new_n = n - penalty;
@@ -181,7 +174,7 @@ public class NWTornado {
                     i--;
                     continue;
                 } else
-		;
+                    ;
             }
 
         } catch (IOException ex) {
@@ -190,11 +183,11 @@ public class NWTornado {
     }
 
     public static void main(String[] args) {
-        int idx, index;
-        int input_itemsets[], output_itemsets[], referrence[];
+        int idx,index;
+        int input_itemsets[],output_itemsets[],referrence[];
 
         // the lengths of the two sequences should be able to divided by 16.
-        // And at current stage  max_rows needs to equal max_cols
+        // And at current stage max_rows needs to equal max_cols
         if (args.length != 3) {
             usage(args);
         }
@@ -211,26 +204,20 @@ public class NWTornado {
         random.setSeed(7);
         Arrays.fill(input_itemsets, 0);
 
-        TaskSchedule s0 = new TaskSchedule("s0")
-                .task("init-ref", NWTornado::initialiseReference, max_rows, max_cols, input_itemsets, referrence, blosum62)
-                .task("init-input1", NWTornado::initialiseInput, max_rows, max_cols, penalty, input_itemsets)
-                .task("init-input2", NWTornado::initialiseInput, max_cols, 1, penalty, input_itemsets
-                )
-                .task("topleft", NWTornado::processTopLeft, max_rows, max_cols, penalty, input_itemsets, referrence
-                )
-                .task("bottomright", NWTornado::processBottomRight, max_rows, max_cols, penalty, input_itemsets, referrence
-                )
-                .streamOut(input_itemsets, referrence);
+        TaskSchedule s0 = new TaskSchedule("s0").task("init-ref", NWTornado::initialiseReference, max_rows, max_cols, input_itemsets, referrence, blosum62)
+                .task("init-input1", NWTornado::initialiseInput, max_rows, max_cols, penalty, input_itemsets).task("init-input2", NWTornado::initialiseInput, max_cols, 1, penalty, input_itemsets)
+                .task("topleft", NWTornado::processTopLeft, max_rows, max_cols, penalty, input_itemsets, referrence)
+                .task("bottomright", NWTornado::processBottomRight, max_rows, max_cols, penalty, input_itemsets, referrence).streamOut(input_itemsets, referrence);
 
         s0.warmup();
 
         System.out.printf("Start Needleman-Wunsch\n");
 
         final long t0 = System.nanoTime();
-        for (int i = 1; i < max_rows; i++) {    //please define your own sequence.
+        for (int i = 1; i < max_rows; i++) { // please define your own sequence.
             input_itemsets[i * max_cols] = Math.abs(random.nextInt()) % 10 + 1;
         }
-        for (int j = 1; j < max_cols; j++) {    //please define your own sequence.
+        for (int j = 1; j < max_cols; j++) { // please define your own sequence.
             input_itemsets[j] = Math.abs(random.nextInt()) % 10 + 1;
         }
 

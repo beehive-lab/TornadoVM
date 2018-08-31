@@ -20,28 +20,25 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: James Clarkson, Juan Fumero
  *
  */
 package uk.ac.manchester.tornado.runtime;
 
 import java.util.BitSet;
 
-import uk.ac.manchester.tornado.api.Event;
-import uk.ac.manchester.tornado.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.common.TornadoEvents;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
-/**
- *
- * @author James Clarkson
- */
-public class EventSet {
+public class EventSet implements TornadoEvents {
 
-    private final TornadoDevice device;
+    private final TornadoAcceleratorDevice device;
     private final BitSet profiles;
     private int index;
     private Event event;
 
-    public EventSet(TornadoDevice device, BitSet profiles) {
+    public EventSet(TornadoAcceleratorDevice device, BitSet profiles) {
         this.device = device;
         this.profiles = profiles;
         index = profiles.nextSetBit(0);
@@ -69,7 +66,7 @@ public class EventSet {
         return event;
     }
 
-    public TornadoDevice getDevice() {
+    public TornadoAcceleratorDevice getDevice() {
         return device;
     }
 

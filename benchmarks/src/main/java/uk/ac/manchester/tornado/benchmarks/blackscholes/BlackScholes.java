@@ -1,35 +1,26 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
- *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
- *
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
  */
 package uk.ac.manchester.tornado.benchmarks.blackscholes;
 
-import static uk.ac.manchester.tornado.common.Tornado.*;
-
-import uk.ac.manchester.tornado.api.*;
-import uk.ac.manchester.tornado.collections.math.*;
-import uk.ac.manchester.tornado.runtime.api.*;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class BlackScholes {
 
@@ -39,9 +30,9 @@ public class BlackScholes {
     /*
      * For a description of the algorithm and the terms used, please see the
      * documentation for this sample. On invocation of kernel blackScholes, each
-     * work thread calculates call price and put price values for given stock price,
-     * option strike price, time to expiration date, risk free interest and
-     * volatility factor.
+     * work thread calculates call price and put price values for given stock
+     * price, option strike price, time to expiration date, risk free interest
+     * and volatility factor.
      */
     public static void main(final String[] args) {
 
@@ -83,7 +74,7 @@ public class BlackScholes {
             System.out.printf("%s, id=java-reference, elapsed=%.9f, per iteration=%.9f \n", id, elapsed, elapsed / iterations);
 
         } else {
-            System.out.printf("%s, id=%s, elapsed=%.9f, per iteration=%.9f \n", id, getProperty("benchmark.device"), elapsed, elapsed / iterations);
+            System.out.printf("%s, id=%s, elapsed=%.9f, per iteration=%.9f \n", id, TornadoRuntime.getProperty("benchmark.device"), elapsed, elapsed / iterations);
             tasks.dumpProfiles();
         }
 
@@ -163,15 +154,15 @@ public class BlackScholes {
      * @brief Calculates the call and put prices by using Black Scholes model
      * 
      * @param s
-     *            Array of random values of current option price @param sigma Array
-     *            of random values sigma @param k Array of random values strike
-     *            price
+     *            Array of random values of current option price @param sigma
+     *            Array of random values sigma @param k Array of random values
+     *            strike price
      * 
      * @param t
-     *            Array of random values of expiration time @param r Array of random
-     *            values of risk free interest rate @param width Width of call price
-     *            or put price array @param call Array of calculated call price
-     *            values
+     *            Array of random values of expiration time @param r Array of
+     *            random values of risk free interest rate @param width Width of
+     *            call price or put price array @param call Array of calculated
+     *            call price values
      * 
      * @param put
      *            Array of calculated put price values

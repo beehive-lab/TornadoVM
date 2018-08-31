@@ -1,36 +1,28 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
- *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
- *
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
  */
 package uk.ac.manchester.tornado.benchmarks.rodinia.kmean;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.Atomic;
-import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.type.annotations.Atomic;
 import uk.ac.manchester.tornado.benchmarks.rodinia.kmean.DataLoader.KmeansData;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
 
 public class Kmean {
 
@@ -62,8 +54,7 @@ public class Kmean {
 
     public final class IntResult {
 
-        @Atomic
-        public int value;
+        @Atomic public int value;
 
         public IntResult() {
             reset();
@@ -125,20 +116,17 @@ public class Kmean {
     private float calculateRMSE(final int numClusters) {
         float sum = 0.0f;
         final int[] membership = new int[numPoints];
-        mapToNearestCluster(data, numPoints, numFeatures, clusters,
-                numClusters, membership, membershipChanges);
+        mapToNearestCluster(data, numPoints, numFeatures, clusters, numClusters, membership, membershipChanges);
 
         for (int i = 0; i < numPoints; i++) {
             final int cluster = membership[i];
-            sum += euclidDist(numFeatures, data, i * numFeatures, clusters,
-                    cluster * numFeatures);
+            sum += euclidDist(numFeatures, data, i * numFeatures, clusters, cluster * numFeatures);
         }
 
         return (float) Math.sqrt(sum / numPoints);
     }
 
-    private final static float euclidDist(final int numFeatures,
-            final float[] a, int aIndex, final float[] b, int bIndex) {
+    private final static float euclidDist(final int numFeatures, final float[] a, int aIndex, final float[] b, int bIndex) {
         float value = 0f;
         for (int i = 0; i < numFeatures; i++) {
             final float dist = a[aIndex + i] - b[bIndex + i];
@@ -147,10 +135,7 @@ public class Kmean {
         return value;
     }
 
-    public static void mapToNearestCluster(final float[] data,
-            final int numPoints, final int numFeatures,
-            final float[] clusters, final int numClusters,
-            final int[] membership, IntResult result) {
+    public static void mapToNearestCluster(final float[] data, final int numPoints, final int numFeatures, final float[] clusters, final int numClusters, final int[] membership, IntResult result) {
 
         for (@Parallel int i = 0; i < numPoints; i++) {
             int index = -1;
@@ -160,8 +145,7 @@ public class Kmean {
             for (int j = 0; j < numClusters; j++) {
                 float dist = 0f;
 
-                final float diff = euclidDist(numFeatures, data, i
-                        * numFeatures, clusters, j * numFeatures);
+                final float diff = euclidDist(numFeatures, data, i * numFeatures, clusters, j * numFeatures);
                 dist += diff * diff;
 
                 if (dist < minDist) {
@@ -180,31 +164,23 @@ public class Kmean {
 
     }
 
-    public static void updateClusters(final float[] data, final int numPoints,
-            final int numFeatures, final int[] membership,
-            final float[] clusters, final int[] clusterSizes) {
+    public static void updateClusters(final float[] data, final int numPoints, final int numFeatures, final int[] membership, final float[] clusters, final int[] clusterSizes) {
         for (@Parallel int i = 0; i < numPoints; i++) {
             final int clusterId = membership[i];
             clusterSizes[clusterId]++;
 
             for (int j = 0; j < numFeatures; j++) {
-                clusters[(clusterId * numFeatures) + j] += data[(i * numFeatures)
-                        + j];
+                clusters[(clusterId * numFeatures) + j] += data[(i * numFeatures) + j];
             }
 
         }
     }
 
-    public static void calculateClusters(final int numFeatures,
-            final int numClusters, final float[] clusters,
-            final int[] clusterSizes, final float[] newClusters,
-            final int[] newClusterSizes) {
+    public static void calculateClusters(final int numFeatures, final int numClusters, final float[] clusters, final int[] clusterSizes, final float[] newClusters, final int[] newClusterSizes) {
         for (int i = 0; i < numClusters; i++) {
             for (int j = 0; j < numFeatures; j++) {
                 if (newClusterSizes[i] > 0) {
-                    clusters[(i * numFeatures) + j] = newClusters[(i * numFeatures)
-                            + j]
-                            / newClusterSizes[i];
+                    clusters[(i * numFeatures) + j] = newClusters[(i * numFeatures) + j] / newClusterSizes[i];
                 }
                 newClusters[(i * numFeatures) + j] = 0f;
             }
@@ -221,15 +197,12 @@ public class Kmean {
         do {
 
             membershipChanges.reset();
-            mapToNearestCluster(data, numPoints, numFeatures, clusters,
-                    numClusters, membership, membershipChanges);
+            mapToNearestCluster(data, numPoints, numFeatures, clusters, numClusters, membership, membershipChanges);
             // graph.schedule().waitOn();
 
-            updateClusters(data, numPoints, numFeatures, membership,
-                    newClusters, newClusterSizes);
+            updateClusters(data, numPoints, numFeatures, membership, newClusters, newClusterSizes);
 
-            calculateClusters(numFeatures, numClusters, clusters, clusterSizes,
-                    newClusters, newClusterSizes);
+            calculateClusters(numFeatures, numClusters, clusters, clusterSizes, newClusters, newClusterSizes);
 
             // assume delta should be percentage of points
             // changing membership this iteration...?
@@ -246,8 +219,7 @@ public class Kmean {
         for (int i = 0; i < clustersMax; i++) {
             sb.append(String.format("cluster: id=%d, ", i));
             for (int j = 0; j < numFeatures; j++) {
-                sb.append(String.format("%6.2f ", clusters[(i * numFeatures)
-                        + j]));
+                sb.append(String.format("%6.2f ", clusters[(i * numFeatures) + j]));
             }
             sb.append(String.format("\n"));
         }
@@ -263,8 +235,7 @@ public class Kmean {
         final StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < clustersMax; i++) {
-            sb.append(String.format("cluster: id=%d, points=%d\n", i,
-                    clusterSizes[i]));
+            sb.append(String.format("cluster: id=%d, points=%d\n", i, clusterSizes[i]));
         }
 
         System.out.println(sb.toString());
@@ -274,9 +245,7 @@ public class Kmean {
         float minRMSERef = Float.MAX_VALUE;
 
         if (numPoints < clustersMin) {
-            System.out
-                    .printf("Error: min_nclusters(%d) > npoints (%s) -- cannot proceed\n",
-                            clustersMin, numPoints);
+            System.out.printf("Error: min_nclusters(%d) > npoints (%s) -- cannot proceed\n", clustersMin, numPoints);
             return;
         }
 
@@ -298,9 +267,7 @@ public class Kmean {
             }
             final long stop = System.nanoTime();
             final double elapsed = (stop - start) * 1e-9;
-            System.out
-                    .printf("Kmeans: iterations=%d, clusters=%d, time=%.4f, rsme=%.4f\n",
-                            numberOfLoops, nclusters, elapsed, rmse);
+            System.out.printf("Kmeans: iterations=%d, clusters=%d, time=%.4f, rsme=%.4f\n", numberOfLoops, nclusters, elapsed, rmse);
 
         }
     }

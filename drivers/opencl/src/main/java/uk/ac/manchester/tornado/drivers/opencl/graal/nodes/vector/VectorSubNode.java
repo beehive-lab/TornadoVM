@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector;
 
-import static uk.ac.manchester.tornado.graal.compiler.TornadoCodeGenerator.trace;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.graph.NodeClass;
@@ -46,10 +46,8 @@ public class VectorSubNode extends FloatingNode implements LIRLowerable, VectorO
 
     public static final NodeClass<VectorSubNode> TYPE = NodeClass.create(VectorSubNode.class);
 
-    @Input
-    ValueNode x;
-    @Input
-    ValueNode y;
+    @Input ValueNode x;
+    @Input ValueNode y;
 
     public VectorSubNode(OCLKind kind, ValueNode x, ValueNode y) {
         this(TYPE, kind, x, y);

@@ -25,7 +25,6 @@
  */
 package uk.ac.manchester.tornado.runtime.graph.nodes;
 
-
 public class ValueNode extends UnaryNode {
 
 }

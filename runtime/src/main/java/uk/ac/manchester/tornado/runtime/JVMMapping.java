@@ -25,13 +25,20 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
-import uk.ac.manchester.tornado.api.Event;
-import uk.ac.manchester.tornado.api.enums.TornadoSchedulingStrategy;
-import uk.ac.manchester.tornado.common.*;
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import uk.ac.manchester.tornado.api.TornadoTargetDevice;
+import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 
-public class JVMMapping implements TornadoDevice {
+public class JVMMapping implements TornadoAcceleratorDevice {
 
     @Override
     public void dumpEvents() {
@@ -62,7 +69,7 @@ public class JVMMapping implements TornadoDevice {
     }
 
     @Override
-    public int ensurePresent(Object object, DeviceObjectState objectState, int[] events) {
+    public int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events) {
         unimplemented();
         return -1;
     }
@@ -94,24 +101,24 @@ public class JVMMapping implements TornadoDevice {
     }
 
     @Override
-    public int streamIn(Object object, DeviceObjectState objectState, int[] events) {
+    public int streamIn(Object object, TornadoDeviceObjectState objectState, int[] events) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public int streamOut(Object object, DeviceObjectState objectState) {
+    public int streamOut(Object object, TornadoDeviceObjectState objectState) {
         unimplemented();
         return -1;
     }
 
     @Override
-    public void streamOutBlocking(Object object, DeviceObjectState objectState) {
+    public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState) {
         unimplemented();
     }
 
     @Override
-    public void streamOutBlocking(Object object, DeviceObjectState objectState, int[] list) {
+    public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState, int[] list) {
         unimplemented();
     }
 
@@ -143,25 +150,25 @@ public class JVMMapping implements TornadoDevice {
     }
 
     @Override
-    public int ensureAllocated(Object object, DeviceObjectState state) {
+    public int ensureAllocated(Object object, TornadoDeviceObjectState state) {
         // TODO Auto-generated method stub
         return -1;
     }
 
     @Override
-    public int ensurePresent(Object object, DeviceObjectState objectState) {
+    public int ensurePresent(Object object, TornadoDeviceObjectState objectState) {
         // TODO Auto-generated method stub
         return -1;
     }
 
     @Override
-    public int streamIn(Object object, DeviceObjectState objectState) {
+    public int streamIn(Object object, TornadoDeviceObjectState objectState) {
         // TODO Auto-generated method stub
         return -1;
     }
 
     @Override
-    public int streamOut(Object object, DeviceObjectState objectState, int[] list) {
+    public int streamOut(Object object, TornadoDeviceObjectState objectState, int[] list) {
         // TODO Auto-generated method stub
         return -1;
     }
@@ -199,6 +206,18 @@ public class JVMMapping implements TornadoDevice {
     @Override
     public String getPlatformName() {
         return "jvm";
+    }
+
+    @Override
+    public TornadoDeviceContext getDeviceContext() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public TornadoTargetDevice getDevice() {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

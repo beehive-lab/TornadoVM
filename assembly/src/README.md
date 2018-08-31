@@ -7,18 +7,46 @@
   * OpenCL (preferably v1.2 or newer)
   * GCC or clang/LLVM
   * Python 2.7 (>= 2.7.5)
-  * Tornado OpenJDK 1.8.0_131 (jdk1.8.0_131_x86.tgz)
 
 ### Tested OS
 Tornado has been tested on:
 
   * OSx 10.13.2 (High Sierra)
-  * CentOS 7.4
+  * CentOS 7.3, 7.4 and 7.5
   * Fedora 21
-  * Ubuntu 16.4 
+  * Ubuntu 16.4 and 18.4 
 
 
 ## Installation
+
+### 1. Compile Java with JVMCI-8
+
+```bash
+ $ git clone -b tornado https://github.com/beehive-lab/mx 
+ $ export PATH=`pwd`/mx:$PATH 
+ $ git clone -b tornado https://github.com/beehive-lab/graal-jvmci-8
+ $ cd graal-jvmci-8
+ $ mx build  
+```
+
+This will generate a new Java binary into the `jdk1.8.0_<your_version>/product`, e.g., `jdk1.8.0_181/product`.
+
+### 1.2 Building Graal (optional) 
+
+The Tornado maven installer will download `graal.jar` and `truffle-api.jar` dependencies automatically. 
+These two jar files include a patch to execute Tornado. If you want to build Graal yourself, you can build it 
+
+```bash
+ $ git clone -b tornado https://github.com/beehive-lab/graal 
+ $ export PATH=`pwd`/mx:$PATH 
+ $ export JAVA_HOME=<path/to/JDK-JVMCI>
+ $ mx build  
+```
+
+Then you will need to copy `graal.jar` and `truffle-api.jar` into the Tornado project.
+
+
+### 2. Download Tornado
 
 ```bash
  $ git clone https://github.com/beehive-lab/tornado.git tornado
@@ -34,9 +62,8 @@ export JAVA_HOME=<path to jvmci 8 jdk with JVMCI>
 export PATH=$PWD/bin/bin:$PATH    ## We will create this directory during Tornado compilation
 export TORNADO_SDK=$PWD/bin/sdk   ## We will create this directory during Tornado compilation
 
-## If CMAKE is needed (See step 2)
+## If CMAKE is needed (See step 4)
 export CMAKE_ROOT=<path/to/cmake/cmake-3.10.2>
-
 ```
 
 Then execute:
@@ -46,9 +73,10 @@ $ . etc/tornado.env
 ```
 
 
-### 1. Setting default maven configuration
+### 3. Setting default maven configuration
 
-Create (or update) the file in `~/.m2/settings.xml` with the following content. Modify the `jvmci.root` with your path to JDK 1.8.0_131.
+Create (or update) the file in `~/.m2/settings.xml` with the following content. Modify the `jvmci.root` with your path to JDK 1.8.0 that was compiled
+in step 1. 
 
 ```bash
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
@@ -70,10 +98,9 @@ Create (or update) the file in `~/.m2/settings.xml` with the following content. 
 		 </activation>
 		 <properties>
 
-			 <!-- Your PATH TO JDK1.8.0_131-->
-			 <jvmci.root>/home/user/jdk1.8.0_131</jvmci.root>
-
-		 	 <jvmci.version>1.8.0_131</jvmci.version>
+			 <!-- Your PATH TO JDK1.8-JVMCI-->
+			 <jvmci.root>/home/user/jdk1.8.0_181/product</jvmci.root>
+		 	 <jvmci.version>1.8.0_181</jvmci.version>
 
 		 </properties>
 	 </profile>
@@ -84,13 +111,13 @@ Create (or update) the file in `~/.m2/settings.xml` with the following content. 
 ```
 
 
-### 2. Install CMAKE (if cmake < 3.6) 
+### 4. Install CMAKE (if cmake < 3.6) 
 
 ```
 $ cmake -version
 ```
 
-If the version of cmake is > 3.6 then skip the rest of this step and to to step 3.
+If the version of cmake is > 3.6 then skip the rest of this step and to to step 5.
 Otherwise try in install cmake.
 
 For simplicity it might be easier to install cmake in your home
@@ -109,44 +136,51 @@ $ cmake -version
 cmake version 3.10.1
 ``` 
 
-### 3. Compile Tornado
+Then export `CMAKE_ROOT` variable to the cmake installation. You can add it to the `etc/tornado.env` file.
+
+```bash
+export CMAKE_ROOT=/opt/cmake-3.10.2
+```
+
+### 5. Compile Tornado
 
 ```bash
 $ cd ~/tornado
-$ mvn package 
-$ bash bin/updatePATHS.sh
+$ . etc/tornado.env
+$ make 
 ```
 and done!! 
-
-Alternately, you can just execute `make`
-
-```bash
-$ make
-```
-
-and done!! 
-
-If you install a new version of Cmake (e.g in CentOS) you need to pass a variable to the mvn package:
-
-```bash 
-$ mvn -Dcmake.root.dir=$HOME/opt/cmake-3.10.1/ package
-```
-
-and done!! 
-
-NOTE: the Makefile autoamtically sets the `cmake.root.dir` based on the variable `CMAKE_ROOT` set in `etc/tornado.env`
-
-
 
 
 ## Running Examples #
 
 ```bash
-$ . etc/tornado.env
 $ tornado uk.ac.manchester.tornado.examples.HelloWorld
 ```
 
-To run on a specific device, use the option: 
+Use the following option to identify id for Tornado devices: 
+
+```bas
+tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput
+```
+Tornado device output corresponds to:
+```bash
+Tornado device=<driverNumber>:<deviceNumber>
+```
+Example output:
+```bash
+Number of Tornado drivers: 1
+Number of devices: 3
+
+Tornado device=0:0
+  NVIDIA CUDA -- GeForce GTX 1050
+Tornado device=0:1
+  Intel(R) OpenCL -- Intel(R) HD Graphics
+Tornado device=0:2
+  Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
+```
+
+To run on a specific device user the following option:
 
 ```bash
  -D<s>.<t>.device=<driverNumber>:<deviceNumber>
@@ -154,7 +188,7 @@ To run on a specific device, use the option:
 
 Where s is the schedule task name and t is the task name.
 
-For example:
+For example running on device [1] will look like this:
 
 ```bash
 $ tornado -Ds0.t0.device=0:1 uk.ac.manchester.tornado.examples.HelloWorld
@@ -191,7 +225,7 @@ $ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello
 To test just a method of a unittest class:
 
 ```bash
-$ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello#helloWorld
+$ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello#testHello
 ```
 
 
@@ -202,6 +236,7 @@ $ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello#helloWo
 The code formatter in Eclipse is automatic after generating the setting files.
 
 ```bash
+$ mvn eclipse:eclipse
 $ python scripts/eclipseSetup.py
 ```
 
@@ -218,4 +253,19 @@ Then :
  2. Check the Use the Eclipse code formatter radio button
  2. Set Eclipse Java Formatter config file to the XML file stored in /scripts/templates/eclise-settings/Tornado.xml
  3. Set Java formatter profile to Tornado
+
+
+## License
+
+Each Tornado module is licensed as follows:
+
+* Tornado-Runtime : GNU-GPLv2 + CLASSPATH Exception
+* Tornado-Assembly: GNU-GPLv2 + CLASSPATH Exception
+* Tornado-Drivers : GNU-GPLv2 + CLASSPATH Exception 
+* Torando-API     : GNU-GPLv2 + CLASSPATH Exception
+* Tornado-scripts : GNU-GPLv2
+* Tornado-Unittests : Apache 2
+* Tornado-Benchmarks: Apache 2
+* Tornado-Examples:   Apache 2
+* Tornado-Matrices:   Apache 2
 

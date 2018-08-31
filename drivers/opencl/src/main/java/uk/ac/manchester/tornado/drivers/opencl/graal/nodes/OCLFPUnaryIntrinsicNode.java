@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
 import org.graalvm.compiler.core.common.type.FloatStamp;
 import org.graalvm.compiler.core.common.type.PrimitiveStamp;
@@ -42,7 +42,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.common.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLArithmeticTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBuiltinTool;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
@@ -60,72 +60,40 @@ public class OCLFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLIRL
     protected final Operation operation;
 
     public enum Operation {
-        ACOS,
-        ACOSH,
-        ACOSPI,
-        ASIN,
-        ASINH,
-        ASINPI,
-        ATAN,
-        //ATAN2,
-        ATANH,
-        ATANPI,
-        //ATAN2PI,
-        CBRT,
-        CEIL,
-        //COPYSIGN,
-        COS,
-        COSH,
-        COSPI,
-        ERFC,
-        ERF,
-        EXP,
-        EXP2,
-        EXP10,
-        EXPM1,
-        FABS,
-        //FDIM,
+        ACOS, ACOSH, ACOSPI, ASIN, ASINH, ASINPI, ATAN,
+        // ATAN2,
+        ATANH, ATANPI,
+        // ATAN2PI,
+        CBRT, CEIL,
+        // COPYSIGN,
+        COS, COSH, COSPI, ERFC, ERF, EXP, EXP2, EXP10, EXPM1, FABS,
+        // FDIM,
         FLOOR,
-        //FMA,
-        //FMAX,
-        //FMIN,
-        //FMOD,
-        //FRACT,
-        //FREXP,
-        //HYPOT,
+        // FMA,
+        // FMAX,
+        // FMIN,
+        // FMOD,
+        // FRACT,
+        // FREXP,
+        // HYPOT,
         ILOGB,
-        //LDEXP,
-        LGAMMA,
-        LOG,
-        LOG2,
-        LOG10,
-        LOG1P,
-        LOGB,
-        //MAD,
-        //MAXMAG,
-        //MINMAG,
-        //MODF,
+        // LDEXP,
+        LGAMMA, LOG, LOG2, LOG10, LOG1P, LOGB,
+        // MAD,
+        // MAXMAG,
+        // MINMAG,
+        // MODF,
         NAN,
-        //NEXTAFTER,
-        //POW,
-        //POWN,
-        //POWR,
-        //REMAINDER,
-        REMQUO,
-        RINT,
-        //ROOTN,
-        ROUND,
-        RSQRT,
-        SIN,
-        //SINCOS,
-        SINH,
-        SINPI,
-        SQRT,
-        TAN,
-        TANH,
-        TANPI,
-        TGAMMA,
-        TRUNC
+        // NEXTAFTER,
+        // POW,
+        // POWN,
+        // POWR,
+        // REMAINDER,
+        REMQUO, RINT,
+        // ROOTN,
+        ROUND, RSQRT, SIN,
+        // SINCOS,
+        SINH, SINPI, SQRT, TAN, TANH, TANPI, TGAMMA, TRUNC
     }
 
     public Operation operation() {

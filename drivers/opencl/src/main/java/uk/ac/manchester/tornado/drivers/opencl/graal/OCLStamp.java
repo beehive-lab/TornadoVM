@@ -23,8 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal;
 
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.spi.LIRKindTool;
@@ -100,7 +100,7 @@ public class OCLStamp extends ObjectStamp {
 
     @Override
     public boolean hasValues() {
-        //shouldNotReachHere();
+        // shouldNotReachHere();
         return true;
     }
 

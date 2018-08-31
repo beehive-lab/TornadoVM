@@ -32,12 +32,12 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
 
-import uk.ac.manchester.tornado.graal.compiler.TornadoCompilerConfiguration;
-import uk.ac.manchester.tornado.graal.compiler.TornadoHighTier;
-import uk.ac.manchester.tornado.graal.compiler.TornadoLowTier;
-import uk.ac.manchester.tornado.graal.compiler.TornadoMidTier;
-import uk.ac.manchester.tornado.graal.compiler.TornadoSketchTier;
-import uk.ac.manchester.tornado.graal.phases.lir.TornadoAllocationStage;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerConfiguration;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
+import uk.ac.manchester.tornado.runtime.graal.phases.lir.TornadoAllocationStage;
 
 public class OCLCompilerConfiguration implements TornadoCompilerConfiguration {
 

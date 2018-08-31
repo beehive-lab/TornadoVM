@@ -25,8 +25,8 @@ package uk.ac.manchester.tornado.drivers.opencl.graal;
 
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
 import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.common.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import java.util.Iterator;
 
@@ -99,12 +99,12 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
-import uk.ac.manchester.tornado.graal.nodes.OCLReduceAddNode;
-import uk.ac.manchester.tornado.graal.nodes.OCLReduceMulNode;
-import uk.ac.manchester.tornado.graal.nodes.OCLReduceSubNode;
-import uk.ac.manchester.tornado.graal.nodes.StoreAtomicIndexedNode;
-import uk.ac.manchester.tornado.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceAddNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceMulNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceSubNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 

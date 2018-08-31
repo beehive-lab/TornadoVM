@@ -34,12 +34,11 @@ import org.graalvm.compiler.nodes.LogicNode;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
-import uk.ac.manchester.tornado.graal.nodes.logic.BinaryLogicalNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.logic.BinaryLogicalNode;
 
 @NodeInfo(shortName = "||")
 public class LogicalOrNode extends BinaryLogicalNode {
 
-    @SuppressWarnings("FieldNameHidesFieldInSuperclass")
     public static final NodeClass<LogicalOrNode> TYPE = NodeClass.create(LogicalOrNode.class);
 
     public LogicalOrNode(LogicNode x, LogicNode y) {

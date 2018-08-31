@@ -1,59 +1,47 @@
-/*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+/**
+ * Copyright (c) 2016 - 2018 Syncleus, Inc.
  *
- * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
- *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package uk.ac.manchester.tornado.benchmarks.corrmatrix;
 
-import uk.ac.manchester.tornado.api.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 
+/**
+ * This material was prepared as an account of work sponsored by an agency of the United States Government.  
+ * Neither the United States Government nor the United States Department of Energy, nor Battelle, nor any of 
+ * their employees, nor any jurisdiction or organization that has cooperated in the development of these materials, 
+ * makes any warranty, express or implied, or assumes any legal liability or responsibility for the accuracy, 
+ * completeness, or usefulness or any information, apparatus, product, software, or process disclosed, or represents
+ * that its use would not infringe privately owned rights.
+ */
 /**
  * This kernel attempts to re-implement the Lucene OpenBitSet functionality on a
  * GPU
- *
- * Based on code from: <br/> null {@link http
- * ://grepcode.com/file/repo1.maven.org/maven2/org.apache.lucene/lucene
- * -core/3.1.0/org/apache/lucene/util/BitUtil.java}
- *
+ * 
+ * Based on code from: <br/>
+ * {@link http://grepcode.com/file/repo1.maven.org/maven2/org.apache.lucene/lucene-core/3.1.0/org/apache/lucene/util/BitUtil.java}
+ * 
  * @author ryan.lamothe at gmail.com
  * @author sedillard at gmail.com
  */
 public class CorrMatrixKernel {
 
-    public static void run(final long[] matrixA,
-            final int matrixA_NumTerms, final long[] matrixB,
-            final int matrixB_NumTerms, final int numLongs,
-            final int[] resultMatrix) {
+    public static void run(final long[] matrixA, final int matrixA_NumTerms, final long[] matrixB, final int matrixB_NumTerms, final int numLongs, final int[] resultMatrix) {
 
         for (@Parallel int i = 0; i < matrixA_NumTerms; i++) {
             for (@Parallel int j = 0; j < matrixB_NumTerms; j++) {
-
-                // For testing purposes, you can use the naive implementation to
-                // compare performance
-                // resultMatrix[(i * matrixB_NumTerms) + j] = pop_intersect(
-                // matrixA, i * numLongs, matrixB, j * numLongs, numLongs);
-                resultMatrix[(i * matrixB_NumTerms) + j] = naive_pop_intersect(
-                        matrixA, i * numLongs, matrixB, j * numLongs, numLongs);
+                resultMatrix[(i * matrixB_NumTerms) + j] = naive_pop_intersect(matrixA, i * numLongs, matrixB, j * numLongs, numLongs);
             }
         }
 
@@ -62,9 +50,7 @@ public class CorrMatrixKernel {
     /**
      * A naive implementation of the pop_array code below
      */
-    private static int naive_pop_intersect(final long matrixA[],
-            final int aStart, final long matrixB[], final int bStart,
-            final int numWords) {
+    private static int naive_pop_intersect(final long matrixA[], final int aStart, final long matrixB[], final int bStart, final int numWords) {
         int sum = 0;
 
         for (int i = 0; i < numWords; i++) {
@@ -80,18 +66,17 @@ public class CorrMatrixKernel {
      *
      * Modified for the purposes of this kernel from its original version
      */
-    private static int pop_intersect(final long matrixA[], final int aStart,
-            final long matrixB[], final int bStart, final int numWords) {
+    private static int pop_intersect(final long matrixA[], final int aStart, final long matrixB[], final int bStart, final int numWords) {
 
         /*
-         * http://grepcode.com/file/repo1.maven.org/maven2/org.apache.lucene/lucene
-         * -core/3.1.0/org/apache/lucene/util/BitUtil.java
+         * http://grepcode.com/file/repo1.maven.org/maven2/org.apache.lucene/
+         * lucene -core/3.1.0/org/apache/lucene/util/BitUtil.java
          */
         // generated from pop_array via sed 's/A\[\([^]]*\)\]/\(A[\1] \&
         // B[\1]\)/g'
         final int n = numWords;
-        int tot = 0, tot8 = 0;
-        long ones = 0, twos = 0, fours = 0;
+        int tot = 0,tot8 = 0;
+        long ones = 0,twos = 0,fours = 0;
 
         int i;
         for (i = 0; i <= (n - 8); i += 8) {
@@ -106,8 +91,7 @@ public class CorrMatrixKernel {
 
             // CSA(twosA, ones, ones, (A[i] & B[i]), (A[i+1] & B[i+1]))
             {
-                final long b = matrixA[ai] & matrixB[bi], c = matrixA[ai + 1]
-                        & matrixB[bi + 1];
+                final long b = matrixA[ai] & matrixB[bi],c = matrixA[ai + 1] & matrixB[bi + 1];
                 final long u = ones ^ b;
                 twosA = (ones & b) | (u & c);
                 ones = u ^ c;
@@ -115,8 +99,7 @@ public class CorrMatrixKernel {
 
             // CSA(twosB, ones, ones, (A[i+2] & B[i+2]), (A[i+3] & B[i+3]))
             {
-                final long b = matrixA[ai + 2] & matrixB[bi + 2], c = matrixA[ai + 3]
-                        & matrixB[bi + 3];
+                final long b = matrixA[ai + 2] & matrixB[bi + 2],c = matrixA[ai + 3] & matrixB[bi + 3];
                 final long u = ones ^ b;
                 twosB = (ones & b) | (u & c);
                 ones = u ^ c;
@@ -131,8 +114,7 @@ public class CorrMatrixKernel {
 
             // CSA(twosA, ones, ones, (A[i+4] & B[i+4]), (A[i+5] & B[i+5]))
             {
-                final long b = matrixA[ai + 4] & matrixB[bi + 4], c = matrixA[ai + 5]
-                        & matrixB[bi + 5];
+                final long b = matrixA[ai + 4] & matrixB[bi + 4],c = matrixA[ai + 5] & matrixB[bi + 5];
                 final long u = ones ^ b;
                 twosA = (ones & b) | (u & c);
                 ones = u ^ c;
@@ -140,8 +122,7 @@ public class CorrMatrixKernel {
 
             // CSA(twosB, ones, ones, (A[i+6] & B[i+6]), (A[i+7] & B[i+7]))
             {
-                final long b = matrixA[ai + 6] & matrixB[bi + 6], c = matrixA[ai + 7]
-                        & matrixB[bi + 7];
+                final long b = matrixA[ai + 6] & matrixB[bi + 6],c = matrixA[ai + 7] & matrixB[bi + 7];
                 final long u = ones ^ b;
                 twosB = (ones & b) | (u & c);
                 ones = u ^ c;
@@ -174,16 +155,14 @@ public class CorrMatrixKernel {
             long eights = 0;
 
             {
-                final long b = matrixA[ai] & matrixB[bi], c = matrixA[ai + 1]
-                        & matrixB[bi + 1];
+                final long b = matrixA[ai] & matrixB[bi],c = matrixA[ai + 1] & matrixB[bi + 1];
                 final long u = ones ^ b;
                 twosA = (ones & b) | (u & c);
                 ones = u ^ c;
             }
 
             {
-                final long b = matrixA[ai + 2] & matrixB[bi + 2], c = matrixA[ai + 3]
-                        & matrixB[bi + 3];
+                final long b = matrixA[ai + 2] & matrixB[bi + 2],c = matrixA[ai + 3] & matrixB[bi + 3];
                 final long u = ones ^ b;
                 twosB = (ones & b) | (u & c);
                 ones = u ^ c;
@@ -206,8 +185,7 @@ public class CorrMatrixKernel {
             final int ai = aStart + i;
             final int bi = bStart + i;
 
-            final long b = matrixA[ai] & matrixB[bi], c = matrixA[ai + 1]
-                    & matrixB[bi + 1];
+            final long b = matrixA[ai] & matrixB[bi],c = matrixA[ai + 1] & matrixB[bi + 1];
             final long u = ones ^ b;
             final long twosA = (ones & b) | (u & c);
             ones = u ^ c;
@@ -241,11 +219,11 @@ public class CorrMatrixKernel {
     private static int pop(long x) {
 
         /*
-         * http://grepcode.com/file/repo1.maven.org/maven2/org.apache.lucene/lucene
-         * -core/3.1.0/org/apache/lucene/util/BitUtil.java
+         * http://grepcode.com/file/repo1.maven.org/maven2/org.apache.lucene/
+         * lucene -core/3.1.0/org/apache/lucene/util/BitUtil.java
          */
 
- /*
+        /*
          * Hacker's Delight 32 bit pop function:
          * http://www.hackersdelight.org/HDcode/newCode/pop_arrayHS.c.txt int
          * pop(unsigned x) { x = x - ((x >> 1) & 0x55555555); x = (x &

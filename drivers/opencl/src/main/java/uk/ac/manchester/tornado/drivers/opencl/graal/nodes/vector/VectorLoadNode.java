@@ -42,17 +42,19 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 @NodeInfo(nameTemplate = "VectorLoad")
 public class VectorLoadNode extends AccessIndexedNode {
 
-    public static final NodeClass<VectorLoadNode> TYPE = NodeClass
-            .create(VectorLoadNode.class);
+    public static final NodeClass<VectorLoadNode> TYPE = NodeClass.create(VectorLoadNode.class);
 
     private final OCLKind kind;
 
     /**
      * Creates a new LoadIndexedNode.
      *
-     * @param kind  the element type
-     * @param array the instruction producing the array
-     * @param index the instruction producing the index
+     * @param kind
+     *            the element type
+     * @param array
+     *            the instruction producing the array
+     * @param index
+     *            the instruction producing the index
      */
     public VectorLoadNode(OCLKind kind, ValueNode array, ValueNode index) {
         super(TYPE, OCLStampFactory.getStampFor(kind), array, index, JavaKind.Illegal);

@@ -1,45 +1,36 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
- *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
- *
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
  */
 package uk.ac.manchester.tornado.benchmarks.spmv;
 
-import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
-import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
-import uk.ac.manchester.tornado.collections.matrix.SparseMatrixUtils.CSRMatrix;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
-
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.findULPDistance;
 import static uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays.spmv;
 import static uk.ac.manchester.tornado.benchmarks.spmv.Benchmark.populateVector;
-import static uk.ac.manchester.tornado.collections.math.TornadoMath.findULPDistance;
-import static uk.ac.manchester.tornado.common.Tornado.getProperty;
+
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.benchmarks.BenchmarkDriver;
+import uk.ac.manchester.tornado.benchmarks.LinearAlgebraArrays;
+import uk.ac.manchester.tornado.matrix.SparseMatrixUtils.CSRMatrix;
 
 public class SpmvTornado extends BenchmarkDriver {
 
     private final CSRMatrix<float[]> matrix;
 
-    private float[] v, y;
+    private float[] v,y;
 
     private TaskSchedule graph;
 
@@ -55,10 +46,7 @@ public class SpmvTornado extends BenchmarkDriver {
 
         populateVector(v);
 
-        graph = new TaskSchedule("benchmark")
-                .task("spmv", LinearAlgebraArrays::spmv, matrix.vals,
-                        matrix.cols, matrix.rows, v, matrix.size, y)
-                .streamOut(y);
+        graph = new TaskSchedule("benchmark").task("spmv", LinearAlgebraArrays::spmv, matrix.vals, matrix.cols, matrix.rows, v, matrix.size, y).streamOut(y);
 
         graph.warmup();
     }
@@ -96,13 +84,9 @@ public class SpmvTornado extends BenchmarkDriver {
 
     public void printSummary() {
         if (isValid()) {
-            System.out.printf(
-                    "id=%s, elapsed=%f, per iteration=%f\n",
-                    getProperty("benchmark.device"), getElapsed(),
-                    getElapsedPerIteration());
+            System.out.printf("id=%s, elapsed=%f, per iteration=%f\n", getProperty("benchmark.device"), getElapsed(), getElapsedPerIteration());
         } else {
-            System.out.printf("id=%s produced invalid result\n",
-                    getProperty("benchmark.device"));
+            System.out.printf("id=%s produced invalid result\n", getProperty("benchmark.device"));
         }
     }
 }

@@ -1,49 +1,40 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
- *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
- *
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
  */
-package uk.ac.manchester.tornado.examples.paralleliser;
 
-import static uk.ac.manchester.tornado.collections.math.TornadoMath.clamp;
+package uk.ac.manchester.tornado.examples.paralleliser;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.Parallel;
-import uk.ac.manchester.tornado.collections.types.ImageFloat;
-import uk.ac.manchester.tornado.runtime.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
+import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 
 public class ResizeImage {
 
-    public static final void resize(ImageFloat dest,
-            ImageFloat src, int scaleFactor) {
+    public static final void resize(ImageFloat dest, ImageFloat src, int scaleFactor) {
 
         for (@Parallel int y = 0; y < dest.Y(); y++) {
             for (@Parallel int x = 0; x < dest.X(); x++) {
 
                 // co-ords of center pixel
-                int cx = clamp(scaleFactor * x, 0, src.X() - 1);
-                int cy = clamp(scaleFactor * y, 0, src.Y() - 1);
+                int cx = TornadoMath.clamp(scaleFactor * x, 0, src.X() - 1);
+                int cy = TornadoMath.clamp(scaleFactor * y, 0, src.Y() - 1);
 
                 float center = src.get(cx, cy);
                 dest.set(x, y, center);
@@ -52,10 +43,8 @@ public class ResizeImage {
     }
 
     public static void main(final String[] args) {
-        final int numElementsX = (args.length == 2) ? Integer.parseInt(args[0])
-                : 8;
-        final int numElementsY = (args.length == 2) ? Integer.parseInt(args[1])
-                : 8;
+        final int numElementsX = (args.length == 2) ? Integer.parseInt(args[0]) : 8;
+        final int numElementsY = (args.length == 2) ? Integer.parseInt(args[1]) : 8;
 
         System.out.printf("image: x=%d, y=%d\n", numElementsX, numElementsY);
         final ImageFloat image1 = new ImageFloat(numElementsX, numElementsY);
@@ -69,9 +58,7 @@ public class ResizeImage {
             }
         }
 
-        final TaskSchedule schedule = new TaskSchedule("s0")
-                .task("t0", ResizeImage::resize, image2, image1, 2)
-                .streamOut(image2);
+        final TaskSchedule schedule = new TaskSchedule("s0").task("t0", ResizeImage::resize, image2, image1, 2).streamOut(image2);
 
         schedule.warmup();
 

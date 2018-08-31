@@ -32,8 +32,8 @@ import org.graalvm.compiler.loop.LoopEx;
 import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.StructuredGraph;
 
-import uk.ac.manchester.tornado.graal.nodes.ParallelRangeNode;
-import uk.ac.manchester.tornado.runtime.api.CompilableTask;
+import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
+import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 
 /**
  *
@@ -53,7 +53,8 @@ class TornadoTaskUtil {
                 for (Node n : parRange.offset().usages()) {
                     if (loop.getInductionVariables().containsKey(n)) {
                         BasicInductionVariable iv = (BasicInductionVariable) loop.getInductionVariables().get(n);
-                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(), parRange.stride(), iv.getOp());
+                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(),
+                                parRange.stride(), iv.getOp());
                         return loop;
                     }
                 }

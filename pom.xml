@@ -1,24 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <groupId>tornado</groupId>
   <artifactId>tornado</artifactId>
-  <version>0.0.2-SNAPSHOT</version>
+  <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>tornado</name>
+
   <properties>
-    <tornado.version>0.0.2-SNAPSHOT</tornado.version>
+    <tornado.version>0.1.0-SNAPSHOT</tornado.version>
     <graal.version>0.22</graal.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <classifier>${platform}</classifier>
     <download.cmake>false</download.cmake>
   </properties>
+
   <repositories>
     <repository>
-      <id>uom-graal-core</id>
-      <url>https://raw.github.com/beehive-lab/graal-core/maven-repo/repository/</url>
+      <id>universityOfManchester-graal</id>
+      <url>https://raw.githubusercontent.com/beehive-lab/graal/maven-tornado-repos</url>
     </repository>
   </repositories>
+
   <profiles>
     <profile>
       <id>list-profiles</id>
@@ -253,34 +257,6 @@
   <build>
     <finalName>${project.artifactId}-${project.version}-${buildNumber}</finalName>
     <plugins>
-      <!--            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>license-maven-plugin</artifactId>
-                <version>1.14</version>
-                <executions>
-                    <execution>
-                        <id>download-licenses</id>
-                        <goals>
-                            <goal>check-file-header</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <organizationName>University of Manchester</organizationName>
-                    <inceptionYear>2013</inceptionYear>
-                    <licenseName>apache_v2 </licenseName>
-                    <copyrightOwners>APT Group, School of Computer Science, The University of Manchester</copyrightOwners>
-                    <descriptionTemplate>${tornado.root}/license-template.ftl</descriptionTemplate>
-                    <emptyLineAfterHeader>true</emptyLineAfterHeader>
-                    <failOnMissingHeader>true</failOnMissingHeader>
-                    <roots>
-                        <root>src</root>
-                        <root>target/generated-sources</root>
-                        <root>jni-bindings/libtornado-opencl</root>
-                        <root>bin</root>
-                    </roots>
-                </configuration>
-            </plugin>-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-scm-plugin</artifactId>
@@ -336,7 +312,6 @@
           </execution>
         </executions>
         <configuration>
-          <!--<revisionOnScmFailure>XXXX</revisionOnScmFailure>-->
           <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
           <doCheck>false</doCheck>
           <doUpdate>true</doUpdate>
@@ -398,12 +373,13 @@
   </dependencies>
   <modules>
     <module>runtime</module>
-    <module>collections</module>
+    <module>matrices</module>
     <module>drivers</module>
     <module>examples</module>
     <module>benchmarks</module>
     <module>unittests</module>
     <module>assembly</module>
+    <module>tornado-api</module>
   </modules>
   <reporting>
     <plugins>

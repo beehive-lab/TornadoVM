@@ -28,7 +28,7 @@ package uk.ac.manchester.tornado.runtime.graph;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import uk.ac.manchester.tornado.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 public class GraphAssembler {
 

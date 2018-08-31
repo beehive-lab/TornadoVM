@@ -25,8 +25,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import uk.ac.manchester.tornado.common.Tornado;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class OCLScheduler {
 

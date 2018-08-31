@@ -40,28 +40,20 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
  * The {@code StoreIndexedNode} represents a write to an array element.
  */
 @NodeInfo(nameTemplate = "Store .s{p#lane}")
-public final class VectorStoreElementProxyNode extends FixedWithNextNode implements Canonicalizable{
+public final class VectorStoreElementProxyNode extends FixedWithNextNode implements Canonicalizable {
 
-    public static final NodeClass<VectorStoreElementProxyNode> TYPE = NodeClass
-            .create(VectorStoreElementProxyNode.class);
+    public static final NodeClass<VectorStoreElementProxyNode> TYPE = NodeClass.create(VectorStoreElementProxyNode.class);
 
-    @Input
-    ValueNode value;
+    @Input ValueNode value;
 
-    @OptionalInput(InputType.Association)
-    ValueNode origin;
-    @OptionalInput(InputType.Association)
-    ValueNode laneOrigin;
+    @OptionalInput(InputType.Association) ValueNode origin;
+    @OptionalInput(InputType.Association) ValueNode laneOrigin;
 
     public ValueNode value() {
         return value;
     }
 
-    protected VectorStoreElementProxyNode(
-            NodeClass<? extends VectorStoreElementProxyNode> c,
-            OCLKind kind,
-            ValueNode origin,
-            ValueNode lane) {
+    protected VectorStoreElementProxyNode(NodeClass<? extends VectorStoreElementProxyNode> c, OCLKind kind, ValueNode origin, ValueNode lane) {
         super(c, OCLStampFactory.getStampFor(kind));
         this.origin = origin;
         this.laneOrigin = lane;
@@ -71,9 +63,8 @@ public final class VectorStoreElementProxyNode extends FixedWithNextNode impleme
     public boolean tryResolve() {
         if (canResolve()) {
             /*
-             * If we can resolve this node properly, this operation
-	     * should be applied to the vector node and this node should be
-	     * discarded.
+             * If we can resolve this node properly, this operation should be
+             * applied to the vector node and this node should be discarded.
              */
             final VectorValueNode vector = (VectorValueNode) origin;
             vector.setElement(((ConstantNode) laneOrigin).asJavaConstant().asInt(), value);
@@ -85,18 +76,14 @@ public final class VectorStoreElementProxyNode extends FixedWithNextNode impleme
 
     }
 
-    public VectorStoreElementProxyNode(
-            OCLKind kind,
-            ValueNode origin,
-            ValueNode lane,
-            ValueNode value) {
+    public VectorStoreElementProxyNode(OCLKind kind, ValueNode origin, ValueNode lane, ValueNode value) {
         this(TYPE, kind, origin, lane);
         this.value = value;
     }
 
     @Override
     public boolean inferStamp() {
-        return true;//updateStamp(createStamp(origin, kind.getElementKind()));
+        return true;// updateStamp(createStamp(origin, kind.getElementKind()));
     }
 
     public boolean canResolve() {
@@ -112,13 +99,14 @@ public final class VectorStoreElementProxyNode extends FixedWithNextNode impleme
     }
 
     public int getLane() {
-//		System.out.printf("vector store proxy: this=%s, origin=%s\n",this,laneOrigin);
+        // System.out.printf("vector store proxy: this=%s,
+        // origin=%s\n",this,laneOrigin);
         return ((ConstantNode) laneOrigin).asJavaConstant().asInt();
     }
 
     @Override
     public Node canonical(CanonicalizerTool ct) {
-        if(tryResolve()){
+        if (tryResolve()) {
             return null;
         } else {
             return this;

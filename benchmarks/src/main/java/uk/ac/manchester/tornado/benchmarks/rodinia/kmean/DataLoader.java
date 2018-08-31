@@ -1,27 +1,19 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
- *
  * Copyright (c) 2013-2018, APT Group, School of Computer Science,
- * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Authors: James Clarkson
- *
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
  */
 package uk.ac.manchester.tornado.benchmarks.rodinia.kmean;
 
@@ -30,80 +22,79 @@ import java.io.FileReader;
 import java.io.IOException;
 
 public class DataLoader {
-	
-	public static class KmeansData {
-		private final float[]			data;
-		private final int					numPoints;
-		private final int					numFeatures;
-		
-		public KmeansData(float[] data, int numPoints, int numFeatures){
-			this.data = data;
-			this.numPoints = numPoints;
-			this.numFeatures = numFeatures;
-		}
 
-		public float[] getData() {
-			return data;
-		}
+    public static class KmeansData {
+        private final float[] data;
+        private final int numPoints;
+        private final int numFeatures;
 
-		public int getNumPoints() {
-			return numPoints;
-		}
+        public KmeansData(float[] data, int numPoints, int numFeatures) {
+            this.data = data;
+            this.numPoints = numPoints;
+            this.numFeatures = numFeatures;
+        }
 
-		public int getNumFeatures() {
-			return numFeatures;
-		}
-	}
+        public float[] getData() {
+            return data;
+        }
 
-	public static KmeansData loadData(String file) {
-		KmeansData result = null;
-		BufferedReader br = null;
-		String line = "";
-		final String splitBy = " ";
+        public int getNumPoints() {
+            return numPoints;
+        }
 
-		try {
-			int i = 0;
-			br = new BufferedReader(new FileReader(file));
+        public int getNumFeatures() {
+            return numFeatures;
+        }
+    }
 
-			br.mark(64 * 1024 * 1024);
+    public static KmeansData loadData(String file) {
+        KmeansData result = null;
+        BufferedReader br = null;
+        String line = "";
+        final String splitBy = " ";
 
-			int numPoints = 0;
-			while ((line = br.readLine()) != null) {
-				numPoints++;
-			}
+        try {
+            int i = 0;
+            br = new BufferedReader(new FileReader(file));
 
-			int numFeatures = -1;
-			float[] data = null;
-			br.reset();
+            br.mark(64 * 1024 * 1024);
 
-			int index = 0;
-			while ((line = br.readLine()) != null) {
-				final String[] values = line.split(splitBy);
-				if(numFeatures == -1){
-					numFeatures = values.length -1;
-					data = new float[numFeatures * numPoints];
-				}
+            int numPoints = 0;
+            while ((line = br.readLine()) != null) {
+                numPoints++;
+            }
 
-				for (int j = 1; j < values.length; j++,index++)
-					data[index] = Float.valueOf(values[j]);
-			}
-			
-			result = new KmeansData(data, numPoints, numFeatures);
+            int numFeatures = -1;
+            float[] data = null;
+            br.reset();
 
-		} catch (final IOException e) {
-			e.printStackTrace();
-		} finally {
-			if (br != null) {
-				try {
-					br.close();
-				} catch (final IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-		
-		return result;
-	}
-	
-	
+            int index = 0;
+            while ((line = br.readLine()) != null) {
+                final String[] values = line.split(splitBy);
+                if (numFeatures == -1) {
+                    numFeatures = values.length - 1;
+                    data = new float[numFeatures * numPoints];
+                }
+
+                for (int j = 1; j < values.length; j++, index++)
+                    data[index] = Float.valueOf(values[j]);
+            }
+
+            result = new KmeansData(data, numPoints, numFeatures);
+
+        } catch (final IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (final IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return result;
+    }
+
 }

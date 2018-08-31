@@ -59,17 +59,17 @@ public class OCLCodeUtil {
         return getCallingConvention(type, retType, argTypes, codeCache.getTarget(), stackOnly);
     }
 
-    private static CallingConvention getCallingConvention(Type type,
-            JavaType returnType, JavaType[] argTypes, TargetDescription target,
-            boolean stackOnly) {
+    private static CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] argTypes, TargetDescription target, boolean stackOnly) {
 
         int variableIndex = 0;
 
         Variable[] inputParameters = new Variable[argTypes.length];
         for (int i = 0; i < argTypes.length; i++, variableIndex++) {
             inputParameters[i] = new Variable(LIRKind.value(target.arch.getPlatformKind(argTypes[i].getJavaKind())), variableIndex);
-            //Tornado.info("arg[%d] : %s",i,inputParameters[i].getLIRKind().getPlatformKind().toString());
-            //Tornado.info("type[%d]: %s",i,inputParameters[i].getKind().getDeclaringClass().getName());
+            // Tornado.info("arg[%d] :
+            // %s",i,inputParameters[i].getLIRKind().getPlatformKind().toString());
+            // Tornado.info("type[%d]:
+            // %s",i,inputParameters[i].getKind().getDeclaringClass().getName());
         }
 
         JavaKind returnKind = returnType == null ? JavaKind.Void : returnType.getJavaKind();

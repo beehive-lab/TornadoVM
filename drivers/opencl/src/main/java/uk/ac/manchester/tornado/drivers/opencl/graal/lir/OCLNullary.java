@@ -41,8 +41,7 @@ public class OCLNullary {
      */
     protected static class NullaryConsumer extends OCLLIROp {
 
-        @Opcode
-        protected final OCLNullaryOp opcode;
+        @Opcode protected final OCLNullaryOp opcode;
 
         protected NullaryConsumer(OCLNullaryOp opcode, LIRKind lirKind) {
             super(lirKind);
