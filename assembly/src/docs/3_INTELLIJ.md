@@ -1,7 +1,8 @@
 # Loading Tornado into IntelliJ
 
-## Intellij 
+Tested with IntelliJ IDEA 2018.2.2 and IntelliJ IDEA 2018.2.2
 
+## Intellij 
 
 Download and install the latest IntelliJ IDEA Community Edition: [https://www.jetbrains.com/idea/download/](https://www.jetbrains.com/idea/download/)
 
