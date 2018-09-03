@@ -1,6 +1,6 @@
 # Loading Tornado into IntelliJ
 
-Tested with IntelliJ IDEA 2018.2.2 and IntelliJ IDEA 2018.2.2
+**Tested with** IntelliJ IDEA 2018.2.2 and IntelliJ IDEA 2017.3.5
 
 ## Intellij 
 
@@ -36,14 +36,7 @@ You need to manually add and check the following information:
 * **Parameters** : **Command line**: add the following
     * `-Dcmake.root.dir=/home/michalis/opt/cmake-3.10.2-Linux-x86_64/ clean package`
         * In case that you need to reduce the amount of maven warnings add also on the above line the command **--quiet**, which constraints maven verbose to only errors
-* **Runner**:  You need to enter the folloiwing enviroment variables, which are alredy set in the (`tornado/etc/tornado.env`):
-    * PATH
-    * TORNADO_SDK
-    * JVMCI_VERSION
-    * GRAAL_ROOT
-    * GRAAL_VERSION
-    * CMAKE_ROOT
-    * TORNADO_ROOT
+
 * **Runner**: Ensure that in **JRE** tab the selected JRE corresponds to `Use Project JDK` (e.g.1.8.0_131)
 
 Finally, one the top right corner drop-down menu select the adove custome `tornado [package]` configuration.
