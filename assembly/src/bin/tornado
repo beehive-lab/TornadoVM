@@ -92,6 +92,7 @@ case $key in
     ;;
     --printFlags)
     printflags=1
+    shift
     ;;
     --devices)
     printdevices=1
