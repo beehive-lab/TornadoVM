@@ -1,7 +1,8 @@
 # Loading Tornado into IntelliJ
 
-## Intellij 
+**Tested with** IntelliJ IDEA 2018.2.2 and IntelliJ IDEA 2017.3.5
 
+## Intellij 
 
 Download and install the latest IntelliJ IDEA Community Edition: [https://www.jetbrains.com/idea/download/](https://www.jetbrains.com/idea/download/)
 
@@ -35,14 +36,7 @@ You need to manually add and check the following information:
 * **Parameters** : **Command line**: add the following
     * `-Dcmake.root.dir=/home/michalis/opt/cmake-3.10.2-Linux-x86_64/ clean package`
         * In case that you need to reduce the amount of maven warnings add also on the above line the command **--quiet**, which constraints maven verbose to only errors
-* **Runner**:  You need to enter the folloiwing enviroment variables, which are alredy set in the (`tornado/etc/tornado.env`):
-    * PATH
-    * TORNADO_SDK
-    * JVMCI_VERSION
-    * GRAAL_ROOT
-    * GRAAL_VERSION
-    * CMAKE_ROOT
-    * TORNADO_ROOT
+
 * **Runner**: Ensure that in **JRE** tab the selected JRE corresponds to `Use Project JDK` (e.g.1.8.0_131)
 
 Finally, one the top right corner drop-down menu select the adove custome `tornado [package]` configuration.
@@ -64,8 +58,7 @@ $ tornado --printFlags
 Output should be something similar to this:
 ```
 /PATH_TOJ_DK/jdk1.8.0_131/bin/java
--server -XX:-UseJVMCIClassLoader -XX:-UseCompressedOops -Djava.ext.dirs=/home/michalis/Tornado/tornado/bin/sdk/share/java/tornado -Djava.library.path=/home/michalis/Tornado/tornado/bin/sdk/lib -Dlog4j.configurationFile=/home/michalis/Tornado/tornado/bin/sdk/etc/log4j2.xml
-
+-server -XX:-UseJVMCIClassLoader -XX:-UseCompressedOops -Djava.ext.dirs=/home/michalis/Tornado/tornado/bin/sdk/share/java/tornado -Djava.library.path=/home/michalis/Tornado/tornado/bin/sdk/lib -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado -Dtornado.load.device.implementation=uk.ac.manchester.tornado.drivers.opencl.runtime.TornadoDeviceFactory
 
 ```
 You need to copy from `-server` to end.
@@ -80,5 +73,6 @@ Then, add your own paraters similar to the following:
 * **VM Options:** What you copied from `-server` and on
 * **Working Directory:** `/home/tornado`
 * **JRE:** Default (Should point to the 1.8.0_131)
+* **Use classpath of module** Select from drop-down menu e.g `tornado-examples`
 
 Finally, you can select the  new custom configuration by selecting the configuration from the right top drop-down menu. Now, you can run it by pressing the **play button** on the top right corner or **Shift+F10**
