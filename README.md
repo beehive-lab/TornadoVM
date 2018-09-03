@@ -4,7 +4,7 @@ Tornado is a compiler framework and a runtime system for automatically running J
 
 ## How to start? 
 
-See the [Install](https://github.com/beehive-lab/tornado/blob/master/assembly/src/docs/1_INSTALL.md) file for details about how to install tornado and [Examples](https://github.com/beehive-lab/tornado/blob/master/assembly/src/docs/2_EXAMPLES.md) for instruction on how to run Java programs on GPUs and FPGAs. 
+See the [Install](https://github.com/beehive-lab/tornado/blob/master/assembly/src/docs/1_INSTALL.md) file for details about how to install tornado and [Examples](https://github.com/beehive-lab/tornado/blob/master/assembly/src/docs/2_EXAMPLES.md) for instructions about how to run Java programs on GPUs and FPGAs. 
 
 
 ## Publications
