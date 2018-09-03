@@ -46,6 +46,7 @@ function print_usage {
     echo "              --debug               Print debugging information"
     echo "              --version             Print tornado version information"
     echo "              --printFlags          Prints Tornado Java flags and exits"
+    echo "              --devices             Prints Tornado available devices and exits"
     echo ""
     exit 0
 }
@@ -57,6 +58,7 @@ function print_version {
 
 TORNADO_FLAGS="-Djava.ext.dirs=${TORNADO_SDK}/share/java/tornado -Djava.library.path=${TORNADO_SDK}/lib"
 printflags=0
+printdevices=0
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -90,6 +92,9 @@ case $key in
     ;;
     --printFlags)
     printflags=1
+    ;;
+    --devices)
+    printdevices=1
     shift
     ;;
     -h|--help)
@@ -116,6 +121,11 @@ JAVA_FLAGS="-server -XX:-UseJVMCIClassLoader -XX:-UseCompressedOops ${TORNADO_FL
 if [ $printflags -eq 1 ] ; then
 	echo $JAVA_CMD
 	echo $JAVA_FLAGS
+	exit 0
+fi
+
+if [ $printdevices -eq 1 ] ; then
+	tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput	
 	exit 0
 fi
 
