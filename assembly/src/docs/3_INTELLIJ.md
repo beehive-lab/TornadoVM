@@ -58,8 +58,7 @@ $ tornado --printFlags
 Output should be something similar to this:
 ```
 /PATH_TOJ_DK/jdk1.8.0_131/bin/java
--server -XX:-UseJVMCIClassLoader -XX:-UseCompressedOops -Djava.ext.dirs=/home/michalis/Tornado/tornado/bin/sdk/share/java/tornado -Djava.library.path=/home/michalis/Tornado/tornado/bin/sdk/lib -Dlog4j.configurationFile=/home/michalis/Tornado/tornado/bin/sdk/etc/log4j2.xml
-
+-server -XX:-UseJVMCIClassLoader -XX:-UseCompressedOops -Djava.ext.dirs=/home/michalis/Tornado/tornado/bin/sdk/share/java/tornado -Djava.library.path=/home/michalis/Tornado/tornado/bin/sdk/lib -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado -Dtornado.load.device.implementation=uk.ac.manchester.tornado.drivers.opencl.runtime.TornadoDeviceFactory
 
 ```
 You need to copy from `-server` to end.
