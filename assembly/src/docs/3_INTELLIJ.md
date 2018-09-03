@@ -73,6 +73,6 @@ Then, add your own paraters similar to the following:
 * **VM Options:** What you copied from `-server` and on
 * **Working Directory:** `/home/tornado`
 * **JRE:** Default (Should point to the 1.8.0_131)
-* **Use classpath of module** Select from drop-down menu e.g `tornado-examples``
+* **Use classpath of module** Select from drop-down menu e.g `tornado-examples`
 
 Finally, you can select the  new custom configuration by selecting the configuration from the right top drop-down menu. Now, you can run it by pressing the **play button** on the top right corner or **Shift+F10**
