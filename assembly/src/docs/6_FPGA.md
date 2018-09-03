@@ -48,7 +48,7 @@ $ clinfo
 Two additional  parameters are needed for executing the pre-compilied binaries onto FPGAs:
 
 *  `tornado.opencl.codecache.loadbin=True`  which enables loading the pre-compilied binaries to TornadoVM for execution 
-* `tornado.precompiled.binary=<path/to/bin>,device`  which points to the directory containing the pre-compilied binary and the device (e.g s0.t0.device=0:1) 
+* `tornado.precompiled.binary=<path/to/bin>,device`  which points to the directory containing the pre-compilied binary and the device (e.g s0.t0.device=0:1). Otherwise, check FPGA device via `tornado --devices`. 
 
 In order to run the Saxpy example:
 
