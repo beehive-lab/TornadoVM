@@ -100,7 +100,7 @@ The `--debug` option will print in which device the kernel was executed (e.g. GP
 Use the following option to identify id for Tornado devices:
 
 ```bas
-tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput
+tornado --devices
 ```
 Tornado device output corresponds to:
 ```bash
