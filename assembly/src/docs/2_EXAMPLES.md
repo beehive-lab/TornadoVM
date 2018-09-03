@@ -1,7 +1,6 @@
 # Examples in Tornado
 
 In the Tornado SDK you can find a number of examples in the `examples` directory. 
-This is a copy of the unittesting framework of Tornado for data types, arrays, and other utilities. 
 
 This document describes how to code and run a full example in Tornado. 
 
@@ -10,16 +9,16 @@ This document describes how to code and run a full example in Tornado.
 
 
 Below you can find a snapshot of the TestArrays example code in Tornado (full code listing can be found in the `examples` directory). 
-In this example, we will run the `vectorAddDouble` method on a heterogeneous device.
-Tornado will dynamically compile and run the Java code (of the `vectorAddDouble` method) to an OpenCL device.
+In this example, we will run the `vectorAdd` method on a heterogeneous device.
+Tornado will dynamically compile and run the Java code (of the `vectorAdd` method) to an OpenCL device.
 During the execution process, the code will be compiled from Java bytecode to OpenCL C and afterwards it will run on the OpenCL-compatible device, transparently.
 
-As you can see in the example below, the `accelerated vectorAddDouble` method performs a double vector addition.
+As you can see in the example below, the `accelerated vectorAdd` method performs a double vector addition.
 Furthermore, it does not differ at all from a vanilla sequential Java implementation of the method.
 The only difference is the addition of the `@Parallel` annotation that instructs Tornado that the loop 
 has to be computed in parallel (eg. using the global identifier in OpenCL).
 
-The `testVectorAdditionDouble` method prepares the input data and creates a Tornado `task`.
+The `testVectorAddition` method prepares the input data and creates a Tornado `task`.
 Tornado `tasks` can not execute directly; instead they must be part of a `TaskSchedule`.
 This is a design choice allowing a number of optimizations, such as task pipelining and parallelism, to be performed.
 Furthermore, `TaskSchedules` define which parameters are copied in and out from the device.
@@ -101,7 +100,7 @@ The `--debug` option will print in which device the kernel was executed (e.g. GP
 Use the following option to identify id for Tornado devices:
 
 ```bas
-tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput
+tornado --devices
 ```
 Tornado device output corresponds to:
 ```bash
@@ -162,7 +161,6 @@ These are intrinsics to the compiler.
 
 Tornado exposes `Float2`, `Float3`, `Float4`, `Float6` and `Float8` vector types.
 Vector operations are also exposed for int and double (e.g `Double8`, `Int4`).
-More examples using vector types are provided in the `examples` directory.
 
 
 The following code shows a snippet of the generated OpenCL C code using the vector types. 

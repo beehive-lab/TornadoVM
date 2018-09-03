@@ -4,8 +4,7 @@ This list of changes have to taken into account in future integrations with the 
 
 1) Graal addition of the TernaryNodes
 
-Link: https://github.com/beehive-lab/graal-core/commit/528acb9abd681cd227edc7e4faac2450071d8a7a 
-
+Link: https://github.com/beehive-lab/graal/commit/c43555ba04b829ecad2fdc6e5feb8a53684f8934
 
 2) Adition of the OCLWriteNode
 

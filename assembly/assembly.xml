@@ -18,7 +18,7 @@
       <fileMode>0444</fileMode>
     </fileSet>
     <fileSet>
-      <directory>src</directory>
+      <directory>../</directory>
       <!-- License file in root directory -->
       <includes>
         <include>LICENSE_APACHE2</include>
@@ -61,12 +61,6 @@
         <include>*.pdf</include>
         <include>*.md</include>
       </includes>
-      <fileMode>0444</fileMode>
-    </fileSet>
-    <fileSet>
-      <directory>../unittests</directory>
-      <!-- Tornado unittests provided as examples -->
-      <outputDirectory>examples</outputDirectory>
       <fileMode>0444</fileMode>
     </fileSet>
     <fileSet>
