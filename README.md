@@ -16,7 +16,7 @@ See the [INSTALL](https://github.com/beehive-lab/tornado/blob/master/INSTALL.md)
 
 ### 2017 
 
-* C. Kotselidis, J. Clarkson, A. Rodchenko, A. Nisbet, J. Mawer, and M. Luján. **Heterogeneous Managed Runtime Systems: A Computer Vision Case Study.** In Proceedings of the 13th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments, VEE ’17, [link](http://doi.acm.org/10.1145/3050748.)
+* C. Kotselidis, J. Clarkson, A. Rodchenko, A. Nisbet, J. Mawer, and M. Luján. **Heterogeneous Managed Runtime Systems: A Computer Vision Case Study.** In Proceedings of the 13th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments, VEE ’17, [link](https://dl.acm.org/citation.cfm?doid=3050748.3050764)
 * James Clarkson, Christos Kotselidis, Gavin Brown, and Mikel Luján. **Boosting Java Performance Using GPGPUs.** In Architecture of Computing Systems ARCS 2017. [link](https://arxiv.org/abs/1508.06791)
 
 ### Citation
