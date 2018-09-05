@@ -14,6 +14,11 @@ See the [INSTALL](https://github.com/beehive-lab/tornado/blob/master/INSTALL.md)
 * James Clarkson, Juan Fumero, Michalis Papadimitriou, Foivos S. Zakkak, Maria Xekalaki, Christos Kotselidis, Mikel Lujan (The University of Manchester). **Exploiting High-Performance Heterogeneous Hardware for Java Programs using Graal**. *To appear in ManLang 2018.* [preprint](https://www.researchgate.net/publication/327097904_Exploiting_High-Performance_Heterogeneous_Hardware_for_Java_Programs_using_Graal)
 * James Clarkson, Juan Fumero, Michalis Papadimitriou, Maria Xekalaki, Christos Kotselidis. **Towards Practical Heterogeneous Virtual Machines**. *MoreVMs 2018.* [link](https://dl.acm.org/citation.cfm?id=3191730)
 
+### 2017 
+
+* C. Kotselidis, J. Clarkson, A. Rodchenko, A. Nisbet, J. Mawer, and M. Luján. **Heterogeneous Managed Runtime Systems: A Computer Vision Case Study.** In Proceedings of the 13th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments, VEE ’17, [link](http://doi.acm.org/10.1145/3050748.)
+* James Clarkson, Christos Kotselidis, Gavin Brown, and Mikel Luján. **Boosting Java Performance Using GPGPUs.** In Architecture of Computing Systems ARCS 2017. [link](https://arxiv.org/abs/1508.06791)
+
 ### Citation
 
 ```bibtex
