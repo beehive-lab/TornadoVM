@@ -54,6 +54,12 @@ We welcome collaborations! Please see how to contribute in the [CONTRIBUTIONS](h
 For academic collaborations please contact [Christos Kotselidis](https://www.kotselidis.net).
 
 
+## Users Mailing list
+
+A mailing list is also available to discuss Tornado related issues:
+
+tornado-support@googlegroups.com
+
 ## Contributors 
 
 This work was originated by James Clarkson under the joint supervision of [Mikel Luján](https://www.linkedin.com/in/mikellujan/) and [Christos Kotselidis](https://www.kotselidis.net). 
