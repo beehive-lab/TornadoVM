@@ -313,8 +313,6 @@ public class OCLCodeCache {
             String[] cmd,cmdRename;
             File f;
 
-
-
             if (OpenCL.FPGA_EMULATION) {
                 cmd = new String[] { "aoc", inputFile, "-march=emulator", "-o", outputFile };
             } else {
@@ -337,6 +335,7 @@ public class OCLCodeCache {
 
             }
             return installEntryPointForBinaryForFPGAs(resolveFPGADir(), LOOKUP_BUFFER_KERNEL_NAME);
+
         } else {
             // Should not reach here
             return null;
