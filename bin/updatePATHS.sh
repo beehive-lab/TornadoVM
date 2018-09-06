@@ -10,7 +10,7 @@ echo "Updating PATH and TORNADO_SDK to $file"
 cd bin/
 
 echo -e "Binaries: $PWD "
-echo -e "Version : $(git rev-parse --short HEAD)"
+echo -e "Commit  : $(git rev-parse --short HEAD)"
 
 if [ -L bin ]
 then
