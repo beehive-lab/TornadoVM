@@ -56,13 +56,13 @@ We welcome collaborations! Please see how to contribute in the [CONTRIBUTIONS](h
 
 ## Authors 
 
-This work was initially started by James Clarkson during his PhD. 
+This work was originated during the PhD thesis of James Clarkson under the joint supervision of [Mikel Luján](http://apt.cs.manchester.ac.uk/people/mlujan/) and [Christos Kotselidis](https://www.kotselidis.net). 
 Currently, this project is maintained and updated by the following authors:
 
-* Juan Fumero
-* Michail Papadimitriou
-* Maria Xekalaki 
-* Christos Kotselidis
+* [Juan Fumero](https://jjfumero.github.io/)
+* [Michail Papadimitriou](https://mikepapadim.github.io)
+* [Maria Xekalaki](https://github.com/mairooni)
+* [Christos Kotselidis](https://www.kotselidis.net)
 
 ## License
 
