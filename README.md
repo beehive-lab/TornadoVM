@@ -12,8 +12,8 @@ We also maintain a live Tornado whitepaper document which you can download [here
 
 ### 2018 
 
-* James Clarkson, Juan Fumero, Michalis Papadimitriou, Foivos S. Zakkak, Maria Xekalaki, Christos Kotselidis, Mikel Lujan (The University of Manchester). **Exploiting High-Performance Heterogeneous Hardware for Java Programs using Graal**. *To appear in ManLang 2018.* [preprint](https://www.researchgate.net/publication/327097904_Exploiting_High-Performance_Heterogeneous_Hardware_for_Java_Programs_using_Graal)
-* James Clarkson, Juan Fumero, Michalis Papadimitriou, Maria Xekalaki, Christos Kotselidis. **Towards Practical Heterogeneous Virtual Machines**. *MoreVMs 2018.* [link](https://dl.acm.org/citation.cfm?id=3191730)
+* James Clarkson, Juan Fumero, Michalis Papadimitriou, Foivos S. Zakkak, Maria Xekalaki, Christos Kotselidis, Mikel Lujan (The University of Manchester). **Exploiting High-Performance Heterogeneous Hardware for Java Programs using Graal**. *Proceedings of the 15th International Conference on Managed Languages & Runtime.* [preprint](https://www.researchgate.net/publication/327097904_Exploiting_High-Performance_Heterogeneous_Hardware_for_Java_Programs_using_Graal)
+* James Clarkson, Juan Fumero, Michalis Papadimitriou, Maria Xekalaki, Christos Kotselidis. **Towards Practical Heterogeneous Virtual Machines**. *Workshop on Modern Language Runtimes, Ecosystems, and VMs, 2018* [link](https://dl.acm.org/citation.cfm?id=3191730)
 
 ### 2017 
 
