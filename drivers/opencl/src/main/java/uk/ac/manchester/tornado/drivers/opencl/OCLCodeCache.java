@@ -276,9 +276,20 @@ public class OCLCodeCache {
             // cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115", "-o",
             // outputFile };
 
-            // boolean check = false;
+            boolean check;
 
-            boolean check = new File("/test", "lookupBufferAddress").exists();
+            // boolean check = new File("/test", "lookupBufferAddress").exists();
+
+            File f;
+            f = new File("./test/lookupBufferAddress");
+
+            if (f.exists()) {
+                System.out.println("success");
+                check = true;
+            } else {
+                check = false;
+                System.out.println("fail");
+            }
 
             System.out.println(Arrays.toString(cmd));
 
