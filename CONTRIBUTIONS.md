@@ -1,6 +1,7 @@
 # How to contribute
 
-We are really happy you want to contribute. 
+We welcome contributions!
+Please follow the instructions below for your PRs!
 
 ## How to submit your changes
 
@@ -11,12 +12,13 @@ We are really happy you want to contribute.
 5. **Push** your work to your repository
 6. Create a **Pull Request**. 
 
-Please, be sure that your changes are merged with the latest changes in the `master` branch.
+Please, ensure that your changes are merged with the latest changes in the `master` branch.
 
-## Conding conventions
+## Coding conventions
 
-We use the auto-formatter for Eclipse and IntelIJ. The auto-formatter is set automatically by running the following script.
-Please, be sure that your code follows the formatter rules before the pull request.
+We use the auto-formatter of Eclipse and IntelIJ. 
+Please,  ensure that your code follows the formatter rules before the pull request.
+The auto-formatter is set automatically by running the following script:
 
 ```bash
 python scripts/eclipseSetup.py
