@@ -265,57 +265,68 @@ public class OCLCodeCache {
 
             String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
 
-            String tempSuffix = ",s0.t0.device=0:2";
+            // String tempSuffix = ",s0.t0.device=0:2";
 
-            String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + tempSuffix;
+            String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
             String[] cmd;
+
+            // cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115", "-o",
 
             cmd = new String[] { "aoc", inputFile, "-v", "-report", "-march=emulator", "-o", outputFile };
             // cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115", "-o",
             // outputFile };
 
+            // boolean check = false;
+
+            boolean check = new File("/test", "lookupBufferAddress").exists();
+
             System.out.println(Arrays.toString(cmd));
 
             System.out.println("Input file and location: " + inputFile + "\n");
             System.out.println("Output file and location: " + outputFile + "\n");
+            System.out.println("Search for file: lookupbuffer " + check + "\n");
 
             String s = null;
 
-            try {
+            Path path = Paths.get("/test");
 
-                Process p = Runtime.getRuntime().exec(cmd);
+            if (check) {
+                return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
 
-                p.waitFor();
+            } else {
+                try {
 
-                BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                    Process p = Runtime.getRuntime().exec(cmd);
 
-                BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+                    p.waitFor();
 
-                // read the output from the command
-                System.out.println("Here is the standard output of the command:\n");
-                while ((s = stdInput.readLine()) != null) {
-                    System.out.println(s);
+                    BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+                    BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+
+                    // read the output from the command
+                    System.out.println("Here is the standard output of the command:\n");
+                    while ((s = stdInput.readLine()) != null) {
+                        System.out.println(s);
+                    }
+
+                    // read any errors from the attempted command
+                    System.out.println("Here is the standard error of the command (if any):\n");
+                    while ((s = stdError.readLine()) != null) {
+                        System.out.println(s);
+                    }
+
+                } catch (IOException e) {
+                    error("Unable to compile with Altera tools", e);
+                } catch (Throwable t) {
+                    t.printStackTrace();
                 }
-
-                // read any errors from the attempted command
-                System.out.println("Here is the standard error of the command (if any):\n");
-                while ((s = stdError.readLine()) != null) {
-                    System.out.println(s);
-                }
-
-            } catch (IOException e) {
-                error("Unable to compile with Altera tools", e);
-            } catch (Throwable t) {
-                t.printStackTrace();
             }
 
-            // final OCLInstalledCode code = new OCLInstalledCode(entryPoint, source,
-            // deviceContext, program, kernel, true);
             final OCLProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
             // final OCLProgram program1 = deviceContext.installEntryPointForBinaryForFPGAs
 
             return installEntryPointForBinaryForFPGAs(resolveFPGADir(), LOOKUP_BUFFER_KERNEL_NAME);
-            // System.exit(0);
 
         } else {
 
