@@ -2,28 +2,28 @@
 
 In the Tornado SDK you can find a number of examples in the `examples` directory. 
 
-This document describes how to code and run a full example in Tornado. 
+This document describes how to program and run a full example in Tornado. 
 
 
 ## 1. Run a simple example within Tornado: Vector Addition
 
 
-Below you can find a snapshot of the TestArrays example code in Tornado (full code listing can be found in the `examples` directory). 
+Below you can find a snapshot of the `TestArrays` example code in Tornado (full code listing can be found in the `examples` directory). 
 In this example, we will run the `vectorAdd` method on a heterogeneous device.
 Tornado will dynamically compile and run the Java code (of the `vectorAdd` method) to an OpenCL device.
 During the execution process, the code will be compiled from Java bytecode to OpenCL C and afterwards it will run on the OpenCL-compatible device, transparently.
 
-As you can see in the example below, the `accelerated vectorAdd` method performs a double vector addition.
+As you can see in the example below, the accelerated `vectorAdd` method performs a double vector addition.
 Furthermore, it does not differ at all from a vanilla sequential Java implementation of the method.
 The only difference is the addition of the `@Parallel` annotation that instructs Tornado that the loop 
-has to be computed in parallel (eg. using the global identifier in OpenCL).
+has to be computed in parallel (i.e. using the global identifier in OpenCL).
 
 The `testVectorAddition` method prepares the input data and creates a Tornado `task`.
 Tornado `tasks` can not execute directly; instead they must be part of a `TaskSchedule`.
 This is a design choice allowing a number of optimizations, such as task pipelining and parallelism, to be performed.
-Furthermore, `TaskSchedules` define which parameters are copied in and out from the device.
+Furthermore, `TaskSchedules` define which parameters are copied in and out from a device.
 
-Once the method `execute` is invoked, Tornado builds the data dependency graph, the Tornado bytecode, compiles the referenced Java method to OpenCL C, and executes the generated application on the available OpenCL device.
+Once the method `execute` is invoked, Tornado builds the data dependency graph, compiles the referenced Java method to OpenCL C, and executes the generated application on the available OpenCL device.
 
 
 
@@ -79,7 +79,7 @@ public class VectorAddFloat {
 
 ## 2. Compiling and Running with Tornado SDK
 
-The example above is already provided in the `examples` directory.
+The example above is provided in the `examples` directory.
 To compile with Tornado SDK, there is a utility command that sets all the `CLASSPATHs` to use Tornado.
 Alternatively, you can use the standard JDK 1.8 and define all jars in `share/java/tornado` into your `CLASSPATHs`.
 
@@ -95,11 +95,11 @@ To run, just execute `tornado`. If you want to see the auto-generated OpenCL C c
 $ tornado --printKernel --debug examples/TestTornado
 ```
 
-The `--debug` option will print in which device the kernel was executed (e.g. GPU or CPU).
+The `--debug` option will print the device on which the kernel was executed (e.g. GPU or CPU).
 
-Use the following option to identify id for Tornado devices:
+Use the following option to print the ids of the Tornado devices:
 
-```bas
+```bash
 tornado --devices
 ```
 Tornado device output corresponds to:
@@ -119,20 +119,20 @@ Tornado device=0:2
     Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
 ```
 
-To run on a specific device user the following option:
+To run on a specific device, use the following option:
 
 ```bash
  -D<s>.<t>.device=<driverNumber>:<deviceNumber>
 ```
 
 
-In order to run your code on a device of choice you can issue, for example running on device [1] will look like this:
+In order to run your code on a device of your choice you can issue:
 
 ```bash
 $ tornado -Ds0.device=0:1 --debug examples/TestTornado
 ```
 
-This will run TaskSchedule (s0) on the device 1 (Intel Graphics 630).
+This will run TaskSchedule (s0) on the device 1 (Intel HD Graphics).
 Similarly, you can execute the code on the rest of the devices.
 
 
@@ -141,7 +141,7 @@ Similarly, you can execute the code on the rest of the devices.
 Tornado API exposes a set of data structures to developers to use specific vector operations such as addition, multiplication, etc. 
 The simple algorithm of vector addition can be rewritten to use Tornado vector types. The Tornado JIT compiler will generate OpenCL vector types that match the Tornado vector types.
 
-The following snippet shows the vector addition example using Tornado vector types.
+The following snippet shows the vector addition example using Tornado's vector types.
 
 
 ```java
@@ -153,19 +153,19 @@ public static void addVectorFloat4(VectorFloat4 a, VectorFloat4 b,
 }
 ```
 
-The type `VectorFloat4` is collection, in Tornado, that contains a list of `Float4` element types. 
+The type `VectorFloat4` is a collection in Tornado, that contains a list of `Float4` element types. 
 When Tornado compiles this code to OpenCL, it will use the OpenCL type `float4`.
 Note that `Float4` provides a static method called `add`. 
 These are intrinsics to the compiler. 
 
 
 Tornado exposes `Float2`, `Float3`, `Float4`, `Float6` and `Float8` vector types.
-Vector operations are also exposed for int and double (e.g `Double8`, `Int4`).
+Vector operations are also exposed for `int` and `double` types (e.g `Double8`, `Int4`).
 
 
 The following code shows a snippet of the generated OpenCL C code using the vector types. 
 First, it loads the data from global memory to local memory for the two input arrays. 
-Then it performs the addition and finally it stores the result in the new position in global memory.
+Then, it performs the addition and finally stores the result in the new position in global memory.
 
 ```c
 v4f_18 = vload4(0, (__global float *) ul_17);  // <- float4 load
@@ -232,11 +232,11 @@ private static void mandelbrotTornado(int size, short[] output) {
 ## 5. Parallel Breadth-First Search (BFS) within Tornado
 
 The following code shows the core method for the parallel BFS using Tornado. 
-Note that the only two annotations needed are in the loops to indicate 2D kernel on the GPU. 
+Note that the only two annotations needed are in the loops to indicate a 2D kernel on the GPU. 
 
 This algorithm receives an input adjacency matrix and an array with the current depth (depth per level in a graph)
 and updates the depth of the current node. 
-This is also an iterative algorithm that will keep computing till the variable `h_true` does not change. 
+This is also an iterative algorithm that will keep computing until the variable `h_true` does not change. 
 
 
 ```java
