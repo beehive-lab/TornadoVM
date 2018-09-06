@@ -9,9 +9,8 @@
   * Python 2.7 (>= 2.7.5)
 
 ### Tested OS
-Tornado has been tested on:
+Tornado has been succefully tested on the following platforms:
 
-  * OSx 10.13.2 (High Sierra)
   * CentOS 7.3, 7.4 and 7.5
   * Fedora 21
   * Ubuntu 16.4 and 18.4 
@@ -19,31 +18,19 @@ Tornado has been tested on:
 
 ## Installation
 
-### 1. Compile Java with JVMCI-8
+### 1. Compile JDK 1.8 with JVMCI-8 support
 
 ```bash
- $ git clone -b tornado https://github.com/beehive-lab/mx 
+ $ git clone -b git@github.com:beehive-lab/mx.git 
  $ export PATH=`pwd`/mx:$PATH 
- $ git clone -b tornado https://github.com/beehive-lab/graal-jvmci-8
+ $ git clone -b tornado git@github.com:beehive-lab/graal-jvmci-8.git
  $ cd graal-jvmci-8
  $ mx build  
 ```
 
 This will generate a new Java binary into the `jdk1.8.0_<your_version>/product`, e.g., `jdk1.8.0_181/product`.
 
-### 1.2 Building Graal (optional) 
 
-The Tornado maven installer will download `graal.jar` and `truffle-api.jar` dependencies automatically. 
-These two jar files include a patch to execute Tornado. If you want to build Graal yourself, you can build it 
-
-```bash
- $ git clone -b tornado https://github.com/beehive-lab/graal 
- $ export PATH=`pwd`/mx:$PATH 
- $ export JAVA_HOME=<path/to/JDK-JVMCI>
- $ mx build  
-```
-
-Then you will need to copy `graal.jar` and `truffle-api.jar` into the Tornado project.
 
 
 ### 2. Download Tornado
@@ -54,13 +41,14 @@ Then you will need to copy `graal.jar` and `truffle-api.jar` into the Tornado pr
  $ vim etc/tornado.env
 ```
 
-Copy and paste the following - but update paths into the etc/tornado.env file:
+
+Create the `etc/tornado.env` file and add the following code in it **(after updating the paths to your correct ones)**:
 
 ```bash
 #!/bin/bash
 export JAVA_HOME=<path to jvmci 8 jdk with JVMCI>
-export PATH=$PWD/bin/bin:$PATH    ## We will create this directory during Tornado compilation
-export TORNADO_SDK=$PWD/bin/sdk   ## We will create this directory during Tornado compilation
+export PATH=$PWD/bin/bin:$PATH    ## This directory will be automatically generated during Tornado compilation
+export TORNADO_SDK=$PWD/bin/sdk   ## This directory will be automatically generated during Tornado compilation
 
 ## If CMAKE is needed (See step 4)
 export CMAKE_ROOT=<path/to/cmake/cmake-3.10.2>
@@ -73,10 +61,9 @@ $ . etc/tornado.env
 ```
 
 
-### 3. Setting default maven configuration
+### 3. Setting the default maven configuration
 
-Create (or update) the file in `~/.m2/settings.xml` with the following content. Modify the `jvmci.root` with your path to JDK 1.8.0 that was compiled
-in step 1. 
+Create (or update) the file in `~/.m2/settings.xml` with the following content. Modify the `jvmci.root` with your path to the JDK 1.8.0 you built in Step 1. 
 
 ```bash
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
@@ -117,13 +104,13 @@ in step 1.
 $ cmake -version
 ```
 
-If the version of cmake is > 3.6 then skip the rest of this step and to to step 5.
+If the version of cmake is > 3.6 then skip the rest of this step and go to Step 5.
 Otherwise try in install cmake.
 
 For simplicity it might be easier to install cmake in your home
 directory.
   * Redhat Enterprise Linux / CentOS use cmake v2.8 
-  * We need a newer version so that OpenCL is configured properly.
+  * We require a newer version so that OpenCL is configured properly.
 
 ```bash
 $ cd ~/Downloads
@@ -158,9 +145,9 @@ and done!!
 $ tornado uk.ac.manchester.tornado.examples.HelloWorld
 ```
 
-Use the following option to identify id for Tornado devices: 
+Use the following command to identify the ids of the Tornado-compatible heterogeneous devices: 
 
-```bas
+```bash
 tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput
 ```
 Tornado device output corresponds to:
@@ -180,19 +167,21 @@ Tornado device=0:2
   Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
 ```
 
-To run on a specific device user the following option:
+To run on a specific device use the following option:
 
 ```bash
  -D<s>.<t>.device=<driverNumber>:<deviceNumber>
 ```
 
-Where s is the schedule task name and t is the task name.
+Where `s` is the schedule task name and `t` is the task name.
 
 For example running on device [1] will look like this:
 
 ```bash
 $ tornado -Ds0.t0.device=0:1 uk.ac.manchester.tornado.examples.HelloWorld
 ```
+
+The command above will run the HelloWorld example on the integrated GPU (Intel HD Graphics).
 
 ## Running Benchmarks #
 
@@ -203,14 +192,14 @@ $ tornado uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sadd
 
 ## Running Unittests
 
-To run all unittest in Tornado:
+To run all unittests in Tornado:
 
 ```bash
 make tests 
 
 ```
 
-To run a separated unittest class:
+To run an individual unittest:
 
 ```bash
 $  tornado-test.py uk.ac.manchester.tornado.unittests.TestHello
@@ -233,7 +222,7 @@ $ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello#testHel
 
 ### Using Eclipse and Netbeans
 
-The code formatter in Eclipse is automatic after generating the setting files.
+The code formatter in Eclipse is automatically applied after generating the setting files.
 
 ```bash
 $ mvn eclipse:eclipse
@@ -250,22 +239,8 @@ Install plugins:
 
 Then :
  1. Open File > Settings > Eclipse Code Formatter
- 2. Check the Use the Eclipse code formatter radio button
- 2. Set Eclipse Java Formatter config file to the XML file stored in /scripts/templates/eclise-settings/Tornado.xml
- 3. Set Java formatter profile to Tornado
+ 2. Check the `Use the Eclipse code` formatter radio button
+ 2. Set the Eclipse Java Formatter config file to the XML file stored in /scripts/templates/eclise-settings/Tornado.xml
+ 3. Set the Java formatter profile in Tornado
 
-
-## License
-
-Each Tornado module is licensed as follows:
-
-* Tornado-Runtime : GNU-GPLv2 + CLASSPATH Exception
-* Tornado-Assembly: GNU-GPLv2 + CLASSPATH Exception
-* Tornado-Drivers : GNU-GPLv2 + CLASSPATH Exception 
-* Torando-API     : GNU-GPLv2 + CLASSPATH Exception
-* Tornado-scripts : GNU-GPLv2
-* Tornado-Unittests : Apache 2
-* Tornado-Benchmarks: Apache 2
-* Tornado-Examples:   Apache 2
-* Tornado-Matrices:   Apache 2
 
