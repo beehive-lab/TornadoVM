@@ -21,9 +21,9 @@ Tornado has been succefully tested on the following platforms:
 ### 1. Compile JDK 1.8 with JVMCI-8 support
 
 ```bash
- $ git clone -b tornado https://github.com/beehive-lab/mx 
+ $ git clone -b git@github.com:beehive-lab/mx.git 
  $ export PATH=`pwd`/mx:$PATH 
- $ git clone -b tornado https://github.com/beehive-lab/graal-jvmci-8
+ $ git clone -b tornado git@github.com:beehive-lab/graal-jvmci-8.git
  $ cd graal-jvmci-8
  $ mx build  
 ```
