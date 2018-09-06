@@ -4,7 +4,7 @@ Tornado is a practical heterogeneous programming framework for automatically acc
 
 ## How to start? 
 
-The [INSTALL](https://github.com/beehive-lab/tornado/blob/master/INSTALL.md) page contains instructions on how to install Tornado while the [Examples](https://github.com/beehive-lab/tornado/blob/master/assembly/src/docs/2_EXAMPLES.md) page includes  instructions and examples regarding running Java programs on GPUs. 
+The [INSTALL](https://github.com/beehive-lab/tornado/blob/master/INSTALL.md) page contains instructions on how to install Tornado while the [Examples](https://github.com/beehive-lab/tornado/blob/master/assembly/src/docs/2_EXAMPLES.md) page includes   examples regarding running Java programs on GPUs. 
 
 
 ## Publications
@@ -47,7 +47,7 @@ Please use the following citation if you use Tornado in your work.
 
 ## Acknowledgments
 
-This work is partially funded by the EU Horizon 2020 E2Data 780245 grant.
+This work is partially supported by the EPSRC grants [PAMELA EP/K008730/1](http://apt.cs.manchester.ac.uk/projects/PAMELA/) and [AnyScale Apps EP/L000725/1](http://anyscale.org), and the [EU Horizon 2020 E2Data 780245](https://e2data.eu).
 
 ## Collaborations
 
