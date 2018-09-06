@@ -9,9 +9,8 @@
   * Python 2.7 (>= 2.7.5)
 
 ### Tested OS
-Tornado has been tested on:
+Tornado has been tested in Linux for the following distros:
 
-  * OSx 10.13.2 (High Sierra)
   * CentOS 7.3, 7.4 and 7.5
   * Fedora 21
   * Ubuntu 16.4 and 18.4 
