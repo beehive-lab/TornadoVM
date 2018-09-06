@@ -1,10 +1,10 @@
 # Tornado
 
-Tornado is a compiler framework and a runtime system for automatically running Java programs on heterogeneous hardware. 
+Tornado is a practical heterogeneous programming framework for automatically accelerating Java programs on heterogeneous (OpenCL-compatible)  hardware. 
 
 ## How to start? 
 
-See the [INSTALL](https://github.com/beehive-lab/tornado/blob/master/INSTALL.md) file for details about how to install tornado and [Examples](https://github.com/beehive-lab/tornado/blob/master/assembly/src/docs/2_EXAMPLES.md) for instructions about how to run Java programs on GPUs. 
+The [INSTALL](https://github.com/beehive-lab/tornado/blob/master/INSTALL.md) page contains instructions on how to install Tornado while the [Examples](https://github.com/beehive-lab/tornado/blob/master/assembly/src/docs/2_EXAMPLES.md) page includes  instructions and examples regarding running Java programs on GPUs. 
 
 
 ## Publications
@@ -20,6 +20,8 @@ See the [INSTALL](https://github.com/beehive-lab/tornado/blob/master/INSTALL.md)
 * James Clarkson, Christos Kotselidis, Gavin Brown, and Mikel Luján. **Boosting Java Performance Using GPGPUs.** In Architecture of Computing Systems ARCS 2017. [link](https://arxiv.org/abs/1508.06791)
 
 ### Citation
+
+Please use the following citation if you use Tornado in your work.
 
 ```bibtex
 @inproceedings{Clarkson:2018:EHH:3237009.3237016,
