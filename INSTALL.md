@@ -36,7 +36,7 @@ This will generate a new Java binary into the `jdk1.8.0_<your_version>/product`,
 ### 2. Download Tornado
 
 ```bash
- $ git clone https://github.com/beehive-lab/tornado.git tornado
+ $ git clone git@github.com:beehive-lab/Tornado.git tornado
  $ cd tornado
  $ vim etc/tornado.env
 ```
