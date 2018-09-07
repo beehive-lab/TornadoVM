@@ -2,6 +2,10 @@
 
 Tornado is a practical heterogeneous programming framework for automatically accelerating Java programs on heterogeneous (OpenCL-compatible)  hardware. 
 
+### Releases
+  * Tornado 0.1.0 - 07/09/2018 : See [CHANGELOG](CHANGELOG.md)
+
+
 ## How to start? 
 
 The [INSTALL](INSTALL.md) page contains instructions on how to install Tornado while the [Examples](assembly/src/docs/2_EXAMPLES.md) page includes   examples regarding running Java programs on GPUs. 
