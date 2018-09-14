@@ -78,8 +78,7 @@ $ . etc/tornado.env
 
 ### 3. Setting default maven configuration
 
-Create (or update) the file in `~/.m2/settings.xml` with the following content. Modify the `jvmci.root` with your path to JDK 1.8.0 that was compiled
-in step 1. 
+Create (or update) the file in `~/.m2/settings.xml` with the following content. Modify the `jvmci.root` with your path to JDK 1.8.0 that you built in step 1 and the `jvmci.version` with the corresponding version. 
 
 ```bash
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
@@ -103,6 +102,7 @@ in step 1.
 
 			 <!-- Your PATH TO JDK1.8-JVMCI-->
 			 <jvmci.root>/home/user/jdk1.8.0_181/product</jvmci.root>
+			 <!-- Your JDK1.8-JVMCI version-->
 		 	 <jvmci.version>1.8.0_181</jvmci.version>
 
 		 </properties>
