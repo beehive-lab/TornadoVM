@@ -37,7 +37,9 @@ The Tornado maven installer will download `graal.jar` and `truffle-api.jar` depe
 These two jar files include a patch to execute Tornado. If you want to build Graal yourself, you can build it 
 
 ```bash
+ $ cd ..
  $ git clone -b tornado https://github.com/beehive-lab/graal 
+ $ cd graal
  $ export PATH=`pwd`/mx:$PATH 
  $ export JAVA_HOME=<path/to/JDK-JVMCI>
  $ mx build  
@@ -49,6 +51,7 @@ Then you will need to copy `graal.jar` and `truffle-api.jar` into the Tornado pr
 ### 2. Download Tornado
 
 ```bash
+ $ cd ..
  $ git clone https://github.com/beehive-lab/tornado.git tornado
  $ cd tornado
  $ vim etc/tornado.env
