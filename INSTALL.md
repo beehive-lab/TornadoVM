@@ -13,7 +13,7 @@ Tornado has been succefully tested on the following platforms:
 
   * CentOS 7.3, 7.4 and 7.5
   * Fedora 21
-  * Ubuntu 16.4 and 18.4 
+  * Ubuntu 16.04 and 18.04 
 
 
 ## Installation
@@ -21,9 +21,9 @@ Tornado has been succefully tested on the following platforms:
 ### 1. Compile JDK 1.8 with JVMCI-8 support
 
 ```bash
- $ git clone -b git@github.com:beehive-lab/mx.git 
+ $ git clone -b tornado https://github.com/beehive-lab/mx 
  $ export PATH=`pwd`/mx:$PATH 
- $ git clone -b tornado git@github.com:beehive-lab/graal-jvmci-8.git
+ $ git clone -b tornado https://github.com/beehive-lab/graal-jvmci-8
  $ cd graal-jvmci-8
  $ mx build  
 ```
@@ -36,7 +36,8 @@ This will generate a new Java binary into the `jdk1.8.0_<your_version>/product`,
 ### 2. Download Tornado
 
 ```bash
- $ git clone git@github.com:beehive-lab/Tornado.git tornado
+ $ cd ..
+ $ git clone https://github.com/beehive-lab/Tornado tornado
  $ cd tornado
  $ vim etc/tornado.env
 ```
@@ -50,8 +51,7 @@ export JAVA_HOME=<path to jvmci 8 jdk with JVMCI>
 export PATH=$PWD/bin/bin:$PATH    ## This directory will be automatically generated during Tornado compilation
 export TORNADO_SDK=$PWD/bin/sdk   ## This directory will be automatically generated during Tornado compilation
 
-## If CMAKE is needed (See step 4)
-export CMAKE_ROOT=<path/to/cmake/cmake-3.10.2>
+export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see step 4)
 ```
 
 Then execute:
@@ -63,7 +63,7 @@ $ . etc/tornado.env
 
 ### 3. Setting the default maven configuration
 
-Create (or update) the file in `~/.m2/settings.xml` with the following content. Modify the `jvmci.root` with your path to the JDK 1.8.0 you built in Step 1. 
+Create (or update) the file in `~/.m2/settings.xml` with the following content. Modify the `jvmci.root` with your path to JDK 1.8.0 that you built in step 1 and the `jvmci.version` with the corresponding version. 
 
 ```bash
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
@@ -87,6 +87,7 @@ Create (or update) the file in `~/.m2/settings.xml` with the following content. 
 
 			 <!-- Your PATH TO JDK1.8-JVMCI-->
 			 <jvmci.root>/home/user/jdk1.8.0_181/product</jvmci.root>
+			 <!-- Your JDK1.8-JVMCI version-->
 		 	 <jvmci.version>1.8.0_181</jvmci.version>
 
 		 </properties>

@@ -14,7 +14,7 @@ Tornado has been tested on:
   * OSx 10.13.2 (High Sierra)
   * CentOS >= 7.3
   * Fedora 21
-  * Ubuntu 16.4 
+  * Ubuntu 16.04 
 
 
 ## Installation
@@ -22,9 +22,9 @@ Tornado has been tested on:
 ### 1. Compile Java with JVMCI-8
 
 ```bash
- $ git clone -b tornado https://github.com/beehive-lab/graal-jvmci-8
  $ git clone -b tornado https://github.com/beehive-lab/mx 
  $ export PATH=`pwd`/mx:$PATH 
+ $ git clone -b tornado https://github.com/beehive-lab/graal-jvmci-8
  $ cd graal-jvmci-8
  $ mx build  
 ```
@@ -37,7 +37,9 @@ The Tornado maven installer will download `graal.jar` and `truffle-api.jar` depe
 These two jar files include a patch to execute Tornado. If you want to build Graal yourself, you can build it 
 
 ```bash
+ $ cd ..
  $ git clone -b tornado https://github.com/beehive-lab/graal 
+ $ cd graal
  $ export PATH=`pwd`/mx:$PATH 
  $ export JAVA_HOME=<path/to/JDK-JVMCI>
  $ mx build  
@@ -49,6 +51,7 @@ Then you will need to copy `graal.jar` and `truffle-api.jar` into the Tornado pr
 ### 2. Download Tornado
 
 ```bash
+ $ cd ..
  $ git clone https://github.com/beehive-lab/tornado.git tornado
  $ cd tornado
  $ vim etc/tornado.env
@@ -62,8 +65,7 @@ export JAVA_HOME=<path to jvmci 8 jdk with JVMCI>
 export PATH=$PWD/bin/bin:$PATH    ## We will create this directory during Tornado compilation
 export TORNADO_SDK=$PWD/bin/sdk   ## We will create this directory during Tornado compilation
 
-## If CMAKE is needed (See step 4)
-export CMAKE_ROOT=<path/to/cmake/cmake-3.10.2>
+export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see Step 4)
 ```
 
 Then execute:
@@ -75,8 +77,7 @@ $ . etc/tornado.env
 
 ### 3. Setting default maven configuration
 
-Create (or update) the file in `~/.m2/settings.xml` with the following content. Modify the `jvmci.root` with your path to JDK 1.8.0 that was compiled
-in step 1. 
+Create (or update) the file in `~/.m2/settings.xml` with the following content. Modify the `jvmci.root` with your path to JDK 1.8.0 that you built in step 1 and the `jvmci.version` with the corresponding version. 
 
 ```bash
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
@@ -100,6 +101,7 @@ in step 1.
 
 			 <!-- Your PATH TO JDK1.8-JVMCI-->
 			 <jvmci.root>/home/user/jdk1.8.0_181/product</jvmci.root>
+			 <!-- Your JDK1.8-JVMCI version-->
 		 	 <jvmci.version>1.8.0_181</jvmci.version>
 
 		 </properties>
