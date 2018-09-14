@@ -14,7 +14,7 @@ Tornado has been tested on:
   * OSx 10.13.2 (High Sierra)
   * CentOS >= 7.3
   * Fedora 21
-  * Ubuntu 16.4 
+  * Ubuntu 16.04 
 
 
 ## Installation

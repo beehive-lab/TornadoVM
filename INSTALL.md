@@ -13,7 +13,7 @@ Tornado has been succefully tested on the following platforms:
 
   * CentOS 7.3, 7.4 and 7.5
   * Fedora 21
-  * Ubuntu 16.4 and 18.4 
+  * Ubuntu 16.04 and 18.04 
 
 
 ## Installation
