@@ -65,8 +65,7 @@ export JAVA_HOME=<path to jvmci 8 jdk with JVMCI>
 export PATH=$PWD/bin/bin:$PATH    ## We will create this directory during Tornado compilation
 export TORNADO_SDK=$PWD/bin/sdk   ## We will create this directory during Tornado compilation
 
-## If CMAKE is needed (See step 4)
-export CMAKE_ROOT=<path/to/cmake/cmake-3.10.2>
+export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see Step 4)
 ```
 
 Then execute:
