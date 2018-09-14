@@ -22,9 +22,9 @@ Tornado has been tested on:
 ### 1. Compile Java with JVMCI-8
 
 ```bash
- $ git clone --depth 1 -b tornado https://github.com/beehive-lab/mx 
+ $ git clone -b tornado https://github.com/beehive-lab/mx 
  $ export PATH=`pwd`/mx:$PATH 
- $ git clone --depth 1 -b tornado https://github.com/beehive-lab/graal-jvmci-8
+ $ git clone -b tornado https://github.com/beehive-lab/graal-jvmci-8
  $ cd graal-jvmci-8
  $ mx build  
 ```
