@@ -264,8 +264,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             return compileTask(task);
         } else if (task instanceof PrebuiltTask) {
             return compilePreBuiltTask(task);
-        } else if (task instanceof CompilableTask && OpenCL.ACCELERATOR_IS_FPGA) {
-            return compileTask(task);
         }
         TornadoInternalError.shouldNotReachHere("task of unknown type: " + task.getClass().getSimpleName());
         return null;
