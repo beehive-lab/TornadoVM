@@ -172,6 +172,7 @@ public class OCLCodeCache {
 
             // For each entry, we should add also an entry for lookup-buffer
             String device = taskAndDeviceInfo.split("\\.")[2];
+            System.out.println("Device in process : -->" + device + "\n");
             String kernelName = "oclbackend.lookupBufferAddress." + device;
             precompiledBinariesPerDevice.put(kernelName, binaryFile);
         }
@@ -212,6 +213,7 @@ public class OCLCodeCache {
         if (precompiledBinariesPerDevice != null) {
             return precompiledBinariesPerDevice.get(taskName);
         } else {
+
             return null;
         }
     }
