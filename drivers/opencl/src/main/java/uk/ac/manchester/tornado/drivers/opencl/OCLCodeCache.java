@@ -43,7 +43,6 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -303,6 +302,8 @@ public class OCLCodeCache {
                 System.out.println(sourceCode);
             }
 
+            String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
+            String[] cmd, cmdRename;
 
         if (!entryPoint.equals("lookupBufferAddress")) {
 
@@ -312,6 +313,7 @@ public class OCLCodeCache {
 
 
             String[] cmd,cmdRename;
+
             File f;
 
             if (OpenCL.FPGA_EMULATION) {
@@ -342,6 +344,7 @@ public class OCLCodeCache {
             // Should not reach here
             return null;
         }
+
 
 
     }
