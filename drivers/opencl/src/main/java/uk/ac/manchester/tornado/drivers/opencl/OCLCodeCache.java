@@ -119,6 +119,14 @@ public class OCLCodeCache {
             precompiledBinariesPerDevice = new HashMap<>();
             processPrecompiledBinariesFromFile();
         }
+        if (OpenCL.ACCELERATOR_IS_FPGA) {
+            System.out.println("OCL CODE CASCHE FOR FPGA");
+            precompiledBinariesPerDevice = new HashMap<>();
+            // String tempKernelName = "oclbackend.lookupBufferAddress.device=0:1";
+            String tempKernelName = "s0.t0.device=0:1";
+            String tempBinaryLocation = "./test/lookupBufferAddress";
+            precompiledBinariesPerDevice.put(tempKernelName, tempBinaryLocation);
+        }
 
         if (OPENCL_CACHE_ENABLE) {
             info("loading binaries into code cache");
@@ -146,6 +154,7 @@ public class OCLCodeCache {
 
             // For each entry, we should add also an entry for lookup-buffer
             String device = taskAndDeviceInfo.split("\\.")[2];
+            System.out.println("Device in process : -->" + device + "\n");
             String kernelName = "oclbackend.lookupBufferAddress." + device;
             precompiledBinariesPerDevice.put(kernelName, binaryFile);
         }
@@ -185,7 +194,11 @@ public class OCLCodeCache {
     public String getOpenCLBinary(String taskName) {
         if (precompiledBinariesPerDevice != null) {
             return precompiledBinariesPerDevice.get(taskName);
+        } else if (OpenCL.ACCELERATOR_IS_FPGA) {
+            return null;
         } else {
+            System.out.println("getoclbin null : " + "\n");
+            // return precompiledBinariesPerDevice.get(taskName);
             return null;
         }
     }
@@ -538,6 +551,7 @@ public class OCLCodeCache {
             error("Empty input binary: %s (%s)", file);
         }
         try {
+            System.out.println("Path: " + lookupPath + "  " + "Entrypoint " + entrypoint + "\n");
             final byte[] binary = Files.readAllBytes(lookupPath);
             lookupCode = installBinary(entrypoint, binary);
         } catch (OCLException | IOException e) {
