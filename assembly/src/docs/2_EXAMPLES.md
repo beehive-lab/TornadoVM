@@ -67,9 +67,8 @@ public class VectorAddFloat {
         }
         if (!wrongResult) {
             System.out.println("Test success");
-            } else {
-                System.out.println("Result is wrong");
-            }
+        } else {
+            System.out.println("Result is wrong");
         }
     }
 }

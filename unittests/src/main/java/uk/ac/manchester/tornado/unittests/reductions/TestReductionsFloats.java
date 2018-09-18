@@ -89,8 +89,6 @@ public class TestReductionsFloats extends TornadoTestBase {
         float[] sequential = new float[1];
         reductionAddFloats(input, sequential);
 
-        // System.out.println(Arrays.toString(result));
-
         // Check result
         assertEquals(sequential[0], result[0], 0.1f);
     }
