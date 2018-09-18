@@ -266,29 +266,34 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             return compileTask(task);
         } else if (task instanceof PrebuiltTask) {
             return compilePreBuiltTask(task);
-        } else if (task instanceof CompilableTask && OpenCL.ACCELERATOR_IS_FPGA) {
-            return compileTask(task);
         }
         TornadoInternalError.shouldNotReachHere("task of unknown type: " + task.getClass().getSimpleName());
         return null;
     }
 
     private TornadoInstalledCode loadPreCompiledBinaryFromCache(SchedulableTask task) {
+        System.out.println("load PRECOMP:"  + "\n");
+        System.out.println("Install task:"+ task  + "\n");
         final OCLDeviceContext deviceContext = getDeviceContext();
         final OCLCodeCache check = new OCLCodeCache(deviceContext);
         final String deviceFullName = getFullTaskIdDevice(task);
+        System.out.println("Device full name "+ deviceFullName + "\n");
         final Path lookupPath = Paths.get(check.getOpenCLBinary(deviceFullName));
+        System.out.println("Install code:"  + task.getName() + "\n");
         String[] tempEntryToSplit = task.getName().split("- ");
         String entry = tempEntryToSplit[1];
+        //String entry = "printHello";
         return check.installEntryPointForBinaryForFPGAs(lookupPath, entry);
     }
 
     private String getFullTaskIdDevice(SchedulableTask task) {
         TaskMetaDataInterface meta = task.meta();
+        System.out.println("getFUll task id:"  + "\n");
         if (meta instanceof TaskMetaData) {
             TaskMetaData stask = (TaskMetaData) task.meta();
             return task.getId() + ".device=" + stask.getDriverIndex() + ":" + stask.getDeviceIndex();
         } else {
+            System.out.println("Meta exception:"  + "\n");
             throw new RuntimeException("[ERROR] TaskMedata Expected");
         }
     }
@@ -297,9 +302,12 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     public TornadoInstalledCode installCode(SchedulableTask task) {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
-        if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !OpenCL.ACCELERATOR_IS_FPGA) {
-            return compileJavaToAccelerator(task);
-        } else if (OpenCL.ACCELERATOR_IS_FPGA) {
+        System.out.println("Install code:"  + "\n");
+        if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && OpenCL.ACCELERATOR_IS_FPGA){
+            System.out.println("Install code: --if"  + "\n");
+            compileJavaToAccelerator(task);
+            return loadPreCompiledBinaryFromCache(task);
+        } else if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !OpenCL.ACCELERATOR_IS_FPGA) {
             return compileJavaToAccelerator(task);
         } else {
             return loadPreCompiledBinaryFromCache(task);
