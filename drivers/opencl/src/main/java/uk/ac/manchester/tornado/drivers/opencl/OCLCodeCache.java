@@ -124,8 +124,11 @@ public class OCLCodeCache {
             precompiledBinariesPerDevice = new HashMap<>();
             // String tempKernelName = "oclbackend.lookupBufferAddress.device=0:1";
             String tempKernelName = "s0.t0.device=0:1";
+            // Dynamic allocation of names
+            String generatedBinaryLocation = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
             String tempBinaryLocation = "./test/lookupBufferAddress";
             precompiledBinariesPerDevice.put(tempKernelName, tempBinaryLocation);
+
         }
 
         if (OPENCL_CACHE_ENABLE) {
@@ -198,7 +201,6 @@ public class OCLCodeCache {
             return null;
         } else {
             System.out.println("getoclbin null : " + "\n");
-            // return precompiledBinariesPerDevice.get(taskName);
             return null;
         }
     }
@@ -272,13 +274,11 @@ public class OCLCodeCache {
 
         appendSourceToFile(id, entryPoint, source);
 
-        System.out.println("New install " + "\n");
+        // System.out.println("New install " + "\n");
 
         if (!entryPoint.equals("lookupBufferAddress")) {
 
             String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
-
-            // String tempSuffix = ",s0.t0.device=0:2";
 
             String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
             String[] cmd;
@@ -347,7 +347,8 @@ public class OCLCodeCache {
                 }
             }
 
-            final OCLProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
+            // final OCLProgram program = deviceContext.createProgramWithSource(source, new
+            // long[] { source.length });
             // final OCLProgram program1 = deviceContext.installEntryPointForBinaryForFPGAs
 
             return installEntryPointForBinaryForFPGAs(resolveFPGADir(), LOOKUP_BUFFER_KERNEL_NAME);
