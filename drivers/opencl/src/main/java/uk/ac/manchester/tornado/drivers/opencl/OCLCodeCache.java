@@ -136,7 +136,6 @@ public class OCLCodeCache {
             precompiledBinariesPerDevice = new HashMap<>();
             // TODO : get this info from runtime
             String tempKernelName = "s0.t0.device=0:1";
-            precompiledBinariesPerDevice.put(tempKernelName, FPGA_BIN_LOCATION);
         }
 
         if (OPENCL_CACHE_ENABLE) {
@@ -336,6 +335,7 @@ public class OCLCodeCache {
                 RuntimeUtilities.sysCall(cmdRename, true);
 
             }
+
             return installEntryPointForBinaryForFPGAs(resolveFPGADir(), LOOKUP_BUFFER_KERNEL_NAME);
 
         } else {
