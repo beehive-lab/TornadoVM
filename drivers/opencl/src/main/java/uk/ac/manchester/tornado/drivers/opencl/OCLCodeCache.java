@@ -32,7 +32,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -118,7 +117,6 @@ public class OCLCodeCache {
             processPrecompiledBinariesFromFile();
         }
         if (OpenCL.ACCELERATOR_IS_FPGA) {
-            System.out.println("OCL CODE CASCHE FOR FPGA");
             precompiledBinariesPerDevice = new HashMap<>();
             // String tempKernelName = "oclbackend.lookupBufferAddress.device=0:1";
             String tempKernelName = "s0.t0.device=0:1";
@@ -196,10 +194,7 @@ public class OCLCodeCache {
     public String getOpenCLBinary(String taskName) {
         if (precompiledBinariesPerDevice != null) {
             return precompiledBinariesPerDevice.get(taskName);
-        } else if (OpenCL.ACCELERATOR_IS_FPGA) {
-            return null;
         } else {
-            System.out.println("getoclbin null : " + "\n");
             return null;
         }
     }
@@ -245,8 +240,8 @@ public class OCLCodeCache {
 
         if (OpenCL.ACCELERATOR_IS_FPGA) {
             final Path outDir = OpenCL.ACCELERATOR_IS_FPGA ? resolveFPGADir() : resolveSourceDir();
-            System.out.println("Entrypoint: " + entryPoint + "\n");
-            System.out.println("ID: " + id + "\n");
+            // System.out.println("Entrypoint: " + entryPoint + "\n");
+            // System.out.println("ID: " + id + "\n");
             if (entryPoint.equals("lookupBufferAddress")) {
                 File file = new File(outDir + "/" + entryPoint + OPENCL_SOURCE_SUFFIX);
                 try (FileOutputStream fos = new FileOutputStream(file)) {
@@ -273,35 +268,24 @@ public class OCLCodeCache {
 
         appendSourceToFile(id, entryPoint, source);
 
+        if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
 
-        if (!entryPoint.equals("lookupBufferAddress")) {
+            String[] cmd, cmdRename;
+            File f;
 
             String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
-
             String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
-            String[] cmd, cmdRename;
-
-            // cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115", "-o",
 
             //cmd = new String[] { "aoc", inputFile, "-v", "-report", "-march=emulator", "-o", outputFile };
             cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115", "-o", outputFile };
+            cmdRename = new String[] {"bash", "./bin/cleanFpga.sh"};
 
-            cmdRename = new String[] {"bash", "cleanFpga.sh"};
-            boolean check;
 
-            File f;
-            f = new File("./test/lookupBufferAddress");
+            f = new File("./fpga-source-comp/lookupBufferAddress");
 
-            if (f.exists()) {
-                System.out.println("success");
-                check = true;
-            } else {
-                check = false;
-                System.out.println("fail");
-            }
 
             String str = String.join(" ", cmd);
-            System.out.println("AOC COMMAND: " + str+ "\n");
+            //System.out.println("AOC COMMAND: " + str+ "\n");
 
 
             String str2 = String.join(" ", cmdRename);
@@ -318,6 +302,19 @@ public class OCLCodeCache {
             if (check) {
                 return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
            // } else {
+            //System.out.println("Rename COMMAND: " + str2 + "\n");
+
+            String s = null;
+
+            Path path = Paths.get("./fpga-source-comp/lookupBufferAddress");
+
+            if (ifFileExists(f)) {
+                //System.out.println("lookuppath :" + path + "\n");
+                //System.out.println("lookup name  :" + LOOKUP_BUFFER_KERNEL_NAME + "\n");
+
+                return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
+
+            } else {
                 try {
 
                     Process p = Runtime.getRuntime().exec(cmd);
@@ -377,11 +374,22 @@ public class OCLCodeCache {
 
             return installEntryPointForBinaryForFPGAs(resolveFPGADir(), LOOKUP_BUFFER_KERNEL_NAME);
 
-//        } else {
-//
-//            return null;
-//        }
+       } else {
 
+            return null;}
+
+    }
+
+    public boolean ifFileExists(File fileName) {
+        boolean check;
+        if (fileName.exists()) {
+            // System.out.println("success");
+            check = true;
+        } else {
+            check = false;
+            // System.out.println("fail");
+        }
+        return check;
     }
 
     public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
