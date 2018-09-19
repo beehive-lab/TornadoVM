@@ -495,10 +495,8 @@ public class ReduceGPUSnippets implements Snippets {
 
     public static class Templates extends AbstractTemplates {
 
-        @SuppressWarnings("unused")
-        private final SnippetInfo reduceIntSnippet = snippet(ReduceGPUSnippets.class, "reduceIntAdd");
-        @SuppressWarnings("unused")
-        private final SnippetInfo fullReduceIntSnippetGlobal = snippet(ReduceGPUSnippets.class, "fullReduceIntAddGlobalMemory");
+        @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippet = snippet(ReduceGPUSnippets.class, "reduceIntAdd");
+        @SuppressWarnings("unused") private final SnippetInfo fullReduceIntSnippetGlobal = snippet(ReduceGPUSnippets.class, "fullReduceIntAddGlobalMemory");
 
         // Add
         private final SnippetInfo partialReduceIntSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceIntAddGlobal");
@@ -519,8 +517,7 @@ public class ReduceGPUSnippets implements Snippets {
         // Max
         private final SnippetInfo partialReduceIntMaxSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceIntMaxGlobal");
 
-        @SuppressWarnings("unused")
-        private final SnippetInfo reduceIntSnippetLocalMemory = snippet(ReduceGPUSnippets.class, "reduceIntAddLocalMemory");
+        @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippetLocalMemory = snippet(ReduceGPUSnippets.class, "reduceIntAddLocalMemory");
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);

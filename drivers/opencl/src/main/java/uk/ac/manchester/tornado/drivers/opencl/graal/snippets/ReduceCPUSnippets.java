@@ -53,7 +53,8 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 public class ReduceCPUSnippets implements Snippets {
 
     /**
-     * Reduction array has to be of size = number of local threads (CPU threads).
+     * Reduction array has to be of size = number of local threads (CPU
+     * threads).
      * 
      * @param inputArray
      * @param outputArray

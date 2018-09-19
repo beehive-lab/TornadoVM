@@ -174,7 +174,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
     }
 
-    private void lowerReduceSnippet(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
+    private void lowerReduceSnippets(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
 
         StructuredGraph graph = storeIndexed.graph();
         JavaKind elementKind = storeIndexed.elementKind();
@@ -241,7 +241,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
         if (!USE_ATOMICS) {
-            lowerReduceSnippet((StoreAtomicIndexedNode) node, tool);
+            lowerReduceSnippets((StoreAtomicIndexedNode) node, tool);
         } else {
             lowerAtomicStoreIndexedNode((StoreAtomicIndexedNode) node, tool);
         }

@@ -37,6 +37,7 @@ public class TestReductionsFloats extends TornadoTestBase {
 
     private static final int SIZE = 8192;
     private static final int SIZE2 = 32;
+    private static final int PI_SIZE = 32768;
 
     public float[] allocResultArray(int numGroups) {
         TornadoDeviceType deviceType = getDefaultDeviceType();
@@ -287,28 +288,26 @@ public class TestReductionsFloats extends TornadoTestBase {
 
     public static void computePi(float[] input, @Reduce float[] result) {
         for (@Parallel int i = 1; i < input.length; i++) {
-            float value = 0;
-            if (i != 0) {
-                value = (float) (Math.pow(-1, i + 1) / (2 * i - 1));
-                result[0] += value + input[i];
-            }
+            float value = (float) (Math.pow(-1, i + 1) / (2 * i - 1));
+            result[0] += value + input[i];
         }
     }
 
-    @Ignore
+    @Test
     public void testComputePi() {
-        int N = 512;
+        float[] input = new float[PI_SIZE];
 
-        float[] input = new float[N];
-        IntStream.range(0, N).sequential().forEach(i -> {
+        IntStream.range(0, PI_SIZE).sequential().forEach(i -> {
             input[i] = 0;
         });
 
         int numGroups = 1;
-        if (SIZE > 256) {
-            numGroups = SIZE / 256;
+        if (PI_SIZE > 256) {
+            numGroups = PI_SIZE / 256;
         }
+
         float[] result = allocResultArray(numGroups);
+        Arrays.fill(result, 0.0f);
 
         //@formatter:off
         new TaskSchedule("s0")
@@ -318,11 +317,14 @@ public class TestReductionsFloats extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 1; i < result.length; i++) {
-            result[0] *= result[i];
+            result[0] += result[i];
         }
 
-        System.out.println("Final Result: " + (result[0] * 4));
+        final float piValue = result[0] * 4;
 
+        System.out.println("PI VALUE: " + piValue);
+
+        assertEquals(3.14, piValue, 0.01f);
     }
 
 }
