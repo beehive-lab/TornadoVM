@@ -43,6 +43,23 @@ public class TestReductionsIntegers extends TornadoTestBase {
     public static final int SIZE2 = 524288;
     public static final int SIZE = 4096;
 
+    public int[] allocResultArray(int numGroups) {
+        TornadoDeviceType deviceType = getDefaultDeviceType();
+        int[] result = null;
+        switch (deviceType) {
+            case CPU:
+                result = new int[Runtime.getRuntime().availableProcessors()];
+                break;
+            case GPU:
+            case ACCELERATOR:
+                result = new int[numGroups];
+                break;
+            default:
+                break;
+        }
+        return result;
+    }
+
     @Test
     public void testReductionAnnotationCPUSimple() {
 
@@ -106,25 +123,12 @@ public class TestReductionsIntegers extends TornadoTestBase {
     @Test
     public void testReductionAnnotation() {
         int[] input = new int[SIZE];
-        int[] result = null;
 
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        TornadoDeviceType deviceType = getDefaultDeviceType();
-        switch (deviceType) {
-            case CPU:
-                result = new int[Runtime.getRuntime().availableProcessors()];
-                numGroups = Runtime.getRuntime().availableProcessors();
-                break;
-            case GPU:
-            case ACCELERATOR:
-                result = new int[numGroups];
-                break;
-            default:
-                break;
-        }
+        int[] result = allocResultArray(numGroups);
 
         IntStream.range(0, SIZE).parallel().forEach(i -> {
             input[i] = 2;
@@ -161,25 +165,12 @@ public class TestReductionsIntegers extends TornadoTestBase {
     @Test
     public void testMultiplicationReduction() {
         int[] input = new int[64];
-        int[] result = null;
 
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        TornadoDeviceType deviceType = getDefaultDeviceType();
-        switch (deviceType) {
-            case CPU:
-                result = new int[Runtime.getRuntime().availableProcessors()];
-                numGroups = Runtime.getRuntime().availableProcessors();
-                break;
-            case ACCELERATOR:
-            case GPU:
-                result = new int[numGroups];
-                break;
-            default:
-                break;
-        }
+        int[] result = allocResultArray(numGroups);
 
         Arrays.fill(input, 1);
         input[10] = new Random().nextInt() * 10;
@@ -214,11 +205,16 @@ public class TestReductionsIntegers extends TornadoTestBase {
     @Ignore
     public void testMaxReduction() {
         int[] input = new int[SIZE];
-        int[] result = new int[SIZE];
 
         IntStream.range(0, SIZE).forEach(idx -> {
             input[idx] = idx;
         });
+
+        int numGroups = 1;
+        if (SIZE > 256) {
+            numGroups = SIZE / 256;
+        }
+        int[] result = allocResultArray(numGroups);
 
         //@formatter:off
         new TaskSchedule("s0")
@@ -229,11 +225,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         //@formatter:on
 
         // Final result
-        int numGroups = 1;
-        if (SIZE > 256) {
-            numGroups = SIZE / 256;
-        }
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] += Math.max(result[0], result[i]);
         }
 
@@ -256,25 +248,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
     public void testSequentialReduction() {
         int[] input = new int[SMALL_SIZE * 2];
 
-        int[] result = null;
-
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        TornadoDeviceType deviceType = getDefaultDeviceType();
-        switch (deviceType) {
-            case CPU:
-                result = new int[Runtime.getRuntime().availableProcessors()];
-                numGroups = Runtime.getRuntime().availableProcessors();
-                break;
-            case GPU:
-            case ACCELERATOR:
-                result = new int[numGroups];
-                break;
-            default:
-                break;
-        }
+        int[] result = allocResultArray(numGroups);
 
         Random r = new Random();
 
@@ -307,26 +285,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
     @Test
     public void testReduction01() {
         int[] input = new int[SMALL_SIZE];
-
-        int[] result = null;
-
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        TornadoDeviceType deviceType = getDefaultDeviceType();
-        switch (deviceType) {
-            case CPU:
-                result = new int[Runtime.getRuntime().availableProcessors()];
-                numGroups = Runtime.getRuntime().availableProcessors();
-                break;
-            case GPU:
-            case ACCELERATOR:
-                result = new int[numGroups];
-                break;
-            default:
-                break;
-        }
+        int[] result = allocResultArray(numGroups);
 
         Random r = new Random();
 
@@ -388,25 +351,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] b = new int[BIG_SIZE];
         int[] c = new int[BIG_SIZE];
 
-        int[] result = null;
-
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        TornadoDeviceType deviceType = getDefaultDeviceType();
-        switch (deviceType) {
-            case CPU:
-                result = new int[Runtime.getRuntime().availableProcessors()];
-                numGroups = Runtime.getRuntime().availableProcessors();
-                break;
-            case ACCELERATOR:
-            case GPU:
-                result = new int[numGroups];
-                break;
-            default:
-                break;
-        }
+        int[] result = allocResultArray(numGroups);
 
         IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
             a[i] = 10;
@@ -451,25 +400,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] a = new int[BIG_SIZE];
         int[] b = new int[BIG_SIZE];
 
-        int[] result = null;
-
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        TornadoDeviceType deviceType = getDefaultDeviceType();
-        switch (deviceType) {
-            case CPU:
-                result = new int[Runtime.getRuntime().availableProcessors()];
-                numGroups = Runtime.getRuntime().availableProcessors();
-                break;
-            case ACCELERATOR:
-            case GPU:
-                result = new int[numGroups];
-                break;
-            default:
-                break;
-        }
+        int[] result = allocResultArray(numGroups);
 
         IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
             a[i] = 10;
@@ -500,25 +435,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] b = new int[BIG_SIZE];
         int[] c = new int[BIG_SIZE];
 
-        int[] result = null;
-
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        TornadoDeviceType deviceType = getDefaultDeviceType();
-        switch (deviceType) {
-            case CPU:
-                result = new int[Runtime.getRuntime().availableProcessors()];
-                numGroups = Runtime.getRuntime().availableProcessors();
-                break;
-            case ACCELERATOR:
-            case GPU:
-                result = new int[numGroups];
-                break;
-            default:
-                break;
-        }
+        int[] result = allocResultArray(numGroups);
 
         Random r = new Random();
 
@@ -535,7 +456,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
 
@@ -569,25 +490,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] a = new int[BIG_SIZE];
         int[] b = new int[BIG_SIZE];
 
-        int[] result = null;
-
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        TornadoDeviceType deviceType = getDefaultDeviceType();
-        switch (deviceType) {
-            case CPU:
-                result = new int[Runtime.getRuntime().availableProcessors()];
-                numGroups = Runtime.getRuntime().availableProcessors();
-                break;
-            case ACCELERATOR:
-            case GPU:
-                result = new int[numGroups];
-                break;
-            default:
-                break;
-        }
+        int[] result = allocResultArray(numGroups);
 
         IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
             a[i] = 1;
@@ -602,7 +509,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 	         .execute();
 	    //@formatter:on
 
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
 
@@ -630,9 +537,14 @@ public class TestReductionsIntegers extends TornadoTestBase {
     public void testThreadSchuler() {
         int[] a = new int[SMALL_SIZE * 2];
         int[] b = new int[SMALL_SIZE * 2];
-        int[] result = new int[SMALL_SIZE * 2];
 
         Random r = new Random();
+
+        int numGroups = 1;
+        if (SMALL_SIZE * 2 > 256) {
+            numGroups = SIZE * 2 / 256;
+        }
+        int[] result = allocResultArray(numGroups);
 
         IntStream.range(0, SMALL_SIZE * 2).parallel().forEach(i -> {
             a[i] = r.nextInt();
@@ -669,26 +581,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
     @Test
     public void testSumInts2() {
         int[] input = new int[SMALL_SIZE];
-
-        int[] result = null;
-
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        TornadoDeviceType deviceType = getDefaultDeviceType();
-        switch (deviceType) {
-            case CPU:
-                result = new int[Runtime.getRuntime().availableProcessors()];
-                numGroups = Runtime.getRuntime().availableProcessors();
-                break;
-            case GPU:
-            case ACCELERATOR:
-                result = new int[numGroups];
-                break;
-            default:
-                break;
-        }
+        int[] result = allocResultArray(numGroups);
 
         IntStream.range(0, SMALL_SIZE).sequential().forEach(i -> {
             input[i] = 2;
@@ -717,28 +614,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
     public void testSumInts3() {
         int[] inputA = new int[SIZE];
         int[] inputB = new int[SIZE];
-
-        int[] result = null;
-
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        TornadoDeviceType deviceType = getDefaultDeviceType();
-        switch (deviceType) {
-            case CPU:
-                result = new int[Runtime.getRuntime().availableProcessors()];
-                numGroups = Runtime.getRuntime().availableProcessors();
-                break;
-            case DEFAULT:
-                break;
-            case ACCELERATOR:
-            case GPU:
-                result = new int[numGroups];
-                break;
-            default:
-                break;
-        }
+        int[] result = allocResultArray(numGroups);
 
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
