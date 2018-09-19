@@ -334,44 +334,11 @@ public class OCLCodeCache {
             } else {
                 RuntimeUtilities.sysCall(cmd, true);
                 RuntimeUtilities.sysCall(cmdRename, true);
-
             }
             return installEntryPointForBinaryForFPGAs(resolveFPGADir(), LOOKUP_BUFFER_KERNEL_NAME);
         } else {
             // Should not reach here
             return null;
-        }
-
-    }
-
-    public void sysCall(String[] command) {
-        String stdOutput = null;
-        try {
-
-            Process p = Runtime.getRuntime().exec(command);
-
-            p.waitFor();
-
-            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-            BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-
-            // read the output from the command
-            System.out.println("Here is the standard output of the command:\n");
-            while ((stdOutput = stdInput.readLine()) != null) {
-                System.out.println(stdOutput);
-            }
-
-            // read any errors from the attempted command
-            System.out.println("Here is the standard error of the command (if any):\n");
-            while ((stdOutput = stdError.readLine()) != null) {
-                System.out.println(stdOutput);
-            }
-
-        } catch (IOException e) {
-            error("Unable to make a native system call.", e);
-        } catch (Throwable t) {
-            t.printStackTrace();
         }
 
     }
