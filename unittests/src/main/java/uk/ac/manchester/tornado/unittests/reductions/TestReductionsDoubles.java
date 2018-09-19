@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.unittests.reductions;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -238,8 +239,10 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
-            input[i] = 1.0f;
+            input[i] = 1.0;
         });
+
+        Arrays.fill(result, 1.0);
 
         input[10] = r.nextDouble();
         input[12] = r.nextDouble();

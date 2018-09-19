@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.unittests.reductions;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -119,44 +120,8 @@ public class TestReductionsFloats extends TornadoTestBase {
         }
     }
 
-    @SuppressWarnings("unused")
     @Test
     public void testSumFloats2() {
-        float[] input = new float[SIZE2];
-
-        int numGroups = 1;
-        if (SIZE2 > 256) {
-            numGroups = SIZE2 / 256;
-        }
-        float[] result = allocResultArray(numGroups);
-
-        Random r = new Random();
-        IntStream.range(0, SIZE2).sequential().forEach(i -> {
-            input[i] = r.nextFloat();
-        });
-
-        //@formatter:off
-        TaskSchedule task = new TaskSchedule("s0")
-            .streamIn(input)
-            .task("t0", TestReductionsFloats::reductionAddFloats2, input, result)
-            .streamOut(result);
-        //@formatter:on
-
-        task.execute();
-
-        for (int i = 1; i < result.length; i++) {
-            result[0] += result[i];
-        }
-
-        float[] sequential = new float[1];
-        reductionAddFloats2(input, sequential);
-
-        // Check result
-        assertEquals(sequential[0], result[0], 0.01f);
-    }
-
-    @Test
-    public void testSumFloats3() {
         float[] input = new float[SIZE];
 
         int numGroups = 1;
@@ -191,7 +156,7 @@ public class TestReductionsFloats extends TornadoTestBase {
     }
 
     @Test
-    public void testSumFloats4() {
+    public void testSumFloats3() {
         float[] inputA = new float[SIZE];
         float[] inputB = new float[SIZE];
 
@@ -252,6 +217,8 @@ public class TestReductionsFloats extends TornadoTestBase {
         input[10] = r.nextFloat();
         input[12] = r.nextFloat();
 
+        Arrays.fill(result, 1.0f);
+
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
@@ -266,8 +233,6 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         float[] sequential = new float[1];
         multiplyFloats(input, sequential);
-
-        // System.out.println(Arrays.toString(result));
 
         // Check result
         assertEquals(sequential[0], result[0], 0.1f);
