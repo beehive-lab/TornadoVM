@@ -273,9 +273,9 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final OCLCodeCache check = new OCLCodeCache(deviceContext);
         final String deviceFullName = getFullTaskIdDevice(task);
-        //System.out.println("Device full name "+ deviceFullName + "\n");
+        // System.out.println("Device full name "+ deviceFullName + "\n");
         final Path lookupPath = Paths.get(check.getOpenCLBinary(deviceFullName));
-        //System.out.println("Install code:"  + task.getName() + "\n");
+        // System.out.println("Install code:" + task.getName() + "\n");
         String[] tempEntryToSplit = task.getName().split("- ");
         String entry = tempEntryToSplit[1];
         return check.installEntryPointForBinaryForFPGAs(lookupPath, entry);
@@ -287,7 +287,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             TaskMetaData stask = (TaskMetaData) task.meta();
             return task.getId() + ".device=" + stask.getDriverIndex() + ":" + stask.getDeviceIndex();
         } else {
-            System.out.println("Meta exception:"  + "\n");
+            System.out.println("Meta exception:" + "\n");
             throw new RuntimeException("[ERROR] TaskMedata Expected");
         }
     }
@@ -296,7 +296,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     public TornadoInstalledCode installCode(SchedulableTask task) {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
-        if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && OpenCL.ACCELERATOR_IS_FPGA){
+        if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && OpenCL.ACCELERATOR_IS_FPGA) {
             compileJavaToAccelerator(task);
             return loadPreCompiledBinaryFromCache(task);
         } else if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !OpenCL.ACCELERATOR_IS_FPGA) {
