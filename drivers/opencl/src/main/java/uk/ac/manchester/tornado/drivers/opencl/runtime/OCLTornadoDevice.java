@@ -230,7 +230,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 return deviceContext.getCode(task.getId(), resolvedMethod.getName());
             }
             return OpenCL.ACCELERATOR_IS_FPGA ? deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), OpenCL.ACCELERATOR_IS_FPGA) : deviceContext.installCode(result);
-            // return deviceContext.installCode(result);
         } catch (Exception e) {
             driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
             driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
