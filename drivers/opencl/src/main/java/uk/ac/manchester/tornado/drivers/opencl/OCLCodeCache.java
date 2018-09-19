@@ -226,6 +226,7 @@ public class OCLCodeCache {
         if (precompiledBinariesPerDevice != null) {
             return precompiledBinariesPerDevice.get(taskName);
         } else {
+
             return null;
         }
     }

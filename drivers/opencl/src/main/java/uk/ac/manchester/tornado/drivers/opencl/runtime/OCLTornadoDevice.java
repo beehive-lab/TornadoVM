@@ -273,9 +273,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final OCLCodeCache check = new OCLCodeCache(deviceContext);
         final String deviceFullName = getFullTaskIdDevice(task);
-        // System.out.println("Device full name "+ deviceFullName + "\n");
         final Path lookupPath = Paths.get(check.getOpenCLBinary(deviceFullName));
-        // System.out.println("Install code:" + task.getName() + "\n");
         String[] tempEntryToSplit = task.getName().split("- ");
         String entry = tempEntryToSplit[1];
         return check.installEntryPointForBinaryForFPGAs(lookupPath, entry);
