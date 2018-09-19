@@ -41,12 +41,7 @@ pipeline {
                 sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && mvn clean install -DskipTests && kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/conf/bm-traj2.settings'
             }
         }
-        stage('tornado-sdk-push') {
-            steps {
-                sh 'cd $TORNADO_ROOT'
-                sh 'python scripts/updateSDKRepository.py'
-            }
-        }
+       
     }
     post {
         success {
