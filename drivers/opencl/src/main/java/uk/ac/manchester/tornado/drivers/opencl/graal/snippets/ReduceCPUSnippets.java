@@ -66,73 +66,97 @@ public class ReduceCPUSnippets implements Snippets {
     @Snippet
     public static void partialReduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID) {
         OpenCLIntrinsics.localBarrier();
-        outputArray[globalID] += inputArray[gidx];
+        if (gidx >= start) {
+            outputArray[globalID] += inputArray[gidx];
+        }
     }
 
     @Snippet
     public static void partialReduceIntAddGlobal2(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID, int value) {
         OpenCLIntrinsics.localBarrier();
-        outputArray[globalID] += value;
+        if (gidx >= start) {
+            outputArray[globalID] += value;
+        }
     }
 
     @Snippet
     public static void partialReduceIntMulGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID) {
         OpenCLIntrinsics.localBarrier();
-        outputArray[globalID] *= inputArray[gidx];
+        if (gidx >= start) {
+            outputArray[globalID] *= inputArray[gidx];
+        }
     }
 
     @Snippet
     public static void partialReduceIntMulGlobal2(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID, int value) {
         OpenCLIntrinsics.localBarrier();
-        outputArray[globalID] *= value;
+        if (gidx >= start) {
+            outputArray[globalID] *= value;
+        }
     }
 
     @Snippet
     public static void partialReduceFloatAddGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID) {
         OpenCLIntrinsics.localBarrier();
-        outputArray[globalID] += inputArray[gidx];
+        if (gidx >= start) {
+            outputArray[globalID] += inputArray[gidx];
+        }
     }
 
     @Snippet
     public static void partialReduceFloatAddGlobal2(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID, float value) {
         OpenCLIntrinsics.localBarrier();
-        outputArray[globalID] += value;
+        if (gidx >= start) {
+            outputArray[globalID] += value;
+        }
     }
 
     @Snippet
     public static void partialReduceFloatMulGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID) {
         OpenCLIntrinsics.localBarrier();
-        outputArray[globalID] *= inputArray[gidx];
+        if (gidx >= start) {
+            outputArray[globalID] *= inputArray[gidx];
+        }
     }
 
     @Snippet
     public static void partialReduceFloatMulGlobal2(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID, float value) {
         OpenCLIntrinsics.localBarrier();
-        outputArray[globalID] *= value;
+        if (gidx >= start) {
+            outputArray[globalID] *= value;
+        }
     }
 
     @Snippet
     public static void partialReduceDoubleAddGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID) {
         OpenCLIntrinsics.localBarrier();
-        outputArray[globalID] += inputArray[gidx];
+        if (gidx >= start) {
+            outputArray[globalID] += inputArray[gidx];
+        }
     }
 
     @Snippet
     public static void partialReduceDoubleAddGlobal2(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID, double value) {
         OpenCLIntrinsics.localBarrier();
-        outputArray[globalID] += value;
+        if (gidx >= start) {
+            outputArray[globalID] += value;
+        }
     }
 
     @Snippet
     public static void partialReduceDoubleMulGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID) {
         OpenCLIntrinsics.localBarrier();
-        outputArray[globalID] *= inputArray[gidx];
+        if (gidx >= start) {
+            outputArray[globalID] *= inputArray[gidx];
+        }
     }
 
     @Snippet
     public static void partialReduceDoubleMulGlobal2(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID, double value) {
         OpenCLIntrinsics.localBarrier();
-        outputArray[globalID] *= value;
+        if (gidx >= start) {
+            outputArray[globalID] *= value;
+        }
     }
 
     public static class Templates extends AbstractTemplates {
@@ -210,7 +234,7 @@ public class ReduceCPUSnippets implements Snippets {
         }
 
         public void lower(StoreAtomicIndexedNode storeAtomicIndexed, AddressNode address, OCLWriteAtomicNode memoryWrite, ValueNode threadId, GlobalThreadSizeNode globalSize, ValueNode startNode,
-                ValueNode globalID, LoweringTool tool) {
+                ValueNode globalID, ValueNode startIndexNode, LoweringTool tool) {
 
             StructuredGraph graph = storeAtomicIndexed.graph();
 
@@ -225,7 +249,7 @@ public class ReduceCPUSnippets implements Snippets {
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", threadId);
-            args.add("start", startNode);
+            args.add("start", startIndexNode);
             int numThreads = Runtime.getRuntime().availableProcessors();
             args.add("numThreads", numThreads);
             args.add("globalID", globalID);

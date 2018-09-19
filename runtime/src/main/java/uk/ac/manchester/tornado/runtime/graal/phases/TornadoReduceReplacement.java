@@ -28,12 +28,17 @@ import java.util.Iterator;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
+import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.PhiNode;
+import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
+import org.graalvm.compiler.nodes.calc.CompareNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
@@ -100,12 +105,14 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         private ValueNode value;
         private ValueNode accumulator;
         private ValueNode inputArray;
+        private ValueNode startNode;
 
-        public ReductionNodes(ValueNode value, ValueNode accumulator, ValueNode inputArray) {
+        public ReductionNodes(ValueNode value, ValueNode accumulator, ValueNode inputArray, ValueNode startNode) {
             super();
             this.value = value;
             this.accumulator = accumulator;
             this.inputArray = inputArray;
+            this.startNode = startNode;
         }
     }
 
@@ -129,7 +136,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         return array;
     }
 
-    private ReductionNodes createReductionNode(StructuredGraph graph, StoreIndexedNode store, ValueNode inputArray) {
+    private ReductionNodes createReductionNode(StructuredGraph graph, StoreIndexedNode store, ValueNode inputArray, ValueNode startNode) {
         ValueNode value = null;
         ValueNode accumulator = null;
 
@@ -161,7 +168,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             throw new RuntimeException("\n\n[NODE REDUCTION NOT SUPPORTED] Node : " + store.value() + " not suported yet.");
         }
 
-        return new ReductionNodes(value, accumulator, inputArray);
+        return new ReductionNodes(value, accumulator, inputArray, startNode);
     }
 
     /**
@@ -173,7 +180,8 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         ValueNode value = reductionNode.value;
         ValueNode accumulator = reductionNode.accumulator;
         ValueNode inputArray = reductionNode.inputArray;
-        final StoreAtomicIndexedNode atomicStore = graph.addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), value, accumulator, inputArray));
+        ValueNode startNode = reductionNode.startNode;
+        final StoreAtomicIndexedNode atomicStore = graph.addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), value, accumulator, inputArray, startNode));
 
         ValueNode arithmeticNode = null;
         if (value instanceof OCLReduceAddNode) {
@@ -210,8 +218,9 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 }
 
                 ValueNode inputArray = obtainInputArray(store.value(), store.array(), store.index());
+                ValueNode startNode = obtainStartNode(store);
 
-                ReductionNodes reductionNode = createReductionNode(graph, store, inputArray);
+                ReductionNodes reductionNode = createReductionNode(graph, store, inputArray, startNode);
                 Node pred = node.predecessor();
                 performNodeReplacement(graph, store, pred, reductionNode);
 
@@ -219,6 +228,34 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 throw new RuntimeException("\n\n[NOT SUPPORTED] Node StoreFieldNode: not suported yet.");
             }
         }
+    }
+
+    private ValueNode obtainStartNode(StoreIndexedNode store) {
+        boolean startFound = false;
+        ValueNode startNode = null;
+        IfNode ifNode = null;
+        Node n = store.predecessor();
+        while (!startFound) {
+            if (n instanceof IfNode) {
+                ifNode = (IfNode) n;
+                while (!(n.predecessor() instanceof LoopBeginNode)) {
+                    n = n.predecessor();
+                    if (n instanceof StartNode) {
+                        // node not found
+                        return null;
+                    }
+                }
+                // in this point n = loopBeginNode
+                CompareNode condition = (CompareNode) ifNode.condition();
+                if (condition.getX() instanceof PhiNode) {
+                    PhiNode phi = (PhiNode) condition.getX();
+                    startNode = phi.valueAt(0);
+                    break;
+                }
+            }
+            n = n.predecessor();
+        }
+        return startNode;
     }
 
     private void findParametersWithReduceAnnotations(StructuredGraph graph, TornadoSketchTierContext context) {

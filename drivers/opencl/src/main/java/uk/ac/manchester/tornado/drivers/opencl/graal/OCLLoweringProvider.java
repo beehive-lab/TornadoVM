@@ -182,6 +182,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode value = storeIndexed.value();
         ValueNode array = storeIndexed.array();
         ValueNode accumulator = storeIndexed.getAccumulator();
+        ValueNode startIndexNode = storeIndexed.getStartNode();
 
         ATOMIC_OPERATION operation = ATOMIC_OPERATION.CUSTOM;
         if (value instanceof OCLReduceAddNode) {
@@ -233,7 +234,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
         // Depending on the Scheduler, call the proper snippet
         if (cpuScheduler) {
-            reduceCPUSnippets.lower(storeIndexed, address, memoryWrite, threadID, oclGlobalSize, startNode, oclIdNode, tool);
+            reduceCPUSnippets.lower(storeIndexed, address, memoryWrite, threadID, oclGlobalSize, startNode, oclIdNode, startIndexNode, tool);
         } else {
             reduceGPUSnippets.lower(storeIndexed, address, memoryWrite, threadID, oclGlobalSize, tool);
         }
