@@ -304,71 +304,16 @@ public class OCLCodeCache {
            // } else {
             //System.out.println("Rename COMMAND: " + str2 + "\n");
 
-            String s = null;
 
             Path path = Paths.get("./fpga-source-comp/lookupBufferAddress");
 
             if (ifFileExists(f)) {
-                //System.out.println("lookuppath :" + path + "\n");
-                //System.out.println("lookup name  :" + LOOKUP_BUFFER_KERNEL_NAME + "\n");
 
                 return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
 
             } else {
-                try {
-
-                    Process p = Runtime.getRuntime().exec(cmd);
-
-                    p.waitFor();
-
-                    BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-                    BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-
-                    // read the output from the command
-                    System.out.println("Here is the standard output of the command:\n");
-                    while ((s = stdInput.readLine()) != null) {
-                        System.out.println(s);
-                    }
-
-                    // read any errors from the attempted command
-                    System.out.println("Here is the standard error of the command (if any):\n");
-                    while ((s = stdError.readLine()) != null) {
-                        System.out.println(s);
-                    }
-
-                } catch (IOException e) {
-                    error("Unable to compile with Altera tools", e);
-                } catch (Throwable t) {
-                    t.printStackTrace();
-                }
-            try {
-
-                Process p = Runtime.getRuntime().exec(cmdRename);
-
-                p.waitFor();
-
-                BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-                BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-
-                // read the output from the command
-                System.out.println("Here is the standard output of the command:\n");
-                while ((s = stdInput.readLine()) != null) {
-                    System.out.println(s);
-                }
-
-                // read any errors from the attempted command
-                System.out.println("Here is the standard error of the command (if any):\n");
-                while ((s = stdError.readLine()) != null) {
-                    System.out.println(s);
-                }
-
-            } catch (IOException e) {
-                error("Unable to compile with Altera tools", e);
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
+               sysCall(cmd);
+               sysCall(cmdRename);
             }
 
 
@@ -387,9 +332,45 @@ public class OCLCodeCache {
             check = true;
         } else {
             check = false;
+
             // System.out.println("fail");
+
+            // System.out.println("fail");
+
         }
         return check;
+    }
+
+    public void sysCall(String[] command) {
+        String stdOutput = null;
+        try {
+
+            Process p = Runtime.getRuntime().exec(command);
+
+            p.waitFor();
+
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+            BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+
+            // read the output from the command
+            System.out.println("Here is the standard output of the command:\n");
+            while ((stdOutput = stdInput.readLine()) != null) {
+                System.out.println(stdOutput);
+            }
+
+            // read any errors from the attempted command
+            System.out.println("Here is the standard error of the command (if any):\n");
+            while ((stdOutput = stdError.readLine()) != null) {
+                System.out.println(stdOutput);
+            }
+
+        } catch (IOException e) {
+            error("Unable to make a native system call.", e);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+
     }
 
     public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
