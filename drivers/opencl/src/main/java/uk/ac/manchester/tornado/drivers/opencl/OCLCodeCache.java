@@ -315,7 +315,6 @@ public class OCLCodeCache {
             String str2 = String.join(" ", cmdRename);
 
             Path path = Paths.get(FPGA_BIN_LOCATION);
-
             if (RuntimeUtilities.ifFileExists(f)) {
                 return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
             } else {
