@@ -226,7 +226,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         // Final result
         for (int i = 1; i < result.length; i++) {
-            result[0] += Math.max(result[0], result[i]);
+            result[0] = Math.max(result[0], result[i]);
         }
 
         int[] sequential = new int[1];
