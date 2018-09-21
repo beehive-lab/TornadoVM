@@ -47,8 +47,10 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     @Input ValueNode value;
     @Input ValueNode accumulator;
     @Input ValueNode inputArray;
+
     @OptionalInput(State) FrameState stateAfter;
     @OptionalInput ValueNode extraOperation;
+    @OptionalInput ValueNode startNode;
     //@formatter:on
 
     @Override
@@ -72,11 +74,12 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
         return value;
     }
 
-    public StoreAtomicIndexedNode(ValueNode outputArray, ValueNode index, JavaKind elementKind, ValueNode value, ValueNode accumulator, ValueNode inputArray) {
+    public StoreAtomicIndexedNode(ValueNode outputArray, ValueNode index, JavaKind elementKind, ValueNode value, ValueNode accumulator, ValueNode inputArray, ValueNode startNode) {
         super(TYPE, StampFactory.forVoid(), outputArray, index, elementKind);
         this.value = value;
         this.accumulator = accumulator;
         this.inputArray = inputArray;
+        this.startNode = startNode;
     }
 
     @Override
@@ -90,6 +93,10 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
 
     public ValueNode getAccumulator() {
         return accumulator;
+    }
+
+    public ValueNode getStartNode() {
+        return startNode;
     }
 
     public ValueNode getInputArray() {
