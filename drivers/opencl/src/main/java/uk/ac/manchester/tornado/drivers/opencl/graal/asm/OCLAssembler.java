@@ -803,10 +803,6 @@ public final class OCLAssembler extends Assembler {
             emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable  ");
         }
 
-        // if (OpenCL.ACCELERATOR_IS_FPGA) {
-        // emitLine("__attribute__((reqd_work_group_size(16,1,1))) ");
-        // }
-
         if (EMIT_INTRINSICS) {
             emitAtomicIntrinsics();
         }
