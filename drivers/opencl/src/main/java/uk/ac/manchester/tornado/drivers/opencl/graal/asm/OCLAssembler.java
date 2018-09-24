@@ -53,6 +53,7 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
+import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
@@ -803,6 +804,10 @@ public final class OCLAssembler extends Assembler {
             emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable  ");
         }
 
+        if (OpenCL.ACCELERATOR_IS_FPGA) {
+            emitLine("__attribute__((reqd_work_group_size(16,1,1)))  ");
+        }
+
         if (EMIT_INTRINSICS) {
             emitAtomicIntrinsics();
         }
@@ -844,8 +849,7 @@ public final class OCLAssembler extends Assembler {
     }
 
     /**
-     * Used to emit instructions within a method. i.e. ones that terminal with a
-     * ';'
+     * Used to emit instructions within a method. i.e. ones that terminal with a ';'
      *
      * @param fmt
      * @param args
@@ -858,8 +862,8 @@ public final class OCLAssembler extends Assembler {
     }
 
     /**
-     * Used to emit function defs and control flow statements. i.e. strings that
-     * do not terminate with a ';'
+     * Used to emit function defs and control flow statements. i.e. strings that do
+     * not terminate with a ';'
      *
      * @param fmt
      * @param args
