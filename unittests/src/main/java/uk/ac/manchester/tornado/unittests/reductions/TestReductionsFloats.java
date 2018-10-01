@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.unittests.reductions;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -35,8 +36,25 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 public class TestReductionsFloats extends TornadoTestBase {
 
     private static final int SIZE = 8192;
-
     private static final int SIZE2 = 32;
+    private static final int PI_SIZE = 32768;
+
+    public float[] allocResultArray(int numGroups) {
+        TornadoDeviceType deviceType = getDefaultDeviceType();
+        float[] result = null;
+        switch (deviceType) {
+            case CPU:
+                result = new float[Runtime.getRuntime().availableProcessors()];
+                break;
+            case GPU:
+            case ACCELERATOR:
+                result = new float[numGroups];
+                break;
+            default:
+                break;
+        }
+        return result;
+    }
 
     public static void reductionAddFloats(float[] input, @Reduce float[] result) {
         result[0] = 0.0f;
@@ -48,25 +66,12 @@ public class TestReductionsFloats extends TornadoTestBase {
     @Test
     public void testSumFloats() {
         float[] input = new float[SIZE];
-        float[] result = null;
 
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        TornadoDeviceType deviceType = getDefaultDeviceType();
-        switch (deviceType) {
-            case CPU:
-                result = new float[Runtime.getRuntime().availableProcessors()];
-                numGroups = Runtime.getRuntime().availableProcessors();
-                break;
-            case GPU:
-            case ACCELERATOR:
-                result = new float[numGroups];
-                break;
-            default:
-                break;
-        }
+        float[] result = allocResultArray(numGroups);
 
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
@@ -82,7 +87,7 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         task.execute();
 
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
 
@@ -116,64 +121,15 @@ public class TestReductionsFloats extends TornadoTestBase {
         }
     }
 
-    @SuppressWarnings("unused")
     @Test
     public void testSumFloats2() {
-        float[] input = new float[SIZE2];
-
-        int numGroups = 1;
-        if (SIZE2 > 256) {
-            numGroups = SIZE2 / 256;
-        }
-        float[] result = null;
-
-        TornadoDeviceType deviceType = getDefaultDeviceType();
-        switch (deviceType) {
-            case CPU:
-                result = new float[Runtime.getRuntime().availableProcessors()];
-                break;
-            case GPU:
-            case ACCELERATOR:
-                result = new float[numGroups];
-                break;
-            default:
-                break;
-        }
-
-        Random r = new Random();
-        IntStream.range(0, SIZE2).sequential().forEach(i -> {
-            input[i] = r.nextFloat();
-        });
-
-        //@formatter:off
-        TaskSchedule task = new TaskSchedule("s0")
-            .streamIn(input)
-            .task("t0", TestReductionsFloats::reductionAddFloats2, input, result)
-            .streamOut(result);
-        //@formatter:on
-
-        task.execute();
-
-        for (int i = 1; i < result.length; i++) {
-            result[0] += result[i];
-        }
-
-        float[] sequential = new float[1];
-        reductionAddFloats2(input, sequential);
-
-        // Check result
-        assertEquals(sequential[0], result[0], 0.01f);
-    }
-
-    @Test
-    public void testSumFloats3() {
         float[] input = new float[SIZE];
 
         int numGroups = 1;
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        float[] result = new float[numGroups];
+        float[] result = allocResultArray(numGroups);
 
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
@@ -189,7 +145,7 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         task.execute();
 
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
 
@@ -201,7 +157,7 @@ public class TestReductionsFloats extends TornadoTestBase {
     }
 
     @Test
-    public void testSumFloats4() {
+    public void testSumFloats3() {
         float[] inputA = new float[SIZE];
         float[] inputB = new float[SIZE];
 
@@ -209,7 +165,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        float[] result = new float[numGroups];
+        float[] result = allocResultArray(numGroups);
 
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
@@ -226,7 +182,7 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         task.execute();
 
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
 
@@ -252,16 +208,17 @@ public class TestReductionsFloats extends TornadoTestBase {
         if (SIZE > 256) {
             numGroups = SIZE / 256;
         }
-        float[] result = new float[32];
+        float[] result = allocResultArray(numGroups);
 
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
             input[i] = 1.0f;
         });
 
-        input[0] = r.nextFloat();
         input[10] = r.nextFloat();
-        input[11] = r.nextFloat();
+        input[12] = r.nextFloat();
+
+        Arrays.fill(result, 1.0f);
 
         //@formatter:off
         new TaskSchedule("s0")
@@ -271,14 +228,12 @@ public class TestReductionsFloats extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[0] *= result[i];
         }
 
         float[] sequential = new float[1];
         multiplyFloats(input, sequential);
-
-        // System.out.println(Arrays.toString(result));
 
         // Check result
         assertEquals(sequential[0], result[0], 0.1f);
@@ -304,7 +259,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         if (SIZE2 > 256) {
             numGroups = SIZE2 / 256;
         }
-        float[] result = new float[numGroups];
+        float[] result = allocResultArray(numGroups);
 
         Random r = new Random();
         IntStream.range(0, SIZE2).sequential().forEach(i -> {
@@ -320,7 +275,7 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         task.execute();
 
-        for (int i = 1; i < numGroups; i++) {
+        for (int i = 1; i < result.length; i++) {
             result[1] += result[i];
         }
 
@@ -333,28 +288,26 @@ public class TestReductionsFloats extends TornadoTestBase {
 
     public static void computePi(float[] input, @Reduce float[] result) {
         for (@Parallel int i = 1; i < input.length; i++) {
-            float value = 0;
-            if (i != 0) {
-                value = (float) (Math.pow(-1, i + 1) / (2 * i - 1));
-                result[0] += value + input[i];
-            }
+            float value = (float) (Math.pow(-1, i + 1) / (2 * i - 1));
+            result[0] += value + input[i];
         }
     }
 
-    @Ignore
+    @Test
     public void testComputePi() {
-        int N = 512;
+        float[] input = new float[PI_SIZE];
 
-        float[] input = new float[N];
-        IntStream.range(0, N).sequential().forEach(i -> {
+        IntStream.range(0, PI_SIZE).sequential().forEach(i -> {
             input[i] = 0;
         });
 
         int numGroups = 1;
-        if (SIZE > 256) {
-            numGroups = SIZE / 256;
+        if (PI_SIZE > 256) {
+            numGroups = PI_SIZE / 256;
         }
-        float[] result = new float[32];
+
+        float[] result = allocResultArray(numGroups);
+        Arrays.fill(result, 0.0f);
 
         //@formatter:off
         new TaskSchedule("s0")
@@ -363,12 +316,15 @@ public class TestReductionsFloats extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        for (int i = 1; i < numGroups; i++) {
-            result[0] *= result[i];
+        for (int i = 1; i < result.length; i++) {
+            result[0] += result[i];
         }
 
-        System.out.println("Final Result: " + (result[0] * 4));
+        final float piValue = result[0] * 4;
 
+        System.out.println("PI VALUE: " + piValue);
+
+        assertEquals(3.14, piValue, 0.01f);
     }
 
 }

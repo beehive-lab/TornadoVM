@@ -6,6 +6,7 @@ find_package(JNI REQUIRED)
 
 include_directories(
 	source/
+	headers/opencl/2.2/include/
 	${JNI_INCLUDE_DIRS}
 	${OPENCL_INCLUDE_DIRS}
 	)
