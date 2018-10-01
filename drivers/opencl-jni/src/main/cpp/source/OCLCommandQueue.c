@@ -24,11 +24,13 @@
  *
  */
 #include <jni.h>
+
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else
 #include <CL/cl.h>
 #endif
+
 #include <stdio.h>
 #include "macros.h"
 #include "utils.h"
