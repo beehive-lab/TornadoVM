@@ -448,6 +448,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         String methodName = crb.compilationResult.getName();
 
+        System.out.println("Inside the compiler method name: --->" + methodName + "\n");
+
         if (crb.isKernel()) {
             /*
              * BUG There is a bug on some OpenCL devices which requires us to insert an
@@ -456,6 +458,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
              * starting at address 0x0. (I assume that this is a interesting case that leads
              * to a few issues.) Iris Pro is the only culprit at the moment.
              */
+            if (OpenCL.ACCELERATOR_IS_FPGA && !methodName.equals("lookupBufferAddress")) {
+                asm.emitLine("__attribute__((reqd_work_group_size(16,1,1)))  ");
+            }
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
 
             asm.emitLine("%s void %s(%s%s)", OCLAssemblerConstants.KERNEL_MODIFIER, methodName, bumpBuffer, architecture.getABI());

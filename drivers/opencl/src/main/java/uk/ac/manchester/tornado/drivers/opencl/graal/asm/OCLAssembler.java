@@ -53,7 +53,6 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
-import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIROp;
@@ -804,9 +803,9 @@ public final class OCLAssembler extends Assembler {
             emitLine("#pragma OPENCL EXTENSION cl_khr_fp64 : enable  ");
         }
 
-        if (OpenCL.ACCELERATOR_IS_FPGA) {
-            emitLine("__attribute__((reqd_work_group_size(16,1,1)))  ");
-        }
+        // if (OpenCL.ACCELERATOR_IS_FPGA) {
+        // emitLine("__attribute__((reqd_work_group_size(16,1,1))) ");
+        // }
 
         if (EMIT_INTRINSICS) {
             emitAtomicIntrinsics();
