@@ -92,3 +92,5 @@ Each Tornado module is licensed as follows:
 | Tornado-Examples |  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) |
 | Tornado-Matrices  |  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) |
 
+
+The OpenCL headers in `drivers/opencl-jni/src/main/cpp/headers/opencl/2.2/include` use MIT license. [link](https://github.com/KhronosGroup/OpenCL-Headers/blob/master/LICENSE).
