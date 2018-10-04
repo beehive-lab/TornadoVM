@@ -56,12 +56,27 @@ public class EmptyEvent implements Event {
     }
 
     @Override
+    public double getExecutionTimeInMilliSeconds() {
+        return 0;
+    }
+
+    @Override
     public long getTotalQueuedTime() {
         return 0;
     }
 
     @Override
+    public double getTotalQueuedTimeInMilliSeconds() {
+        return 0;
+    }
+
+    @Override
     public long getQueuedTime() {
+        return 0;
+    }
+
+    @Override
+    public double getQueuedTimeInMilliSeconds() {
         return 0;
     }
 
@@ -81,6 +96,11 @@ public class EmptyEvent implements Event {
     }
 
     @Override
+    public double getTotalTimeInMilliSeconds() {
+        return 0;
+    }
+
+    @Override
     public void retain() {
 
     }
@@ -96,12 +116,27 @@ public class EmptyEvent implements Event {
     }
 
     @Override
+    public double getSubmitTimeInMilliSeconds() {
+        return 0;
+    }
+
+    @Override
     public long getStartTime() {
         return 0;
     }
 
     @Override
+    public double getStartTimeInMilliSeconds() {
+        return 0;
+    }
+
+    @Override
     public long getEndTime() {
+        return 0;
+    }
+
+    @Override
+    public double getEndTimeInMilliSeconds() {
         return 0;
     }
 
