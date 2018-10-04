@@ -199,22 +199,27 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     @Override
     public long getTotalTime() {
-        return (getCLEndTime() - getCLSubmitTime());
+        return (getCLEndTime() - getCLStartTime());
     }
 
     @Override
     public double getTotalTimeInSeconds() {
-        return RuntimeUtilities.elapsedTimeInSeconds(getCLSubmitTime(), getCLEndTime());
+        return RuntimeUtilities.elapsedTimeInSeconds(getCLStartTime(), getCLEndTime());
+    }
+
+    @Override
+    public long getTotalQueuedTime() {
+        return (getCLStartTime() - getCLQueuedTime());
     }
 
     @Override
     public long getQueuedTime() {
-        return (getCLStartTime() - getCLSubmitTime());
+        return getCLQueuedTime();
     }
 
     @Override
     public long getSubmitTime() {
-        return getCLQueuedTime();
+        return getCLSubmitTime();
     }
 
     @Override

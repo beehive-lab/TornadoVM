@@ -56,6 +56,11 @@ public class EmptyEvent implements Event {
     }
 
     @Override
+    public long getTotalQueuedTime() {
+        return 0;
+    }
+
+    @Override
     public long getQueuedTime() {
         return 0;
     }

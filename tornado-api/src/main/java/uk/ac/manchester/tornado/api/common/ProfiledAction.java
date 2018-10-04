@@ -57,6 +57,8 @@ public interface ProfiledAction {
 
     public double getExecutionTimeInSeconds();
 
+    public long getTotalQueuedTime();
+
     public long getQueuedTime();
 
     public TornadoExecutionStatus getStatus();
