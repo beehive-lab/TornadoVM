@@ -53,15 +53,17 @@ public interface ProfiledAction {
 
     public long getEndTime();
 
-    public double getExecutionTime();
+    public long getExecutionTime();
 
-    public double getQueuedTime();
+    public double getExecutionTimeInSeconds();
+
+    public long getQueuedTime();
 
     public TornadoExecutionStatus getStatus();
 
-    public double getTotalTime();
+    public long getTotalTime();
 
-    public long getExecutionTimeInNanoSeconds();
+    public double getTotalTimeInSeconds();
 
     public void retain();
 

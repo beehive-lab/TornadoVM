@@ -46,12 +46,17 @@ public class EmptyEvent implements Event {
     }
 
     @Override
-    public double getExecutionTime() {
+    public long getExecutionTime() {
         return 0;
     }
 
     @Override
-    public double getQueuedTime() {
+    public double getExecutionTimeInSeconds() {
+        return 0;
+    }
+
+    @Override
+    public long getQueuedTime() {
         return 0;
     }
 
@@ -61,7 +66,12 @@ public class EmptyEvent implements Event {
     }
 
     @Override
-    public double getTotalTime() {
+    public long getTotalTime() {
+        return 0;
+    }
+
+    @Override
+    public double getTotalTimeInSeconds() {
         return 0;
     }
 
@@ -87,11 +97,6 @@ public class EmptyEvent implements Event {
 
     @Override
     public long getEndTime() {
-        return 0;
-    }
-
-    @Override
-    public long getExecutionTimeInNanoSeconds() {
         return 0;
     }
 

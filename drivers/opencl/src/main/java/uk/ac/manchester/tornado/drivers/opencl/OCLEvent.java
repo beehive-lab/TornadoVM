@@ -123,21 +123,6 @@ public class OCLEvent extends TornadoLogger implements Event {
         return readEventTime(CL_PROFILING_COMMAND_END);
     }
 
-    @Override
-    public double getExecutionTime() {
-        return RuntimeUtilities.elapsedTimeInSeconds(getCLStartTime(), getCLEndTime());
-    }
-
-    @Override
-    public long getExecutionTimeInNanoSeconds() {
-        return (getCLEndTime() - getCLStartTime());
-    }
-
-    @Override
-    public double getTotalTime() {
-        return RuntimeUtilities.elapsedTimeInSeconds(getCLSubmitTime(), getCLEndTime());
-    }
-
     protected OCLCommandExecutionStatus getCLStatus() {
         if (status == 0) {
             return CL_COMPLETE;
@@ -198,13 +183,33 @@ public class OCLEvent extends TornadoLogger implements Event {
     }
 
     @Override
-    public double getQueuedTime() {
-        return RuntimeUtilities.elapsedTimeInSeconds(getCLSubmitTime(), getCLStartTime());
+    public TornadoExecutionStatus getStatus() {
+        return getCLStatus().toTornadoExecutionStatus();
     }
 
     @Override
-    public TornadoExecutionStatus getStatus() {
-        return getCLStatus().toTornadoExecutionStatus();
+    public long getExecutionTime() {
+        return (getCLEndTime() - getCLStartTime());
+    }
+
+    @Override
+    public double getExecutionTimeInSeconds() {
+        return RuntimeUtilities.elapsedTimeInSeconds(getCLStartTime(), getCLEndTime());
+    }
+
+    @Override
+    public long getTotalTime() {
+        return (getCLEndTime() - getCLSubmitTime());
+    }
+
+    @Override
+    public double getTotalTimeInSeconds() {
+        return RuntimeUtilities.elapsedTimeInSeconds(getCLSubmitTime(), getCLEndTime());
+    }
+
+    @Override
+    public long getQueuedTime() {
+        return (getCLStartTime() - getCLSubmitTime());
     }
 
     @Override

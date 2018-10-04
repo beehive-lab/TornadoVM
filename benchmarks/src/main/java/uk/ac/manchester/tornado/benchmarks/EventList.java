@@ -38,7 +38,7 @@ public class EventList<T extends ProfiledAction> extends ArrayList<T> {
         double total = 0.0;
 
         for (ProfiledAction e : this) {
-            total += e.getExecutionTime();
+            total += e.getExecutionTimeInSeconds();
         }
 
         return total;
@@ -47,7 +47,7 @@ public class EventList<T extends ProfiledAction> extends ArrayList<T> {
     public final double getMinExecutionTime() {
         double result = Double.MAX_VALUE;
         for (ProfiledAction e : this) {
-            result = Math.min(result, e.getExecutionTime());
+            result = Math.min(result, e.getExecutionTimeInSeconds());
         }
         return result;
     }
@@ -55,7 +55,7 @@ public class EventList<T extends ProfiledAction> extends ArrayList<T> {
     public final double getMaxExecutionTime() {
         double result = Double.MIN_VALUE;
         for (ProfiledAction e : this) {
-            result = Math.max(result, e.getExecutionTime());
+            result = Math.max(result, e.getExecutionTimeInSeconds());
         }
         return result;
     }
@@ -72,7 +72,7 @@ public class EventList<T extends ProfiledAction> extends ArrayList<T> {
         final double mean = getMeanExecutionTime();
         double temp = 0;
         for (final ProfiledAction e : this) {
-            final double value = e.getExecutionTime();
+            final double value = e.getExecutionTimeInSeconds();
             temp += (mean - value) * (mean - value);
         }
         return temp / size();
