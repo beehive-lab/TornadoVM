@@ -38,8 +38,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
 import java.nio.ByteBuffer;
 
 import uk.ac.manchester.tornado.api.common.Event;
-import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus;
+import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus; import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -225,6 +224,26 @@ public class OCLEvent extends TornadoLogger implements Event {
     @Override
     public double getTotalQueuedTimeInMilliSeconds() {
         return RuntimeUtilities.elapsedTimeInMilliSeconds(getCLQueuedTime(), getCLStartTime());
+    }
+
+    @Override 
+    public long getElapsedQueuedTime() {
+        return (getCLSubmitTime() - getCLQueuedTime());
+    }
+
+    @Override
+    public double getElapsedQueuedTimeInMilliSeconds() {
+        return RuntimeUtilities.elapsedTimeInMilliSeconds(getCLQueuedTime(), getCLSubmitTime());
+    }
+
+    @Override
+    public long getElapsedSubmitTime() {
+        return (getCLStartTime() - getCLSubmitTime());
+    }
+
+    @Override
+    public double getElapsedSubmitTimeInMilliSeconds() {
+        return RuntimeUtilities.elapsedTimeInMilliSeconds(getCLSubmitTime(), getCLStartTime());
     }
 
     @Override

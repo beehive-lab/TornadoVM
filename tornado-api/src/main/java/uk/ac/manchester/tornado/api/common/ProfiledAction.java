@@ -69,6 +69,14 @@ public interface ProfiledAction {
 
     public double getTotalQueuedTimeInMilliSeconds();
 
+    public long getElapsedQueuedTime();
+
+    public double getElapsedQueuedTimeInMilliSeconds();
+
+    public long getElapsedSubmitTime();
+
+    public double getElapsedSubmitTimeInMilliSeconds();
+
     public long getQueuedTime();
 
     public double getQueuedTimeInMilliSeconds();

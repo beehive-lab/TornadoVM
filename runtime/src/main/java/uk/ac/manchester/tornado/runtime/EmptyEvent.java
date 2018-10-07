@@ -71,6 +71,26 @@ public class EmptyEvent implements Event {
     }
 
     @Override
+    public long getElapsedQueuedTime() {
+        return 0;
+    }
+
+    @Override
+    public double getElapsedQueuedTimeInMilliSeconds() {
+        return 0;
+    }
+
+    @Override
+    public long getElapsedSubmitTime() {
+        return 0;
+    }
+
+    @Override
+    public double getElapsedSubmitTimeInMilliSeconds() {
+        return 0;
+    }
+
+    @Override
     public long getQueuedTime() {
         return 0;
     }
