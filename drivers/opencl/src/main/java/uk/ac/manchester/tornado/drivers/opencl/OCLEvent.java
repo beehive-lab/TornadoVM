@@ -38,7 +38,8 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
 import java.nio.ByteBuffer;
 
 import uk.ac.manchester.tornado.api.common.Event;
-import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus; import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus;
+import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
