@@ -34,7 +34,7 @@ public class EventList<T extends ProfiledAction> extends ArrayList<T> {
         super();
     }
 
-    public final double getTotalExecutionTime() {
+    public final double getTotalExecutionTimeInSeconds() {
         double total = 0.0;
 
         for (ProfiledAction e : this) {
@@ -44,7 +44,7 @@ public class EventList<T extends ProfiledAction> extends ArrayList<T> {
         return total;
     }
 
-    public final double getMinExecutionTime() {
+    public final double getMinExecutionTimeInSeconds() {
         double result = Double.MAX_VALUE;
         for (ProfiledAction e : this) {
             result = Math.min(result, e.getExecutionTimeInSeconds());
@@ -52,7 +52,7 @@ public class EventList<T extends ProfiledAction> extends ArrayList<T> {
         return result;
     }
 
-    public final double getMaxExecutionTime() {
+    public final double getMaxExecutionTimeInSeconds() {
         double result = Double.MIN_VALUE;
         for (ProfiledAction e : this) {
             result = Math.max(result, e.getExecutionTimeInSeconds());
@@ -60,16 +60,16 @@ public class EventList<T extends ProfiledAction> extends ArrayList<T> {
         return result;
     }
 
-    public final double getMeanExecutionTime() {
-        return getTotalExecutionTime() / size();
+    public final double getMeanExecutionTimeInSeconds() {
+        return getTotalExecutionTimeInSeconds() / size();
     }
 
-    public final double getExecutionStdDev() {
-        return Math.sqrt(getExecutionVariance());
+    public final double getExecutionStdDevInSeconds() {
+        return Math.sqrt(getExecutionVarianceInSeconds());
     }
 
-    public double getExecutionVariance() {
-        final double mean = getMeanExecutionTime();
+    public double getExecutionVarianceInSeconds() {
+        final double mean = getMeanExecutionTimeInSeconds();
         double temp = 0;
         for (final ProfiledAction e : this) {
             final double value = e.getExecutionTimeInSeconds();
@@ -85,7 +85,7 @@ public class EventList<T extends ProfiledAction> extends ArrayList<T> {
     }
 
     public final EventsSummary summeriseEvents() {
-        return new EventsSummary(size(), getTotalExecutionTime(), getMinExecutionTime(), getMaxExecutionTime(), getMeanExecutionTime(), getExecutionStdDev());
+        return new EventsSummary(size(), getTotalExecutionTimeInSeconds(), getMinExecutionTimeInSeconds(), getMaxExecutionTimeInSeconds(), getMeanExecutionTimeInSeconds(), getExecutionStdDevInSeconds());
     }
 
     public T getLast() {
