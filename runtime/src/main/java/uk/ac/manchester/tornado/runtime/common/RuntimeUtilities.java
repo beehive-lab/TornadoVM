@@ -33,6 +33,9 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
 import sun.misc.Unsafe;
+import java.math.RoundingMode;
+import java.math.MathContext;
+import java.math.BigDecimal;
 
 public class RuntimeUtilities {
 
@@ -303,6 +306,18 @@ public class RuntimeUtilities {
         final long duration = end - start;
         double elapsed = duration * 1e-9;
         return elapsed;
+    }
+
+    public static double elapsedTimeInMilliSeconds(long start, long end) {
+        return BigDecimal.valueOf((end - start)*1e-6)
+                         .setScale(5, RoundingMode.HALF_UP)
+                         .doubleValue();
+    }
+
+    public static double elapsedTimeInMilliSeconds(long time) {
+        return BigDecimal.valueOf(time*1e-6)
+                         .setScale(5, RoundingMode.HALF_UP)
+                         .doubleValue();
     }
 
     public static String formatArray(Object object) {
