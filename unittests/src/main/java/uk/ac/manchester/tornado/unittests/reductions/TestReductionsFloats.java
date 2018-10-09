@@ -396,7 +396,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         //@formatter:on
 
         for (int i = 1; i < result.length; i++) {
-            result[0] = Math.max(result[0], result[i]);
+            result[0] = Math.min(result[0], result[i]);
         }
 
         float[] sequential = new float[1];
