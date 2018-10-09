@@ -54,8 +54,6 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
  */
 public class ReduceCPUSnippets implements Snippets {
 
-    public static boolean DEBUG_CPU_SNIPPETS = true;
-
     /**
      * Reduction array has to be of size = number of local threads (CPU
      * threads).
@@ -140,6 +138,14 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
+    public static void partialReduceFloatMinGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID) {
+        OpenCLIntrinsics.localBarrier();
+        if (gidx >= start) {
+            outputArray[globalID] = TornadoMath.min(outputArray[globalID], inputArray[gidx]);
+        }
+    }
+
+    @Snippet
     public static void partialReduceDoubleAddGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
@@ -185,6 +191,7 @@ public class ReduceCPUSnippets implements Snippets {
         private final SnippetInfo partialReduceMulFloatSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceFloatMulGlobal");
         private final SnippetInfo partialReduceMulFloatSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceFloatMulGlobal2");
         private final SnippetInfo partialReduceMaxFloatSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceFloatMaxGlobal");
+        private final SnippetInfo partialReduceMinFloatSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceFloatMinGlobal");
 
         // Double
         private final SnippetInfo partialReduceAddDoubleSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceDoubleAddGlobal");
@@ -209,6 +216,17 @@ public class ReduceCPUSnippets implements Snippets {
             return snippet;
         }
 
+        private SnippetInfo getSnippetFromOCLBinaryNode(OCLFPBinaryIntrinsicNode value) {
+            switch (value.operation()) {
+                case FMAX:
+                    return partialReduceMaxFloatSnippetGlobal;
+                case FMIN:
+                    return partialReduceMinFloatSnippetGlobal;
+                default:
+                    throw new RuntimeException("OCLFPBinaryIntrinsicNode operation not supported yet");
+            }
+        }
+
         @Override
         public SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
@@ -217,14 +235,7 @@ public class ReduceCPUSnippets implements Snippets {
             } else if (value instanceof OCLReduceMulNode) {
                 snippet = (extra == null) ? partialReduceMulFloatSnippetGlobal : partialReduceMulFloatSnippetGlobal2;
             } else if (value instanceof OCLFPBinaryIntrinsicNode) {
-                switch (((OCLFPBinaryIntrinsicNode) value).operation()) {
-                    case FMAX:
-                        snippet = partialReduceMaxFloatSnippetGlobal;
-                        break;
-                    default:
-                        break;
-                }
-
+                snippet = getSnippetFromOCLBinaryNode((OCLFPBinaryIntrinsicNode) value);
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
@@ -270,16 +281,6 @@ public class ReduceCPUSnippets implements Snippets {
             SnippetInfo snippet = getSnippet(elementKind, value, extra);
 
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
-
-            if (DEBUG_CPU_SNIPPETS) {
-                System.out.println("INPUT PARAMETERS:");
-                System.out.println("INPUT: " + storeAtomicIndexed.getInputArray());
-                System.out.println("OUtput: " + storeAtomicIndexed.array());
-                System.out.println("GIDX: " + threadId);
-                System.out.println("Start: " + startIndexNode);
-                System.out.println("GlobalID: " + globalID);
-            }
-
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", threadId);

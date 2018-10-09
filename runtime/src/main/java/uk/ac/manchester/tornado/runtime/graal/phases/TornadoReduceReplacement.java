@@ -169,17 +169,16 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             value = atomicSub;
             subNode.safeDelete();
         } else if (storeValue instanceof BinaryNode) {
-            // First check it is not a builtin
 
             // We need the name because it is loaded from inner core
             // (tornado-driver).
             if (storeValue.getClass().getName().endsWith("OCLFPBinaryIntrinsicNode")) {
-                System.out.println("I found an instrisic");
                 accumulator = ((BinaryNode) storeValue).getX();
             } else {
+                // For any other binary node
+                // if it is a builtin, we apply the general case
                 accumulator = storeValue;
             }
-            // For any other binary node
             value = storeValue;
         } else {
             throw new RuntimeException("\n\n[NODE REDUCTION NOT SUPPORTED] Node : " + store.value() + " not suported yet.");
