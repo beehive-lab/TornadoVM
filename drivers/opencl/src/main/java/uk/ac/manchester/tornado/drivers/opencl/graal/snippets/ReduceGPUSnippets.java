@@ -493,7 +493,7 @@ public class ReduceGPUSnippets implements Snippets {
         }
     }
 
-    public static class Templates extends AbstractTemplates {
+    public static class Templates extends AbstractTemplates implements TornadoSnippetTypeInference {
 
         @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippet = snippet(ReduceGPUSnippets.class, "reduceIntAdd");
         @SuppressWarnings("unused") private final SnippetInfo fullReduceIntSnippetGlobal = snippet(ReduceGPUSnippets.class, "fullReduceIntAddGlobalMemory");
@@ -523,7 +523,8 @@ public class ReduceGPUSnippets implements Snippets {
             super(options, providers, snippetReflection, target);
         }
 
-        private SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra) {
+        @Override
+        public SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
                 snippet = (extra == null) ? partialReduceIntSnippetGlobal : partialReduceIntSnippetGlobal2;
@@ -545,7 +546,8 @@ public class ReduceGPUSnippets implements Snippets {
             return snippet;
         }
 
-        private SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra) {
+        @Override
+        public SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
                 snippet = (extra == null) ? partialReduceAddFloatSnippetGlobal : partialReduceAddFloatSnippetGlobal2;
@@ -557,7 +559,8 @@ public class ReduceGPUSnippets implements Snippets {
             return snippet;
         }
 
-        private SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra) {
+        @Override
+        public SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
                 snippet = (extra == null) ? partialReduceAddDoubleSnippetGlobal : partialReduceAddDoubleSnippetGlobal2;
@@ -569,7 +572,8 @@ public class ReduceGPUSnippets implements Snippets {
             return snippet;
         }
 
-        private SnippetInfo getSnippetInfo(JavaKind elementKind, ValueNode value, ValueNode extra) {
+        @Override
+        public SnippetInfo getSnippet(JavaKind elementKind, ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (elementKind == JavaKind.Int) {
                 snippet = inferIntSnippet(value, extra);
@@ -584,17 +588,11 @@ public class ReduceGPUSnippets implements Snippets {
         public void lower(StoreAtomicIndexedNode storeAtomicIndexed, AddressNode address, OCLWriteAtomicNode memoryWrite, ValueNode globalId, GlobalThreadSizeNode globalSize, LoweringTool tool) {
 
             StructuredGraph graph = storeAtomicIndexed.graph();
-
-            // In this point, depending on the type and the operation,
-            // we call the corresponding snippet.
             JavaKind elementKind = storeAtomicIndexed.elementKind();
-
             ValueNode value = storeAtomicIndexed.value();
-            ValueNode array = storeAtomicIndexed.array();
-            ValueNode accumulator = storeAtomicIndexed.getAccumulator();
             ValueNode extra = storeAtomicIndexed.getExtraOperation();
 
-            SnippetInfo snippet = getSnippetInfo(elementKind, value, extra);
+            SnippetInfo snippet = getSnippet(elementKind, value, extra);
 
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
             args.add("inputData", storeAtomicIndexed.getInputArray());

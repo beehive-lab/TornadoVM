@@ -39,7 +39,6 @@ import org.graalvm.compiler.replacements.Snippets;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
@@ -130,10 +129,11 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceFloatMaxGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID, float value) {
+    public static void partialReduceFloatMaxGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
-            outputArray[globalID] = TornadoMath.max(outputArray[globalID], inputArray[gidx]);
+            float max = OpenCLIntrinsics.fmax();
+            outputArray[globalID] = max;
         }
     }
 
@@ -169,7 +169,7 @@ public class ReduceCPUSnippets implements Snippets {
         }
     }
 
-    public static class Templates extends AbstractTemplates {
+    public static class Templates extends AbstractTemplates implements TornadoSnippetTypeInference {
 
         // Int
         private final SnippetInfo partialReduceAddIntSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceIntAddGlobal");
@@ -194,7 +194,8 @@ public class ReduceCPUSnippets implements Snippets {
             super(options, providers, snippetReflection, target);
         }
 
-        private SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra) {
+        @Override
+        public SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
                 snippet = (extra == null) ? partialReduceAddIntSnippetGlobal : partialReduceAddIntSnippetGlobal2;
@@ -206,21 +207,30 @@ public class ReduceCPUSnippets implements Snippets {
             return snippet;
         }
 
-        private SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra) {
+        @Override
+        public SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
                 snippet = (extra == null) ? partialReduceAddFloatSnippetGlobal : partialReduceAddFloatSnippetGlobal2;
             } else if (value instanceof OCLReduceMulNode) {
                 snippet = (extra == null) ? partialReduceMulFloatSnippetGlobal : partialReduceMulFloatSnippetGlobal2;
             } else if (value instanceof OCLFPBinaryIntrinsicNode) {
-                snippet = partialReduceMaxFloatSnippetGlobal;
+                switch (((OCLFPBinaryIntrinsicNode) value).operation()) {
+                    case FMAX:
+                        snippet = partialReduceMaxFloatSnippetGlobal;
+                        break;
+                    default:
+                        break;
+                }
+
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
             return snippet;
         }
 
-        private SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra) {
+        @Override
+        public SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
                 snippet = (extra == null) ? partialReduceAddDoubleSnippetGlobal : partialReduceAddDoubleSnippetGlobal2;
@@ -232,7 +242,8 @@ public class ReduceCPUSnippets implements Snippets {
             return snippet;
         }
 
-        private SnippetInfo getSnippetInfo(JavaKind elementKind, ValueNode value, ValueNode extra) {
+        @Override
+        public SnippetInfo getSnippet(JavaKind elementKind, ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (elementKind == JavaKind.Int) {
                 snippet = inferIntSnippet(value, extra);
@@ -250,13 +261,11 @@ public class ReduceCPUSnippets implements Snippets {
                 ValueNode globalID, ValueNode startIndexNode, LoweringTool tool) {
 
             StructuredGraph graph = storeAtomicIndexed.graph();
-
             JavaKind elementKind = storeAtomicIndexed.elementKind();
-
             ValueNode value = storeAtomicIndexed.value();
             ValueNode extra = storeAtomicIndexed.getExtraOperation();
 
-            SnippetInfo snippet = getSnippetInfo(elementKind, value, extra);
+            SnippetInfo snippet = getSnippet(elementKind, value, extra);
 
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
             args.add("inputData", storeAtomicIndexed.getInputArray());
