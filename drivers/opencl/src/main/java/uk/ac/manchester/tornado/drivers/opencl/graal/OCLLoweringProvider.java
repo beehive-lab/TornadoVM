@@ -113,8 +113,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private final TornadoVMConfig vmConfig;
 
     protected NewObjectSnippets.Templates newObjectSnippets;
-    protected ReduceGPUSnippets.Templates reduceGPUSnippets;
-    protected ReduceCPUSnippets.Templates reduceCPUSnippets;
+    protected ReduceGPUSnippets.Templates GPUreduceSnippets;
+    protected ReduceCPUSnippets.Templates CPUreduceSnippets;
 
     public OCLLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, ConstantReflectionProvider constantReflection, TornadoVMConfig vmConfig, OCLTargetDescription target) {
         super(metaAccess, foreignCalls, target);
@@ -129,8 +129,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private void initializeSnippets(OptionValues options, SnippetCounter.Group.Factory factory, Providers providers, SnippetReflectionProvider snippetReflection) {
-        this.reduceGPUSnippets = new ReduceGPUSnippets.Templates(options, providers, snippetReflection, target);
-        this.reduceCPUSnippets = new ReduceCPUSnippets.Templates(options, providers, snippetReflection, target);
+        this.GPUreduceSnippets = new ReduceGPUSnippets.Templates(options, providers, snippetReflection, target);
+        this.CPUreduceSnippets = new ReduceCPUSnippets.Templates(options, providers, snippetReflection, target);
     }
 
     @Override
@@ -234,9 +234,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
         // Depending on the Scheduler, call the proper snippet
         if (cpuScheduler) {
-            reduceCPUSnippets.lower(storeIndexed, address, memoryWrite, threadID, oclGlobalSize, startNode, oclIdNode, startIndexNode, tool);
+            CPUreduceSnippets.lower(storeIndexed, address, memoryWrite, threadID, oclGlobalSize, startNode, oclIdNode, startIndexNode, tool);
         } else {
-            reduceGPUSnippets.lower(storeIndexed, address, memoryWrite, threadID, oclGlobalSize, tool);
+            GPUreduceSnippets.lower(storeIndexed, address, memoryWrite, threadID, oclGlobalSize, tool);
         }
     }
 

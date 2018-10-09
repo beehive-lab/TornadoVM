@@ -39,6 +39,7 @@ import org.graalvm.compiler.replacements.Snippets;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
@@ -52,6 +53,8 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
  * 
  */
 public class ReduceCPUSnippets implements Snippets {
+
+    public static boolean DEBUG_CPU_SNIPPETS = true;
 
     /**
      * Reduction array has to be of size = number of local threads (CPU
@@ -132,8 +135,7 @@ public class ReduceCPUSnippets implements Snippets {
     public static void partialReduceFloatMaxGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
-            float max = OpenCLIntrinsics.fmax();
-            outputArray[globalID] = max;
+            outputArray[globalID] = TornadoMath.max(outputArray[globalID], inputArray[gidx]);
         }
     }
 
@@ -268,6 +270,16 @@ public class ReduceCPUSnippets implements Snippets {
             SnippetInfo snippet = getSnippet(elementKind, value, extra);
 
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
+
+            if (DEBUG_CPU_SNIPPETS) {
+                System.out.println("INPUT PARAMETERS:");
+                System.out.println("INPUT: " + storeAtomicIndexed.getInputArray());
+                System.out.println("OUtput: " + storeAtomicIndexed.array());
+                System.out.println("GIDX: " + threadId);
+                System.out.println("Start: " + startIndexNode);
+                System.out.println("GlobalID: " + globalID);
+            }
+
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", threadId);

@@ -127,6 +127,14 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             if (array == null) {
                 array = obtainInputArray(value.getY(), outputArray, indexToStore);
             }
+        } else if (currentNode instanceof BinaryNode) {
+            if (currentNode.getClass().getName().endsWith("OCLFPBinaryIntrinsicNode")) {
+                array = obtainInputArray(((BinaryNode) currentNode).getX(), outputArray, indexToStore);
+                if (array == null) {
+                    array = obtainInputArray(((BinaryNode) currentNode).getY(), outputArray, indexToStore);
+                }
+            }
+
         } else if (currentNode instanceof LoadIndexedNode) {
             LoadIndexedNode loadNode = (LoadIndexedNode) currentNode;
             if (loadNode.array() != outputArray) {
@@ -162,7 +170,9 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             subNode.safeDelete();
         } else if (storeValue instanceof BinaryNode) {
             // First check it is not a builtin
-            System.out.println("CHECKING BUILTIN: " + storeValue.getClass().getName());
+
+            // We need the name because it is loaded from inner core
+            // (tornado-driver).
             if (storeValue.getClass().getName().endsWith("OCLFPBinaryIntrinsicNode")) {
                 System.out.println("I found an instrisic");
                 accumulator = ((BinaryNode) storeValue).getX();
