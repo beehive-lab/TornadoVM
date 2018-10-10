@@ -697,7 +697,7 @@ public class ReduceGPUSnippets implements Snippets {
             return snippet;
         }
 
-        public void lower(StoreAtomicIndexedNode storeAtomicIndexed, AddressNode address, OCLWriteAtomicNode memoryWrite, ValueNode globalId, GlobalThreadSizeNode globalSize, LoweringTool tool) {
+        public void lower(StoreAtomicIndexedNode storeAtomicIndexed, ValueNode globalId, GlobalThreadSizeNode globalSize, LoweringTool tool) {
 
             StructuredGraph graph = storeAtomicIndexed.graph();
             JavaKind elementKind = storeAtomicIndexed.elementKind();

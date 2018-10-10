@@ -234,9 +234,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
         // Depending on the Scheduler, call the proper snippet
         if (cpuScheduler) {
-            CPUreduceSnippets.lower(storeIndexed, address, memoryWrite, threadID, oclGlobalSize, startNode, oclIdNode, startIndexNode, tool);
+            CPUreduceSnippets.lower(storeIndexed, threadID, oclIdNode, startIndexNode, tool);
         } else {
-            GPUreduceSnippets.lower(storeIndexed, address, memoryWrite, threadID, oclGlobalSize, tool);
+            GPUreduceSnippets.lower(storeIndexed, threadID, oclGlobalSize, tool);
         }
     }
 

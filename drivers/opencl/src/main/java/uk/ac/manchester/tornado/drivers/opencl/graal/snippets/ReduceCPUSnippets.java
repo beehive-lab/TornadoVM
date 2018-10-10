@@ -66,7 +66,7 @@ public class ReduceCPUSnippets implements Snippets {
      * @param globalID
      */
     @Snippet
-    public static void partialReduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID) {
+    public static void partialReduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] += inputArray[gidx];
@@ -74,7 +74,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceIntAddGlobal2(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID, int value) {
+    public static void partialReduceIntAddGlobal2(int[] inputArray, int[] outputArray, int gidx, int start, int globalID, int value) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] += value;
@@ -82,7 +82,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceIntMulGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID) {
+    public static void partialReduceIntMulGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] *= inputArray[gidx];
@@ -90,7 +90,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceIntMulGlobal2(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID, int value) {
+    public static void partialReduceIntMulGlobal2(int[] inputArray, int[] outputArray, int gidx, int start, int globalID, int value) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] *= value;
@@ -98,7 +98,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceFloatAddGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID) {
+    public static void partialReduceFloatAddGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] += inputArray[gidx];
@@ -106,7 +106,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceFloatAddGlobal2(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID, float value) {
+    public static void partialReduceFloatAddGlobal2(float[] inputArray, float[] outputArray, int gidx, int start, int globalID, float value) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] += value;
@@ -114,7 +114,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceFloatMulGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID) {
+    public static void partialReduceFloatMulGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] *= inputArray[gidx];
@@ -122,7 +122,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceFloatMulGlobal2(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID, float value) {
+    public static void partialReduceFloatMulGlobal2(float[] inputArray, float[] outputArray, int gidx, int start, int globalID, float value) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] *= value;
@@ -130,7 +130,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceFloatMaxGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID) {
+    public static void partialReduceFloatMaxGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] = TornadoMath.max(outputArray[globalID], inputArray[gidx]);
@@ -138,7 +138,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceFloatMinGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID) {
+    public static void partialReduceFloatMinGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] = TornadoMath.min(outputArray[globalID], inputArray[gidx]);
@@ -146,7 +146,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceDoubleAddGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID) {
+    public static void partialReduceDoubleAddGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] += inputArray[gidx];
@@ -154,7 +154,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceDoubleAddGlobal2(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID, double value) {
+    public static void partialReduceDoubleAddGlobal2(double[] inputArray, double[] outputArray, int gidx, int start, int globalID, double value) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] += value;
@@ -162,7 +162,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceDoubleMulGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID) {
+    public static void partialReduceDoubleMulGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] *= inputArray[gidx];
@@ -170,7 +170,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceDoubleMulGlobal2(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID, double value) {
+    public static void partialReduceDoubleMulGlobal2(double[] inputArray, double[] outputArray, int gidx, int start, int globalID, double value) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] *= value;
@@ -178,7 +178,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceDoubleMaxGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID) {
+    public static void partialReduceDoubleMaxGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] = TornadoMath.max(outputArray[globalID], inputArray[gidx]);
@@ -186,7 +186,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceDoubleMinGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID) {
+    public static void partialReduceDoubleMinGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] = TornadoMath.min(outputArray[globalID], inputArray[gidx]);
@@ -301,8 +301,7 @@ public class ReduceCPUSnippets implements Snippets {
             return snippet;
         }
 
-        public void lower(StoreAtomicIndexedNode storeAtomicIndexed, AddressNode address, OCLWriteAtomicNode memoryWrite, ValueNode threadId, GlobalThreadSizeNode globalSize, ValueNode startNode,
-                ValueNode globalID, ValueNode startIndexNode, LoweringTool tool) {
+        public void lower(StoreAtomicIndexedNode storeAtomicIndexed, ValueNode threadId, ValueNode globalID, ValueNode startIndexNode, LoweringTool tool) {
 
             StructuredGraph graph = storeAtomicIndexed.graph();
             JavaKind elementKind = storeAtomicIndexed.elementKind();
@@ -316,8 +315,6 @@ public class ReduceCPUSnippets implements Snippets {
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", threadId);
             args.add("start", startIndexNode);
-            int numThreads = Runtime.getRuntime().availableProcessors();
-            args.add("numThreads", numThreads);
             args.add("globalID", globalID);
             if (extra != null) {
                 args.add("value", extra);
