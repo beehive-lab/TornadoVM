@@ -175,27 +175,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private void lowerReduceSnippets(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
-
         StructuredGraph graph = storeIndexed.graph();
-        JavaKind elementKind = storeIndexed.elementKind();
-
-        ValueNode value = storeIndexed.value();
-        ValueNode array = storeIndexed.array();
-        ValueNode accumulator = storeIndexed.getAccumulator();
         ValueNode startIndexNode = storeIndexed.getStartNode();
-
-        ATOMIC_OPERATION operation = ATOMIC_OPERATION.CUSTOM;
-        if (value instanceof OCLReduceAddNode) {
-            operation = ATOMIC_OPERATION.ADD;
-        } else if (value instanceof OCLReduceSubNode) {
-            operation = ATOMIC_OPERATION.SUB;
-        } else if (value instanceof OCLReduceMulNode) {
-            operation = ATOMIC_OPERATION.MUL;
-        }
-
-        AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-        OCLWriteAtomicNode memoryWrite = new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), accumulator,
-                accumulator.stamp(), storeIndexed.elementKind(), operation);
 
         // Find Get Global ID node and Global Size;
         GlobalThreadIdNode oclIdNode = graph.getNodes().filter(GlobalThreadIdNode.class).first();
@@ -205,8 +186,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         Iterator<Node> usages = oclIdNode.usages().iterator();
 
         boolean cpuScheduler = false;
-
-        ValueNode startNode = null;
 
         while (usages.hasNext()) {
             Node n = usages.next();
@@ -219,7 +198,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
             // CPU SCHEDULER
             if (n instanceof MulNode) {
-                startNode = (ValueNode) n;
                 Iterator<Node> usages2 = n.usages().iterator();
                 while (usages2.hasNext()) {
                     Node n2 = usages2.next();
@@ -232,7 +210,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             }
         }
 
-        // Depending on the Scheduler, call the proper snippet
+        // Depending on the Scheduler, call the proper snippet factory
         if (cpuScheduler) {
             CPUreduceSnippets.lower(storeIndexed, threadID, oclIdNode, startIndexNode, tool);
         } else {
