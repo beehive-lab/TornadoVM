@@ -177,6 +177,22 @@ public class ReduceCPUSnippets implements Snippets {
         }
     }
 
+    @Snippet
+    public static void partialReduceDoubleMaxGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID) {
+        OpenCLIntrinsics.localBarrier();
+        if (gidx >= start) {
+            outputArray[globalID] = TornadoMath.max(outputArray[globalID], inputArray[gidx]);
+        }
+    }
+
+    @Snippet
+    public static void partialReduceDoubleMinGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID) {
+        OpenCLIntrinsics.localBarrier();
+        if (gidx >= start) {
+            outputArray[globalID] = TornadoMath.min(outputArray[globalID], inputArray[gidx]);
+        }
+    }
+
     public static class Templates extends AbstractTemplates implements TornadoSnippetTypeInference {
 
         // Int
@@ -198,6 +214,8 @@ public class ReduceCPUSnippets implements Snippets {
         private final SnippetInfo partialReduceAddDoubleSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceDoubleAddGlobal2");
         private final SnippetInfo partialReduceMulDoubleSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMulGlobal");
         private final SnippetInfo partialReduceMulDoubleSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMulGlobal2");
+        private final SnippetInfo partialReduceMaxDoubleSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMaxGlobal");
+        private final SnippetInfo partialReduceMinDoubleSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMinGlobal");
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);
@@ -242,6 +260,17 @@ public class ReduceCPUSnippets implements Snippets {
             return snippet;
         }
 
+        private SnippetInfo getSnippetFromOCLBinaryNodeDouble(OCLFPBinaryIntrinsicNode value) {
+            switch (value.operation()) {
+                case FMAX:
+                    return partialReduceMaxDoubleSnippetGlobal;
+                case FMIN:
+                    return partialReduceMinDoubleSnippetGlobal;
+                default:
+                    throw new RuntimeException("OCLFPBinaryIntrinsicNode operation not supported yet");
+            }
+        }
+
         @Override
         public SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
@@ -249,6 +278,8 @@ public class ReduceCPUSnippets implements Snippets {
                 snippet = (extra == null) ? partialReduceAddDoubleSnippetGlobal : partialReduceAddDoubleSnippetGlobal2;
             } else if (value instanceof OCLReduceMulNode) {
                 snippet = (extra == null) ? partialReduceMulDoubleSnippetGlobal : partialReduceMulDoubleSnippetGlobal2;
+            } else if (value instanceof OCLFPBinaryIntrinsicNode) {
+                snippet = getSnippetFromOCLBinaryNodeDouble((OCLFPBinaryIntrinsicNode) value);
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
@@ -256,7 +287,7 @@ public class ReduceCPUSnippets implements Snippets {
         }
 
         @Override
-        public SnippetInfo getSnippet(JavaKind elementKind, ValueNode value, ValueNode extra) {
+        public SnippetInfo getSnippetInstance(JavaKind elementKind, ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (elementKind == JavaKind.Int) {
                 snippet = inferIntSnippet(value, extra);
@@ -278,7 +309,7 @@ public class ReduceCPUSnippets implements Snippets {
             ValueNode value = storeAtomicIndexed.value();
             ValueNode extra = storeAtomicIndexed.getExtraOperation();
 
-            SnippetInfo snippet = getSnippet(elementKind, value, extra);
+            SnippetInfo snippet = getSnippetInstance(elementKind, value, extra);
 
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
             args.add("inputData", storeAtomicIndexed.getInputArray());

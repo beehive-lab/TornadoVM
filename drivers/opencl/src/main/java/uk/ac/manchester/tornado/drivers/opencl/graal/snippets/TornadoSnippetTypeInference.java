@@ -36,6 +36,6 @@ public interface TornadoSnippetTypeInference {
 
     public SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra);
 
-    public SnippetInfo getSnippet(JavaKind elementKind, ValueNode value, ValueNode extra);
+    public SnippetInfo getSnippetInstance(JavaKind elementKind, ValueNode value, ValueNode extra);
 
 }
