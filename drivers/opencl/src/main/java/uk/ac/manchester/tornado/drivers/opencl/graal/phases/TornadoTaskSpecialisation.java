@@ -52,7 +52,6 @@ import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopUnroller;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeReplacement;
 
 public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext> {
@@ -62,13 +61,13 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     private final CanonicalizerPhase canonicalizer;
     private final TornadoValueTypeReplacement valueTypeReplacement;
     private final DeadCodeEliminationPhase deadCodeElimination;
-    private final TornadoLoopUnroller loopUnroller;
+    // private final TornadoLoopUnroller loopUnroller;
 
     public TornadoTaskSpecialisation(CanonicalizerPhase canonicalizer) {
         this.canonicalizer = canonicalizer;
         this.valueTypeReplacement = new TornadoValueTypeReplacement();
         this.deadCodeElimination = new DeadCodeEliminationPhase();
-        this.loopUnroller = new TornadoLoopUnroller(canonicalizer);
+        // this.loopUnroller = new TornadoLoopUnroller(canonicalizer);
 
     }
 
