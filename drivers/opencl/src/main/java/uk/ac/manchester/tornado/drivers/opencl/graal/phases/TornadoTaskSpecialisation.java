@@ -48,10 +48,10 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
+import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopUnroller;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeReplacement;
 
 public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext> {
@@ -61,13 +61,13 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     private final CanonicalizerPhase canonicalizer;
     private final TornadoValueTypeReplacement valueTypeReplacement;
     private final DeadCodeEliminationPhase deadCodeElimination;
-    private final TornadoLoopUnroller loopUnroller;
+    // private final TornadoLoopUnroller loopUnroller;
 
     public TornadoTaskSpecialisation(CanonicalizerPhase canonicalizer) {
         this.canonicalizer = canonicalizer;
         this.valueTypeReplacement = new TornadoValueTypeReplacement();
         this.deadCodeElimination = new DeadCodeEliminationPhase();
-        this.loopUnroller = new TornadoLoopUnroller(canonicalizer);
+        // this.loopUnroller = new TornadoLoopUnroller(canonicalizer);
 
     }
 
@@ -142,8 +142,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                     break;
                 case Object:
                     /*
-                     * propagate all constants from connected final
-                     * fields...cool!
+                     * propagate all constants from connected final fields...cool!
                      */
                     if (Modifier.isFinal(f.getModifiers())) {
                         final Object value = lookup(obj, f::get);
@@ -251,7 +250,10 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             if (context.hasArgs()) {
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                    propagateParameters(graph, param, context.getArgs());
+                    if (OpenCL.ACCELERATOR_IS_FPGA)
+                        ;
+                    else
+                        propagateParameters(graph, param, context.getArgs());
                 }
                 Debug.dump(Debug.INFO_LEVEL, graph, "After Phase Propagate Parameters");
             } else {
@@ -275,7 +277,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             Debug.dump(Debug.INFO_LEVEL, graph, "After Phase Pi Node Removal");
 
-            loopUnroller.execute(graph, context);
+            // loopUnroller.execute(graph, context);
 
             valueTypeReplacement.execute(graph, context);
 
