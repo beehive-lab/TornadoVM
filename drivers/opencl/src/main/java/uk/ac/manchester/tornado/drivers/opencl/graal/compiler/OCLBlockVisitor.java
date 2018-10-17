@@ -48,6 +48,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     Set<Block> merges;
     Set<Block> switches;
     Set<Node> switchClosed;
+    int loopCount = 0;
 
     public OCLBlockVisitor(OCLCompilationResultBuilder resBuilder) {
         this.openclBuilder = resBuilder;
@@ -105,10 +106,16 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             asm.eolOn();
             merges.add(block);
         }
-
         if (block.isLoopHeader()) {
+            loopCount++;
+        }
+        if (block.isLoopHeader() && loopCount > 1) {
+            System.out.println("Block is loop header ---> " + loopCount + "\n");
             openclBuilder.emitLoopHeader(block);
             asm.beginScope();
+            // loopCount++;
+        } else if (block.isLoopHeader() && loopCount == 1) {
+
         } else {
             // We emit either an ELSE statement or a SWITCH statement
             final Block dom = block.getDominator();
@@ -147,8 +154,11 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
 
     @Override
     public void exit(Block b, Block value) {
-        if (b.isLoopEnd()) {
+        if (b.isLoopEnd() && loopCount != 1) {
             asm.endScope();
+            loopCount--;
+            System.out.println("Block is loop header ---> " + loopCount + "\n");
+        } else {
         }
         if (b.getPostdominator() != null) {
             Block pdom = b.getPostdominator();
