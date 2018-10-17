@@ -33,7 +33,7 @@ def setEclipseSettings():
 
 		if (not os.path.exists(settingsDirectory)):
 			print  "\tCreating Directory"
-			os.mkdirs(settingsDirectory)
+			os.mkdir(settingsDirectory)
 
 		command = "cp " + __PATH_TO_ECLIPSE_SETTINGS__ + "* " + project +  "/.settings/" 
 		print "\t" + command 

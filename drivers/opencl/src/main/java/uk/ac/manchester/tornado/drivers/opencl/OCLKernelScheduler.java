@@ -70,7 +70,7 @@ public abstract class OCLKernelScheduler {
 
         if (deviceContext.printOCLKernelTime()) {
             Event resolveEvent = deviceContext.resolveEvent(task);
-            System.out.println("[OCL Kernel Execution Time] " + resolveEvent.getExecutionTimeInNanoSeconds() + " (ns)");
+            System.out.println("[OCL Kernel Execution Time] " + resolveEvent.getExecutionTime() + " (ns)");
         }
 
         return task;

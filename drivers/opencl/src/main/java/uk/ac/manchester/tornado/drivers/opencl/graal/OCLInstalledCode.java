@@ -133,8 +133,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             debug("\tstatus   : %s", event.getStatus());
 
             if (meta != null && meta.enableProfiling()) {
-                debug("\texecuting: %f seconds", event.getExecutionTime());
-                debug("\ttotal    : %f seconds", event.getTotalTime());
+                debug("\texecuting: %f seconds", event.getExecutionTimeInSeconds());
+                debug("\ttotal    : %f seconds", event.getTotalTimeInSeconds());
             }
         }
     }
