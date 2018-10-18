@@ -133,8 +133,12 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 if (array == null) {
                     array = obtainInputArray(((BinaryNode) currentNode).getY(), outputArray, indexToStore);
                 }
+            } else if (currentNode.getClass().getName().endsWith("OCLIntBinaryIntrinsicNode")) {
+                array = obtainInputArray(((BinaryNode) currentNode).getX(), outputArray, indexToStore);
+                if (array == null) {
+                    array = obtainInputArray(((BinaryNode) currentNode).getY(), outputArray, indexToStore);
+                }
             }
-
         } else if (currentNode instanceof LoadIndexedNode) {
             LoadIndexedNode loadNode = (LoadIndexedNode) currentNode;
             if (loadNode.array() != outputArray) {
@@ -173,6 +177,8 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             // We need the name because it is loaded from inner core
             // (tornado-driver).
             if (storeValue.getClass().getName().endsWith("OCLFPBinaryIntrinsicNode")) {
+                accumulator = ((BinaryNode) storeValue).getX();
+            } else if (storeValue.getClass().getName().endsWith("OCLIntBinaryIntrinsicNode")) {
                 accumulator = ((BinaryNode) storeValue).getX();
             } else {
                 // For any other binary node
@@ -278,7 +284,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         final Annotation[][] parameterAnnotations = graph.method().getParameterAnnotations();
         for (int index = 0; index < parameterAnnotations.length; index++) {
             for (Annotation annotation : parameterAnnotations[index]) {
-                // Get the reduce annotations
                 if (annotation instanceof Reduce) {
                     processReduceAnnotation(graph, index);
                 }
