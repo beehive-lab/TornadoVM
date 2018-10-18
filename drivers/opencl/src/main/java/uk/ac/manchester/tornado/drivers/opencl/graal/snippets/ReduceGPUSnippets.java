@@ -486,6 +486,28 @@ public class ReduceGPUSnippets implements Snippets {
     }
 
     @Snippet
+    public static void partialReduceIntMinGlobal(int[] inputArray, int[] outputArray, int gidx) {
+
+        int localIdx = OpenCLIntrinsics.get_local_id(0);
+        int localGroupSize = OpenCLIntrinsics.get_local_size(0);
+        int groupID = OpenCLIntrinsics.get_group_id(0);
+
+        int myID = localIdx + (localGroupSize * groupID);
+
+        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+            OpenCLIntrinsics.localBarrier();
+            if (localIdx < stride) {
+                inputArray[myID] = TornadoMath.min(inputArray[myID], inputArray[myID + stride]);
+            }
+        }
+
+        OpenCLIntrinsics.globalBarrier();
+        if (localIdx == 0) {
+            outputArray[groupID] = inputArray[myID];
+        }
+    }
+
+    @Snippet
     public static void partialReduceFloatMinGlobal(float[] inputArray, float[] outputArray, int gidx) {
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
@@ -600,6 +622,7 @@ public class ReduceGPUSnippets implements Snippets {
         private final SnippetInfo partialReduceMaxDoubleSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceDoubleMaxGlobal");
 
         // Min
+        private final SnippetInfo partialReduceIntMinSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceIntMinGlobal");
         private final SnippetInfo partialReduceMinFloatSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceFloatMinGlobal");
         private final SnippetInfo partialReduceMinDoubleSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceDoubleMinGlobal");
 
@@ -607,6 +630,17 @@ public class ReduceGPUSnippets implements Snippets {
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);
+        }
+
+        private SnippetInfo getSnippetFromOCLBinaryNode(OCLIntBinaryIntrinsicNode value) {
+            switch (value.operation()) {
+                case MAX:
+                    return partialReduceIntMaxSnippetGlobal;
+                case MIN:
+                    return partialReduceIntMinSnippetGlobal;
+                default:
+                    throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
+            }
         }
 
         @Override
@@ -619,13 +653,7 @@ public class ReduceGPUSnippets implements Snippets {
                 snippet = (extra == null) ? partialReduceIntMultSnippetGlobal : partialReduceIntMultSnippetGlobal2;
             } else if (value instanceof OCLIntBinaryIntrinsicNode) {
                 OCLIntBinaryIntrinsicNode op = (OCLIntBinaryIntrinsicNode) value;
-                switch (op.operation()) {
-                    case MAX:
-                        snippet = partialReduceIntMaxSnippetGlobal;
-                        break;
-                    default:
-                        throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
-                }
+                snippet = getSnippetFromOCLBinaryNode(op);
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
