@@ -56,9 +56,34 @@ public class OCLFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
     public static final NodeClass<OCLFPBinaryIntrinsicNode> TYPE = NodeClass.create(OCLFPBinaryIntrinsicNode.class);
     protected final Operation operation;
 
+    // @formatter:off
     public enum Operation {
-        ATAN2, ATAN2PI, COPYSIGN, FDIM, FMA, FMAX, FMIN, FMOD, FRACT, FREXP, HYPOT, LDEXP, MAD, MAXMAG, MINMAG, MODF, NEXTAFTER, POW, POWN, POWR, REMAINDER, REMQUO, ROOTN, SINCOS
+        ATAN2, 
+        ATAN2PI, 
+        COPYSIGN, 
+        FDIM, 
+        FMA, 
+        FMAX, 
+        FMIN, 
+        FMOD, 
+        FRACT, 
+        FREXP, 
+        HYPOT, 
+        LDEXP, 
+        MAD, 
+        MAXMAG, 
+        MINMAG, 
+        MODF, 
+        NEXTAFTER, 
+        POW, 
+        POWN, 
+        POWR, 
+        REMAINDER, 
+        REMQUO, 
+        ROOTN, 
+        SINCOS
     }
+    // @formatter:on
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool) {
