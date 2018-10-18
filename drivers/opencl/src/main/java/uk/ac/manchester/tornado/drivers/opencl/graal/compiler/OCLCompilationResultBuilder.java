@@ -101,8 +101,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     /**
-     * Emits code for {@code lir} in its {@linkplain LIR#codeEmittingOrder()
-     * code emitting order}.
+     * Emits code for {@code lir} in its {@linkplain LIR#codeEmittingOrder() code
+     * emitting order}.
      */
     @Override
     public void emit(LIR lir) {
@@ -278,9 +278,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
 
         /*
-         * Because of the way Graal handles Phi nodes, we generate the break
-         * instruction before any phi nodes are updated, therefore we need to
-         * ensure that the break is emitted as the end of the block.
+         * Because of the way Graal handles Phi nodes, we generate the break instruction
+         * before any phi nodes are updated, therefore we need to ensure that the break
+         * is emitted as the end of the block.
          */
         if (breakInst != null) {
             try {

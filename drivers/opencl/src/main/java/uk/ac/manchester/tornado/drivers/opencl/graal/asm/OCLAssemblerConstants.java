@@ -97,6 +97,9 @@ public class OCLAssemblerConstants {
     public static final String MAX = "max";
     public static final String ELSE = "else";
 
+    public static final String PRAGMA = "#pragma";
+    public static final String UNROLL = "unroll";
+
     public static final int STACK_BASE_OFFSET = 6;
 
 }
