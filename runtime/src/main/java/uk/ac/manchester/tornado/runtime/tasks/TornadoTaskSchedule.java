@@ -437,6 +437,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 String taskScheduleName = "$$TS-Exploration$$" + taskNumber;
                 TaskSchedule task = new TaskSchedule(taskScheduleName);
 
+                // XXX: Fill stream IN
                 // task.streamIn(objects);
 
                 for (int k = 0; k < taskPackages.size(); k++) {
@@ -471,7 +472,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             t.start();
         }
 
-        // Blocking policy
+        // Blocking policy: define the winner
         // ...
 
         // JOIN
