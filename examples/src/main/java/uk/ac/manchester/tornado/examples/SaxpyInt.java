@@ -18,57 +18,61 @@
 
 package uk.ac.manchester.tornado.examples;
 
-import uk.ac.manchester.tornado.api.*;
-import uk.ac.manchester.tornado.api.annotations.*;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class SaxpyInt {
 
-    public static void saxpy(int alpha, int[] x, int[] y) {
-        for (@Parallel int i = 0; i < y.length; i++) {
-            y[i] = alpha * x[i];
-
+    // public static void saxpy(int alpha, int[] x, int[] y) {
+    // for (@Parallel int i = 0; i < y.length; i++) {
+    // y[i] va= alpha * x[i];
+    //
+    // }
+    // }
+    public static void saxpy(int alpha, int[] x, int[] y, int[] size) {
+        // for (@Parallel int i = 0; i < y.length; i++) {
+        for (@Parallel int i = 0; i < size[0]; i++) {
+            for (@Parallel int ii = 0; ii < size[0]; ii++) {
+                y[ii] = alpha * x[ii];
+            }
         }
     }
 
     public static void main(String[] args) {
-        int numElements = 1024;
 
         int alpha = 2;
+        int[] size = new int[1];
+        String filename;
+
+        filename = null;
+
+        size[0] = Integer.parseInt(args[0]);
+        int numElements = size[0];
 
         int[] x = new int[numElements];
         int[] y = new int[numElements];
 
         for (int i = 0; i < numElements; i++) {
             x[i] = 1;
-            // y[i] = 0;
         }
-        // new TaskSchedule("s0")
-        // │·····························································································
-        // .prebuiltTask("t0",
-        // │·····························································································
-        // "saxpy",
-        // │·····························································································
-        // "/home/admin/Tornado/tornado/null/var/opencl-codecache/device-2-0/saxpy",
-        // │·····························································································
-        // new Object[] { alpha, x , y},
-        // │·····························································································
-        // new Access[] { Access.READ, Access.READ, Access.WRITE },
-        // │·····························································································
-        // OpenCL.defaultDevice(),
-        // │·····························································································
-        // new int[] { numElements })
-        // │·····························································································
-        // .streamOut(y)
-        // │·····························································································
-        // .execute();
-        // │·····························································································
-        TaskSchedule s0 = new TaskSchedule("s0").streamIn(x).task("t0", SaxpyInt::saxpy, alpha, x, y).streamOut(y);
 
-        // s0.warmup();
+        if (args.length == 2) {
+            filename = args[1];
+            TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+            new TaskSchedule("s0").prebuiltTask("t0", "saxpy", filename, new Object[] { alpha, x, y, size }, new Access[] { Access.READ, Access.READ, Access.WRITE, Access.READ }, defaultDevice,
+                    new int[] { Integer.parseInt(args[0]) }).streamOut(y).execute();
 
-        s0.execute();
+        } else {
+            TaskSchedule s0 = new TaskSchedule("s0").streamIn(x).task("t0", SaxpyInt::saxpy, alpha, x, y, size).streamOut(y);
+            // s0.warmup();
+            s0.execute();
+        }
+
         for (int i = 0; i < y.length; i++) {
-            // System.out.println(y[i] + "\n");
+            System.out.println(y[i] + "\n");
         }
 
     }

@@ -18,5 +18,5 @@ test-slam:
 eclipse:
 	mvn eclipse:eclipse
 cfgs:
-	rm *.cfg
+	rm *.cfg *.bgv *.log
 
