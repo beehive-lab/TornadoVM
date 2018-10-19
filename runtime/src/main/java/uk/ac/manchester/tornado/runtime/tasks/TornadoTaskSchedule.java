@@ -432,7 +432,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             final int taskNumber = i;
             threads[i] = new Thread(() -> {
                 // Each thread compile a TaskSchedule and Run
-                String taskScheduleName = "TS-E" + taskNumber;
+                String taskScheduleName = "$$TS-Exploration$$" + taskNumber;
                 TaskSchedule task = new TaskSchedule(taskScheduleName);
 
                 // task.streamIn(objects);
@@ -440,6 +440,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 for (int k = 0; k < taskPackages.size(); k++) {
                     String taskID = taskPackages.get(k).getId();
                     TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + taskNumber);
+                    System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=0:" + taskNumber);
                     task.addTask(taskPackages.get(k));
                 }
 
