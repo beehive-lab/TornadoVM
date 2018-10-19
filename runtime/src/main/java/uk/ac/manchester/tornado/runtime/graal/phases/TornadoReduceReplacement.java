@@ -280,11 +280,29 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         return startNode;
     }
 
+    private int getNumberOfParameterNodes(StructuredGraph graph) {
+        int numParameters = 0;
+        for (Node n : graph.getNodes()) {
+            if (n instanceof ParameterNode) {
+                numParameters++;
+            }
+        }
+        return numParameters;
+    }
+
     private void findParametersWithReduceAnnotations(StructuredGraph graph, TornadoSketchTierContext context) {
         final Annotation[][] parameterAnnotations = graph.method().getParameterAnnotations();
         for (int index = 0; index < parameterAnnotations.length; index++) {
             for (Annotation annotation : parameterAnnotations[index]) {
                 if (annotation instanceof Reduce) {
+                    // XXX: If the number of arguments do not match, then we
+                    // increase the index to obtain the correct one when
+                    // indexing from getParameters. This is an issue when having
+                    // inheritance with interfaces from Flink. See issue #185
+                    if (getNumberOfParameterNodes(graph) > parameterAnnotations.length) {
+                        index++;
+                    }
+
                     processReduceAnnotation(graph, index);
                 }
             }
