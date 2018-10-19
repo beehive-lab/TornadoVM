@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
+import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
 
 import java.util.ArrayList;
@@ -67,6 +68,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     protected int currentBlockIndex;
     protected final Set<ResolvedJavaMethod> nonInlinedMethods;
     protected boolean isKernel;
+    protected boolean isOutter; // XXXXXXX
+    protected int loops = 0; // XXXXXX
+    final boolean REMOVE_OUTER_LOOPS = Boolean.parseBoolean(getProperty("tornado.assembler.removeloops", "False"));
 
     public OCLCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
             OCLCompilationResult compilationResult, OptionValues options) {
@@ -264,8 +268,11 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             } else if (op instanceof OCLControlFlow.LoopBreakOp) {
                 breakInst = op;
                 continue;
+            } else if ((REMOVE_OUTER_LOOPS && loops == 0) && (op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp)) {
+                if (op instanceof OCLControlFlow.LoopPostOp) // xxxxx
+                    loops++; // xxxxx
+                continue;
             }
-
             if (PrintLIRWithAssembly.getValue(getOptions())) {
                 blockComment(String.format("%d %s", op.id(), op));
             }
