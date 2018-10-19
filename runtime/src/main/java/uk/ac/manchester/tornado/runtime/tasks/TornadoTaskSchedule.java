@@ -89,7 +89,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private Event event;
     private String taskName;
 
-    private ArrayList<TaskPackage> taskPackages;
+    private ArrayList<TaskPackage> taskPackages = new ArrayList<>();
+    private ArrayList<Object> streamOutObjects = new ArrayList<>();
 
     public TornadoTaskSchedule(String name) {
         graphContext = new ExecutionContext(name);
@@ -322,6 +323,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 warn("null object passed into streamIn() in schedule %s", graphContext.getId());
                 continue;
             }
+            streamOutObjects.add(object);
             graphContext.getObjectState(object).setStreamOut(true);
         }
     }
@@ -444,7 +446,22 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                     task.addTask(taskPackages.get(k));
                 }
 
-                // task.streamOut(objects);
+                int numObjectsCopyOut = streamOutObjects.size();
+                switch (numObjectsCopyOut) {
+                    case 1:
+                        task.streamOut(streamOutObjects.get(0));
+                        break;
+                    case 2:
+                        task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1));
+                        break;
+                    case 3:
+                        task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2));
+                        break;
+                    default:
+                        System.out.println("Not supported");
+                        break;
+                }
+
                 task.execute();
             });
         }
@@ -474,11 +491,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public void addTask(TaskPackage taskPackage) {
 
-        if (taskPackages == null) {
-            taskPackages = new ArrayList<>();
-        }
         taskPackages.add(taskPackage);
-
         String id = taskPackage.getId();
         int type = taskPackage.getTaskType();
         Object[] parameters = taskPackage.getTaskParameters();
