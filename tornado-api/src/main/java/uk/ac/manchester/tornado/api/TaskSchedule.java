@@ -195,6 +195,11 @@ public class TaskSchedule implements TornadoAPI {
     }
 
     @Override
+    public void executeWithProfiler() {
+        taskScheduleImpl.scheduleWithProfile().waitOn();
+    }
+
+    @Override
     public void warmup() {
         taskScheduleImpl.warmup();
     }

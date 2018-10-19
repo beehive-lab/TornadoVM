@@ -411,6 +411,15 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return this;
     }
 
+    @Override
+    public AbstractTaskGraph scheduleWithProfile() {
+
+        // FORK-JOIN MODEL
+
+        scheduleInner();
+        return this;
+    }
+
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public void addTask(TaskPackage taskPackage) {

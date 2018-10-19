@@ -99,6 +99,8 @@ public interface TornadoAPI {
 
     public void execute();
 
+    public void executeWithProfiler();
+
     public void warmup();
 
     public long getReturnValue(String id);

@@ -103,6 +103,8 @@ public interface AbstractTaskGraph {
 
     public abstract AbstractTaskGraph schedule();
 
+    public abstract AbstractTaskGraph scheduleWithProfile();
+
     public void addTask(TaskPackage taskPackage);
 
     public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
