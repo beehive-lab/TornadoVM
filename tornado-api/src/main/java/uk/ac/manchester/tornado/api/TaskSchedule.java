@@ -69,6 +69,12 @@ public class TaskSchedule implements TornadoAPI {
     }
 
     @Override
+    public TaskSchedule addTask(TaskPackage taskPackage) {
+        taskScheduleImpl.addTask(taskPackage);
+        return this;
+    }
+
+    @Override
     public <T1> TaskSchedule task(String id, Task1<T1> code, T1 arg) {
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg);
         taskScheduleImpl.addTask(taskPackage);

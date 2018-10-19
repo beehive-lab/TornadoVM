@@ -35,6 +35,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.function.Consumer;
@@ -43,11 +44,13 @@ import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.AbstractTaskGraph;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task15;
@@ -59,6 +62,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
@@ -84,6 +88,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private TornadoVM vm;
     private Event event;
     private String taskName;
+
+    private ArrayList<TaskPackage> taskPackages;
 
     public TornadoTaskSchedule(String name) {
         graphContext = new ExecutionContext(name);
@@ -414,15 +420,63 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public AbstractTaskGraph scheduleWithProfile() {
 
-        // FORK-JOIN MODEL
+        System.out.println("FORK-JOIN Model");
 
-        scheduleInner();
+        TornadoDriver driver = getTornadoRuntime().getDriver(0);
+        int numDevices = driver.getDeviceCount();
+
+        System.out.println("Number of devices: " + numDevices);
+
+        Thread[] threads = new Thread[numDevices];
+        for (int i = 0; i < threads.length; i++) {
+            final int taskNumber = i;
+            threads[i] = new Thread(() -> {
+                // Each thread compile a TaskSchedule and Run
+                String taskScheduleName = "TS-E" + taskNumber;
+                TaskSchedule task = new TaskSchedule(taskScheduleName);
+
+                // task.streamIn(objects);
+
+                for (int k = 0; k < taskPackages.size(); k++) {
+                    String taskID = taskPackages.get(k).getId();
+                    TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + taskNumber);
+                    task.addTask(taskPackages.get(k));
+                }
+
+                // task.streamOut(objects);
+                task.execute();
+            });
+        }
+
+        // FORK
+        for (Thread t : threads) {
+            t.start();
+        }
+
+        // Blocking policy
+        // ...
+
+        // JOIN
+        for (Thread t : threads) {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        // scheduleInner();
         return this;
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public void addTask(TaskPackage taskPackage) {
+
+        if (taskPackages == null) {
+            taskPackages = new ArrayList<>();
+        }
+        taskPackages.add(taskPackage);
 
         String id = taskPackage.getId();
         int type = taskPackage.getTaskType();
