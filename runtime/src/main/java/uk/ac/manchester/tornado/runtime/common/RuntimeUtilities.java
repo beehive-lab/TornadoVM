@@ -353,17 +353,14 @@ public class RuntimeUtilities {
             p.waitFor();
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
             BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-
             normalOutput.append("Here is the standard output of the command:\n");
             while ((stdOutput = stdInput.readLine()) != null) {
                 normalOutput.append(stdOutput);
             }
-
             errorOutput.append("Here is the standard error of the command (if any):\n");
             while ((stdOutput = stdError.readLine()) != null) {
                 errorOutput.append(stdOutput);
             }
-
             if (getOutput) {
                 System.out.println(normalOutput.toString());
                 System.out.println(errorOutput.toString());
