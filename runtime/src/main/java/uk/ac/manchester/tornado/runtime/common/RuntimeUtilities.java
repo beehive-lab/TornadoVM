@@ -339,39 +339,35 @@ public class RuntimeUtilities {
     }
 
     public static boolean ifFileExists(File fileName) {
-        boolean check;
-        if (fileName.exists()) {
-            check = true;
-        } else {
-            check = false;
-        }
+        boolean check = fileName.exists() ? true : false;
         return check;
     }
 
-    public static void sysCall(String[] command) {
+    public static void sysCall(String[] command, boolean getOutput) {
         String stdOutput = null;
+        StringBuffer normalOutput = new StringBuffer();
+        StringBuffer errorOutput = new StringBuffer();
+
         try {
-
             Process p = Runtime.getRuntime().exec(command);
-
             p.waitFor();
-
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
             BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
-            // read the output from the command
-            System.out.println("Here is the standard output of the command:\n");
+            normalOutput.append("Here is the standard output of the command:\n");
             while ((stdOutput = stdInput.readLine()) != null) {
-                System.out.println(stdOutput);
+                normalOutput.append(stdOutput);
             }
 
-            // read any errors from the attempted command
-            System.out.println("Here is the standard error of the command (if any):\n");
+            errorOutput.append("Here is the standard error of the command (if any):\n");
             while ((stdOutput = stdError.readLine()) != null) {
-                System.out.println(stdOutput);
+                errorOutput.append(stdOutput);
             }
 
+            if (getOutput) {
+                System.out.println(normalOutput.toString());
+                System.out.println(errorOutput.toString());
+            }
         } catch (IOException e) {
             error("Unable to make a native system call.", e);
         } catch (Throwable t) {
