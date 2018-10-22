@@ -595,45 +595,36 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             case 3:
                 addInner(TaskUtils.createTask(meta(), id, (Task3) parameters[0], parameters[1], parameters[2], parameters[3]));
                 break;
-
             case 4:
                 addInner(TaskUtils.createTask(meta(), id, (Task4) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4]));
                 break;
-
             case 5:
                 addInner(TaskUtils.createTask(meta(), id, (Task5) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5]));
                 break;
-
             case 6:
                 addInner(TaskUtils.createTask(meta(), id, (Task6) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6]));
                 break;
-
             case 7:
                 addInner(TaskUtils.createTask(meta(), id, (Task7) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7]));
                 break;
-
             case 8:
                 addInner(TaskUtils.createTask(meta(), id, (Task8) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                         parameters[8]));
                 break;
-
             case 9:
                 addInner(TaskUtils.createTask(meta(), id, (Task9) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7], parameters[8],
                         parameters[9]));
                 break;
-
             case 10:
                 addInner(TaskUtils.createTask(meta(), id, (Task10) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                         parameters[8], parameters[9], parameters[10]));
                 break;
-
             case 15:
                 addInner(TaskUtils.createTask(meta(), id, (Task15) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                         parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15]));
                 break;
-
             default:
-                throw new RuntimeException("Task not supported yet");
+                throw new RuntimeException("Task not supported yet. Type: " + type);
         }
     }
 
