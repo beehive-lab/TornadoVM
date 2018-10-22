@@ -36,6 +36,12 @@ public class TestDynamic extends TornadoTestBase {
         }
     }
 
+    public static void saxpy(float alpha, float[] x, float[] y) {
+        for (@Parallel int i = 0; i < y.length; i++) {
+            y[i] = alpha * x[i];
+        }
+    }
+
     @Test
     public void testDynamicWithProfiler() {
         int numElements = 16777216;
@@ -53,6 +59,26 @@ public class TestDynamic extends TornadoTestBase {
 
         for (int i = 0; i < b.length; i++) {
             assertEquals(a[i] * 2, b[i]);
+        }
+    }
+
+    @Test
+    public void testDynamicWithProfiler2() {
+        int numElements = 16777216;
+        float[] a = new float[numElements];
+        float[] b = new float[numElements];
+
+        Arrays.fill(a, 10);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .task("t0", TestDynamic::saxpy, 2.0f, a, b)
+            .streamOut(b)
+            .executeWithProfiler(Policy.PERFORMANCE);
+        //@formatter:on
+
+        for (int i = 0; i < b.length; i++) {
+            assertEquals(a[i] * 2.0f, b[i], 0.01f);
         }
     }
 
