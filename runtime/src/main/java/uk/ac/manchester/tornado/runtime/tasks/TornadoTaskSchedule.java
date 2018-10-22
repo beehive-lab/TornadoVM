@@ -36,6 +36,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.function.Consumer;
@@ -433,11 +434,14 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private void syncWithPolicy(DynamicPolicy policy, Thread[] threads) {
+    private ArrayList<Integer> synchronizeWithPolicy(DynamicPolicy policy, Thread[] threads) {
         // Set the Performance policy by default;
         if (policy == null) {
             policy = DynamicPolicy.PERFORMANCE;
         }
+
+        ArrayList<Integer> positions = new ArrayList<>();
+        ArrayList<String> names = new ArrayList<>();
 
         switch (policy) {
             case PERFORMANCE:
@@ -451,7 +455,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                         if (!isAlive && isFinished[i] == false) {
                             threadsFinished++;
                             isFinished[i] = true;
-                            System.out.println("Thread " + threads[i].getName() + " WINNER");
+                            positions.add(i);
+                            names.add(threads[i].getName());
                         }
                     }
                     if (threadsFinished == numThreads) {
@@ -459,20 +464,22 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                     }
                 }
                 break;
-
             default:
                 throw new RuntimeException("Policy " + policy + " not defined yet");
         }
+
+        for (String s : names) {
+            System.out.println(s);
+        }
+
+        return positions;
 
     }
 
     @Override
     public AbstractTaskGraph scheduleWithProfile(DynamicPolicy policy) {
 
-        // XXX: Interpreted.
-        /// XXX: warminUp() user single thread.
-
-        long start = System.currentTimeMillis();
+        final long startSearchProfiler = System.currentTimeMillis();
 
         System.out.println("FORK-JOIN Model");
 
@@ -482,32 +489,39 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         System.out.println("Number of devices: " + numDevices);
 
         // One additional threads is reserved for sequential CPU execution
-        int numThreads = numDevices + 1;
-        int indexSequential = numDevices;
+        final int numThreads = numDevices + 1;
+        final int indexSequential = numDevices;
 
         Thread[] threads = new Thread[numThreads];
+
+        long[] totalTimers = new long[numThreads];
 
         // Last Thread runs the sequential code
         threads[indexSequential] = new Thread(() -> {
             for (int k = 0; k < taskPackages.size(); k++) {
                 runSequentialCodeInThread(taskPackages.get(k));
             }
+            final long endSequentialCode = System.currentTimeMillis();
+            Thread.currentThread().setName("SEQUENTIAL");
+            totalTimers[indexSequential] = (endSequentialCode - startSearchProfiler);
         });
 
         for (int i = 0; i < numDevices; i++) {
-            final int taskNumber = i;
+            final int taskScheduleNumber = i;
             threads[i] = new Thread(() -> {
                 // Each thread compile a TaskSchedule and Run
-                String taskScheduleName = "$$TS-Exploration$$" + taskNumber;
+                String taskScheduleName = "$$TS-Exploration$$" + taskScheduleNumber;
                 TaskSchedule task = new TaskSchedule(taskScheduleName);
 
                 // XXX: Fill stream IN
                 // task.streamIn(objects);
 
+                final long start = System.currentTimeMillis();
+
                 for (int k = 0; k < taskPackages.size(); k++) {
                     String taskID = taskPackages.get(k).getId();
-                    TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + taskNumber);
-                    System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=0:" + taskNumber);
+                    TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + taskScheduleNumber);
+                    System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=0:" + taskScheduleNumber);
                     task.addTask(taskPackages.get(k));
                 }
 
@@ -528,6 +542,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 }
 
                 task.execute();
+
+                final long end = System.currentTimeMillis();
+                totalTimers[taskScheduleNumber] = end - start;
             });
         }
 
@@ -536,7 +553,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             t.start();
         }
 
-        syncWithPolicy(policy, threads);
+        ArrayList<Integer> positions = synchronizeWithPolicy(policy, threads);
+
+        int k = 0;
+        for (Integer i : positions) {
+            System.out.println("#" + k++ + " -> " + totalTimers[i]);
+        }
 
         // JOIN
         for (Thread t : threads) {
