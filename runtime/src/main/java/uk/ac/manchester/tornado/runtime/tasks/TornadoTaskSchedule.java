@@ -513,7 +513,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             final int taskScheduleNumber = i;
             threads[i] = new Thread(() -> {
                 // Each thread compile a TaskSchedule and Run
-                String taskScheduleName = "$$TS-Exploration$$" + taskScheduleNumber;
+                String taskScheduleName = "XXX" + taskScheduleNumber;
                 TaskSchedule task = new TaskSchedule(taskScheduleName);
 
                 // XXX: Fill stream IN
