@@ -36,7 +36,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.function.Consumer;
@@ -431,8 +430,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             case 3:
                 Task3 task3 = (Task3) taskPackage.getTaskParameters()[0];
                 task3.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3]);
+                break;
             default:
-                System.out.println("Sequential Runner not supported yet");
+                System.out.println("Sequential Runner not supported yet. Type: " + type);
                 break;
         }
     }
