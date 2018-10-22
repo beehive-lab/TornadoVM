@@ -419,6 +419,22 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return this;
     }
 
+    private void runSequentialCodeInThread(TaskPackage taskPackage) {
+        int type = taskPackage.getTaskType();
+        switch (type) {
+            case 2:
+                System.out.println("Running sequential");
+                Task2 task = (Task2) taskPackage.getTaskParameters()[0];
+                task.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2]);
+                System.out.println("Sequential code finished");
+                break;
+            default:
+                System.out.println("Sequential Runner not supported yet");
+                break;
+        }
+
+    }
+
     @Override
     public AbstractTaskGraph scheduleWithProfile() {
 
@@ -434,8 +450,19 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         System.out.println("Number of devices: " + numDevices);
 
-        Thread[] threads = new Thread[numDevices];
-        for (int i = 0; i < threads.length; i++) {
+        // One additional threads is reserved for sequential CPU execution
+        int numThreads = numDevices + 1;
+
+        Thread[] threads = new Thread[numThreads];
+
+        // Last Thread runs the sequential code
+        threads[numDevices] = new Thread(() -> {
+            for (int k = 0; k < taskPackages.size(); k++) {
+                runSequentialCodeInThread(taskPackages.get(k));
+            }
+        });
+
+        for (int i = 0; i < numDevices; i++) {
             final int taskNumber = i;
             threads[i] = new Thread(() -> {
                 // Each thread compile a TaskSchedule and Run
