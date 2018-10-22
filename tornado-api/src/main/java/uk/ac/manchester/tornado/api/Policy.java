@@ -41,7 +41,7 @@
  */
 package uk.ac.manchester.tornado.api;
 
-public enum DynamicPolicy {
+public enum Policy {
 
     // @formatter:off
     PERFORMANCE ("Performance"), 
@@ -51,7 +51,7 @@ public enum DynamicPolicy {
 
     private String policy;
 
-    DynamicPolicy(String policy) {
+    Policy(String policy) {
         this.policy = policy;
     }
 

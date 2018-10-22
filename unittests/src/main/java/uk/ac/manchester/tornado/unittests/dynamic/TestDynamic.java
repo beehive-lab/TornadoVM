@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.api.DynamicPolicy;
+import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -48,7 +48,7 @@ public class TestDynamic extends TornadoTestBase {
         new TaskSchedule("s0")
             .task("t0", TestDynamic::compute, a, b)
             .streamOut(b)
-            .executeWithProfiler(DynamicPolicy.PERFORMANCE);
+            .executeWithProfiler(Policy.PERFORMANCE);
         //@formatter:on
 
         for (int i = 0; i < b.length; i++) {

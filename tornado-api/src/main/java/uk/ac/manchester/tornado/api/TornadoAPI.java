@@ -102,7 +102,7 @@ public interface TornadoAPI {
 
     public void execute();
 
-    public void executeWithProfiler(DynamicPolicy policy);
+    public void executeWithProfiler(Policy policy);
 
     public void warmup();
 

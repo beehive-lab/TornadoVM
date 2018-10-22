@@ -45,7 +45,7 @@ import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.AbstractTaskGraph;
-import uk.ac.manchester.tornado.api.DynamicPolicy;
+import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -434,10 +434,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private ArrayList<Integer> synchronizeWithPolicy(DynamicPolicy policy, Thread[] threads) {
+    private ArrayList<Integer> synchronizeWithPolicy(Policy policy, Thread[] threads) {
         // Set the Performance policy by default;
         if (policy == null) {
-            policy = DynamicPolicy.PERFORMANCE;
+            policy = Policy.PERFORMANCE;
         }
 
         ArrayList<Integer> positions = new ArrayList<>();
@@ -477,7 +477,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
-    public AbstractTaskGraph scheduleWithProfile(DynamicPolicy policy) {
+    public AbstractTaskGraph scheduleWithProfile(Policy policy) {
 
         final long startSearchProfiler = System.currentTimeMillis();
 

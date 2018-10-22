@@ -103,7 +103,7 @@ public interface AbstractTaskGraph {
 
     public abstract AbstractTaskGraph schedule();
 
-    public abstract AbstractTaskGraph scheduleWithProfile(DynamicPolicy policy);
+    public abstract AbstractTaskGraph scheduleWithProfile(Policy policy);
 
     public void addTask(TaskPackage taskPackage);
 
