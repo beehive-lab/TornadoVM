@@ -505,7 +505,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 runSequentialCodeInThread(taskPackages.get(k));
             }
             final long endSequentialCode = System.currentTimeMillis();
-            Thread.currentThread().setName("SEQUENTIAL");
+            Thread.currentThread().setName("Thread-sequential");
             totalTimers[indexSequential] = (endSequentialCode - startSearchProfiler);
         });
 
