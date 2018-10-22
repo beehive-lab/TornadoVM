@@ -44,6 +44,7 @@ import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.AbstractTaskGraph;
+import uk.ac.manchester.tornado.api.DynamicPolicy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -423,20 +424,50 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         int type = taskPackage.getTaskType();
         switch (type) {
             case 2:
-                System.out.println("Running sequential");
                 Task2 task = (Task2) taskPackage.getTaskParameters()[0];
                 task.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2]);
-                System.out.println("Sequential code finished");
                 break;
             default:
                 System.out.println("Sequential Runner not supported yet");
                 break;
         }
+    }
+
+    private void syncWithPolicy(DynamicPolicy policy, Thread[] threads) {
+        // Set the Performance policy by default;
+        if (policy == null) {
+            policy = DynamicPolicy.PERFORMANCE;
+        }
+
+        switch (policy) {
+            case PERFORMANCE:
+                int numThreads = threads.length;
+                int threadsFinished = 0;
+                boolean[] isFinished = new boolean[threads.length];
+                boolean allFinished = false;
+                while (!allFinished) {
+                    for (int i = 0; i < threads.length; i++) {
+                        boolean isAlive = threads[i].isAlive();
+                        if (!isAlive && isFinished[i] == false) {
+                            threadsFinished++;
+                            isFinished[i] = true;
+                            System.out.println("Thread " + threads[i].getName() + " WINNER");
+                        }
+                    }
+                    if (threadsFinished == numThreads) {
+                        allFinished = true;
+                    }
+                }
+                break;
+
+            default:
+                throw new RuntimeException("Policy " + policy + " not defined yet");
+        }
 
     }
 
     @Override
-    public AbstractTaskGraph scheduleWithProfile() {
+    public AbstractTaskGraph scheduleWithProfile(DynamicPolicy policy) {
 
         // XXX: Interpreted.
         /// XXX: warminUp() user single thread.
@@ -452,11 +483,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         // One additional threads is reserved for sequential CPU execution
         int numThreads = numDevices + 1;
+        int indexSequential = numDevices;
 
         Thread[] threads = new Thread[numThreads];
 
         // Last Thread runs the sequential code
-        threads[numDevices] = new Thread(() -> {
+        threads[indexSequential] = new Thread(() -> {
             for (int k = 0; k < taskPackages.size(); k++) {
                 runSequentialCodeInThread(taskPackages.get(k));
             }
@@ -504,8 +536,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             t.start();
         }
 
-        // XXX: Blocking policy: define the winner
-        // ...
+        syncWithPolicy(policy, threads);
 
         // JOIN
         for (Thread t : threads) {

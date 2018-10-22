@@ -201,8 +201,8 @@ public class TaskSchedule implements TornadoAPI {
     }
 
     @Override
-    public void executeWithProfiler() {
-        taskScheduleImpl.scheduleWithProfile().waitOn();
+    public void executeWithProfiler(DynamicPolicy policy) {
+        taskScheduleImpl.scheduleWithProfile(policy).waitOn();
     }
 
     @Override

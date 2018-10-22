@@ -41,73 +41,22 @@
  */
 package uk.ac.manchester.tornado.api;
 
-import java.util.function.Consumer;
+public enum DynamicPolicy {
 
-import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.common.TaskPackage;
-import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
+    // @formatter:off
+    PERFORMANCE ("Performance"), 
+    SURVIVOR ("Survivor"),
+    ENERGY ("Energy");
+    // @formatter:on
 
-public interface AbstractTaskGraph {
+    private String policy;
 
-    public SchedulableTask getTask(String i);
+    DynamicPolicy(String policy) {
+        this.policy = policy;
+    }
 
-    public TornadoDevice getDevice();
-
-    public void setDevice(TornadoDevice device);
-
-    public TornadoDevice getDeviceForTask(String id);
-
-    public long getReturnValue(String id);
-
-    public void addInner(SchedulableTask task);
-
-    public boolean isLastDeviceListEmpty();
-
-    public void scheduleInner();
-
-    public void apply(Consumer<SchedulableTask> consumer);
-
-    public void mapAllToInner(TornadoDevice device);
-
-    public void dumpTimes();
-
-    public void dumpProfiles();
-
-    public void dumpEvents();
-
-    public void clearProfiles();
-
-    public void waitOn();
-
-    public void streamInInner(Object... objects);
-
-    public void streamOutInner(Object... objects);
-
-    public void dump();
-
-    public void warmup();
-
-    public void invalidateObjects();
-
-    public void syncObject(Object object);
-
-    public void syncObjects();
-
-    public void syncObjects(Object... objects);
-
-    public String getId();
-
-    public TaskMetaDataInterface meta();
-
-    public abstract AbstractTaskGraph schedule();
-
-    public abstract AbstractTaskGraph scheduleWithProfile(DynamicPolicy policy);
-
-    public void addTask(TaskPackage taskPackage);
-
-    public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
-
-    public void addScalaTask(String id, Object function, Object[] args);
+    @Override
+    public String toString() {
+        return policy;
+    }
 }
