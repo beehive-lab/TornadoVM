@@ -422,6 +422,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public AbstractTaskGraph scheduleWithProfile() {
 
+        // XXX: Interpreted.
+        /// XXX: warminUp() user single thread.
+
+        long start = System.currentTimeMillis();
+
         System.out.println("FORK-JOIN Model");
 
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
@@ -472,7 +477,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             t.start();
         }
 
-        // Blocking policy: define the winner
+        // XXX: Blocking policy: define the winner
         // ...
 
         // JOIN
