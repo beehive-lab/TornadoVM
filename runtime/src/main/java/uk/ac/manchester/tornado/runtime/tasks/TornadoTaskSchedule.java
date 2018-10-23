@@ -36,6 +36,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.function.Consumer;
@@ -88,10 +89,14 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private GraphCompilationResult result;
     private TornadoVM vm;
     private Event event;
-    private String taskName;
+    private String taskScheduleName;
 
     private ArrayList<TaskPackage> taskPackages = new ArrayList<>();
     private ArrayList<Object> streamOutObjects = new ArrayList<>();
+
+    private static final int DEFAULT_WINNER_INDEX = -1;
+
+    private int deviceWinnerIndex = DEFAULT_WINNER_INDEX;
 
     public TornadoTaskSchedule(String name) {
         graphContext = new ExecutionContext(name);
@@ -100,11 +105,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         hlBuffer.rewind();
         result = null;
         event = null;
-        this.taskName = name;
+        this.taskScheduleName = name;
     }
 
     public String getTaskScheduleName() {
-        return taskName;
+        return taskScheduleName;
     }
 
     @Override
@@ -437,59 +442,49 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private ArrayList<Integer> synchronizeWithPolicy(Policy policy, Thread[] threads) {
+    private int synchronizeWithPolicy(Policy policy, Thread[] threads, long[] totalTimers) {
         // Set the Performance policy by default;
         if (policy == null) {
             policy = Policy.PERFORMANCE;
         }
 
-        ArrayList<Integer> positions = new ArrayList<>();
-        ArrayList<String> names = new ArrayList<>();
-
         switch (policy) {
             case PERFORMANCE:
-                int numThreads = threads.length;
-                int threadsFinished = 0;
-                boolean[] isFinished = new boolean[threads.length];
-                boolean allFinished = false;
-                while (!allFinished) {
-                    for (int i = 0; i < threads.length; i++) {
-                        boolean isAlive = threads[i].isAlive();
-                        if (!isAlive && isFinished[i] == false) {
-                            threadsFinished++;
-                            isFinished[i] = true;
-                            positions.add(i);
-                            names.add(threads[i].getName());
-                        }
-                    }
-                    if (threadsFinished == numThreads) {
-                        allFinished = true;
+
+                long min = Long.MAX_VALUE;
+                for (int i = 0; i < totalTimers.length; i++) {
+                    if (min < totalTimers[i]) {
+                        min = totalTimers[i];
                     }
                 }
+
+                System.out.println("MIN: " + min);
+                int position = 0;
+                for (int i = 0; i < totalTimers.length; i++) {
+                    if (min == totalTimers[i]) {
+                        position = i;
+                    }
+                }
+                deviceWinnerIndex = position;
+
                 break;
             default:
                 throw new RuntimeException("Policy " + policy + " not defined yet");
         }
 
-        for (String s : names) {
-            System.out.println(s);
-        }
-
-        return positions;
+        return deviceWinnerIndex;
 
     }
 
-    @Override
-    public AbstractTaskGraph scheduleWithProfile(Policy policy) {
+    private void runScheduleWithProfiler(Policy policy) {
 
         final long startSearchProfiler = System.currentTimeMillis();
-
-        System.out.println("FORK-JOIN Model");
-
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
         int numDevices = driver.getDeviceCount();
 
         System.out.println("Number of devices: " + numDevices);
+
+        long masterThreadID = Thread.currentThread().getId();
 
         // One additional threads is reserved for sequential CPU execution
         final int numThreads = numDevices + 1;
@@ -556,13 +551,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             t.start();
         }
 
-        ArrayList<Integer> positions = synchronizeWithPolicy(policy, threads);
-
-        int k = 0;
-        for (Integer i : positions) {
-            System.out.println("#" + k++ + " -> " + totalTimers[i]);
-        }
-
         // JOIN
         for (Thread t : threads) {
             try {
@@ -572,7 +560,40 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             }
         }
 
-        // scheduleInner();
+        if (masterThreadID == Thread.currentThread().getId()) {
+            System.out.println("SYNCHRONIZING with thread: " + Thread.currentThread().getId());
+            deviceWinnerIndex = synchronizeWithPolicy(policy, threads, totalTimers);
+            System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
+        }
+    }
+
+    private void runSequential() {
+        for (int k = 0; k < taskPackages.size(); k++) {
+            runSequentialCodeInThread(taskPackages.get(k));
+        }
+    }
+
+    private void runParallel() {
+        for (int k = 0; k < taskPackages.size(); k++) {
+            TaskPackage taskPackage = taskPackages.get(k);
+            TornadoRuntime.setProperty(this.getTaskScheduleName() + "." + taskPackage.getId() + ".device", "0:" + deviceWinnerIndex);
+        }
+        scheduleInner();
+    }
+
+    @Override
+    public synchronized AbstractTaskGraph scheduleWithProfile(Policy policy) {
+        if (deviceWinnerIndex == DEFAULT_WINNER_INDEX) {
+            runScheduleWithProfiler(policy);
+        } else {
+            // Run with the winner device
+            System.out.println("Selecting the device: " + deviceWinnerIndex);
+            if (deviceWinnerIndex >= TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount()) {
+                runSequential();
+            } else {
+                runParallel();
+            }
+        }
         return this;
     }
 

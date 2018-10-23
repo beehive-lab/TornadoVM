@@ -36,6 +36,14 @@ public class TestDynamic extends TornadoTestBase {
         }
     }
 
+    public static void compute2(int[] a, int[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            for (int j = 0; j < a.length; j++) {
+                b[i] += a[j] * 2;
+            }
+        }
+    }
+
     public static void saxpy(float alpha, float[] x, float[] y) {
         for (@Parallel int i = 0; i < y.length; i++) {
             y[i] = alpha * x[i];
@@ -44,18 +52,25 @@ public class TestDynamic extends TornadoTestBase {
 
     @Test
     public void testDynamicWithProfiler() {
-        int numElements = 16777216;
+        int numElements = 16000;
         int[] a = new int[numElements];
         int[] b = new int[numElements];
 
         Arrays.fill(a, 10);
 
         //@formatter:off
-        new TaskSchedule("s0")
+        TaskSchedule taskSchedule = new TaskSchedule("s0")
             .task("t0", TestDynamic::compute, a, b)
-            .streamOut(b)
-            .executeWithProfiler(Policy.PERFORMANCE);
+            .streamOut(b);
         //@formatter:on
+
+        // Run first time to obtain the best performance device
+        taskSchedule.executeWithProfiler(Policy.PERFORMANCE);
+
+        // Run a few iterations to get the device.
+        for (int i = 0; i < 10; i++) {
+            taskSchedule.executeWithProfiler(Policy.PERFORMANCE);
+        }
 
         for (int i = 0; i < b.length; i++) {
             assertEquals(a[i] * 2, b[i]);
@@ -69,6 +84,7 @@ public class TestDynamic extends TornadoTestBase {
         float[] b = new float[numElements];
 
         Arrays.fill(a, 10);
+        Arrays.fill(b, 0);
 
         //@formatter:off
         new TaskSchedule("s0")
@@ -79,6 +95,36 @@ public class TestDynamic extends TornadoTestBase {
 
         for (int i = 0; i < b.length; i++) {
             assertEquals(a[i] * 2.0f, b[i], 0.01f);
+        }
+    }
+
+    @Test
+    public void testDynamicWithProfiler3() {
+        int numElements = 16000;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] seq = new int[numElements];
+
+        Arrays.fill(a, 10);
+
+        compute(a, seq);
+
+        //@formatter:off
+        TaskSchedule taskSchedule = new TaskSchedule("s0")
+            .task("t0", TestDynamic::compute2, a, b)
+            .streamOut(b);
+        //@formatter:on
+
+        // Run first time to obtain the best performance device
+        taskSchedule.executeWithProfiler(Policy.PERFORMANCE);
+
+        // Run a few iterations to get the device.
+        for (int i = 0; i < 10; i++) {
+            taskSchedule.executeWithProfiler(Policy.PERFORMANCE);
+        }
+
+        for (int i = 0; i < b.length; i++) {
+            assertEquals(seq[i], b[i]);
         }
     }
 
