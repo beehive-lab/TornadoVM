@@ -450,23 +450,16 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         switch (policy) {
             case PERFORMANCE:
-
+                int position = 0;
                 long min = Long.MAX_VALUE;
                 for (int i = 0; i < totalTimers.length; i++) {
-                    if (min < totalTimers[i]) {
+                    if (min > totalTimers[i]) {
                         min = totalTimers[i];
-                    }
-                }
-
-                System.out.println("MIN: " + min);
-                int position = 0;
-                for (int i = 0; i < totalTimers.length; i++) {
-                    if (min == totalTimers[i]) {
                         position = i;
                     }
                 }
+                System.out.println("MIN: " + min);
                 deviceWinnerIndex = position;
-
                 break;
             default:
                 throw new RuntimeException("Policy " + policy + " not defined yet");
