@@ -458,7 +458,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                         position = i;
                     }
                 }
-                System.out.println("MIN: " + min);
                 deviceWinnerIndex = position;
                 break;
             default:
