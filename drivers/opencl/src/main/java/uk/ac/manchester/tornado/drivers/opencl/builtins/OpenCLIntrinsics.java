@@ -25,6 +25,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.builtins;
 
+import org.graalvm.compiler.api.replacements.Fold;
+
 import uk.ac.manchester.tornado.api.annotations.ReductionOp;
 
 public class OpenCLIntrinsics {
@@ -85,6 +87,15 @@ public class OpenCLIntrinsics {
 
     public static void createLocalMemory(int[] array, int size) {
 
+    }
+
+    public static int fmax(float a, float b) {
+        return 0;
+    }
+
+    @Fold
+    public static int fmax() {
+        return 0;
     }
 
     public static <T1, T2, R> R op(ReductionOp op, T1 x, T2 y) {

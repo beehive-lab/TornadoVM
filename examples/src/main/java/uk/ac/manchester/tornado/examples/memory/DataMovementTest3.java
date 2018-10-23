@@ -61,8 +61,8 @@ public class DataMovementTest3 {
 
         printArray(array);
 
-        // System.out.printf("write: %.4e s\n",writeTask.getExecutionTime());
-        // System.out.printf("read : %.4e s\n",readTask.getExecutionTime());
+        // System.out.printf("write: %.4e s\n",writeTask.getExecutionTimeInSeconds());
+        // System.out.printf("read : %.4e s\n",readTask.getExecutionTimeInSeconds());
     }
 
 }

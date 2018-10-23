@@ -127,6 +127,18 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             if (array == null) {
                 array = obtainInputArray(value.getY(), outputArray, indexToStore);
             }
+        } else if (currentNode instanceof BinaryNode) {
+            if (currentNode.getClass().getName().endsWith("OCLFPBinaryIntrinsicNode")) {
+                array = obtainInputArray(((BinaryNode) currentNode).getX(), outputArray, indexToStore);
+                if (array == null) {
+                    array = obtainInputArray(((BinaryNode) currentNode).getY(), outputArray, indexToStore);
+                }
+            } else if (currentNode.getClass().getName().endsWith("OCLIntBinaryIntrinsicNode")) {
+                array = obtainInputArray(((BinaryNode) currentNode).getX(), outputArray, indexToStore);
+                if (array == null) {
+                    array = obtainInputArray(((BinaryNode) currentNode).getY(), outputArray, indexToStore);
+                }
+            }
         } else if (currentNode instanceof LoadIndexedNode) {
             LoadIndexedNode loadNode = (LoadIndexedNode) currentNode;
             if (loadNode.array() != outputArray) {
@@ -161,8 +173,18 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             value = atomicSub;
             subNode.safeDelete();
         } else if (storeValue instanceof BinaryNode) {
-            // For any other binary node
-            accumulator = storeValue;
+
+            // We need the name because it is loaded from inner core
+            // (tornado-driver).
+            if (storeValue.getClass().getName().endsWith("OCLFPBinaryIntrinsicNode")) {
+                accumulator = ((BinaryNode) storeValue).getX();
+            } else if (storeValue.getClass().getName().endsWith("OCLIntBinaryIntrinsicNode")) {
+                accumulator = ((BinaryNode) storeValue).getX();
+            } else {
+                // For any other binary node
+                // if it is a builtin, we apply the general case
+                accumulator = storeValue;
+            }
             value = storeValue;
         } else {
             throw new RuntimeException("\n\n[NODE REDUCTION NOT SUPPORTED] Node : " + store.value() + " not suported yet.");
@@ -262,7 +284,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         final Annotation[][] parameterAnnotations = graph.method().getParameterAnnotations();
         for (int index = 0; index < parameterAnnotations.length; index++) {
             for (Annotation annotation : parameterAnnotations[index]) {
-                // Get the reduce annotations
                 if (annotation instanceof Reduce) {
                     processReduceAnnotation(graph, index);
                 }

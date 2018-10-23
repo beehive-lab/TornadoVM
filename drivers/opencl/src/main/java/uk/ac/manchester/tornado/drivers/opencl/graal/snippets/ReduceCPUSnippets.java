@@ -39,9 +39,12 @@ import org.graalvm.compiler.replacements.Snippets;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceAddNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
@@ -64,7 +67,7 @@ public class ReduceCPUSnippets implements Snippets {
      * @param globalID
      */
     @Snippet
-    public static void partialReduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID) {
+    public static void partialReduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] += inputArray[gidx];
@@ -72,7 +75,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceIntAddGlobal2(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID, int value) {
+    public static void partialReduceIntAddGlobal2(int[] inputArray, int[] outputArray, int gidx, int start, int globalID, int value) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] += value;
@@ -80,7 +83,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceIntMulGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID) {
+    public static void partialReduceIntMulGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] *= inputArray[gidx];
@@ -88,7 +91,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceIntMulGlobal2(int[] inputArray, int[] outputArray, int gidx, int start, int numThreads, int globalID, int value) {
+    public static void partialReduceIntMulGlobal2(int[] inputArray, int[] outputArray, int gidx, int start, int globalID, int value) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] *= value;
@@ -96,7 +99,23 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceFloatAddGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID) {
+    public static void partialReduceIntMaxGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int globalID) {
+        OpenCLIntrinsics.localBarrier();
+        if (gidx >= start) {
+            outputArray[globalID] = TornadoMath.max(outputArray[globalID], inputArray[gidx]);
+        }
+    }
+
+    @Snippet
+    public static void partialReduceIntMinGlobal(int[] inputArray, int[] outputArray, int gidx, int start, int globalID) {
+        OpenCLIntrinsics.localBarrier();
+        if (gidx >= start) {
+            outputArray[globalID] = TornadoMath.min(outputArray[globalID], inputArray[gidx]);
+        }
+    }
+
+    @Snippet
+    public static void partialReduceFloatAddGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] += inputArray[gidx];
@@ -104,7 +123,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceFloatAddGlobal2(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID, float value) {
+    public static void partialReduceFloatAddGlobal2(float[] inputArray, float[] outputArray, int gidx, int start, int globalID, float value) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] += value;
@@ -112,7 +131,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceFloatMulGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID) {
+    public static void partialReduceFloatMulGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] *= inputArray[gidx];
@@ -120,7 +139,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceFloatMulGlobal2(float[] inputArray, float[] outputArray, int gidx, int start, int numThreads, int globalID, float value) {
+    public static void partialReduceFloatMulGlobal2(float[] inputArray, float[] outputArray, int gidx, int start, int globalID, float value) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] *= value;
@@ -128,7 +147,23 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceDoubleAddGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID) {
+    public static void partialReduceFloatMaxGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int globalID) {
+        OpenCLIntrinsics.localBarrier();
+        if (gidx >= start) {
+            outputArray[globalID] = TornadoMath.max(outputArray[globalID], inputArray[gidx]);
+        }
+    }
+
+    @Snippet
+    public static void partialReduceFloatMinGlobal(float[] inputArray, float[] outputArray, int gidx, int start, int globalID) {
+        OpenCLIntrinsics.localBarrier();
+        if (gidx >= start) {
+            outputArray[globalID] = TornadoMath.min(outputArray[globalID], inputArray[gidx]);
+        }
+    }
+
+    @Snippet
+    public static void partialReduceDoubleAddGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] += inputArray[gidx];
@@ -136,7 +171,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceDoubleAddGlobal2(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID, double value) {
+    public static void partialReduceDoubleAddGlobal2(double[] inputArray, double[] outputArray, int gidx, int start, int globalID, double value) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] += value;
@@ -144,7 +179,7 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceDoubleMulGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID) {
+    public static void partialReduceDoubleMulGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int globalID) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] *= inputArray[gidx];
@@ -152,74 +187,139 @@ public class ReduceCPUSnippets implements Snippets {
     }
 
     @Snippet
-    public static void partialReduceDoubleMulGlobal2(double[] inputArray, double[] outputArray, int gidx, int start, int numThreads, int globalID, double value) {
+    public static void partialReduceDoubleMulGlobal2(double[] inputArray, double[] outputArray, int gidx, int start, int globalID, double value) {
         OpenCLIntrinsics.localBarrier();
         if (gidx >= start) {
             outputArray[globalID] *= value;
         }
     }
 
-    public static class Templates extends AbstractTemplates {
+    @Snippet
+    public static void partialReduceDoubleMaxGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int globalID) {
+        OpenCLIntrinsics.localBarrier();
+        if (gidx >= start) {
+            outputArray[globalID] = TornadoMath.max(outputArray[globalID], inputArray[gidx]);
+        }
+    }
+
+    @Snippet
+    public static void partialReduceDoubleMinGlobal(double[] inputArray, double[] outputArray, int gidx, int start, int globalID) {
+        OpenCLIntrinsics.localBarrier();
+        if (gidx >= start) {
+            outputArray[globalID] = TornadoMath.min(outputArray[globalID], inputArray[gidx]);
+        }
+    }
+
+    public static class Templates extends AbstractTemplates implements TornadoSnippetTypeInference {
 
         // Int
         private final SnippetInfo partialReduceAddIntSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceIntAddGlobal");
         private final SnippetInfo partialReduceAddIntSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceIntAddGlobal2");
         private final SnippetInfo partialReduceMulIntSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceIntMulGlobal");
         private final SnippetInfo partialReduceMulIntSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceIntMulGlobal2");
+        private final SnippetInfo partialReduceMaxIntSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceIntMaxGlobal");
+        private final SnippetInfo partialReduceMinIntSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceIntMinGlobal");
 
         // Float
         private final SnippetInfo partialReduceAddFloatSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceFloatAddGlobal");
         private final SnippetInfo partialReduceAddFloatSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceFloatAddGlobal2");
         private final SnippetInfo partialReduceMulFloatSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceFloatMulGlobal");
         private final SnippetInfo partialReduceMulFloatSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceFloatMulGlobal2");
+        private final SnippetInfo partialReduceMaxFloatSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceFloatMaxGlobal");
+        private final SnippetInfo partialReduceMinFloatSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceFloatMinGlobal");
 
         // Double
         private final SnippetInfo partialReduceAddDoubleSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceDoubleAddGlobal");
         private final SnippetInfo partialReduceAddDoubleSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceDoubleAddGlobal2");
         private final SnippetInfo partialReduceMulDoubleSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMulGlobal");
         private final SnippetInfo partialReduceMulDoubleSnippetGlobal2 = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMulGlobal2");
+        private final SnippetInfo partialReduceMaxDoubleSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMaxGlobal");
+        private final SnippetInfo partialReduceMinDoubleSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMinGlobal");
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);
         }
 
-        private SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra) {
+        private SnippetInfo getSnippetFromOCLBinaryNodeInteger(OCLIntBinaryIntrinsicNode value) {
+            switch (value.operation()) {
+                case MAX:
+                    return partialReduceMaxIntSnippetGlobal;
+                case MIN:
+                    return partialReduceMinIntSnippetGlobal;
+                default:
+                    throw new RuntimeException("OCLFPBinaryIntrinsicNode operation not supported yet");
+            }
+        }
+
+        @Override
+        public SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
                 snippet = (extra == null) ? partialReduceAddIntSnippetGlobal : partialReduceAddIntSnippetGlobal2;
             } else if (value instanceof OCLReduceMulNode) {
                 snippet = (extra == null) ? partialReduceMulIntSnippetGlobal : partialReduceMulIntSnippetGlobal2;
+            } else if (value instanceof OCLIntBinaryIntrinsicNode) {
+                snippet = getSnippetFromOCLBinaryNodeInteger((OCLIntBinaryIntrinsicNode) value);
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
             return snippet;
         }
 
-        private SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra) {
+        private SnippetInfo getSnippetFromOCLBinaryNode(OCLFPBinaryIntrinsicNode value) {
+            switch (value.operation()) {
+                case FMAX:
+                    return partialReduceMaxFloatSnippetGlobal;
+                case FMIN:
+                    return partialReduceMinFloatSnippetGlobal;
+                default:
+                    throw new RuntimeException("OCLFPBinaryIntrinsicNode operation not supported yet");
+            }
+        }
+
+        @Override
+        public SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
                 snippet = (extra == null) ? partialReduceAddFloatSnippetGlobal : partialReduceAddFloatSnippetGlobal2;
             } else if (value instanceof OCLReduceMulNode) {
                 snippet = (extra == null) ? partialReduceMulFloatSnippetGlobal : partialReduceMulFloatSnippetGlobal2;
+            } else if (value instanceof OCLFPBinaryIntrinsicNode) {
+                snippet = getSnippetFromOCLBinaryNode((OCLFPBinaryIntrinsicNode) value);
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
             return snippet;
         }
 
-        private SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra) {
+        private SnippetInfo getSnippetFromOCLBinaryNodeDouble(OCLFPBinaryIntrinsicNode value) {
+            switch (value.operation()) {
+                case FMAX:
+                    return partialReduceMaxDoubleSnippetGlobal;
+                case FMIN:
+                    return partialReduceMinDoubleSnippetGlobal;
+                default:
+                    throw new RuntimeException("OCLFPBinaryIntrinsicNode operation not supported yet");
+            }
+        }
+
+        @Override
+        public SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {
                 snippet = (extra == null) ? partialReduceAddDoubleSnippetGlobal : partialReduceAddDoubleSnippetGlobal2;
             } else if (value instanceof OCLReduceMulNode) {
                 snippet = (extra == null) ? partialReduceMulDoubleSnippetGlobal : partialReduceMulDoubleSnippetGlobal2;
+            } else if (value instanceof OCLFPBinaryIntrinsicNode) {
+                snippet = getSnippetFromOCLBinaryNodeDouble((OCLFPBinaryIntrinsicNode) value);
             } else {
                 throw new RuntimeException("Reduce Operation no supported yet: snippet not installed");
             }
             return snippet;
         }
 
-        private SnippetInfo getSnippetInfo(JavaKind elementKind, ValueNode value, ValueNode extra) {
+        @Override
+        public SnippetInfo getSnippetInstance(JavaKind elementKind, ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (elementKind == JavaKind.Int) {
                 snippet = inferIntSnippet(value, extra);
@@ -233,25 +333,20 @@ public class ReduceCPUSnippets implements Snippets {
             return snippet;
         }
 
-        public void lower(StoreAtomicIndexedNode storeAtomicIndexed, AddressNode address, OCLWriteAtomicNode memoryWrite, ValueNode threadId, GlobalThreadSizeNode globalSize, ValueNode startNode,
-                ValueNode globalID, ValueNode startIndexNode, LoweringTool tool) {
+        public void lower(StoreAtomicIndexedNode storeAtomicIndexed, ValueNode threadId, ValueNode globalID, ValueNode startIndexNode, LoweringTool tool) {
 
             StructuredGraph graph = storeAtomicIndexed.graph();
-
             JavaKind elementKind = storeAtomicIndexed.elementKind();
-
             ValueNode value = storeAtomicIndexed.value();
             ValueNode extra = storeAtomicIndexed.getExtraOperation();
 
-            SnippetInfo snippet = getSnippetInfo(elementKind, value, extra);
+            SnippetInfo snippet = getSnippetInstance(elementKind, value, extra);
 
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
             args.add("inputData", storeAtomicIndexed.getInputArray());
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", threadId);
             args.add("start", startIndexNode);
-            int numThreads = Runtime.getRuntime().availableProcessors();
-            args.add("numThreads", numThreads);
             args.add("globalID", globalID);
             if (extra != null) {
                 args.add("value", extra);

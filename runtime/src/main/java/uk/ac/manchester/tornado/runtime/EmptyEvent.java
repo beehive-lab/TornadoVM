@@ -46,12 +46,57 @@ public class EmptyEvent implements Event {
     }
 
     @Override
-    public double getExecutionTime() {
+    public long getExecutionTime() {
         return 0;
     }
 
     @Override
-    public double getQueuedTime() {
+    public double getExecutionTimeInSeconds() {
+        return 0;
+    }
+
+    @Override
+    public double getExecutionTimeInMilliSeconds() {
+        return 0;
+    }
+
+    @Override
+    public long getTotalQueuedTime() {
+        return 0;
+    }
+
+    @Override
+    public double getTotalQueuedTimeInMilliSeconds() {
+        return 0;
+    }
+
+    @Override
+    public long getElapsedQueuedTime() {
+        return 0;
+    }
+
+    @Override
+    public double getElapsedQueuedTimeInMilliSeconds() {
+        return 0;
+    }
+
+    @Override
+    public long getElapsedSubmitTime() {
+        return 0;
+    }
+
+    @Override
+    public double getElapsedSubmitTimeInMilliSeconds() {
+        return 0;
+    }
+
+    @Override
+    public long getQueuedTime() {
+        return 0;
+    }
+
+    @Override
+    public double getQueuedTimeInMilliSeconds() {
         return 0;
     }
 
@@ -61,7 +106,17 @@ public class EmptyEvent implements Event {
     }
 
     @Override
-    public double getTotalTime() {
+    public long getTotalTime() {
+        return 0;
+    }
+
+    @Override
+    public double getTotalTimeInSeconds() {
+        return 0;
+    }
+
+    @Override
+    public double getTotalTimeInMilliSeconds() {
         return 0;
     }
 
@@ -81,7 +136,17 @@ public class EmptyEvent implements Event {
     }
 
     @Override
+    public double getSubmitTimeInMilliSeconds() {
+        return 0;
+    }
+
+    @Override
     public long getStartTime() {
+        return 0;
+    }
+
+    @Override
+    public double getStartTimeInMilliSeconds() {
         return 0;
     }
 
@@ -91,7 +156,7 @@ public class EmptyEvent implements Event {
     }
 
     @Override
-    public long getExecutionTimeInNanoSeconds() {
+    public double getEndTimeInMilliSeconds() {
         return 0;
     }
 
