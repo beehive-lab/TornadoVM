@@ -87,6 +87,7 @@ public class ReductionMinFloats {
 
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
+            .streamIn(input)
             .task("t0", ReductionMinFloats::reductionMaxFloats, input, result, Float.MAX_VALUE)
             .streamOut(result);
         //@formatter:on
