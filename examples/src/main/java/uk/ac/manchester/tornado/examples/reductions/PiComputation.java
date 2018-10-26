@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.api.annotations.Reduce;
 
 public class PiComputation {
 
-    public void computePi(float[] input, @Reduce float[] result) {
+    public static void computePi(float[] input, @Reduce float[] result) {
         for (@Parallel int i = 1; i < input.length; i++) {
             float value = (float) (Math.pow(-1, i + 1) / (2 * i - 1));
             result[0] += value + input[i];
@@ -52,7 +52,7 @@ public class PiComputation {
 
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
-            .task("t0", this::computePi, input, result)
+            .task("t0", PiComputation::computePi, input, result)
             .streamOut(result);
         //@formatter:on
 
