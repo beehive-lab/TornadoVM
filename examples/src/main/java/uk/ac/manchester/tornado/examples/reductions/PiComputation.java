@@ -38,10 +38,6 @@ public class PiComputation {
     public void run(int size) {
         float[] input = new float[size];
 
-        IntStream.range(0, size).sequential().forEach(i -> {
-            input[i] = 0;
-        });
-
         int numGroups = 1;
         if (size > 256) {
             numGroups = size / 256;
@@ -58,6 +54,10 @@ public class PiComputation {
 
         ArrayList<Long> timers = new ArrayList<>();
         for (int i = 0; i < Config.MAX_ITERATIONS; i++) {
+
+            IntStream.range(0, size).sequential().forEach(idx -> {
+                input[idx] = 0;
+            });
 
             long start = System.nanoTime();
             task.execute();
