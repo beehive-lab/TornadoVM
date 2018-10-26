@@ -48,6 +48,7 @@ public class PiComputation {
 
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
+            .streamIn(input)
             .task("t0", PiComputation::computePi, input, result)
             .streamOut(result);
         //@formatter:on
