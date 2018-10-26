@@ -19,8 +19,6 @@
 package uk.ac.manchester.tornado.examples.reductions;
 
 import java.util.ArrayList;
-
-import java.util.Collections;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -33,27 +31,11 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;;
 
 public class ReductionMinFloats {
 
-    private static final int MAX_ITERATIONS = 101;
-
     public static void reductionMaxFloats(float[] input, @Reduce float[] result, float neutral) {
         result[0] = neutral;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] = Math.min(result[0], input[i]);
         }
-    }
-
-    public double computeMedian(ArrayList<Long> input) {
-        Collections.sort(input);
-        double middle = input.size() / 2;
-        if (input.size() % 2 == 1) {
-            middle = (input.get(input.size() / 2) + input.get(input.size() / 2 - 1)) / 2;
-        }
-        return middle;
-    }
-
-    public TornadoDeviceType getDefaultDeviceType() {
-        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
-        return driver.getTypeDefaultDevice();
     }
 
     public void run(int size) {
@@ -65,7 +47,7 @@ public class ReductionMinFloats {
         }
         float[] result = null;
 
-        TornadoDeviceType deviceType = getDefaultDeviceType();
+        TornadoDeviceType deviceType = Config.getDefaultDeviceType();
         switch (deviceType) {
             case CPU:
                 result = new float[Runtime.getRuntime().availableProcessors()];
@@ -93,7 +75,7 @@ public class ReductionMinFloats {
         //@formatter:on
 
         ArrayList<Long> timers = new ArrayList<>();
-        for (int i = 0; i < MAX_ITERATIONS; i++) {
+        for (int i = 0; i < Config.MAX_ITERATIONS; i++) {
 
             long start = System.nanoTime();
             task.execute();
@@ -106,7 +88,7 @@ public class ReductionMinFloats {
             timers.add((end - start));
         }
 
-        System.out.println("Median TotalTime: " + computeMedian(timers));
+        System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
     }
 
     public static void main(String[] args) {
