@@ -80,7 +80,7 @@ public class ReductionMaxFloats {
             long end = System.nanoTime();
 
             for (int j = 1; j < result.length; j++) {
-                result[0] += result[j];
+                result[0] = Math.max(result[0], result[j]);
             }
 
             timers.add((end - start));

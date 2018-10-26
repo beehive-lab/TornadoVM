@@ -67,6 +67,7 @@ public class PiComputation {
                 result[0] += result[j];
             }
             final float piValue = result[0] * 4;
+            System.out.println("PI VALUE: " + piValue);
             timers.add((end - start));
         }
 
