@@ -41,7 +41,6 @@ import org.graalvm.compiler.nodes.debug.ControlFlowAnchorNode;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PragmaUnrollNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
@@ -81,7 +80,6 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
 
             System.out.println("Loops: ---> " + loops + "  ifs: ---> " + ifs + "\n");
             if (loops - ifs != 0) {
-                // return false;
                 return true;
             }
 
@@ -93,47 +91,6 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
 
     public void execute(StructuredGraph graph, TornadoHighTierContext context) {
         run(graph, context);
-    }
-
-    public static void fullUnroll(LoopEx loop, PhaseContext context, CanonicalizerPhase canonicalizer) {
-        LoopBeginNode loopBegin = loop.loopBegin();
-        StructuredGraph graph = loopBegin.graph();
-        int initialNodeCount = graph.getNodeCount();
-
-        try {
-            // FixedNode node =
-            Node node = loopBegin.predecessor();
-            PragmaUnrollNode unroll = graph.addOrUnique(new PragmaUnrollNode(2));
-            graph.add(unroll);
-
-            // node.isAlive();
-            System.out.println("Loop begin node predessor: " + node);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return;
-
-        // do {
-        // if (loopBegin.isDeleted()) {
-        // return;
-        // }
-        //
-        // Graph.Mark mark = graph.getMark();
-        // peel(loop);
-        // canonicalizer.applyIncremental(graph, context, mark);
-        // loop.invalidateFragments();
-        // } while (graph.getNodeCount() <= initialNodeCount + (Integer)
-        // GraalOptions.MaximumDesiredSize.getValue(graph.getOptions()) * 2);
-        //
-        // throw new RetryableBailoutException("FullUnroll : Graph seems to grow out of
-        // proportion");:w
-        /// continue;
-    }
-
-    public static void peel(LoopEx loop) {
-        loop.inside().duplicate().insertBefore(loop);
-        loop.loopBegin().setLoopFrequency(Math.max(0.0D, loop.loopBegin().loopFrequency() - 1.0D));
     }
 
     @Override
@@ -148,8 +105,6 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
                     if (shouldFullUnroll(graph.getOptions(), loop)) {
                         LoopBeginNode loopBegin = loop.loopBegin();
 
-                        System.out.println(loopBegin);
-
                         List<EndNode> snapshot = graph.getNodes().filter(EndNode.class).snapshot();
 
                         System.out.println(loopBegin.predecessor());
@@ -161,34 +116,18 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
                             idx++;
                             if (idx == 2) {
                                 PragmaUnrollNode unroll = graph.addOrUnique(new PragmaUnrollNode(2));
-                                // graph.addAfterFixed(unroll, end);
                                 graph.addBeforeFixed(end, unroll);
-                                // loopBegin.replaceAtPredecessor(unroll);
 
                                 System.out.println("End node successors ---> " + end.successors());
                                 System.out.println("End node predecessors ---> " + end.predecessor());
                                 System.out.println("End node isAlive ---> " + end.isAlive());
 
-                                // loopBegin.replaceAtPredecessor(unroll);
-                                // loopBegin.predecessor().replaceAtPredecessor();
                                 System.out.println("Loop begin predecessor --->" + loopBegin.predecessor());
                             }
                             System.out.println("End inputs: - -- ->" + end.inputPositions());
 
                         }
-
-                        // unroll.setNext(loopBegin);
-
-                        // graph.getNodes().filter(EndNode.class).forEach(Endnode end)--->;
-                        // tmp.add(graph.getNodes().filter(EndNode.class);
-
-                        // EndNode endToTrack = graph.getNodes().filter(EndNode.class)
-
                         System.out.println(loopBegin.predecessor());
-                        // loopBegin.predecessor().replaceAtPredecessor(unroll);
-                        // graph.addBeforeFixed(unroll, loopBegin);
-
-                        // Debug.dump(INFO_LEVEL, graph, "After fullUnroll %s", loop);
                         peeled = false;
                         break;
                     }
@@ -198,18 +137,6 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
 
     }
 
-    // public void replaceAtPredecessor(Node other) {
-    // Node.checkReplaceWith(other);
-    // if (this.predecessor != null) {
-    // if (!this.predecessor.getNodeClass().replaceFirstSuccessor(this.predecessor,
-    // this, other)) {
-    // this.fail("not found in successors, predecessor: %s", this.predecessor);
-    // }
-    //
-    // this.predecessor.updatePredecessor(this, other);
-    // }
-    //
-    // }
     @Override
     public boolean checkContract() {
         return false;
