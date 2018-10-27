@@ -48,6 +48,7 @@ import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoOpenCLIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoParallelScheduler;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPragmaUnroll;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoTaskSpecialisation;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionSuppression;
@@ -98,8 +99,16 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(new TornadoParallelScheduler());
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
 
-        LoopPolicies loopPolicies = new DefaultLoopPolicies();
-        appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
+        // if (OpenCL.ACCELERATOR_IS_FPGA) { // FIX
+        // <-------------------------------------------Before merge
+        if (true) {
+            appendPhase(new TornadoPragmaUnroll(canonicalizer));
+        } else {
+            LoopPolicies loopPolicies = new DefaultLoopPolicies();
+            appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
+        }
+
+        appendPhase(canonicalizer);
         appendPhase(new RemoveValueProxyPhase());
         appendPhase(canonicalizer);
         appendPhase(new DeadCodeEliminationPhase(Optional));
