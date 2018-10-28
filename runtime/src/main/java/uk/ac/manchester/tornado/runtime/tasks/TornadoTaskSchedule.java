@@ -38,6 +38,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.function.Consumer;
 
@@ -94,9 +95,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private ArrayList<TaskPackage> taskPackages = new ArrayList<>();
     private ArrayList<Object> streamOutObjects = new ArrayList<>();
 
-    private static final int DEFAULT_WINNER_INDEX = -1;
-
-    private int deviceWinnerIndex = DEFAULT_WINNER_INDEX;
+    private HashMap<Policy, Integer> policyTable = new HashMap<>();
 
     public TornadoTaskSchedule(String name) {
         graphContext = new ExecutionContext(name);
@@ -448,6 +447,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             policy = Policy.PERFORMANCE;
         }
 
+        int deviceWinnerIndex = -1;
+
         switch (policy) {
             case PERFORMANCE:
                 int position = 0;
@@ -568,7 +569,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         // Define the winner, based on the first thread to finish
         if (policy == Policy.WINNER) {
-            deviceWinnerIndex = syncWinner(threads);
+            int deviceWinnerIndex = syncWinner(threads);
+            policyTable.put(policy, deviceWinnerIndex);
         }
 
         // JOIN
@@ -583,7 +585,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (policy == Policy.PERFORMANCE) {
             if (masterThreadID == Thread.currentThread().getId()) {
                 System.out.println("SYNCHRONIZING with thread: " + Thread.currentThread().getId());
-                deviceWinnerIndex = synchronizeWithPolicy(policy, threads, totalTimers);
+                int deviceWinnerIndex = synchronizeWithPolicy(policy, threads, totalTimers);
+                policyTable.put(policy, deviceWinnerIndex);
                 System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
             }
         }
@@ -595,7 +598,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private void runParallel() {
+    private void runParallel(int deviceWinnerIndex) {
         for (int k = 0; k < taskPackages.size(); k++) {
             TaskPackage taskPackage = taskPackages.get(k);
             TornadoRuntime.setProperty(this.getTaskScheduleName() + "." + taskPackage.getId() + ".device", "0:" + deviceWinnerIndex);
@@ -605,15 +608,16 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public synchronized AbstractTaskGraph scheduleWithProfile(Policy policy) {
-        if (deviceWinnerIndex == DEFAULT_WINNER_INDEX) {
+        if (policyTable.get(policy) == null) {
             runScheduleWithProfiler(policy);
         } else {
             // Run with the winner device
-            System.out.println("Selecting the device: " + deviceWinnerIndex);
+            int deviceWinnerIndex = policyTable.get(policy);
+            System.out.println("Selecting the device: " + deviceWinnerIndex + " for POLICY: " + policy);
             if (deviceWinnerIndex >= TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount()) {
                 runSequential();
             } else {
-                runParallel();
+                runParallel(deviceWinnerIndex);
             }
         }
         return this;

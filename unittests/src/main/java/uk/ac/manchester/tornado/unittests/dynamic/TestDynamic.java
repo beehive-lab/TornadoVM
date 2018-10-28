@@ -111,6 +111,7 @@ public class TestDynamic extends TornadoTestBase {
 
         //@formatter:off
         TaskSchedule taskSchedule = new TaskSchedule("s0")
+            .streamIn(a)
             .task("t0", TestDynamic::compute2, a, b)
             .streamOut(b);
         //@formatter:on
@@ -120,6 +121,7 @@ public class TestDynamic extends TornadoTestBase {
 
         // Run a few iterations to get the device.
         for (int i = 0; i < 10; i++) {
+            Arrays.fill(a, 10);
             taskSchedule.executeWithProfiler(Policy.PERFORMANCE);
         }
 
