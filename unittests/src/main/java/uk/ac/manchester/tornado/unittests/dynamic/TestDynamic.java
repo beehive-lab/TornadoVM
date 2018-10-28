@@ -128,4 +128,31 @@ public class TestDynamic extends TornadoTestBase {
         }
     }
 
+    @Test
+    public void testDynamicWinner() {
+        int numElements = 16000;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+
+        Arrays.fill(a, 10);
+
+        //@formatter:off
+        TaskSchedule taskSchedule = new TaskSchedule("s0")
+            .task("t0", TestDynamic::compute, a, b)
+            .streamOut(b);
+        //@formatter:on
+
+        // Run first time to obtain the best performance device
+        taskSchedule.executeWithProfiler(Policy.WINNER);
+
+        // Run a few iterations to get the device.
+        for (int i = 0; i < 10; i++) {
+            taskSchedule.executeWithProfiler(Policy.WINNER);
+        }
+
+        for (int i = 0; i < b.length; i++) {
+            assertEquals(a[i] * 2, b[i]);
+        }
+    }
+
 }

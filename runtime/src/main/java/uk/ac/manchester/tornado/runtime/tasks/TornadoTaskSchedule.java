@@ -465,7 +465,30 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
 
         return deviceWinnerIndex;
+    }
 
+    private int syncWinner(Thread[] threads) {
+        int winner = 0;
+        boolean isAlive = true;
+        while (isAlive) {
+
+            for (int i = 0; i < threads.length; i++) {
+                isAlive = threads[i].isAlive();
+                if (!isAlive) {
+                    System.out.println("Thread " + threads[i].getName() + " finished");
+                    winner = i;
+                    // kill the others
+                    for (int j = 0; j < threads.length; j++) {
+                        if (i != j) {
+                            System.out.println("Killing THREAD " + threads[j].getName());
+                            threads[j].interrupt();
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        return winner;
     }
 
     private void runScheduleWithProfiler(Policy policy) {
@@ -543,6 +566,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             t.start();
         }
 
+        // Define the winner, based on the first thread to finish
+        if (policy == Policy.WINNER) {
+            deviceWinnerIndex = syncWinner(threads);
+        }
+
         // JOIN
         for (Thread t : threads) {
             try {
@@ -552,10 +580,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             }
         }
 
-        if (masterThreadID == Thread.currentThread().getId()) {
-            System.out.println("SYNCHRONIZING with thread: " + Thread.currentThread().getId());
-            deviceWinnerIndex = synchronizeWithPolicy(policy, threads, totalTimers);
-            System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
+        if (policy == Policy.PERFORMANCE) {
+            if (masterThreadID == Thread.currentThread().getId()) {
+                System.out.println("SYNCHRONIZING with thread: " + Thread.currentThread().getId());
+                deviceWinnerIndex = synchronizeWithPolicy(policy, threads, totalTimers);
+                System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
+            }
         }
     }
 

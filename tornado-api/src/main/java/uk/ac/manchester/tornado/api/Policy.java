@@ -45,7 +45,7 @@ public enum Policy {
 
     // @formatter:off
     PERFORMANCE ("Performance"), 
-    SURVIVOR ("Survivor"),
+    WINNER("Winner"),
     ENERGY ("Energy");
     // @formatter:on
 
