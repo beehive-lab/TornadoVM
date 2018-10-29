@@ -80,6 +80,10 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
+/**
+ * Implementation of the Tornado API for running on heterogeneous devices.
+ * 
+ */
 public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private final ExecutionContext graphContext;
@@ -94,8 +98,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private ArrayList<TaskPackage> taskPackages = new ArrayList<>();
     private ArrayList<Object> streamOutObjects = new ArrayList<>();
+    private HashMap<Policy, Integer> policyTimeTable = new HashMap<>();
 
-    private HashMap<Policy, Integer> policyTable = new HashMap<>();
+    public boolean DEBUG_POLICY = true;
 
     public TornadoTaskSchedule(String name) {
         graphContext = new ExecutionContext(name);
@@ -571,7 +576,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         // Define the winner, based on the first thread to finish
         if (policy == Policy.WINNER) {
             int deviceWinnerIndex = syncWinner(threads);
-            policyTable.put(policy, deviceWinnerIndex);
+            policyTimeTable.put(policy, deviceWinnerIndex);
         }
 
         // JOIN
@@ -587,7 +592,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             if (masterThreadID == Thread.currentThread().getId()) {
                 System.out.println("SYNCHRONIZING with thread: " + Thread.currentThread().getId());
                 int deviceWinnerIndex = synchronizeWithPolicy(policy, threads, totalTimers);
-                policyTable.put(policy, deviceWinnerIndex);
+                policyTimeTable.put(policy, deviceWinnerIndex);
                 System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
             }
         }
@@ -609,11 +614,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public synchronized AbstractTaskGraph scheduleWithProfile(Policy policy) {
-        if (policyTable.get(policy) == null) {
+        if (policyTimeTable.get(policy) == null) {
             runScheduleWithProfiler(policy);
         } else {
             // Run with the winner device
-            int deviceWinnerIndex = policyTable.get(policy);
+            int deviceWinnerIndex = policyTimeTable.get(policy);
             System.out.println("Selecting the device: " + deviceWinnerIndex + " for POLICY: " + policy);
             if (deviceWinnerIndex >= TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount()) {
                 runSequential();
