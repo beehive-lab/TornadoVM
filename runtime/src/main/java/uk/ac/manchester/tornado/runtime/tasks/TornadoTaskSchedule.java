@@ -424,15 +424,16 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     private void runSequentialCodeInThread(TaskPackage taskPackage) {
         int type = taskPackage.getTaskType();
         switch (type) {
             case 2:
-                Task2 task2 = (Task2) taskPackage.getTaskParameters()[0];
+                @SuppressWarnings("rawtypes") Task2 task2 = (Task2) taskPackage.getTaskParameters()[0];
                 task2.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2]);
                 break;
             case 3:
-                Task3 task3 = (Task3) taskPackage.getTaskParameters()[0];
+                @SuppressWarnings("rawtypes") Task3 task3 = (Task3) taskPackage.getTaskParameters()[0];
                 task3.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3]);
                 break;
             default:
