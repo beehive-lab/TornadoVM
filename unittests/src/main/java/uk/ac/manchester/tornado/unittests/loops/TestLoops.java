@@ -487,6 +487,34 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
+    public static void controlFlowBreakNested(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            for (@Parallel int y = 0; y < a.length; y++) {
+                if (a[y] == 2) {
+                    a[y] = 10;
+                    break;
+                } else {
+                    a[y] = 100;
+                }
+            }
+
+        }
+    }
+
+    public static void controlFlowBreakNested2(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            for (int y = 0; y < a.length; y++) {
+                if (a[y] == 2) {
+                    a[y] = 10;
+                    break;
+                } else {
+                    a[y] = 100;
+                }
+            }
+
+        }
+    }
+
     /*
      * This test is failing, the reason is that the runtime does not copy in the
      * variable a, just copy out
@@ -537,6 +565,60 @@ public class TestLoops extends TornadoTestBase {
                 assertEquals(10, a[i]);
             } else {
                 assertEquals(1000, a[i]);
+            }
+        }
+    }
+
+    @Test
+    public void testLoopControlFlowBreakNested() {
+        final int size = 10;
+
+        int[] a = new int[size];
+
+        Arrays.fill(a, 1000);
+        a[2] = 2;
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestLoops::controlFlowBreakNested, a)
+                .streamOut(a)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < a.length; i++) {
+            for (int y = 0; y < a.length; y++) {
+                if (i == 2) {
+                    assertEquals(10, a[y]);
+                } else {
+                    assertEquals(100, a[y]);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testLoopControlFlowBreakNested2() {
+        final int size = 10;
+
+        int[] a = new int[size];
+
+        Arrays.fill(a, 1000);
+        a[2] = 2;
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestLoops::controlFlowBreakNested2, a)
+                .streamOut(a)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < a.length; i++) {
+            for (int y = 0; y < a.length; y++) {
+                if (i == 2) {
+                    assertEquals(10, a[y]);
+                } else {
+                    assertEquals(100, a[y]);
+                }
             }
         }
     }
