@@ -84,6 +84,10 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testMultFloats",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles#testSumDoubles",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles#testMultdoubles",
+        
+        "uk.ac.manchester.tornado.unittests.loops.TestLoops#testInnertForEach",
+        "uk.ac.manchester.tornado.unittests.loops.TestLoops#testLoopControlFlowBreakNested",
+        "uk.ac.manchester.tornado.unittests.loops.TestLoops#testLoopControlFlowBreakNested2",
 	]
 
 
