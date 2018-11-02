@@ -747,6 +747,34 @@ public class TestLoops extends TornadoTestBase {
                 y++;
             }
         }
+    }
 
+    public static void forEach(int[] a, int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (int j : a) {
+                a[i * size + j] = 10;
+            }
+        }
+    }
+
+    @Test
+    public void testInnertForEach() {
+        final int size = 10;
+
+        int[] a = new int[size * size];
+        Arrays.fill(a, 1);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestLoops::forEach, a, size)
+                .streamOut(a)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                assertEquals(10, a[i * size + j]);
+            }
+        }
     }
 }
