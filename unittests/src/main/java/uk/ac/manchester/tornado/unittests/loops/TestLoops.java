@@ -492,7 +492,7 @@ public class TestLoops extends TornadoTestBase {
             for (@Parallel int y = 0; y < a.length; y++) {
                 if (a[y] == 2) {
                     a[y] = 10;
-                    break;
+                    // break;
                 } else {
                     a[y] = 100;
                 }
@@ -505,7 +505,6 @@ public class TestLoops extends TornadoTestBase {
         for (@Parallel int i = 0; i < a.length; i++) {
             for (int y = 0; y < a.length; y++) {
                 if (a[y] == 2) {
-                    a[y] = 10;
                     break;
                 } else {
                     a[y] = 100;
@@ -749,10 +748,12 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    public static void forEach(int[] a, int size) {
+    public static void forEach(int[] a, int[] c, int size) {
         for (@Parallel int i = 0; i < size; i++) {
+            int idx = 0;
             for (int j : a) {
-                a[i * size + j] = 10;
+                c[idx] = j + 1;
+                idx++;
             }
         }
     }
@@ -761,20 +762,21 @@ public class TestLoops extends TornadoTestBase {
     public void testInnertForEach() {
         final int size = 10;
 
-        int[] a = new int[size * size];
+        int[] a = new int[size];
+        int[] c = new int[size];
         Arrays.fill(a, 1);
+        Arrays.fill(c, 0);
 
+        System.out.println(Arrays.toString(c));
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0", TestLoops::forEach, a, size)
-                .streamOut(a)
+                .task("t0", TestLoops::forEach, a, c, size)
+                .streamOut(c)
                 .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                assertEquals(10, a[i * size + j]);
-            }
+            assertEquals(2, c[i]);
         }
     }
 }
