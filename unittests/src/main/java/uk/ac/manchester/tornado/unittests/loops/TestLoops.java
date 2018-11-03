@@ -734,7 +734,7 @@ public class TestLoops extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0", TestLoops::whileLoop, a, size)
+                .task("t0", TestLoops::dowWhileLoop, a, size)
                 .streamOut(a)
                 .execute();
         //@formatter:on
@@ -767,7 +767,6 @@ public class TestLoops extends TornadoTestBase {
         Arrays.fill(a, 1);
         Arrays.fill(c, 0);
 
-        System.out.println(Arrays.toString(c));
         //@formatter:off
         new TaskSchedule("s0")
                 .task("t0", TestLoops::forEach, a, c, size)
