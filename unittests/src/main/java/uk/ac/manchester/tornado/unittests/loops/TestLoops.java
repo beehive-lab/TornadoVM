@@ -491,8 +491,7 @@ public class TestLoops extends TornadoTestBase {
         for (@Parallel int i = 0; i < a.length; i++) {
             for (@Parallel int y = 0; y < a.length; y++) {
                 if (a[y] == 2) {
-                    a[y] = 10;
-                    // break;
+                    break;
                 } else {
                     a[y] = 100;
                 }
