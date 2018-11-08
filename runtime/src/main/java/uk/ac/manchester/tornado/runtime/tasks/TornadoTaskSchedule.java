@@ -580,6 +580,15 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                     case 3:
                         task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2));
                         break;
+                    case 4:
+                        task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2), streamOutObjects.get(3));
+                        break;
+                    case 5:
+                        task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2), streamOutObjects.get(3), streamOutObjects.get(4));
+                        break;
+                    case 6:
+                        task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2), streamOutObjects.get(3), streamOutObjects.get(4), streamOutObjects.get(5));
+                        break;
                     default:
                         System.out.println("Not supported");
                         break;
