@@ -724,7 +724,7 @@ public class TestLoops extends TornadoTestBase {
         }
     }
 
-    @Test
+    @Ignore
     public void testInnerDoWhileLoop() {
         final int size = 100;
 
