@@ -441,6 +441,30 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 @SuppressWarnings("rawtypes") Task3 task3 = (Task3) taskPackage.getTaskParameters()[0];
                 task3.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3]);
                 break;
+            case 4:
+                @SuppressWarnings("rawtype") Task4 task4 = (Task4) taskPackage.getTaskParameters()[0];
+                task4.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4]);
+                break;
+            case 5:
+                @SuppressWarnings("rawtype") Task5 task5 = (Task5) taskPackage.getTaskParameters()[0];
+                task5.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4],
+                        taskPackage.getTaskParameters()[5]);
+                break;
+            case 6:
+                @SuppressWarnings("rawtype") Task6 task6 = (Task6) taskPackage.getTaskParameters()[0];
+                task6.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4],
+                        taskPackage.getTaskParameters()[5], taskPackage.getTaskParameters()[6]);
+                break;
+            case 7:
+                @SuppressWarnings("rawtype") Task7 task7 = (Task7) taskPackage.getTaskParameters()[0];
+                task7.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4],
+                        taskPackage.getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7]);
+                break;
+            case 8:
+                @SuppressWarnings("rawtype") Task8 task8 = (Task8) taskPackage.getTaskParameters()[0];
+                task8.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4],
+                        taskPackage.getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7], taskPackage.getTaskParameters()[8]);
+                break;
             default:
                 System.out.println("Sequential Runner not supported yet. Type: " + type);
                 break;
