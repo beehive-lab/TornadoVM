@@ -718,51 +718,22 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             totalTimers[indexSequential] = (endSequentialCode - startSearchProfiler);
         });
 
-        for (int i = 0; i < 1; i++) {
-            final int taskScheduleNumber = i;
-            threads[i] = new Thread(() -> {
-                String taskScheduleName = "XXX" + taskScheduleNumber;
-                TaskSchedule task = new TaskSchedule(taskScheduleName);
-
-                final long start = System.currentTimeMillis();
-                performStreamInThread(task);
-                for (int k = 0; k < taskPackages.size(); k++) {
-                    String taskID = taskPackages.get(k).getId();
-                    TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + taskScheduleNumber);
-                    System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=0:" + taskScheduleNumber);
-                    task.addTask(taskPackages.get(k));
-                }
-                performStreamOutThreads(task);
-                task.execute();
-
-                System.out.println("Parallel finished: " + Thread.currentThread().getName());
-                final long end = System.currentTimeMillis();
-                totalTimers[taskScheduleNumber] = end - start;
-            });
-        }
-
         threads[indexSequential].start();
 
         // Running sequentially for all the devices
         for (int i = 0; i < numDevices; i++) {
             String taskScheduleName = this.taskScheduleName;
-            int taskScheduleNumber = i;
-            TaskSchedule task = new TaskSchedule(taskScheduleName);
-
             final long start = System.currentTimeMillis();
-            performStreamInThread(task);
             for (int k = 0; k < taskPackages.size(); k++) {
                 String taskID = taskPackages.get(k).getId();
-                TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + taskScheduleNumber);
-                System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=0:" + taskScheduleNumber);
-                task.addTask(taskPackages.get(k));
+                TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + i);
+                System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=0:" + i);
             }
-            performStreamOutThreads(task);
-            task.execute();
+            schedule();
 
-            System.out.println("Parallel finished: " + Thread.currentThread().getName());
+            System.out.println("Parallel version finished: " + Thread.currentThread().getName());
             final long end = System.currentTimeMillis();
-            totalTimers[taskScheduleNumber] = end - start;
+            totalTimers[i] = end - start;
         }
 
         try {
