@@ -131,6 +131,39 @@ public class TestDynamic extends TornadoTestBase {
     }
 
     @Test
+    public void testDynamicWithProfiler4() {
+        int numElements = 16000;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+        int[] seq = new int[numElements];
+
+        Arrays.fill(a, 10);
+
+        compute(a, seq);
+
+        //@formatter:off
+        TaskSchedule taskSchedule = new TaskSchedule("s0")
+            .streamIn(a)
+            .task("t0", TestDynamic::compute, a, b)
+            //.task("t1", TestDynamic::compute2, a, b)
+            .streamOut(b);
+        //@formatter:on
+
+        // Run first time to obtain the best performance device
+        taskSchedule.executeWithProfiler(Policy.PERFORMANCE);
+
+        // Run a few iterations to get the device.
+        for (int i = 0; i < 10; i++) {
+            Arrays.fill(a, 10);
+            taskSchedule.executeWithProfiler(Policy.PERFORMANCE);
+        }
+
+        for (int i = 0; i < b.length; i++) {
+            assertEquals(seq[i], b[i]);
+        }
+    }
+
+    @Test
     public void testDynamicWinner() {
         int numElements = 16000;
         int[] a = new int[numElements];

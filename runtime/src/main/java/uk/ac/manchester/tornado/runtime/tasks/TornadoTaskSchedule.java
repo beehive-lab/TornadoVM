@@ -98,6 +98,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private ArrayList<TaskPackage> taskPackages = new ArrayList<>();
     private ArrayList<Object> streamOutObjects = new ArrayList<>();
+    private ArrayList<Object> streamInObjects = new ArrayList<>();
     private HashMap<Policy, Integer> policyTimeTable = new HashMap<>();
 
     public boolean DEBUG_POLICY = true;
@@ -322,6 +323,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 warn("null object passed into streamIn() in schedule %s", graphContext.getId());
                 continue;
             }
+            streamInObjects.add(object);
             graphContext.getObjectState(object).setStreamIn(true);
         }
     }
@@ -442,26 +444,26 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 task3.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3]);
                 break;
             case 4:
-                @SuppressWarnings("rawtype") Task4 task4 = (Task4) taskPackage.getTaskParameters()[0];
+                @SuppressWarnings("rawtypes") Task4 task4 = (Task4) taskPackage.getTaskParameters()[0];
                 task4.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4]);
                 break;
             case 5:
-                @SuppressWarnings("rawtype") Task5 task5 = (Task5) taskPackage.getTaskParameters()[0];
+                @SuppressWarnings("rawtypes") Task5 task5 = (Task5) taskPackage.getTaskParameters()[0];
                 task5.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4],
                         taskPackage.getTaskParameters()[5]);
                 break;
             case 6:
-                @SuppressWarnings("rawtype") Task6 task6 = (Task6) taskPackage.getTaskParameters()[0];
+                @SuppressWarnings("rawtypes") Task6 task6 = (Task6) taskPackage.getTaskParameters()[0];
                 task6.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4],
                         taskPackage.getTaskParameters()[5], taskPackage.getTaskParameters()[6]);
                 break;
             case 7:
-                @SuppressWarnings("rawtype") Task7 task7 = (Task7) taskPackage.getTaskParameters()[0];
+                @SuppressWarnings("rawtypes") Task7 task7 = (Task7) taskPackage.getTaskParameters()[0];
                 task7.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4],
                         taskPackage.getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7]);
                 break;
             case 8:
-                @SuppressWarnings("rawtype") Task8 task8 = (Task8) taskPackage.getTaskParameters()[0];
+                @SuppressWarnings("rawtypes") Task8 task8 = (Task8) taskPackage.getTaskParameters()[0];
                 task8.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4],
                         taskPackage.getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7], taskPackage.getTaskParameters()[8]);
                 break;
@@ -522,6 +524,64 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return winner;
     }
 
+    private void performStreamInThread(TaskSchedule task) {
+        int numObjectsCopyIn = streamInObjects.size();
+        switch (numObjectsCopyIn) {
+            case 0:
+                break;
+            case 1:
+                task.streamIn(streamInObjects.get(0));
+                break;
+            case 2:
+                task.streamIn(streamInObjects.get(0), streamInObjects.get(1));
+                break;
+            case 3:
+                task.streamIn(streamInObjects.get(0), streamInObjects.get(1), streamInObjects.get(2));
+                break;
+            case 4:
+                task.streamIn(streamInObjects.get(0), streamInObjects.get(1), streamInObjects.get(2), streamInObjects.get(3));
+                break;
+            case 5:
+                task.streamIn(streamInObjects.get(0), streamInObjects.get(1), streamInObjects.get(2), streamInObjects.get(3), streamInObjects.get(4));
+                break;
+            case 6:
+                task.streamIn(streamInObjects.get(0), streamInObjects.get(1), streamInObjects.get(2), streamInObjects.get(3), streamInObjects.get(4), streamInObjects.get(5));
+                break;
+            default:
+                System.out.println("COPY-IN Not supported yet: " + numObjectsCopyIn);
+                break;
+        }
+    }
+
+    private void performStreamOutThreads(TaskSchedule task) {
+        int numObjectsCopyOut = streamOutObjects.size();
+        switch (numObjectsCopyOut) {
+            case 0:
+                break;
+            case 1:
+                task.streamOut(streamOutObjects.get(0));
+                break;
+            case 2:
+                task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1));
+                break;
+            case 3:
+                task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2));
+                break;
+            case 4:
+                task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2), streamOutObjects.get(3));
+                break;
+            case 5:
+                task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2), streamOutObjects.get(3), streamOutObjects.get(4));
+                break;
+            case 6:
+                task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2), streamOutObjects.get(3), streamOutObjects.get(4), streamOutObjects.get(5));
+                break;
+            default:
+                System.out.println("COPY-OUT Not supported yet: " + numObjectsCopyOut);
+                break;
+        }
+    }
+
     private void runScheduleWithProfiler(Policy policy) {
 
         final long startSearchProfiler = System.currentTimeMillis();
@@ -537,7 +597,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         final int indexSequential = numDevices;
 
         Thread[] threads = new Thread[numThreads];
-
         long[] totalTimers = new long[numThreads];
 
         // Last Thread runs the sequential code
@@ -553,47 +612,18 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         for (int i = 0; i < numDevices; i++) {
             final int taskScheduleNumber = i;
             threads[i] = new Thread(() -> {
-                // Each thread compile a TaskSchedule and Run
                 String taskScheduleName = "XXX" + taskScheduleNumber;
                 TaskSchedule task = new TaskSchedule(taskScheduleName);
 
-                // XXX: Fill stream IN
-                // task.streamIn(objects);
-
                 final long start = System.currentTimeMillis();
-
+                performStreamInThread(task);
                 for (int k = 0; k < taskPackages.size(); k++) {
                     String taskID = taskPackages.get(k).getId();
                     TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + taskScheduleNumber);
                     System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=0:" + taskScheduleNumber);
                     task.addTask(taskPackages.get(k));
                 }
-
-                int numObjectsCopyOut = streamOutObjects.size();
-                switch (numObjectsCopyOut) {
-                    case 1:
-                        task.streamOut(streamOutObjects.get(0));
-                        break;
-                    case 2:
-                        task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1));
-                        break;
-                    case 3:
-                        task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2));
-                        break;
-                    case 4:
-                        task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2), streamOutObjects.get(3));
-                        break;
-                    case 5:
-                        task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2), streamOutObjects.get(3), streamOutObjects.get(4));
-                        break;
-                    case 6:
-                        task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2), streamOutObjects.get(3), streamOutObjects.get(4), streamOutObjects.get(5));
-                        break;
-                    default:
-                        System.out.println("Not supported");
-                        break;
-                }
-
+                performStreamOutThreads(task);
                 task.execute();
 
                 final long end = System.currentTimeMillis();
