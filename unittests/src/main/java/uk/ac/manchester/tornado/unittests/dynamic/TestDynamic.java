@@ -79,7 +79,7 @@ public class TestDynamic extends TornadoTestBase {
 
     @Test
     public void testDynamicWithProfiler2() {
-        int numElements = 16777216;
+        int numElements = 4194304;
         float[] a = new float[numElements];
         float[] b = new float[numElements];
 
@@ -88,6 +88,7 @@ public class TestDynamic extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
+            .streamIn(a)
             .task("t0", TestDynamic::saxpy, 2.0f, a, b)
             .streamOut(b)
             .executeWithProfiler(Policy.PERFORMANCE);
@@ -140,12 +141,13 @@ public class TestDynamic extends TornadoTestBase {
         Arrays.fill(a, 10);
 
         compute(a, seq);
+        compute(seq, seq);
 
         //@formatter:off
-        TaskSchedule taskSchedule = new TaskSchedule("s0")
+        TaskSchedule taskSchedule = new TaskSchedule("pp")
             .streamIn(a)
             .task("t0", TestDynamic::compute, a, b)
-            .task("t1", TestDynamic::compute2, a, b)
+            .task("t1", TestDynamic::compute2, b, b)
             .streamOut(b);
         //@formatter:on
 

@@ -105,6 +105,8 @@ public interface AbstractTaskGraph {
 
     public abstract AbstractTaskGraph scheduleWithProfile(Policy policy);
 
+    public abstract AbstractTaskGraph scheduleWithProfileSequential(Policy policy);
+
     public void addTask(TaskPackage taskPackage);
 
     public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);

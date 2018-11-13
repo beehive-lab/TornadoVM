@@ -145,7 +145,6 @@ public class JVMMapping implements TornadoAcceleratorDevice {
 
     @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {
-
         return null;
     }
 
