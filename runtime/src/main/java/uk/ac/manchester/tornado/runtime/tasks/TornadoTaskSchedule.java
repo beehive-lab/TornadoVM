@@ -722,14 +722,20 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         // Running sequentially for all the devices
         for (int i = 0; i < numDevices; i++) {
-            String taskScheduleName = this.taskScheduleName;
+            String taskScheduleName = "XXX" + i;
+            TaskSchedule task = new TaskSchedule(taskScheduleName);
+
             final long start = System.currentTimeMillis();
+            performStreamInThread(task);
             for (int k = 0; k < taskPackages.size(); k++) {
                 String taskID = taskPackages.get(k).getId();
                 TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + i);
                 System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=0:" + i);
+                task.addTask(taskPackages.get(k));
             }
-            schedule();
+            performStreamOutThreads(task);
+            task.warmup();
+            task.execute();
 
             System.out.println("Parallel version finished: " + Thread.currentThread().getName());
             final long end = System.currentTimeMillis();
