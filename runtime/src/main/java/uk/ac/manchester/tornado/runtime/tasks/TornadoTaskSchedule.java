@@ -100,6 +100,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private ArrayList<Object> streamOutObjects = new ArrayList<>();
     private ArrayList<Object> streamInObjects = new ArrayList<>();
     private HashMap<Policy, Integer> policyTimeTable = new HashMap<>();
+    private boolean warmUpPhase = false;
 
     public boolean DEBUG_POLICY = true;
 
@@ -366,6 +367,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     public void warmup() {
         compileTasks();
         vm.warmup();
+        warmUpPhase = true;
     }
 
     @Override
@@ -713,7 +715,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             }
             final long endSequentialCode = System.currentTimeMillis();
             Thread.currentThread().setName("Thread-sequential");
-            System.out.println("Seq finished: " + Thread.currentThread().getName());
 
             totalTimers[indexSequential] = (endSequentialCode - startSearchProfiler);
         });
@@ -725,7 +726,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             String taskScheduleName = "XXX" + i;
             TaskSchedule task = new TaskSchedule(taskScheduleName);
 
-            final long start = System.currentTimeMillis();
+            long start = System.currentTimeMillis();
             performStreamInThread(task);
             for (int k = 0; k < taskPackages.size(); k++) {
                 String taskID = taskPackages.get(k).getId();
@@ -734,10 +735,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 task.addTask(taskPackages.get(k));
             }
             performStreamOutThreads(task);
-            task.warmup();
-            task.execute();
 
-            System.out.println("Parallel version finished: " + Thread.currentThread().getName());
+            if (warmUpPhase) {
+                task.warmup();
+                start = System.currentTimeMillis();
+            }
+            task.execute();
             final long end = System.currentTimeMillis();
             totalTimers[i] = end - start;
         }
@@ -749,7 +752,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
 
         if ((policy == Policy.PERFORMANCE) && (masterThreadID == Thread.currentThread().getId())) {
-            System.out.println("SYNCHRONIZING with thread: " + Thread.currentThread().getId());
             int deviceWinnerIndex = synchronizeWithPolicy(policy, threads, totalTimers);
             policyTimeTable.put(policy, deviceWinnerIndex);
             System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));

@@ -64,6 +64,8 @@ public class TestDynamic extends TornadoTestBase {
             .streamOut(b);
         //@formatter:on
 
+        taskSchedule.warmup();
+
         // Run first time to obtain the best performance device
         taskSchedule.executeWithProfiler(Policy.PERFORMANCE);
 
