@@ -753,7 +753,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         } else {
             // Run with the winner device
             int deviceWinnerIndex = policyTimeTable.get(policy);
-            System.out.println("Selecting the device: " + deviceWinnerIndex + " for POLICY: " + policy);
             if (deviceWinnerIndex >= TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount()) {
                 runSequential();
             } else {
