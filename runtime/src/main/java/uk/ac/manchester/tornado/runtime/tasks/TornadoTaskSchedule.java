@@ -708,18 +708,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         Thread[] threads = new Thread[numThreads];
         long[] totalTimers = new long[numThreads];
-        // Last Thread runs the sequential code
-        threads[indexSequential] = new Thread(() -> {
-            for (int k = 0; k < taskPackages.size(); k++) {
-                runSequentialCodeInThread(taskPackages.get(k));
-            }
-            final long endSequentialCode = System.currentTimeMillis();
-            Thread.currentThread().setName("Thread-sequential");
 
-            totalTimers[indexSequential] = (endSequentialCode - startSearchProfiler);
-        });
-
-        threads[indexSequential].start();
+        for (int k = 0; k < taskPackages.size(); k++) {
+            runSequentialCodeInThread(taskPackages.get(k));
+        }
+        final long endSequentialCode = System.currentTimeMillis();
+        totalTimers[indexSequential] = (endSequentialCode - startSearchProfiler);
 
         // Running sequentially for all the devices
         for (int i = 0; i < numDevices; i++) {
@@ -743,12 +737,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             task.execute();
             final long end = System.currentTimeMillis();
             totalTimers[i] = end - start;
-        }
-
-        try {
-            threads[indexSequential].join();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
 
         if ((policy == Policy.PERFORMANCE) && (masterThreadID == Thread.currentThread().getId())) {
