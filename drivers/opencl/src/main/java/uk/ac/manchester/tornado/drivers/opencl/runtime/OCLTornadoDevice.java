@@ -294,48 +294,61 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         }
     }
 
+    private ObjectBuffer createArrayWrapper(Class<?> type, OCLDeviceContext device) {
+        ObjectBuffer result = null;
+        if (type == int[].class) {
+            result = new OCLIntArrayWrapper(device);
+        } else if (type == short[].class) {
+            result = new OCLShortArrayWrapper(device);
+        } else if (type == byte[].class) {
+            result = new OCLByteArrayWrapper(device);
+        } else if (type == float[].class) {
+            result = new OCLFloatArrayWrapper(device);
+        } else if (type == double[].class) {
+            result = new OCLDoubleArrayWrapper(device);
+        } else if (type == long[].class) {
+            result = new OCLLongArrayWrapper(device);
+        } else if (type == char[].class) {
+            result = new OCLCharArrayWrapper(device);
+        } else {
+            TornadoInternalError.unimplemented("array of type %s", type.getName());
+        }
+        return result;
+    }
+
+    private ObjectBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, OCLDeviceContext device) {
+        ObjectBuffer result = null;
+
+        if (componentType == int[].class) {
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLIntArrayWrapper(context));
+        } else if (componentType == short[].class) {
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLShortArrayWrapper(context));
+        } else if (componentType == char[].class) {
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLCharArrayWrapper(context));
+        } else if (componentType == byte[].class) {
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLByteArrayWrapper(context));
+        } else if (componentType == float[].class) {
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLFloatArrayWrapper(context));
+        } else if (componentType == double[].class) {
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLDoubleArrayWrapper(context));
+        } else if (componentType == long[].class) {
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLLongArrayWrapper(context));
+        } else {
+            TornadoInternalError.unimplemented("array of type %s", type.getName());
+        }
+        return result;
+    }
+
     private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg, OCLDeviceContext device) throws TornadoOutOfMemoryException {
         ObjectBuffer result = null;
         if (type.isArray()) {
 
             if (!type.getComponentType().isArray()) {
-                if (type == int[].class) {
-                    result = new OCLIntArrayWrapper(device);
-                } else if (type == short[].class) {
-                    result = new OCLShortArrayWrapper(device);
-                } else if (type == byte[].class) {
-                    result = new OCLByteArrayWrapper(device);
-                } else if (type == float[].class) {
-                    result = new OCLFloatArrayWrapper(device);
-                } else if (type == double[].class) {
-                    result = new OCLDoubleArrayWrapper(device);
-                } else if (type == long[].class) {
-                    result = new OCLLongArrayWrapper(device);
-                } else if (type == char[].class) {
-                    result = new OCLCharArrayWrapper(device);
-                } else {
-                    TornadoInternalError.unimplemented("array of type %s", type.getName());
-                }
+                result = createArrayWrapper(type, device);
             } else {
                 final Class<?> componentType = type.getComponentType();
                 if (RuntimeUtilities.isPrimitiveArray(componentType)) {
-                    if (componentType == int[].class) {
-                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLIntArrayWrapper(context));
-                    } else if (componentType == short[].class) {
-                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLShortArrayWrapper(context));
-                    } else if (componentType == char[].class) {
-                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLCharArrayWrapper(context));
-                    } else if (componentType == byte[].class) {
-                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLByteArrayWrapper(context));
-                    } else if (componentType == float[].class) {
-                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLFloatArrayWrapper(context));
-                    } else if (componentType == double[].class) {
-                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLDoubleArrayWrapper(context));
-                    } else if (componentType == long[].class) {
-                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLLongArrayWrapper(context));
-                    } else {
-                        TornadoInternalError.unimplemented("array of type %s", type.getName());
-                    }
+                    result = createMultiArrayWrapper(componentType, type, device);
                 } else {
                     TornadoInternalError.unimplemented("multi-dimensional array of type %s", type.getName());
                 }
