@@ -98,9 +98,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     }
 
     private static long align(final long address, final long alignment) {
-        // long ad = (address % alignment == 0) ? address : address + (alignment
-        // - address % alignment);
-        long ad = (address % alignment == 0) ? address : address + (address % alignment);
+        long ad = (address % alignment == 0) ? address : address + (alignment - address % alignment);
         System.out.println("New Address: " + ad + " ALIGMENT: " + alignment + " ADDRESS: " + address);
         return ad;
     }
