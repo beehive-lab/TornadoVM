@@ -42,7 +42,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 
 public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
-    private static final int ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.opencl.array.align", "64"));
+    private static final int ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.opencl.array.align", "512"));
 
     private final int arrayHeaderSize;
 
