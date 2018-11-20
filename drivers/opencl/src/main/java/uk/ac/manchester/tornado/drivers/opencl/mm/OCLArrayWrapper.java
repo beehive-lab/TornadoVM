@@ -115,7 +115,6 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
             index++;
         }
         header.buffer.putInt(Array.getLength(array));
-        // header.dump(8);
         return header;
     }
 
@@ -126,13 +125,9 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         if (isFinal) {
             returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
         } else {
-            // int index = 0;
             internalEvents[1] = -1;
-            // internalEvents[0] = prepareArrayHeader().enqueueRead(null);
             internalEvents[0] = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
-            returnEvent = internalEvents[0]; // (index == 0) ? internalEvents[0]
-                                             // :
-                                             // deviceContext.enqueueMarker(internalEvents);
+            returnEvent = internalEvents[0];
         }
         return useDeps ? returnEvent : -1;
     }
@@ -257,7 +252,6 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     private boolean validateArrayHeader(final T array) {
         final OCLByteBuffer header = prepareArrayHeader();
         header.read();
-        // header.dump(8);
         final int numElements = header.getInt(arrayLengthOffset);
         final boolean valid = numElements == Array.getLength(array);
         if (!valid) {
