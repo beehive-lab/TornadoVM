@@ -155,6 +155,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         architecture = (OCLArchitecture) target.arch;
         scheduleMeta = new ScheduleMetaData("oclbackend");
 
+        if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && !isFPGAInit) {
+            // initFPGA();
+            isFPGAInit = true;
+        }
+
     }
 
     public SnippetReflectionProvider getSnippetReflection() {
@@ -330,17 +335,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     private void initFPGA() {
         // Initialize FPGA
-        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
-        for (int i = 0; i < driver.getDeviceCount(); i++) {
-            TornadoDeviceType deviceType = driver.getDevice(i).getDeviceType();
-            if (deviceType == TornadoDeviceType.ACCELERATOR) {
-                // run a custom kernel
-                System.out.println("Loading FPGA");
-                OCLCodeCache check = new OCLCodeCache(deviceContext);
-                Path lookupPath = Paths.get("/hdd/pre-compilied/pre-tornado/combined/WorkingExamples/Saxpy/lookupBufferAddress");
-                check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
-            }
-        }
+        System.out.println("Loading FPGA");
+        OCLCodeCache check = new OCLCodeCache(deviceContext);
+        Path lookupPath = Paths.get("/hdd/pre-compilied/pre-tornado/combined/WorkingExamples/Saxpy/lookupBufferAddress");
+        check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
     }
 
     public void init() {
@@ -349,11 +347,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         if (isLookupCodeAvailable()) {
             // Only run kernel is the compilation was correct.
             runAndReadLookUpKernel(meta);
-        }
-
-        if (!isFPGAInit) {
-            initFPGA();
-            isFPGAInit = true;
         }
     }
 
