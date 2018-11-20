@@ -78,6 +78,10 @@ import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
@@ -332,6 +336,14 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         }
 
         // Initialize FPGA
+        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        for (int i = 0; i < driver.getDeviceCount(); i++) {
+            TornadoDeviceType deviceType = driver.getDevice(i).getDeviceType();
+            if (deviceType == TornadoDeviceType.FPGA) {
+                // run a custom kernel
+                System.out.println("Found an FPGA");
+            }
+        }
     }
 
     public OCLDeviceContext getDeviceContext() {

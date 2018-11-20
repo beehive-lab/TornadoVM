@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
@@ -209,13 +210,16 @@ public class JVMMapping implements TornadoAcceleratorDevice {
 
     @Override
     public TornadoDeviceContext getDeviceContext() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public TornadoTargetDevice getDevice() {
-        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public TornadoDeviceType getDeviceType() {
         return null;
     }
 
