@@ -319,7 +319,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return lookupCodeAvailable;
     }
 
-    public void runAndReadLookUpKernel(TaskMetaData meta) {
+    private void runAndReadLookUpKernel(TaskMetaData meta) {
         deviceContext.getMemoryManager().init(this, readHeapBaseAddress(meta));
     }
 
@@ -330,6 +330,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             // Only run kernel is the compilation was correct.
             runAndReadLookUpKernel(meta);
         }
+
+        // Initialize FPGA
     }
 
     public OCLDeviceContext getDeviceContext() {
