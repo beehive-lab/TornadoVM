@@ -127,11 +127,8 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
     @Override
     public String toString() {
-        return String
-                .format("Call Stack: num args = %d, device = %s, size = %s @ 0x%x (0x%x)",
-                        numArgs, deviceContext.getDevice().getName(),
-                        humanReadableByteCount(bytes, true),
-                        toAbsoluteAddress(), toRelativeAddress());
+        return String.format("Call Stack: num args = %d, device = %s, size = %s @ 0x%x (0x%x)", numArgs, deviceContext.getDevice().getName(), humanReadableByteCount(bytes, true), toAbsoluteAddress(),
+                toRelativeAddress());
     }
 
     @Override
@@ -141,28 +138,23 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
     @Override
     public void push(Object arg) {
-
         if (arg == null) {
             if (DEBUG) {
                 debug("arg : (null)");
             }
             buffer.putLong(0);
-        } else if (isBoxedPrimitive(arg)
-                || arg.getClass().isPrimitive()) {
+        } else if (isBoxedPrimitive(arg) || arg.getClass().isPrimitive()) {
             if (DEBUG) {
-                debug("arg : type=%s, value=%s", arg.getClass()
-                        .getName(), arg.toString());
+                debug("arg : type=%s, value=%s", arg.getClass().getName(), arg.toString());
             }
             PrimitiveSerialiser.put(buffer, arg, 8);
         } else {
             shouldNotReachHere();
         }
-
     }
 
     @Override
     public void push(Object arg, DeviceObjectState state) {
-
         if (arg == null) {
             if (DEBUG) {
                 debug("arg : (null)");
@@ -170,8 +162,7 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
             buffer.putLong(0);
         } else {
             if (DEBUG) {
-                debug("arg : [0x%x] type=%s, value=%s, address=0x%x (0x%x)", arg.hashCode(), arg.getClass()
-                        .getSimpleName(), arg, state.getAddress(), state.getOffset());
+                debug("arg : [0x%x] type=%s, value=%s, address=0x%x (0x%x)", arg.hashCode(), arg.getClass().getSimpleName(), arg, state.getAddress(), state.getOffset());
             }
             if (OPENCL_USE_RELATIVE_ADDRESSES) {
                 buffer.putLong(state.getOffset());

@@ -42,7 +42,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 
 public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
-    private static final int ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.opencl.array.align", "512"));
+    private static final int ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.opencl.array.align", "128"));
 
     private final int arrayHeaderSize;
 
@@ -91,9 +91,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         if (bufferOffset == -1) {
             final T ref = cast(value);
             bytes = sizeOf(ref);
-
             bufferOffset = deviceContext.getMemoryManager().tryAllocate(ref.getClass(), bytes, arrayHeaderSize, getAlignment());
-
             info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x", kind.getJavaName(), humanReadableByteCount(bytes, true), arrayLengthOffset, arrayHeaderSize,
                     bufferOffset);
             info("allocated: %s", toString());

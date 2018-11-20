@@ -53,6 +53,8 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
 
     private boolean initialised;
 
+    public static final int STACK_ALIGNMENT_SIZE = 128;
+
     public OCLMemoryManager(final OCLDeviceContext device) {
         deviceContext = device;
         callStackLimit = OpenCL.OCL_CALL_STACK_LIMIT;
@@ -98,9 +100,8 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     }
 
     private static long align(final long address, final long alignment) {
-        long ad = (address % alignment == 0) ? address : address + (alignment - address % alignment);
-        System.out.println("New Address: " + ad + " ALIGMENT: " + alignment + " ADDRESS: " + address);
-        return ad;
+        long newAddress = (address % alignment == 0) ? address : address + (alignment - address % alignment);
+        return newAddress;
     }
 
     public long tryAllocate(final Class<?> type, final long bytes, final int headerSize, int alignment) throws TornadoOutOfMemoryException {
@@ -120,7 +121,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         OCLCallStack callStack = new OCLCallStack(callStackPosition, maxArgs, deviceContext);
 
         if (callStackPosition + callStack.getSize() < callStackLimit) {
-            callStackPosition = align(callStackPosition + callStack.getSize(), 32);
+            callStackPosition = align(callStackPosition + callStack.getSize(), STACK_ALIGNMENT_SIZE);
         } else {
             callStack = null;
             fatal("Out of call-stack memory");
