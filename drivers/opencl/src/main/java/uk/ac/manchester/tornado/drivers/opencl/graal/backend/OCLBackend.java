@@ -156,7 +156,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         scheduleMeta = new ScheduleMetaData("oclbackend");
 
         if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && !isFPGAInit) {
-            // initFPGA();
+            initFPGA();
             isFPGAInit = true;
         }
 
