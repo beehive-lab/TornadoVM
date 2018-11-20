@@ -79,7 +79,6 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
@@ -143,6 +142,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     final ScheduleMetaData scheduleMeta;
 
     private boolean lookupCodeAvailable;
+
+    private static boolean isFPGAInit = false;
 
     public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLContext openclContext, OCLDeviceContext deviceContext) {
         super(providers);
@@ -327,6 +328,21 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         deviceContext.getMemoryManager().init(this, readHeapBaseAddress(meta));
     }
 
+    private void initFPGA() {
+        // Initialize FPGA
+        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
+        for (int i = 0; i < driver.getDeviceCount(); i++) {
+            TornadoDeviceType deviceType = driver.getDevice(i).getDeviceType();
+            if (deviceType == TornadoDeviceType.ACCELERATOR) {
+                // run a custom kernel
+                System.out.println("Loading FPGA");
+                OCLCodeCache check = new OCLCodeCache(deviceContext);
+                Path lookupPath = Paths.get("/hdd/pre-compilied/pre-tornado/combined/WorkingExamples/Saxpy/lookupBufferAddress");
+                check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+            }
+        }
+    }
+
     public void init() {
         allocateHeapMemoryOnDevice();
         TaskMetaData meta = compileLookupBufferKernel();
@@ -335,14 +351,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             runAndReadLookUpKernel(meta);
         }
 
-        // Initialize FPGA
-        TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
-        for (int i = 0; i < driver.getDeviceCount(); i++) {
-            TornadoDeviceType deviceType = driver.getDevice(i).getDeviceType();
-            if (deviceType == TornadoDeviceType.ACCELERATOR) {
-                // run a custom kernel
-                System.out.println("Found an FPGA");
-            }
+        if (!isFPGAInit) {
+            initFPGA();
+            isFPGAInit = true;
         }
     }
 
