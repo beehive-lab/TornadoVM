@@ -339,7 +339,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         for (int i = 0; i < driver.getDeviceCount(); i++) {
             TornadoDeviceType deviceType = driver.getDevice(i).getDeviceType();
-            if (deviceType == TornadoDeviceType.FPGA) {
+            if (deviceType == TornadoDeviceType.ACCELERATOR) {
                 // run a custom kernel
                 System.out.println("Found an FPGA");
             }
