@@ -145,6 +145,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     private static boolean isFPGAInit = false;
 
+    private static final String KERNEL_WARMUP = System.getProperty("tornado.fpga.kernel.warmup");
+
     public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLContext openclContext, OCLDeviceContext deviceContext) {
         super(providers);
         this.options = options;
@@ -155,9 +157,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         architecture = (OCLArchitecture) target.arch;
         scheduleMeta = new ScheduleMetaData("oclbackend");
 
-        if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && !isFPGAInit) {
-            initFPGA();
-            isFPGAInit = true;
+        if (KERNEL_WARMUP != null) {
+            System.out.println("Warming UP kernel");
+            if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && !isFPGAInit) {
+                initFPGA();
+                isFPGAInit = true;
+            }
         }
 
     }
@@ -337,8 +342,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         // Initialize FPGA
         System.out.println("Loading FPGA");
         OCLCodeCache check = new OCLCodeCache(deviceContext);
-        Path lookupPath = Paths.get("/hdd/pre-compilied/pre-tornado/combined/WorkingExamples/Saxpy/lookupBufferAddress");
-        check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        System.out.println("KERNEL WARM-UP: " + KERNEL_WARMUP);
+        Path lookupPath = Paths.get(KERNEL_WARMUP);
+        if (lookupPath != null) {
+            check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        }
     }
 
     public void init() {
