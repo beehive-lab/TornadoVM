@@ -158,7 +158,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         scheduleMeta = new ScheduleMetaData("oclbackend");
 
         if (KERNEL_WARMUP != null) {
-            System.out.println("Warming UP kernel");
             if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && !isFPGAInit) {
                 initFPGA();
                 isFPGAInit = true;
@@ -339,13 +338,14 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     private void initFPGA() {
-        // Initialize FPGA
-        System.out.println("Loading FPGA");
+        // Initialize FPGA with a precompiled kernel
         OCLCodeCache check = new OCLCodeCache(deviceContext);
-        System.out.println("KERNEL WARM-UP: " + KERNEL_WARMUP);
-        Path lookupPath = Paths.get(KERNEL_WARMUP);
-        if (lookupPath != null) {
-            check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        try {
+            Path lookupPath = Paths.get(KERNEL_WARMUP);
+            if (lookupPath != null) {
+                check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+            }
+        } catch (Exception e) {
         }
     }
 
