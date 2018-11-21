@@ -731,7 +731,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             for (int k = 0; k < taskPackages.size(); k++) {
                 String taskID = taskPackages.get(k).getId();
                 TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + i);
-                System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=0:" + i);
+                // System.out.println("SET DEVICE: " + taskScheduleName + "." +
+                // taskID + ".device=0:" + i);
                 task.addTask(taskPackages.get(k));
             }
             performStreamOutThreads(task);
