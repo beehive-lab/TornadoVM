@@ -24,8 +24,8 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 public class HilbertMatrix {
 
     private static final boolean CHECK_RESULT = true;
-    private static int NROWS = 16;
-    private static int NCOLS = 16;
+    private static int NROWS = 1024;
+    private static int NCOLS = 1024;
 
     public static void hilberComputation(float[] output, int rows, int cols) {
         for (@Parallel int i = 0; i < rows; i++) {
@@ -47,7 +47,7 @@ public class HilbertMatrix {
         s0.execute();
 
         if (CHECK_RESULT) {
-            float[] seq = new float[64 * 64];
+            float[] seq = new float[NROWS * NCOLS];
             hilberComputation(seq, NROWS, NCOLS);
             for (int i = 0; i < NROWS; i++) {
                 for (int j = 0; j < NCOLS; j++) {
