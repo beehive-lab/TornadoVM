@@ -737,10 +737,16 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             }
             performStreamOutThreads(task);
 
-            if (warmUpPhase) {
-                task.warmup();
-                start = System.currentTimeMillis();
+            // if (warmUpPhase) {
+            // task.warmup();
+            // start = System.currentTimeMillis();
+            // }
+
+            for (int j = 0; j < 4; j++) {
+                task.execute();
             }
+
+            start = System.currentTimeMillis();
             task.execute();
             final long end = System.currentTimeMillis();
             totalTimers[i] = end - start;
