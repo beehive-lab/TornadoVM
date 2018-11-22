@@ -23,6 +23,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 
@@ -37,6 +38,12 @@ public class TestsVirtualLayer {
     public static void accumulator(int[] a, int value) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] += value;
+        }
+    }
+
+    public static void saxpy(float alpha, float[] x, float[] y) {
+        for (@Parallel int i = 0; i < y.length; i++) {
+            y[i] = alpha * x[i];
         }
     }
 
@@ -91,6 +98,7 @@ public class TestsVirtualLayer {
         final int numKernels = 1;
 
         int[] data = new int[numElements];
+
         int initValue = 0;
 
         TaskSchedule s0 = new TaskSchedule("s0");
@@ -119,6 +127,43 @@ public class TestsVirtualLayer {
 
         for (int i = 0; i < numElements; i++) {
             assertEquals((initValue + numKernels), data[i]);
+        }
+    }
+
+    @Test
+    public void testTaskMigration() {
+
+        TornadoDriver driver = getTornadoRuntime().getDriver(0);
+
+        if (driver.getDeviceCount() < 2) {
+            assertFalse("The current driver has less than 2 devices", true);
+        }
+
+        final int numElements = 512;
+        final float alpha = 2f;
+
+        final float[] x = new float[numElements];
+        final float[] y = new float[numElements];
+
+        IntStream.range(0, numElements).parallel().forEach(i -> x[i] = 450);
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+
+        s0.task("t0", TestsVirtualLayer::saxpy, alpha, x, y).streamOut(y);
+        s0.streamOut(y);
+
+        s0.mapAllTo(driver.getDevice(0));
+        s0.execute();
+
+        for (int i = 0; i < numElements; i++) {
+            assertEquals((alpha * 450), y[i], 0.001f);
+        }
+
+        s0.mapAllTo(driver.getDevice(1));
+        s0.execute();
+
+        for (int i = 0; i < numElements; i++) {
+            assertEquals((alpha * 450), y[i], 0.001f);
         }
     }
 
