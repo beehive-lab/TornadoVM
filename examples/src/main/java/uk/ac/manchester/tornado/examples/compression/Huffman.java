@@ -32,6 +32,7 @@ import java.util.LinkedList;
 import java.util.PriorityQueue;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class Huffman {
 
@@ -135,11 +136,8 @@ public class Huffman {
         int outIndex = 0;
         for (int idx = 0; idx < input.length; idx++) {
             byte bitInput = input[idx];
-            int l = left[iteratorNode];
-            int r = right[iteratorNode];
-            int d = data[iteratorNode];
 
-            if (l == -1) {
+            if (left[iteratorNode] == -1) {
                 int realData = data[iteratorNode];
                 output[outIndex] = realData;
                 iteratorNode = rootNode;
