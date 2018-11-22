@@ -199,6 +199,11 @@ public class TestsVirtualLayer {
         s0.execute();
     }
 
+    /**
+     * This test executes everything on the same device, even if the user forces
+     * to change. A task schedule is always executed on the same device. Device
+     * can change once the task is executed.
+     */
     @Test
     public void testVirtualLayer02() {
 
