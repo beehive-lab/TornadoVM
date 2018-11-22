@@ -32,7 +32,6 @@ import java.util.LinkedList;
 import java.util.PriorityQueue;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class Huffman {
 

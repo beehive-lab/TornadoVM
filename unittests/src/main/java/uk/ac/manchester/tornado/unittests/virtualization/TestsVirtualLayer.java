@@ -34,7 +34,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class TestsVirtualLayer {
 
-    public static void acc(int[] a, int value) {
+    public static void accumulator(int[] a, int value) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] += value;
         }
@@ -88,14 +88,14 @@ public class TestsVirtualLayer {
     public void testArrayMigration() {
 
         final int numElements = 8;
-        final int numKernels = 8;
+        final int numKernels = 1;
 
         int[] data = new int[numElements];
         int initValue = 0;
 
         TaskSchedule s0 = new TaskSchedule("s0");
         for (int i = 0; i < numKernels; i++) {
-            s0.task("t" + i, TestsVirtualLayer::acc, data, 1);
+            s0.task("t" + i, TestsVirtualLayer::accumulator, data, 1);
         }
         s0.streamOut(data);
 
