@@ -47,6 +47,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private final boolean isDeviceDefined;
     private int driverIndex;
     private int deviceIndex;
+    private boolean deviceManuallySet;
 
     public static final int DEFAULT_DRIVER_INDEX = 0;
     public static final int DEFAULT_DEVICE_INDEX = 0;
@@ -75,6 +76,10 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return index;
     }
 
+    public boolean isDeviceManuallySet() {
+        return deviceManuallySet;
+    }
+
     /**
      * Set a device in the default driver in Tornado.
      * 
@@ -87,6 +92,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         if (device instanceof TornadoAcceleratorDevice) {
             this.device = (TornadoAcceleratorDevice) device;
         }
+        deviceManuallySet = true;
     }
 
     /**

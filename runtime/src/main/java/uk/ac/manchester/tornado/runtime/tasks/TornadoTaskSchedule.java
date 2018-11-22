@@ -100,7 +100,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private ArrayList<Object> streamOutObjects = new ArrayList<>();
     private ArrayList<Object> streamInObjects = new ArrayList<>();
     private HashMap<Policy, Integer> policyTimeTable = new HashMap<>();
-    private boolean warmUpPhase = false;
 
     public boolean DEBUG_POLICY = true;
 
@@ -367,7 +366,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     public void warmup() {
         compileTasks();
         vm.warmup();
-        warmUpPhase = true;
     }
 
     @Override
