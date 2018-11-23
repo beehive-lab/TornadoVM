@@ -18,6 +18,7 @@
 
 package uk.ac.manchester.tornado.examples.fpga;
 
+import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
@@ -47,8 +48,9 @@ public class ASaxpy {
 
         TaskSchedule s0 = new TaskSchedule("s0").task("t0", ASaxpy::saxpy, alpha, x, y, b).streamOut(y);
 
-        for (int idx = 0; idx < 10; idx++) {
-            s0.execute();
+        //or (int idx = 0; idx < 10; idx++) {
+            //s0.execute();
+	    s0.executeWithProfilerSequential(Policy.PERFORMANCE);
             saxpy(alpha, x, result, b);
             System.out.println("Checking result");
             boolean wrongResult = false;
@@ -63,6 +65,6 @@ public class ASaxpy {
             } else {
                 System.out.println("Result is wrong");
             }
-        }
+        //}
     }
 }
