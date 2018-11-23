@@ -84,7 +84,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     private final int platformIndex;
     private static OCLDriver driver = null;
     private String platformName;
-    private boolean explorationMode;
 
     private static OCLDriver findDriver() {
         if (driver == null) {
