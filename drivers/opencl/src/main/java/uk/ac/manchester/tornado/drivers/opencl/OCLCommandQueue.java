@@ -468,32 +468,26 @@ public class OCLCommandQueue extends TornadoLogger {
 
     public int enqueueWrite(long devicePtr, boolean blocking, long offset, long bytes, float[] array, int[] waitEvents) {
         guarantee(array != null, "null array");
-
         int event = -1;
-
         try {
-            flush();
-
+            // flush();
             event = registerEvent(writeArrayToDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
                     DESC_WRITE_FLOAT, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
-
         return event;
     }
 
     public int enqueueWrite(long devicePtr, boolean blocking, long offset, long bytes, double[] array, int[] waitEvents) {
         guarantee(array != null, "null array");
         int event = -1;
-
         try {
             event = registerEvent(writeArrayToDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
                     DESC_WRITE_DOUBLE, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
-
         return event;
     }
 
