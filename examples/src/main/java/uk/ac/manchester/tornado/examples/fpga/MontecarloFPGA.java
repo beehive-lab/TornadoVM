@@ -18,7 +18,7 @@
 
 package uk.ac.manchester.tornado.examples.fpga;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.*;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
@@ -60,9 +60,9 @@ public class MontecarloFPGA {
 
         TaskSchedule t0 = new TaskSchedule("s0").task("t0", MontecarloFPGA::computeMontecarlo, output, size).streamOut(output);
 
-        for (int i = 0; i < 10; i++) {
+        //r (int i = 0; i < 10; i++) {
             long start = System.nanoTime();
-            t0.execute();
+            t0.executeWithProfilerSequential(Policy.PERFORMANCE);
             long end = System.nanoTime();
             long tornadoTime = (end - start);
 
@@ -71,8 +71,8 @@ public class MontecarloFPGA {
                 sum += output[j];
             }
             sum *= 4;
-            System.out.println("Total time (Tornado)   : " + (tornadoTime));
-            System.out.println("Pi value(Tornado)   : " + (sum / size));
+            //System.out.println("Total time (Tornado)   : " + (tornadoTime));
+            //System.out.println("Pi value(Tornado)   : " + (sum / size));
 
             start = System.nanoTime();
             computeMontecarlo(seq, size);
@@ -85,12 +85,12 @@ public class MontecarloFPGA {
             }
             sum *= 4;
 
-            System.out.println("Total time (Sequential): " + (sequentialTime));
-            System.out.println("Pi value(seq)   : " + (sum / size));
+            //System.out.println("Total time (Sequential): " + (sequentialTime));
+            //System.out.println("Pi value(seq)   : " + (sum / size));
 
             double speedup = (double) sequentialTime / (double) tornadoTime;
-            System.out.println("Speedup: " + speedup);
-        }
+            //System.out.println("Speedup: " + speedup);
+        //
     }
 
     public static void main(String[] args) {

@@ -20,7 +20,7 @@ package uk.ac.manchester.tornado.examples.compute;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.*;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
@@ -106,11 +106,11 @@ public class BlackScholes {
 
         System.gc();
         graph.task("t0", BlackScholes::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
-        for (int i = 0; i < 10; i++) {
-            graph.execute();
+       // for (int i = 0; i < 10; i++) {
+            graph.executeWithProfilerSequential(Policy.PERFORMANCE);
             blackScholesKernel(input, seqCall, seqPut);
             boolean results = checkResult(seqCall, seqPut, callPrice, putPrice);
-        }
+     //   }
     }
 
     public static void main(String[] args) {

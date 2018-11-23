@@ -23,7 +23,7 @@ import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 import java.io.PrintStream;
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.*;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
@@ -177,16 +177,16 @@ public class NBodyFPGA {
 
         validate();
 
-        for (int i = 0; i < iterations; i++) {
+     //   for (int i = 0; i < iterations; i++) {
             System.gc();
             long start = System.nanoTime();
-            t0.execute();
+            t0.executeWithProfilerSequential(Policy.PERFORMANCE);
             long end = System.nanoTime();
-            resultsIterations.append("Tornado execution time of iteration " + i + " is: " + (end - start) + " ns");
-            resultsIterations.append("\n");
-        }
+//            resultsIterations.append("Tornado execution time of iteration " + i + " is: " + (end - start) + " ns");
+  //          resultsIterations.append("\n");
+       // }
 
-        System.out.println(resultsIterations.toString());
+       // System.out.println(resultsIterations.toString());
 
     }
 
