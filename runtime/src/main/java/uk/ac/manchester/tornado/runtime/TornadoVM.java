@@ -77,6 +77,8 @@ public class TornadoVM extends TornadoLogger {
     private double totalTime;
     private long invocations;
 
+    private boolean exploration;
+
     public TornadoVM(ExecutionContext graphContext, byte[] code, int limit) {
 
         this.graphContext = graphContext;
@@ -222,6 +224,9 @@ public class TornadoVM extends TornadoLogger {
                 bytecodesList.append(String.format("COPY_IN [0x%x] %s on %s [event list=%d]\n", object.hashCode(), object, device, eventList));
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
+                if (exploration) {
+                    objectState.setExplorationMode();
+                }
                 if (graphContext.meta().isDebug()) {
                     debug("vm: state=%s", objectState);
                 }

@@ -84,6 +84,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     private final int platformIndex;
     private static OCLDriver driver = null;
     private String platformName;
+    private boolean explorationMode;
 
     private static OCLDriver findDriver() {
         if (driver == null) {
@@ -410,7 +411,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             ensureAllocated(object, state);
         }
 
-        if (!state.hasContents()) {
+        if (!state.isExplorationMode() && !state.hasContents()) {
             state.setContents(true);
             return state.getBuffer().enqueueWrite(object, events, events == null);
         }

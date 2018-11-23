@@ -222,4 +222,5 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     public TornadoDeviceType getDeviceType() {
         return null;
     }
+
 }
