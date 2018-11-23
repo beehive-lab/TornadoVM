@@ -103,8 +103,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     public boolean DEBUG_POLICY = true;
 
-    private boolean warmUpPhase;
-
     private static final int DEFAULT_DRIVER_INDEX = 0;
 
     public TornadoTaskSchedule(String name) {
@@ -368,7 +366,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     public void warmup() {
         compileTasks();
         vm.warmup();
-        this.warmUpPhase = true;
     }
 
     @Override
