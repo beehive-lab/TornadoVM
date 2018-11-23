@@ -69,6 +69,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
@@ -629,8 +630,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 for (int k = 0; k < taskPackages.size(); k++) {
                     String taskID = taskPackages.get(k).getId();
                     TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + taskScheduleNumber);
-                    // System.out.println("SET DEVICE: " + taskScheduleName +
-                    // "." + taskID + ".device=0:" + taskScheduleNumber);
+                    if (Tornado.DEBUG) {
+                        System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=0:" + taskScheduleNumber);
+                    }
                     task.addTask(taskPackages.get(k));
                 }
                 performStreamOutThreads(task);
@@ -737,8 +739,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             for (int k = 0; k < taskPackages.size(); k++) {
                 String taskID = taskPackages.get(k).getId();
                 TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + i);
-                // System.out.println("SET DEVICE: " + taskScheduleName + "." +
-                // taskID + ".device=0:" + i);
+                if (Tornado.DEBUG) {
+                    System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=0:" + i);
+                }
                 task.addTask(taskPackages.get(k));
             }
             performStreamOutThreads(task);
