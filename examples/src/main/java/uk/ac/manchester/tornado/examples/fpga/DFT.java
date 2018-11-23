@@ -20,7 +20,7 @@ package uk.ac.manchester.tornado.examples.fpga;
 
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.*;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
@@ -107,11 +107,12 @@ public class DFT {
         graph = new TaskSchedule("s0");
         graph.task("t0", DFT::computeDft, inReal, inImag, outReal, outImag, inputSize);
         graph.streamOut(outReal, outImag);
-        graph.warmup();
+        //aph.warmup();
 
-        for (int i = 0; i < 10; i++) {
-            graph.execute();
-        }
+        graph.executeWithProfilerSequential(Policy.PERFORMANCE);
+	//for (int i = 0; i < 10; i++) {
+        //    graph.execute();
+        //}
 
         if (CHECK_RESULT) {
             if (validate()) {
