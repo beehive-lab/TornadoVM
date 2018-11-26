@@ -38,8 +38,8 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import org.graalvm.compiler.phases.util.Providers;
@@ -87,12 +87,17 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
  */
 public class TornadoTaskSchedule implements AbstractTaskGraph {
 
-    private final ExecutionContext graphContext;
+    private ExecutionContext graphContext;
 
     private byte[] hlcode = new byte[2048];
     private ByteBuffer hlBuffer;
 
     private GraphCompilationResult result;
+
+    /**
+     * One VM instance per TaskSchedule
+     * 
+     */
     private TornadoVM vm;
     private Event event;
     private String taskScheduleName;
@@ -100,7 +105,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private ArrayList<TaskPackage> taskPackages = new ArrayList<>();
     private ArrayList<Object> streamOutObjects = new ArrayList<>();
     private ArrayList<Object> streamInObjects = new ArrayList<>();
-    private HashMap<Policy, Integer> policyTimeTable = new HashMap<>();
+    private ConcurrentHashMap<Policy, Integer> policyTimeTable = new ConcurrentHashMap<>();
 
     public boolean DEBUG_POLICY = true;
 
@@ -209,6 +214,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
 
         result = TornadoGraphCompiler.compile(graph, graphContext);
+
         // final long t2 = System.nanoTime();
         vm = new TornadoVM(graphContext, result.getCode(), result.getCodeSize());
         // final long t3 = System.nanoTime();
@@ -624,6 +630,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             threads[i] = new Thread(() -> {
                 String taskScheduleName = "XXX" + taskScheduleNumber;
                 TaskSchedule task = new TaskSchedule(taskScheduleName);
+
+                Thread.currentThread().setName("Thread-DEV: " + TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(taskScheduleNumber).getDevice().getName());
 
                 long start = System.currentTimeMillis();
                 performStreamInThread(task);

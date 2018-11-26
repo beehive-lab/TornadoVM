@@ -44,7 +44,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
@@ -93,7 +93,7 @@ public class OCLCodeCache {
 
     private final boolean PRINT_WARNINGS = false;
 
-    private final Map<String, OCLInstalledCode> cache;
+    private final ConcurrentHashMap<String, OCLInstalledCode> cache;
     private final OCLDeviceContext deviceContext;
 
     private boolean kernelAvailable;
@@ -102,7 +102,7 @@ public class OCLCodeCache {
 
     public OCLCodeCache(OCLDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
-        cache = new HashMap<>();
+        cache = new ConcurrentHashMap<>();
 
         if (OPENCL_BINARIES != null) {
             precompiledBinariesPerDevice = new HashMap<>();
