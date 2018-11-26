@@ -30,7 +30,6 @@ import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueInfo.CL_QUEUE_DEVICE;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_OOO_EXECUTION;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.EVENT_WINDOW;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.FORCE_BLOCKING_API_CALLS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.MARKER_USE_BARRIER;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.MAX_WAIT_EVENTS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
@@ -368,9 +367,9 @@ public class OCLCommandQueue extends TornadoLogger {
             error(e.getMessage());
         }
 
-        if (FORCE_BLOCKING_API_CALLS) {
-            enqueueBarrier();
-        }
+        // if (FORCE_BLOCKING_API_CALLS) {
+        enqueueBarrier();
+        // }
 
         return event;
     }
@@ -385,9 +384,9 @@ public class OCLCommandQueue extends TornadoLogger {
             error(e.getMessage());
         }
 
-        if (FORCE_BLOCKING_API_CALLS) {
-            enqueueBarrier();
-        }
+        // if (FORCE_BLOCKING_API_CALLS) {
+        enqueueBarrier();
+        /// }
 
         return event;
     }
@@ -397,8 +396,7 @@ public class OCLCommandQueue extends TornadoLogger {
         int event = -1;
 
         try {
-            event = registerEvent(writeArrayToDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
-                    DESC_WRITE_BYTE, offset);
+            event = registerEvent(writeArrayToDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_WRITE_BYTE, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -411,8 +409,7 @@ public class OCLCommandQueue extends TornadoLogger {
         int event = -1;
 
         try {
-            event = registerEvent(writeArrayToDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
-                    DESC_WRITE_BYTE, offset);
+            event = registerEvent(writeArrayToDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_WRITE_BYTE, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -427,8 +424,7 @@ public class OCLCommandQueue extends TornadoLogger {
         try {
             flush();
 
-            event = registerEvent(writeArrayToDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
-                    DESC_WRITE_INT, offset);
+            event = registerEvent(writeArrayToDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_WRITE_INT, offset);
 
         } catch (OCLException e) {
             error(e.getMessage());
@@ -442,8 +438,7 @@ public class OCLCommandQueue extends TornadoLogger {
         int event = -1;
 
         try {
-            event = registerEvent(writeArrayToDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
-                    DESC_WRITE_SHORT, offset);
+            event = registerEvent(writeArrayToDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_WRITE_SHORT, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -457,8 +452,7 @@ public class OCLCommandQueue extends TornadoLogger {
         int event = -1;
 
         try {
-            event = registerEvent(writeArrayToDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
-                    DESC_WRITE_LONG, offset);
+            event = registerEvent(writeArrayToDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_WRITE_LONG, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -471,8 +465,7 @@ public class OCLCommandQueue extends TornadoLogger {
         int event = -1;
         try {
             // flush();
-            event = registerEvent(writeArrayToDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
-                    DESC_WRITE_FLOAT, offset);
+            event = registerEvent(writeArrayToDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_WRITE_FLOAT, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -483,8 +476,7 @@ public class OCLCommandQueue extends TornadoLogger {
         guarantee(array != null, "null array");
         int event = -1;
         try {
-            event = registerEvent(writeArrayToDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
-                    DESC_WRITE_DOUBLE, offset);
+            event = registerEvent(writeArrayToDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_WRITE_DOUBLE, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
