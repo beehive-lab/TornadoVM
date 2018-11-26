@@ -496,8 +496,7 @@ public class OCLCommandQueue extends TornadoLogger {
         int event = -1;
 
         try {
-            event = registerEvent(readArrayFromDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
-                    DESC_READ_BYTE, offset);
+            event = registerEvent(readArrayFromDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_BYTE, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -510,8 +509,7 @@ public class OCLCommandQueue extends TornadoLogger {
         int event = -1;
 
         try {
-            event = registerEvent(readArrayFromDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
-                    DESC_READ_BYTE, offset);
+            event = registerEvent(readArrayFromDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_BYTE, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -526,8 +524,7 @@ public class OCLCommandQueue extends TornadoLogger {
         try {
             flush();
 
-            event = registerEvent(readArrayFromDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
-                    DESC_READ_INT, offset);
+            event = registerEvent(readArrayFromDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_INT, offset);
 
         } catch (OCLException e) {
             error(e.getMessage());
@@ -541,8 +538,7 @@ public class OCLCommandQueue extends TornadoLogger {
         int event = -1;
 
         try {
-            event = registerEvent(readArrayFromDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
-                    DESC_READ_SHORT, offset);
+            event = registerEvent(readArrayFromDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_SHORT, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -555,8 +551,7 @@ public class OCLCommandQueue extends TornadoLogger {
         int event = -1;
 
         try {
-            event = registerEvent(readArrayFromDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
-                    DESC_READ_LONG, offset);
+            event = registerEvent(readArrayFromDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_LONG, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -569,8 +564,7 @@ public class OCLCommandQueue extends TornadoLogger {
         int event = -1;
 
         try {
-            event = registerEvent(readArrayFromDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
-                    DESC_READ_FLOAT, offset);
+            event = registerEvent(readArrayFromDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_FLOAT, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -583,8 +577,7 @@ public class OCLCommandQueue extends TornadoLogger {
         int event = -1;
 
         try {
-            event = registerEvent(readArrayFromDevice(id, array, (FORCE_BLOCKING_API_CALLS) ? true : blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null),
-                    DESC_READ_DOUBLE, offset);
+            event = registerEvent(readArrayFromDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_DOUBLE, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
