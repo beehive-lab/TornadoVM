@@ -25,6 +25,7 @@ import static org.junit.Assert.assertNotNull;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
@@ -167,8 +168,9 @@ public class TestsVirtualLayer {
         }
     }
 
-    @Test
+    @Ignore
     public void testVirtualLayer01() {
+
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
         if (driver.getDeviceCount() < 2) {
             return;
@@ -200,11 +202,11 @@ public class TestsVirtualLayer {
     }
 
     /**
-     * This test executes everything on the same device, even if the user forces
-     * to change. A task schedule is always executed on the same device. Device
-     * can change once the task is executed.
+     * This test is not legal in Tornado. This test executes everything on the
+     * same device, even if the user forces to change. A task schedule is always
+     * executed on the same device. Device can change once the task is executed.
      */
-    @Test
+    @Ignore
     public void testVirtualLayer02() {
 
         TornadoDriver driver = getTornadoRuntime().getDriver(0);
