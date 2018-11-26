@@ -86,7 +86,7 @@ public class RenderTrack {
 
         TaskSchedule task = new TaskSchedule("s0").task("t0", RenderTrack::renderTrack, output, input).streamOut(output);
         ArrayList<Long> timers = new ArrayList<>();
-
+	task.warmup();
         for (int i = 0; i < 10; i++) {
             long start = System.nanoTime();
             task.executeWithProfilerSequential(Policy.PERFORMANCE);
