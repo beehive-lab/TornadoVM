@@ -594,7 +594,6 @@ public class OCLCommandQueue extends TornadoLogger {
     }
 
     public void printEvents() {
-
     }
 
     public int enqueueBarrier(int[] events) {
