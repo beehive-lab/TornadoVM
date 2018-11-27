@@ -156,7 +156,6 @@ public class TornadoVM extends TornadoLogger {
         if (stacks[index] == null || setNewDevice) {
             stacks[index] = device.createStack(numArgs);
         }
-
         return stacks[index];
     }
 
