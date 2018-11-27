@@ -34,6 +34,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
 
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
