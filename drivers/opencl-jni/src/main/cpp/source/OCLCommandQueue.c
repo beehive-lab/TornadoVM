@@ -135,7 +135,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
 
     OPENCL_DECODE_WAITLIST(array4, events, numEvents);
 
-    cl_event kernelEvent;
+    cl_event kernelEvent = NULL;
     OPENCL_SOFT_ERROR("clEnqueueNDRangeKernel",
             clEnqueueNDRangeKernel((cl_command_queue) queue_id, (cl_kernel) kernel_id, (cl_uint) work_dim, (size_t*) global_work_offset, (size_t*) global_work_size, (size_t*) local_work_size, (cl_uint) numEvents, (numEvents == 0)? NULL: (cl_event*) events, &kernelEvent), 0);
 
@@ -148,7 +148,6 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
 
     JNI_RELEASE_ARRAY(array1, global_work_offset);
     JNI_RELEASE_ARRAY(array2, global_work_size);
-
 
     return (jlong) kernelEvent;
 }

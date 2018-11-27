@@ -45,12 +45,9 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     private long callStackPosition;
     private long deviceBufferAddress;
     private final OCLDeviceContext deviceContext;
-
-    private long buffer;
+    private long deviceHeapPointer;
     private long heapLimit;
-
     private long heapPosition;
-
     private boolean initialised;
 
     public static final int STACK_ALIGNMENT_SIZE = 64;
@@ -157,7 +154,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
      */
     public void allocateRegion(long numBytes) {
         heapLimit = numBytes;
-        buffer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, numBytes);
+        deviceHeapPointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, numBytes);
     }
 
     public void init(OCLBackend backend, long address) {
@@ -181,7 +178,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     }
 
     public long toBuffer() {
-        return buffer;
+        return deviceHeapPointer;
     }
 
     public long toRelativeAddress() {
