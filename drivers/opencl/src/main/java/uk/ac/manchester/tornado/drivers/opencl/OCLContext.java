@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import sun.misc.Unsafe;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -78,7 +77,6 @@ public class OCLContext extends TornadoLogger {
     private final long[] allocatedRegions;
     private int allocatedRegionCount;
     private final ByteBuffer buffer;
-    private final Unsafe unsafe;
     private final OCLPlatform platform;
 
     public OCLContext(OCLPlatform platform, long id, List<OCLDevice> devices) {
@@ -93,7 +91,6 @@ public class OCLContext extends TornadoLogger {
         Arrays.fill(this.allocatedRegions, -1);
         this.buffer = ByteBuffer.allocate(128);
         this.buffer.order(OpenCL.BYTE_ORDER);
-        this.unsafe = RuntimeUtilities.getUnsafe();
     }
 
     native static void clReleaseContext(long id) throws OCLException;
