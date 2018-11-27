@@ -76,8 +76,10 @@ public class OCLContext extends TornadoLogger {
     private final List<OCLProgram> programs;
     private final long[] allocatedRegions;
     private int allocatedRegionCount;
-    private final ByteBuffer buffer;
     private final OCLPlatform platform;
+
+    private static final int MAX_ALLOCATED_REGIONS = 64;
+    private static final int BUFFER_CAPACITY = 128;
 
     public OCLContext(OCLPlatform platform, long id, List<OCLDevice> devices) {
         this.platform = platform;
@@ -86,11 +88,9 @@ public class OCLContext extends TornadoLogger {
         this.deviceContexts = new ArrayList<>(devices.size());
         this.queues = new OCLCommandQueue[devices.size()];
         this.programs = new ArrayList<>();
-        this.allocatedRegions = new long[64];
+        this.allocatedRegions = new long[MAX_ALLOCATED_REGIONS];
         this.allocatedRegionCount = 0;
         Arrays.fill(this.allocatedRegions, -1);
-        this.buffer = ByteBuffer.allocate(128);
-        this.buffer.order(OpenCL.BYTE_ORDER);
     }
 
     native static void clReleaseContext(long id) throws OCLException;
