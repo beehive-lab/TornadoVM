@@ -18,30 +18,42 @@
 
 package uk.ac.manchester.tornado.examples.fpga;
 
+import java.util.Arrays;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
+/**
+ * Init FPGA kernel. Copy-in and copy-out the same array to check device buffers
+ * and offset within Tornado.
+ * 
+ */
 public class Init {
 
     public static void init(float[] x) {
         for (@Parallel int i = 0; i < x.length; i++) {
-            x[i] = 100;
+            x[i] = x[i] + 100;
         }
     }
 
     public static void main(String[] args) {
-
         int numElements = 256;
-
         float[] x = new float[numElements];
 
-        TaskSchedule s0 = new TaskSchedule("s0").task("t0", Init::init, x).streamOut(x);
+        Arrays.fill(x, 10);
+
+        // @formatter:off
+        TaskSchedule s0 = new TaskSchedule("s0")
+                .streamIn(x)
+                .task("t0", Init::init, x)
+                .streamOut(x);
+        // @formatter:on
 
         s0.execute();
 
         boolean wrongResult = false;
         for (int i = 0; i < x.length; i++) {
-            if (x[i] != 100) {
+            if (x[i] != 110) {
                 wrongResult = true;
                 break;
             }
