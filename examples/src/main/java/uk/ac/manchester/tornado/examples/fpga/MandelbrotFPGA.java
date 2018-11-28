@@ -18,6 +18,8 @@
 
 package uk.ac.manchester.tornado.examples.fpga;
 
+import static java.lang.Integer.parseInt;
+
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -28,13 +30,12 @@ import java.io.File;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 
-import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class MandelbrotFPGA {
+    public static int sizes;
 
-    public final static int SIZE = 256;
     public static final boolean USE_TORNADO = true;
 
     @SuppressWarnings("serial")
@@ -86,13 +87,13 @@ public class MandelbrotFPGA {
             return result;
         }
 
-        private static void mandelbrotTornado(int size, short[] output) {
+        private static void mandelbrotTornado(int[] size, short[] output) {
             final int iterations = 10000;
-            float space = 2.0f / size;
+            float space = 2.0f / size[0];
 
-            for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int i = 0; i < size[0]; i++) {
                 int indexIDX = i;
-                for (int j = 0; j < size; j++) {
+                for (int j = 0; j < size[0]; j++) {
 
                     int indexJDX = j;
 
@@ -116,8 +117,8 @@ public class MandelbrotFPGA {
                             ii = iterations;
                         }
                     }
-                    short r = (short) ((y * 255) / iterations);
-                    output[i * size + j] = r;
+                    short r = (short) ((y * size[0] - 1) / iterations);
+                    output[i * size[0] + j] = r;
                 }
             }
         }
@@ -145,16 +146,18 @@ public class MandelbrotFPGA {
         @Override
         public void paint(Graphics g) {
             if (!USE_TORNADO) {
-                short[] mandelbrotSequential = mandelbrotSequential(SIZE);
-                this.image = writeFile(mandelbrotSequential, SIZE);
+                short[] mandelbrotSequential = mandelbrotSequential(sizes);
+                this.image = writeFile(mandelbrotSequential, sizes);
             } else {
-                short[] result = new short[SIZE * SIZE];
+                short[] result = new short[sizes * sizes];
                 TaskSchedule s0 = new TaskSchedule("s0");
 
-                s0.task("t0", MandelbrotImage::mandelbrotTornado, SIZE, result);
+                int[] sizesDyn = new int[1];
+                sizesDyn[0] = sizes;
+                s0.task("t0", MandelbrotImage::mandelbrotTornado, sizesDyn, result);
                 s0.streamOut(result).execute();
-                s0.executeWithProfilerSequential(Policy.PERFORMANCE);
-                this.image = writeFile(result, SIZE);
+                // s0.executeWithProfilerSequential(Policy.PERFORMANCE);
+                this.image = writeFile(result, sizes);
             }
             // draw the image
             g.drawImage(this.image, 0, 0, null);
@@ -163,7 +166,7 @@ public class MandelbrotFPGA {
         @Override
         public Dimension getPreferredSize() {
             if (image == null) {
-                return new Dimension(SIZE, SIZE);
+                return new Dimension(sizes, sizes);
             } else {
                 return new Dimension(image.getWidth(), image.getHeight());
             }
@@ -172,7 +175,7 @@ public class MandelbrotFPGA {
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("Mandelbrot Example within Tornado");
-
+        sizes = parseInt(args[0]);
         frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent event) {
