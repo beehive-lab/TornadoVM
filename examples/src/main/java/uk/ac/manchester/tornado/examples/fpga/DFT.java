@@ -67,7 +67,7 @@ public class DFT {
             long t2 = System.nanoTime();
 
             long seqTime = t2 - t1;
-            System.out.println("Sequential time: " + seqTime + "\n");
+//            System.out.println("Sequential time: " + seqTime + "\n");
 
         }
 

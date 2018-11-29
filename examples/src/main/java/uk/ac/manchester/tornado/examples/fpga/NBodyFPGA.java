@@ -99,11 +99,11 @@ public class NBodyFPGA {
             velSeqSeq[i] = auxVelocityZero[i];
         }
         graph = new TaskSchedule("s0");
-        graph.task("t0", NBodyFPGA::nBody, numBodies, posSeq, velSeq, delT, espSqr, inputSize);
+        graph.task("t0", NBodyFPGA::nBody, numBodies, posSeq, velSeq, delT, espSqr, inputSize).streamOut(posSeq,velSeq);
         graph.warmup();
         graph.execute();
-        graph.syncObjects(posSeq, velSeq);
-        graph.clearProfiles();
+        //graph.syncObjects(posSeq, velSeq);
+        //graph.clearProfiles();
 
         nBody(numBodies, posSeqSeq, velSeqSeq, delT, espSqr, inputSize);
 
@@ -181,7 +181,8 @@ public class NBodyFPGA {
             System.gc();
             long start = System.nanoTime();
             t0.executeWithProfilerSequential(Policy.PERFORMANCE);
-            long end = System.nanoTime();
+            //t0.execute();
+  	   	long end = System.nanoTime();
 //            resultsIterations.append("Tornado execution time of iteration " + i + " is: " + (end - start) + " ns");
   //          resultsIterations.append("\n");
        // }
