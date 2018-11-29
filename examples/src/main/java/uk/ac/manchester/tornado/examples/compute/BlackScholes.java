@@ -107,9 +107,11 @@ public class BlackScholes {
         System.gc();
         graph.task("t0", BlackScholes::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
        // for (int i = 0; i < 10; i++) {
-            graph.executeWithProfilerSequential(Policy.PERFORMANCE);
-            blackScholesKernel(input, seqCall, seqPut);
+       graph.executeWithProfilerSequential(Policy.PERFORMANCE);
+       // graph.execute();    
+	blackScholesKernel(input, seqCall, seqPut);
             boolean results = checkResult(seqCall, seqPut, callPrice, putPrice);
+            System.out.println("Validation " + results + " \n");
      //   }
     }
 

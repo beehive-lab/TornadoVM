@@ -30,7 +30,7 @@ import java.io.File;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.*;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class MandelbrotFPGA {
@@ -155,8 +155,8 @@ public class MandelbrotFPGA {
                 int[] sizesDyn = new int[1];
                 sizesDyn[0] = sizes;
                 s0.task("t0", MandelbrotImage::mandelbrotTornado, sizesDyn, result);
-                s0.streamOut(result).execute();
-                // s0.executeWithProfilerSequential(Policy.PERFORMANCE);
+                s0.streamOut(result);//.execute();
+                s0.executeWithProfilerSequential(Policy.PERFORMANCE);
                 this.image = writeFile(result, sizes);
             }
             // draw the image
