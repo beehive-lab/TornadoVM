@@ -86,7 +86,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
  * 
  */
 public class TornadoTaskSchedule implements AbstractTaskGraph {
-
+    public final static boolean TIME_IN_NS = Boolean.parseBoolean(System.getProperty("tornado.ns.time", "true"));
     private ExecutionContext graphContext;
 
     private byte[] hlcode = new byte[2048];
@@ -613,7 +613,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private void runScheduleWithProfiler(Policy policy) {
 
-        final long startSearchProfiler = System.currentTimeMillis();
+        final long startSearchProfiler = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
         TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
         int numDevices = tornadoDriver.getDeviceCount();
 
@@ -635,8 +635,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 }
                 start = System.currentTimeMillis();
             }
-            runAllTaskSequentially();
-            final long endSequentialCode = System.currentTimeMillis();
+
+            final long endSequentialCode = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
             Thread.currentThread().setName("Thread-sequential");
             System.out.println("Seq finished: " + Thread.currentThread().getName());
 
@@ -651,7 +651,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
                 Thread.currentThread().setName("Thread-DEV: " + TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(taskScheduleNumber).getDevice().getName());
 
-                long start = System.currentTimeMillis();
+                long start = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
                 performStreamInThread(task, streamInObjects);
                 for (int k = 0; k < taskPackages.size(); k++) {
                     String taskID = taskPackages.get(k).getId();
@@ -668,10 +668,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                     for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
                         task.execute();
                     }
-                    start = System.currentTimeMillis();
+                    start = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
                 }
                 task.execute();
-                final long end = System.currentTimeMillis();
+                final long end = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
                 taskScheduleIndex.put(taskScheduleNumber, task);
                 totalTimers[taskScheduleNumber] = end - start;
             });
@@ -787,7 +787,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private void runWithSequentialProfiler(Policy policy) {
 
-        final long startSearchProfiler = System.currentTimeMillis();
+        final long startSearchProfiler = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
         TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
         int numDevices = tornadoDriver.getDeviceCount();
 
@@ -807,15 +807,15 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             startSequential = System.currentTimeMillis();
         }
         runAllTaskSequentially();
-        final long endSequentialCode = System.currentTimeMillis();
-        totalTimers[indexSequential] = (endSequentialCode - startSequential);
+        final long endSequentialCode = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+        totalTimers[indexSequential] = (endSequentialCode - startSearchProfiler);
 
         // Running sequentially for all the devices
         for (int i = 0; i < numDevices; i++) {
             String taskScheduleName = "XXX" + i;
             TaskSchedule task = new TaskSchedule(taskScheduleName);
 
-            long start = System.currentTimeMillis();
+            long start = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
             performStreamInThread(task, streamInObjects);
             for (int k = 0; k < taskPackages.size(); k++) {
                 String taskID = taskPackages.get(k).getId();
@@ -831,12 +831,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
                     task.execute();
                 }
-                start = System.currentTimeMillis();
+                start = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
             }
 
             task.execute();
             taskScheduleIndex.put(i, task);
-            final long end = System.currentTimeMillis();
+            final long end = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
             totalTimers[i] = end - start;
         }
 
