@@ -94,10 +94,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private GraphCompilationResult result;
 
-    /**
-     * One VM instance per TaskSchedule
-     * 
-     */
+    // One VM instance per TaskSchedule
     private TornadoVM vm;
     private Event event;
     private String taskScheduleName;
@@ -106,8 +103,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private ArrayList<Object> streamOutObjects = new ArrayList<>();
     private ArrayList<Object> streamInObjects = new ArrayList<>();
     private ConcurrentHashMap<Policy, Integer> policyTimeTable = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerOutputs = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerInputs = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, TaskSchedule> taskScheduleIndex = new ConcurrentHashMap<>();
 
-    public boolean DEBUG_POLICY = true;
+    public boolean DEBUG_POLICY = false;
+    public boolean EXEPERIMENTAL_MULTI_HEAP = false;
 
     private static final int DEFAULT_DRIVER_INDEX = 0;
 
@@ -424,6 +425,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
+    public ExecutionContext getGraphContext() {
+        return this.graphContext;
+    }
+
     @Override
     public String getId() {
         return meta().getId();
@@ -540,28 +545,28 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return winner;
     }
 
-    private void performStreamInThread(TaskSchedule task) {
-        int numObjectsCopyIn = streamInObjects.size();
+    private void performStreamInThread(TaskSchedule task, ArrayList<Object> inputObjects) {
+        int numObjectsCopyIn = inputObjects.size();
         switch (numObjectsCopyIn) {
             case 0:
                 break;
             case 1:
-                task.streamIn(streamInObjects.get(0));
+                task.streamIn(inputObjects.get(0));
                 break;
             case 2:
-                task.streamIn(streamInObjects.get(0), streamInObjects.get(1));
+                task.streamIn(inputObjects.get(0), inputObjects.get(1));
                 break;
             case 3:
-                task.streamIn(streamInObjects.get(0), streamInObjects.get(1), streamInObjects.get(2));
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2));
                 break;
             case 4:
-                task.streamIn(streamInObjects.get(0), streamInObjects.get(1), streamInObjects.get(2), streamInObjects.get(3));
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3));
                 break;
             case 5:
-                task.streamIn(streamInObjects.get(0), streamInObjects.get(1), streamInObjects.get(2), streamInObjects.get(3), streamInObjects.get(4));
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4));
                 break;
             case 6:
-                task.streamIn(streamInObjects.get(0), streamInObjects.get(1), streamInObjects.get(2), streamInObjects.get(3), streamInObjects.get(4), streamInObjects.get(5));
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5));
                 break;
             default:
                 System.out.println("COPY-IN Not supported yet: " + numObjectsCopyIn);
@@ -569,28 +574,28 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private void performStreamOutThreads(TaskSchedule task) {
-        int numObjectsCopyOut = streamOutObjects.size();
+    private void performStreamOutThreads(TaskSchedule task, ArrayList<Object> outputArrays) {
+        int numObjectsCopyOut = outputArrays.size();
         switch (numObjectsCopyOut) {
             case 0:
                 break;
             case 1:
-                task.streamOut(streamOutObjects.get(0));
+                task.streamOut(outputArrays.get(0));
                 break;
             case 2:
-                task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1));
+                task.streamOut(outputArrays.get(0), outputArrays.get(1));
                 break;
             case 3:
-                task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2));
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2));
                 break;
             case 4:
-                task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2), streamOutObjects.get(3));
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3));
                 break;
             case 5:
-                task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2), streamOutObjects.get(3), streamOutObjects.get(4));
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4));
                 break;
             case 6:
-                task.streamOut(streamOutObjects.get(0), streamOutObjects.get(1), streamOutObjects.get(2), streamOutObjects.get(3), streamOutObjects.get(4), streamOutObjects.get(5));
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5));
                 break;
             default:
                 System.out.println("COPY-OUT Not supported yet: " + numObjectsCopyOut);
@@ -634,7 +639,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 Thread.currentThread().setName("Thread-DEV: " + TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(taskScheduleNumber).getDevice().getName());
 
                 long start = System.currentTimeMillis();
-                performStreamInThread(task);
+                performStreamInThread(task, streamInObjects);
                 for (int k = 0; k < taskPackages.size(); k++) {
                     String taskID = taskPackages.get(k).getId();
                     TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + taskScheduleNumber);
@@ -643,7 +648,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                     }
                     task.addTask(taskPackages.get(k));
                 }
-                performStreamOutThreads(task);
+                performStreamOutThreads(task, streamOutObjects);
 
                 if (policy == Policy.PERFORMANCE) {
                     // first warm up
@@ -696,7 +701,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             TaskPackage taskPackage = taskPackages.get(k);
             TornadoRuntime.setProperty(this.getTaskScheduleName() + "." + taskPackage.getId() + ".device", "0:" + deviceWinnerIndex);
         }
-        scheduleInner();
+        // call to scheduleInner() through the corresponding task
+        TaskSchedule task = taskScheduleIndex.get(deviceWinnerIndex);
+        if (DEBUG_POLICY) {
+            System.out.println("Running in parallel device: " + deviceWinnerIndex);
+        }
+        task.execute();
     }
 
     @Override
@@ -716,13 +726,56 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return this;
     }
 
+    private Object cloneObject(Object o) {
+        System.out.println("ORIGINAL:" + o);
+        if (o instanceof float[]) {
+            float[] clone = ((float[]) o).clone();
+            return clone;
+        } else if (o instanceof int[]) {
+            int[] clone = ((int[]) o).clone();
+            return clone;
+        } else {
+            throw new RuntimeException("Data type cloning not supported");
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private void cloneInputOutputObjects() {
+        TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
+        int numDevices = tornadoDriver.getDeviceCount();
+        // Clone objects (only outputs) for each device
+        for (int deviceNumber = 0; deviceNumber < numDevices; deviceNumber++) {
+            ArrayList<Object> newInObjects = new ArrayList<>();
+            ArrayList<Object> newOutObjects = new ArrayList<>();
+
+            for (int i = 0; i < streamInObjects.size(); i++) {
+                Object in = streamInObjects.get(i);
+                boolean outputObjectFound = false;
+                for (int j = 0; j < streamOutObjects.size(); j++) {
+                    Object out = streamOutObjects.get(j);
+                    if (in == out) {
+                        outputObjectFound = true;
+                        break;
+                    }
+                }
+                if (outputObjectFound) {
+                    Object clonedObject = cloneObject(in);
+                    newInObjects.add(clonedObject);
+                    newOutObjects.add(clonedObject);
+                } else {
+                    newInObjects.add(in);
+                }
+            }
+            multiHeapManagerInputs.put(deviceNumber, newInObjects);
+            multiHeapManagerOutputs.put(deviceNumber, newOutObjects);
+        }
+    }
+
     private void runWithSequentialProfiler(Policy policy) {
 
         final long startSearchProfiler = System.currentTimeMillis();
         TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
         int numDevices = tornadoDriver.getDeviceCount();
-
-        long masterThreadID = Thread.currentThread().getId();
 
         // One additional threads is reserved for sequential CPU execution
         final int numThreads = numDevices + 1;
@@ -743,7 +796,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             TaskSchedule task = new TaskSchedule(taskScheduleName);
 
             long start = System.currentTimeMillis();
-            performStreamInThread(task);
+            performStreamInThread(task, streamInObjects);
             for (int k = 0; k < taskPackages.size(); k++) {
                 String taskID = taskPackages.get(k).getId();
                 TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + i);
@@ -752,7 +805,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 }
                 task.addTask(taskPackages.get(k));
             }
-            performStreamOutThreads(task);
+            performStreamOutThreads(task, streamOutObjects);
 
             if (policy == Policy.PERFORMANCE) {
                 for (int k = 0; k < 3; k++) {
@@ -762,25 +815,55 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             }
 
             task.execute();
+            taskScheduleIndex.put(i, task);
             final long end = System.currentTimeMillis();
             totalTimers[i] = end - start;
+
         }
 
-        if ((policy == Policy.PERFORMANCE || policy == Policy.END_2_END) && (masterThreadID == Thread.currentThread().getId())) {
+        if (policy == Policy.PERFORMANCE || policy == Policy.END_2_END) {
             int deviceWinnerIndex = synchronizeWithPolicy(policy, threads, totalTimers);
             policyTimeTable.put(policy, deviceWinnerIndex);
             System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
         }
     }
 
+    private void restoreVarsIntoJavaHeap(Policy policy, int numDevices) {
+        if (policyTimeTable.get(policy) < numDevices) {
+            // link output
+            int deviceWinnerIndex = policyTimeTable.get(policy);
+            ArrayList<Object> deviceOutputObjects = multiHeapManagerOutputs.get(deviceWinnerIndex);
+            for (int i = 0; i < streamOutObjects.size(); i++) {
+                // Object output = streamOutObjects.get(i);
+                // output = deviceOutputObjects.get(i);
+            }
+            System.out.println("Output: ");
+            System.out.println(Arrays.toString((int[]) streamOutObjects.get(0)));
+
+            for (int i = 0; i < numDevices; i++) {
+                deviceOutputObjects = multiHeapManagerOutputs.get(i);
+                System.out.println("Device: " + i);
+                for (Object o : deviceOutputObjects) {
+                    System.out.println("===========================");
+                    System.out.println(Arrays.toString((int[]) o));
+                }
+            }
+
+        }
+    }
+
     @Override
     public AbstractTaskGraph scheduleWithProfileSequential(Policy policy) {
+        int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
         if (policyTimeTable.get(policy) == null) {
             runWithSequentialProfiler(policy);
+            if (EXEPERIMENTAL_MULTI_HEAP) {
+                restoreVarsIntoJavaHeap(policy, numDevices);
+            }
         } else {
             // Run with the winner device
             int deviceWinnerIndex = policyTimeTable.get(policy);
-            if (deviceWinnerIndex >= TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount()) {
+            if (deviceWinnerIndex >= numDevices) {
                 runSequential();
             } else {
                 runParallel(deviceWinnerIndex);

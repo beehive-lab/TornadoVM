@@ -180,7 +180,6 @@ public class TornadoVM extends TornadoLogger {
         for (int[] waitList : events) {
             Arrays.fill(waitList, -1);
         }
-
         StringBuilder bytecodesList = new StringBuilder();
 
         while (buffer.hasRemaining()) {

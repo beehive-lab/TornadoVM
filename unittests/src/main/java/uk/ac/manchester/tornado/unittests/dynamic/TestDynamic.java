@@ -52,7 +52,7 @@ public class TestDynamic extends TornadoTestBase {
 
     @Test
     public void testDynamicWithProfiler() {
-        int numElements = 16000;
+        int numElements = 256;
         int[] a = new int[numElements];
         int[] b = new int[numElements];
 
@@ -64,14 +64,12 @@ public class TestDynamic extends TornadoTestBase {
             .streamOut(b);
         //@formatter:on
 
-        taskSchedule.warmup();
-
         // Run first time to obtain the best performance device
-        taskSchedule.executeWithProfiler(Policy.PERFORMANCE);
+        taskSchedule.executeWithProfilerSequential(Policy.PERFORMANCE);
 
         // Run a few iterations to get the device.
         for (int i = 0; i < 10; i++) {
-            taskSchedule.executeWithProfiler(Policy.PERFORMANCE);
+            taskSchedule.executeWithProfilerSequential(Policy.PERFORMANCE);
         }
 
         for (int i = 0; i < b.length; i++) {
