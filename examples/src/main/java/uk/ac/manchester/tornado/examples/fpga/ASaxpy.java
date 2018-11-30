@@ -48,12 +48,17 @@ public class ASaxpy {
 
         TaskSchedule s0 = new TaskSchedule("s0").task("t0", ASaxpy::saxpy, alpha, x, y, b).streamOut(y);
 
-        //or (int idx = 0; idx < 10; idx++) {
-            //s0.execute();
-	    s0.executeWithProfilerSequential(Policy.PERFORMANCE);
-            saxpy(alpha, x, result, b);
+        for (int idx = 0; idx < 5; idx++) 
+        {
+            long start = System.nanoTime();
+            s0.execute();
+	    long end = System.nanoTime();
+	    //s0.executeWithProfilerSequential(Policy.PERFORMANCE);
+	    saxpy(alpha, x, result, b);
             System.out.println("Checking result");
-            boolean wrongResult = false;
+            System.out.println("end2end:" +(end-start)+ " ns");
+            }
+		boolean wrongResult = false;
             for (int i = 0; i < y.length; i++) {
                 if (Math.abs(y[i] - (alpha * x[i] + b[i])) > 0.01) {
                     wrongResult = true;
