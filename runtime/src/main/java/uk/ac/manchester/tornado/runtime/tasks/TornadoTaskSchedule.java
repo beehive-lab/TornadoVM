@@ -633,7 +633,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
                     runAllTaskSequentially();
                 }
-                start = System.currentTimeMillis();
+                start = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
             }
             final long endSequentialCode = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
             Thread.currentThread().setName("Thread-sequential");
@@ -809,7 +809,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
         runAllTaskSequentially();
         final long endSequentialCode = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
-        totalTimers[indexSequential] = (endSequentialCode - startSearchProfiler);
+        totalTimers[indexSequential] = (endSequentialCode - startSequential);
 
         // Running sequentially for all the devices
         for (int i = 0; i < numDevices; i++) {
