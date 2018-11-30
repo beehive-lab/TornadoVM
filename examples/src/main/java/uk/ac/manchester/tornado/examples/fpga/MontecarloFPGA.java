@@ -60,7 +60,11 @@ public class MontecarloFPGA {
         float[] output = new float[size];
         float[] seq = new float[size];
         long start,end;
+
+        long startInit = System.nanoTime();
         TaskSchedule s0 = new TaskSchedule("s0").task("t0", MontecarloFPGA::computeMontecarlo, output, size).streamOut(output);
+        long stopInit = System.nanoTime();
+        System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
         for (int i = 0; i < iterations; i++) {
             switch (executionType) {

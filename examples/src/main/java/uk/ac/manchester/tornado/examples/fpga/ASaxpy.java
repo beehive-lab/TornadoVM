@@ -49,7 +49,10 @@ public class ASaxpy {
             b[i] = 20;
         }
 
+        long startInit = System.nanoTime();
         TaskSchedule s0 = new TaskSchedule("s0").task("t0", ASaxpy::saxpy, alpha, x, y, b).streamOut(y);
+        long stopInit = System.nanoTime();
+        System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
         for (int idx = 0; idx < iterations; idx++) {
 

@@ -109,9 +109,12 @@ public class DFT {
             inImag[i] = 1 / (float) (i + 2);
         }
 
+        long startInit = System.nanoTime();
         graph = new TaskSchedule("s0");
         graph.task("t0", DFT::computeDft, inReal, inImag, outReal, outImag, inputSize);
         graph.streamOut(outReal, outImag);
+        long stopInit = System.nanoTime();
+        System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
         for (int i = 0; i < iterations; i++) {
             switch (executionType) {

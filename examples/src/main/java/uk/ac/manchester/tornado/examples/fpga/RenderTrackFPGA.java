@@ -93,7 +93,10 @@ public class RenderTrackFPGA {
             }
         }
 
+        long startInit = System.nanoTime();
         TaskSchedule s0 = new TaskSchedule("s0").task("t0", RenderTrackFPGA::renderTrack, output, input).streamOut(output);
+        long stopInit = System.nanoTime();
+        System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
         for (int i = 0; i < iterations; i++) {
             switch (executionType) {

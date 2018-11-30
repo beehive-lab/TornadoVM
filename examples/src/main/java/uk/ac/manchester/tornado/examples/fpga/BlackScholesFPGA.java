@@ -109,7 +109,10 @@ public class BlackScholesFPGA {
             input[i] = random.nextFloat();
         }
 
+        long startInit = System.nanoTime();
         s0.task("t0", BlackScholesFPGA::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
+        long stopInit = System.nanoTime();
+        System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
         for (int i = 0; i < iterations; i++) {
             switch (executionType) {

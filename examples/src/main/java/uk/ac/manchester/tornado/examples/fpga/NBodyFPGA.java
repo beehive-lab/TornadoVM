@@ -159,7 +159,10 @@ public class NBodyFPGA {
             velSeq[i] = auxVelocityZero[i];
         }
 
+        long startInit = System.nanoTime();
         final TaskSchedule s0 = new TaskSchedule("s0").task("t0", NBodyFPGA::nBody, numBodies, posSeq, velSeq, delT, espSqr, inputSize).streamOut(posSeq, velSeq);
+        long stopInit = System.nanoTime();
+        System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
         for (int i = 0; i < iterations; i++) {
             switch (executionType) {
