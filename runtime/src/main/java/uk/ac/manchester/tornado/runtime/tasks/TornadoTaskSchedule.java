@@ -635,7 +635,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 }
                 start = System.currentTimeMillis();
             }
-
             final long endSequentialCode = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
             Thread.currentThread().setName("Thread-sequential");
             System.out.println("Seq finished: " + Thread.currentThread().getName());
@@ -754,7 +753,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @SuppressWarnings("unused")
+
     private void cloneInputOutputObjects() {
+        final long startSearchProfiler = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
         TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
         int numDevices = tornadoDriver.getDeviceCount();
         // Clone objects (only outputs) for each device
@@ -799,12 +800,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         long[] totalTimers = new long[numThreads];
 
         // Run Sequential
-        long startSequential = System.currentTimeMillis();
+        long startSequential = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
         if (policy == Policy.PERFORMANCE) {
             for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
                 runAllTaskSequentially();
             }
-            startSequential = System.currentTimeMillis();
+            startSequential = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
         }
         runAllTaskSequentially();
         final long endSequentialCode = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
