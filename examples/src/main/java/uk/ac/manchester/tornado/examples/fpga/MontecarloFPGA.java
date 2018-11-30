@@ -63,7 +63,7 @@ public class MontecarloFPGA {
         //r (int i = 0; i < 10; i++) {
             long start = System.nanoTime();
             t0.executeWithProfilerSequential(Policy.PERFORMANCE);
-            //t0.execute();    
+           // t0.execute();    
 			long end = System.nanoTime();
             long tornadoTime = (end - start);
 
@@ -73,7 +73,7 @@ public class MontecarloFPGA {
             }
             sum *= 4;
             //System.out.println("Total time (Tornado)   : " + (tornadoTime));
-            System.out.println("Pi value(Tornado)   : " + (sum / size));
+            //System.out.println("Pi value(Tornado)   : " + (sum / size));
 
             start = System.nanoTime();
             computeMontecarlo(seq, size);
@@ -87,10 +87,10 @@ public class MontecarloFPGA {
             sum *= 4;
 
             //System.out.println("Total time (Sequential): " + (sequentialTime));
-            System.out.println("Pi value(seq)   : " + (sum / size));
+            //System.out.println("Pi value(seq)   : " + (sum / size));
 
             double speedup = (double) sequentialTime / (double) tornadoTime;
-            //System.out.println("Speedup: " + speedup);
+            System.out.println("Speedup: " + speedup);
         //
     }
 

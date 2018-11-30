@@ -26,7 +26,7 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 public class DFT {
 
-    public static boolean CHECK_RESULT = true;
+    public static boolean CHECK_RESULT = false;
 
     private static int size;
     private static TaskSchedule graph;

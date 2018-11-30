@@ -175,10 +175,10 @@ public class NBodyFPGA {
 
         resultsIterations = new StringBuffer();
 
-        validate();
+        //validate();
 
      //   for (int i = 0; i < iterations; i++) {
-            System.gc();
+           // System.gc();
             long start = System.nanoTime();
             t0.executeWithProfilerSequential(Policy.PERFORMANCE);
             //t0.execute();
