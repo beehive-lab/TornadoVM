@@ -112,6 +112,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private static final int DEFAULT_DRIVER_INDEX = 0;
 
+    private static final int PERFORMANCE_WARMUP = 3;
+
     public TornadoTaskSchedule(String name) {
         graphContext = new ExecutionContext(name);
         hlBuffer = ByteBuffer.wrap(hlcode);
@@ -603,6 +605,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
+    private void runAllTaskSequentially() {
+        for (int k = 0; k < taskPackages.size(); k++) {
+            runSequentialCodeInThread(taskPackages.get(k));
+        }
+    }
+
     private void runScheduleWithProfiler(Policy policy) {
 
         final long startSearchProfiler = System.currentTimeMillis();
@@ -620,14 +628,19 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         // Last Thread runs the sequential code
         threads[indexSequential] = new Thread(() -> {
-            for (int k = 0; k < taskPackages.size(); k++) {
-                runSequentialCodeInThread(taskPackages.get(k));
+            long start = System.currentTimeMillis();
+            if (policy == Policy.PERFORMANCE) {
+                for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
+                    runAllTaskSequentially();
+                }
+                start = System.currentTimeMillis();
             }
+            runAllTaskSequentially();
             final long endSequentialCode = System.currentTimeMillis();
             Thread.currentThread().setName("Thread-sequential");
             System.out.println("Seq finished: " + Thread.currentThread().getName());
 
-            totalTimers[indexSequential] = (endSequentialCode - startSearchProfiler);
+            totalTimers[indexSequential] = (endSequentialCode - start);
         });
 
         for (int i = 0; i < numDevices; i++) {
@@ -652,13 +665,14 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
                 if (policy == Policy.PERFORMANCE) {
                     // first warm up
-                    for (int k = 0; k < 3; k++) {
+                    for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
                         task.execute();
                     }
                     start = System.currentTimeMillis();
                 }
                 task.execute();
                 final long end = System.currentTimeMillis();
+                taskScheduleIndex.put(taskScheduleNumber, task);
                 totalTimers[taskScheduleNumber] = end - start;
             });
         }
@@ -784,11 +798,17 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         Thread[] threads = new Thread[numThreads];
         long[] totalTimers = new long[numThreads];
 
-        for (int k = 0; k < taskPackages.size(); k++) {
-            runSequentialCodeInThread(taskPackages.get(k));
+        // Run Sequential
+        long startSequential = System.currentTimeMillis();
+        if (policy == Policy.PERFORMANCE) {
+            for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
+                runAllTaskSequentially();
+            }
+            startSequential = System.currentTimeMillis();
         }
+        runAllTaskSequentially();
         final long endSequentialCode = System.currentTimeMillis();
-        totalTimers[indexSequential] = (endSequentialCode - startSearchProfiler);
+        totalTimers[indexSequential] = (endSequentialCode - startSequential);
 
         // Running sequentially for all the devices
         for (int i = 0; i < numDevices; i++) {
@@ -808,7 +828,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             performStreamOutThreads(task, streamOutObjects);
 
             if (policy == Policy.PERFORMANCE) {
-                for (int k = 0; k < 3; k++) {
+                for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
                     task.execute();
                 }
                 start = System.currentTimeMillis();
@@ -818,7 +838,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             taskScheduleIndex.put(i, task);
             final long end = System.currentTimeMillis();
             totalTimers[i] = end - start;
-
         }
 
         if (policy == Policy.PERFORMANCE || policy == Policy.END_2_END) {
