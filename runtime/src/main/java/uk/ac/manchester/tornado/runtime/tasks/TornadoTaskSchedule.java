@@ -108,7 +108,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private ConcurrentHashMap<Integer, TaskSchedule> taskScheduleIndex = new ConcurrentHashMap<>();
 
     public boolean DEBUG_POLICY = false;
-    public boolean EXEPERIMENTAL_MULTI_HEAP = false;
+    public boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
 
     private static final int DEFAULT_DRIVER_INDEX = 0;
 
@@ -857,7 +857,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
         if (policyTimeTable.get(policy) == null) {
             runWithSequentialProfiler(policy);
-            if (EXEPERIMENTAL_MULTI_HEAP) {
+            if (EXEPERIMENTAL_MULTI_HOST_HEAP) {
                 restoreVarsIntoJavaHeap(policy, numDevices);
             }
         } else {
