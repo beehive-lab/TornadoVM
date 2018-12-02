@@ -1,16 +1,18 @@
 # Tornado Flags
 
 
-
-There is a number of runtime flags bla
-
-Note: for the following examples ```s0``` represents an arbitrary schedule name, as well as ```t0``` represents a given tasks name. 
-
-All flags needs Java prefix of ```-D```. An example of tornado using a flag is the following:
+There is a number of runtime flags and compiler flags to enable experimental features, as well as fine and coarse grain profilling in the context of Tornado.
 
 
-```$ tornado -Dtornado.fullDebug=true uk.ac.manchester.examples.compute.Montecarlo 1024```
+**Note:** for the following examples ```s0``` represents an arbitrary schedule, as well as ```t0``` represents a given task's name.   
 
+
+All flags needs Java prefix of ```-D```. An example of tornado using a flag is the following:  
+
+
+```$ tornado -Dtornado.fullDebug=true uk.ac.manchester.examples.compute.Montecarlo 1024```  
+
+  
 
 ## List of Tornado Flags:
 
@@ -36,8 +38,9 @@ Enable profilling for OpenCL events such as kernel times and data tranfers.
 Enables use of relative addresses which a prior for using DMA tranfers for Alters/Intel FPGAs.  
 * ``` tornado.opencl.timer.kernel=true ```:  
 Print kernel times for OpenCL compute kernels.
-* ``` as ``` 
-* ``` as ``` 
-* ``` as ``` 
-* ``` as ``` 
-* ``` as ``` 
+* ```tornado.opencl.codecache.loadbin=true```:  
+Allows to use precomplied binaries for pre-built taskschedules or FPGA bitstreams.
+* ```tornado.precompiled.binary=PATH```:
+ Provides the location of the bistream or pre-geneared OpenCL (.cl) kernel. 
+* ```tornado.opencl.blocking=true```:  
+Allows to force API blocking calls. 
