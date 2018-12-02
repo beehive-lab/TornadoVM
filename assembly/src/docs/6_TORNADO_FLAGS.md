@@ -22,8 +22,8 @@ Enables full debugging log to be output in the. command line.
 Print the generated OpenCL kernel in the command line.
 * ```--debug ```:  
 Print minor debug in fo such as number of parallel threads used.
-*```--devices```:  
-Output a list of all OpenCL-ready devices of the current system.
+* ```--devices```:  
+Output a list of all OpenCL-ready devices on the current system.
 * ``` tornado.ns.time=true ```:  
  Converts the time to units to nanoseconds instead of milliseconds.  
 * ``` tornado.debug.compiletimes=true ```:  
