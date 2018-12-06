@@ -108,4 +108,27 @@ public class TestHello extends TornadoTestBase {
         }
     }
 
+    @Test
+    public void testSimpleCompute2() {
+        int numElements = 256;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+
+        Arrays.fill(a, 10);
+
+        TestHello t = new TestHello();
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(a)
+            .task("t0", t::compute, a, b)
+            .streamOut(b)
+            .execute();
+        //@formatter:on
+
+        for (int i = 0; i < b.length; i++) {
+            assertEquals(a[i] * 2, b[i]);
+        }
+    }
+
 }
