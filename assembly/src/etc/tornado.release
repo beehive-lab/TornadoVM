@@ -1,3 +1,0 @@
-version=${project.version}
-branch=${scmBranch}
-commit=${buildNumber}
