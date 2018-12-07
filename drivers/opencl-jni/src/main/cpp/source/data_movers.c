@@ -69,7 +69,7 @@ CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, D, double)
             OPENCL_DECODE_WAITLIST(array2, events, num_events) \
             JNI_ACQUIRE_ARRAY(jbyte,buffer,array1);\
             if(PRINT_DATA_SIZES) { \
-                debug("uk.ac.manchester.tornado.drivers.opencl> write array 0x%lx (%d bytes) from %p \n",offset, num_bytes, buffer);\
+                printf("uk.ac.manchester.tornado.drivers.opencl> write array 0x%lx (%d bytes) from %p \n",offset, num_bytes, buffer);\
             } \
             cl_event event; \
             OPENCL_SOFT_ERROR("clEnqueueWriteBuffer (" #TYPE  ")", clEnqueueWriteBuffer((cl_command_queue) queue_id, (cl_mem) device_ptr, blocking_write, (size_t) offset, (size_t) num_bytes, (void *) buffer,(cl_uint) num_events, (cl_event*) events, &event),-1); \
