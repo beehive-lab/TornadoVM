@@ -164,6 +164,7 @@ public class NBodyFPGA {
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
+        System.out.println("Heap size  " + Runtime.getRuntime().maxMemory() + " " + "\n");
         for (int i = 0; i < iterations; i++) {
             switch (executionType) {
                 case "performance":
@@ -174,6 +175,12 @@ public class NBodyFPGA {
                 case "end":
                     start = System.nanoTime();
                     s0.executeWithProfilerSequential(Policy.END_2_END);
+                    end = System.nanoTime();
+                    break;
+                case "sequential":
+                    System.gc();
+                    start = System.nanoTime();
+                    nBody(numBodies, posSeq, velSeq, delT, espSqr, inputSize);
                     end = System.nanoTime();
                     break;
                 default:
