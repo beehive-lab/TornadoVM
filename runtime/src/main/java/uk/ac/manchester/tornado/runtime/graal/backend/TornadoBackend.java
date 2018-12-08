@@ -24,14 +24,13 @@
 package uk.ac.manchester.tornado.runtime.graal.backend;
 
 import org.graalvm.compiler.core.target.Backend;
-
 import org.graalvm.compiler.phases.util.Providers;
 
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 public abstract class TornadoBackend<P extends Providers> extends Backend {
 
-    public static final long DEFAULT_HEAP_ALLOCATION = RuntimeUtilities.parseSize(System.getProperty("tornado.heap.allocation", "512MB"));
+    public static final long DEFAULT_HEAP_ALLOCATION = RuntimeUtilities.parseSize(System.getProperty("tornado.heap.allocation", "1024MB"));
     public final static boolean ENABLE_EXCEPTIONS = Boolean.parseBoolean(System.getProperty("tornado.exceptions", "False"));
 
     protected TornadoBackend(Providers providers) {
