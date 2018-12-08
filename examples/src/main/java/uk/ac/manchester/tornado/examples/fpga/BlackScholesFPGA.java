@@ -126,6 +126,12 @@ public class BlackScholesFPGA {
                     s0.executeWithProfilerSequential(Policy.END_2_END);
                     end = System.nanoTime();
                     break;
+                case "sequential":
+                    System.gc();
+                    start = System.nanoTime();
+                    blackScholesKernel(input, callPrice, putPrice);
+                    end = System.nanoTime();
+                    break;
                 default:
                     start = System.nanoTime();
                     s0.execute();

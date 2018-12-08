@@ -110,6 +110,12 @@ public class RenderTrackFPGA {
                     s0.executeWithProfilerSequential(Policy.END_2_END);
                     end = System.nanoTime();
                     break;
+                case "sequential":
+                    System.gc();
+                    start = System.nanoTime();
+                    renderTrack(output, input);
+                    end = System.nanoTime();
+                    break;
                 default:
                     start = System.nanoTime();
                     s0.execute();
