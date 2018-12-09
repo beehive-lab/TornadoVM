@@ -128,6 +128,11 @@ public class DFT {
                     graph.executeWithProfilerSequential(Policy.END_2_END);
                     end = System.nanoTime();
                     break;
+                case "sequential":
+                    start = System.nanoTime();
+                    computeDft(inReal, inImag, outReal, outImag, inputSize);
+                    end = System.nanoTime();
+                    break;
                 default:
                     start = System.nanoTime();
                     graph.execute();
