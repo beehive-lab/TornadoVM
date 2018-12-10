@@ -33,7 +33,7 @@ public class RenderTrack {
 
     public static void renderTrack(ImageByte3 output, ImageFloat3 input) {
         for (@Parallel int y = 0; y < input.Y(); y++) {
-            for (int x = 0; x < input.X(); x++) {
+            for (@Parallel int x = 0; x < input.X(); x++) {
                 Byte3 pixel = null;
                 final int result = (int) input.get(x, y).getS2();
                 switch (result) {
@@ -86,15 +86,15 @@ public class RenderTrack {
 
         TaskSchedule task = new TaskSchedule("s0").task("t0", RenderTrack::renderTrack, output, input).streamOut(output);
         ArrayList<Long> timers = new ArrayList<>();
-	task.warmup();
-        //for (int i = 0; i < 10; i++) {
+        task.warmup();
+        for (int i = 0; i < 10; i++) {
             long start = System.nanoTime();
             task.executeWithProfilerSequential(Policy.PERFORMANCE);
             long end = System.nanoTime();
             timers.add((end - start));
-        //}
+        }
 
-        //System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
+        System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
 
     }
 
