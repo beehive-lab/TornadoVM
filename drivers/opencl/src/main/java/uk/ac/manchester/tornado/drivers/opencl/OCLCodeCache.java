@@ -318,7 +318,7 @@ public class OCLCodeCache {
         long afterLoad = (TornadoTaskSchedule.TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
 
         if (PRINT_LOAD_TIME) {
-            System.out.println("Binary load time ns or ms:  " + (afterLoad - beforeLoad) + " \n");
+            System.out.println("Binary load time: " + (afterLoad - beforeLoad) + (TornadoTaskSchedule.TIME_IN_NS ? " ns" : " ms") + " \n");
         }
 
         if (program == null) {
