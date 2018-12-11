@@ -49,6 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
+import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLCodeCache {
@@ -64,6 +65,7 @@ public class OCLCodeCache {
     private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "/var/opencl-codecache");
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-logs");
+    private final boolean PRINT_LOAD_TIME = false;
 
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
@@ -311,8 +313,14 @@ public class OCLCodeCache {
         } catch (NullPointerException | ArrayIndexOutOfBoundsException e) {
 
         }
-
+        long beforeLoad = (TornadoTaskSchedule.TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
         OCLProgram program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
+        long afterLoad = (TornadoTaskSchedule.TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+
+        if (PRINT_LOAD_TIME) {
+            System.out.println("Binary load time: " + (afterLoad - beforeLoad) + (TornadoTaskSchedule.TIME_IN_NS ? " ns" : " ms") + " \n");
+        }
+
         if (program == null) {
             throw new OCLException("unable to load binary for " + entryPoint);
         }

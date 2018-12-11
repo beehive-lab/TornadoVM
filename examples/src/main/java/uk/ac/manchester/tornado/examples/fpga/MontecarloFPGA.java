@@ -18,7 +18,8 @@
 
 package uk.ac.manchester.tornado.examples.fpga;
 
-import uk.ac.manchester.tornado.api.*;
+import uk.ac.manchester.tornado.api.Policy;
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
@@ -29,7 +30,7 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
  */
 public class MontecarloFPGA {
 
-    private static void computeMontecarlo(float[] output, final int iterations) {
+    public static void computeMontecarlo(float[] output, final int iterations) {
         float sum = 0.0f;
         for (@Parallel int j = 0; j < iterations; j++) {
             long seed = j;
@@ -54,48 +55,69 @@ public class MontecarloFPGA {
         }
     }
 
-    public static void montecarlo(final int size) {
+    public static void montecarlo(final int size, final String executionType, final int iterations) {
+
         float[] output = new float[size];
         float[] seq = new float[size];
+        long start,end;
 
-        TaskSchedule t0 = new TaskSchedule("s0").task("t0", MontecarloFPGA::computeMontecarlo, output, size).streamOut(output);
+        long startInit = System.nanoTime();
+        TaskSchedule s0 = new TaskSchedule("s0").task("t0", MontecarloFPGA::computeMontecarlo, output, size).streamOut(output);
+        long stopInit = System.nanoTime();
+        System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
-        //r (int i = 0; i < 10; i++) {
-            long start = System.nanoTime();
-            t0.executeWithProfilerSequential(Policy.PERFORMANCE);
-            long end = System.nanoTime();
-            long tornadoTime = (end - start);
-
-            float sum = 0;
-            for (int j = 0; j < size; j++) {
-                sum += output[j];
+        for (int i = 0; i < iterations; i++) {
+            switch (executionType) {
+                case "performance":
+                    start = System.nanoTime();
+                    s0.executeWithProfilerSequential(Policy.PERFORMANCE);
+                    end = System.nanoTime();
+                    break;
+                case "end":
+                    start = System.nanoTime();
+                    s0.executeWithProfilerSequential(Policy.END_2_END);
+                    end = System.nanoTime();
+                    break;
+                case "sequential":
+                    System.gc();
+                    start = System.nanoTime();
+                    computeMontecarlo(output, iterations);
+                    end = System.nanoTime();
+                    break;
+                default:
+                    start = System.nanoTime();
+                    s0.execute();
+                    end = System.nanoTime();
             }
-            sum *= 4;
-            //System.out.println("Total time (Tornado)   : " + (tornadoTime));
-            //System.out.println("Pi value(Tornado)   : " + (sum / size));
+            System.out.println("End to end time:  " + (end - start) + " ns" + "\n");
+        }
 
-            start = System.nanoTime();
-            computeMontecarlo(seq, size);
-            end = System.nanoTime();
-            long sequentialTime = (end - start);
+        float sum = 0;
+        for (int j = 0; j < size; j++) {
+            sum += output[j];
+        }
+        sum *= 4;
+        System.out.println("Pi value(Tornado) : " + (sum / size));
 
-            sum = 0;
-            for (int j = 0; j < size; j++) {
-                sum += seq[j];
-            }
-            sum *= 4;
+        start = System.nanoTime();
+        computeMontecarlo(seq, size);
+        end = System.nanoTime();
 
-            //System.out.println("Total time (Sequential): " + (sequentialTime));
-            //System.out.println("Pi value(seq)   : " + (sum / size));
+        sum = 0;
+        for (int j = 0; j < size; j++) {
+            sum += seq[j];
+        }
+        sum *= 4;
 
-            double speedup = (double) sequentialTime / (double) tornadoTime;
-            //System.out.println("Speedup: " + speedup);
-        //
+        System.out.println("Pi value(seq) : " + (sum / size));
+
     }
 
     public static void main(String[] args) {
         System.out.println("Compute Montecarlo");
         int inputSize = Integer.parseInt(args[0]);
-        montecarlo(inputSize);
+        String executionType = args[1];
+        int iterations = Integer.parseInt(args[2]);
+        montecarlo(inputSize, executionType, iterations);
     }
 }

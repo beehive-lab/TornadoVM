@@ -30,13 +30,93 @@ import java.io.File;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 
+import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class MandelbrotFPGA {
     public static int sizes;
 
+    public static final boolean VALIDATE = true;
     public static final boolean USE_TORNADO = true;
+    public static final boolean PRINT_IMAGE = false;
+
+    private static short[] mandelbrotSequential(int size) {
+        final int iterations = 10000;
+        float space = 2.0f / size;
+
+        short[] result = new short[size * size];
+
+        for (int i = 0; i < size; i++) {
+            int indexIDX = i;
+            for (int j = 0; j < size; j++) {
+
+                int indexJDX = j;
+
+                float Zr = 0.0f;
+                float Zi = 0.0f;
+                float Cr = (1 * indexJDX * space - 1.5f);
+                float Ci = (1 * indexIDX * space - 1.0f);
+
+                float ZrN = 0;
+                float ZiN = 0;
+                int y = 0;
+
+                for (int ii = 0; ii < iterations; ii++) {
+
+                    if (ZiN + ZrN <= 4.0f) {
+                        Zi = 2.0f * Zr * Zi + Ci;
+                        Zr = 1 * ZrN - ZiN + Cr;
+                        ZiN = Zi * Zi;
+                        ZrN = Zr * Zr;
+                        y++;
+                    } else {
+                        ii = iterations;
+                    }
+
+                }
+                short r = (short) ((y * size - 1) / iterations);
+                result[i * size + j] = r;
+            }
+        }
+        return result;
+    }
+
+    private static void mandelbrotTornado(int size, short[] output) {
+        final int iterations = 10000;
+        float space = 2.0f / size;
+
+        for (@Parallel int i = 0; i < size; i++) {
+            int indexIDX = i;
+            for (int j = 0; j < size; j++) {
+
+                int indexJDX = j;
+
+                float Zr = 0.0f;
+                float Zi = 0.0f;
+                float Cr = (1 * indexJDX * space - 1.5f);
+                float Ci = (1 * indexIDX * space - 1.0f);
+
+                float ZrN = 0;
+                float ZiN = 0;
+                int y = 0;
+
+                for (int ii = 0; ii < iterations; ii++) {
+                    if (ZiN + ZrN <= 4.0f) {
+                        Zi = 2.0f * Zr * Zi + Ci;
+                        Zr = 1 * ZrN - ZiN + Cr;
+                        ZiN = Zi * Zi;
+                        ZrN = Zr * Zr;
+                        y++;
+                    } else {
+                        ii = iterations;
+                    }
+                }
+                short r = (short) ((y * size - 1) / iterations);
+                output[i * size + j] = r;
+            }
+        }
+    }
 
     @SuppressWarnings("serial")
     public static class MandelbrotImage extends Component {
@@ -87,13 +167,13 @@ public class MandelbrotFPGA {
             return result;
         }
 
-        private static void mandelbrotTornado(int[] size, short[] output) {
+        private static void mandelbrotTornado(int size, short[] output) {
             final int iterations = 10000;
-            float space = 2.0f / size[0];
+            float space = 2.0f / size;
 
-            for (@Parallel int i = 0; i < size[0]; i++) {
+            for (@Parallel int i = 0; i < size; i++) {
                 int indexIDX = i;
-                for (int j = 0; j < size[0]; j++) {
+                for (int j = 0; j < size; j++) {
 
                     int indexJDX = j;
 
@@ -117,8 +197,8 @@ public class MandelbrotFPGA {
                             ii = iterations;
                         }
                     }
-                    short r = (short) ((y * size[0] - 1) / iterations);
-                    output[i * size[0] + j] = r;
+                    short r = (short) ((y * size - 1) / iterations);
+                    output[i * size + j] = r;
                 }
             }
         }
@@ -145,6 +225,8 @@ public class MandelbrotFPGA {
 
         @Override
         public void paint(Graphics g) {
+
+            System.out.println("Counter");
             if (!USE_TORNADO) {
                 short[] mandelbrotSequential = mandelbrotSequential(sizes);
                 this.image = writeFile(mandelbrotSequential, sizes);
@@ -152,12 +234,13 @@ public class MandelbrotFPGA {
                 short[] result = new short[sizes * sizes];
                 TaskSchedule s0 = new TaskSchedule("s0");
 
-                int[] sizesDyn = new int[1];
-                sizesDyn[0] = sizes;
-                s0.task("t0", MandelbrotImage::mandelbrotTornado, sizesDyn, result);
-                s0.streamOut(result).execute();
+                s0.task("t0", MandelbrotImage::mandelbrotTornado, sizes, result);
+                s0.streamOut(result);
+                s0.execute();
                 // s0.executeWithProfilerSequential(Policy.PERFORMANCE);
                 this.image = writeFile(result, sizes);
+
+                System.out.println(result);
             }
             // draw the image
             g.drawImage(this.image, 0, 0, null);
@@ -173,18 +256,73 @@ public class MandelbrotFPGA {
         }
     }
 
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Mandelbrot Example within Tornado");
-        sizes = parseInt(args[0]);
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent event) {
-                System.exit(0);
-            }
-        });
+    private static BufferedImage writeFile(short[] output, int size) {
+        BufferedImage img = null;
+        try {
+            img = new BufferedImage(size, size, BufferedImage.TYPE_INT_BGR);
+            WritableRaster write = img.getRaster();
+            String workingDir = System.getProperty("user.dir");
+            File outputFile = new File(workingDir + "/mande.png");
 
-        frame.add(new MandelbrotImage());
-        frame.pack();
-        frame.setVisible(true);
+            for (int i = 0; i < size; i++) {
+                for (int j = 0; j < size; j++) {
+                    int colour = output[(i * size + j)];
+                    write.setSample(i, j, 0, colour);
+                }
+            }
+            ImageIO.write(img, "PNG", outputFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return img;
+    }
+
+    public static void main(String[] args) {
+        sizes = parseInt(args[0]);
+        String executionType = args[1];
+        int iterations = Integer.parseInt(args[2]);
+
+        if (PRINT_IMAGE) {
+            JFrame frame = new JFrame("Mandelbrot Example within Tornado");
+            frame.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent event) {
+                    System.exit(0);
+                }
+            });
+
+            frame.add(new MandelbrotImage());
+            frame.pack();
+            frame.setVisible(true);
+        } else {
+            short[] result = new short[sizes * sizes];
+            TaskSchedule graph = new TaskSchedule("s0");
+            long end,start;
+
+            graph.task("t0", MandelbrotFPGA::mandelbrotTornado, sizes, result).streamOut(result);
+
+            for (int i = 0; i < iterations; i++) {
+                switch (executionType) {
+                    case "performance":
+                        start = System.nanoTime();
+                        graph.executeWithProfilerSequential(Policy.PERFORMANCE);
+                        end = System.nanoTime();
+                        break;
+                    case "end":
+                        start = System.nanoTime();
+                        graph.executeWithProfilerSequential(Policy.END_2_END);
+                        end = System.nanoTime();
+                        break;
+                    default:
+                        start = System.nanoTime();
+                        graph.execute();
+                        end = System.nanoTime();
+                }
+                System.out.println("End to end time:  " + (end - start) + " ns" + " \n");
+                end = 0;
+                start = 0l;
+            }
+            writeFile(result, sizes);
+        }
     }
 }

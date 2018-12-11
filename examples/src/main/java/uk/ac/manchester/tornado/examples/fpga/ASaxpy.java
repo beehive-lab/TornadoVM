@@ -32,7 +32,10 @@ public class ASaxpy {
 
     public static void main(String[] args) {
         int numElements = Integer.parseInt(args[0]);
+        String executionType = args[1];
+        int iterations = Integer.parseInt(args[2]);
 
+        long start,end;
         float alpha = 2f;
 
         float[] x = new float[numElements];
@@ -46,25 +49,50 @@ public class ASaxpy {
             b[i] = 20;
         }
 
+        long startInit = System.nanoTime();
         TaskSchedule s0 = new TaskSchedule("s0").task("t0", ASaxpy::saxpy, alpha, x, y, b).streamOut(y);
+        long stopInit = System.nanoTime();
+        System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
-        //or (int idx = 0; idx < 10; idx++) {
-            //s0.execute();
-	    s0.executeWithProfilerSequential(Policy.PERFORMANCE);
+        for (int idx = 0; idx < iterations; idx++) {
+
+            switch (executionType) {
+                case "performance":
+                    start = System.nanoTime();
+                    s0.executeWithProfilerSequential(Policy.PERFORMANCE);
+                    end = System.nanoTime();
+                    break;
+                case "end":
+                    start = System.nanoTime();
+                    s0.executeWithProfilerSequential(Policy.END_2_END);
+                    end = System.nanoTime();
+                    break;
+                case "sequential":
+                    System.gc();
+                    start = System.nanoTime();
+                    saxpy(alpha, x, y, b);
+                    end = System.nanoTime();
+                    break;
+                default:
+                    start = System.nanoTime();
+                    s0.execute();
+                    end = System.nanoTime();
+            }
             saxpy(alpha, x, result, b);
             System.out.println("Checking result");
-            boolean wrongResult = false;
-            for (int i = 0; i < y.length; i++) {
-                if (Math.abs(y[i] - (alpha * x[i] + b[i])) > 0.01) {
-                    wrongResult = true;
-                    break;
-                }
+            System.out.println("end2end:" + (end - start) + " ns");
+        }
+        boolean wrongResult = false;
+        for (int i = 0; i < y.length; i++) {
+            if (Math.abs(y[i] - (alpha * x[i] + b[i])) > 0.01) {
+                wrongResult = true;
+                break;
             }
-            if (!wrongResult) {
-                System.out.println("Test success");
-            } else {
-                System.out.println("Result is wrong");
-            }
-        //}
+        }
+        if (!wrongResult) {
+            System.out.println("Test success");
+        } else {
+            System.out.println("Result is wrong");
+        }
     }
 }

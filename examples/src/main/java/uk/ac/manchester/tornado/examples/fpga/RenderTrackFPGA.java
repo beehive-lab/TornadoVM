@@ -15,9 +15,8 @@
  * limitations under the License.
  * 
  */
-package uk.ac.manchester.tornado.examples.compute;
+package uk.ac.manchester.tornado.examples.fpga;
 
-import java.util.ArrayList;
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.Policy;
@@ -27,9 +26,11 @@ import uk.ac.manchester.tornado.api.collections.types.Byte3;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
-import uk.ac.manchester.tornado.examples.reductions.Stats;
 
-public class RenderTrack {
+public class RenderTrackFPGA {
+    public static String executionType;
+    public static int iterations;
+    public static boolean VALIDATION = false;
 
     public static void renderTrack(ImageByte3 output, ImageFloat3 input) {
         for (@Parallel int y = 0; y < input.Y(); y++) {
@@ -64,14 +65,22 @@ public class RenderTrack {
         }
     }
 
+    public static boolean validate() {
+        return true;
+    }
+
     public static void main(String[] args) {
 
         int n = 2048;
         int m = 2048;
-        if (args.length > 1) {
+        if (args.length > 2) {
             n = Integer.parseInt(args[0]);
-            m = Integer.parseInt(args[1]);
+            m = Integer.parseInt(args[0]);
         }
+
+        executionType = args[1];
+        iterations = Integer.parseInt(args[2]);
+        long end,start;
 
         ImageByte3 output = new ImageByte3(n, m);
         ImageFloat3 input = new ImageFloat3(n, m);
@@ -84,17 +93,40 @@ public class RenderTrack {
             }
         }
 
-        TaskSchedule task = new TaskSchedule("s0").task("t0", RenderTrack::renderTrack, output, input).streamOut(output);
-        ArrayList<Long> timers = new ArrayList<>();
-        task.warmup();
-        for (int i = 0; i < 10; i++) {
-            long start = System.nanoTime();
-            task.executeWithProfilerSequential(Policy.PERFORMANCE);
-            long end = System.nanoTime();
-            timers.add((end - start));
+        long startInit = System.nanoTime();
+        TaskSchedule s0 = new TaskSchedule("s0").task("t0", RenderTrackFPGA::renderTrack, output, input).streamOut(output);
+        long stopInit = System.nanoTime();
+        System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
+
+        for (int i = 0; i < iterations; i++) {
+            switch (executionType) {
+                case "performance":
+                    start = System.nanoTime();
+                    s0.executeWithProfilerSequential(Policy.PERFORMANCE);
+                    end = System.nanoTime();
+                    break;
+                case "end":
+                    start = System.nanoTime();
+                    s0.executeWithProfilerSequential(Policy.END_2_END);
+                    end = System.nanoTime();
+                    break;
+                case "sequential":
+                    System.gc();
+                    start = System.nanoTime();
+                    renderTrack(output, input);
+                    end = System.nanoTime();
+                    break;
+                default:
+                    start = System.nanoTime();
+                    s0.execute();
+                    end = System.nanoTime();
+            }
+            System.out.println("End to end time:  " + (end - start) + " ns" + " \n");
         }
 
-        System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
+        if (VALIDATION) {
+            System.out.println("Results are valid: " + validate() + " \n");
+        }
 
     }
 
