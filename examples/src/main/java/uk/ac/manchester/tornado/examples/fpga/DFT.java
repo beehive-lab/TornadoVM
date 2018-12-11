@@ -61,17 +61,6 @@ public class DFT {
 
         DFT.computeDft(inReal, inImag, outRealTor, outImagTor, inputSize);
 
-        for (int i = 0; i < 1; i++) {
-
-            long t1 = System.nanoTime();
-            DFT.computeDft(inReal, inImag, outRealTor, outImagTor, inputSize);
-            long t2 = System.nanoTime();
-
-            long seqTime = t2 - t1;
-            // System.out.println("Sequential time: " + seqTime + "\n");
-
-        }
-
         for (int i = 0; i < size; i++) {
             if (abs(outImagTor[i] - outImag[i]) > 0.1) {
                 System.out.println(outImagTor[i] + " vs " + outImag[i] + "\n");
