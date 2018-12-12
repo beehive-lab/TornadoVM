@@ -803,11 +803,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         long startSequential = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
         if (policy == Policy.PERFORMANCE) {
             for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
-                // runAllTaskSequentially();
+                runAllTaskSequentially();
             }
             startSequential = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
         }
-        // runAllTaskSequentially();
+        runAllTaskSequentially();
         final long endSequentialCode = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
         totalTimers[indexSequential] = (endSequentialCode - startSequential);
 
