@@ -489,6 +489,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                         taskPackage.getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7], taskPackage.getTaskParameters()[8],
                         taskPackage.getTaskParameters()[9]);
                 break;
+            case 10:
+                @SuppressWarnings("rawtypes") Task10 task10 = (Task10) taskPackage.getTaskParameters()[0];
+                task10.apply(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2], taskPackage.getTaskParameters()[3], taskPackage.getTaskParameters()[4],
+                        taskPackage.getTaskParameters()[5], taskPackage.getTaskParameters()[6], taskPackage.getTaskParameters()[7], taskPackage.getTaskParameters()[8],
+                        taskPackage.getTaskParameters()[9], taskPackage.getTaskParameters()[10]);
+                break;
             default:
                 System.out.println("Sequential Runner not supported yet. Number of parameters: " + type);
                 break;
