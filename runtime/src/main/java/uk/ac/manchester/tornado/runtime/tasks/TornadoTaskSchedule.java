@@ -811,6 +811,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         final long endSequentialCode = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
         totalTimers[indexSequential] = (endSequentialCode - startSequential);
 
+        String[] ignoreTaskNames = System.getProperties().getProperty("tornado.ignore.tasks", "").split(",");
+
         // Running sequentially for all the devices
         for (int i = 0; i < numDevices; i++) {
             String taskScheduleName = "XXX" + i;
@@ -818,13 +820,29 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
             long start = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
             performStreamInThread(task, streamInObjects);
+
+            boolean ignoreTask = false;
             for (int k = 0; k < taskPackages.size(); k++) {
                 String taskID = taskPackages.get(k).getId();
+
+                String name = taskScheduleName + "." + taskID;
+                for (String s : ignoreTaskNames) {
+                    if (s.equals(name)) {
+                        totalTimers[i] = Integer.MAX_VALUE;
+                        ignoreTask = true;
+                        break;
+                    }
+                }
+
                 TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + i);
                 if (Tornado.DEBUG) {
                     System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID + ".device=0:" + i);
                 }
                 task.addTask(taskPackages.get(k));
+            }
+
+            if (ignoreTask) {
+                continue;
             }
             performStreamOutThreads(task, streamOutObjects);
 
