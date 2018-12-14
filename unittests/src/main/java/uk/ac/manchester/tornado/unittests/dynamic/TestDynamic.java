@@ -21,7 +21,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.Policy;
@@ -39,9 +38,7 @@ public class TestDynamic extends TornadoTestBase {
 
     public static void compute2(int[] a, int[] b) {
         for (@Parallel int i = 0; i < a.length; i++) {
-            for (int j = 0; j < a.length; j++) {
-                b[i] += a[j] * 2;
-            }
+            b[i] = a[i] * 10;
         }
     }
 
@@ -87,8 +84,8 @@ public class TestDynamic extends TornadoTestBase {
         Arrays.fill(a, 10);
 
         //@formatter:off
-        TaskSchedule taskSchedule = new TaskSchedule("s0")
-            .task("t0", TestDynamic::compute, a, b)
+        TaskSchedule taskSchedule = new TaskSchedule("ss0")
+            .task("tt0", TestDynamic::compute, a, b)
             .streamOut(b);
         //@formatter:on
 
@@ -119,7 +116,7 @@ public class TestDynamic extends TornadoTestBase {
             .streamIn(a)
             .task("t0", TestDynamic::saxpy, 2.0f, a, b)
             .streamOut(b)
-            .executeWithProfiler(Policy.PERFORMANCE);
+            .executeWithProfilerSequential(Policy.PERFORMANCE);
         //@formatter:on
 
         for (int i = 0; i < b.length; i++) {
@@ -129,29 +126,28 @@ public class TestDynamic extends TornadoTestBase {
 
     @Test
     public void testDynamicWithProfiler3() {
-        int numElements = 16000;
+        int numElements = 4096;
         int[] a = new int[numElements];
         int[] b = new int[numElements];
         int[] seq = new int[numElements];
 
         Arrays.fill(a, 10);
 
-        compute(a, seq);
+        compute2(a, seq);
 
         //@formatter:off
-        TaskSchedule taskSchedule = new TaskSchedule("s0")
+        TaskSchedule taskSchedule = new TaskSchedule("ts")
             .streamIn(a)
-            .task("t0", TestDynamic::compute2, a, b)
+            .task("task", TestDynamic::compute2, a, b)
             .streamOut(b);
         //@formatter:on
 
         // Run first time to obtain the best performance device
-        taskSchedule.executeWithProfiler(Policy.PERFORMANCE);
+        taskSchedule.executeWithProfilerSequential(Policy.PERFORMANCE);
 
         // Run a few iterations to get the device.
         for (int i = 0; i < 10; i++) {
-            Arrays.fill(a, 10);
-            taskSchedule.executeWithProfiler(Policy.PERFORMANCE);
+            taskSchedule.executeWithProfilerSequential(Policy.PERFORMANCE);
         }
 
         for (int i = 0; i < b.length; i++) {
@@ -169,7 +165,7 @@ public class TestDynamic extends TornadoTestBase {
         Arrays.fill(a, 10);
 
         compute(a, seq);
-        compute(seq, seq);
+        compute2(seq, seq);
 
         //@formatter:off
         TaskSchedule taskSchedule = new TaskSchedule("pp")
@@ -180,12 +176,11 @@ public class TestDynamic extends TornadoTestBase {
         //@formatter:on
 
         // Run first time to obtain the best performance device
-        taskSchedule.executeWithProfiler(Policy.PERFORMANCE);
+        taskSchedule.executeWithProfilerSequential(Policy.PERFORMANCE);
 
         // Run a few iterations to get the device.
         for (int i = 0; i < 10; i++) {
-            Arrays.fill(a, 10);
-            taskSchedule.executeWithProfiler(Policy.PERFORMANCE);
+            taskSchedule.executeWithProfilerSequential(Policy.PERFORMANCE);
         }
 
         for (int i = 0; i < b.length; i++) {

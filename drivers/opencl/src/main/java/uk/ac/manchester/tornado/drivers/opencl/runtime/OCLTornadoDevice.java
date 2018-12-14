@@ -85,7 +85,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     private static OCLDriver driver = null;
     private String platformName;
 
-    private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
+    private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
 
     private static OCLDriver findDriver() {
         if (driver == null) {
@@ -413,6 +413,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         }
 
         if (BENCHMARKING_MODE || (!state.isExplorationMode() && !state.hasContents())) {
+            System.out.println("PERFORMING WRITE");
             state.setContents(true);
             return state.getBuffer().enqueueWrite(object, events, events == null);
         }
