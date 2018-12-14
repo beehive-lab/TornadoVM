@@ -38,8 +38,6 @@ public class DeviceObjectState implements TornadoDeviceObjectState {
 
     private ObjectBuffer buffer;
 
-    private boolean explorationMode;
-
     public DeviceObjectState() {
         valid = false;
         modified = false;
@@ -110,12 +108,4 @@ public class DeviceObjectState implements TornadoDeviceObjectState {
         return buffer.toRelativeAddress();
     }
 
-    public void setExplorationMode() {
-        explorationMode = true;
-    }
-
-    @Override
-    public boolean isExplorationMode() {
-        return explorationMode;
-    }
 }

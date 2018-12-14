@@ -66,6 +66,4 @@ public interface TornadoDeviceObjectState {
     public long getAddress();
 
     public long getOffset();
-
-    public boolean isExplorationMode();
 }
