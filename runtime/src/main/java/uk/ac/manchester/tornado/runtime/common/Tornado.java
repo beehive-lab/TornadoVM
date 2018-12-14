@@ -82,6 +82,8 @@ public final class Tornado implements TornadoCI {
 
     public static final boolean SHOULD_LOAD_RMI = Boolean.parseBoolean(settings.getProperty("tornado.rmi.enable", "false"));
 
+    public final static boolean TIME_IN_NANOSECONDS = Boolean.parseBoolean(System.getProperty("tornado.ns.time", "true"));
+
     public static final TornadoLogger log = new TornadoLogger(Tornado.class);
 
     public static final void debug(final String msg) {

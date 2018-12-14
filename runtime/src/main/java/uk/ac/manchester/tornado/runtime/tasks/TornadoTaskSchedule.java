@@ -86,7 +86,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
  * 
  */
 public class TornadoTaskSchedule implements AbstractTaskGraph {
-    public final static boolean TIME_IN_NS = Boolean.parseBoolean(System.getProperty("tornado.ns.time", "true"));
+
     private ExecutionContext graphContext;
 
     private byte[] hlcode = new byte[2048];
@@ -107,12 +107,14 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private ConcurrentHashMap<Integer, ArrayList<Object>> multiHeapManagerInputs = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Integer, TaskSchedule> taskScheduleIndex = new ConcurrentHashMap<>();
 
+    /**
+     * Configuration variables
+     */
     public boolean DEBUG_POLICY = false;
     public boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
-
     private static final int DEFAULT_DRIVER_INDEX = 0;
-
     private static final int PERFORMANCE_WARMUP = 3;
+    private final static boolean TIME_IN_NANOSECONDS = Tornado.TIME_IN_NANOSECONDS;
 
     public TornadoTaskSchedule(String name) {
         graphContext = new ExecutionContext(name);
@@ -193,6 +195,24 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         // launch code
         hlBuffer.put(TornadoGraphBitcodes.LAUNCH.index());
+    }
+
+    private static abstract class Timer {
+        abstract long time();
+    }
+
+    private static class MillesecTimer extends Timer {
+        @Override
+        long time() {
+            return System.currentTimeMillis();
+        }
+    }
+
+    private static class NanoSecTimer extends Timer {
+        @Override
+        long time() {
+            return System.nanoTime();
+        }
     }
 
     private void updateDeviceContext(TornadoGraph graph) {
@@ -537,12 +557,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             for (int i = 0; i < threads.length; i++) {
                 isAlive = threads[i].isAlive();
                 if (!isAlive) {
-                    System.out.println("Thread " + threads[i].getName() + " finished");
+                    if (DEBUG_POLICY) {
+                        System.out.println("Thread " + threads[i].getName() + " finished");
+                    }
                     winner = i;
                     // kill the others
                     for (int j = 0; j < threads.length; j++) {
                         if (i != j) {
-                            System.out.println("Killing THREAD " + threads[j].getName());
                             threads[j].interrupt();
                         }
                     }
@@ -619,7 +640,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private void runScheduleWithProfiler(Policy policy) {
 
-        final long startSearchProfiler = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+        final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MillesecTimer();
+
+        final long startSearchProfiler = timer.time();
         TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
         int numDevices = tornadoDriver.getDeviceCount();
 
@@ -639,11 +662,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
                     runAllTaskSequentially();
                 }
-                start = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+                start = timer.time();
             }
-            final long endSequentialCode = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+            final long endSequentialCode = timer.time();
             Thread.currentThread().setName("Thread-sequential");
-            System.out.println("Seq finished: " + Thread.currentThread().getName());
+            if (DEBUG_POLICY) {
+                System.out.println("Seq finished: " + Thread.currentThread().getName());
+            }
 
             totalTimers[indexSequential] = (endSequentialCode - start);
         });
@@ -656,7 +681,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
                 Thread.currentThread().setName("Thread-DEV: " + TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(taskScheduleNumber).getDevice().getName());
 
-                long start = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+                long start = timer.time();
                 performStreamInThread(task, streamInObjects);
                 for (int k = 0; k < taskPackages.size(); k++) {
                     String taskID = taskPackages.get(k).getId();
@@ -673,10 +698,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                     for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
                         task.execute();
                     }
-                    start = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+                    start = timer.time();
                 }
                 task.execute();
-                final long end = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+                final long end = timer.time();
                 taskScheduleIndex.put(taskScheduleNumber, task);
                 totalTimers[taskScheduleNumber] = end - start;
             });
@@ -705,7 +730,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if ((policy == Policy.PERFORMANCE || policy == Policy.END_2_END) && (masterThreadID == Thread.currentThread().getId())) {
             int deviceWinnerIndex = synchronizeWithPolicy(policy, threads, totalTimers);
             policyTimeTable.put(policy, deviceWinnerIndex);
-            System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
+            if (DEBUG_POLICY) {
+                System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
+            }
         }
     }
 
@@ -715,7 +742,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private void runParallel(int deviceWinnerIndex) {
+    private void runTaskScheduleParallelSelected(int deviceWinnerIndex) {
         for (int k = 0; k < taskPackages.size(); k++) {
             TaskPackage taskPackage = taskPackages.get(k);
             TornadoRuntime.setProperty(this.getTaskScheduleName() + "." + taskPackage.getId() + ".device", "0:" + deviceWinnerIndex);
@@ -735,11 +762,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         } else {
             // Run with the winner device
             int deviceWinnerIndex = policyTimeTable.get(policy);
-            System.out.println("Selecting the device: " + deviceWinnerIndex + " for POLICY: " + policy);
             if (deviceWinnerIndex >= TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount()) {
                 runSequential();
             } else {
-                runParallel(deviceWinnerIndex);
+                runTaskScheduleParallelSelected(deviceWinnerIndex);
             }
         }
         return this;
@@ -761,7 +787,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @SuppressWarnings("unused")
 
     private void cloneInputOutputObjects() {
-        final long startSearchProfiler = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+        final long startSearchProfiler = (TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
         TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
         int numDevices = tornadoDriver.getDeviceCount();
         // Clone objects (only outputs) for each device
@@ -794,7 +820,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private void runWithSequentialProfiler(Policy policy) {
 
-        final long startSearchProfiler = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+        final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MillesecTimer();
+
+        final long startSearchProfiler = timer.time();
         TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
         int numDevices = tornadoDriver.getDeviceCount();
 
@@ -806,15 +834,15 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         long[] totalTimers = new long[numThreads];
 
         // Run Sequential
-        long startSequential = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+        long startSequential = timer.time();
         if (policy == Policy.PERFORMANCE) {
             for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
                 runAllTaskSequentially();
             }
-            startSequential = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+            startSequential = timer.time();
         }
         runAllTaskSequentially();
-        final long endSequentialCode = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+        final long endSequentialCode = timer.time();
         totalTimers[indexSequential] = (endSequentialCode - startSequential);
 
         String[] ignoreTaskNames = System.getProperties().getProperty("tornado.ignore.tasks", "").split(",");
@@ -824,7 +852,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             String taskScheduleName = "XXX" + i;
             TaskSchedule task = new TaskSchedule(taskScheduleName);
 
-            long start = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+            long start = timer.time();
             performStreamInThread(task, streamInObjects);
 
             boolean ignoreTask = false;
@@ -856,19 +884,21 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
                     task.execute();
                 }
-                start = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+                start = timer.time();
             }
 
             task.execute();
             taskScheduleIndex.put(i, task);
-            final long end = (TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+            final long end = timer.time();
             totalTimers[i] = end - start;
         }
 
         if (policy == Policy.PERFORMANCE || policy == Policy.END_2_END) {
             int deviceWinnerIndex = synchronizeWithPolicy(policy, threads, totalTimers);
             policyTimeTable.put(policy, deviceWinnerIndex);
-            System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
+            if (DEBUG_POLICY) {
+                System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
+            }
         }
     }
 
@@ -878,39 +908,36 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             int deviceWinnerIndex = policyTimeTable.get(policy);
             ArrayList<Object> deviceOutputObjects = multiHeapManagerOutputs.get(deviceWinnerIndex);
             for (int i = 0; i < streamOutObjects.size(); i++) {
-                // Object output = streamOutObjects.get(i);
-                // output = deviceOutputObjects.get(i);
+                Object output = streamOutObjects.get(i);
+                output = deviceOutputObjects.get(i);
             }
             System.out.println("Output: ");
             System.out.println(Arrays.toString((int[]) streamOutObjects.get(0)));
 
             for (int i = 0; i < numDevices; i++) {
                 deviceOutputObjects = multiHeapManagerOutputs.get(i);
-                System.out.println("Device: " + i);
-                for (Object o : deviceOutputObjects) {
-                    System.out.println("===========================");
-                    System.out.println(Arrays.toString((int[]) o));
-                }
             }
-
         }
     }
 
     @Override
     public AbstractTaskGraph scheduleWithProfileSequential(Policy policy) {
         int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
+
         if (policyTimeTable.get(policy) == null) {
             runWithSequentialProfiler(policy);
+
             if (EXEPERIMENTAL_MULTI_HOST_HEAP) {
                 restoreVarsIntoJavaHeap(policy, numDevices);
             }
+
         } else {
             // Run with the winner device
             int deviceWinnerIndex = policyTimeTable.get(policy);
             if (deviceWinnerIndex >= numDevices) {
                 runSequential();
             } else {
-                runParallel(deviceWinnerIndex);
+                runTaskScheduleParallelSelected(deviceWinnerIndex);
             }
         }
         return this;

@@ -49,6 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -313,12 +314,12 @@ public class OCLCodeCache {
         } catch (NullPointerException | ArrayIndexOutOfBoundsException e) {
 
         }
-        long beforeLoad = (TornadoTaskSchedule.TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+        long beforeLoad = (Tornado.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
         OCLProgram program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
-        long afterLoad = (TornadoTaskSchedule.TIME_IN_NS) ? System.nanoTime() : System.currentTimeMillis();
+        long afterLoad = (Tornado.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
 
         if (PRINT_LOAD_TIME) {
-            System.out.println("Binary load time: " + (afterLoad - beforeLoad) + (TornadoTaskSchedule.TIME_IN_NS ? " ns" : " ms") + " \n");
+            System.out.println("Binary load time: " + (afterLoad - beforeLoad) + (Tornado.TIME_IN_NANOSECONDS ? " ns" : " ms") + " \n");
         }
 
         if (program == null) {
