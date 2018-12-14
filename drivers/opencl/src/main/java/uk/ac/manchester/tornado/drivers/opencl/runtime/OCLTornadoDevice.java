@@ -85,7 +85,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     private static OCLDriver driver = null;
     private String platformName;
 
-    private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "True"));
+    private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
 
     private static OCLDriver findDriver() {
         if (driver == null) {
