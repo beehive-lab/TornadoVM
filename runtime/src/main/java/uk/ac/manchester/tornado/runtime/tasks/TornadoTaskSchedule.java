@@ -640,23 +640,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private void runScheduleWithProfiler(Policy policy) {
-
-        final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MillesecTimer();
-
-        final long startSearchProfiler = timer.time();
-        TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
-        int numDevices = tornadoDriver.getDeviceCount();
-
-        long masterThreadID = Thread.currentThread().getId();
-
-        // One additional threads is reserved for sequential CPU execution
-        final int numThreads = numDevices + 1;
-        final int indexSequential = numDevices;
-
-        Thread[] threads = new Thread[numThreads];
-        long[] totalTimers = new long[numThreads];
-
+    private void runParallelSequential(Policy policy, Thread[] threads, int indexSequential, Timer timer, long[] totalTimers) {
         // Last Thread runs the sequential code
         threads[indexSequential] = new Thread(() -> {
             long start = System.currentTimeMillis();
@@ -674,7 +658,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
             totalTimers[indexSequential] = (endSequentialCode - start);
         });
+    }
 
+    private void runParallelTaskSchedules(int numDevices, Thread[] threads, Timer timer, Policy policy, long[] totalTimers) {
         for (int i = 0; i < numDevices; i++) {
             final int taskScheduleNumber = i;
             threads[i] = new Thread(() -> {
@@ -708,6 +694,31 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 totalTimers[taskScheduleNumber] = end - start;
             });
         }
+
+    }
+
+    private void runScheduleWithParallelProfiler(Policy policy) {
+
+        final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MillesecTimer();
+
+        final long startSearchProfiler = timer.time();
+        TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
+        int numDevices = tornadoDriver.getDeviceCount();
+
+        long masterThreadID = Thread.currentThread().getId();
+
+        // One additional threads is reserved for sequential CPU execution
+        final int numThreads = numDevices + 1;
+        final int indexSequential = numDevices;
+
+        Thread[] threads = new Thread[numThreads];
+        long[] totalTimers = new long[numThreads];
+
+        // Last Thread runs the sequential code
+        runParallelSequential(policy, threads, indexSequential, timer, totalTimers);
+
+        // Run all task schedules in parallel
+        runParallelTaskSchedules(numDevices, threads, timer, policy, totalTimers);
 
         // FORK
         for (int i = 0; i < numThreads; i++) {
@@ -760,7 +771,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public AbstractTaskGraph scheduleWithProfile(Policy policy) {
         if (policyTimeTable.get(policy) == null) {
-            runScheduleWithProfiler(policy);
+            runScheduleWithParallelProfiler(policy);
         } else {
             // Run with the winner device
             int deviceWinnerIndex = policyTimeTable.get(policy);
