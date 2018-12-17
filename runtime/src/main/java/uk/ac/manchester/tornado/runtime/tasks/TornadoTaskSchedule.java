@@ -700,17 +700,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private void runScheduleWithParallelProfiler(Policy policy) {
 
         final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MillesecTimer();
-
-        final long startSearchProfiler = timer.time();
         TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
         int numDevices = tornadoDriver.getDeviceCount();
-
         long masterThreadID = Thread.currentThread().getId();
 
         // One additional threads is reserved for sequential CPU execution
         final int numThreads = numDevices + 1;
         final int indexSequential = numDevices;
-
         Thread[] threads = new Thread[numThreads];
         long[] totalTimers = new long[numThreads];
 
