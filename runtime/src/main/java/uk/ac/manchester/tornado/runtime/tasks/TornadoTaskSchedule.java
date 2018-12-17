@@ -116,6 +116,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private static final int PERFORMANCE_WARMUP = 3;
     private final static boolean TIME_IN_NANOSECONDS = Tornado.TIME_IN_NANOSECONDS;
 
+    public static final String TASK_SCHEDULE_PREFIX = "XXX";
+
     public TornadoTaskSchedule(String name) {
         graphContext = new ExecutionContext(name);
         hlBuffer = ByteBuffer.wrap(hlcode);
@@ -676,7 +678,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         for (int i = 0; i < numDevices; i++) {
             final int taskScheduleNumber = i;
             threads[i] = new Thread(() -> {
-                String taskScheduleName = "XXX" + taskScheduleNumber;
+                String taskScheduleName = TASK_SCHEDULE_PREFIX + taskScheduleNumber;
                 TaskSchedule task = new TaskSchedule(taskScheduleName);
 
                 Thread.currentThread().setName("Thread-DEV: " + TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(taskScheduleNumber).getDevice().getName());
@@ -772,7 +774,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private Object cloneObject(Object o) {
-        System.out.println("ORIGINAL:" + o);
         if (o instanceof float[]) {
             float[] clone = ((float[]) o).clone();
             return clone;
@@ -785,7 +786,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @SuppressWarnings("unused")
-
     private void cloneInputOutputObjects() {
         final long startSearchProfiler = (TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
         TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
@@ -849,7 +849,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         // Running sequentially for all the devices
         for (int i = 0; i < numDevices; i++) {
-            String taskScheduleName = "XXX" + i;
+            String taskScheduleName = TASK_SCHEDULE_PREFIX + i;
             TaskSchedule task = new TaskSchedule(taskScheduleName);
 
             long start = timer.time();
