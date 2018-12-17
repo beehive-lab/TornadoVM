@@ -523,7 +523,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private int synchronizeWithPolicy(Policy policy, Thread[] threads, long[] totalTimers) {
+    private int synchronizeWithPolicy(Policy policy, long[] totalTimers) {
         // Set the Performance policy by default;
         if (policy == null) {
             policy = Policy.PERFORMANCE;
@@ -730,7 +730,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
 
         if ((policy == Policy.PERFORMANCE || policy == Policy.END_2_END) && (masterThreadID == Thread.currentThread().getId())) {
-            int deviceWinnerIndex = synchronizeWithPolicy(policy, threads, totalTimers);
+            int deviceWinnerIndex = synchronizeWithPolicy(policy, totalTimers);
             policyTimeTable.put(policy, deviceWinnerIndex);
             if (DEBUG_POLICY) {
                 System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
@@ -818,22 +818,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private void runWithSequentialProfiler(Policy policy) {
-
-        final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MillesecTimer();
-
-        final long startSearchProfiler = timer.time();
-        TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
-        int numDevices = tornadoDriver.getDeviceCount();
-
-        // One additional threads is reserved for sequential CPU execution
-        final int numThreads = numDevices + 1;
-        final int indexSequential = numDevices;
-
-        Thread[] threads = new Thread[numThreads];
-        long[] totalTimers = new long[numThreads];
-
-        // Run Sequential
+    private void runSequentialTaskSchedule(Policy policy, Timer timer, long[] totalTimers, int indexSequential) {
         long startSequential = timer.time();
         if (policy == Policy.PERFORMANCE) {
             for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
@@ -844,7 +829,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         runAllTaskSequentially();
         final long endSequentialCode = timer.time();
         totalTimers[indexSequential] = (endSequentialCode - startSequential);
+    }
 
+    private void runAllTaskSchedulesInAcceleratorsSequentually(int numDevices, Timer timer, Policy policy, long[] totalTimers) {
         String[] ignoreTaskNames = System.getProperties().getProperty("tornado.ignore.tasks", "").split(",");
 
         // Running sequentially for all the devices
@@ -892,9 +879,26 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             final long end = timer.time();
             totalTimers[i] = end - start;
         }
+    }
+
+    private void runWithSequentialProfiler(Policy policy) {
+
+        final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MillesecTimer();
+        TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
+        int numDevices = tornadoDriver.getDeviceCount();
+
+        final int totalTornadoDevices = numDevices + 1;
+        final int indexSequential = numDevices;
+        long[] totalTimers = new long[totalTornadoDevices];
+
+        // Run Sequential
+        runSequentialTaskSchedule(policy, timer, totalTimers, indexSequential);
+
+        // Run Task Schedules on the accelerator
+        runAllTaskSchedulesInAcceleratorsSequentually(numDevices, timer, policy, totalTimers);
 
         if (policy == Policy.PERFORMANCE || policy == Policy.END_2_END) {
-            int deviceWinnerIndex = synchronizeWithPolicy(policy, threads, totalTimers);
+            int deviceWinnerIndex = synchronizeWithPolicy(policy, totalTimers);
             policyTimeTable.put(policy, deviceWinnerIndex);
             if (DEBUG_POLICY) {
                 System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
@@ -908,11 +912,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             int deviceWinnerIndex = policyTimeTable.get(policy);
             ArrayList<Object> deviceOutputObjects = multiHeapManagerOutputs.get(deviceWinnerIndex);
             for (int i = 0; i < streamOutObjects.size(); i++) {
-                Object output = streamOutObjects.get(i);
+                @SuppressWarnings("unused") Object output = streamOutObjects.get(i);
                 output = deviceOutputObjects.get(i);
             }
-            System.out.println("Output: ");
-            System.out.println(Arrays.toString((int[]) streamOutObjects.get(0)));
 
             for (int i = 0; i < numDevices; i++) {
                 deviceOutputObjects = multiHeapManagerOutputs.get(i);
