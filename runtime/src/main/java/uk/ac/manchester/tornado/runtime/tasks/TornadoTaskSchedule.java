@@ -108,26 +108,31 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private ConcurrentHashMap<Integer, TaskSchedule> taskScheduleIndex = new ConcurrentHashMap<>();
 
     /**
-     * Configuration variables
+     * Dynamic Reconfiguration
      */
     public boolean DEBUG_POLICY = false;
     public boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int PERFORMANCE_WARMUP = 3;
     private final static boolean TIME_IN_NANOSECONDS = Tornado.TIME_IN_NANOSECONDS;
-
     public static final String TASK_SCHEDULE_PREFIX = "XXX";
 
-    public TornadoTaskSchedule(String name) {
-        graphContext = new ExecutionContext(name);
+    /**
+     * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
+     * 
+     * @param taskScheduleName
+     */
+    public TornadoTaskSchedule(String taskScheduleName) {
+        graphContext = new ExecutionContext(taskScheduleName);
         hlBuffer = ByteBuffer.wrap(hlcode);
         hlBuffer.order(ByteOrder.LITTLE_ENDIAN);
         hlBuffer.rewind();
         result = null;
         event = null;
-        this.taskScheduleName = name;
+        this.taskScheduleName = taskScheduleName;
     }
 
+    @Override
     public String getTaskScheduleName() {
         return taskScheduleName;
     }
@@ -199,6 +204,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         hlBuffer.put(TornadoGraphBitcodes.LAUNCH.index());
     }
 
+    // Timer implementation within the Task Schedule
     private static abstract class Timer {
         abstract long time();
     }
@@ -224,8 +230,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         graphContext.addDevice(meta().getDevice());
     }
 
+    /**
+     * Compile a task-schedule into TornadoVM bytecode
+     * 
+     * @param setNewDevice
+     */
     private void compile(boolean setNewDevice) {
-
         final ByteBuffer buffer = ByteBuffer.wrap(hlcode);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.limit(hlBuffer.position());
