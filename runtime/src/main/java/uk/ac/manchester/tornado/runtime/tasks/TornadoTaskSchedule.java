@@ -634,7 +634,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private void runAllTaskSequentially() {
+    private void runAllTasksSequentially() {
         for (int k = 0; k < taskPackages.size(); k++) {
             runSequentialCodeInThread(taskPackages.get(k));
         }
@@ -646,7 +646,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             long start = System.currentTimeMillis();
             if (policy == Policy.PERFORMANCE) {
                 for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
-                    runAllTaskSequentially();
+                    runAllTasksSequentially();
                 }
                 start = timer.time();
             }
@@ -829,11 +829,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         long startSequential = timer.time();
         if (policy == Policy.PERFORMANCE) {
             for (int k = 0; k < PERFORMANCE_WARMUP; k++) {
-                runAllTaskSequentially();
+                runAllTasksSequentially();
             }
             startSequential = timer.time();
         }
-        runAllTaskSequentially();
+        runAllTasksSequentially();
         final long endSequentialCode = timer.time();
         totalTimers[indexSequential] = (endSequentialCode - startSequential);
     }
@@ -889,11 +889,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void runWithSequentialProfiler(Policy policy) {
-
         final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MillesecTimer();
-        TornadoDriver tornadoDriver = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX);
-        int numDevices = tornadoDriver.getDeviceCount();
-
+        int numDevices = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX).getDeviceCount();
         final int totalTornadoDevices = numDevices + 1;
         final int indexSequential = numDevices;
         long[] totalTimers = new long[totalTornadoDevices];
@@ -913,6 +910,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
+    /**
+     * Experimental method to sync all objects when making a clone copy for all
+     * output objects per device.
+     * 
+     * @param policy
+     * @param numDevices
+     */
     private void restoreVarsIntoJavaHeap(Policy policy, int numDevices) {
         if (policyTimeTable.get(policy) < numDevices) {
             // link output

@@ -354,7 +354,5 @@ public class TestArrays extends TornadoTestBase {
         assertEquals('l', a[3]);
         assertEquals('d', a[4]);
         assertEquals('!', a[5]);
-
     }
-
 }
