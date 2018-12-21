@@ -43,6 +43,7 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class OCLCommandQueue extends TornadoLogger {
@@ -367,9 +368,9 @@ public class OCLCommandQueue extends TornadoLogger {
             error(e.getMessage());
         }
 
-        // if (FORCE_BLOCKING_API_CALLS) {
-        enqueueBarrier();
-        // }
+        if (Tornado.FORCE_BLOCKING_API_CALLS) {
+            enqueueBarrier();
+        }
 
         return event;
     }
@@ -384,9 +385,9 @@ public class OCLCommandQueue extends TornadoLogger {
             error(e.getMessage());
         }
 
-        // if (FORCE_BLOCKING_API_CALLS) {
-        enqueueBarrier();
-        /// }
+        if (Tornado.FORCE_BLOCKING_API_CALLS) {
+            enqueueBarrier();
+        }
 
         return event;
     }
