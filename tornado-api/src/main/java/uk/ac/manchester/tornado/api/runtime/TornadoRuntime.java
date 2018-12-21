@@ -95,4 +95,5 @@ public class TornadoRuntime {
     public static TornadoDevice createDevice(int platformIndex, int deviceIndex) {
         return device.createDevice(platformIndex, deviceIndex);
     }
+
 }

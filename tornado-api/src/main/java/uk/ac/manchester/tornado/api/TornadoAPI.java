@@ -44,6 +44,7 @@ package uk.ac.manchester.tornado.api;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task15;
@@ -56,10 +57,38 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 
+/**
+ * Base interface of the Tornado API. It exposes the set of operations within a
+ * task-schedule
+ *
+ */
 public interface TornadoAPI {
 
+    /**
+     * It adds a task by using a {@link TaskPackage}.
+     * 
+     * @param taskPackage
+     * @return {@link @TornadoAPI}
+     */
+    public TornadoAPI addTask(TaskPackage taskPackage);
+
+    /**
+     * 
+     * @param id
+     * @param code
+     * @param arg
+     * @return {@}
+     */
     public <T1> TornadoAPI task(String id, Task1<T1> code, T1 arg);
 
+    /**
+     * 
+     * @param id
+     * @param code
+     * @param arg1
+     * @param arg2
+     * @return
+     */
     public <T1, T2> TornadoAPI task(String id, Task2<T1, T2> code, T1 arg1, T2 arg2);
 
     public <T1, T2, T3> TornadoAPI task(String id, Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3);
@@ -83,10 +112,32 @@ public interface TornadoAPI {
     public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> TornadoAPI task(String id, Task15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> code, T1 arg1,
             T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15);
 
+    /**
+     * Add a prebuilt OpenCL task into a task-schedule
+     * 
+     * @param id
+     * @param entryPoint
+     * @param filename
+     * @param args
+     * @param accesses
+     * @param device
+     * @param dimensions
+     * @return {@link TornadoAPI}
+     */
     public TornadoAPI prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
 
+    /**
+     * Obtains the task-schedule name that was assigned.
+     * 
+     * @return {@link String}
+     */
     public String getTaskScheduleName();
 
+    /**
+     * 
+     * @param task
+     * @return
+     */
     public TornadoAPI task(SchedulableTask task);
 
     public TornadoAPI mapAllTo(TornadoDevice device);
@@ -98,6 +149,10 @@ public interface TornadoAPI {
     public TornadoAPI schedule();
 
     public void execute();
+
+    public void executeWithProfiler(Policy policy);
+
+    public void executeWithProfilerSequential(Policy policy);
 
     public void warmup();
 

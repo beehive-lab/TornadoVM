@@ -19,20 +19,19 @@
 package uk.ac.manchester.tornado.examples.reductions;
 
 import java.util.ArrayList;
-import java.util.Random;
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 
-public class ReductionMultiplyFloats {
+public class PiComputation {
 
-    public static void reductionMulFloats(float[] input, @Reduce float[] result) {
-        result[0] = 1.0f;
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] *= input[i];
+    public static void computePi(float[] input, @Reduce float[] result) {
+        for (@Parallel int i = 1; i < input.length; i++) {
+            float value = (float) (Math.pow(-1, i + 1) / (2 * i - 1));
+            result[0] += value + input[i];
         }
     }
 
@@ -43,51 +42,38 @@ public class ReductionMultiplyFloats {
         if (size > 256) {
             numGroups = size / 256;
         }
-        float[] result = null;
 
-        TornadoDeviceType deviceType = Config.getDefaultDeviceType();
-        switch (deviceType) {
-            case CPU:
-                result = new float[Runtime.getRuntime().availableProcessors()];
-                numGroups = Runtime.getRuntime().availableProcessors();
-                break;
-            case GPU:
-                result = new float[numGroups];
-                break;
-            default:
-                break;
-        }
-
-        if (result == null) {
-            throw new RuntimeException("Result is null");
-        }
-
-        Random r = new Random();
-        IntStream.range(0, size).sequential().forEach(i -> {
-            input[i] = r.nextFloat();
-        });
+        float[] result = Config.allocResultArray(numGroups);
+        Arrays.fill(result, 0.0f);
 
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", ReductionMultiplyFloats::reductionMulFloats, input, result)
+            .task("t0", PiComputation::computePi, input, result)
             .streamOut(result);
         //@formatter:on
 
         ArrayList<Long> timers = new ArrayList<>();
         for (int i = 0; i < Config.MAX_ITERATIONS; i++) {
 
+            IntStream.range(0, size).sequential().forEach(idx -> {
+                input[idx] = 0;
+            });
+
             long start = System.nanoTime();
             task.execute();
             long end = System.nanoTime();
 
             for (int j = 1; j < result.length; j++) {
-                result[0] *= result[j];
+                result[0] += result[j];
             }
+            final float piValue = result[0] * 4;
+            System.out.println("PI VALUE: " + piValue);
             timers.add((end - start));
         }
 
         System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
+
     }
 
     public static void main(String[] args) {
@@ -96,6 +82,7 @@ public class ReductionMultiplyFloats {
             inputSize = Integer.parseInt(args[0]);
         }
         System.out.print("Size = " + inputSize + " ");
-        new ReductionMultiplyFloats().run(inputSize);
+        new PiComputation().run(inputSize);
     }
+
 }

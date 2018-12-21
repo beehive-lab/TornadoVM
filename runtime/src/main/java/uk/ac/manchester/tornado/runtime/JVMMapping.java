@@ -25,12 +25,12 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
@@ -42,41 +42,41 @@ public class JVMMapping implements TornadoAcceleratorDevice {
 
     @Override
     public void dumpEvents() {
-        unimplemented();
+        TornadoInternalError.unimplemented();
     }
 
     @Override
     public void dumpMemory(String file) {
-        unimplemented();
+        TornadoInternalError.unimplemented();
     }
 
     @Override
     public int enqueueBarrier(int[] events) {
-        unimplemented();
+        TornadoInternalError.unimplemented();
         return -1;
     }
 
     @Override
     public int enqueueMarker() {
-        unimplemented();
+        TornadoInternalError.unimplemented();
         return -1;
     }
 
     @Override
     public int enqueueMarker(int[] events) {
-        unimplemented();
+        TornadoInternalError.unimplemented();
         return -1;
     }
 
     @Override
     public int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events) {
-        unimplemented();
+        TornadoInternalError.unimplemented();
         return -1;
     }
 
     @Override
     public void flush() {
-        unimplemented();
+        TornadoInternalError.unimplemented();
     }
 
     @Override
@@ -86,7 +86,7 @@ public class JVMMapping implements TornadoAcceleratorDevice {
 
     @Override
     public TornadoMemoryProvider getMemoryProvider() {
-        unimplemented();
+        TornadoInternalError.unimplemented();
         return null;
     }
 
@@ -97,29 +97,29 @@ public class JVMMapping implements TornadoAcceleratorDevice {
 
     @Override
     public void reset() {
-        unimplemented();
+        TornadoInternalError.unimplemented();
     }
 
     @Override
     public int streamIn(Object object, TornadoDeviceObjectState objectState, int[] events) {
-        unimplemented();
+        TornadoInternalError.unimplemented();
         return -1;
     }
 
     @Override
     public int streamOut(Object object, TornadoDeviceObjectState objectState) {
-        unimplemented();
+        TornadoInternalError.unimplemented();
         return -1;
     }
 
     @Override
     public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState) {
-        unimplemented();
+        TornadoInternalError.unimplemented();
     }
 
     @Override
     public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState, int[] list) {
-        unimplemented();
+        TornadoInternalError.unimplemented();
     }
 
     @Override
@@ -145,7 +145,6 @@ public class JVMMapping implements TornadoAcceleratorDevice {
 
     @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {
-
         return null;
     }
 
@@ -210,13 +209,16 @@ public class JVMMapping implements TornadoAcceleratorDevice {
 
     @Override
     public TornadoDeviceContext getDeviceContext() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public TornadoTargetDevice getDevice() {
-        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public TornadoDeviceType getDeviceType() {
         return null;
     }
 

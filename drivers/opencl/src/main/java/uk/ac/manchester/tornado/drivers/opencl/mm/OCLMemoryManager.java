@@ -45,13 +45,12 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     private long callStackPosition;
     private long deviceBufferAddress;
     private final OCLDeviceContext deviceContext;
-
-    private long buffer;
+    private long deviceHeapPointer;
     private long heapLimit;
-
     private long heapPosition;
-
     private boolean initialised;
+
+    public static final int STACK_ALIGNMENT_SIZE = 32;
 
     public OCLMemoryManager(final OCLDeviceContext device) {
         deviceContext = device;
@@ -98,7 +97,8 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     }
 
     private static long align(final long address, final long alignment) {
-        return (address % alignment == 0) ? address : address + (alignment - address % alignment);
+        long newAddress = (address % alignment == 0) ? address : address + (alignment - address % alignment);
+        return newAddress;
     }
 
     public long tryAllocate(final Class<?> type, final long bytes, final int headerSize, int alignment) throws TornadoOutOfMemoryException {
@@ -118,7 +118,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         OCLCallStack callStack = new OCLCallStack(callStackPosition, maxArgs, deviceContext);
 
         if (callStackPosition + callStack.getSize() < callStackLimit) {
-            callStackPosition = align(callStackPosition + callStack.getSize(), 32);
+            callStackPosition = align(callStackPosition + callStack.getSize(), STACK_ALIGNMENT_SIZE);
         } else {
             callStack = null;
             fatal("Out of call-stack memory");
@@ -154,7 +154,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
      */
     public void allocateRegion(long numBytes) {
         heapLimit = numBytes;
-        buffer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, numBytes);
+        deviceHeapPointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, numBytes);
     }
 
     public void init(OCLBackend backend, long address) {
@@ -178,7 +178,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     }
 
     public long toBuffer() {
-        return buffer;
+        return deviceHeapPointer;
     }
 
     public long toRelativeAddress() {

@@ -25,15 +25,36 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.enums;
 
+/**
+ * OpenCL Memory Flags for OpenCL 1.2 and Intel FPGA extensions.
+ * 
+ * Link: https://github.com/KhronosGroup/OpenCL-Headers/blob/master/CL/cl.h
+ *
+ */
 public class OCLMemFlags {
-    public static final long CL_MEM_READ_WRITE = (1 << 0);
-    public static final long CL_MEM_WRITE_ONLY = (1 << 1);
-    public static final long CL_MEM_READ_ONLY = (1 << 2);
-    public static final long CL_MEM_USE_HOST_PTR = (1 << 3);
-    public static final long CL_MEM_ALLOC_HOST_PTR = (1 << 4);
-    public static final long CL_MEM_COPY_HOST_PTR = (1 << 5);
+
+    // @formatter:off
+    public static final long CL_MEM_READ_WRITE      = (1 << 0);
+    public static final long CL_MEM_WRITE_ONLY      = (1 << 1);
+    public static final long CL_MEM_READ_ONLY       = (1 << 2);
+    public static final long CL_MEM_USE_HOST_PTR    = (1 << 3);
+    public static final long CL_MEM_ALLOC_HOST_PTR  = (1 << 4);
+    public static final long CL_MEM_COPY_HOST_PTR   = (1 << 5);
+
     // reserved (1 << 6)
     public static final long CL_MEM_HOST_WRITE_ONLY = (1 << 7);
-    public static final long CL_MEM_HOST_READ_ONLY = (1 << 8);
-    public static final long CL_MEM_HOST_NO_ACCESS = (1 << 9);
+    public static final long CL_MEM_HOST_READ_ONLY  = (1 << 8);
+    public static final long CL_MEM_HOST_NO_ACCESS  = (1 << 9);
+
+    // Intel Altera FPGAs Memory Banks
+    public static final long CL_CHANNEL_1_INTELFPGA = (1 << 16);
+    public static final long CL_CHANNEL_2_INTELFPGA = (2 << 16);
+    public static final long CL_CHANNEL_3_INTELFPGA = (3 << 16);
+    public static final long CL_CHANNEL_4_INTELFPGA = (4 << 16);
+    public static final long CL_CHANNEL_5_INTELFPGA = (5 << 16);
+    public static final long CL_CHANNEL_6_INTELFPGA = (6 << 16);
+    public static final long CL_CHANNEL_7_INTELFPGA = (7 << 16);
+    public static final long CL_MEM_HETEROGENEOUS_INTELFPGA = (1 << 19);
+    // @formatter:on
+
 }

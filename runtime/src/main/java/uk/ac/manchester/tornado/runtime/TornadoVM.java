@@ -154,7 +154,6 @@ public class TornadoVM extends TornadoLogger {
         if (stacks[index] == null || setNewDevice) {
             stacks[index] = device.createStack(numArgs);
         }
-
         return stacks[index];
     }
 
@@ -179,7 +178,6 @@ public class TornadoVM extends TornadoLogger {
         for (int[] waitList : events) {
             Arrays.fill(waitList, -1);
         }
-
         StringBuilder bytecodesList = new StringBuilder();
 
         while (buffer.hasRemaining()) {
@@ -222,6 +220,7 @@ public class TornadoVM extends TornadoLogger {
                 bytecodesList.append(String.format("COPY_IN [0x%x] %s on %s [event list=%d]\n", object.hashCode(), object, device, eventList));
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
+
                 if (graphContext.meta().isDebug()) {
                     debug("vm: state=%s", objectState);
                 }

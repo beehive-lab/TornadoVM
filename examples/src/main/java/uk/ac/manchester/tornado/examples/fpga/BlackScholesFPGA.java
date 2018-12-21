@@ -16,7 +16,7 @@
  * 
  */
 
-package uk.ac.manchester.tornado.examples.compute;
+package uk.ac.manchester.tornado.examples.fpga;
 
 import java.util.Random;
 
@@ -30,7 +30,10 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
  * compiler framework.
  *
  */
-public class BlackScholes {
+public class BlackScholesFPGA {
+    public static String executionType;
+    public static int iterations;
+    public static boolean VALIDATION = false;
 
     private static void blackScholesKernel(float[] input, float[] callResult, float[] putResult) {
         for (@Parallel int idx = 0; idx < callResult.length; idx++) {
@@ -99,24 +102,56 @@ public class BlackScholes {
         float[] putPrice = new float[size];
         float[] seqCall = new float[size];
         float[] seqPut = new float[size];
-        TaskSchedule graph = new TaskSchedule("s0");
+        TaskSchedule s0 = new TaskSchedule("s0");
+        long end,start;
 
         for (int i = 0; i < size; i++) {
             input[i] = random.nextFloat();
         }
 
-        System.gc();
-        graph.task("t0", BlackScholes::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
-        graph.executeWithProfilerSequential(Policy.PERFORMANCE);
-        blackScholesKernel(input, seqCall, seqPut);
-        boolean results = checkResult(seqCall, seqPut, callPrice, putPrice);
-        System.out.println("Validation " + results + " \n");
+        long startInit = System.nanoTime();
+        s0.task("t0", BlackScholesFPGA::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
+        long stopInit = System.nanoTime();
+        System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
+
+        for (int i = 0; i < iterations; i++) {
+            switch (executionType) {
+                case "performance":
+                    start = System.nanoTime();
+                    s0.executeWithProfilerSequential(Policy.PERFORMANCE);
+                    end = System.nanoTime();
+                    break;
+                case "end":
+                    start = System.nanoTime();
+                    s0.executeWithProfilerSequential(Policy.END_2_END);
+                    end = System.nanoTime();
+                    break;
+                case "sequential":
+                    System.gc();
+                    start = System.nanoTime();
+                    blackScholesKernel(input, callPrice, putPrice);
+                    end = System.nanoTime();
+                    break;
+                default:
+                    start = System.nanoTime();
+                    s0.execute();
+                    end = System.nanoTime();
+            }
+            System.out.println("End to end time:  " + (end - start) + " ns" + " \n");
+        }
+
+        if (VALIDATION) {
+            blackScholesKernel(input, seqCall, seqPut);
+            boolean results = checkResult(seqCall, seqPut, callPrice, putPrice);
+            System.out.println("Validation " + results + " \n");
+        }
     }
 
     public static void main(String[] args) {
         System.out.println("BlackScholes Tornado");
         int size = Integer.parseInt(args[0]);
-        System.out.println("Input size: " + size + " \n");
+        executionType = args[1];
+        iterations = Integer.parseInt(args[2]);
         blackScholes(size);
     }
 }

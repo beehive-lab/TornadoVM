@@ -25,14 +25,14 @@ import java.util.stream.IntStream;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;;
 
-public class ReductionMultiplyFloats {
+public class ReductionMaxFloats {
 
-    public static void reductionMulFloats(float[] input, @Reduce float[] result) {
-        result[0] = 1.0f;
+    public static void reductionMaxFloats(float[] input, @Reduce float[] result, float neutral) {
+        result[0] = neutral;
         for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] *= input[i];
+            result[0] = Math.max(result[0], input[i]);
         }
     }
 
@@ -49,17 +49,15 @@ public class ReductionMultiplyFloats {
         switch (deviceType) {
             case CPU:
                 result = new float[Runtime.getRuntime().availableProcessors()];
-                numGroups = Runtime.getRuntime().availableProcessors();
                 break;
             case GPU:
+            case FPGA:
                 result = new float[numGroups];
+                break;
+            case DEFAULT:
                 break;
             default:
                 break;
-        }
-
-        if (result == null) {
-            throw new RuntimeException("Result is null");
         }
 
         Random r = new Random();
@@ -70,7 +68,7 @@ public class ReductionMultiplyFloats {
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", ReductionMultiplyFloats::reductionMulFloats, input, result)
+            .task("t0", ReductionMaxFloats::reductionMaxFloats, input, result, Float.MIN_VALUE)
             .streamOut(result);
         //@formatter:on
 
@@ -82,8 +80,9 @@ public class ReductionMultiplyFloats {
             long end = System.nanoTime();
 
             for (int j = 1; j < result.length; j++) {
-                result[0] *= result[j];
+                result[0] = Math.max(result[0], result[j]);
             }
+
             timers.add((end - start));
         }
 
@@ -95,7 +94,7 @@ public class ReductionMultiplyFloats {
         if (args.length > 0) {
             inputSize = Integer.parseInt(args[0]);
         }
-        System.out.print("Size = " + inputSize + " ");
-        new ReductionMultiplyFloats().run(inputSize);
+        System.out.println("Size = " + inputSize);
+        new ReductionMaxFloats().run(inputSize);
     }
 }

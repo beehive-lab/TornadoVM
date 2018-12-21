@@ -15,43 +15,45 @@
  * limitations under the License.
  * 
  */
-package uk.ac.manchester.tornado.examples;
 
-import java.util.stream.IntStream;
+package uk.ac.manchester.tornado.examples.fpga;
+
+import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
-public class Saxpy {
+/**
+ * Init FPGA kernel. Copy-in and copy-out the same array to check device buffers
+ * and offset within Tornado.
+ * 
+ */
+public class Init {
 
-    public static void saxpy(float alpha, float[] x, float[] y) {
-        for (@Parallel int i = 0; i < y.length; i++) {
-            y[i] = alpha * x[i];
+    public static void init(float[] x) {
+        for (@Parallel int i = 0; i < x.length; i++) {
+            x[i] = x[i] + 100;
         }
     }
 
     public static void main(String[] args) {
-        int numElements = 512;
+        int numElements = 256;
+        float[] x = new float[numElements];
 
-        if (args.length > 0) {
-            numElements = Integer.parseInt(args[0]);
-        }
+        Arrays.fill(x, 10);
 
-        final float alpha = 2f;
-
-        final float[] x = new float[numElements];
-        final float[] y = new float[numElements];
-
-        IntStream.range(0, numElements).parallel().forEach(i -> x[i] = 450);
-
-        TaskSchedule s0 = new TaskSchedule("s0").task("t0", Saxpy::saxpy, alpha, x, y).streamOut(y);
+        // @formatter:off
+        TaskSchedule s0 = new TaskSchedule("s0")
+                .streamIn(x)
+                .task("t0", Init::init, x)
+                .streamOut(x);
+        // @formatter:on
 
         s0.execute();
 
-        System.out.println("Checking result");
         boolean wrongResult = false;
-        for (int i = 0; i < y.length; i++) {
-            if (Math.abs(y[i] - (alpha * x[i])) > 0.01) {
+        for (int i = 0; i < x.length; i++) {
+            if (x[i] != 110) {
                 wrongResult = true;
                 break;
             }
@@ -62,5 +64,4 @@ public class Saxpy {
             System.out.println("Result is wrong");
         }
     }
-
 }

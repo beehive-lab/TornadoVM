@@ -140,6 +140,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     private boolean lookupCodeAvailable;
 
+    private static boolean isFPGAInit = false;
+
+    private static final String KERNEL_WARMUP = System.getProperty("tornado.fpga.kernel.warmup");
+
     public OCLBackend(OptionValues options, Providers providers, OCLTargetDescription target, OCLCodeProvider codeCache, OCLContext openclContext, OCLDeviceContext deviceContext) {
         super(providers);
         this.options = options;
@@ -149,6 +153,13 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         this.deviceContext = deviceContext;
         architecture = (OCLArchitecture) target.arch;
         scheduleMeta = new ScheduleMetaData("oclbackend");
+
+        if (KERNEL_WARMUP != null) {
+            if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && !isFPGAInit) {
+                initFPGA();
+                isFPGAInit = true;
+            }
+        }
 
     }
 
@@ -319,8 +330,20 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return lookupCodeAvailable;
     }
 
-    public void runAndReadLookUpKernel(TaskMetaData meta) {
+    private void runAndReadLookUpKernel(TaskMetaData meta) {
         deviceContext.getMemoryManager().init(this, readHeapBaseAddress(meta));
+    }
+
+    private void initFPGA() {
+        // Initialize FPGA with a precompiled kernel
+        OCLCodeCache check = new OCLCodeCache(deviceContext);
+        try {
+            Path lookupPath = Paths.get(KERNEL_WARMUP);
+            if (lookupPath != null) {
+                check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+            }
+        } catch (Exception e) {
+        }
     }
 
     public void init() {

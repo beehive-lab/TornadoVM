@@ -39,74 +39,25 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.common;
+package uk.ac.manchester.tornado.api;
 
-import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.api.TornadoTargetDevice;
-import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
-import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
-import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
+public enum Policy {
 
-public interface TornadoDevice {
+    // @formatter:off
+    PERFORMANCE ("Performance"), 
+    END_2_END ("End_2_End"),
+    WINNER("Winner"),
+    ENERGY ("Energy");
+    // @formatter:on
 
-    public boolean isDistibutedMemory();
+    private String policy;
 
-    public void ensureLoaded();
+    Policy(String policy) {
+        this.policy = policy;
+    }
 
-    public void markEvent();
-
-    public void flushEvents();
-
-    public int enqueueBarrier();
-
-    public int enqueueBarrier(int[] events);
-
-    public int enqueueMarker();
-
-    public int enqueueMarker(int[] events);
-
-    public void sync();
-
-    public void flush();
-
-    public String getDeviceName();
-
-    public String getDescription();
-
-    public void reset();
-
-    public void dumpEvents();
-
-    public void dumpMemory(String file);
-
-    public String getPlatformName();
-
-    public int ensureAllocated(Object object, TornadoDeviceObjectState state);
-
-    public int ensurePresent(Object object, TornadoDeviceObjectState objectState);
-
-    public int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events);
-
-    public int streamIn(Object object, TornadoDeviceObjectState objectState);
-
-    public int streamIn(Object object, TornadoDeviceObjectState objectState, int[] events);
-
-    public int streamOut(Object object, TornadoDeviceObjectState objectState);
-
-    public int streamOut(Object object, TornadoDeviceObjectState objectState, int[] list);
-
-    public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState);
-
-    public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState, int[] list);
-
-    public Event resolveEvent(int event);
-
-    public TornadoDeviceContext getDeviceContext();
-
-    public TornadoTargetDevice getDevice();
-
-    public TornadoMemoryProvider getMemoryProvider();
-
-    public TornadoDeviceType getDeviceType();
-
+    @Override
+    public String toString() {
+        return policy;
+    }
 }

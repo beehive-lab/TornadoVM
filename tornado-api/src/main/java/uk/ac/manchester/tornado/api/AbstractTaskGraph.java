@@ -103,9 +103,15 @@ public interface AbstractTaskGraph {
 
     public abstract AbstractTaskGraph schedule();
 
+    public abstract AbstractTaskGraph scheduleWithProfile(Policy policy);
+
+    public abstract AbstractTaskGraph scheduleWithProfileSequential(Policy policy);
+
     public void addTask(TaskPackage taskPackage);
 
     public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
 
     public void addScalaTask(String id, Object function, Object[] args);
+
+    public String getTaskScheduleName();
 }

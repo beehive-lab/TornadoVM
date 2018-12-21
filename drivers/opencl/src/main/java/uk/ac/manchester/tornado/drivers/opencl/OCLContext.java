@@ -37,9 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import sun.misc.Unsafe;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBufferCreateType;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -78,9 +76,10 @@ public class OCLContext extends TornadoLogger {
     private final List<OCLProgram> programs;
     private final long[] allocatedRegions;
     private int allocatedRegionCount;
-    private final ByteBuffer buffer;
-    private final Unsafe unsafe;
     private final OCLPlatform platform;
+
+    private static final int MAX_ALLOCATED_REGIONS = 64;
+    private static final int BUFFER_CAPACITY = 128;
 
     public OCLContext(OCLPlatform platform, long id, List<OCLDevice> devices) {
         this.platform = platform;
@@ -89,12 +88,9 @@ public class OCLContext extends TornadoLogger {
         this.deviceContexts = new ArrayList<>(devices.size());
         this.queues = new OCLCommandQueue[devices.size()];
         this.programs = new ArrayList<>();
-        this.allocatedRegions = new long[64];
+        this.allocatedRegions = new long[MAX_ALLOCATED_REGIONS];
         this.allocatedRegionCount = 0;
         Arrays.fill(this.allocatedRegions, -1);
-        this.buffer = ByteBuffer.allocate(128);
-        this.buffer.order(OpenCL.BYTE_ORDER);
-        this.unsafe = RuntimeUtilities.getUnsafe();
     }
 
     native static void clReleaseContext(long id) throws OCLException;
@@ -110,7 +106,7 @@ public class OCLContext extends TornadoLogger {
     native static ByteBuffer asByteBuffer(long address, long size);
 
     // creates an empty buffer on the device
-    native static OCLBufferResult createBuffer(long contextId, long flags, long size, long address) throws OCLException;
+    native static OCLBufferResult createBuffer(long contextId, long flags, long size, long hostPointer) throws OCLException;
 
     native static long createSubBuffer(long buffer, long flags, int createType, byte[] createInfo) throws OCLException;
 
@@ -293,10 +289,10 @@ public class OCLContext extends TornadoLogger {
         return createBuffer(flags, bytes, 0L);
     }
 
-    public long createBuffer(long flags, long bytes, long address) {
+    public long createBuffer(long flags, long bytes, long hostPointer) {
         long devicePtr = 0;
         try {
-            final OCLBufferResult result = createBuffer(id, flags, bytes, address);
+            final OCLBufferResult result = createBuffer(id, flags, bytes, hostPointer);
             devicePtr = result.getBuffer();
             allocatedRegions[allocatedRegionCount] = devicePtr;
             allocatedRegionCount++;

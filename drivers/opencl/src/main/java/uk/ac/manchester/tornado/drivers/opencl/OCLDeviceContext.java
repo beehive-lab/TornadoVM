@@ -189,36 +189,36 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     /*
-     * Asynchronouse reads from device
+     * Sync reads from device
      */
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, byte[] array, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
+        return queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, char[] array, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
+        return queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, int[] array, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
+        return queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, long[] array, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
+        return queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, float[] array, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
+        return queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
 
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, double[] array, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
+        return queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
 
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, short[] array, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array, waitEvents);
+        return queue.enqueueRead(bufferId, true, offset, bytes, array, waitEvents);
 
     }
 

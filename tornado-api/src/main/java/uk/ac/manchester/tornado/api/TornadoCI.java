@@ -50,4 +50,5 @@ public interface TornadoCI {
     public String getTornadoProperty(String key, String defaultValue);
 
     public void loadTornadoSettngs(String filename);
+
 }
