@@ -273,8 +273,6 @@ public class TaskMetaData extends AbstractMetaData {
             return scheduleMetaData.getDevice();
         }
         return super.getDevice();
-        // return scheduleMetaData.isDeviceDefined() && !isDeviceDefined() ?
-        // scheduleMetaData.getDevice() : super.getDevice();
     }
 
     public int getDims() {
