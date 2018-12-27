@@ -23,25 +23,26 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 public class ComputeKernels {
-    static final float S_LOWER_LIMIT = 10.0f;
 
-    static final float S_UPPER_LIMIT = 100.0f;
+    public static final float S_LOWER_LIMIT = 10.0f;
 
-    static final float K_LOWER_LIMIT = 10.0f;
+    public static final float S_UPPER_LIMIT = 100.0f;
 
-    static final float K_UPPER_LIMIT = 100.0f;
+    public static final float K_LOWER_LIMIT = 10.0f;
 
-    static final float T_LOWER_LIMIT = 1.0f;
+    public static final float K_UPPER_LIMIT = 100.0f;
 
-    static final float T_UPPER_LIMIT = 10.0f;
+    public static final float T_LOWER_LIMIT = 1.0f;
 
-    static final float R_LOWER_LIMIT = 0.01f;
+    public static final float T_UPPER_LIMIT = 10.0f;
 
-    static final float R_UPPER_LIMIT = 0.05f;
+    public static final float R_LOWER_LIMIT = 0.01f;
 
-    static final float SIGMA_LOWER_LIMIT = 0.01f;
+    public static final float R_UPPER_LIMIT = 0.05f;
 
-    static final float SIGMA_UPPER_LIMIT = 0.10f;
+    public static final float SIGMA_LOWER_LIMIT = 0.01f;
+
+    public static final float SIGMA_UPPER_LIMIT = 0.10f;
 
     /**
      * Parallel Implementation of the MonteCarlo computation: this is based on
