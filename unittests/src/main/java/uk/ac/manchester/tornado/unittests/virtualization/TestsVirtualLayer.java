@@ -307,14 +307,10 @@ public class TestsVirtualLayer {
             //@formatter:on
 
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
-
                 String propertyDevice = "s" + driverIndex + "." + taskName + ".device";
                 String value = driverIndex + ":" + deviceIndex;
 
-                System.out.println("Setting device: " + propertyDevice + "=" + value);
-
                 // XXX: the set property should be optional.
-
                 // Tornado.setProperty(propertyDevice, value);
                 s0.setDevice(driver.getDevice(deviceIndex));
                 s0.execute();
