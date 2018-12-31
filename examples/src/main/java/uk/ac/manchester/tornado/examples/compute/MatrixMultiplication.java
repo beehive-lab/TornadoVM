@@ -8,7 +8,6 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class MatrixMultiplication {
 
-    public static int N = 512;
     public static final int WARMING_UP_ITERATIONS = 15;
 
     public static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
@@ -24,51 +23,69 @@ public class MatrixMultiplication {
     }
 
     public static void main(String[] args) {
-        float[] matrixA = new float[N * N];
-        float[] matrixB = new float[N * N];
-        float[] matrixC = new float[N * N];
-        float[] resultSeq = new float[N * N];
+
+        int size = 512;
+        if (args.length > 1) {
+            try {
+                size = Integer.parseInt(args[0]);
+            } catch (NumberFormatException nfe) {
+                size = 512;
+            }
+        }
+
+        System.out.println("Computing MxM of " + size + "x" + size);
+
+        float[] matrixA = new float[size * size];
+        float[] matrixB = new float[size * size];
+        float[] matrixC = new float[size * size];
+        float[] resultSeq = new float[size * size];
 
         Random r = new Random();
-        IntStream.range(0, N * N).parallel().forEach(idx -> {
+        IntStream.range(0, size * size).parallel().forEach(idx -> {
             matrixA[idx] = r.nextFloat();
             matrixB[idx] = r.nextFloat();
         });
 
         //@formatter:off
         TaskSchedule t = new TaskSchedule("s0")
-                .task("t0", MatrixMultiplication::matrixMultiplication, matrixA, matrixB, matrixC, N)
+                .task("t0", MatrixMultiplication::matrixMultiplication, matrixA, matrixB, matrixC, size)
                 .streamOut(matrixC);
         //@formatter:on
 
+        // 1. Warm up Tornado
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
             t.execute();
         }
 
-        // Run parallel on the GPU
+        // 2. Run parallel on the GPU with Tornado
         long start = System.currentTimeMillis();
         t.execute();
         long end = System.currentTimeMillis();
 
         // Run sequential
+        // 1. Warm up sequential
         for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
-            matrixMultiplication(matrixA, matrixB, resultSeq, N);
+            matrixMultiplication(matrixA, matrixB, resultSeq, size);
         }
 
+        // 2. Run the sequential code
         long startSequential = System.currentTimeMillis();
-        matrixMultiplication(matrixA, matrixB, resultSeq, N);
+        matrixMultiplication(matrixA, matrixB, resultSeq, size);
         long endSequential = System.currentTimeMillis();
+
+        // Compute Gigaflops and performance
         long msecGPUElapsedTime = (end - start);
         long msecCPUElaptedTime = (endSequential - startSequential);
-
-        // Compute Gigaflops
-        double flops = 2 * Math.pow(N, 3);
+        double flops = 2 * Math.pow(size, 3);
         double gpuGigaFlops = (1.0E-9 * flops) / (msecGPUElapsedTime / 1000.0f);
         double cpuGigaFlops = (1.0E-9 * flops) / (msecCPUElaptedTime / 1000.0f);
 
-        System.out.println("CPU Execution: " + cpuGigaFlops + " GFlops, " + (endSequential - startSequential) + " ms");
-        System.out.println("GPU Execution: " + gpuGigaFlops + " GFlops, " + (end - start) + " ms");
-        System.out.println("Speedup: " + ((endSequential - startSequential) / (end - start)) + "x");
+        String formatGPUFGlops = String.format("%.2f", gpuGigaFlops);
+        String formatCPUFGlops = String.format("%.2f", cpuGigaFlops);
+
+        System.out.println("\tCPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms");
+        System.out.println("\tGPU Execution: " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ms");
+        System.out.println("\tSpeedup: " + ((endSequential - startSequential) / (end - start)) + "x");
     }
 
 }

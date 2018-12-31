@@ -67,12 +67,17 @@ public class NBody {
 
         StringBuffer resultsIterations = new StringBuffer();
 
-        if (args.length != 2) {
-            usage(args);
+        int numBodies = 32768;
+        int iterations = 10;
+
+        if (args.length == 2) {
+            numBodies = Integer.parseInt(args[0]);
+            iterations = Integer.parseInt(args[1]);
+        } else if (args.length == 1) {
+            numBodies = Integer.parseInt(args[0]);
         }
 
-        final int numBodies = Integer.parseInt(args[0]);
-        final int iterations = Integer.parseInt(args[1]);
+        System.out.println("Running Nbody with " + numBodies + " bodies" + " and " + iterations + " iterations");
 
         delT = 0.005f;
         espSqr = 500.0f;
@@ -96,35 +101,44 @@ public class NBody {
             velSeq[i] = auxVelocityZero[i];
         }
 
+        long start = 0;
+        long end = 0;
         for (int i = 0; i < iterations; i++) {
             System.gc();
-            long start = System.nanoTime();
+            start = System.nanoTime();
             nBody(numBodies, posSeq, velSeq, delT, espSqr);
-            long end = System.nanoTime();
-            resultsIterations.append("Sequential execution time of iteration " + i + " is: " + (end - start) + " ns");
+            end = System.nanoTime();
+            resultsIterations.append("\tSequential execution time of iteration " + i + " is: " + (end - start) + " ns");
             resultsIterations.append("\n");
         }
 
+        long timeSequential = (end - start);
+
         System.out.println(resultsIterations.toString());
 
-        final TaskSchedule t0 = new TaskSchedule("s0").task("t0", NBody::nBody, numBodies, posSeq, velSeq, delT, espSqr);
+        // @formatter:off
+        final TaskSchedule t0 = new TaskSchedule("s0")
+                .task("t0", NBody::nBody, numBodies, posSeq, velSeq, delT, espSqr);
+        // @formatter:on
 
         t0.warmup();
-        resultsIterations = null;
 
         resultsIterations = new StringBuffer();
 
         for (int i = 0; i < iterations; i++) {
             System.gc();
-            long start = System.nanoTime();
+            start = System.nanoTime();
             t0.execute();
-            long end = System.nanoTime();
-            resultsIterations.append("Tornado execution time of iteration " + i + " is: " + (end - start) + " ns");
+            end = System.nanoTime();
+            resultsIterations.append("\tTornado execution time of iteration " + i + " is: " + (end - start) + " ns");
             resultsIterations.append("\n");
+
         }
+        long timeParallel = (end - start);
 
         System.out.println(resultsIterations.toString());
 
+        System.out.println("Speedup in peak performance: " + (timeSequential / timeParallel) + "x");
     }
 
 }
