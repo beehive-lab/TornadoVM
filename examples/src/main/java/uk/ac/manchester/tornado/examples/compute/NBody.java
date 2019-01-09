@@ -18,18 +18,12 @@
 
 package uk.ac.manchester.tornado.examples.compute;
 
-import java.io.PrintStream;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class NBody {
-
-    private static void usage(String[] args) {
-        final PrintStream printf = System.err.printf("Usage: Number of bodies is missing or number of iterations\n");
-        System.exit(1);
-    }
 
     private static void nBody(int numBodies, float[] refPos, float[] refVel, float delT, float espSqr) {
         for (@Parallel int i = 0; i < numBodies; i++) {
