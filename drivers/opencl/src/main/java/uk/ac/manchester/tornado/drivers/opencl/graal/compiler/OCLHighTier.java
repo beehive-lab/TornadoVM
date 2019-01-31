@@ -46,6 +46,7 @@ import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 
+import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoOpenCLIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPragmaUnroll;
@@ -99,9 +100,7 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(new TornadoParallelScheduler());
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
 
-        // if (OpenCL.ACCELERATOR_IS_FPGA) { // FIX
-        // <-------------------------------------------Before merge
-        if (true) {
+        if (OpenCL.ACCELERATOR_IS_FPGA) {
             appendPhase(new TornadoPragmaUnroll(canonicalizer));
         } else {
             LoopPolicies loopPolicies = new DefaultLoopPolicies();

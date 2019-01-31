@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, APT Group, School of Computer Science,
+ * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -18,9 +18,11 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: Michalis Papadimitriou
  *
- */
+ *
+ * */
+
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
 import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
@@ -104,7 +106,7 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
                         List<EndNode> snapshot = graph.getNodes().filter(EndNode.class).snapshot();
 
                         System.out.println(loopBegin.predecessor());
-                        System.out.println("LOOP BEGIN PRE");
+                        System.out.println("LOOP BEGIN PRE 0");
 
                         int idx = 0;
                         for (EndNode end : snapshot) {
