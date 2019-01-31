@@ -448,8 +448,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         String methodName = crb.compilationResult.getName();
 
-        System.out.println("Inside the compiler method name: --->" + methodName + "\n");
-
         if (crb.isKernel()) {
             /*
              * BUG There is a bug on some OpenCL devices which requires us to insert an

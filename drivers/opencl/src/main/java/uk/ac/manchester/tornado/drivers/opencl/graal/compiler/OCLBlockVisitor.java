@@ -162,8 +162,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     public void exit(Block b, Block value) {
         if (b.isLoopEnd()) {
             loopEnds++;
-            System.out.println("Loopend --> " + loopEnds + " LoopCounts --- > " + loopCount + "\n");
-
             if (openclBuilder.REMOVE_OUTER_LOOPS) {
                 if (loopCount - loopEnds > 0) {
                     asm.endScope();

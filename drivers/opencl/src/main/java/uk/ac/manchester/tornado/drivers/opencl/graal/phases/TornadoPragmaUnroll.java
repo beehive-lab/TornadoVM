@@ -55,8 +55,6 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
 
     public static boolean shouldFullUnroll(OptionValues options, LoopEx loop) {
         if (!loop.isCounted() || !loop.counted().isConstantMaxTripCount()) {
-
-            System.out.println("Try to unroll 3" + " \n");
             return false;
         }
         CountedLoopInfo counted = loop.counted();
@@ -77,8 +75,6 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
                     ifs++;
                 }
             }
-
-            System.out.println("Loops: ---> " + loops + "  ifs: ---> " + ifs + "\n");
             if (loops - ifs != 0) {
                 return true;
             }
@@ -117,17 +113,17 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
                             if (idx == 2) {
                                 PragmaUnrollNode unroll = graph.addOrUnique(new PragmaUnrollNode(2));
                                 graph.addBeforeFixed(end, unroll);
-
-                                System.out.println("End node successors ---> " + end.successors());
-                                System.out.println("End node predecessors ---> " + end.predecessor());
-                                System.out.println("End node isAlive ---> " + end.isAlive());
-
-                                System.out.println("Loop begin predecessor --->" + loopBegin.predecessor());
+                                //
+                                // System.out.println("End node successors ---> " + end.successors());
+                                // System.out.println("End node predecessors ---> " + end.predecessor());
+                                // System.out.println("End node isAlive ---> " + end.isAlive());
+                                //
+                                // System.out.println("Loop begin predecessor --->" + loopBegin.predecessor());
                             }
-                            System.out.println("End inputs: - -- ->" + end.inputPositions());
+                            // System.out.println("End inputs: - -- ->" + end.inputPositions());
 
                         }
-                        System.out.println(loopBegin.predecessor());
+                        // System.out.println(loopBegin.predecessor());
                         peeled = false;
                         break;
                     }
