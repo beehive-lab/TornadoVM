@@ -72,6 +72,7 @@ public class OCLCodeCache {
     private final String FPGA_SOURCE_DIR = getProperty("tornado.fpga.source.dir", "fpga-source-comp/");
     private final String FPGA_BIN_LOCATION = getProperty("tornado.fpga.bin", "./fpga-source-comp/lookupBufferAddress");
     private final String[] FPGA_FLAGS = { "v", "fast-compile", "high-effort", "fp-relaxed", "high-effort", "report" };
+    private int counter = 0;
 
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
@@ -305,7 +306,8 @@ public class OCLCodeCache {
             String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
             String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
 
-            cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115", "-o", outputFile };
+            //cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115", "-o", outputFile };
+            cmd = new String[] { "aoc", inputFile, "-v", "-march=emulator", "-o", outputFile };
             cmdRename = new String[] { "bash", "./bin/cleanFpga.sh" };
 
             f = new File(FPGA_BIN_LOCATION);

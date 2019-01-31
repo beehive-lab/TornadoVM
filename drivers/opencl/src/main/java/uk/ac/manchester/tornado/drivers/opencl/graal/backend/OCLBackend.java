@@ -266,22 +266,21 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         // To Avoid errors, check the target device is not the FPGA, because
         // JIT compilation for FPGAs is not supported yet.
         // Get driver index + deviceIndex
+        boolean flag=false;
         String deviceDriver = deviceFullName.split("=")[1];
         int driverIndex = Integer.parseInt(deviceDriver.split(":")[0]);
         int deviceIndex = Integer.parseInt(deviceDriver.split(":")[1]);
         OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
         String platformName = device.getPlatformName();
         if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && platformName.contains("FPGA") && !platformName.contains("Intel(R)")) {
-            // If compilation for other platforms are chosen then we do not
-            // compile for FPGAs
             if (Tornado.DEBUG) {
                 System.out.println("JIT Compilation for FPGAs is only supported for Intel/Altera FPGAs");
             }
-            return true;
-        } else if (Tornado.DEBUG) {
-            System.out.println("JIT Compilation for " + deviceFullName);
+            flag=false;
+        } else {
+            flag = true;
         }
-        return false;
+        return flag;
     }
 
     /*
