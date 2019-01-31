@@ -251,7 +251,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
         try {
             final byte[] source = Files.readAllBytes(path);
-            System.out.print("OCLTornadoDevice:   <-> \n");
             return deviceContext.installCode(executable.meta(), task.getId(), executable.getEntryPoint(), source);
         } catch (IOException e) {
             e.printStackTrace();
