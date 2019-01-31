@@ -308,10 +308,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             }
         } else {
             // Option 3) JIT Compilation of the lookupBufferAddress kernel
-
             // Avoid JIT compilation for FPGAs due to unsupported feature
+            // There is a bug in this check
+            // TO DO:
             if (isJITCompilationForFPGAs(deviceFullName)) {
-                return meta;
+               // return meta;
             }
 
             ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
