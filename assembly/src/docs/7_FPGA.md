@@ -27,6 +27,9 @@ The following two steps are required:
 
 2) All the runtime flags are the same used during the full JIT mode plus the following:  
            ``` -Dtornado.fpga.emulation=true ```
+<<<<<<< HEAD
 
+=======
+>>>>>>> [docs] Update FPGA support documentation
 
 
