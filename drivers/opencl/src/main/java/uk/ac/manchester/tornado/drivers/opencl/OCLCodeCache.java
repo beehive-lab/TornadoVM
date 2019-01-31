@@ -169,7 +169,6 @@ public class OCLCodeCache {
 
             // For each entry, we should add also an entry for lookup-buffer
             String device = taskAndDeviceInfo.split("\\.")[2];
-            System.out.println("Device in process : -->" + device + "\n");
             String kernelName = "oclbackend.lookupBufferAddress." + device;
             precompiledBinariesPerDevice.put(kernelName, binaryFile);
         }
@@ -306,8 +305,12 @@ public class OCLCodeCache {
             String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
             String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
 
-            //cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115", "-o", outputFile };
-            cmd = new String[] { "aoc", inputFile, "-v", "-march=emulator", "-o", outputFile };
+            if (OpenCL.FPGA_EMULATION) {
+                cmd = new String[] { "aoc", inputFile, "-v", "-march=emulator", "-o", outputFile };
+            } else {
+                cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115", "-o", outputFile };
+            }
+
             cmdRename = new String[] { "bash", "./bin/cleanFpga.sh" };
 
             f = new File(FPGA_BIN_LOCATION);
