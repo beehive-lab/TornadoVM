@@ -312,7 +312,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             // There is a bug in this check
             // TO DO:
             if (isJITCompilationForFPGAs(deviceFullName)) {
-                // return meta;
+
             }
 
             ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
