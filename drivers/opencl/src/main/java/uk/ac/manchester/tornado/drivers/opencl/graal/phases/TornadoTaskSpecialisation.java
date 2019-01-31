@@ -278,7 +278,9 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             Debug.dump(Debug.INFO_LEVEL, graph, "After Phase Pi Node Removal");
 
-            loopUnroller.execute(graph, context);
+            if (!OpenCL.ACCELERATOR_IS_FPGA) {
+                loopUnroller.execute(graph, context);
+            }
 
             valueTypeReplacement.execute(graph, context);
 
