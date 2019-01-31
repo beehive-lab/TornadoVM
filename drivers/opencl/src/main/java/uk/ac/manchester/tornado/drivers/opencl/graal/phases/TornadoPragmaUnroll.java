@@ -115,17 +115,9 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
                             if (idx == 2) {
                                 PragmaUnrollNode unroll = graph.addOrUnique(new PragmaUnrollNode(2));
                                 graph.addBeforeFixed(end, unroll);
-
-                                System.out.println("End node successors ---> " + end.successors());
-                                System.out.println("End node predecessors ---> " + end.predecessor());
-                                System.out.println("End node isAlive ---> " + end.isAlive());
-
-                                System.out.println("Loop begin predecessor --->" + loopBegin.predecessor());
                             }
-                            // System.out.println("End inputs: - -- ->" + end.inputPositions());
 
                         }
-
                         peeled = false;
                         break;
                     }
