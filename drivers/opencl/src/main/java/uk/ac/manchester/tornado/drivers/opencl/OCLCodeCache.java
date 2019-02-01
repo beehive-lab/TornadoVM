@@ -305,9 +305,9 @@ public class OCLCodeCache {
 
             String hlsFlags = INTEL_FPGA_COMPILATION_FLAGS.equals(null) ? "-v" : String.join(" ", processFPGAFlags());
             if (OpenCL.FPGA_EMULATION) {
-                cmd = new String[] { "aoc", inputFile, "-march=emulator", "-o", outputFile + " " + hlsFlags };
+                cmd = new String[] { "aoc", inputFile, "-march=emulator", "-o", outputFile};
             } else {
-                cmd = new String[] { "aoc", inputFile, "-board=p385a_sch_ax115", "-o", outputFile + " " + hlsFlags };
+                cmd = new String[] { "aoc", inputFile, "-board=p385a_sch_ax115", "-o", outputFile};
             }
 
             cmdRename = new String[] { "bash", "./bin/cleanFpga.sh" };
