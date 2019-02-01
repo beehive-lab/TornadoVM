@@ -71,8 +71,8 @@ public class OCLCodeCache {
     private final boolean PRINT_LOAD_TIME = false;
     private final String FPGA_SOURCE_DIR = getProperty("tornado.fpga.source.dir", "fpga-source-comp/");
     private final String FPGA_BIN_LOCATION = getProperty("tornado.fpga.bin", "./fpga-source-comp/lookupBufferAddress");
-    private final String[] FPGA_FLAGS = { "v", "fast-compile", "high-effort", "fp-relaxed", "high-effort", "report" };
-    private int counter = 0;
+    private final String[] FPGA_FLAGS = { "v", "fast-compile", "high-effort", "fp-relaxed", "high-effort", "report", "incremental" };
+    private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
 
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
@@ -110,8 +110,6 @@ public class OCLCodeCache {
      * </p>
      *
      */
-
-    private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
 
     private final boolean PRINT_WARNINGS = false;
 
@@ -181,6 +179,7 @@ public class OCLCodeCache {
     private String[] processFPGAFlags() {
         String[] flags;
         flags = INTEL_FPGA_COMPILATION_FLAGS.split(",");
+        System.out.println(Arrays.toString(flags));
         if (INTEL_FPGA_COMPILATION_FLAGS != null && flagCorrectness(flags)) {
             for (int i = 0; i < flags.length; i++) {
                 flags[i] = "-" + flags[i] + " ";
@@ -305,10 +304,12 @@ public class OCLCodeCache {
             String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
             String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
 
+            String hlsFlags = INTEL_FPGA_COMPILATION_FLAGS.equals(null) ? "-v" : Arrays.toString(processFPGAFlags());
+
             if (OpenCL.FPGA_EMULATION) {
-                cmd = new String[] { "aoc", inputFile, "-v", "-march=emulator", "-o", outputFile };
+                cmd = new String[] { "aoc", inputFile, hlsFlags, "-march=emulator", "-o", outputFile };
             } else {
-                cmd = new String[] { "aoc", inputFile, "-v", "-board=p385a_sch_ax115", "-o", outputFile };
+                cmd = new String[] { "aoc", inputFile, hlsFlags, "-board=p385a_sch_ax115", "-o", outputFile };
             }
 
             cmdRename = new String[] { "bash", "./bin/cleanFpga.sh" };
@@ -338,6 +339,8 @@ public class OCLCodeCache {
 
         info("Installing code for %s into code cache", entryPoint);
         final OCLProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
+
+        String[] test = processFPGAFlags();
 
         if (OPENCL_DUMP_SOURCE) {
             final Path outDir = resolveSourceDir();
