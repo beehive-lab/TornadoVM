@@ -332,7 +332,7 @@ public class OCLCodeCache {
                 return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
             } else {
                 RuntimeUtilities.sysCall(cmd, true);
-                RuntimeUtilities.sysCall(cmdRename, true);
+                // RuntimeUtilities.sysCall(cmdRename, true);
             }
             return installEntryPointForBinaryForFPGAs(resolveFPGADir(), LOOKUP_BUFFER_KERNEL_NAME);
         } else {
@@ -346,8 +346,6 @@ public class OCLCodeCache {
 
         info("Installing code for %s into code cache", entryPoint);
         final OCLProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
-
-        String[] test = processFPGAFlags();
 
         if (OPENCL_DUMP_SOURCE) {
             final Path outDir = resolveSourceDir();
