@@ -71,7 +71,7 @@ public class OCLCodeCache {
     private final boolean PRINT_LOAD_TIME = false;
     private final String FPGA_SOURCE_DIR = getProperty("tornado.fpga.source.dir", "fpga-source-comp/");
     private final String FPGA_BIN_LOCATION = getProperty("tornado.fpga.bin", "./fpga-source-comp/lookupBufferAddress");
-    private final String[] FPGA_FLAGS = { "v", "fast-compile", "high-effort", "fp-relaxed", "high-effort", "report", "incremental" };
+    private final String[] FPGA_FLAGS = { "v", "fast-compile", "high-effort", "fp-relaxed", "high-effort", "report", "incremental", "profile" };
     private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
 
     /**
@@ -135,9 +135,9 @@ public class OCLCodeCache {
         }
         if (OpenCL.ACCELERATOR_IS_FPGA) {
             precompiledBinariesPerDevice = new HashMap<>();
+            // TO DO :
+            // get this info from runtime
             String tempKernelName = "s0.t0.device=0:1";
-            // String generatedBinaryLocation = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
-            // String tempBinaryLocation = "./fpga-source-comp/lookupBufferAddress";
             precompiledBinariesPerDevice.put(tempKernelName, FPGA_BIN_LOCATION);
         }
 
@@ -179,13 +179,12 @@ public class OCLCodeCache {
     private String[] processFPGAFlags() {
         String[] flags;
         flags = INTEL_FPGA_COMPILATION_FLAGS.split(",");
-        System.out.println(Arrays.toString(flags));
         if (INTEL_FPGA_COMPILATION_FLAGS != null && flagCorrectness(flags)) {
             for (int i = 0; i < flags.length; i++) {
                 flags[i] = "-" + flags[i] + " ";
             }
         } else {
-            flags = null;
+            flags[0] = " ";
         }
         return flags;
     }
@@ -304,35 +303,23 @@ public class OCLCodeCache {
             String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
             String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
 
-            String hlsFlags = INTEL_FPGA_COMPILATION_FLAGS.equals(null) ? "-v" : String.join(" ", processFPGAFlags
-());
-;		 System.out.println("FLAGS:  ");
-            //String hlsFlags = INTEL_FPGA_COMPILATION_FLAGS.equals(null) ? "-v" : Arrays.toString(processFPGAFlags());		 System.out.println("FLAGS:  ");
-            System.out.println(hlsFlags);
-		
-            //hlsFlags = " ";
+            String hlsFlags = INTEL_FPGA_COMPILATION_FLAGS.equals(null) ? "-v" : String.join(" ", processFPGAFlags());
             if (OpenCL.FPGA_EMULATION) {
-                cmd = new String[] { "aoc", inputFile, hlsFlags, "-march=emulator", "-o", outputFile };
+                cmd = new String[] { "aoc", inputFile, "-march=emulator", "-o", outputFile + " " + hlsFlags };
             } else {
-                cmd = new String[] { "aoc", inputFile,"-board=p385a_sch_ax115", "-o", outputFile+ " " + hlsFlags};
+                cmd = new String[] { "aoc", inputFile, "-board=p385a_sch_ax115", "-o", outputFile + " " + hlsFlags };
             }
-		
-	   System.out.println(Arrays.toString(cmd));
-	    //cmd[2] = hlsFlags;
+
             cmdRename = new String[] { "bash", "./bin/cleanFpga.sh" };
 
             f = new File(FPGA_BIN_LOCATION);
-
-            String str = String.join(" ", cmd);
-
-            String str2 = String.join(" ", cmdRename);
 
             Path path = Paths.get(FPGA_BIN_LOCATION);
             if (RuntimeUtilities.ifFileExists(f)) {
                 return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
             } else {
                 RuntimeUtilities.sysCall(cmd, true);
-                //RuntimeUtilities.sysCall(cmdRename, true);
+                RuntimeUtilities.sysCall(cmdRename, true);
             }
             return installEntryPointForBinaryForFPGAs(resolveFPGADir(), LOOKUP_BUFFER_KERNEL_NAME);
         } else {
