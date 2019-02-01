@@ -304,14 +304,21 @@ public class OCLCodeCache {
             String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
             String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
 
-            String hlsFlags = INTEL_FPGA_COMPILATION_FLAGS.equals(null) ? "-v" : Arrays.toString(processFPGAFlags());
-
+            String hlsFlags = INTEL_FPGA_COMPILATION_FLAGS.equals(null) ? "-v" : String.join(" ", processFPGAFlags
+());
+;		 System.out.println("FLAGS:  ");
+            //String hlsFlags = INTEL_FPGA_COMPILATION_FLAGS.equals(null) ? "-v" : Arrays.toString(processFPGAFlags());		 System.out.println("FLAGS:  ");
+            System.out.println(hlsFlags);
+		
+            //hlsFlags = " ";
             if (OpenCL.FPGA_EMULATION) {
                 cmd = new String[] { "aoc", inputFile, hlsFlags, "-march=emulator", "-o", outputFile };
             } else {
-                cmd = new String[] { "aoc", inputFile, hlsFlags, "-board=p385a_sch_ax115", "-o", outputFile };
+                cmd = new String[] { "aoc", inputFile,"-board=p385a_sch_ax115", "-o", outputFile+ " " + hlsFlags};
             }
-
+		
+	   System.out.println(Arrays.toString(cmd));
+	    //cmd[2] = hlsFlags;
             cmdRename = new String[] { "bash", "./bin/cleanFpga.sh" };
 
             f = new File(FPGA_BIN_LOCATION);
@@ -325,7 +332,7 @@ public class OCLCodeCache {
                 return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
             } else {
                 RuntimeUtilities.sysCall(cmd, true);
-                RuntimeUtilities.sysCall(cmdRename, true);
+                //RuntimeUtilities.sysCall(cmdRename, true);
             }
             return installEntryPointForBinaryForFPGAs(resolveFPGADir(), LOOKUP_BUFFER_KERNEL_NAME);
         } else {
@@ -339,8 +346,6 @@ public class OCLCodeCache {
 
         info("Installing code for %s into code cache", entryPoint);
         final OCLProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
-
-        String[] test = processFPGAFlags();
 
         if (OPENCL_DUMP_SOURCE) {
             final Path outDir = resolveSourceDir();
