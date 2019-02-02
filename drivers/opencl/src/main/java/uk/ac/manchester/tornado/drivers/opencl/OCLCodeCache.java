@@ -135,8 +135,7 @@ public class OCLCodeCache {
         }
         if (OpenCL.ACCELERATOR_IS_FPGA) {
             precompiledBinariesPerDevice = new HashMap<>();
-            // TO DO :
-            // get this info from runtime
+            // TODO : get this info from runtime
             String tempKernelName = "s0.t0.device=0:1";
             precompiledBinariesPerDevice.put(tempKernelName, FPGA_BIN_LOCATION);
         }
@@ -305,9 +304,9 @@ public class OCLCodeCache {
 
             String hlsFlags = INTEL_FPGA_COMPILATION_FLAGS.equals(null) ? "-v" : String.join(" ", processFPGAFlags());
             if (OpenCL.FPGA_EMULATION) {
-                cmd = new String[] { "aoc", inputFile, "-march=emulator", "-o", outputFile};
+                cmd = new String[] { "aoc", inputFile, "-march=emulator", "-o", outputFile };
             } else {
-                cmd = new String[] { "aoc", inputFile, "-board=p385a_sch_ax115", "-o", outputFile};
+                cmd = new String[] { "aoc", inputFile, "-board=p385a_sch_ax115", "-o", outputFile };
             }
 
             cmdRename = new String[] { "bash", "./bin/cleanFpga.sh" };

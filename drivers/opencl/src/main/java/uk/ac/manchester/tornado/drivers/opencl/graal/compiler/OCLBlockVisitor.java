@@ -111,10 +111,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         if (block.isLoopHeader()) {
             loopCount++;
             openclBuilder.emitLoopHeader(block);
-            // TO DO: TEMP FIX for FPGA expiermentation XXXXX
             if (openclBuilder.REMOVE_OUTER_LOOPS) {
-                if (loopCount == 1) { // XXXXXXX
-                    System.out.println("No scope");
+                if (loopCount == 1) { // TODO: Add a more generic fix for removing outter loops
                 } else {
                     asm.beginScope();
                 }
