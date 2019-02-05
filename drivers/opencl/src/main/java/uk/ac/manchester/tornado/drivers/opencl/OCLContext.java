@@ -234,7 +234,6 @@ public class OCLContext extends TornadoLogger {
 
             long t3 = System.nanoTime();
             clReleaseContext(id);
-
             long t4 = System.nanoTime();
 
             if (DEBUG) {
