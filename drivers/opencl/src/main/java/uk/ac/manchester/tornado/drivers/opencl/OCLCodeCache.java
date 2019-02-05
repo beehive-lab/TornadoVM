@@ -45,6 +45,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
@@ -71,7 +72,9 @@ public class OCLCodeCache {
     private final boolean PRINT_LOAD_TIME = false;
     private final String FPGA_SOURCE_DIR = getProperty("tornado.fpga.source.dir", "fpga-source-comp/");
     private final String FPGA_BIN_LOCATION = getProperty("tornado.fpga.bin", "./fpga-source-comp/lookupBufferAddress");
-    private final String[] FPGA_FLAGS = { "v", "fast-compile", "high-effort", "fp-relaxed", "high-effort", "report", "incremental", "profile" };
+    // private final String[] FPGA_FLAGS = { "v", "fast-compile", "high-effort",
+    // "fp-relaxed", "high-effort", "report", "incremental", "profile" };
+    private final HashSet<String> FPGA_FLAGS = new HashSet<>(Arrays.asList("v", "fast-compile", "high-effort", "fp-relaxed", "high-effort", "report", "incremental", "profile"));
     private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
 
     /**
@@ -172,7 +175,8 @@ public class OCLCodeCache {
     }
 
     private boolean flagCorrectness(String[] flags) {
-        return Arrays.asList(FPGA_FLAGS).containsAll(Arrays.asList(flags));
+        // return Arrays.asList(FPGA_FLAGS).containsAll(Arrays.asList(flags));
+        return FPGA_FLAGS.containsAll(Arrays.asList(flags));
     }
 
     private String[] processFPGAFlags() {
@@ -303,6 +307,7 @@ public class OCLCodeCache {
             String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
 
             String hlsFlags = INTEL_FPGA_COMPILATION_FLAGS.equals(null) ? "-v" : String.join(" ", processFPGAFlags());
+
             if (OpenCL.FPGA_EMULATION) {
                 cmd = new String[] { "aoc", inputFile, "-march=emulator", "-o", outputFile };
             } else {
