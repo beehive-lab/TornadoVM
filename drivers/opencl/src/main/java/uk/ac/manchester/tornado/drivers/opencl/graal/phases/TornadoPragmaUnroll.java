@@ -101,16 +101,9 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
                 dataCounted.detectedCountedLoops();
                 for (LoopEx loop : dataCounted.countedLoops()) {
                     if (shouldFullUnroll(graph.getOptions(), loop)) {
-                        LoopBeginNode loopBegin = loop.loopBegin();
-
                         List<EndNode> snapshot = graph.getNodes().filter(EndNode.class).snapshot();
-
-                        System.out.println(loopBegin.predecessor());
-                        System.out.println("LOOP BEGIN PRE 0");
-
                         int idx = 0;
                         for (EndNode end : snapshot) {
-                            System.out.println(end);
                             idx++;
                             if (idx == 2) {
                                 PragmaUnrollNode unroll = graph.addOrUnique(new PragmaUnrollNode(2));
