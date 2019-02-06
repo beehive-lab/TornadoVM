@@ -300,6 +300,12 @@ public class OCLCodeCache {
         appendSourceToFile(id, entryPoint, source);
 
         if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
+
+            if (OPENCL_PRINT_SOURCE) {
+                String sourceCode = new String(source);
+                System.out.println(sourceCode);
+            }
+
             String[] cmd,cmdRename;
             File f;
 
