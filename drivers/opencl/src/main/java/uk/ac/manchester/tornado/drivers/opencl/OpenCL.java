@@ -72,7 +72,7 @@ public class OpenCL {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                setName("OpenCL Cleanup");
+                setName("OpenCL-Cleanup-Thread");
                 OpenCL.cleanup();
             }
         });
@@ -94,7 +94,6 @@ public class OpenCL {
                 platform.cleanup();
             }
         }
-
     }
 
     public static OCLPlatform getPlatform(int index) {
