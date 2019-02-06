@@ -26,14 +26,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class SaxpyInt {
 
-    // public static void saxpy(int alpha, int[] x, int[] y) {
-    // for (@Parallel int i = 0; i < y.length; i++) {
-    // y[i] va= alpha * x[i];
-    //
-    // }
-    // }
     public static void saxpy(int alpha, int[] x, int[] y, int[] size) {
-        // for (@Parallel int i = 0; i < y.length; i++) {
         for (@Parallel int i = 0; i < size[0]; i++) {
             for (@Parallel int ii = 0; ii < size[0]; ii++) {
                 y[ii] = alpha * x[ii];
@@ -67,7 +60,6 @@ public class SaxpyInt {
 
         } else {
             TaskSchedule s0 = new TaskSchedule("s0").streamIn(x).task("t0", SaxpyInt::saxpy, alpha, x, y, size).streamOut(y);
-            // s0.warmup();
             s0.execute();
         }
 
