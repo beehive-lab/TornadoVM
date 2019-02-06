@@ -285,7 +285,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             TaskMetaData stask = (TaskMetaData) task.meta();
             return task.getId() + ".device=" + stask.getDriverIndex() + ":" + stask.getDeviceIndex();
         } else {
-            System.out.println("Meta exception:" + "\n");
             throw new RuntimeException("[ERROR] TaskMedata Expected");
         }
     }
