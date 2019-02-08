@@ -389,7 +389,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean isFPGA) {
-        return codeCache.installSource(id, entryPoint, code, isFPGA);
+        return codeCache.installFPGASource(id, entryPoint, code);
     }
 
     public boolean isCached(String id, String entryPoint) {
