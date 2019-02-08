@@ -251,7 +251,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             if (context.hasArgs()) {
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                    if (OpenCL.ACCELERATOR_IS_FPGA) {
+                    if (Tornado.ACCELERATOR_IS_FPGA) {
                     }
                     else {
                         propagateParameters(graph, param, context.getArgs());
@@ -279,7 +279,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             Debug.dump(Debug.INFO_LEVEL, graph, "After Phase Pi Node Removal");
 
-            if (!OpenCL.ACCELERATOR_IS_FPGA) {
+            if (!Tornado.ACCELERATOR_IS_FPGA) {
                 loopUnroller.execute(graph, context);
             }
 

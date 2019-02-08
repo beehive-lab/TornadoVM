@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoOpenCLIntrins
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPragmaUnroll;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoTaskSpecialisation;
+import uk.ac.manchester.tornado.runtime.common.*;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionSuppression;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
@@ -100,7 +101,7 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(new TornadoParallelScheduler());
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
 
-        if (OpenCL.ACCELERATOR_IS_FPGA) {
+        if (Tornado.ACCELERATOR_IS_FPGA) {
             appendPhase(new TornadoPragmaUnroll(canonicalizer));
         } else {
             LoopPolicies loopPolicies = new DefaultLoopPolicies();
