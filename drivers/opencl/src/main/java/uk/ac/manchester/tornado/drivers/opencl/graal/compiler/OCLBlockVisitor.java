@@ -40,6 +40,7 @@ import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import jdk.vm.ci.meta.JavaConstant;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
+import uk.ac.manchester.tornado.runtime.common.*;
 
 public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block> {
 
@@ -111,7 +112,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         if (block.isLoopHeader()) {
             loopCount++;
             openclBuilder.emitLoopHeader(block);
-            if (openclBuilder.REMOVE_OUTER_LOOPS) {
+            if (Tornado.REMOVE_OUTER_LOOPS) {
                 if (loopCount == 1) { // TODO: Add a more generic fix for removing outter loops
                 } else {
                     asm.beginScope();
@@ -160,7 +161,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     public void exit(Block b, Block value) {
         if (b.isLoopEnd()) {
             loopEnds++;
-            if (openclBuilder.REMOVE_OUTER_LOOPS) {
+            if (Tornado.REMOVE_OUTER_LOOPS) {
                 if (loopCount - loopEnds > 0) {
                     asm.endScope();
                 }

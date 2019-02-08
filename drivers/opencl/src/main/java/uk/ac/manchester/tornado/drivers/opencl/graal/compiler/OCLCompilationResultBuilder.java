@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
+import uk.ac.manchester.tornado.runtime.common.*;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
 
@@ -68,9 +69,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     protected int currentBlockIndex;
     protected final Set<ResolvedJavaMethod> nonInlinedMethods;
     protected boolean isKernel;
-    protected boolean isOutter; // XXXXXXX
-    protected int loops = 0; // XXXXXX
-    final boolean REMOVE_OUTER_LOOPS = Boolean.parseBoolean(getProperty("tornado.assembler.removeloops", "False"));
+    protected boolean isOutter;
+    protected int loops = 0;
 
     public OCLCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
             OCLCompilationResult compilationResult, OptionValues options) {
@@ -268,9 +268,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             } else if (op instanceof OCLControlFlow.LoopBreakOp) {
                 breakInst = op;
                 continue;
-            } else if ((REMOVE_OUTER_LOOPS && loops == 0) && (op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp)) {
-                if (op instanceof OCLControlFlow.LoopPostOp) // xxxxx
-                    loops++; // xxxxx
+            } else if ((Tornado.REMOVE_OUTER_LOOPS && loops == 0) && (op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp)) {
+                if (op instanceof OCLControlFlow.LoopPostOp)
+                    loops++;
                 continue;
             }
             if (PrintLIRWithAssembly.getValue(getOptions())) {

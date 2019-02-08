@@ -84,6 +84,9 @@ public final class Tornado implements TornadoCI {
 
     public final static boolean TIME_IN_NANOSECONDS = Boolean.parseBoolean(System.getProperty("tornado.ns.time", "true"));
 
+    public final static boolean REMOVE_OUTER_LOOPS = Boolean.parseBoolean(getProperty("tornado.assembler.removeloops", "False"));
+
+
     public static final TornadoLogger log = new TornadoLogger(Tornado.class);
 
     public static final void debug(final String msg) {
