@@ -325,6 +325,7 @@ public class OCLCodeCache {
 
             cmd = composeIntelHLSCommand(inputFile, outputFile);
             cmdRename = new String[] { "bash", FPGA_CLEANUP_SCRIPT };
+
             f = new File(FPGA_BIN_LOCATION);
 
             Path path = Paths.get(FPGA_BIN_LOCATION);
