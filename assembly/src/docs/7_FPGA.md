@@ -1,5 +1,6 @@
 # Tornado FPGA Support #
 
+Tornado supports execution and prototyping with OpenCL compatible Intel/Altera FPGAs. For debuging you can use common IDEs from Java ecosystem. 
 
 ### Pre-requisites
 
@@ -7,7 +8,7 @@ Currently tested with Nalatech a385 FPGA with Intel Arria 10 GT1150.
 
 * BSP Version
 * Quartus Version: 17.1.0 Build 240
-* Tornado Version: 0.1.XXX
+* Tornado Version: 0.1.1
 
 
 If the OpenCL ICD loaders are installed correclty, the output of the ```clinfo``` it shoudl be the following:  
@@ -31,15 +32,18 @@ $ clinfo
    Device OpenCL C Version                         OpenCL C 1.0
    Device Type                                     Accelerator
 ```
-## Execution Modes 
 
-### Full JIT 
+## Execution Modes  
 
+### Full JIT Mode  
+
+This mode allows the compilation and execution of a given task for the FPGA. As it provided full end-to-end execution the compilation is expected to take up to 2 hours due HLS bistream generation process.  
+
+The generated beatstream as well as the the generated OpenCL code can be found in the `fpga-source-comp/` directory which is place in the `$TORNADO_ROOT`
 
 Example:  
-
-```bash  
-tornado   >
+```  
+tornado   
         -Ds0.t0.device=0:1  
         -Dtornado.assembler.removeloops=true  
         -Ds0.t0.global.dims=32  
@@ -48,23 +52,23 @@ tornado   >
         -Dtornado.fpga.flags=v,report  
         -Dtornado.opencl.userelative=True  
          uk.ac.manchester.tornado.examples.fpga.DFT 32 normal 1  
-         ```
+```
 
 ### Ahead of Time Execution Mode
 
+Ahead of time execution mode allows the use of pre-generated bitstream of Tornado Tasks. The bitstream file should be named as `lookupBufferAddress`. 
 
 Example:  
-```bash  
-tornado   >
-        -Ds0.t0.device=0:1  
-        -Dtornado.assembler.removeloops=true  
-        -Ds0.t0.global.dims=32  
-        -Ds0.t0.local.dims=16  
-        -Dtornado.opencl.accelerator.fpga=true  
-        -Dtornado.fpga.flags=v,report  
-        -Dtornado.opencl.userelative=True  
-         uk.ac.manchester.tornado.examples.fpga.DFT 32 normal 1  
-         ```
+``` 
+tornado 
+    -Ds0.t0.device=0:1
+    -Dtornado.opencl.codecache.loadbin=True  
+    -Dtornado.precompiled.binary=/hdd/pre-compilied/pre-tornado/use_relativeaddress/dft/lookupBufferAddress,s0.t0.device=0:1 
+    -Dtornado.opencl.userelative=True  
+    -Ds0.t0.global.dims=1024 
+    -Ds0.t0.local.dims=16 
+    uk.ac.manchester.tornado.examples.fpga.DFT 1024 normal 1
+```
 
 ### Emulation Mode [Intel/Altera Tools]
 
@@ -73,16 +77,16 @@ Emulation mode can be used for fast-prototying and ensuring program functional c
 The following two steps are required:
 
 1) Before executing the tornado program, the following env variable needs to be exported:  
-           ``` $ export CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1 ```
+           ``$ export CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1``
 
 2) All the runtime flags are the same used during the full JIT mode plus the following:  
-           ``` -Dtornado.fpga.emulation=true ```
+           ``-Dtornado.fpga.emulation=true``
 
 Example:  
 
-```bash 
-$ export CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1  
-tornado   >
+``$ export CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1``
+``` 
+tornado   
         -Ds0.t0.device=0:1  
         -Dtornado.assembler.removeloops=true  
         -Ds0.t0.global.dims=32  
@@ -92,4 +96,4 @@ tornado   >
         -Dtornado.fpga.flags=v,report  
         -Dtornado.opencl.userelative=True  
          uk.ac.manchester.tornado.examples.fpga.DFT 32 normal 1 
-         ```
+```
