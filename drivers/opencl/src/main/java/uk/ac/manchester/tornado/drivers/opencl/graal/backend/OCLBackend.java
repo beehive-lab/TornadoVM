@@ -318,7 +318,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
             OCLProviders providers = (OCLProviders) getProviders();
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
-            lookupCode = OpenCL.ACCELERATOR_IS_FPGA ? deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), OpenCL.ACCELERATOR_IS_FPGA)
+            lookupCode = Tornado.ACCELERATOR_IS_FPGA ? deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(),Tornado.ACCELERATOR_IS_FPGA)
                     : deviceContext.installCode(result);
             if (deviceContext.isKernelAvailable()) {
                 lookupCodeAvailable = true;
@@ -456,7 +456,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
              * starting at address 0x0. (I assume that this is a interesting case that leads
              * to a few issues.) Iris Pro is the only culprit at the moment.
              */
-            if (OpenCL.ACCELERATOR_IS_FPGA && !methodName.equals("lookupBufferAddress")) {
+            if (Tornado.ACCELERATOR_IS_FPGA && !methodName.equals("lookupBufferAddress")) {
                 asm.emitLine("__attribute__((reqd_work_group_size(16,1,1)))  ");
             }
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
