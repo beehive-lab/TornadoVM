@@ -121,6 +121,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public final static boolean SHOW_OPENCL = Boolean.parseBoolean(System.getProperty("tornado.opencl.print", "False"));
     public final static String OPENCL_PATH = System.getProperty("tornado.opencl.path", "./opencl");
     private final static String FPGA_ATTRIBUTE = "__attribute__((reqd_work_group_size(16,1,1)))  ";
+    private final static String INTEL = "Intel(R)";
 
     @Override
     public OCLTargetDescription getTarget() {
@@ -272,7 +273,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         int deviceIndex = Integer.parseInt(deviceDriver.split(":")[1]);
         OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
         String platformName = device.getPlatformName();
-        if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && platformName.contains("FPGA") && !platformName.contains("Intel(R)")) {
+        if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && platformName.contains("FPGA") && !platformName.contains(INTEL)) {
             if (Tornado.DEBUG) {
                 System.out.println("JIT Compilation for FPGAs is only supported for Intel/Altera FPGAs");
             }
