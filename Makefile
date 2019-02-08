@@ -17,6 +17,6 @@ test-slam:
 
 eclipse:
 	mvn eclipse:eclipse
-cfgs:
+clean-graphs:
 	rm *.cfg *.bgv *.log
 
