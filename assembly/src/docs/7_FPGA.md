@@ -3,18 +3,68 @@
 
 ### Pre-requisites
 
-Currently tested with Nalatech a385 FPGA.
+Currently tested with Nalatech a385 FPGA with Intel Arria 10 GT1150.
 
 * BSP Version
-* Quartus Version 
-* XXXXXXXX
+* Quartus Version: 17.1.0 Build 240
+* Tornado Version: 0.1.XXX
 
 
+If the OpenCL ICD loaders are installed correclty, the output of the ```clinfo``` it shoudl be the following:  
+```bash
+$ clinfo
+   Number of platforms                               1
+   Platform Name                                   Intel(R) FPGA SDK for OpenCL(TM)
+   Platform Vendor                                 Intel(R) Corporation
+   Platform Version                                OpenCL 1.0 Intel(R) FPGA SDK for OpenCL(TM), Version 17.1
+   Platform Profile                                EMBEDDED_PROFILE
+   Platform Extensions                             cl_khr_byte_addressable_store cles_khr_int64 cl_intelfpga_live_object_tracking cl_intelfpga_compiler_mode cl_khr_icd cl_khr_3d_image_writes
+   Platform Extensions function suffix             IntelFPGA
+ 
+   Platform Name                                   Intel(R) FPGA SDK for OpenCL(TM)
+   Number of devices                                 1
+   Device Name                                     p385a_sch_ax115 : nalla_pcie (aclnalla_pcie0)
+   Device Vendor                                   Nallatech ltd
+   Device Vendor ID                                0x1172
+   Device Version                                  OpenCL 1.0 Intel(R) FPGA SDK for OpenCL(TM), Version 17.1
+   Driver Version                                  17.1
+   Device OpenCL C Version                         OpenCL C 1.0
+   Device Type                                     Accelerator
+```
 ## Execution Modes 
 
 ### Full JIT 
 
+
+Example:  
+
+```bash  
+tornado   >
+        -Ds0.t0.device=0:1  
+        -Dtornado.assembler.removeloops=true  
+        -Ds0.t0.global.dims=32  
+        -Ds0.t0.local.dims=16  
+        -Dtornado.opencl.accelerator.fpga=true  
+        -Dtornado.fpga.flags=v,report  
+        -Dtornado.opencl.userelative=True  
+         uk.ac.manchester.tornado.examples.fpga.DFT 32 normal 1  
+         ```
+
 ### Ahead of Time Execution Mode
+
+
+Example:  
+```bash  
+tornado   >
+        -Ds0.t0.device=0:1  
+        -Dtornado.assembler.removeloops=true  
+        -Ds0.t0.global.dims=32  
+        -Ds0.t0.local.dims=16  
+        -Dtornado.opencl.accelerator.fpga=true  
+        -Dtornado.fpga.flags=v,report  
+        -Dtornado.opencl.userelative=True  
+         uk.ac.manchester.tornado.examples.fpga.DFT 32 normal 1  
+         ```
 
 ### Emulation Mode [Intel/Altera Tools]
 
@@ -28,4 +78,18 @@ The following two steps are required:
 2) All the runtime flags are the same used during the full JIT mode plus the following:  
            ``` -Dtornado.fpga.emulation=true ```
 
+Example:  
 
+```bash 
+$ export CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1  
+tornado   >
+        -Ds0.t0.device=0:1  
+        -Dtornado.assembler.removeloops=true  
+        -Ds0.t0.global.dims=32  
+        -Ds0.t0.local.dims=16  
+        -Dtornado.opencl.accelerator.fpga=true  
+        -Dtornado.fpga.emulation=true  
+        -Dtornado.fpga.flags=v,report  
+        -Dtornado.opencl.userelative=True  
+         uk.ac.manchester.tornado.examples.fpga.DFT 32 normal 1 
+         ```
