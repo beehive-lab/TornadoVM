@@ -251,10 +251,11 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             if (context.hasArgs()) {
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                    if (OpenCL.ACCELERATOR_IS_FPGA)
-                        ;
-                    else
+                    if (OpenCL.ACCELERATOR_IS_FPGA) {
+                    }
+                    else {
                         propagateParameters(graph, param, context.getArgs());
+                    }
                 }
                 Debug.dump(Debug.INFO_LEVEL, graph, "After Phase Propagate Parameters");
             } else {
