@@ -139,10 +139,6 @@ public class OCLCodeCache {
             precompiledBinariesPerDevice = new HashMap<>();
             // TODO : get this info from runtime
             String tempKernelName = "s0.t0.device=0:1";
-            // TornadoTaskSchedule tm = new TornadoTaskSchedule();
-            // TornadoTaskSchedule = new TornadoTaskSchedule()
-            // System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID +
-            // ".device=0:" + i);
             precompiledBinariesPerDevice.put(tempKernelName, FPGA_BIN_LOCATION);
         }
 
