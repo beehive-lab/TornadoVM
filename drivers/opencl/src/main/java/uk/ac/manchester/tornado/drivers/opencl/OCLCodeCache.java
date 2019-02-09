@@ -1,4 +1,3 @@
-
 /*
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
@@ -139,6 +138,10 @@ public class OCLCodeCache {
             precompiledBinariesPerDevice = new HashMap<>();
             // TODO : get this info from runtime
             String tempKernelName = "s0.t0.device=0:1";
+            // TornadoTaskSchedule tm = new TornadoTaskSchedule();
+            // TornadoTaskSchedule = new TornadoTaskSchedule()
+            // System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID +
+            // ".device=0:" + i);
             precompiledBinariesPerDevice.put(tempKernelName, FPGA_BIN_LOCATION);
         }
 
@@ -208,6 +211,7 @@ public class OCLCodeCache {
         if (precompiledBinariesPerDevice != null) {
             return precompiledBinariesPerDevice.get(taskName);
         } else {
+
             return null;
         }
     }
@@ -300,7 +304,6 @@ public class OCLCodeCache {
         sb.add("-o " + outputFile);
 
         return sb.toString();
-
     }
 
     public OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) {
@@ -322,7 +325,6 @@ public class OCLCodeCache {
 
             cmd = composeIntelHLSCommand(inputFile, outputFile);
             cmdRename = new String[] { "bash", FPGA_CLEANUP_SCRIPT };
-
             f = new File(FPGA_BIN_LOCATION);
 
             Path path = Paths.get(FPGA_BIN_LOCATION);
@@ -330,7 +332,6 @@ public class OCLCodeCache {
                 return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
             } else {
                 RuntimeUtilities.sysCall(cmd, true);
-
                 RuntimeUtilities.sysCall(cmdRename, true);
             }
             return installEntryPointForBinaryForFPGAs(resolveFPGADir(), LOOKUP_BUFFER_KERNEL_NAME);

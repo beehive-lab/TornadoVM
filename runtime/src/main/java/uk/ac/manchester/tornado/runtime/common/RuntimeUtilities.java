@@ -386,6 +386,37 @@ public class RuntimeUtilities {
 
     }
 
+    public static void sysCall(String command, boolean getOutput) {
+        String stdOutput = null;
+        StringBuffer normalOutput = new StringBuffer();
+        StringBuffer errorOutput = new StringBuffer();
+
+        try {
+            Process p = Runtime.getRuntime().exec(command);
+            p.waitFor();
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            normalOutput.append("Here is the standard output of the command:\n");
+            while ((stdOutput = stdInput.readLine()) != null) {
+                normalOutput.append(stdOutput);
+            }
+            errorOutput.append("Here is the standard error of the command (if any):\n");
+            while ((stdOutput = stdError.readLine()) != null) {
+                errorOutput.append(stdOutput);
+            }
+            if (getOutput) {
+                System.out.println(normalOutput.toString());
+                System.out.println(errorOutput.toString());
+            }
+
+        } catch (IOException e) {
+            error("Unable to make a native system call.", e);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+
+    }
+
     public static void writeToFile(String file, byte[] binary) {
         info("dumping binary %s", file);
         try (FileOutputStream fis = new FileOutputStream(file);) {
