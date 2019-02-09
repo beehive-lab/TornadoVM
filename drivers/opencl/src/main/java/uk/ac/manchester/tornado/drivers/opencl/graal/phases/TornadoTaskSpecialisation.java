@@ -48,7 +48,6 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
-import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
@@ -251,9 +250,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             if (context.hasArgs()) {
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                    if (Tornado.ACCELERATOR_IS_FPGA) {
-                    }
-                    else {
+                    if (Tornado.ACCELERATOR_IS_FPGA && context.getDeviceMapping().getDeviceType().equals("ACCELERATOR")) {
+                    } else {
                         propagateParameters(graph, param, context.getArgs());
                     }
                 }
