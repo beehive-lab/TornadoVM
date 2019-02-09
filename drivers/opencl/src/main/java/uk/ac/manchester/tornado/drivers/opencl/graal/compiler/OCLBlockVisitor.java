@@ -40,7 +40,7 @@ import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import jdk.vm.ci.meta.JavaConstant;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
-import uk.ac.manchester.tornado.runtime.common.*;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block> {
 
@@ -49,8 +49,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     Set<Block> merges;
     Set<Block> switches;
     Set<Node> switchClosed;
-    private int loopCount; // XXXX
-    private int loopEnds; // XXXX
+    private int loopCount;
+    private int loopEnds;
 
     public OCLBlockVisitor(OCLCompilationResultBuilder resBuilder) {
         this.openclBuilder = resBuilder;
@@ -112,6 +112,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         if (block.isLoopHeader()) {
             loopCount++;
             openclBuilder.emitLoopHeader(block);
+            // Temporary fix to remove the end scope of the most outer loop
+            // without changing the loop schemantics in IR level.
             if (Tornado.REMOVE_OUTER_LOOPS) {
                 if (loopCount == 1) { // TODO: Add a more generic fix for removing outter loops
                 } else {
@@ -160,6 +162,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     @Override
     public void exit(Block b, Block value) {
         if (b.isLoopEnd()) {
+            // Temporary fix to remove the end scope of the most outer loop
+            // without changing the loop schemantics in IR level.
             loopEnds++;
             if (Tornado.REMOVE_OUTER_LOOPS) {
                 if (loopCount - loopEnds > 0) {
