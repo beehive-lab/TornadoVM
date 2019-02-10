@@ -351,8 +351,7 @@ public class RuntimeUtilities {
     }
 
     public static boolean ifFileExists(File fileName) {
-        boolean check = fileName.exists() ? true : false;
-        return check;
+        return fileName.exists() ? true : false;
     }
 
     public static void sysCall(String[] command, boolean getOutput) {
