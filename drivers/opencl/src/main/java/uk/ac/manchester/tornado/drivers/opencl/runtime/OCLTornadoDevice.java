@@ -41,12 +41,12 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
+import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
-import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
@@ -229,12 +229,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
                 return deviceContext.getCode(task.getId(), resolvedMethod.getName());
             }
-<<<<<<< HEAD
-            return OpenCL.ACCELERATOR_IS_FPGA ? deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), OpenCL.ACCELERATOR_IS_FPGA) : deviceContext.installCode(result);
-
-=======
             return Tornado.ACCELERATOR_IS_FPGA ? deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA) : deviceContext.installCode(result);
->>>>>>> [refactor] Move flgas to Tornado.java
         } catch (Exception e) {
             driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
             driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
@@ -277,7 +272,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final OCLCodeCache check = new OCLCodeCache(deviceContext);
         final String deviceFullName = getFullTaskIdDevice(task);
         final Path lookupPath = Paths.get(check.getOpenCLBinary(deviceFullName));
-
         String[] tempEntryToSplit = task.getName().split("- ");
         String entry = tempEntryToSplit[1];
         return check.installEntryPointForBinaryForFPGAs(lookupPath, entry);
@@ -300,9 +294,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && Tornado.ACCELERATOR_IS_FPGA) {
             compileJavaToAccelerator(task);
             return loadPreCompiledBinaryFromCache(task);
-        } else if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !OpenCL.ACCELERATOR_IS_FPGA) {
-        if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !OpenCL.ACCELERATOR_IS_FPGA) {
-            return compileJavaToAccelerator(task);
         } else if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !Tornado.ACCELERATOR_IS_FPGA) {
             return compileJavaToAccelerator(task);
         } else {
