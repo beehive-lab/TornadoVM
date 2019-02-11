@@ -134,14 +134,10 @@ public class OCLCodeCache {
             precompiledBinariesPerDevice = new HashMap<>();
             processPrecompiledBinariesFromFile();
         }
+
         if (Tornado.ACCELERATOR_IS_FPGA) {
             precompiledBinariesPerDevice = new HashMap<>();
-            // TODO : get this info from runtime
-            String tempKernelName = "s0.t0.device=0:1";
-            // TornadoTaskSchedule tm = new TornadoTaskSchedule();
-            // TornadoTaskSchedule = new TornadoTaskSchedule()
-            // System.out.println("SET DEVICE: " + taskScheduleName + "." + taskID +
-            // ".device=0:" + i);
+            String tempKernelName = "s0.t0." + String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
             precompiledBinariesPerDevice.put(tempKernelName, FPGA_BIN_LOCATION);
         }
 
@@ -523,10 +519,7 @@ public class OCLCodeCache {
             error("Empty input binary: %s (%s)", file);
         }
         try {
-            // potential cause
-            System.out.println("try  :" + entrypoint + "  PATH : " + lookupPath);
-            Path p = Paths.get("/home/admin/Tornado/tornado/fpga-source-comp/lookupBufferAddress");
-            final byte[] binary = Files.readAllBytes(p);
+            final byte[] binary = Files.readAllBytes(lookupPath);
             lookupCode = installBinary(entrypoint, binary);
         } catch (OCLException | IOException e) {
             error("unable to load binary: %s (%s)", file, e.getMessage());
