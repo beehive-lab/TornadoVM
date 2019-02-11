@@ -250,31 +250,15 @@ public class OCLCodeCache {
     }
 
     public void appendSourceToFile(String id, String entryPoint, byte[] source) {
-
         if (Tornado.ACCELERATOR_IS_FPGA) {
             final Path outDir = Tornado.ACCELERATOR_IS_FPGA ? resolveFPGADir() : resolveSourceDir();
             if (entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
                 File file = new File(outDir + "/" + entryPoint + OPENCL_SOURCE_SUFFIX);
                 RuntimeUtilities.writeStreamToFile(file, source, false);
-                // try (FileOutputStream fos = new FileOutputStream(file)) {
-                // fos.write(source);
-                // fos.close();
-                // } catch (IOException e) {
-                // error("unable to dump source: ", e.getMessage());
-                // throw new RuntimeException("unable to dump source: " + e.getMessage());
-                // }
             } else {
                 File file = new File(outDir + "/" + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX);
                 RuntimeUtilities.writeStreamToFile(file, source, true);
-                // try (FileOutputStream fos = new FileOutputStream(file, true)) {
-                // fos.write(source);
-                // fos.close();
-                // } catch (IOException e) {
-                // error("unable to dump source: ", e.getMessage());
-                // throw new RuntimeException("unable to dump source: " + e.getMessage());
-                // }
             }
-
         }
 
     }

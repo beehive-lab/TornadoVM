@@ -355,7 +355,7 @@ public class RuntimeUtilities {
     }
 
     public static void sysCall(String[] command, boolean getOutput) {
-        String stdOutput = null;
+        String stdOutput;
         StringBuffer normalOutput = new StringBuffer();
         StringBuffer errorOutput = new StringBuffer();
 
@@ -386,7 +386,7 @@ public class RuntimeUtilities {
     }
 
     public static void sysCall(String command, boolean getOutput) {
-        String stdOutput = null;
+        String stdOutput;
         StringBuffer normalOutput = new StringBuffer();
         StringBuffer errorOutput = new StringBuffer();
 
@@ -415,16 +415,6 @@ public class RuntimeUtilities {
         }
 
     }
-
-    // public static void writeStreamToFile(File file, byte[] source){
-    // try (FileOutputStream fos = new FileOutputStream(file)) {
-    // fos.write(source);
-    // } catch (IOException e) {
-    // error("unable to dump source: ", e.getMessage());
-    // throw new RuntimeException("unable to dump source: " + e.getMessage());
-    // }
-
-    // }
 
     public static void writeStreamToFile(File file, byte[] source, boolean append) {
         try (FileOutputStream fos = (append ? new FileOutputStream(file, true) : new FileOutputStream(file))) {
