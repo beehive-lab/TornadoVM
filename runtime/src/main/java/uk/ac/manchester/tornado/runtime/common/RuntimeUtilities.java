@@ -26,23 +26,24 @@
 package uk.ac.manchester.tornado.runtime.common;
 
 import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
 import sun.misc.Unsafe;
-import java.math.RoundingMode;
-import java.math.MathContext;
-import java.math.BigDecimal;
 
 public class RuntimeUtilities {
 
@@ -304,15 +305,11 @@ public class RuntimeUtilities {
     }
 
     public static double elapsedTimeInMilliSeconds(long start, long end) {
-        return BigDecimal.valueOf((end - start)*1e-6)
-                         .setScale(5, RoundingMode.HALF_UP)
-                         .doubleValue();
+        return BigDecimal.valueOf((end - start) * 1e-6).setScale(5, RoundingMode.HALF_UP).doubleValue();
     }
 
     public static double elapsedTimeInMilliSeconds(long time) {
-        return BigDecimal.valueOf(time*1e-6)
-                         .setScale(5, RoundingMode.HALF_UP)
-                         .doubleValue();
+        return BigDecimal.valueOf(time * 1e-6).setScale(5, RoundingMode.HALF_UP).doubleValue();
     }
 
     public static String formatArray(Object object) {
@@ -354,8 +351,7 @@ public class RuntimeUtilities {
     }
 
     public static boolean ifFileExists(File fileName) {
-        boolean check = fileName.exists() ? true : false;
-        return check;
+        return fileName.exists() ? true : false;
     }
 
     public static void sysCall(String[] command, boolean getOutput) {
@@ -380,12 +376,53 @@ public class RuntimeUtilities {
                 System.out.println(normalOutput.toString());
                 System.out.println(errorOutput.toString());
             }
+
         } catch (IOException e) {
             error("Unable to make a native system call.", e);
         } catch (Throwable t) {
             t.printStackTrace();
         }
 
+    }
+
+    public static void sysCall(String command, boolean getOutput) {
+        String stdOutput = null;
+        StringBuffer normalOutput = new StringBuffer();
+        StringBuffer errorOutput = new StringBuffer();
+
+        try {
+            Process p = Runtime.getRuntime().exec(command);
+            p.waitFor();
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            normalOutput.append("Here is the standard output of the command:\n");
+            while ((stdOutput = stdInput.readLine()) != null) {
+                normalOutput.append(stdOutput);
+            }
+            errorOutput.append("Here is the standard error of the command (if any):\n");
+            while ((stdOutput = stdError.readLine()) != null) {
+                errorOutput.append(stdOutput);
+            }
+            if (getOutput) {
+                System.out.println(normalOutput.toString());
+                System.out.println(errorOutput.toString());
+            }
+
+        } catch (IOException e) {
+            error("Unable to make a native system call.", e);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+
+    }
+
+    public static void writeToFile(String file, byte[] binary) {
+        info("dumping binary %s", file);
+        try (FileOutputStream fis = new FileOutputStream(file);) {
+            fis.write(binary);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private RuntimeUtilities() {
