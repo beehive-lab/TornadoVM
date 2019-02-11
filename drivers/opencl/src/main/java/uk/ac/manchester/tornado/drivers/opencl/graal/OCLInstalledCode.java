@@ -34,6 +34,7 @@ import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.drivers.opencl.OCLFPGAScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLGPUScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernelScheduler;
@@ -208,8 +209,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
 
         /*
-         * Only set the kernel arguments if they are either: - not set or - have
-         * changed
+         * Only set the kernel arguments if they are either: - not set or - have changed
          */
         final int[] waitEvents;
         if (!stack.isOnDevice()) {
@@ -269,8 +269,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
 
         /*
-         * Only set the kernel arguments if they are either: - not set or - have
-         * changed
+         * Only set the kernel arguments if they are either: - not set or - have changed
          */
         if (!stack.isOnDevice()) {
             setKernelArgs(stack, meta);

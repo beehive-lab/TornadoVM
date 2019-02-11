@@ -100,8 +100,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     /**
-     * First approach: use annotations in the user code to identify the
-     * reduction variables. This is a similar approach to OpenMP and OpenACC.
+     * First approach: use annotations in the user code to identify the reduction
+     * variables. This is a similar approach to OpenMP and OpenACC.
      * 
      * @param input
      * @param result
@@ -464,8 +464,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     /**
-     * Currently we cannot do this due to synchronisation between the first part
-     * and the second part, unless an explicit barrier is used.
+     * Currently we cannot do this due to synchronisation between the first part and
+     * the second part, unless an explicit barrier is used.
      */
     @Ignore
     public void testMapReduceSameKernel() {

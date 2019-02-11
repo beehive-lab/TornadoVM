@@ -23,6 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
+import uk.ac.manchester.tornado.runtime.common.*;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
 
 import java.util.ArrayList;
@@ -67,6 +69,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     protected int currentBlockIndex;
     protected final Set<ResolvedJavaMethod> nonInlinedMethods;
     protected boolean isKernel;
+    protected boolean isOutter;
+    protected int loops = 0;
 
     public OCLCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
             OCLCompilationResult compilationResult, OptionValues options) {
@@ -101,8 +105,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     /**
-     * Emits code for {@code lir} in its {@linkplain LIR#codeEmittingOrder()
-     * code emitting order}.
+     * Emits code for {@code lir} in its {@linkplain LIR#codeEmittingOrder() code
+     * emitting order}.
      */
     @Override
     public void emit(LIR lir) {
@@ -264,8 +268,11 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             } else if (op instanceof OCLControlFlow.LoopBreakOp) {
                 breakInst = op;
                 continue;
+            } else if ((Tornado.REMOVE_OUTER_LOOPS && loops == 0) && (op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp)) {
+                if (op instanceof OCLControlFlow.LoopPostOp)
+                    loops++;
+                continue;
             }
-
             if (PrintLIRWithAssembly.getValue(getOptions())) {
                 blockComment(String.format("%d %s", op.id(), op));
             }
@@ -278,9 +285,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
 
         /*
-         * Because of the way Graal handles Phi nodes, we generate the break
-         * instruction before any phi nodes are updated, therefore we need to
-         * ensure that the break is emitted as the end of the block.
+         * Because of the way Graal handles Phi nodes, we generate the break instruction
+         * before any phi nodes are updated, therefore we need to ensure that the break
+         * is emitted as the end of the block.
          */
         if (breakInst != null) {
             try {

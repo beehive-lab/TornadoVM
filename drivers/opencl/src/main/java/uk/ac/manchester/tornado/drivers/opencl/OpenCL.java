@@ -45,8 +45,6 @@ public class OpenCL {
 
     public final static boolean DUMP_OPENCL_EVENTS = Boolean.parseBoolean(getProperty("tornado.opencl.events.dump", "False"));
 
-    public final static boolean ACCELERATOR_IS_GPU = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.asgpu", "True"));
-
     public final static int OCL_CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.opencl.callstack.limit", "8192"));
 
     public static final ByteOrder BYTE_ORDER = ByteOrder.LITTLE_ENDIAN;
