@@ -416,6 +416,26 @@ public class RuntimeUtilities {
 
     }
 
+    // public static void writeStreamToFile(File file, byte[] source){
+    // try (FileOutputStream fos = new FileOutputStream(file)) {
+    // fos.write(source);
+    // } catch (IOException e) {
+    // error("unable to dump source: ", e.getMessage());
+    // throw new RuntimeException("unable to dump source: " + e.getMessage());
+    // }
+
+    // }
+
+    public static void writeStreamToFile(File file, byte[] source, boolean append) {
+        try (FileOutputStream fos = (append ? new FileOutputStream(file, true) : new FileOutputStream(file))) {
+            fos.write(source);
+        } catch (IOException e) {
+            error("unable to dump source: ", e.getMessage());
+            throw new RuntimeException("unable to dump source: " + e.getMessage());
+        }
+
+    }
+
     public static void writeToFile(String file, byte[] binary) {
         info("dumping binary %s", file);
         try (FileOutputStream fis = new FileOutputStream(file);) {
