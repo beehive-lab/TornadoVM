@@ -137,7 +137,7 @@ public class OCLCodeCache {
 
         if (Tornado.ACCELERATOR_IS_FPGA) {
             precompiledBinariesPerDevice = new HashMap<>();
-            String tempKernelName = "s0.t0." + String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
+            String tempKernelName = "s0.t0." + String.format("device=%d:%d",  deviceContext.getDevice().getIndex(),deviceContext.getPlatformContext().getPlatformIndex());
             precompiledBinariesPerDevice.put(tempKernelName, FPGA_BIN_LOCATION);
         }
 
