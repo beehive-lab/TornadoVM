@@ -74,6 +74,7 @@ public class OCLCodeCache {
     private final HashSet<String> FPGA_FLAGS = new HashSet<>(Arrays.asList("-v", "-fast-compile", "-high-effort", "-fp-relaxed", "-high-effort", "-report", "-incremental", "-profile"));
     private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
     private final String FPGA_CLEANUP_SCRIPT = "./bin/cleanFpga.sh";
+    private final String FPGA_TASKSCHEDULE = "s0.t0.";
 
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
@@ -135,9 +136,12 @@ public class OCLCodeCache {
             processPrecompiledBinariesFromFile();
         }
 
+        // Composing the binary entrypoint for the FPGA needs a
+        // a Taskschedule and Task id as prefix which is currently
+        // passed as constant FPGA_TASKSCHEDULE (e.g s0.t0.)
         if (Tornado.ACCELERATOR_IS_FPGA) {
             precompiledBinariesPerDevice = new HashMap<>();
-            String tempKernelName = "s0.t0." + String.format("device=%d:%d",  deviceContext.getDevice().getIndex(),deviceContext.getPlatformContext().getPlatformIndex());
+            String tempKernelName = FPGA_TASKSCHEDULE + String.format("device=%d:%d", deviceContext.getDevice().getIndex(), deviceContext.getPlatformContext().getPlatformIndex());
             precompiledBinariesPerDevice.put(tempKernelName, FPGA_BIN_LOCATION);
         }
 
@@ -250,34 +254,20 @@ public class OCLCodeCache {
     }
 
     public void appendSourceToFile(String id, String entryPoint, byte[] source) {
-
         if (Tornado.ACCELERATOR_IS_FPGA) {
             final Path outDir = Tornado.ACCELERATOR_IS_FPGA ? resolveFPGADir() : resolveSourceDir();
             if (entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
                 File file = new File(outDir + "/" + entryPoint + OPENCL_SOURCE_SUFFIX);
-                try (FileOutputStream fos = new FileOutputStream(file)) {
-                    fos.write(source);
-                    fos.close();
-                } catch (IOException e) {
-                    error("unable to dump source: ", e.getMessage());
-                    throw new RuntimeException("unable to dump source: " + e.getMessage());
-                }
+                RuntimeUtilities.writeStreamToFile(file, source, false);
             } else {
                 File file = new File(outDir + "/" + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX);
-                try (FileOutputStream fos = new FileOutputStream(file, true)) {
-                    fos.write(source);
-                    fos.close();
-                } catch (IOException e) {
-                    error("unable to dump source: ", e.getMessage());
-                    throw new RuntimeException("unable to dump source: " + e.getMessage());
-                }
+                RuntimeUtilities.writeStreamToFile(file, source, true);
             }
-
         }
 
     }
 
-    private String composeIntelHLSCommand(String inputFile, String outputFile) {
+    public String composeIntelHLSCommand(String inputFile, String outputFile) {
         StringJoiner sb = new StringJoiner(" ");
 
         sb.add("aoc");
