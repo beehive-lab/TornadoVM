@@ -16,7 +16,7 @@
  * 
  */
 
-package uk.ac.manchester.tornado.examples.fpga;
+package uk.ac.manchester.tornado.examples.dynamic;
 
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 

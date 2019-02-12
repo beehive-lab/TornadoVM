@@ -16,7 +16,7 @@
  * 
  */
 
-package uk.ac.manchester.tornado.examples.fpga;
+package uk.ac.manchester.tornado.examples.dynamic;
 
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
@@ -31,7 +31,6 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 public class MontecarloFPGA {
 
     public static void computeMontecarlo(float[] output, final int iterations) {
-        float sum = 0.0f;
         for (@Parallel int j = 0; j < iterations; j++) {
             long seed = j;
             // generate a pseudo random number (you do need it twice)
@@ -62,7 +61,11 @@ public class MontecarloFPGA {
         long start,end;
 
         long startInit = System.nanoTime();
-        TaskSchedule s0 = new TaskSchedule("s0").task("t0", MontecarloFPGA::computeMontecarlo, output, size).streamOut(output);
+        // @formatter:off
+        TaskSchedule s0 = new TaskSchedule("s0")
+                .task("t0", MontecarloFPGA::computeMontecarlo, output, size)
+                .streamOut(output);
+        // @formatter:on
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
@@ -114,7 +117,7 @@ public class MontecarloFPGA {
     }
 
     public static void main(String[] args) {
-        System.out.println("Compute Montecarlo");
+        System.out.println("Montecarlo Computation");
         int inputSize = Integer.parseInt(args[0]);
         String executionType = args[1];
         int iterations = Integer.parseInt(args[2]);

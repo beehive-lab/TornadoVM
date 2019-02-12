@@ -15,7 +15,7 @@
  * limitations under the License.
  * 
  */
-package uk.ac.manchester.tornado.examples.fpga;
+package uk.ac.manchester.tornado.examples.dynamic;
 
 import java.util.Random;
 

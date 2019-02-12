@@ -73,7 +73,6 @@ public class PiComputation {
         }
 
         System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
-
     }
 
     public static void main(String[] args) {
@@ -84,5 +83,4 @@ public class PiComputation {
         System.out.print("Size = " + inputSize + " ");
         new PiComputation().run(inputSize);
     }
-
 }

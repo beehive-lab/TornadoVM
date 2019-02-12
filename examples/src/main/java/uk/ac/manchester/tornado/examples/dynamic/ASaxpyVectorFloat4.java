@@ -16,7 +16,7 @@
  * 
  */
 
-package uk.ac.manchester.tornado.examples.fpga;
+package uk.ac.manchester.tornado.examples.dynamic;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -26,7 +26,6 @@ import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 public class ASaxpyVectorFloat4 {
 
     public static void saxpy(float alpha, VectorFloat4 x, VectorFloat4 y, VectorFloat4 b) {
-
         for (@Parallel int i = 0; i < x.getLength(); i++) {
             Float4 temp = Float4.mult(x.get(i), alpha);
             y.set(i, Float4.add(temp, b.get(i)));
@@ -34,39 +33,43 @@ public class ASaxpyVectorFloat4 {
     }
 
     public static void main(String[] args) {
+
         int numElements = Integer.parseInt(args[0]);
 
-        // numElements = numElements/4;
         float alpha = 2f;
-        VectorFloat4 xx = new VectorFloat4(numElements);
-        VectorFloat4 yy = new VectorFloat4(numElements);
-        VectorFloat4 bb = new VectorFloat4(numElements);
+        VectorFloat4 vectorA = new VectorFloat4(numElements);
+        VectorFloat4 vectorB = new VectorFloat4(numElements);
+        VectorFloat4 vectorC = new VectorFloat4(numElements);
         VectorFloat4 results = new VectorFloat4(numElements);
 
-        xx.fill(450f);
-        yy.fill(0);
-        bb.fill(20);
+        vectorA.fill(450f);
+        vectorB.fill(0);
+        vectorC.fill(20);
 
-        TaskSchedule s0 = new TaskSchedule("s0").task("t0", ASaxpyVectorFloat4::saxpy, alpha, xx, yy, bb).streamOut(yy);
+        // @formatter:off
+        TaskSchedule s0 = new TaskSchedule("s0")
+                .task("t0", ASaxpyVectorFloat4::saxpy, alpha, vectorA, vectorB, vectorC)
+                .streamOut(vectorB);
+        // @formatter:on
 
         for (int idx = 0; idx < 10; idx++) {
             s0.execute();
-            saxpy(alpha, xx, results, bb);
+            saxpy(alpha, vectorA, results, vectorC);
 
             System.out.println("Checking result");
             boolean wrongResult = false;
 
-            for (int i = 0; i < yy.getLength(); i++) {
+            for (int i = 0; i < vectorB.getLength(); i++) {
 
-                if (Math.abs(yy.get(i).getW() - results.get(i).getW()) > 0.1) {
+                if (Math.abs(vectorB.get(i).getW() - results.get(i).getW()) > 0.1) {
                     wrongResult = true;
-                } else if (Math.abs(yy.get(i).getX() - results.get(i).getX()) > 0.1) {
-                    wrongResult = true;
-                }
-                if (Math.abs(yy.get(i).getZ() - results.get(i).getZ()) > 0.1) {
+                } else if (Math.abs(vectorB.get(i).getX() - results.get(i).getX()) > 0.1) {
                     wrongResult = true;
                 }
-                if (Math.abs(yy.get(i).getY() - results.get(i).getY()) > 0.1) {
+                if (Math.abs(vectorB.get(i).getZ() - results.get(i).getZ()) > 0.1) {
+                    wrongResult = true;
+                }
+                if (Math.abs(vectorB.get(i).getY() - results.get(i).getY()) > 0.1) {
                     wrongResult = true;
                 }
             }

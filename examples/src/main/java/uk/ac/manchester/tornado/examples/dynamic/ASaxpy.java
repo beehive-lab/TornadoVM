@@ -16,7 +16,7 @@
  * 
  */
 
-package uk.ac.manchester.tornado.examples.fpga;
+package uk.ac.manchester.tornado.examples.dynamic;
 
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
@@ -79,8 +79,7 @@ public class ASaxpy {
                     end = System.nanoTime();
             }
             saxpy(alpha, x, result, b);
-            System.out.println("Checking result");
-            System.out.println("end2end:" + (end - start) + " ns");
+            System.out.println("Total Time:" + (end - start) + " ns");
         }
         boolean wrongResult = false;
         for (int i = 0; i < y.length; i++) {
