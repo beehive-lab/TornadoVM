@@ -37,7 +37,7 @@ public class NBodyDynamic {
     private static boolean VALIDATION = false;
 
     private static void usage(String[] args) {
-        System.err.printf("Usage: <numBodies> <performance|end2end|sequential> <iterations>\n");
+        System.err.printf("Usage: <numBodies> <performance|end|sequential> <iterations>\n");
         System.exit(1);
     }
 
