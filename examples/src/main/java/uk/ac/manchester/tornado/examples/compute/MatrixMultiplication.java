@@ -43,7 +43,7 @@ public class MatrixMultiplication {
     public static void main(String[] args) {
 
         int size = 512;
-        if (args.length > 1) {
+        if (args.length >= 1) {
             try {
                 size = Integer.parseInt(args[0]);
             } catch (NumberFormatException nfe) {
@@ -97,13 +97,14 @@ public class MatrixMultiplication {
         double flops = 2 * Math.pow(size, 3);
         double gpuGigaFlops = (1.0E-9 * flops) / (msecGPUElapsedTime / 1000.0f);
         double cpuGigaFlops = (1.0E-9 * flops) / (msecCPUElaptedTime / 1000.0f);
+        double speedup = (double) (endSequential - startSequential) / (double) (end - start);
 
         String formatGPUFGlops = String.format("%.2f", gpuGigaFlops);
         String formatCPUFGlops = String.format("%.2f", cpuGigaFlops);
 
         System.out.println("\tCPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms");
         System.out.println("\tGPU Execution: " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ms");
-        System.out.println("\tSpeedup: " + ((endSequential - startSequential) / (end - start)) + "x");
+        System.out.println("\tSpeedup: " + speedup + "x");
     }
 
 }
