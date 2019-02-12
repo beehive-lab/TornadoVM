@@ -355,7 +355,7 @@ public class RuntimeUtilities {
     }
 
     public static void sysCall(String[] command, boolean getOutput) {
-        String stdOutput;
+        String stdOutput = null;
         StringBuffer normalOutput = new StringBuffer();
         StringBuffer errorOutput = new StringBuffer();
 
@@ -386,7 +386,7 @@ public class RuntimeUtilities {
     }
 
     public static void sysCall(String command, boolean getOutput) {
-        String stdOutput;
+        String stdOutput = null;
         StringBuffer normalOutput = new StringBuffer();
         StringBuffer errorOutput = new StringBuffer();
 
