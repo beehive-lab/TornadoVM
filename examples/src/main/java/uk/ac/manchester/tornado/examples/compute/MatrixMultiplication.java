@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester.

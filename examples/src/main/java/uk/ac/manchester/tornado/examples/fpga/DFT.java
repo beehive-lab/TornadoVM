@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
+// XXX How to launch with the FPGA support
 public class DFT {
 
     public static boolean CHECK_RESULT = false;
