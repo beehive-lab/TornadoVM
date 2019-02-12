@@ -27,7 +27,8 @@ import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 
-public class RenderTrackFPGA {
+public class RenderTrackDynamic {
+
     public static String executionType;
     public static int iterations;
     public static boolean VALIDATION = false;
@@ -99,7 +100,7 @@ public class RenderTrackFPGA {
         }
 
         long startInit = System.nanoTime();
-        TaskSchedule s0 = new TaskSchedule("s0").task("t0", RenderTrackFPGA::renderTrack, output, input).streamOut(output);
+        TaskSchedule s0 = new TaskSchedule("s0").task("t0", RenderTrackDynamic::renderTrack, output, input).streamOut(output);
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
