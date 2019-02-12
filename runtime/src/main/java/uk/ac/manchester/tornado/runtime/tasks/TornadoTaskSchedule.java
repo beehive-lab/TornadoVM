@@ -94,7 +94,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private GraphCompilationResult result;
 
-    // One VM instance per TaskSchedule
+    // One TornadoVM instance per TaskSchedule
     private TornadoVM vm;
     private Event event;
     private String taskScheduleName;
