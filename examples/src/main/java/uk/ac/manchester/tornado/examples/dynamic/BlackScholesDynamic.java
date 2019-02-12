@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
  * compiler framework.
  *
  */
-public class BlackScholesFPGA {
+public class BlackScholesDynamic {
     public static String executionType;
     public static int iterations;
     public static boolean VALIDATION = false;
@@ -110,7 +110,7 @@ public class BlackScholesFPGA {
         }
 
         long startInit = System.nanoTime();
-        s0.task("t0", BlackScholesFPGA::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
+        s0.task("t0", BlackScholesDynamic::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
@@ -137,7 +137,7 @@ public class BlackScholesFPGA {
                     s0.execute();
                     end = System.nanoTime();
             }
-            System.out.println("End to end time:  " + (end - start) + " ns" + " \n");
+            System.out.println("Total time:  " + (end - start) + " ns" + " \n");
         }
 
         if (VALIDATION) {
@@ -149,6 +149,12 @@ public class BlackScholesFPGA {
 
     public static void main(String[] args) {
         System.out.println("BlackScholes Tornado");
+
+        if (args.length < 3) {
+            System.out.println("Usage: <elements> <mode:performance|end|sequential> <itarations>");
+            System.exit(-1);
+        }
+
         int size = Integer.parseInt(args[0]);
         executionType = args[1];
         iterations = Integer.parseInt(args[2]);

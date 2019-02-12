@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
  * adapted from Marawacc test-suite.
  *
  */
-public class MontecarloFPGA {
+public class MontecarloDynamic {
 
     public static void computeMontecarlo(float[] output, final int iterations) {
         for (@Parallel int j = 0; j < iterations; j++) {
@@ -63,7 +63,7 @@ public class MontecarloFPGA {
         long startInit = System.nanoTime();
         // @formatter:off
         TaskSchedule s0 = new TaskSchedule("s0")
-                .task("t0", MontecarloFPGA::computeMontecarlo, output, size)
+                .task("t0", MontecarloDynamic::computeMontecarlo, output, size)
                 .streamOut(output);
         // @formatter:on
         long stopInit = System.nanoTime();
@@ -92,7 +92,7 @@ public class MontecarloFPGA {
                     s0.execute();
                     end = System.nanoTime();
             }
-            System.out.println("End to end time:  " + (end - start) + " ns" + "\n");
+            System.out.println("Total time:  " + (end - start) + " ns" + "\n");
         }
 
         float sum = 0;
@@ -118,6 +118,11 @@ public class MontecarloFPGA {
 
     public static void main(String[] args) {
         System.out.println("Montecarlo Computation");
+
+        if (args.length < 3) {
+            System.out.println("Usage: <elements> <mode:performance|end|sequential> <itarations>");
+            System.exit(-1);
+        }
         int inputSize = Integer.parseInt(args[0]);
         String executionType = args[1];
         int iterations = Integer.parseInt(args[2]);

@@ -71,11 +71,16 @@ public class RenderTrackFPGA {
 
     public static void main(String[] args) {
 
+        if (args.length < 3) {
+            System.out.println("Usage: <elements> <mode:performance|end|sequential> <itarations>");
+            System.exit(-1);
+        }
+
         int n = 2048;
         int m = 2048;
         if (args.length > 2) {
             n = Integer.parseInt(args[0]);
-            m = Integer.parseInt(args[0]);
+            m = n;
         }
 
         executionType = args[1];
@@ -121,7 +126,7 @@ public class RenderTrackFPGA {
                     s0.execute();
                     end = System.nanoTime();
             }
-            System.out.println("End to end time:  " + (end - start) + " ns" + " \n");
+            System.out.println("Total time:  " + (end - start) + " ns" + " \n");
         }
 
         if (VALIDATION) {

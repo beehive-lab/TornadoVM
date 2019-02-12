@@ -22,7 +22,7 @@ import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
-public class ASaxpy {
+public class SaxpyDynamic {
 
     public static void saxpy(float alpha, float[] x, float[] y, float[] b) {
         for (@Parallel int i = 0; i < y.length; i++) {
@@ -31,6 +31,12 @@ public class ASaxpy {
     }
 
     public static void main(String[] args) {
+
+        if (args.length < 3) {
+            System.out.println("Usage: <elements> <mode:performance|end|sequential> <itarations>");
+            System.exit(-1);
+        }
+
         int numElements = Integer.parseInt(args[0]);
         String executionType = args[1];
         int iterations = Integer.parseInt(args[2]);
@@ -50,7 +56,7 @@ public class ASaxpy {
         }
 
         long startInit = System.nanoTime();
-        TaskSchedule s0 = new TaskSchedule("s0").task("t0", ASaxpy::saxpy, alpha, x, y, b).streamOut(y);
+        TaskSchedule s0 = new TaskSchedule("s0").task("t0", SaxpyDynamic::saxpy, alpha, x, y, b).streamOut(y);
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 

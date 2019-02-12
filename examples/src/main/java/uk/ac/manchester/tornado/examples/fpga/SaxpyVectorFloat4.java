@@ -16,14 +16,14 @@
  * 
  */
 
-package uk.ac.manchester.tornado.examples.dynamic;
+package uk.ac.manchester.tornado.examples.fpga;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat4;
 
-public class ASaxpyVectorFloat4 {
+public class SaxpyVectorFloat4 {
 
     public static void saxpy(float alpha, VectorFloat4 x, VectorFloat4 y, VectorFloat4 b) {
         for (@Parallel int i = 0; i < x.getLength(); i++) {
@@ -33,6 +33,11 @@ public class ASaxpyVectorFloat4 {
     }
 
     public static void main(String[] args) {
+
+        if (args.length < 1) {
+            System.out.println("Usage: <elements> ");
+            System.exit(-1);
+        }
 
         int numElements = Integer.parseInt(args[0]);
 
@@ -48,7 +53,7 @@ public class ASaxpyVectorFloat4 {
 
         // @formatter:off
         TaskSchedule s0 = new TaskSchedule("s0")
-                .task("t0", ASaxpyVectorFloat4::saxpy, alpha, vectorA, vectorB, vectorC)
+                .task("t0", SaxpyVectorFloat4::saxpy, alpha, vectorA, vectorB, vectorC)
                 .streamOut(vectorB);
         // @formatter:on
 

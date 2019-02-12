@@ -20,7 +20,6 @@ package uk.ac.manchester.tornado.examples.dynamic;
 
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 
-import java.io.PrintStream;
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.Policy;
@@ -28,7 +27,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
-public class NBodyFPGA {
+public class NBodyDynamic {
 
     private static float delT,espSqr;
     private static float[] posSeq,velSeq;
@@ -38,7 +37,7 @@ public class NBodyFPGA {
     private static boolean VALIDATION = false;
 
     private static void usage(String[] args) {
-        final PrintStream printf = System.err.printf("Usage: Number of bodies is missing or number of iterations\n");
+        System.err.printf("Usage: <numBodies> <performance|end2end|sequential> <iterations>\n");
         System.exit(1);
     }
 
@@ -101,7 +100,7 @@ public class NBodyFPGA {
             velSeqSeq[i] = auxVelocityZero[i];
         }
         graph = new TaskSchedule("s0");
-        graph.task("t0", NBodyFPGA::nBody, numBodies, posSeq, velSeq, delT, espSqr, inputSize).streamOut(posSeq, velSeq).streamOut(posSeq, velSeq);
+        graph.task("t0", NBodyDynamic::nBody, numBodies, posSeq, velSeq, delT, espSqr, inputSize).streamOut(posSeq, velSeq).streamOut(posSeq, velSeq);
         graph.warmup();
         graph.execute();
 
@@ -123,16 +122,15 @@ public class NBodyFPGA {
 
     public static void main(String[] args) {
 
-        StringBuffer resultsIterations = new StringBuffer();
-
-        if (args.length != 3) {
+        if (args.length < 3) {
             usage(args);
         }
 
         numBodies = Integer.parseInt(args[0]);
         String executionType = args[1];
         final int iterations = Integer.parseInt(args[2]);
-        long end,start;
+        long end;
+        long start;
 
         inputSize = new int[1];
         inputSize[0] = numBodies;
@@ -160,7 +158,7 @@ public class NBodyFPGA {
         }
 
         long startInit = System.nanoTime();
-        final TaskSchedule s0 = new TaskSchedule("s0").task("t0", NBodyFPGA::nBody, numBodies, posSeq, velSeq, delT, espSqr, inputSize).streamOut(posSeq, velSeq);
+        final TaskSchedule s0 = new TaskSchedule("s0").task("t0", NBodyDynamic::nBody, numBodies, posSeq, velSeq, delT, espSqr, inputSize).streamOut(posSeq, velSeq);
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
@@ -188,12 +186,11 @@ public class NBodyFPGA {
                     s0.execute();
                     end = System.nanoTime();
             }
-            System.out.println("End to end time:  " + (end - start) + " ns" + "\n");
+            System.out.println("Total time:  " + (end - start) + " ns" + "\n");
         }
 
         if (VALIDATION) {
             validate();
         }
     }
-
 }
