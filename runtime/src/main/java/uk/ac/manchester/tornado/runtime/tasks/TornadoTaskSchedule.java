@@ -110,8 +110,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * Dynamic Reconfiguration
      */
-    public boolean DEBUG_POLICY = false;
-    public boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
+    public static final boolean DEBUG_POLICY = Boolean.parseBoolean(System.getProperty("tornado.dynamic.verbose", "False"));
+    public static final boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int PERFORMANCE_WARMUP = 3;
     private final static boolean TIME_IN_NANOSECONDS = Tornado.TIME_IN_NANOSECONDS;

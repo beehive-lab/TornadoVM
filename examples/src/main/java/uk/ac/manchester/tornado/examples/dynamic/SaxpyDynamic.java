@@ -33,7 +33,7 @@ public class SaxpyDynamic {
     public static void main(String[] args) {
 
         if (args.length < 3) {
-            System.out.println("Usage: <elements> <mode:performance|end|sequential> <itarations>");
+            System.out.println("Usage: <elements> <mode:performance|end|sequential> <iterations>");
             System.exit(-1);
         }
 

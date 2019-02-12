@@ -120,7 +120,7 @@ public class MontecarloDynamic {
         System.out.println("Montecarlo Computation");
 
         if (args.length < 3) {
-            System.out.println("Usage: <elements> <mode:performance|end|sequential> <itarations>");
+            System.out.println("Usage: <elements> <mode:performance|end|sequential> <iterations>");
             System.exit(-1);
         }
         int inputSize = Integer.parseInt(args[0]);
