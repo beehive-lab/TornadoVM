@@ -108,7 +108,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private ConcurrentHashMap<Integer, TaskSchedule> taskScheduleIndex = new ConcurrentHashMap<>();
 
     /**
-     * Dynamic Reconfiguration
+     * Options for Dynamic Reconfiguration
      */
     public static final boolean DEBUG_POLICY = Boolean.parseBoolean(System.getProperty("tornado.dynamic.verbose", "False"));
     public static final boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
