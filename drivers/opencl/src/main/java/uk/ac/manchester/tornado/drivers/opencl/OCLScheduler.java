@@ -35,7 +35,7 @@ public class OCLScheduler {
             case CL_DEVICE_TYPE_GPU:
                 return new OCLGPUScheduler(context);
             case CL_DEVICE_TYPE_ACCELERATOR:
-                return (OpenCL.ACCELERATOR_IS_GPU) ? new OCLGPUScheduler(context) : new OCLCPUScheduler(context);
+                return (Tornado.ACCELERATOR_IS_FPGA) ? new OCLFPGAScheduler(context) : new OCLCPUScheduler(context);
             case CL_DEVICE_TYPE_CPU:
                 return new OCLCPUScheduler(context);
             default:

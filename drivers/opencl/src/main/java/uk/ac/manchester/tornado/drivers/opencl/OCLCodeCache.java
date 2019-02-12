@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
@@ -43,20 +43,22 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLCodeCache {
 
     public static final String LOOKUP_BUFFER_KERNEL_NAME = "lookupBufferAddress";
-
     private final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", "False"));
     private final boolean OPENCL_LOAD_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.loadbin", "False"));
@@ -67,12 +69,18 @@ public class OCLCodeCache {
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-logs");
     private final boolean PRINT_LOAD_TIME = false;
+    private final String FPGA_SOURCE_DIR = getProperty("tornado.fpga.source.dir", "fpga-source-comp/");
+    private final String FPGA_BIN_LOCATION = getProperty("tornado.fpga.bin", "./fpga-source-comp/lookupBufferAddress");
+    private final HashSet<String> FPGA_FLAGS = new HashSet<>(Arrays.asList("-v", "-fast-compile", "-high-effort", "-fp-relaxed", "-high-effort", "-report", "-incremental", "-profile"));
+    private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
+    private final String FPGA_CLEANUP_SCRIPT = "./bin/cleanFpga.sh";
+    private final String FPGA_TASKSCHEDULE = "s0.t0.";
 
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
-     * 
+     *
      * e.g.
-     * 
+     *
      * <p>
      * <code>
      * -Dtornado.precompiled.binary=</tmp/saxpy,s0.t0.device=0:1>
@@ -84,15 +92,26 @@ public class OCLCodeCache {
     /**
      * Configuration File with all paths to the OpenCl pre-compiled binaries:
      * -Dtornado.precompiled.listFile=<path/to/file>
-     * 
+     *
      * <p>
      * <code>
      * -Dtornado.precompiled.listFile=./fileConfigFPGAs
      * </code>
      * </p>
-     * 
+     *
      */
     private final String OPENCL_FILE_BINARIES = getProperty("tornado.precompiled.listFile", null);
+
+    /**
+     * List of all flags targeting AOC compiler -Dtornado.fpga.flags=flag1,....flagn
+     *
+     * <p>
+     * <code>
+     * -Dtornado.fpga.flags=flag1,....flagn
+     * </code>
+     * </p>
+     *
+     */
 
     private final boolean PRINT_WARNINGS = false;
 
@@ -115,6 +134,15 @@ public class OCLCodeCache {
         if (OPENCL_FILE_BINARIES != null) {
             precompiledBinariesPerDevice = new HashMap<>();
             processPrecompiledBinariesFromFile();
+        }
+
+        // Composing the binary entrypoint for the FPGA needs a
+        // a Taskschedule and Task id as prefix which is currently
+        // passed as constant FPGA_TASKSCHEDULE (e.g s0.t0.)
+        if (Tornado.ACCELERATOR_IS_FPGA) {
+            precompiledBinariesPerDevice = new HashMap<>();
+            String tempKernelName = FPGA_TASKSCHEDULE + String.format("device=%d:%d", deviceContext.getDevice().getIndex(), deviceContext.getPlatformContext().getPlatformIndex());
+            precompiledBinariesPerDevice.put(tempKernelName, FPGA_BIN_LOCATION);
         }
 
         if (OPENCL_CACHE_ENABLE) {
@@ -183,14 +211,15 @@ public class OCLCodeCache {
         if (precompiledBinariesPerDevice != null) {
             return precompiledBinariesPerDevice.get(taskName);
         } else {
+
             return null;
         }
     }
 
     private Path resolveDir(String dir) {
-        final String tornadoRoot = System.getenv("TORNADO_SDK");
+        final String tornadoRoot = (Tornado.ACCELERATOR_IS_FPGA) ? System.getenv("TORNADO_ROOT") : System.getenv("TORNADO_SDK");
         final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
-        final Path outDir = Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
+        final Path outDir = (Tornado.ACCELERATOR_IS_FPGA) ? Paths.get(tornadoRoot + "/" + dir) : Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
         if (!Files.exists(outDir)) {
             try {
                 Files.createDirectories(outDir);
@@ -202,6 +231,10 @@ public class OCLCodeCache {
 
         guarantee(Files.isDirectory(outDir), "target directory is not a directory: %s", outDir.toAbsolutePath().toString());
         return outDir;
+    }
+
+    private Path resolveFPGADir() {
+        return resolveDir(FPGA_SOURCE_DIR);
     }
 
     private Path resolveCacheDir() {
@@ -220,6 +253,81 @@ public class OCLCodeCache {
         return kernelAvailable;
     }
 
+    public void appendSourceToFile(String id, String entryPoint, byte[] source) {
+        if (Tornado.ACCELERATOR_IS_FPGA) {
+            final Path outDir = Tornado.ACCELERATOR_IS_FPGA ? resolveFPGADir() : resolveSourceDir();
+            if (entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
+                File file = new File(outDir + "/" + entryPoint + OPENCL_SOURCE_SUFFIX);
+                RuntimeUtilities.writeStreamToFile(file, source, false);
+            } else {
+                File file = new File(outDir + "/" + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX);
+                RuntimeUtilities.writeStreamToFile(file, source, true);
+            }
+        }
+
+    }
+
+    public String composeIntelHLSCommand(String inputFile, String outputFile) {
+        StringJoiner sb = new StringJoiner(" ");
+
+        sb.add("aoc");
+        sb.add(inputFile);
+
+        if (INTEL_FPGA_COMPILATION_FLAGS != null) {
+            String[] flags;
+            flags = INTEL_FPGA_COMPILATION_FLAGS.split(",");
+            for (String flag : flags) {
+                if (FPGA_FLAGS.contains(flag)) {
+                    sb.add(flag);
+                }
+            }
+        }
+        if (Tornado.FPGA_EMULATION) {
+            sb.add("-march=emulator");
+        } else {
+            sb.add("-board=p385a_sch_ax115");
+        }
+        sb.add("-o " + outputFile);
+
+        return sb.toString();
+    }
+
+    public OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) {
+
+        appendSourceToFile(id, entryPoint, source);
+
+        if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
+            String[] cmdRename;
+            String cmd;
+            File f;
+
+            String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
+            String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
+
+            if (OPENCL_PRINT_SOURCE) {
+                String sourceCode = new String(source);
+                System.out.println(sourceCode);
+            }
+
+            cmd = composeIntelHLSCommand(inputFile, outputFile);
+            cmdRename = new String[] { "bash", FPGA_CLEANUP_SCRIPT };
+            f = new File(FPGA_BIN_LOCATION);
+
+            Path path = Paths.get(FPGA_BIN_LOCATION);
+            if (RuntimeUtilities.ifFileExists(f)) {
+                return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
+            } else {
+                RuntimeUtilities.sysCall(cmd, true);
+                RuntimeUtilities.sysCall(cmdRename, true);
+            }
+            return installEntryPointForBinaryForFPGAs(resolveFPGADir(), LOOKUP_BUFFER_KERNEL_NAME);
+        } else {
+            // Should not reach here
+            return null;
+        }
+
+    }
+
     public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
 
         info("Installing code for %s into code cache", entryPoint);
@@ -233,6 +341,10 @@ public class OCLCodeCache {
             } catch (IOException e) {
                 error("unable to dump source: ", e.getMessage());
             }
+        }
+
+        if (Tornado.ACCELERATOR_IS_FPGA) {
+            appendSourceToFile(id, entryPoint, source);
         }
 
         if (OPENCL_PRINT_SOURCE) {
@@ -306,7 +418,6 @@ public class OCLCodeCache {
     }
 
     private OCLInstalledCode installBinary(String entryPoint, byte[] binary, boolean alreadyCached) throws OCLException {
-
         info("Installing binary for %s into code cache", entryPoint);
 
         try {
@@ -350,7 +461,7 @@ public class OCLCodeCache {
 
             if ((OPENCL_CACHE_ENABLE || OPENCL_DUMP_BINS) && !alreadyCached) {
                 final Path outDir = resolveCacheDir();
-                writeToFile(outDir.toAbsolutePath().toString() + "/" + entryPoint, binary);
+                RuntimeUtilities.writeToFile(outDir.toAbsolutePath().toString() + "/" + entryPoint, binary);
             }
 
         } else {
@@ -381,15 +492,6 @@ public class OCLCodeCache {
             installBinary(file.getName(), binary, true);
         } catch (OCLException | IOException e) {
             error("unable to load binary: %s (%s)", file, e.getMessage());
-        }
-    }
-
-    private void writeToFile(String file, byte[] binary) {
-        info("dumping binary %s", file);
-        try (FileOutputStream fis = new FileOutputStream(file);) {
-            fis.write(binary);
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 

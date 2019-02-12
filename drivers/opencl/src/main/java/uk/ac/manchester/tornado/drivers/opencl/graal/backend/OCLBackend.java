@@ -120,6 +120,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     public final static boolean SHOW_OPENCL = Boolean.parseBoolean(System.getProperty("tornado.opencl.print", "False"));
     public final static String OPENCL_PATH = System.getProperty("tornado.opencl.path", "./opencl");
+    private final static String FPGA_ATTRIBUTE = "__attribute__((reqd_work_group_size(16,1,1)))  ";
+    private final static String INTEL = "Intel(R)";
 
     @Override
     public OCLTargetDescription getTarget() {
@@ -226,8 +228,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     /**
-     * It allocates the smallest of the requested heap size or the max global
-     * memory size.
+     * It allocates the smallest of the requested heap size or the max global memory
+     * size.
      */
     public void allocateHeapMemoryOnDevice() {
 
@@ -265,22 +267,21 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         // To Avoid errors, check the target device is not the FPGA, because
         // JIT compilation for FPGAs is not supported yet.
         // Get driver index + deviceIndex
+        boolean flag = false;
         String deviceDriver = deviceFullName.split("=")[1];
         int driverIndex = Integer.parseInt(deviceDriver.split(":")[0]);
         int deviceIndex = Integer.parseInt(deviceDriver.split(":")[1]);
         OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
         String platformName = device.getPlatformName();
-        if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && platformName.contains("FPGA")) {
-            // If compilation for other platforms are chosen then we do not
-            // compile for FPGAs
+        if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && platformName.contains("FPGA") && !platformName.contains(INTEL)) {
             if (Tornado.DEBUG) {
-                System.out.println("JIT Compilation for FPGAs not supported yet.");
+                System.out.println("JIT Compilation for FPGAs is only supported for Intel/Altera FPGAs");
             }
-            return true;
-        } else if (Tornado.DEBUG) {
-            System.out.println("JIT Compilation for " + deviceFullName);
+            flag = false;
+        } else {
+            flag = true;
         }
-        return false;
+        return flag;
     }
 
     /*
@@ -308,16 +309,14 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             }
         } else {
             // Option 3) JIT Compilation of the lookupBufferAddress kernel
-
             // Avoid JIT compilation for FPGAs due to unsupported feature
-            if (isJITCompilationForFPGAs(deviceFullName)) {
-                return meta;
-            }
-
+            // There is a bug in this check
+            // TO DO:
             ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
             OCLProviders providers = (OCLProviders) getProviders();
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
-            lookupCode = deviceContext.installCode(result);
+            lookupCode = Tornado.ACCELERATOR_IS_FPGA ? deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA)
+                    : deviceContext.installCode(result);
             if (deviceContext.isKernelAvailable()) {
                 lookupCodeAvailable = true;
             }
@@ -448,13 +447,16 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         if (crb.isKernel()) {
             /*
-             * BUG There is a bug on some OpenCL devices which requires us to
-             * insert an extra OpenCL buffer into the kernel arguments. This has
-             * the effect of shifting the devices address mappings, which allows
-             * us to avoid the heap starting at address 0x0. (I assume that this
-             * is a interesting case that leads to a few issues.) Iris Pro is
-             * the only culprit at the moment.
+             * BUG There is a bug on some OpenCL devices which requires us to insert an
+             * extra OpenCL buffer into the kernel arguments. This has the effect of
+             * shifting the devices address mappings, which allows us to avoid the heap
+             * starting at address 0x0. (I assume that this is a interesting case that leads
+             * to a few issues.) Iris Pro is the only culprit at the moment.
              */
+            if (Tornado.ACCELERATOR_IS_FPGA && !methodName.equals(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
+                // TODO: FIX with info at the runtime, currently is a static decision
+                asm.emitLine(FPGA_ATTRIBUTE);
+            }
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
 
             asm.emitLine("%s void %s(%s%s)", OCLAssemblerConstants.KERNEL_MODIFIER, methodName, bumpBuffer, architecture.getABI());

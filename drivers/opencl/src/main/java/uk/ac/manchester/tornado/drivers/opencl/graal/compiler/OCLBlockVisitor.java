@@ -40,6 +40,7 @@ import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import jdk.vm.ci.meta.JavaConstant;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block> {
 
@@ -48,6 +49,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     Set<Block> merges;
     Set<Block> switches;
     Set<Node> switchClosed;
+    private int loopCount;
+    private int loopEnds;
 
     public OCLBlockVisitor(OCLCompilationResultBuilder resBuilder) {
         this.openclBuilder = resBuilder;
@@ -107,8 +110,19 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         }
 
         if (block.isLoopHeader()) {
+            loopCount++;
             openclBuilder.emitLoopHeader(block);
-            asm.beginScope();
+            // Temporary fix to remove the end scope of the most outer loop
+            // without changing the loop schemantics in IR level.
+            if (Tornado.REMOVE_OUTER_LOOPS) {
+                if (loopCount == 1) { // TODO: Add a more generic fix for removing outter loops
+                } else {
+                    asm.beginScope();
+                }
+            } else {
+                asm.beginScope();
+            }
+
         } else {
             // We emit either an ELSE statement or a SWITCH statement
             final Block dom = block.getDominator();
@@ -148,7 +162,16 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     @Override
     public void exit(Block b, Block value) {
         if (b.isLoopEnd()) {
-            asm.endScope();
+            // Temporary fix to remove the end scope of the most outer loop
+            // without changing the loop schemantics in IR level.
+            loopEnds++;
+            if (Tornado.REMOVE_OUTER_LOOPS) {
+                if (loopCount - loopEnds > 0) {
+                    asm.endScope();
+                }
+            } else {
+                asm.endScope();
+            }
         }
         if (b.getPostdominator() != null) {
             Block pdom = b.getPostdominator();
