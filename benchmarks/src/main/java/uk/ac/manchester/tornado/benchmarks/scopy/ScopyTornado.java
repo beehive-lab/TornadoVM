@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");

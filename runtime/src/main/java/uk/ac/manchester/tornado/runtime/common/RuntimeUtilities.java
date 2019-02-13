@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornado
  *
- * Copyright (c) 2013-2018, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,10 +25,17 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
+import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
+
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
@@ -63,8 +70,7 @@ public class RuntimeUtilities {
 
     /**
      * Very nice means to convert byte sizes into human readable format<br>
-     * Based on code from
-     * http://stackoverflow.com/questions/3758606/how-to-convert
+     * Based on code from http://stackoverflow.com/questions/3758606/how-to-convert
      * -byte-size-into-human-readable-format-in-java
      * <p>
      *
@@ -79,8 +85,7 @@ public class RuntimeUtilities {
             return bytes + " B";
         }
         final int exp = (int) (Math.log(bytes) / Math.log(unit));
-        final String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1)
-                + (si ? "" : "i");
+        final String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
 
         return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
     }
@@ -99,14 +104,11 @@ public class RuntimeUtilities {
         String out = "";
 
         if (bytes >= ONE_GIGABYTE) {
-            out = String.format("%.2f GB",
-                    ((double) bytes / (double) ONE_GIGABYTE));
+            out = String.format("%.2f GB", ((double) bytes / (double) ONE_GIGABYTE));
         } else if (bytes >= ONE_MEGABYTE) {
-            out = String.format("%.2f MB",
-                    ((double) bytes / (double) ONE_MEGABYTE));
+            out = String.format("%.2f MB", ((double) bytes / (double) ONE_MEGABYTE));
         } else if (bytes >= ONE_KILOBYTE) {
-            out = String.format("%.2f KB",
-                    ((double) bytes / (double) ONE_KILOBYTE));
+            out = String.format("%.2f KB", ((double) bytes / (double) ONE_KILOBYTE));
         } else {
             out = String.format("%d B", bytes);
         }
@@ -224,7 +226,8 @@ public class RuntimeUtilities {
     /**
      * determines whether a given array is composed of primitives or objects
      *
-     * @param type type to check
+     * @param type
+     *            type to check
      *
      * @return true if the array is composed of a primitive type
      */
@@ -238,12 +241,8 @@ public class RuntimeUtilities {
 
     public static void printBuffer(final ByteBuffer buffer) {
 
-        System.out.printf(
-                "buffer : position=%d, remaining=%d, capacity=%d, limit=%d\n",
-                buffer.position(), buffer.remaining(), buffer.capacity(),
-                buffer.limit());
-        System.out.printf("array  : length=%d, offset=%d\n",
-                buffer.array().length, buffer.arrayOffset());
+        System.out.printf("buffer : position=%d, remaining=%d, capacity=%d, limit=%d\n", buffer.position(), buffer.remaining(), buffer.capacity(), buffer.limit());
+        System.out.printf("array  : length=%d, offset=%d\n", buffer.array().length, buffer.arrayOffset());
         System.out.printf("%-8s: ", "Index");
         for (int i = 0; i < 8; i++) {
             System.out.printf("%-8d ", i * 4);
@@ -270,8 +269,7 @@ public class RuntimeUtilities {
         System.out.println();
     }
 
-    public static void printBuffer(final ByteBuffer buffer, final int start,
-            final int len) {
+    public static void printBuffer(final ByteBuffer buffer, final int start, final int len) {
 
         System.out.printf("Index : ");
         for (int i = 0; i < 5; i++) {
@@ -289,14 +287,11 @@ public class RuntimeUtilities {
     public static Unsafe getUnsafe() {
         Unsafe result = null;
         try {
-            Constructor<Unsafe> unsafeConstructor = Unsafe.class
-                    .getDeclaredConstructor();
+            Constructor<Unsafe> unsafeConstructor = Unsafe.class.getDeclaredConstructor();
             unsafeConstructor.setAccessible(true);
 
             result = unsafeConstructor.newInstance();
-        } catch (InstantiationException | IllegalAccessException
-                | IllegalArgumentException | InvocationTargetException
-                | NoSuchMethodException | SecurityException e) {
+        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
             e.printStackTrace();
         }
         return result;
@@ -356,6 +351,41 @@ public class RuntimeUtilities {
         }
         sb.append(")");
         return sb.toString();
+    }
+
+    public static boolean ifFileExists(File fileName) {
+        boolean check = fileName.exists() ? true : false;
+        return check;
+    }
+
+    public static void sysCall(String[] command, boolean getOutput) {
+        String stdOutput = null;
+        StringBuffer normalOutput = new StringBuffer();
+        StringBuffer errorOutput = new StringBuffer();
+
+        try {
+            Process p = Runtime.getRuntime().exec(command);
+            p.waitFor();
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            normalOutput.append("Here is the standard output of the command:\n");
+            while ((stdOutput = stdInput.readLine()) != null) {
+                normalOutput.append(stdOutput);
+            }
+            errorOutput.append("Here is the standard error of the command (if any):\n");
+            while ((stdOutput = stdError.readLine()) != null) {
+                errorOutput.append(stdOutput);
+            }
+            if (getOutput) {
+                System.out.println(normalOutput.toString());
+                System.out.println(errorOutput.toString());
+            }
+        } catch (IOException e) {
+            error("Unable to make a native system call.", e);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+
     }
 
     private RuntimeUtilities() {
