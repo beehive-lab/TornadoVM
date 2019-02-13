@@ -43,7 +43,7 @@ public class PiComputation {
             numGroups = size / 256;
         }
 
-        float[] result = Config.allocResultArray(numGroups);
+        float[] result = ConfigurationReduce.allocResultArray(numGroups);
         Arrays.fill(result, 0.0f);
 
         //@formatter:off
@@ -54,7 +54,7 @@ public class PiComputation {
         //@formatter:on
 
         ArrayList<Long> timers = new ArrayList<>();
-        for (int i = 0; i < Config.MAX_ITERATIONS; i++) {
+        for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {
 
             IntStream.range(0, size).sequential().forEach(idx -> {
                 input[idx] = 0;
@@ -73,7 +73,6 @@ public class PiComputation {
         }
 
         System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
-
     }
 
     public static void main(String[] args) {
@@ -84,5 +83,4 @@ public class PiComputation {
         System.out.print("Size = " + inputSize + " ");
         new PiComputation().run(inputSize);
     }
-
 }

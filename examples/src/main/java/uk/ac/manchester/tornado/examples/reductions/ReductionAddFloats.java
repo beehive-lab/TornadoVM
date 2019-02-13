@@ -44,7 +44,7 @@ public class ReductionAddFloats {
         }
         float[] result = null;
 
-        TornadoDeviceType deviceType = Config.getDefaultDeviceType();
+        TornadoDeviceType deviceType = ConfigurationReduce.getDefaultDeviceType();
         switch (deviceType) {
             case CPU:
                 result = new float[Runtime.getRuntime().availableProcessors()];
@@ -72,7 +72,7 @@ public class ReductionAddFloats {
         //@formatter:on
 
         ArrayList<Long> timers = new ArrayList<>();
-        for (int i = 0; i < Config.MAX_ITERATIONS; i++) {
+        for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {
 
             long start = System.nanoTime();
             task.execute();

@@ -36,6 +36,12 @@ except:
 	print "[ERROR] TORNADO_SDK is not defined"
 	sys.exit(-1)
 
+try:
+	classpathEnviron = os.environ["CLASSPATH"]
+except:
+	classpathEnviron = ""
+	pass
+
 classPathPrefix= preffix + "/"
 jarFilesPaths = classPathPrefix + "share/java/tornado"
 
@@ -45,9 +51,11 @@ process = subprocess.Popen(['ls', jarFilesPaths], stdout=subprocess.PIPE)
 out, err = process.communicate()
 files = out.split("\n")
 
+if (classpathEnviron != ""):
+	classPathVar = classPathVar + ":" + classpathEnviron
+
 for f in files:
 	classPathVar = classPathVar +  ":" + classPathPrefix + "/share/java/tornado/" +  f 
-
 
 command = "javac -classpath \"" + classPathVar  +  "\" " + sys.argv[1]
 
