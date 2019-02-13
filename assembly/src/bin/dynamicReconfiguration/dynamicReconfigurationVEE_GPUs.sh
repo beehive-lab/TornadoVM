@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # #########################################################################
-# Runner script for dynamic reconfiguration
+# Runner script for dynamic reconfiguration. It assumes there is no FPGA
 # #########################################################################
 
 function runCommand() {
@@ -21,16 +21,14 @@ function runCommand() {
 function runCommandRepetitions() {
 	for y in `seq 1 $iter`
 	do
-		echo "**************************************************************************"
+		echo "***********************************"
 		echo "Running for size $2"
-		echo "**************************************************************************"
 		javaProgram=$1
         size=$2
 		policy=$3
 		repetitions=$4
 		runCommand $javaProgram $size $policy $repetitions
 		sleep 5
-		echo "**************************************************************************"
 	done
 }
 
@@ -47,9 +45,10 @@ function nbody() {
 	done
 }
 
-
 function saxpy() {
+	echo "======================="
 	echo "Saxpy with policy: $1"
+	echo "======================="
 	policy=$1
 	iter=1
 	for i in {15..26} 
@@ -62,7 +61,9 @@ function saxpy() {
 }
 
 function montecarlo() {
+	echo "======================="
 	echo "Montecarlo with policy $1"
+	echo "======================="
 	policy=$1
 	iter=1
 	for i in {16..27} 
@@ -74,9 +75,10 @@ function montecarlo() {
 	done
 }
 
-
 function renderTrack() {
+	echo "======================="
 	echo "RenderTrack with policy $1"
+	echo "======================="
 	policy=$1
 	iter=1
 	for i in {6..13} 
@@ -89,7 +91,9 @@ function renderTrack() {
 }
 
 function blackscholes() {
+	echo "======================="
 	echo "Blackscholes with policy $1"
+	echo "======================="
 	policy=$1
 	iter=1
 	for i in {16..26} 
@@ -101,9 +105,10 @@ function blackscholes() {
 	done
 }
 
-
 function dft() {
+	echo "======================="
 	echo "Running DFT with policy $1"
+	echo "======================="
 	policy=$1
 	iter=1
 	for i in {6..20} 
@@ -114,7 +119,6 @@ function dft() {
         runCommandRepetitions $javaProgram $size $policy $repetitions 
 	done
 }
-
 
 function runALL() {
 	saxpy "end"

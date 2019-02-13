@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # #########################################################################
-# Runner script for dynamic reconfiguration
+# Runner script for dynamic reconfiguration. This script assumes an FPGA 
+# in the device 0:1
+# For custom changes, change the lines marked with [FPGA]
 # #########################################################################
 
-## This method assumes that the FPGA is the device in index 1.
-## If it is not, change XXX1.t0.device=0:1 for the corresponding 
-## device
-## NOTE: To run this script on 
+## This function assumes that the FPGA is the device in index 1.
+## If it is not, change XXX1.t0.device=0:1 for the corresponding device
 function runCommand() {
 	globalDims=$1
 	localDims=$2
@@ -15,6 +15,13 @@ function runCommand() {
 	javaProgram=$4
 	policy=$5
 	repetitions=$6
+
+	size=$globalDims
+
+	if [ "$#" -eq 7 ]
+	then
+		size=$7 
+	fi
 
 	## [FPGA] CHANGE THIS LINE WITH THE FPGA DEVICE INDEX
 	fpgaDevice="-DXXX1.t0.device=0:1"
@@ -29,28 +36,24 @@ function runCommand() {
 		-Dtornado.precompiled.binary=$pathToBinary \
 		-DXXX1.t0.global.dims=$globalDims \
 		-DXXX1.t0.local.dims=$localDims \
-		$javaProgram $globalDims $policy $repetitions
+		$javaProgram $size $policy $repetitions
 }
+
 
 function runCommandRepetitions() {
 	for y in `seq 1 $iter`
 	do
 		echo "**************************************************************************"
 		echo "Running for size $j"
-		echo "**************************************************************************"
-		globalDims=$1
-		localDims=$2
-		pathToBinary=$3
-		javaProgram=$4
-		policy=$5
-		repetitions=$6
-		runCommand $globalDims $localDims $pathToBinary $javaProgram $policy $repetitions
+		runCommand $@
 		sleep 5
-		echo "**************************************************************************"
 	done
 }
 
 function nbody() {
+	echo "======================="
+	echo "NBody with policy: $1"
+	echo "======================="
 	policy=$1
 	item=1
 	iter=1
@@ -67,15 +70,15 @@ function nbody() {
 	done
 }
 
-
 function saxpy() {
+	echo "======================="
 	echo "Saxpy with policy: $1"
+	echo "======================="
 	policy=$1
 	iter=1
 	for i in {15..26} 
 	do
 		j=$((2**$i))
-
 		globalDims=$j
 		localDims=128
 		## [FPGA] CHANGE THIS LINE WITH THE PATH TO THE BINARY
@@ -88,7 +91,9 @@ function saxpy() {
 }
 
 function montecarlo() {
+	echo "======================="
 	echo "Montecarlo with policy $1"
+	echo "======================="
 	policy=$1
 	iter=1
 	for i in {16..27} 
@@ -105,26 +110,30 @@ function montecarlo() {
 	done
 }
 
-
 function renderTrack() {
+	echo "======================="
 	echo "RenderTrack with policy $1"
+	echo "======================="
 	policy=$1
 	iter=1
 	for i in {6..13} 
 	do
 		j=$((2**$i))
-		globalDims="$j,1024"
-		localDims="64,16"
+		globalDims=$j,1024
+		localDims=64,16
 		## [FPGA] CHANGE THIS LINE WITH THE PATH TO THE BINARY
 		pathToBinary="/hdd/vee2019_artifact_supplements/bitstreams/rndr/lookupBufferAddress,XXX1.t0.device=0:1"
 		javaProgram="uk.ac.manchester.tornado.examples.dynamic.RenderTrackDynamic"
 		repetitions=5
-		runCommandRepetitions $globalDims $localDims $pathToBinary $javaProgram $policy $repetitions
+		size=$j
+		runCommandRepetitions $globalDims $localDims $pathToBinary $javaProgram $policy $repetitions $size
 	done
 }
 
 function blackscholes() {
+	echo "======================="
 	echo "Blackscholes with policy $1"
+	echo "======================="
 	policy=$1
 	iter=1
 	for i in {16..26} 
@@ -140,9 +149,10 @@ function blackscholes() {
 	done
 }
 
-
 function dft() {
+	echo "======================="
 	echo "Running DFT with policy $1"
+	echo "======================="
 	policy=$1
 	iter=1
 	for i in {6..20} 
@@ -157,7 +167,6 @@ function dft() {
 		runCommandRepetitions $globalDims $localDims $pathToBinary $javaProgram $policy $repetitions
 	done
 }
-
 
 function runALL() {
 	saxpy "end"
