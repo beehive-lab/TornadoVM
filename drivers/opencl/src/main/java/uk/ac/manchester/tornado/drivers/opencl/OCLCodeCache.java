@@ -70,7 +70,7 @@ public class OCLCodeCache {
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-logs");
     private final boolean PRINT_LOAD_TIME = false;
     private final String FPGA_SOURCE_DIR = getProperty("tornado.fpga.source.dir", "fpga-source-comp/");
-    private final String FPGA_BIN_LOCATION = getProperty("tornado.fpga.bin", "./fpga-source-comp/lookupBufferAddress");
+    public static String FPGA_BIN_LOCATION = getProperty("tornado.fpga.bin", "./fpga-source-comp/lookupBufferAddress");
     private final HashSet<String> FPGA_FLAGS = new HashSet<>(Arrays.asList("-v", "-fast-compile", "-high-effort", "-fp-relaxed", "-high-effort", "-report", "-incremental", "-profile"));
     private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
     private final String FPGA_CLEANUP_SCRIPT = "./bin/cleanFpga.sh";
