@@ -38,6 +38,7 @@
         <include>*.py</include>
         <include>tornado*</include>
         <include>misc/*.py</include>
+        <include>dynamicReconfiguration/*.sh</include>
       </includes>
       <lineEnding>unix</lineEnding>
       <fileMode>0755</fileMode>

@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ */
 package uk.ac.manchester.tornado.examples.compute;
 
 import java.util.Random;
@@ -25,7 +42,7 @@ public class MatrixMultiplication {
     public static void main(String[] args) {
 
         int size = 512;
-        if (args.length > 1) {
+        if (args.length >= 1) {
             try {
                 size = Integer.parseInt(args[0]);
             } catch (NumberFormatException nfe) {
@@ -79,13 +96,14 @@ public class MatrixMultiplication {
         double flops = 2 * Math.pow(size, 3);
         double gpuGigaFlops = (1.0E-9 * flops) / (msecGPUElapsedTime / 1000.0f);
         double cpuGigaFlops = (1.0E-9 * flops) / (msecCPUElaptedTime / 1000.0f);
+        double speedup = (double) (endSequential - startSequential) / (double) (end - start);
 
         String formatGPUFGlops = String.format("%.2f", gpuGigaFlops);
         String formatCPUFGlops = String.format("%.2f", cpuGigaFlops);
 
         System.out.println("\tCPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms");
         System.out.println("\tGPU Execution: " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ms");
-        System.out.println("\tSpeedup: " + ((endSequential - startSequential) / (end - start)) + "x");
+        System.out.println("\tSpeedup: " + speedup + "x");
     }
 
 }

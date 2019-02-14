@@ -24,11 +24,19 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 /**
- * Init FPGA kernel. Copy-in and copy-out the same array to check device buffers
- * and offset within Tornado.
+ * Initialize an FPGA kernel. It performs a copy-in and copy-out of the same
+ * array to check device buffers and offset within Tornado.
+ * 
+ * <p>
+ * <code>
+ * tornado --debug -Ds0.t0.device=0:1 -Dtornado.opencl.codecache.loadbin=True
+ * -Dtornado.precompiled.binary=path/to/lookupBufferAddress,s0.t0.device=0:1
+ * -Dtornado.opencl.userelative=True uk.ac.manchester.tornado.examples.fpga.InitFPGA
+ * </code>
+ * </p>
  * 
  */
-public class Init {
+public class InitFPGA {
 
     public static void init(float[] x) {
         for (@Parallel int i = 0; i < x.length; i++) {
@@ -45,7 +53,7 @@ public class Init {
         // @formatter:off
         TaskSchedule s0 = new TaskSchedule("s0")
                 .streamIn(x)
-                .task("t0", Init::init, x)
+                .task("t0", InitFPGA::init, x)
                 .streamOut(x);
         // @formatter:on
 

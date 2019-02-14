@@ -139,7 +139,9 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     public int enqueueWrite(final Object value, final int[] events, boolean useDeps) {
         final T array = cast(value);
         final int returnEvent;
+
         if (isFinal && onDevice) {
+
             returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
         } else {
             int index = 0;

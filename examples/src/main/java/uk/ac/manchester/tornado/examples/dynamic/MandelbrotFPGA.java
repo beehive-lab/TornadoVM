@@ -16,7 +16,7 @@
  * 
  */
 
-package uk.ac.manchester.tornado.examples.fpga;
+package uk.ac.manchester.tornado.examples.dynamic;
 
 import static java.lang.Integer.parseInt;
 
@@ -40,47 +40,6 @@ public class MandelbrotFPGA {
     public static final boolean VALIDATE = true;
     public static final boolean USE_TORNADO = true;
     public static final boolean PRINT_IMAGE = false;
-
-    private static short[] mandelbrotSequential(int size) {
-        final int iterations = 10000;
-        float space = 2.0f / size;
-
-        short[] result = new short[size * size];
-
-        for (int i = 0; i < size; i++) {
-            int indexIDX = i;
-            for (int j = 0; j < size; j++) {
-
-                int indexJDX = j;
-
-                float Zr = 0.0f;
-                float Zi = 0.0f;
-                float Cr = (1 * indexJDX * space - 1.5f);
-                float Ci = (1 * indexIDX * space - 1.0f);
-
-                float ZrN = 0;
-                float ZiN = 0;
-                int y = 0;
-
-                for (int ii = 0; ii < iterations; ii++) {
-
-                    if (ZiN + ZrN <= 4.0f) {
-                        Zi = 2.0f * Zr * Zi + Ci;
-                        Zr = 1 * ZrN - ZiN + Cr;
-                        ZiN = Zi * Zi;
-                        ZrN = Zr * Zr;
-                        y++;
-                    } else {
-                        ii = iterations;
-                    }
-
-                }
-                short r = (short) ((y * size - 1) / iterations);
-                result[i * size + j] = r;
-            }
-        }
-        return result;
-    }
 
     private static void mandelbrotTornado(int size, short[] output) {
         final int iterations = 10000;

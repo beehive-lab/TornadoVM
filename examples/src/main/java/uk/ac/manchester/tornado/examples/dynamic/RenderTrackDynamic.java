@@ -15,7 +15,7 @@
  * limitations under the License.
  * 
  */
-package uk.ac.manchester.tornado.examples.fpga;
+package uk.ac.manchester.tornado.examples.dynamic;
 
 import java.util.Random;
 
@@ -27,7 +27,8 @@ import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 
-public class RenderTrackFPGA {
+public class RenderTrackDynamic {
+
     public static String executionType;
     public static int iterations;
     public static boolean VALIDATION = false;
@@ -71,11 +72,16 @@ public class RenderTrackFPGA {
 
     public static void main(String[] args) {
 
+        if (args.length < 3) {
+            System.out.println("Usage: <elements> <mode:performance|end|sequential> <iterations>");
+            System.exit(-1);
+        }
+
         int n = 2048;
         int m = 2048;
         if (args.length > 2) {
             n = Integer.parseInt(args[0]);
-            m = Integer.parseInt(args[0]);
+            m = n;
         }
 
         executionType = args[1];
@@ -94,7 +100,7 @@ public class RenderTrackFPGA {
         }
 
         long startInit = System.nanoTime();
-        TaskSchedule s0 = new TaskSchedule("s0").task("t0", RenderTrackFPGA::renderTrack, output, input).streamOut(output);
+        TaskSchedule s0 = new TaskSchedule("s0").task("t0", RenderTrackDynamic::renderTrack, output, input).streamOut(output);
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
@@ -121,7 +127,7 @@ public class RenderTrackFPGA {
                     s0.execute();
                     end = System.nanoTime();
             }
-            System.out.println("End to end time:  " + (end - start) + " ns" + " \n");
+            System.out.println("Total time:  " + (end - start) + " ns" + " \n");
         }
 
         if (VALIDATION) {

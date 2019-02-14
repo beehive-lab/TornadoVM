@@ -16,7 +16,7 @@
  * 
  */
 
-package uk.ac.manchester.tornado.examples.fpga;
+package uk.ac.manchester.tornado.examples.dynamic;
 
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 
@@ -25,7 +25,8 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
-public class DFT {
+// XXX How to launch with the FPGA support
+public class DFTDynamic {
 
     public static boolean CHECK_RESULT = false;
 
@@ -59,7 +60,7 @@ public class DFT {
         graph.execute();
         graph.streamOut(outReal, outImag);
 
-        DFT.computeDft(inReal, inImag, outRealTor, outImagTor, inputSize);
+        DFTDynamic.computeDft(inReal, inImag, outRealTor, outImagTor, inputSize);
 
         for (int i = 0; i < size; i++) {
             if (abs(outImagTor[i] - outImag[i]) > 0.1) {
@@ -78,6 +79,11 @@ public class DFT {
     }
 
     public static void main(String[] args) {
+
+        if (args.length < 3) {
+            System.out.println("Usage: <size> <mode:performance|end|sequential> <iterations>");
+            System.exit(-1);
+        }
 
         size = Integer.parseInt(args[0]);
         String executionType = args[1];
@@ -100,7 +106,7 @@ public class DFT {
 
         long startInit = System.nanoTime();
         graph = new TaskSchedule("s0");
-        graph.task("t0", DFT::computeDft, inReal, inImag, outReal, outImag, inputSize);
+        graph.task("t0", DFTDynamic::computeDft, inReal, inImag, outReal, outImag, inputSize);
         graph.streamOut(outReal, outImag);
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
@@ -127,7 +133,7 @@ public class DFT {
                     graph.execute();
                     end = System.nanoTime();
             }
-            System.out.println("End to end time:  " + (end - start) + " ns" + " \n");
+            System.out.println("Total time:  " + (end - start) + " ns" + " \n");
         }
 
         if (CHECK_RESULT) {
