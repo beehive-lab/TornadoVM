@@ -40,6 +40,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -118,7 +120,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private final static boolean TIME_IN_NANOSECONDS = Tornado.TIME_IN_NANOSECONDS;
     public static final String TASK_SCHEDULE_PREFIX = "XXX";
 
-    private static final ConcurrentHashMap<String, Integer> executionHistory = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, HistoryTable> executionHistory = new ConcurrentHashMap<>();
 
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
@@ -969,6 +971,20 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return this;
     }
 
+    private static class HistoryTable {
+        // TreeMap between input size -> device index
+        private TreeMap<Integer, Integer> table = new TreeMap<>();
+
+        public int getClosestKey(int goal) {
+            Set<Integer> keySet = table.keySet();
+            return keySet.stream().reduce((prev, current) -> Math.abs(current - goal) < Math.abs(prev - goal) ? current : prev).get();
+        }
+
+        public boolean isKeyInTable(int key) {
+            return table.containsKey(key);
+        }
+    }
+
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public void addTask(TaskPackage taskPackage) {
@@ -979,43 +995,49 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         Object[] parameters = taskPackage.getTaskParameters();
 
         Method method = TaskUtils.resolveMethodHandle(parameters[0]);
+        ScheduleMetaData meta = meta();
+
+        if (!executionHistory.containsKey(method.toGenericString())) {
+            HistoryTable table = new HistoryTable();
+            executionHistory.put(method.toGenericString(), table);
+        }
 
         switch (type) {
             case 1:
-                addInner(TaskUtils.createTask(method, meta(), id, (Task1) parameters[0], parameters[1]));
+                addInner(TaskUtils.createTask(method, meta, id, (Task1) parameters[0], parameters[1]));
                 break;
             case 2:
-                addInner(TaskUtils.createTask(method, meta(), id, (Task2) parameters[0], parameters[1], parameters[2]));
+                addInner(TaskUtils.createTask(method, meta, id, (Task2) parameters[0], parameters[1], parameters[2]));
                 break;
             case 3:
-                addInner(TaskUtils.createTask(method, meta(), id, (Task3) parameters[0], parameters[1], parameters[2], parameters[3]));
+                addInner(TaskUtils.createTask(method, meta, id, (Task3) parameters[0], parameters[1], parameters[2], parameters[3]));
                 break;
             case 4:
-                addInner(TaskUtils.createTask(method, meta(), id, (Task4) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4]));
+                addInner(TaskUtils.createTask(method, meta, id, (Task4) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4]));
                 break;
             case 5:
-                addInner(TaskUtils.createTask(method, meta(), id, (Task5) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5]));
+                addInner(TaskUtils.createTask(method, meta, id, (Task5) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5]));
                 break;
             case 6:
-                addInner(TaskUtils.createTask(method, meta(), id, (Task6) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6]));
+                addInner(TaskUtils.createTask(method, meta, id, (Task6) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6]));
                 break;
             case 7:
-                addInner(TaskUtils.createTask(method, meta(), id, (Task7) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7]));
+                addInner(TaskUtils.createTask(method, meta, id, (Task7) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7]));
                 break;
             case 8:
-                addInner(TaskUtils.createTask(method, meta(), id, (Task8) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                addInner(TaskUtils.createTask(method, meta, id, (Task8) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                         parameters[8]));
                 break;
             case 9:
-                addInner(TaskUtils.createTask(method, meta(), id, (Task9) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                addInner(TaskUtils.createTask(method, meta, id, (Task9) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                         parameters[8], parameters[9]));
                 break;
             case 10:
-                addInner(TaskUtils.createTask(method, meta(), id, (Task10) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                addInner(TaskUtils.createTask(method, meta, id, (Task10) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                         parameters[8], parameters[9], parameters[10]));
                 break;
             case 15:
-                addInner(TaskUtils.createTask(method, meta(), id, (Task15) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
+                addInner(TaskUtils.createTask(method, meta, id, (Task15) parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7],
                         parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15]));
                 break;
             default:
