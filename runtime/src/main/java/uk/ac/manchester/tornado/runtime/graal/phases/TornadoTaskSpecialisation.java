@@ -71,8 +71,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     }
 
     private Field lookupField(Class<?> type, String field) {
-        // Tornado.debug("lookup field: class=%s, field=%s", type.toString(),
-        // field);
         Field f = null;
         try {
             f = type.getDeclaredField(field);
@@ -145,7 +143,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                     break;
                 case Object:
                     /*
-                     * propagate all constants from connected final fields...cool!
+                     * propagate all constants from connected final
+                     * fields...cool!
                      */
                     if (Modifier.isFinal(f.getModifiers())) {
                         final Object value = lookup(obj, f::get);
@@ -279,8 +278,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             Debug.dump(INFO_LEVEL, graph, "After TaskSpecialisation iteration=" + iterations);
 
-            // boolean hasGuardingPiNodes = graph.getNodes().filter(n -> n
-            // instanceof GuardingPiNode).isNotEmpty();
             hasWork = (lastNodeCount != graph.getNodeCount() || graph.getNewNodes(mark).isNotEmpty()) // ||
                                                                                                       // hasGuardingPiNodes)
                     && (iterations < MAX_ITERATIONS);
@@ -300,15 +297,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     private void assumeNonNull(StructuredGraph graph, ParameterNode param) {
         if (param.getStackKind().isObject() && param.usages().filter(IsNullNode.class).count() > 0) {
             unimplemented("assumeNonNull: param %s", param);
-            // final IsNullNode isNullNode = (IsNullNode)
-            // param.usages().filter(IsNullNode.class).first();
-            // for (final GuardingPiNode guardingPiNode :
-            // isNullNode.usages().filter(GuardingPiNode.class)) {
-            // guardingPiNode.replaceAtUsages(param);
-            // }
-
         }
-
     }
 
 }
