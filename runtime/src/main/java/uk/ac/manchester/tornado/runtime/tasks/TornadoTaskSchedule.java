@@ -129,6 +129,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private static final int DEFAUL_DRIVER_INDEX = 0;
 
+    public static final int HISTORY_POINTS_PREDICTION = 5;
+
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
      * 
@@ -785,6 +787,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         // call to scheduleInner() through the corresponding task
         TaskSchedule task = taskScheduleIndex.get(deviceWinnerIndex);
         if (task == null) {
+            // XXX: Force re-compilation in device <deviceWinnerIndex>
             task = globalTaskScheduleIndex.get(deviceWinnerIndex);
         }
         if (DEBUG_POLICY) {
@@ -1043,14 +1046,45 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     public void runInParallel(int deviceWinnerIndex, int numDevices) {
         // Run with the winner device
         if (deviceWinnerIndex >= numDevices) {
-            // if the winner is the last index => it is the
-            // sequential
-            // (HotSpot)
+            // Last index corresponds to the sequential in HotSpot
             runSequential();
         } else {
-            // Otherwise, it runs the parallel in the corresponding
-            // device
+            // It runs the parallel in the corresponding device
             runTaskScheduleParallelSelected(deviceWinnerIndex);
+        }
+    }
+
+    /**
+     * Class that keeps the history of executions based in their data sizes. It
+     * has a sorted map (TreeMap) that keeps the relationship between the input
+     * size and the actual Tornado device in which the task was executed based
+     * on the profiler for the dynamic reconfiguration.
+     */
+    private static class HistoryTable {
+        /**
+         * TreeMap between input size -> device index
+         */
+        private TreeMap<Integer, Integer> table = new TreeMap<>();
+
+        public int getClosestKey(int goal) {
+            Set<Integer> keySet = table.keySet();
+            return keySet.stream().reduce((prev, current) -> Math.abs(current - goal) < Math.abs(prev - goal) ? current : prev).get();
+        }
+
+        public TreeMap<Integer, Integer> getTree() {
+            return table;
+        }
+
+        public int getNumKeys() {
+            return table.keySet().size();
+        }
+
+        public int getDeviceNumber(int key) {
+            return table.get(key);
+        }
+
+        public boolean isKeyInTable(int key) {
+            return table.containsKey(key);
         }
     }
 
@@ -1091,11 +1125,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                     runInParallel(deviceWinnerIndex, numDevices);
                 } else {
                     // Input size not found
-                    if (table.getNumKeys() <= 0) {
-                        // not enough to make a decision
+                    if (table.getNumKeys() < HISTORY_POINTS_PREDICTION) {
+                        // not enough to make a decision -> run with the whole
+                        // profiler
                         runWithSequentialProfiler(policy);
                     } else {
-                        // get the closet one
+                        // get the closet one to the input history data
                         int closestKey = table.getClosestKey(inputSize);
                         int deviceWinnerIndex = table.getTree().get(closestKey);
                         runInParallel(deviceWinnerIndex, numDevices);
@@ -1109,14 +1144,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public AbstractTaskGraph scheduleWithProfileSequential(Policy policy) {
         int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(DEFAUL_DRIVER_INDEX).getDeviceCount();
-
         if (policyTimeTable.get(policy) == null) {
             runWithSequentialProfiler(policy);
-
             if (EXEPERIMENTAL_MULTI_HOST_HEAP) {
                 restoreVarsIntoJavaHeap(policy, numDevices);
             }
-
         } else {
             // Run with the winner device
             int deviceWinnerIndex = policyTimeTable.get(policy);
@@ -1130,32 +1162,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             }
         }
         return this;
-    }
-
-    private static class HistoryTable {
-        // TreeMap between input size -> device index
-        private TreeMap<Integer, Integer> table = new TreeMap<>();
-
-        public int getClosestKey(int goal) {
-            Set<Integer> keySet = table.keySet();
-            return keySet.stream().reduce((prev, current) -> Math.abs(current - goal) < Math.abs(prev - goal) ? current : prev).get();
-        }
-
-        public TreeMap<Integer, Integer> getTree() {
-            return table;
-        }
-
-        public int getNumKeys() {
-            return table.keySet().size();
-        }
-
-        public int getDeviceNumber(int key) {
-            return table.get(key);
-        }
-
-        public boolean isKeyInTable(int key) {
-            return table.containsKey(key);
-        }
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
