@@ -154,6 +154,8 @@ public interface TornadoAPI {
 
     public void executeWithProfilerSequential(Policy policy);
 
+    public void executeWithProfilerSequentialGlobal(Policy policy);
+
     public void warmup();
 
     public long getReturnValue(String id);
