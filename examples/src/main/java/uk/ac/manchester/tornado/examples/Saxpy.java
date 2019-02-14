@@ -48,7 +48,17 @@ public class Saxpy {
 
         s0.execute();
 
-        System.out.println("Checking result");
+        numElements = 512 * 2;
+
+        final float[] a = new float[numElements];
+        final float[] b = new float[numElements];
+
+        IntStream.range(0, numElements).parallel().forEach(i -> a[i] = 450);
+
+        TaskSchedule s1 = new TaskSchedule("s1").task("t0", Saxpy::saxpy, alpha, a, b).streamOut(a);
+
+        s1.execute();
+
         boolean wrongResult = false;
         for (int i = 0; i < y.length; i++) {
             if (Math.abs(y[i] - (alpha * x[i])) > 0.01) {
