@@ -60,6 +60,8 @@ public class Saxpy {
 
         s1.executeWithProfilerSequentialGlobal(Policy.PERFORMANCE);
 
+        s1.executeWithProfilerSequentialGlobal(Policy.PERFORMANCE);
+
         boolean wrongResult = false;
         for (int i = 0; i < y.length; i++) {
             if (Math.abs(y[i] - (alpha * x[i])) > 0.01) {
