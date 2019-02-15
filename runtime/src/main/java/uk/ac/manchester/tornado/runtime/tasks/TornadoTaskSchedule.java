@@ -129,7 +129,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private static final int DEFAUL_DRIVER_INDEX = 0;
 
-    public static final int HISTORY_POINTS_PREDICTION = 0;
+    public static final int HISTORY_POINTS_PREDICTION = 5;
 
     public static final boolean USE_GLOBAL_TASK_CACHE = false;
 
