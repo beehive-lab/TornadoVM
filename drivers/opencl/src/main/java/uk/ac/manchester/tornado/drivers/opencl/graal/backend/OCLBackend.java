@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.backend;
 
-import org.omg.Messaging.*;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
@@ -308,12 +307,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             if (lookupCode != null) {
                 lookupCodeAvailable = true;
             }
-        } else if (Tornado.ACCELERATOR_IS_FPGA && deviceFullName.contains("0:1")) {
-            lookupCode = check.installEntryPointForBinaryForFPGAs(Paths.get(OCLCodeCache.FPGA_BIN_LOCATION), OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
-            if (lookupCode != null) {
-                lookupCodeAvailable = true;
-            }
-        }else {
+        } else {
             // Option 3) JIT Compilation of the lookupBufferAddress kernel
             // Avoid JIT compilation for FPGAs due to unsupported feature
             // There is a bug in this check
