@@ -57,9 +57,11 @@ public class TestMatrices extends TornadoTestBase {
 
     public static void matrixVector(float[] matrix, float[] vector, float[] result, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
+            float sum = 0.0f;
             for (int j = 0; j < size; j++) {
-                result[i] += matrix[i * size + j] * vector[j];
+                sum += matrix[i * size + j] * vector[j];
             }
+            result[i] = sum;
         }
     }
 
@@ -142,7 +144,7 @@ public class TestMatrices extends TornadoTestBase {
 
     @Test
     public void testMatrixVector() {
-        final int N = 32;
+        final int N = 512;
         float[] matrix = new float[N * N];
         float[] vector = new float[N];
         float[] result = new float[N];
@@ -161,13 +163,12 @@ public class TestMatrices extends TornadoTestBase {
                 .task("t0", TestMatrices::matrixVector, matrix, vector, result, N)
                 .streamOut(result);
         //@formatter:on
-        t.warmup();
         t.execute();
 
         matrixVector(matrix, vector, resultSeq, N);
 
         for (int i = 0; i < vector.length; i++) {
-            assertEquals(resultSeq[i], result[i], 0.001);
+            assertEquals(resultSeq[i], result[i], 0.01f);
         }
     }
 
@@ -190,7 +191,6 @@ public class TestMatrices extends TornadoTestBase {
                 .task("t0", TestMatrices::matrixMultiplication, matrixA, matrixB, matrixC, N)
                 .streamOut(matrixC);
         //@formatter:on
-        t.warmup();
         t.execute();
 
         for (int i = 0; i < N; i++) {
