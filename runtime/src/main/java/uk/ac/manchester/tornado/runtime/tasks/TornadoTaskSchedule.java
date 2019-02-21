@@ -756,7 +756,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
 
         // Define the winner, based on the first thread to finish
-        if (policy == Policy.WINNER) {
+        if (policy == Policy.LATENCY) {
             int deviceWinnerIndex = syncWinner(threads);
             policyTimeTable.put(policy, deviceWinnerIndex);
         }

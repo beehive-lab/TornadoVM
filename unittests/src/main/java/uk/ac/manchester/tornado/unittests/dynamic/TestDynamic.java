@@ -203,11 +203,11 @@ public class TestDynamic extends TornadoTestBase {
         //@formatter:on
 
         // Run first time to obtain the best performance device
-        taskSchedule.executeWithProfiler(Policy.WINNER);
+        taskSchedule.executeWithProfiler(Policy.LATENCY);
 
         // Run a few iterations to get the device.
         for (int i = 0; i < 10; i++) {
-            taskSchedule.executeWithProfiler(Policy.WINNER);
+            taskSchedule.executeWithProfiler(Policy.LATENCY);
         }
 
         for (int i = 0; i < b.length; i++) {

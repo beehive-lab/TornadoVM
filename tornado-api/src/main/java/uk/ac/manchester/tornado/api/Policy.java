@@ -46,7 +46,7 @@ public enum Policy {
     // @formatter:off
     PERFORMANCE ("Performance"), 
     END_2_END ("End_2_End"),
-    WINNER("Winner"),
+    LATENCY("Latency"),
     ENERGY ("Energy");
     // @formatter:on
 
