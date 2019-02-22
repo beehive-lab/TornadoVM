@@ -143,8 +143,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                     break;
                 case Object:
                     /*
-                     * propagate all constants from connected final
-                     * fields...cool!
+                     * propagate all constants from connected final fields
                      */
                     if (Modifier.isFinal(f.getModifiers())) {
                         final Object value = lookup(obj, f::get);
