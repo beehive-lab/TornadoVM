@@ -28,7 +28,6 @@ package uk.ac.manchester.tornado.drivers.opencl;
 import static uk.ac.manchester.tornado.drivers.opencl.OpenCL.DUMP_OPENCL_EVENTS;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_OOO_EXECUTION;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
 
@@ -40,6 +39,7 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class OCLContext extends TornadoLogger {
@@ -236,7 +236,7 @@ public class OCLContext extends TornadoLogger {
             clReleaseContext(id);
             long t4 = System.nanoTime();
 
-            if (DEBUG) {
+            if (Tornado.FULL_DEBUG) {
                 System.out.printf("cleanup: %-10s..........%.9f s\n", "programs", (t1 - t0) * 1e-9);
                 System.out.printf("cleanup: %-10s..........%.9f s\n", "memory", (t2 - t1) * 1e-9);
                 System.out.printf("cleanup: %-10s..........%.9f s\n", "queues", (t3 - t2) * 1e-9);

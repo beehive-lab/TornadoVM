@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.examples;
 
 import java.util.stream.IntStream;
 
+import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
@@ -46,9 +47,21 @@ public class Saxpy {
 
         TaskSchedule s0 = new TaskSchedule("s0").task("t0", Saxpy::saxpy, alpha, x, y).streamOut(y);
 
-        s0.execute();
+        s0.executeWithProfilerSequentialGlobal(Policy.PERFORMANCE);
 
-        System.out.println("Checking result");
+        numElements = 512 * 2;
+
+        final float[] a = new float[numElements];
+        final float[] b = new float[numElements];
+
+        IntStream.range(0, numElements).parallel().forEach(i -> a[i] = 450);
+
+        TaskSchedule s1 = new TaskSchedule("s1").task("t0", Saxpy::saxpy, alpha, a, b).streamOut(a);
+
+        s1.executeWithProfilerSequentialGlobal(Policy.PERFORMANCE);
+
+        s1.executeWithProfilerSequentialGlobal(Policy.PERFORMANCE);
+
         boolean wrongResult = false;
         for (int i = 0; i < y.length; i++) {
             if (Math.abs(y[i] - (alpha * x[i])) > 0.01) {

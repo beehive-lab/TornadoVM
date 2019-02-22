@@ -54,6 +54,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles",
 	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
+	"uk.ac.manchester.tornado.unittests.instances.TestInstances",
 ]
 
 ## Options

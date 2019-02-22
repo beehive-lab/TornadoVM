@@ -43,6 +43,8 @@ package uk.ac.manchester.tornado.api.common;
 
 public final class TornadoFunctions {
 
+    public static final String methodName = "apply";
+
     @FunctionalInterface
     public interface Task1<T1> {
         public void apply(T1 arg1);
