@@ -127,8 +127,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private static final ConcurrentHashMap<Policy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
 
-    private static final int DEFAUL_DRIVER_INDEX = 0;
-
     public static final int HISTORY_POINTS_PREDICTION = 5;
 
     public static final boolean USE_GLOBAL_TASK_CACHE = false;
@@ -966,7 +964,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             if (!executionHistoryPolicy.containsKey(policy)) {
                 tableSizes = new ConcurrentHashMap<>();
                 HistoryTable table = new HistoryTable();
-                int size = getInputSize();
+                int size = getMaxInputSize();
                 table.getTree().put(size, dev);
 
                 tableSizes.put(m.toGenericString(), table);
@@ -975,13 +973,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 tableSizes = executionHistoryPolicy.get(policy);
                 if (!tableSizes.containsKey(m.toGenericString())) {
                     HistoryTable table = new HistoryTable();
-                    int size = getInputSize();
+                    int size = getMaxInputSize();
                     table.getTree().put(size, dev);
                     tableSizes.put(m.toGenericString(), table);
                 } else {
                     // update the size
                     HistoryTable table = tableSizes.get(m.toGenericString());
-                    int size = getInputSize();
+                    int size = getMaxInputSize();
                     table.getTree().put(size, dev);
                     tableSizes.put(m.toGenericString(), table);
                 }
@@ -1039,7 +1037,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private int getInputSize() {
+    /**
+     * It obtains the maximum input size for an input task.
+     * 
+     * @return int
+     */
+    private int getMaxInputSize() {
         Object[] parameters = taskPackages.get(0).getTaskParameters();
         int size = 0;
         for (int i = 1; i < parameters.length; i++) {
@@ -1074,7 +1077,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     public void runInParallel(int deviceWinnerIndex, int numDevices) {
         // Run with the winner device
         if (deviceWinnerIndex >= numDevices) {
-            // Last index corresponds to the sequential in HotSpot
+            // Last index corresponds to the sequential in HostVM
             runSequential();
         } else {
             // It runs the parallel in the corresponding device
@@ -1083,7 +1086,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     /**
-     * Class that keeps the history of executions based in their data sizes. It
+     * Class that keeps the history of executions based on their data sizes. It
      * has a sorted map (TreeMap) that keeps the relationship between the input
      * size and the actual Tornado device in which the task was executed based
      * on the profiler for the dynamic reconfiguration.
@@ -1118,7 +1121,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public AbstractTaskGraph scheduleWithProfileSequentialGlobal(Policy policy) {
-        int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(DEFAUL_DRIVER_INDEX).getDeviceCount();
+        int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX).getDeviceCount();
 
         if (!executionHistoryPolicy.containsKey(policy)) {
             runWithSequentialProfiler(policy);
@@ -1145,7 +1148,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 // 1. Infer sizes
                 // We get the first set of parameters for the first task as a
                 // reference
-                int inputSize = getInputSize();
+                int inputSize = getMaxInputSize();
 
                 // 2. Make decision
                 if (table.isKeyInTable(inputSize)) {
@@ -1171,7 +1174,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public AbstractTaskGraph scheduleWithProfileSequential(Policy policy) {
-        int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(DEFAUL_DRIVER_INDEX).getDeviceCount();
+        int numDevices = TornadoRuntime.getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX).getDeviceCount();
 
         if (policyTimeTable.get(policy) == null) {
             runWithSequentialProfiler(policy);
