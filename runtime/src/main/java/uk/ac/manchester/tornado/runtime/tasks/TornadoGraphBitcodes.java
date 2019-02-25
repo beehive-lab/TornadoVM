@@ -35,7 +35,7 @@ public enum TornadoGraphBitcodes {
     CONTEXT  ((byte)5);
     // @formatter:on
 
-    private byte index;
+    public byte index;
 
     TornadoGraphBitcodes(byte index) {
         this.index = index;

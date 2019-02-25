@@ -72,7 +72,7 @@ public class TestLoops extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-                .task("t0",TestLoops::reverseLoop, a)
+                .task("t0", TestLoops::reverseLoop, a)
                 .streamOut(a)
                 .execute();
         //formatter:on
@@ -83,7 +83,7 @@ public class TestLoops extends TornadoTestBase {
     }
 
     public static void steppedLoop(int[] a, int size) {
-        for (@Parallel int i = 0; i < size; i += 2){
+        for (@Parallel int i = 0; i < size; i += 2) {
             a[i] = 200;
         }
     }
@@ -92,15 +92,15 @@ public class TestLoops extends TornadoTestBase {
     public void testStepLoop() {
         final int size = 16;
 
-        int [] a = new int[size];
+        int[] a = new int[size];
 
         Arrays.fill(a, 75);
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0",TestLoops::steppedLoop, a, size)
-            .streamOut(a)
-            .execute();
+                .task("t0", TestLoops::steppedLoop, a, size)
+                .streamOut(a)
+                .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i += 2) {
@@ -125,9 +125,9 @@ public class TestLoops extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0",TestLoops::steppedLoop2, a, size)
-            .streamOut(a)
-            .execute();
+                .task("t0", TestLoops::steppedLoop2, a, size)
+                .streamOut(a)
+                .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -152,9 +152,9 @@ public class TestLoops extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0",TestLoops::steppedLoop3, a, size)
-            .streamOut(a)
-            .execute();
+                .task("t0", TestLoops::steppedLoop3, a, size)
+                .streamOut(a)
+                .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i++) {
@@ -177,9 +177,9 @@ public class TestLoops extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0",TestLoops::steppedLoop4, a, size)
-            .streamOut(a)
-            .execute();
+                .task("t0", TestLoops::steppedLoop4, a, size)
+                .streamOut(a)
+                .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i += 4) {
@@ -205,9 +205,9 @@ public class TestLoops extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0",TestLoops::steppedLoop5, a, size)
-            .streamOut(a)
-            .execute();
+                .task("t0", TestLoops::steppedLoop5, a, size)
+                .streamOut(a)
+                .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i += 3) {
@@ -233,9 +233,9 @@ public class TestLoops extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0",TestLoops::steppedLoop7, a, size)
-            .streamOut(a)
-            .execute();
+                .task("t0", TestLoops::steppedLoop7, a, size)
+                .streamOut(a)
+                .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i += 7) {
@@ -261,9 +261,9 @@ public class TestLoops extends TornadoTestBase {
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0",TestLoops::steppedLoop10, a, size)
-            .streamOut(a)
-            .execute();
+                .task("t0", TestLoops::steppedLoop10, a, size)
+                .streamOut(a)
+                .execute();
         //@formatter:on
 
         for (int i = 0; i < size; i += 10) {
@@ -598,6 +598,103 @@ public class TestLoops extends TornadoTestBase {
             for (int j = 0; j < size; j++) {
                 assertEquals(10, a[i * size + j]);
             }
+        }
+    }
+
+    public static void whileLoop(int[] a, int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            int y = 0;
+            while (y < size) {
+                a[i * size + y] = 10;
+                y++;
+            }
+        }
+    }
+
+    @Test
+    public void testInnerWhileLoop() {
+        final int size = 100;
+
+        int[] a = new int[size * size];
+        Arrays.fill(a, 1);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestLoops::whileLoop, a, size)
+                .streamOut(a)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            int y = 0;
+            while (y < size) {
+                assertEquals(10, a[i * size + y]);
+                y++;
+            }
+        }
+    }
+
+    public static void dowWhileLoop(int[] a, int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            int y = 1;
+            do {
+                a[i * size + y] = 10;
+                y++;
+            } while (y < size);
+        }
+    }
+
+    @Ignore
+    public void testInnerDoWhileLoop() {
+        final int size = 100;
+
+        int[] a = new int[size * size];
+        Arrays.fill(a, 1);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestLoops::dowWhileLoop, a, size)
+                .streamOut(a)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            int y = 0;
+            while (y < size) {
+                assertEquals(10, a[i * size + y]);
+                y++;
+            }
+        }
+    }
+
+    public static void forEach(int[] a, int[] c, int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            int idx = 0;
+            for (int j : a) {
+                c[idx] = j + 1;
+                idx++;
+            }
+        }
+    }
+
+    @Test
+    public void testInnertForEach() {
+        final int size = 10;
+
+        int[] a = new int[size];
+        int[] c = new int[size];
+        Arrays.fill(a, 1);
+        Arrays.fill(c, 0);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestLoops::forEach, a, c, size)
+                .streamOut(c)
+                .execute();
+        //@formatter:on
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(2, c[i]);
         }
     }
 }

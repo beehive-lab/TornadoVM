@@ -33,7 +33,5 @@ public class DotProduct {
         s0.schedule();
 
         System.out.printf("result = 0x%x\n", s0.getReturnValue("t0"));
-
     }
-
 }

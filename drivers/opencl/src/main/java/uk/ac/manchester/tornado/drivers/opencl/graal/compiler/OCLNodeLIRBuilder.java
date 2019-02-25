@@ -52,28 +52,7 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerator.Options;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.BlockScope;
-import org.graalvm.compiler.nodes.AbstractEndNode;
-import org.graalvm.compiler.nodes.AbstractMergeNode;
-import org.graalvm.compiler.nodes.BreakpointNode;
-import org.graalvm.compiler.nodes.DirectCallTargetNode;
-import org.graalvm.compiler.nodes.EndNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.IndirectCallTargetNode;
-import org.graalvm.compiler.nodes.Invoke;
-import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
-import org.graalvm.compiler.nodes.LogicNode;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.LoopEndNode;
-import org.graalvm.compiler.nodes.LoopExitNode;
-import org.graalvm.compiler.nodes.LoweredCallTargetNode;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.SafepointNode;
-import org.graalvm.compiler.nodes.ShortCircuitOrNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.graalvm.compiler.nodes.*;
 import org.graalvm.compiler.nodes.calc.FloatEqualsNode;
 import org.graalvm.compiler.nodes.calc.FloatLessThanNode;
 import org.graalvm.compiler.nodes.calc.IntegerBelowNode;
@@ -110,6 +89,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.ExprStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PragmaUnrollNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalAndNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalEqualsNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
@@ -449,8 +429,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         trace("emitIf: %s, condition=%s\n", x, x.condition().getClass().getName());
 
         /**
-         * test to see if this is an exception check need to implement this
-         * properly? or omit!
+         * test to see if this is an exception check need to implement this properly? or
+         * omit!
          */
         final LabelRef falseBranch = getLIRBlock(x.falseSuccessor());
         if (falseBranch.getTargetBlock().isExceptionEntry()) {
@@ -465,6 +445,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         trace("condition: %s -> %s", x.condition(), condition);
 
         if (isLoop) {
+            // HERE NEED TO ADD THE PRAGMA UNROLL
             append(new OCLControlFlow.LoopConditionOp(condition));
         } else if (elseClause) {
             append(new OCLControlFlow.LinkedConditionalBranchOp(condition));
@@ -481,6 +462,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         trace("emitLoopBegin");
 
         final Block block = (Block) gen.getCurrentBlock();
+
+        final Block currentBlockDominator = block.getDominator();
 
         final LIR lir = getGen().getResult().getLIR();
 
@@ -502,6 +485,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             }
         }
 
+        emitPragmaLoopUnroll(currentBlockDominator);
         append(new OCLControlFlow.LoopInitOp());
         append(new OCLControlFlow.LoopPostOp());
         label.clearIncomingValues();
@@ -560,6 +544,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             emitLoopExit((LoopExitNode) node);
         } else if (node instanceof ShortCircuitOrNode) {
             emitShortCircuitOrNode((ShortCircuitOrNode) node);
+        } else if (node instanceof PragmaUnrollNode) {
         } else {
             super.emitNode(node);
         }
@@ -623,6 +608,14 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 LIRKind lirKind = getGen().getLIRKind(param.stamp());
                 setResult(param, new OCLNullary.Parameter(locals[index].getName(), lirKind));
                 index++;
+            }
+        }
+    }
+
+    private void emitPragmaLoopUnroll(Block blk) {
+        for (ValueNode tempDomBlockNode : blk.getNodes()) {
+            if (tempDomBlockNode instanceof PragmaUnrollNode) {
+                super.emitNode(tempDomBlockNode);
             }
         }
     }

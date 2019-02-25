@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
@@ -36,6 +36,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
@@ -46,6 +47,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
@@ -82,6 +84,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     private final int platformIndex;
     private static OCLDriver driver = null;
     private String platformName;
+
+    private static boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
 
     private static OCLDriver findDriver() {
         if (driver == null) {
@@ -225,7 +229,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
                 return deviceContext.getCode(task.getId(), resolvedMethod.getName());
             }
-            return deviceContext.installCode(result);
+            return Tornado.ACCELERATOR_IS_FPGA ? deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA) : deviceContext.installCode(result);
         } catch (Exception e) {
             driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
             driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());
@@ -253,7 +257,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return null;
     }
 
-    private TornadoInstalledCode compileJavaToAccelertor(SchedulableTask task) {
+    private TornadoInstalledCode compileJavaToAccelerator(SchedulableTask task) {
         if (task instanceof CompilableTask) {
             return compileTask(task);
         } else if (task instanceof PrebuiltTask) {
@@ -287,11 +291,59 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     public TornadoInstalledCode installCode(SchedulableTask task) {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
-        if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName)) {
-            return compileJavaToAccelertor(task);
+        if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && Tornado.ACCELERATOR_IS_FPGA) {
+            compileJavaToAccelerator(task);
+            return loadPreCompiledBinaryFromCache(task);
+        } else if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !Tornado.ACCELERATOR_IS_FPGA) {
+            return compileJavaToAccelerator(task);
         } else {
             return loadPreCompiledBinaryFromCache(task);
         }
+    }
+
+    private ObjectBuffer createArrayWrapper(Class<?> type, OCLDeviceContext device) {
+        ObjectBuffer result = null;
+        if (type == int[].class) {
+            result = new OCLIntArrayWrapper(device);
+        } else if (type == short[].class) {
+            result = new OCLShortArrayWrapper(device);
+        } else if (type == byte[].class) {
+            result = new OCLByteArrayWrapper(device);
+        } else if (type == float[].class) {
+            result = new OCLFloatArrayWrapper(device);
+        } else if (type == double[].class) {
+            result = new OCLDoubleArrayWrapper(device);
+        } else if (type == long[].class) {
+            result = new OCLLongArrayWrapper(device);
+        } else if (type == char[].class) {
+            result = new OCLCharArrayWrapper(device);
+        } else {
+            TornadoInternalError.unimplemented("array of type %s", type.getName());
+        }
+        return result;
+    }
+
+    private ObjectBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, OCLDeviceContext device) {
+        ObjectBuffer result = null;
+
+        if (componentType == int[].class) {
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLIntArrayWrapper(context));
+        } else if (componentType == short[].class) {
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLShortArrayWrapper(context));
+        } else if (componentType == char[].class) {
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLCharArrayWrapper(context));
+        } else if (componentType == byte[].class) {
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLByteArrayWrapper(context));
+        } else if (componentType == float[].class) {
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLFloatArrayWrapper(context));
+        } else if (componentType == double[].class) {
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLDoubleArrayWrapper(context));
+        } else if (componentType == long[].class) {
+            result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLLongArrayWrapper(context));
+        } else {
+            TornadoInternalError.unimplemented("array of type %s", type.getName());
+        }
+        return result;
     }
 
     private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg, OCLDeviceContext device) throws TornadoOutOfMemoryException {
@@ -299,43 +351,11 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         if (type.isArray()) {
 
             if (!type.getComponentType().isArray()) {
-                if (type == int[].class) {
-                    result = new OCLIntArrayWrapper(device);
-                } else if (type == short[].class) {
-                    result = new OCLShortArrayWrapper(device);
-                } else if (type == byte[].class) {
-                    result = new OCLByteArrayWrapper(device);
-                } else if (type == float[].class) {
-                    result = new OCLFloatArrayWrapper(device);
-                } else if (type == double[].class) {
-                    result = new OCLDoubleArrayWrapper(device);
-                } else if (type == long[].class) {
-                    result = new OCLLongArrayWrapper(device);
-                } else if (type == char[].class) {
-                    result = new OCLCharArrayWrapper(device);
-                } else {
-                    TornadoInternalError.unimplemented("array of type %s", type.getName());
-                }
+                result = createArrayWrapper(type, device);
             } else {
                 final Class<?> componentType = type.getComponentType();
                 if (RuntimeUtilities.isPrimitiveArray(componentType)) {
-                    if (componentType == int[].class) {
-                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLIntArrayWrapper(context));
-                    } else if (componentType == short[].class) {
-                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLShortArrayWrapper(context));
-                    } else if (componentType == char[].class) {
-                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLCharArrayWrapper(context));
-                    } else if (componentType == byte[].class) {
-                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLByteArrayWrapper(context));
-                    } else if (componentType == float[].class) {
-                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLFloatArrayWrapper(context));
-                    } else if (componentType == double[].class) {
-                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLDoubleArrayWrapper(context));
-                    } else if (componentType == long[].class) {
-                        result = new OCLMultiDimArrayWrapper<>(device, (OCLDeviceContext context) -> new OCLLongArrayWrapper(context));
-                    } else {
-                        TornadoInternalError.unimplemented("array of type %s", type.getName());
-                    }
+                    result = createMultiArrayWrapper(componentType, type, device);
                 } else {
                     TornadoInternalError.unimplemented("multi-dimensional array of type %s", type.getName());
                 }
@@ -395,7 +415,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             ensureAllocated(object, state);
         }
 
-        if (!state.hasContents()) {
+        if (BENCHMARKING_MODE || !state.hasContents()) {
             state.setContents(true);
             return state.getBuffer().enqueueWrite(object, events, events == null);
         }
@@ -532,6 +552,27 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     @Override
     public String getDeviceName() {
         return String.format("opencl-%d-%d", platformIndex, deviceIndex);
+    }
+
+    @Override
+    public TornadoDeviceType getDeviceType() {
+        OCLDeviceType deviceType = device.getDeviceType();
+        switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU:
+                return TornadoDeviceType.CPU;
+            case CL_DEVICE_TYPE_GPU:
+                return TornadoDeviceType.GPU;
+            case CL_DEVICE_TYPE_ACCELERATOR:
+                return TornadoDeviceType.ACCELERATOR;
+            case CL_DEVICE_TYPE_CUSTOM:
+                return TornadoDeviceType.CUSTOM;
+            case CL_DEVICE_TYPE_ALL:
+                return TornadoDeviceType.ALL;
+            case CL_DEVICE_TYPE_DEFAULT:
+                return TornadoDeviceType.DEFAULT;
+            default:
+                throw new RuntimeException("Device not supported");
+        }
     }
 
 }

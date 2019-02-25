@@ -68,7 +68,7 @@ public class OCLPlatform extends TornadoLogger {
     native static long clCreateContext(long platform, long[] devices) throws OCLException;
 
     public OCLContext createContext() {
-        OCLContext result = null;
+        OCLContext contextObject = null;
         final LongBuffer deviceIds = LongBuffer.allocate(devices.size());
         for (OCLDevice device : devices) {
             deviceIds.put(device.getId());
@@ -76,18 +76,20 @@ public class OCLPlatform extends TornadoLogger {
 
         try {
             long contextId = clCreateContext(id, deviceIds.array());
-            result = new OCLContext(this, contextId, devices);
-            contexts.add(result);
+            contextObject = new OCLContext(this, contextId, devices);
+            contexts.add(contextObject);
         } catch (OCLException e) {
             error(e.getMessage());
             e.printStackTrace();
         }
-        return result;
+        return contextObject;
     }
 
     public void cleanup() {
         for (OCLContext context : contexts) {
-            context.cleanup();
+            if (context != null) {
+                context.cleanup();
+            }
         }
     }
 

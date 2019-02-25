@@ -57,9 +57,11 @@ public class TestMatrices extends TornadoTestBase {
 
     public static void matrixVector(float[] matrix, float[] vector, float[] result, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
+            float sum = 0.0f;
             for (int j = 0; j < size; j++) {
-                result[i] += matrix[i * size + j] * vector[j];
+                sum += matrix[i * size + j] * vector[j];
             }
+            result[i] = sum;
         }
     }
 
@@ -142,7 +144,7 @@ public class TestMatrices extends TornadoTestBase {
 
     @Test
     public void testMatrixVector() {
-        final int N = 32;
+        final int N = 4;
         float[] matrix = new float[N * N];
         float[] vector = new float[N];
         float[] result = new float[N];
@@ -161,13 +163,44 @@ public class TestMatrices extends TornadoTestBase {
                 .task("t0", TestMatrices::matrixVector, matrix, vector, result, N)
                 .streamOut(result);
         //@formatter:on
-        t.warmup();
         t.execute();
 
         matrixVector(matrix, vector, resultSeq, N);
 
         for (int i = 0; i < vector.length; i++) {
-            assertEquals(resultSeq[i], result[i], 0.001);
+            assertEquals(resultSeq[i], result[i], 0.01f);
+        }
+    }
+
+    public static void copyMatrix2D(final float[][] matrixA, final float[][] matrixB) {
+        for (@Parallel int i = 0; i < matrixA.length; i++) {
+            for (@Parallel int j = 0; j < matrixA[i].length; j++) {
+                matrixB[i][j] = matrixA[i][j];
+            }
+        }
+    }
+
+    @Test
+    @Ignore
+    public void testCopyMatrix2D() {
+        final int N = 32;
+        float[][] matrixA = new float[N][N];
+        float[][] matrixB = new float[N][N];
+
+        Random random = new Random();
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                matrixA[i][j] = random.nextFloat();
+            }
+        }
+
+        TaskSchedule ts = new TaskSchedule("s0").task("s0", TestMatrices::copyMatrix2D, matrixA, matrixB).streamOut(matrixB);
+        ts.execute();
+
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                assertEquals(matrixA[i][j], matrixB[i][j], 0.01);
+            }
         }
     }
 
@@ -190,7 +223,6 @@ public class TestMatrices extends TornadoTestBase {
                 .task("t0", TestMatrices::matrixMultiplication, matrixA, matrixB, matrixC, N)
                 .streamOut(matrixC);
         //@formatter:on
-        t.warmup();
         t.execute();
 
         for (int i = 0; i < N; i++) {

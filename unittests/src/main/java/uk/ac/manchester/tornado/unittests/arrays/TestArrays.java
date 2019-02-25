@@ -331,6 +331,10 @@ public class TestArrays extends TornadoTestBase {
         }
     }
 
+    /**
+     * Inspired by the CUDA Hello World from Computer Graphics:
+     * {@link http://computer-graphics.se/hello-world-for-cuda.html}
+     */
     @Test
     public void testVectorCharsMessage() {
         char[] a = new char[] { 'h', 'e', 'l', 'l', 'o', ' ', '\0', '\0', '\0', '\0', '\0', '\0' };
@@ -350,7 +354,5 @@ public class TestArrays extends TornadoTestBase {
         assertEquals('l', a[3]);
         assertEquals('d', a[4]);
         assertEquals('!', a[5]);
-
     }
-
 }

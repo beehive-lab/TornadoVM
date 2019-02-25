@@ -43,6 +43,7 @@ package uk.ac.manchester.tornado.api.common;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 
@@ -105,5 +106,7 @@ public interface TornadoDevice {
     public TornadoTargetDevice getDevice();
 
     public TornadoMemoryProvider getMemoryProvider();
+
+    public TornadoDeviceType getDeviceType();
 
 }

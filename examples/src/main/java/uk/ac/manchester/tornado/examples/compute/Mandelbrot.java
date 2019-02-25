@@ -18,9 +18,7 @@
 
 package uk.ac.manchester.tornado.examples.compute;
 
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Graphics;
+import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -28,7 +26,7 @@ import java.awt.image.WritableRaster;
 import java.io.File;
 
 import javax.imageio.ImageIO;
-import javax.swing.JFrame;
+import javax.swing.*;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -99,16 +97,17 @@ public class Mandelbrot {
                     float ZiN = 0;
                     int y = 0;
 
-                    for (y = 0; y < iterations; y++) {
-                        float s = ZiN + ZrN;
-                        if (s > 4.0f) {
-                            break;
-                        } else {
+                    for (int ii = 0; ii < iterations; ii++) {
+                        if (ZiN + ZrN <= 4.0f) {
                             Zi = 2.0f * Zr * Zi + Ci;
                             Zr = 1 * ZrN - ZiN + Cr;
                             ZiN = Zi * Zi;
                             ZrN = Zr * Zr;
+                            y++;
+                        } else {
+                            ii = iterations;
                         }
+
                     }
                     short r = (short) ((y * 255) / iterations);
                     output[i * size + j] = r;

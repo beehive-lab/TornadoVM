@@ -16,27 +16,28 @@
  * 
  */
 
-package uk.ac.manchester.tornado.examples.fpga;
+package uk.ac.manchester.tornado.examples.dynamic;
 
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 
-import java.io.PrintStream;
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
-public class NBodyFPGA {
+public class NBodyDynamic {
 
     private static float delT,espSqr;
     private static float[] posSeq,velSeq;
     private static int[] inputSize;
     private static int numBodies;
     private static TaskSchedule graph;
+    private static boolean VALIDATION = false;
 
     private static void usage(String[] args) {
-        final PrintStream printf = System.err.printf("Usage: Number of bodies is missing or number of iterations\n");
+        System.err.printf("Usage: <numBodies> <performance|end|sequential> <iterations>\n");
         System.exit(1);
     }
 
@@ -99,11 +100,9 @@ public class NBodyFPGA {
             velSeqSeq[i] = auxVelocityZero[i];
         }
         graph = new TaskSchedule("s0");
-        graph.task("t0", NBodyFPGA::nBody, numBodies, posSeq, velSeq, delT, espSqr, inputSize);
+        graph.task("t0", NBodyDynamic::nBody, numBodies, posSeq, velSeq, delT, espSqr, inputSize).streamOut(posSeq, velSeq).streamOut(posSeq, velSeq);
         graph.warmup();
         graph.execute();
-        graph.syncObjects(posSeq, velSeq);
-        graph.clearProfiles();
 
         nBody(numBodies, posSeqSeq, velSeqSeq, delT, espSqr, inputSize);
 
@@ -123,14 +122,15 @@ public class NBodyFPGA {
 
     public static void main(String[] args) {
 
-        StringBuffer resultsIterations = new StringBuffer();
-
-        if (args.length != 2) {
+        if (args.length < 3) {
             usage(args);
         }
 
         numBodies = Integer.parseInt(args[0]);
-        final int iterations = Integer.parseInt(args[1]);
+        String executionType = args[1];
+        final int iterations = Integer.parseInt(args[2]);
+        long end;
+        long start;
 
         inputSize = new int[1];
         inputSize[0] = numBodies;
@@ -157,37 +157,40 @@ public class NBodyFPGA {
             velSeq[i] = auxVelocityZero[i];
         }
 
+        long startInit = System.nanoTime();
+        final TaskSchedule s0 = new TaskSchedule("s0").task("t0", NBodyDynamic::nBody, numBodies, posSeq, velSeq, delT, espSqr, inputSize).streamOut(posSeq, velSeq);
+        long stopInit = System.nanoTime();
+        System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
+
+        System.out.println("Heap size  " + Runtime.getRuntime().maxMemory() + " " + "\n");
         for (int i = 0; i < iterations; i++) {
-            System.gc();
-            long start = System.nanoTime();
-            nBody(numBodies, posSeq, velSeq, delT, espSqr, inputSize);
-            long end = System.nanoTime();
-            resultsIterations.append("Sequential execution time of iteration " + i + " is: " + (end - start) + " ns");
-            resultsIterations.append("\n");
+            switch (executionType) {
+                case "performance":
+                    start = System.nanoTime();
+                    s0.executeWithProfilerSequential(Policy.PERFORMANCE);
+                    end = System.nanoTime();
+                    break;
+                case "end":
+                    start = System.nanoTime();
+                    s0.executeWithProfilerSequential(Policy.END_2_END);
+                    end = System.nanoTime();
+                    break;
+                case "sequential":
+                    System.gc();
+                    start = System.nanoTime();
+                    nBody(numBodies, posSeq, velSeq, delT, espSqr, inputSize);
+                    end = System.nanoTime();
+                    break;
+                default:
+                    start = System.nanoTime();
+                    s0.execute();
+                    end = System.nanoTime();
+            }
+            System.out.println("Total time:  " + (end - start) + " ns" + "\n");
         }
 
-        System.out.println(resultsIterations.toString());
-
-        final TaskSchedule t0 = new TaskSchedule("s0").task("t0", NBodyFPGA::nBody, numBodies, posSeq, velSeq, delT, espSqr, inputSize);
-
-        t0.warmup();
-        resultsIterations = null;
-
-        resultsIterations = new StringBuffer();
-
-        validate();
-
-        for (int i = 0; i < iterations; i++) {
-            System.gc();
-            long start = System.nanoTime();
-            t0.execute();
-            long end = System.nanoTime();
-            resultsIterations.append("Tornado execution time of iteration " + i + " is: " + (end - start) + " ns");
-            resultsIterations.append("\n");
+        if (VALIDATION) {
+            validate();
         }
-
-        System.out.println(resultsIterations.toString());
-
     }
-
 }

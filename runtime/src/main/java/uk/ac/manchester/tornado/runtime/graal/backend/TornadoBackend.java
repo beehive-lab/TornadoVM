@@ -24,7 +24,6 @@
 package uk.ac.manchester.tornado.runtime.graal.backend;
 
 import org.graalvm.compiler.core.target.Backend;
-
 import org.graalvm.compiler.phases.util.Providers;
 
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;

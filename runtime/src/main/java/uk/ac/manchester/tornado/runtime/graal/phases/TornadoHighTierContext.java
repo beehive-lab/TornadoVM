@@ -38,14 +38,8 @@ public class TornadoHighTierContext extends HighTierContext {
     protected final TaskMetaData meta;
     protected final boolean isKernel;
 
-    public TornadoHighTierContext(
-            Providers providers,
-            PhaseSuite<HighTierContext> graphBuilderSuite,
-            OptimisticOptimizations optimisticOpts,
-            ResolvedJavaMethod method,
-            Object[] args,
-            TaskMetaData meta,
-            boolean isKernel) {
+    public TornadoHighTierContext(Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ResolvedJavaMethod method, Object[] args,
+            TaskMetaData meta, boolean isKernel) {
         super(providers, graphBuilderSuite, optimisticOpts);
         this.method = method;
         this.args = args;

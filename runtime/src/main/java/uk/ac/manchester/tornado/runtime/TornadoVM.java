@@ -53,6 +53,18 @@ import uk.ac.manchester.tornado.runtime.graph.GraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
+/**
+ * TornadoVM: it includes a bytecode interpreter (Tornado bytecodes), a memory
+ * manager for all devices (FPGAs, GPUs and multi-core that follows the OpenCL
+ * programming model), and a JIT compiler from Java bytecode to OpenCL.
+ *
+ * The JIT compiler extends the Graal JIT Compiler for OpenCL compilation.
+ * 
+ * There is an instance of the {@link TornadoVM} per
+ * {@link TornadoTaskSchedule}. Each TornadoVM contains the logic to orchestrate
+ * the execution on the parallel device (e.g., a GPU).
+ *
+ */
 public class TornadoVM extends TornadoLogger {
 
     private static final Event EMPTY_EVENT = new EmptyEvent();
@@ -154,7 +166,6 @@ public class TornadoVM extends TornadoLogger {
         if (stacks[index] == null || setNewDevice) {
             stacks[index] = device.createStack(numArgs);
         }
-
         return stacks[index];
     }
 
@@ -179,7 +190,6 @@ public class TornadoVM extends TornadoLogger {
         for (int[] waitList : events) {
             Arrays.fill(waitList, -1);
         }
-
         StringBuilder bytecodesList = new StringBuilder();
 
         while (buffer.hasRemaining()) {
@@ -222,6 +232,7 @@ public class TornadoVM extends TornadoLogger {
                 bytecodesList.append(String.format("COPY_IN [0x%x] %s on %s [event list=%d]\n", object.hashCode(), object, device, eventList));
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
+
                 if (graphContext.meta().isDebug()) {
                     debug("vm: state=%s", objectState);
                 }
@@ -555,9 +566,7 @@ public class TornadoVM extends TornadoLogger {
                                 profile.getEndTime());
                     }
                 }
-
             }
-
         }
     }
 

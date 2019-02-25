@@ -142,8 +142,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                     break;
                 case Object:
                     /*
-                     * propagate all constants from connected final
-                     * fields...cool!
+                     * propagate all constants from connected final fields
                      */
                     if (Modifier.isFinal(f.getModifiers())) {
                         final Object value = lookup(obj, f::get);
@@ -251,7 +250,10 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             if (context.hasArgs()) {
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                    propagateParameters(graph, param, context.getArgs());
+                    if (Tornado.ACCELERATOR_IS_FPGA && context.getDeviceMapping().getDeviceType().equals("ACCELERATOR")) {
+                    } else {
+                        propagateParameters(graph, param, context.getArgs());
+                    }
                 }
                 Debug.dump(Debug.INFO_LEVEL, graph, "After Phase Propagate Parameters");
             } else {
@@ -275,7 +277,9 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             Debug.dump(Debug.INFO_LEVEL, graph, "After Phase Pi Node Removal");
 
-            loopUnroller.execute(graph, context);
+            if (!Tornado.ACCELERATOR_IS_FPGA) {
+                loopUnroller.execute(graph, context);
+            }
 
             valueTypeReplacement.execute(graph, context);
 

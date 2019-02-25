@@ -322,8 +322,6 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         final float piValue = result[0] * 4;
 
-        System.out.println("PI VALUE: " + piValue);
-
         assertEquals(3.14, piValue, 0.01f);
     }
 

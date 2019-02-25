@@ -144,8 +144,13 @@ JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContex
     jmethodID constructorId = (*env)->GetMethodID(env, resultClass, "<init>", "(JJI)V");
 
     cl_mem mem;
-    OPENCL_CHECK_ERROR("clCreateBuffer",
+	if (host_ptr == 0) {	
+	    OPENCL_CHECK_ERROR("clCreateBuffer",
+            mem = clCreateBuffer((cl_context) context_id, (cl_mem_flags) flags, (size_t) size, NULL, &error_id), NULL);
+	} else {
+	    OPENCL_CHECK_ERROR("clCreateBuffer",
             mem = clCreateBuffer((cl_context) context_id, (cl_mem_flags) flags, (size_t) size, (void *) host_ptr, &error_id), NULL);
+	}
 
     return (*env)->NewObject(env, resultClass, constructorId, (jlong) mem, (jlong) host_ptr, (jint) error_id);
 }

@@ -107,4 +107,5 @@ public class DeviceObjectState implements TornadoDeviceObjectState {
     public long getOffset() {
         return buffer.toRelativeAddress();
     }
+
 }

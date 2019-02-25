@@ -14,7 +14,7 @@ class Colors:
 ## Wait still we merge with @James to include formatting in all the projects
 __TORNADO_PROJECTS__ = [
 			"benchmarks",
-			"collections",
+			"matrices",
 			"drivers/opencl",
 			"examples",
 			"runtime",
@@ -27,7 +27,7 @@ __PATH_TO_ECLIPSE_SETTINGS__ = "scripts/templates/eclipse-settings/files/"
 def setEclipseSettings():
 	for project in __TORNADO_PROJECTS__:
 
-		print Colors.GREEN + "Generating eclipse files for project: " + Colors.BOLD + project + Colors.RESET
+		print Colors.GREEN + "Generating eclipse files for the module: " + Colors.BOLD + project + Colors.RESET
 
 		settingsDirectory = project + "/.settings"
 

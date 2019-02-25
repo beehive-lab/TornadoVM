@@ -25,12 +25,12 @@
 # Authors: Juan Fumero
 #
 
-import os
-import sys
 import argparse
-import time
-import subprocess
+import os
 import re
+import subprocess
+import sys
+import time
 
 ## Include here the new test clasess in Tornado
 __TEST_THE_WORLD__ = [
@@ -53,6 +53,8 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles",
+	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
+	"uk.ac.manchester.tornado.unittests.instances.TestInstances",
 ]
 
 ## Options
@@ -79,11 +81,12 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testThreadSchuler",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testSumInts2",     
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testSumInts3",
-
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testSumFloats",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testMultFloats",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles#testSumDoubles",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles#testMultdoubles",
+	"uk.ac.manchester.tornado.unittests.loops.TestLoops#testInnertForEach",
+	"uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer#testArrayMigration",
 	]
 
 
