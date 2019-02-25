@@ -6,7 +6,7 @@ To include the latest version in your project:
    <repositories>
      <repository>
        <id>universityOfManchester-graal</id>
-       <url>https://raw.githubusercontent.com/beehive-lab/tornado/maven-tornado-latest</url>
+       <url>https://raw.githubusercontent.com/beehive-lab/tornado/maven-tornadovm</url>
      </repository>
    </repositories>
   
