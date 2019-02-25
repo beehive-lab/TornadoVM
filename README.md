@@ -15,6 +15,7 @@ We also maintain a live TornadoVM whitepaper document which you can download [he
 
 ## Selected Publications
 
+* Juan Fumero, Michail Papadimitriou, Foivos Zakkak, Maria Xekalaki, James Clarkson, Christos Kotselidis. **Dynamic Application Reconfiguration on Heterogeneous Hardware.** To appear in Virtual Execution Environments (VEE) 2019, Providence, Rhode Island, United States, 2019.
 * James Clarkson, Juan Fumero, Michalis Papadimitriou, Foivos S. Zakkak, Maria Xekalaki, Christos Kotselidis, Mikel Luján (The University of Manchester). **Exploiting High-Performance Heterogeneous Hardware for Java Programs using Graal**. *Proceedings of the 15th International Conference on Managed Languages & Runtime.* [preprint](https://www.researchgate.net/publication/327097904_Exploiting_High-Performance_Heterogeneous_Hardware_for_Java_Programs_using_Graal)
 
 * Sajad Saeedi, Bruno Bodin, Harry Wagstaff, Andy Nisbet, Luigi Nardi, John Mawer, Nicolas Melot, Oscar Palomar, Emanuele Vespa, Tom Spink, Cosmin Gorgovan, Andrew Webb, James Clarkson, Erik Tomusk, Thomas Debrunner, Kuba Kaszyk, Pablo Gonzalez-de-Aledo, Andrey Rodchenko, Graham Riley, Christos Kotselidis, Björn Franke, Michael FP O'Boyle, Andrew J Davison, Paul HJ Kelly, Mikel Luján, Steve Furber. **Navigating the Landscape for Real-Time Localization and Mapping for Robotics and Virtual and Augmented Reality.** In Proceedings of the IEEE, 2018.
@@ -24,7 +25,21 @@ We also maintain a live TornadoVM whitepaper document which you can download [he
 
 ### Citation
 
-Please use the following citation if you use Tornado in your work.
+If you are using **TornadoVM 0.2** (which includes the Dynamic Reconfiguration, the Initial FPGA support and CPU/GPU reductions), please use the following citation:
+
+```bibtex
+@inproceedings{Fumero:DARHH:VEE:2019,
+ author = {Juan Fumero, Michail Papadimitriou, Foivos Zakkak, Maria Xekalaki, James Clarkson, Christos Kotselidis},
+ title = {{Dynamic Application Reconfiguration on Heterogeneous Hardware.}},
+ booktitle = {Proceedings of the 15th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments},
+ series = {VEE '19},
+ year = {2019},
+ publisher = {ACM},
+} 
+```
+
+
+If you are using **Tornado 0.1** (Initial release), please use the following citation in your work.
 
 ```bibtex
 @inproceedings{Clarkson:2018:EHH:3237009.3237016,
