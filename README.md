@@ -4,7 +4,7 @@ TornadoVM is a practical heterogeneous programming framework for automatically a
 
 ### Releases
   * TornadoVM 0.2   - 25/02/2019 : See [CHANGELOG](CHANGELOG.md)
-  * TornadoVM 0.1.0 - 07/09/2018 : See [CHANGELOG](CHANGELOG.md)
+  * Tornado 0.1.0 - 07/09/2018 : See [CHANGELOG](CHANGELOG.md)
 
 
 ## How to start? 
