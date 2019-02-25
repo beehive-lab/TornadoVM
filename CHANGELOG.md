@@ -2,6 +2,7 @@
 This file summarizes the new and major changes for each *TornadoVM* version. 
 
 ## TornadoVM 0.2 
+25/02/2019
 
   * Device selection (CPU, multi-core, GPU, FPGA) via an API for Dynamic Reconfiguration
       * Added methods `executeWithProfiler` and `executeWithProfilerSequential` with an input policy. 
@@ -16,6 +17,7 @@ This file summarizes the new and major changes for each *TornadoVM* version.
   * Performance and stability fixes
 
 ## TornadoVM 0.1.0 
+07/09/2018
 
   * Initial Implementation of the Tornado compiler
   * Initial GPU/CPU code generation for OpenCL

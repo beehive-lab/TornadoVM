@@ -1,16 +1,16 @@
-# Tornado
+# TornadoVM
 
-Tornado is a practical heterogeneous programming framework for automatically accelerating Java programs on heterogeneous (OpenCL-compatible)  hardware. 
+TornadoVM is a practical heterogeneous programming framework for automatically accelerating Java programs on heterogeneous (OpenCL-compatible)  hardware. 
 
 ### Releases
-  * Tornado 0.2   - 25/02/2019 : See [CHANGELOG](CHANGELOG.md)
-  * Tornado 0.1.0 - 07/09/2018 : See [CHANGELOG](CHANGELOG.md)
+  * TornadoVM 0.2   - 25/02/2019 : See [CHANGELOG](CHANGELOG.md)
+  * TornadoVM 0.1.0 - 07/09/2018 : See [CHANGELOG](CHANGELOG.md)
 
 
 ## How to start? 
 
-The [INSTALL](INSTALL.md) page contains instructions on how to install Tornado while the [Examples](assembly/src/docs/2_EXAMPLES.md) page includes   examples regarding running Java programs on GPUs. 
-We also maintain a live Tornado whitepaper document which you can download [here](https://www.dropbox.com/s/rbb2qv0q2wicgvy/main.pdf).
+The [INSTALL](INSTALL.md) page contains instructions on how to install TornadoVM while the [Examples](assembly/src/docs/2_EXAMPLES.md) page includes examples regarding running Java programs on GPUs. 
+We also maintain a live TornadoVM whitepaper document which you can download [here](https://www.dropbox.com/s/rbb2qv0q2wicgvy/main.pdf).
 
 
 ## Selected Publications
@@ -77,9 +77,9 @@ Currently, this project is maintained and updated by the following contributors:
 
 ## License
 
-To use Tornado, you can link the Tornado API to your application which is under the CLASSPATH Exception of GPLv2.0.
+To use TornadoVM, you can link the Tornado API to your application which is under the CLASSPATH Exception of GPLv2.0.
 
-Each Tornado module is licensed as follows:
+Each TornadoVM module is licensed as follows:
 
 |  Module | License  |
 |---|---|
