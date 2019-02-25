@@ -10,9 +10,9 @@
   <url>https://github.com/beehive-lab/tornado</url>
 
    <scm>
-    <connection>scm:git:https://github.com/beehive-lab/tornado.git</connection>
-    <developerConnection>scm:git:https://github.com/beehive-lab/tornado.git</developerConnection>
-    <url>https://github.com/beehive-lab/tornado</url>
+    <connection>scm:git:https://github.com/beehive-lab/tornadovm.git</connection>
+    <developerConnection>scm:git:https://github.com/beehive-lab/tornadovm.git</developerConnection>
+    <url>https://github.com/beehive-lab/tornadovm</url>
   </scm>
 
   <properties>
