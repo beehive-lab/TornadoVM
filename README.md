@@ -1,4 +1,4 @@
-# Tornado-Maven-Repositories
+# TornadoVM Maven Repositories
 
 To include the latest version in your project: 
 
