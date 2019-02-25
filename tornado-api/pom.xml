@@ -4,12 +4,12 @@
   <parent>
     <artifactId>tornado</artifactId>
     <groupId>tornado</groupId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.2</version>
   </parent>
 
   <groupId>tornado</groupId>
   <artifactId>tornado-api</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.2</version>
 
   <name>tornado-api</name>
   <url>http://www.example.com</url>
