@@ -1,22 +1,23 @@
 # TornadoVM Changelog
-This file summarizes the new and major changes for each *TornadoVM* version. 
+This file summarizes the new features and major changes for each *TornadoVM* version. 
 
 ## TornadoVM 0.2 
 25/02/2019
-
-  * Device selection (CPU, multi-core, GPU, FPGA) via an API for Dynamic Reconfiguration
+  * Rename to TornadoVM
+  * Device selection for better performance (CPU, multi-core, GPU, FPGA) via an API for Dynamic Reconfiguration
       * Added methods `executeWithProfiler` and `executeWithProfilerSequential` with an input policy. 
       * Policies: `Policy.PERFORMANCE`, `Policy.END_2_END`, and `Policy.LATENCY` implemented. 
-  * Basic heuristic for prediction of the target device within Dynamic Reconfiguration
-  * Initial FPGA integration for Altera FPGAs;
+  * Basic heuristic for predicting the highest performing target device with Dynamic Reconfiguration
+  * Initial FPGA integration for Altera FPGAs:
     * Full JIT compilation mode
     * Ahead of time compilation mode
     * Emulation/debug mode 
   * FPGA JIT compiler specializations
-  * Reductions specializations for CPUs and GPUs
+  * Added support for Java reductions:
+    * Compiler specializations for CPU and GPU reductions
   * Performance and stability fixes
 
-## TornadoVM 0.1.0 
+## Tornado 0.1.0 
 07/09/2018
 
   * Initial Implementation of the Tornado compiler
