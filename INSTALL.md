@@ -1,19 +1,19 @@
-# Installing Tornado #
+# Installing TornadoVM #
 
 ### Pre-requisites
 
   * Maven Version 3
   * CMake 3.6 (or newer)
   * OpenCL (preferably v1.2 or newer)
-  * GCC or clang/LLVM
+  * GCC or clang/LLVM (GCC >= 5.5)
   * Python 2.7 (>= 2.7.5)
 
 ### Tested OS
 Tornado has been succefully tested on the following platforms:
 
-  * CentOS 7.3, 7.4 and 7.5
-  * Fedora 21
-  * Ubuntu 16.04 and 18.04 
+  * CentOS >= 7.3
+  * Fedora >= 21
+  * Ubuntu 16.04, 18.04 and 18.10
 
 
 ## Installation
@@ -32,8 +32,7 @@ This will generate a new Java binary into the `jdk1.8.0_<your_version>/product`,
 
 
 
-
-### 2. Download Tornado
+### 2. Download TornadoVM
 
 ```bash
  $ cd ..
@@ -130,7 +129,7 @@ Then export `CMAKE_ROOT` variable to the cmake installation. You can add it to t
 export CMAKE_ROOT=/opt/cmake-3.10.2
 ```
 
-### 5. Compile Tornado
+### 5. Compile TornadoVM
 
 ```bash
 $ cd ~/tornadovm
