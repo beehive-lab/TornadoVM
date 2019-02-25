@@ -37,13 +37,13 @@ This will generate a new Java binary into the `jdk1.8.0_<your_version>/product`,
 
 ```bash
  $ cd ..
- $ git clone https://github.com/beehive-lab/Tornado tornado
- $ cd tornado
- $ vim etc/tornado.env
+ $ git clone https://github.com/beehive-lab/TornadoVM tornadovm
+ $ cd tornadovm
+ $ vim etc/tornadovm.env
 ```
 
 
-Create the `etc/tornado.env` file and add the following code in it **(after updating the paths to your correct ones)**:
+Create the `etc/tornadovm.env` file and add the following code in it **(after updating the paths to your correct ones)**:
 
 ```bash
 #!/bin/bash
@@ -124,7 +124,7 @@ $ cmake -version
 cmake version 3.10.1
 ``` 
 
-Then export `CMAKE_ROOT` variable to the cmake installation. You can add it to the `etc/tornado.env` file.
+Then export `CMAKE_ROOT` variable to the cmake installation. You can add it to the `etc/tornadovm.env` file.
 
 ```bash
 export CMAKE_ROOT=/opt/cmake-3.10.2
@@ -133,8 +133,8 @@ export CMAKE_ROOT=/opt/cmake-3.10.2
 ### 5. Compile Tornado
 
 ```bash
-$ cd ~/tornado
-$ . etc/tornado.env
+$ cd ~/tornadovm
+$ . etc/tornadovm.env
 $ make 
 ```
 and done!! 
