@@ -31,6 +31,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -76,8 +77,8 @@ public class OpenCL {
         });
     }
 
-    public static void throwException(String message) throws TornadoRuntimeException {
-        throw new TornadoRuntimeException(message);
+    public static void throwException(String message) throws TornadoException {
+        throw new TornadoException(message);
     }
 
     native static boolean registerCallback();
@@ -102,7 +103,7 @@ public class OpenCL {
         return platforms.size();
     }
 
-    public static void initialise() throws TornadoRuntimeException {
+    public static void initialise() {
         if (!initialised) {
             try {
                 int numPlatforms = clGetPlatformCount();

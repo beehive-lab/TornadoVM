@@ -44,6 +44,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
 import sun.misc.Unsafe;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 public class RuntimeUtilities {
 
@@ -70,10 +71,12 @@ public class RuntimeUtilities {
     }
 
     /**
-     * Very nice means to convert byte sizes into human readable format<br>
-     * Based on code from http://stackoverflow.com/questions/3758606/how-to-convert
-     * -byte-size-into-human-readable-format-in-java
-     * <p>
+     * Convert byte sizes into human readable format Based on code from
+     * 
+     * @see <a href=http://stackoverflow.com/questions/3758606/how-to-convert
+     *      -byte-size-into-human-readable-format-in-java >Reference to
+     *      StackOverflow</a>
+     * 
      *
      * @param bytes
      * @param si
@@ -285,6 +288,7 @@ public class RuntimeUtilities {
         System.out.println();
     }
 
+    @SuppressWarnings("restriction")
     public static Unsafe getUnsafe() {
         Unsafe result = null;
         try {
@@ -354,9 +358,9 @@ public class RuntimeUtilities {
         return fileName.exists() ? true : false;
     }
 
-    public static void sysCall(String[] command, boolean getOutput) {
+    public static void sysCall(String[] command, boolean printStandardOutput) throws IOException {
         String stdOutput = null;
-        StringBuffer normalOutput = new StringBuffer();
+        StringBuffer standardOutput = new StringBuffer();
         StringBuffer errorOutput = new StringBuffer();
 
         try {
@@ -364,56 +368,26 @@ public class RuntimeUtilities {
             p.waitFor();
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
             BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            normalOutput.append("Here is the standard output of the command:\n");
+            standardOutput.append("Here is the standard output of the command:\n");
             while ((stdOutput = stdInput.readLine()) != null) {
-                normalOutput.append(stdOutput);
+                standardOutput.append(stdOutput);
             }
             errorOutput.append("Here is the standard error of the command (if any):\n");
             while ((stdOutput = stdError.readLine()) != null) {
                 errorOutput.append(stdOutput);
             }
-            if (getOutput) {
-                System.out.println(normalOutput.toString());
+            if (printStandardOutput) {
+                System.out.println(standardOutput.toString());
                 System.out.println(errorOutput.toString());
             }
 
         } catch (IOException e) {
             error("Unable to make a native system call.", e);
+            throw new IOException(e);
         } catch (Throwable t) {
-            t.printStackTrace();
+            error("Unable to make a native system call.", t);
+            throw new TornadoRuntimeException(t.getMessage());
         }
-
-    }
-
-    public static void sysCall(String command, boolean getOutput) {
-        String stdOutput = null;
-        StringBuffer normalOutput = new StringBuffer();
-        StringBuffer errorOutput = new StringBuffer();
-
-        try {
-            Process p = Runtime.getRuntime().exec(command);
-            p.waitFor();
-            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            normalOutput.append("Here is the standard output of the command:\n");
-            while ((stdOutput = stdInput.readLine()) != null) {
-                normalOutput.append(stdOutput);
-            }
-            errorOutput.append("Here is the standard error of the command (if any):\n");
-            while ((stdOutput = stdError.readLine()) != null) {
-                errorOutput.append(stdOutput);
-            }
-            if (getOutput) {
-                System.out.println(normalOutput.toString());
-                System.out.println(errorOutput.toString());
-            }
-
-        } catch (IOException e) {
-            error("Unable to make a native system call.", e);
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
-
     }
 
     public static void writeStreamToFile(File file, byte[] source, boolean append) {
@@ -436,6 +410,5 @@ public class RuntimeUtilities {
     }
 
     private RuntimeUtilities() {
-
     }
 }

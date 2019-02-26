@@ -41,16 +41,16 @@
  */
 package uk.ac.manchester.tornado.api.exceptions;
 
-public class TornadoRuntimeException extends RuntimeException {
+public class TornadoException extends RuntimeException {
 
-    private static final long serialVersionUID = -7515308573010965892L;
+    private static final long serialVersionUID = -4737820856531945219L;
     private final String message;
 
-    public TornadoRuntimeException(final String msg) {
+    public TornadoException(final String msg) {
         message = msg;
     }
 
-    public TornadoRuntimeException(Exception e) {
+    public TornadoException(Exception e) {
         message = e.getMessage();
         this.initCause(e.getCause());
     }
