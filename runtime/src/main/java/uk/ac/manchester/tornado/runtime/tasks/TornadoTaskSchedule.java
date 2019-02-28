@@ -328,15 +328,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         vm.compile();
     }
 
-    @Override
-    public void scheduleInner() {
-        long t0 = System.nanoTime();
-        compileToTornadoVMBytecodes();
-        long t1 = System.nanoTime();
-        if (PRINT_COMPILE_TIMES) {
-            System.out.printf("compile: compileTasks: " + (t1 - t0) + "ns" + "\n");
-        }
-
+    private void precompilationForFPGA() {
         // If current FPGA execution and JIT mode => run warmup
         if (Tornado.FPGA_EMULATION && Tornado.ACCELERATOR_IS_FPGA) {
             System.out.println("Compilation for Emulation");
@@ -347,6 +339,21 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 System.out.println("Compilation for full JIT");
                 compileTaskToOpenCL();
             }
+        }
+    }
+
+    @Override
+    public void scheduleInner() {
+        long t0 = System.nanoTime();
+        compileToTornadoVMBytecodes();
+        long t1 = System.nanoTime();
+        if (PRINT_COMPILE_TIMES) {
+            System.out.printf("compile: compileTasks: " + (t1 - t0) + "ns" + "\n");
+        }
+
+        CompileInfo compileInfo = extractCompileInfo();
+        if (compileInfo.compile) {
+            precompilationForFPGA();
         }
 
         event = vm.execute();
