@@ -125,7 +125,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     private final static String FPGA_ATTRIBUTE = "__attribute__((reqd_work_group_size(16,1,1)))  ";
     private final static String INTEL = "Intel(R)";
     private boolean flag = false;
-    private int counter;
 
     @Override
     public OCLTargetDescription getTarget() {
@@ -289,8 +288,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
      * Retrieve the address of the heap on the device
      */
     public TaskMetaData compileLookupBufferKernel() {
-        int numKernelParameters = 0;
-        TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME, numKernelParameters);
+
+        TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
         OCLCodeCache codeCache = new OCLCodeCache(deviceContext);
         int[] deviceInfo = getDriverAndDevice();
         String deviceFullName = getDriverAndDevice(meta, deviceInfo);
@@ -377,12 +376,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     public TaskMetaData fpgaInstallCode() {
-        int numKernelParameters = 0;
-        TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME, numKernelParameters);
+        TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
         ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
         OCLProviders providers = (OCLProviders) getProviders();
         OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
-        deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA);
+        lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA);
         return meta;
     }
 
