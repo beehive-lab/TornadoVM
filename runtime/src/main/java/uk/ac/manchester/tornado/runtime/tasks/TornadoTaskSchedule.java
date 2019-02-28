@@ -314,7 +314,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return new CompileInfo(false, false);
     }
 
-    private void compileToTornadoVMBytecodes() {
+    private boolean compileToTornadoVMBytecodes() {
         CompileInfo compileInfo = extractCompileInfo();
         if (compileInfo.compile) {
             graphContext.assignToDevices();
@@ -322,6 +322,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
         graphContext.addLastDevice(meta().getDevice());
         graphContext.newStack(compileInfo.updateDevice);
+        return compileInfo.compile;
     }
 
     private void compileTaskToOpenCL() {
@@ -345,14 +346,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public void scheduleInner() {
         long t0 = System.nanoTime();
-        compileToTornadoVMBytecodes();
+        boolean compile = compileToTornadoVMBytecodes();
         long t1 = System.nanoTime();
         if (PRINT_COMPILE_TIMES) {
             System.out.printf("compile: compileTasks: " + (t1 - t0) + "ns" + "\n");
         }
 
-        CompileInfo compileInfo = extractCompileInfo();
-        if (compileInfo.compile) {
+        if (compile) {
             precompilationForFPGA();
         }
 
