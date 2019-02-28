@@ -18,8 +18,6 @@
 
 package uk.ac.manchester.tornado.examples.dynamic;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
-
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -29,11 +27,6 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 public class DFTDynamic {
 
     public static boolean CHECK_RESULT = false;
-
-    private static int size;
-    private static TaskSchedule graph;
-    private static float[] inReal,inImag,outReal,outImag;
-    private static int[] inputSize;
 
     public static void computeDft(float[] inreal, float[] inimag, float[] outreal, float[] outimag, int[] inputSize) {
         int n = inreal.length;
@@ -47,28 +40,23 @@ public class DFTDynamic {
             }
             outreal[k] = sumreal;
             outimag[k] = sumimag;
-
         }
     }
 
-    public static boolean validate() {
+    public static boolean validate(int size, float[] inReal, float[] inImag, float[] outReal, float[] outImag, int[] inputSize) {
         boolean val = true;
         float[] outRealTor = new float[size];
         float[] outImagTor = new float[size];
 
-        graph.warmup();
-        graph.execute();
-        graph.streamOut(outReal, outImag);
-
-        DFTDynamic.computeDft(inReal, inImag, outRealTor, outImagTor, inputSize);
+        computeDft(inReal, inImag, outRealTor, outImagTor, inputSize);
 
         for (int i = 0; i < size; i++) {
-            if (abs(outImagTor[i] - outImag[i]) > 0.1) {
+            if (Math.abs(outImagTor[i] - outImag[i]) > 0.1) {
                 System.out.println(outImagTor[i] + " vs " + outImag[i] + "\n");
                 val = false;
                 break;
             }
-            if (abs(outReal[i] - outRealTor[i]) > 0.1) {
+            if (Math.abs(outReal[i] - outRealTor[i]) > 0.1) {
                 System.out.println(outReal[i] + " vs " + outRealTor[i] + "\n");
                 val = false;
                 break;
@@ -85,11 +73,18 @@ public class DFTDynamic {
             System.exit(-1);
         }
 
-        size = Integer.parseInt(args[0]);
+        final int size = Integer.parseInt(args[0]);
         String executionType = args[1];
         int iterations = Integer.parseInt(args[2]);
 
         long end,start;
+
+        TaskSchedule graph;
+        float[] inReal;
+        float[] inImag;
+        float[] outReal;
+        float[] outImag;
+        int[] inputSize;
 
         inReal = new float[size];
         inImag = new float[size];
@@ -106,9 +101,9 @@ public class DFTDynamic {
 
         long startInit = System.nanoTime();
         graph = new TaskSchedule("s0");
-        graph.task("t0", DFTDynamic::computeDft, inReal, inImag, outReal, outImag, inputSize);
-        graph.streamOut(outReal, outImag);
+        graph.task("t0", DFTDynamic::computeDft, inReal, inImag, outReal, outImag, inputSize).streamOut(outReal, outImag);
         long stopInit = System.nanoTime();
+
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
         for (int i = 0; i < iterations; i++) {
@@ -137,7 +132,7 @@ public class DFTDynamic {
         }
 
         if (CHECK_RESULT) {
-            if (validate()) {
+            if (validate(size, inReal, inImag, outReal, outImag, inputSize)) {
                 System.out.println("Validation: " + "SUCCESS " + "\n");
             } else {
                 System.out.println("Validation: " + " FAIL " + "\n");
