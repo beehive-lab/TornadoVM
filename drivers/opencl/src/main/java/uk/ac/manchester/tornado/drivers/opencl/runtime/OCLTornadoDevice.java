@@ -198,7 +198,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     private boolean isOpenCLPreLoadBinary(OCLDeviceContext deviceContext, String deviceInfo) {
         OCLCodeCache installedCode = new OCLCodeCache(deviceContext);
-        if ((installedCode.isLoadBinaryOptionEnabled() == false) || (installedCode.getOpenCLBinary(deviceInfo) == null)) {
+        if (!installedCode.isLoadBinaryOptionEnabled() || (installedCode.getOpenCLBinary(deviceInfo) == null)) {
             return false;
         }
         return true;
@@ -285,6 +285,13 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         } else {
             throw new RuntimeException("[ERROR] TaskMedata Expected");
         }
+    }
+
+    @Override
+    public boolean isFullJITMode(SchedulableTask task) {
+        final OCLDeviceContext deviceContext = getDeviceContext();
+        final String deviceFullName = getFullTaskIdDevice(task);
+        return (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && Tornado.ACCELERATOR_IS_FPGA);
     }
 
     @Override

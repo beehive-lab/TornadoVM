@@ -290,7 +290,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public TaskMetaData compileLookupBufferKernel() {
         int numKernelParameters = 0;
         TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME, numKernelParameters);
-        OCLCodeCache check = new OCLCodeCache(deviceContext);
+        OCLCodeCache codeCache = new OCLCodeCache(deviceContext);
         int[] deviceInfo = getDriverAndDevice();
         String deviceFullName = getDriverAndDevice(meta, deviceInfo);
         if (deviceContext.isCached("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
@@ -299,11 +299,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             if (lookupCode != null) {
                 lookupCodeAvailable = true;
             }
-        } else if (check.isLoadBinaryOptionEnabled() && check.getOpenCLBinary(deviceFullName) != null) {
+        } else if (codeCache.isLoadBinaryOptionEnabled() && codeCache.getOpenCLBinary(deviceFullName) != null) {
             // Option 2) Loading pre-compiled lookupBufferAddress kernel FPGA
             // binary
-            Path lookupPath = Paths.get(check.getOpenCLBinary(deviceFullName));
-            lookupCode = check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+            Path lookupPath = Paths.get(codeCache.getOpenCLBinary(deviceFullName));
+            lookupCode = codeCache.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
             if (lookupCode != null) {
                 lookupCodeAvailable = true;
             }

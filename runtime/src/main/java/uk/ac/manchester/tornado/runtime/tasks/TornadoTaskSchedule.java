@@ -314,7 +314,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return new CompileInfo(false, false);
     }
 
-    private void compileToTornadoBytecodes() {
+    private void compileToTornadoVMBytecodes() {
         CompileInfo compileInfo = extractCompileInfo();
         if (compileInfo.compile) {
             graphContext.assignToDevices();
@@ -324,14 +324,31 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         graphContext.newStack(compileInfo.updateDevice);
     }
 
+    private void compileTaskToOpenCL() {
+        vm.compile();
+    }
+
     @Override
     public void scheduleInner() {
         long t0 = System.nanoTime();
-        compileToTornadoBytecodes();
+        compileToTornadoVMBytecodes();
         long t1 = System.nanoTime();
         if (PRINT_COMPILE_TIMES) {
             System.out.printf("compile: compileTasks: " + (t1 - t0) + "ns" + "\n");
         }
+
+        // If current FPGA execution and JIT mode => run warmup
+        if (Tornado.FPGA_EMULATION && Tornado.ACCELERATOR_IS_FPGA) {
+            System.out.println("Compilation for Emulation");
+            compileTaskToOpenCL();
+        } else if (graphContext.getDeviceFirtTask() instanceof TornadoAcceleratorDevice && Tornado.ACCELERATOR_IS_FPGA) {
+            TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) graphContext.getDeviceFirtTask();
+            if (device.isFullJITMode(graphContext.getTask(0))) {
+                System.out.println("Compilation for full JIT");
+                compileTaskToOpenCL();
+            }
+        }
+
         event = vm.execute();
     }
 
@@ -420,7 +437,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public void warmup() {
-        compileToTornadoBytecodes();
+        compileToTornadoVMBytecodes();
         vm.warmup();
     }
 

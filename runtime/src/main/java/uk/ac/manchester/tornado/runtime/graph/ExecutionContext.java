@@ -37,6 +37,7 @@ import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -185,12 +186,12 @@ public class ExecutionContext {
 
         String id = task.getId();
         TornadoDevice target = task.getDevice();
-        TornadoAcceleratorDevice dev = null;
+        TornadoAcceleratorDevice accelerator = null;
 
         if (target instanceof TornadoAcceleratorDevice) {
-            dev = (TornadoAcceleratorDevice) target;
+            accelerator = (TornadoAcceleratorDevice) target;
         } else {
-            throw new RuntimeException("Device " + target.getClass() + " not supported yet");
+            throw new TornadoRuntimeException("Device " + target.getClass() + " not supported yet");
         }
 
         info("assigning %s to %s", id, target.getDeviceName());
@@ -198,7 +199,7 @@ public class ExecutionContext {
         int deviceIndex = devices.indexOf(target);
         if (deviceIndex == -1) {
             deviceIndex = devices.size();
-            devices.add(dev);
+            devices.add(accelerator);
         }
         taskToDevice[index] = deviceIndex;
     }
@@ -207,6 +208,10 @@ public class ExecutionContext {
         for (int i = 0; i < tasks.size(); i++) {
             assignTask(i, tasks.get(i));
         }
+    }
+
+    public TornadoDevice getDeviceFirtTask() {
+        return tasks.get(0).getDevice();
     }
 
     public LocalObjectState getObjectState(Object object) {

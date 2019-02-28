@@ -64,7 +64,6 @@ public class OCLCodeCache {
     public static String FPGA_BIN_LOCATION = getProperty("tornado.fpga.bin", "./" + DIRECTORY_BITSTREAM + LOOKUP_BUFFER_KERNEL_NAME);
 
     private static final String FALSE = "False";
-    private static final String TRUE = "True";
     private static final String BASH = "bash";
     private final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", FALSE));
@@ -148,8 +147,8 @@ public class OCLCodeCache {
         // passed as constant FPGA_TASKSCHEDULE (e.g s0.t0.)
         if (Tornado.ACCELERATOR_IS_FPGA) {
             precompiledBinariesPerDevice = new HashMap<>();
-            String tempKernelName = FPGA_TASKSCHEDULE + String.format("device=%d:%d", deviceContext.getDevice().getIndex(), deviceContext.getPlatformContext().getPlatformIndex());
-            precompiledBinariesPerDevice.put(tempKernelName, FPGA_BIN_LOCATION);
+            final String lookupBufferDeviceKernelName = FPGA_TASKSCHEDULE + String.format("device=%d:%d", deviceContext.getDevice().getIndex(), deviceContext.getPlatformContext().getPlatformIndex());
+            precompiledBinariesPerDevice.put(lookupBufferDeviceKernelName, FPGA_BIN_LOCATION);
         }
 
         if (OPENCL_CACHE_ENABLE) {
@@ -158,13 +157,13 @@ public class OCLCodeCache {
         }
     }
 
-    private void processPrecompiledBinaries(String binList) {
+    private void processPrecompiledBinaries(String bitstreamList) {
         String[] binaries = null;
 
-        if (binList == null) {
+        if (bitstreamList == null) {
             binaries = OPENCL_BINARIES.split(",");
         } else {
-            binaries = binList.split(",");
+            binaries = bitstreamList.split(",");
         }
 
         if ((binaries.length % 2) != 0) {

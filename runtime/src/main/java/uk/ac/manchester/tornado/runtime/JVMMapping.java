@@ -222,4 +222,9 @@ public class JVMMapping implements TornadoAcceleratorDevice {
         return null;
     }
 
+    @Override
+    public boolean isFullJITMode(SchedulableTask task) {
+        return false;
+    }
+
 }
