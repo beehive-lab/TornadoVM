@@ -26,7 +26,7 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 // XXX How to launch with the FPGA support
 public class DFTDynamic {
 
-    public static boolean CHECK_RESULT = false;
+    public static boolean CHECK_RESULT = true;
 
     public static void computeDft(float[] inreal, float[] inimag, float[] outreal, float[] outimag, int[] inputSize) {
         int n = inreal.length;
