@@ -191,6 +191,10 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         }
     }
 
+    public void ensureLoadedFPGA() {
+        getBackend().fpgaJITinit();
+    }
+
     @Override
     public CallStack createStack(int numArgs) {
         return getDeviceContext().getMemoryManager().createCallStack(numArgs);
@@ -300,6 +304,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final String deviceFullName = getFullTaskIdDevice(task);
         if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && Tornado.ACCELERATOR_IS_FPGA) {
             compileJavaToAccelerator(task);
+            ensureLoadedFPGA();
             return loadPreCompiledBinaryFromCache(task);
         } else if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !Tornado.ACCELERATOR_IS_FPGA) {
             return compileJavaToAccelerator(task);
