@@ -18,9 +18,9 @@
 
 package uk.ac.manchester.tornado.examples.dynamic;
 
-import static java.lang.Integer.parseInt;
-
-import java.awt.*;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -28,15 +28,15 @@ import java.awt.image.WritableRaster;
 import java.io.File;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
+import javax.swing.JFrame;
 
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class MandelbrotFPGA {
-    public static int sizes;
 
+    public static int sizes;
     public static final boolean VALIDATE = true;
     public static final boolean USE_TORNADO = true;
     public static final boolean PRINT_IMAGE = false;
@@ -237,7 +237,7 @@ public class MandelbrotFPGA {
     }
 
     public static void main(String[] args) {
-        sizes = parseInt(args[0]);
+        sizes = Integer.parseInt(args[0]);
         String executionType = args[1];
         int iterations = Integer.parseInt(args[2]);
 

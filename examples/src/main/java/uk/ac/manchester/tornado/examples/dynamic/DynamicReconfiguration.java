@@ -24,6 +24,10 @@ import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
+/**
+ * Simple example to show to dynamic reconfiguration in action.
+ * 
+ */
 public class DynamicReconfiguration {
 
     public static void saxpy(float alpha, float[] x, float[] y) {
@@ -36,20 +40,16 @@ public class DynamicReconfiguration {
         int numElements = 16777216;
         float[] a = new float[numElements];
         float[] b = new float[numElements];
-
         Arrays.fill(a, 10);
-
         //@formatter:off
         new TaskSchedule("s0")
             .task("t0", DynamicReconfiguration::saxpy, 2.0f, a, b)
             .streamOut(b)
             .executeWithProfiler(Policy.PERFORMANCE);
         //@formatter:on
-
     }
 
     public static void main(String[] args) {
         new DynamicReconfiguration().runWithDynamicProfiler();
     }
-
 }
