@@ -56,7 +56,7 @@ export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see step 4
 Then execute:
 
 ```bash
-$ . etc/tornado.env
+$ . etc/tornadovm.env
 ```
 
 
