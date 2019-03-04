@@ -73,7 +73,7 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
         switch (meta.getDims()) {
             case 3:
                 /// XXX: Support 3D
-                localWork[2] = 1;
+                localWork[2] = calculateGroupSize(maxWorkItemSizes[2], meta.getOpenCLGpuBlock2DY(), meta.getGlobalWork()[2]);
             case 2:
                 localWork[1] = calculateGroupSize(maxWorkItemSizes[1], meta.getOpenCLGpuBlock2DY(), meta.getGlobalWork()[1]);
                 localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenCLGpuBlock2DX(), meta.getGlobalWork()[0]);
