@@ -63,22 +63,24 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
     private String version;
     private OCLDeviceType deviceType;
 
+    private static final int INITVALUE = -1;
+
     public OCLDevice(int index, long id) {
         this.index = index;
         this.id = id;
         this.buffer = ByteBuffer.allocate(8192);
         this.buffer.order(OpenCL.BYTE_ORDER);
         this.openCLVersion = null;
-        this.deviceEndianLittle = -1;
-        this.maxComputeUnits = -1;
-        this.maxAllocationSize = -1;
-        this.globalMemorySize = -1;
-        this.localMemorySize = -1;
-        this.maxWorkItemDimensions = -1;
-        this.maxWorkGroupSize = -1;
-        this.maxConstantBufferSize = -1;
-        this.doubleFPConfig = -1;
-        this.singleFPConfig = -1;
+        this.deviceEndianLittle = INITVALUE;
+        this.maxComputeUnits = INITVALUE;
+        this.maxAllocationSize = INITVALUE;
+        this.globalMemorySize = INITVALUE;
+        this.localMemorySize = INITVALUE;
+        this.maxWorkItemDimensions = INITVALUE;
+        this.maxWorkGroupSize = INITVALUE;
+        this.maxConstantBufferSize = INITVALUE;
+        this.doubleFPConfig = INITVALUE;
+        this.singleFPConfig = INITVALUE;
         this.maxWorkItemSizes = null;
         this.name = null;
         this.version = null;
@@ -225,7 +227,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
 
     @Override
     public int getMaxComputeUnits() {
-        if (maxComputeUnits != -1) {
+        if (maxComputeUnits != INITVALUE) {
             return maxComputeUnits;
         }
 
@@ -309,14 +311,14 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
 
-        final int elements = getMaxWorkItemDimensions();
+        final int dimensions = getMaxWorkItemDimensions();
 
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MAX_WORK_ITEM_SIZES.getValue(), buffer.array());
 
         buffer.rewind();
 
-        maxWorkItemSizes = new long[elements];
-        for (int i = 0; i < elements; i++) {
+        maxWorkItemSizes = new long[dimensions];
+        for (int i = 0; i < dimensions; i++) {
             maxWorkItemSizes[i] = buffer.getLong();
         }
 

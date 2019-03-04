@@ -71,7 +71,7 @@ public class OCLCodeCache {
     private final boolean PRINT_LOAD_TIME = false;
     private final String FPGA_SOURCE_DIR = getProperty("tornado.fpga.source.dir", "fpga-source-comp/");
     public static String FPGA_BIN_LOCATION = getProperty("tornado.fpga.bin", "./fpga-source-comp/lookupBufferAddress");
-    private final HashSet<String> FPGA_FLAGS = new HashSet<>(Arrays.asList("-v", "-fast-compile", "-high-effort", "-fp-relaxed", "-high-effort", "-report", "-incremental", "-profile"));
+    private final HashSet<String> ALTERA_FPGA_FLAGS = new HashSet<>(Arrays.asList("-v", "-fast-compile", "-fp-relaxed", "-high-effort", "-report", "-incremental", "-profile"));
     private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
     private final String FPGA_CLEANUP_SCRIPT = "./bin/cleanFpga.sh";
     private final String FPGA_TASKSCHEDULE = "s0.t0.";
@@ -103,7 +103,8 @@ public class OCLCodeCache {
     private final String OPENCL_FILE_BINARIES = getProperty("tornado.precompiled.listFile", null);
 
     /**
-     * List of all flags targeting AOC compiler -Dtornado.fpga.flags=flag1,....flagn
+     * List of all flags targeting AOC compiler
+     * -Dtornado.fpga.flags=flag1,....flagn
      *
      * <p>
      * <code>
@@ -277,7 +278,7 @@ public class OCLCodeCache {
             String[] flags;
             flags = INTEL_FPGA_COMPILATION_FLAGS.split(",");
             for (String flag : flags) {
-                if (FPGA_FLAGS.contains(flag)) {
+                if (ALTERA_FPGA_FLAGS.contains(flag)) {
                     sb.add(flag);
                 }
             }

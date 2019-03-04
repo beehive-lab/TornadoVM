@@ -37,17 +37,18 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
     @SuppressWarnings("unused") private double workGroupUtil;
     @SuppressWarnings("unused") private long maxWorkGroupSize;
 
+    private static final int WARP_SIZE = 32;
+    private boolean ADJUST_IRREGULAR = false;
+
     private final long[] maxWorkItemSizes;
 
     public OCLGPUScheduler(final OCLDeviceContext context) {
         super(context);
         OCLDevice device = context.getDevice();
-
-        maxWorkItemSizes = device.getMaxWorkItemSizes();
-        maxComputeUnits = device.getMaxComputeUnits();
-        maxWorkGroupSize = device.getMaxWorkGroupSize();
-
-        workGroupUtil = GPU_WORK_GROUP_COEFF;
+        this.maxWorkItemSizes = device.getMaxWorkItemSizes();
+        this.maxComputeUnits = device.getMaxComputeUnits();
+        this.maxWorkGroupSize = device.getMaxWorkGroupSize();
+        this.workGroupUtil = GPU_WORK_GROUP_COEFF;
     }
 
     @Override
@@ -57,8 +58,10 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (long) (meta.getDomain().get(i).cardinality());
             // adjust for irregular problem sizes
-            if (value % 32 != 0) {
-                value = ((value / 32) + 1) * 32;
+            if (ADJUST_IRREGULAR) {
+                if (value % WARP_SIZE != 0) {
+                    value = ((value / WARP_SIZE) + 1) * WARP_SIZE;
+                }
             }
             globalWork[i] = value;
         }
@@ -69,12 +72,11 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
         final long[] localWork = meta.getLocalWork();
         switch (meta.getDims()) {
             case 3:
+                /// XXX: Support 3D
                 localWork[2] = 1;
-
             case 2:
                 localWork[1] = calculateGroupSize(maxWorkItemSizes[1], meta.getOpenCLGpuBlock2DY(), meta.getGlobalWork()[1]);
                 localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenCLGpuBlock2DX(), meta.getGlobalWork()[0]);
-
                 break;
             case 1:
                 localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenCLGpuBlockX(), meta.getGlobalWork()[0]);
@@ -84,9 +86,13 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
         }
     }
 
-    private int calculateGroupSize(long maxWorkItemSizes, long sizes2, long l) {
-        int value = (int) Math.min(Math.min(maxWorkItemSizes, sizes2), l);
-        while (l % value != 0) {
+    private int calculateGroupSize(long maxBlockSize, long customBlockSize, long globalWorkSize) {
+        if (maxBlockSize == globalWorkSize) {
+            maxBlockSize /= 4;
+        }
+
+        int value = (int) Math.min(Math.max(maxBlockSize, customBlockSize), globalWorkSize);
+        while (globalWorkSize % value != 0) {
             value--;
         }
         return value;
