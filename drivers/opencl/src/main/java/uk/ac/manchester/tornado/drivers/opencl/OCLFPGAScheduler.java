@@ -29,10 +29,11 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLFPGAScheduler extends OCLKernelScheduler {
 
+    private static final int LOCAL_WORK_SIZE = 64;
+    private static final int WARP = 32;
+
     public OCLFPGAScheduler(final OCLDeviceContext context) {
         super(context);
-        OCLDevice device = context.getDevice();
-
     }
 
     @Override
@@ -41,8 +42,8 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
 
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (long) (meta.getDomain().get(i).cardinality());
-            if (value % 32 != 0) {
-                value = ((value / 32) + 1) * 32;
+            if (value % WARP != 0) {
+                value = ((value / WARP) + 1) * WARP;
             }
             globalWork[i] = value;
         }
@@ -54,15 +55,15 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
         switch (meta.getDims()) {
             case 3:
                 localWork[2] = 1;
-                localWork[1] = 16;
-                localWork[0] = 16;
+                localWork[1] = LOCAL_WORK_SIZE;
+                localWork[0] = LOCAL_WORK_SIZE;
 
             case 2:
-                localWork[1] = 16;
-                localWork[0] = 16;
+                localWork[1] = LOCAL_WORK_SIZE;
+                localWork[0] = LOCAL_WORK_SIZE;
                 break;
             case 1:
-                localWork[0] = 16;
+                localWork[0] = LOCAL_WORK_SIZE;
                 break;
             default:
                 break;
