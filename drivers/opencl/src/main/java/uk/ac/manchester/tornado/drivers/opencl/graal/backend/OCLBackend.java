@@ -228,8 +228,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     /**
-     * It allocates the smallest of the requested heap size or the max global memory
-     * size.
+     * It allocates the smallest of the requested heap size or the max global
+     * memory size.
      */
     public void allocateHeapMemoryOnDevice() {
 
@@ -369,7 +369,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     public void emitCode(OCLCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
-
         final OCLAssembler asm = (OCLAssembler) crb.asm;
         emitPrologue(crb, asm, method, lir);
         crb.emit(lir);
@@ -447,14 +446,16 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         if (crb.isKernel()) {
             /*
-             * BUG There is a bug on some OpenCL devices which requires us to insert an
-             * extra OpenCL buffer into the kernel arguments. This has the effect of
-             * shifting the devices address mappings, which allows us to avoid the heap
-             * starting at address 0x0. (I assume that this is a interesting case that leads
-             * to a few issues.) Iris Pro is the only culprit at the moment.
+             * BUG There is a bug on some OpenCL devices which requires us to
+             * insert an extra OpenCL buffer into the kernel arguments. This has
+             * the effect of shifting the devices address mappings, which allows
+             * us to avoid the heap starting at address 0x0. (I assume that this
+             * is a interesting case that leads to a few issues.) Iris Pro is
+             * the only culprit at the moment.
              */
             if (Tornado.ACCELERATOR_IS_FPGA && !methodName.equals(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
-                // TODO: FIX with info at the runtime, currently is a static decision
+                // TODO: FIX with info at the runtime, currently is a static
+                // decision
                 asm.emitLine(FPGA_ATTRIBUTE);
             }
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
