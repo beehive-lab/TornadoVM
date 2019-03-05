@@ -76,6 +76,9 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
         while (globalWorkSize % value != 0) {
             value--;
         }
+        if (value == globalWorkSize) {
+            value /= 2;
+        }
         return value;
     }
 }
