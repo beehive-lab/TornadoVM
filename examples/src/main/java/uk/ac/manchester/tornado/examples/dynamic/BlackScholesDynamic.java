@@ -31,9 +31,10 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
  *
  */
 public class BlackScholesDynamic {
+
     public static String executionType;
     public static int iterations;
-    public static boolean VALIDATION = false;
+    public static boolean VALIDATION = true;
 
     private static void blackScholesKernel(float[] input, float[] callResult, float[] putResult) {
         for (@Parallel int idx = 0; idx < callResult.length; idx++) {

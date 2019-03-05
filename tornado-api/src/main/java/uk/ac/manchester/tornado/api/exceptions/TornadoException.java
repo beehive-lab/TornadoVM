@@ -39,16 +39,25 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api;
+package uk.ac.manchester.tornado.api.exceptions;
 
-public interface TornadoTargetDevice {
+public class TornadoException extends RuntimeException {
 
-    public String getDeviceName();
+    private static final long serialVersionUID = -4737820856531945219L;
+    private final String message;
 
-    public long getDeviceGlobalMemorySize();
+    public TornadoException(final String msg) {
+        message = msg;
+    }
 
-    public long getDeviceLocalMemorySize();
+    public TornadoException(Exception e) {
+        message = e.getMessage();
+        this.initCause(e.getCause());
+    }
 
-    public int getDeviceMaxComputeUnits();
+    @Override
+    public String getMessage() {
+        return message;
+    }
 
 }

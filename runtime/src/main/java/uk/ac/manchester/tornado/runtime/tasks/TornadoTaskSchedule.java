@@ -314,7 +314,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return new CompileInfo(false, false);
     }
 
-    private void compileToTornadoBytecodes() {
+    private boolean compileToTornadoVMBytecodes() {
         CompileInfo compileInfo = extractCompileInfo();
         if (compileInfo.compile) {
             graphContext.assignToDevices();
@@ -322,16 +322,44 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
         graphContext.addLastDevice(meta().getDevice());
         graphContext.newStack(compileInfo.updateDevice);
+        return compileInfo.compile;
+    }
+
+    private void compileTaskToOpenCL() {
+        vm.compile();
+    }
+
+    private void precompilationForFPGA() {
+        // If current FPGA execution and JIT mode => run warmup
+        if (Tornado.FPGA_EMULATION && Tornado.ACCELERATOR_IS_FPGA) {
+            if (Tornado.DEBUG) {
+                System.out.println("Compilation for Emulation");
+            }
+            compileTaskToOpenCL();
+        } else if (graphContext.getDeviceFirtTask() instanceof TornadoAcceleratorDevice && Tornado.ACCELERATOR_IS_FPGA) {
+            TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) graphContext.getDeviceFirtTask();
+            if (device.isFullJITMode(graphContext.getTask(0))) {
+                if (Tornado.DEBUG) {
+                    System.out.println("Compilation for full JIT");
+                }
+                compileTaskToOpenCL();
+            }
+        }
     }
 
     @Override
     public void scheduleInner() {
         long t0 = System.nanoTime();
-        compileToTornadoBytecodes();
+        boolean compile = compileToTornadoVMBytecodes();
         long t1 = System.nanoTime();
         if (PRINT_COMPILE_TIMES) {
             System.out.printf("compile: compileTasks: " + (t1 - t0) + "ns" + "\n");
         }
+
+        if (compile) {
+            precompilationForFPGA();
+        }
+
         event = vm.execute();
     }
 
@@ -420,7 +448,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public void warmup() {
-        compileToTornadoBytecodes();
+        compileToTornadoVMBytecodes();
         vm.warmup();
     }
 
@@ -691,7 +719,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 String taskScheduleName = TASK_SCHEDULE_PREFIX + taskScheduleNumber;
                 TaskSchedule task = new TaskSchedule(taskScheduleName);
 
-                Thread.currentThread().setName("Thread-DEV: " + TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(taskScheduleNumber).getDevice().getName());
+                Thread.currentThread().setName("Thread-DEV: " + TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(taskScheduleNumber).getDevice().getDeviceName());
 
                 long start = timer.time();
                 performStreamInThread(task, streamInObjects);

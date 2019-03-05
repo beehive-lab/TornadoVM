@@ -1,25 +1,24 @@
-# Installation Process of Tornado SDK
+# Installing TornadoVM #
 
 ### Pre-requisites
 
   * Maven Version 3
   * CMake 3.6 (or newer)
   * OpenCL (preferably v1.2 or newer)
-  * GCC or clang/LLVM
+  * GCC or clang/LLVM (GCC >= 5.5)
   * Python 2.7 (>= 2.7.5)
 
 ### Tested OS
-Tornado has been tested on:
+Tornado has been succefully tested on the following platforms:
 
-  * OSx 10.13.2 (High Sierra)
   * CentOS >= 7.3
-  * Fedora 21
-  * Ubuntu 16.04 
+  * Fedora >= 21
+  * Ubuntu 16.04, 18.04 and 18.10
 
 
 ## Installation
 
-### 1. Compile Java with JVMCI-8
+### 1. Compile JDK 1.8 with JVMCI-8 support
 
 ```bash
  $ git clone -b tornado https://github.com/beehive-lab/mx 
@@ -31,51 +30,37 @@ Tornado has been tested on:
 
 This will generate a new Java binary into the `jdk1.8.0_<your_version>/product`, e.g., `jdk1.8.0_181/product`.
 
-### 1.2 Building Graal (optional) 
-
-The Tornado maven installer will download `graal.jar` and `truffle-api.jar` dependencies automatically. 
-These two jar files include a patch to execute Tornado. If you want to build Graal yourself, you can build it 
-
-```bash
- $ cd ..
- $ git clone -b tornado https://github.com/beehive-lab/graal 
- $ cd graal
- $ export PATH=`pwd`/mx:$PATH 
- $ export JAVA_HOME=<path/to/JDK-JVMCI>
- $ mx build  
-```
-
-Then you will need to copy `graal.jar` and `truffle-api.jar` into the Tornado project.
 
 
-### 2. Download Tornado
+### 2. Download TornadoVM
 
 ```bash
  $ cd ..
- $ git clone https://github.com/beehive-lab/tornado.git tornado
- $ cd tornado
- $ vim etc/tornado.env
+ $ git clone https://github.com/beehive-lab/TornadoVM tornadovm
+ $ cd tornadovm
+ $ vim etc/tornadovm.env
 ```
 
-Copy and paste the following - but update paths into the etc/tornado.env file:
+
+Create the `etc/tornadovm.env` file and add the following code in it **(after updating the paths to your correct ones)**:
 
 ```bash
 #!/bin/bash
 export JAVA_HOME=<path to jvmci 8 jdk with JVMCI>
-export PATH=$PWD/bin/bin:$PATH    ## We will create this directory during Tornado compilation
-export TORNADO_SDK=$PWD/bin/sdk   ## We will create this directory during Tornado compilation
+export PATH=$PWD/bin/bin:$PATH    ## This directory will be automatically generated during Tornado compilation
+export TORNADO_SDK=$PWD/bin/sdk   ## This directory will be automatically generated during Tornado compilation
 
-export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see Step 4)
+export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see step 4)
 ```
 
 Then execute:
 
 ```bash
-$ . etc/tornado.env
+$ . etc/tornadovm.env
 ```
 
 
-### 3. Setting default maven configuration
+### 3. Setting the default maven configuration
 
 Create (or update) the file in `~/.m2/settings.xml` with the following content. Modify the `jvmci.root` with your path to JDK 1.8.0 that you built in step 1 and the `jvmci.version` with the corresponding version. 
 
@@ -119,13 +104,13 @@ Create (or update) the file in `~/.m2/settings.xml` with the following content. 
 $ cmake -version
 ```
 
-If the version of cmake is > 3.6 then skip the rest of this step and to to step 5.
+If the version of cmake is > 3.6 then skip the rest of this step and go to Step 5.
 Otherwise try in install cmake.
 
 For simplicity it might be easier to install cmake in your home
 directory.
   * Redhat Enterprise Linux / CentOS use cmake v2.8 
-  * We need a newer version so that OpenCL is configured properly.
+  * We require a newer version so that OpenCL is configured properly.
 
 ```bash
 $ cd ~/Downloads
@@ -138,51 +123,124 @@ $ cmake -version
 cmake version 3.10.1
 ``` 
 
-NOTE: the tornado `Makefile` automatically sets the `cmake.root.dir` based on the variable `CMAKE_ROOT` set in `etc/tornado.env`
-
-### 5. Compile Tornado
+Then export `CMAKE_ROOT` variable to the cmake installation. You can add it to the `etc/tornadovm.env` file.
 
 ```bash
-$ cd ~/tornado
-$ . etc/tornado.env
+export CMAKE_ROOT=/opt/cmake-3.10.2
+```
+
+### 5. Compile TornadoVM
+
+```bash
+$ cd ~/tornadovm
+$ . etc/tornadovm.env
 $ make 
 ```
 and done!! 
 
 
-# Check Installation 
+## Running Examples #
 
 ```bash
-$ tornado
-Usage: java [-options] class [args...]
-           (to execute a class)
-   or  java [-options] -jar jarfile [args...]
-           (to execute a jar file)
-where options include:
-    -d32	  use a 32-bit data model if available
-    -d64	  use a 64-bit data model if available
-    -server	  to select the "server" VM
-    -original	  to select the "original" VM
-                  The default VM is server,
-                  because you are running on a server-class machine.
-
-
-    -cp <class search path of directories and zip/jar files>
-
-...
+$ tornado uk.ac.manchester.tornado.examples.HelloWorld
 ```
 
-__Testing__
-
-
-Tornado provides a sets of unittests. You can run them using as follows:
-
+Use the following command to identify the ids of the Tornado-compatible heterogeneous devices: 
 
 ```bash
-tornado-test.py -V
+tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput
+```
+Tornado device output corresponds to:
+```bash
+Tornado device=<driverNumber>:<deviceNumber>
+```
+Example output:
+```bash
+Number of Tornado drivers: 1
+Number of devices: 3
+
+Tornado device=0:0
+  NVIDIA CUDA -- GeForce GTX 1050
+Tornado device=0:1
+  Intel(R) OpenCL -- Intel(R) HD Graphics
+Tornado device=0:2
+  Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
 ```
 
-Note: Not all of them are currently passing; expect around 4 or 5 to fail. 
+To run on a specific device use the following option:
 
+```bash
+ -D<s>.<t>.device=<driverNumber>:<deviceNumber>
+```
+
+Where `s` is the schedule task name and `t` is the task name.
+
+For example running on device [1] will look like this:
+
+```bash
+$ tornado -Ds0.t0.device=0:1 uk.ac.manchester.tornado.examples.HelloWorld
+```
+
+The command above will run the HelloWorld example on the integrated GPU (Intel HD Graphics).
+
+## Running Benchmarks #
+
+```bash
+$ tornado uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sadd
+```
+
+
+## Running Unittests
+
+To run all unittests in Tornado:
+
+```bash
+make tests 
+
+```
+
+To run an individual unittest:
+
+```bash
+$  tornado-test.py uk.ac.manchester.tornado.unittests.TestHello
+```
+
+Also, it can be executed in verbose mode:
+
+```bash
+$ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello
+```
+
+To test just a method of a unittest class:
+
+```bash
+$ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello#testHello
+```
+
+
+## IDE Code Formatter
+
+### Using Eclipse and Netbeans
+
+The code formatter in Eclipse is automatically applied after generating the setting files.
+
+```bash
+$ mvn eclipse:eclipse
+$ python scripts/eclipseSetup.py
+```
+
+For Netbeans, the Eclipse Formatter Plugin is needed.
+
+### Using IntelliJ 
+
+Install plugins:
+ * Eclipse Code Formatter
+ * Save Actions 
+
+Then :
+ 1. Open File > Settings > Eclipse Code Formatter
+ 2. Check the `Use the Eclipse code` formatter radio button
+ 2. Set the Eclipse Java Formatter config file to the XML file stored in /scripts/templates/eclise-settings/Tornado.xml
+ 3. Set the Java formatter profile in Tornado
 
 

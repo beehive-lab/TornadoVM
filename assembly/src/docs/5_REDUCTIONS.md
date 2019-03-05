@@ -1,6 +1,6 @@
 # Reductions support
 
-Tornado now supports basic reductions for `int`, `float` and `double` data types for the operators `+` and `*`.
+TornadoVM now supports basic reductions for `int`, `float` and `double` data types for the operators `+` and `*`.
 This wiki shows how to program with reductions in Tornado.
 More examples can be found in the `examples/src/main/java/uk/ac/manchester/tornado/unittests/reductions` directory of the Tornado SDK.
 
@@ -280,9 +280,3 @@ There are a few limitations concerning reductions.
 Reductions have been tested on Intel CPU (using the Intel driver) and NVIDIA GPUs. 
 For AMD GPUs, we get different results due to precision errors.
 We are currently investigating these cases. 
-
- 
-
-
-
-

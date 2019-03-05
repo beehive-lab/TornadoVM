@@ -1,4 +1,4 @@
-# Loading Tornado into IntelliJ
+# Loading TornadoVM into IntelliJ
 
 **Tested with** IntelliJ IDEA 2018.2.2 and IntelliJ IDEA 2017.3.5
 
@@ -18,8 +18,8 @@ Open IntelliJ and go to **Preferences > Plugins > Browse Repositories**. Install
 2. [Save Actions:](https://plugins.jetbrains.com/plugin/7642-save-actions) Allows post-save actions (e.g. code formating on save)
 3. [Python Plugin:](https://plugins.jetbrains.com/plugin/631-python) Allows Python scripting 
 
-## Run and Debug Tornado with Intellij 
-Normal maven lifecycle goals like *package* and *install* will not result a succefull build for Tornado.
+## Run and Debug TornadoVM with Intellij 
+Normal maven lifecycle goals like *package* and *install* will not result a succefull build for TornadoVM.
 
 Two different configurations are needed for **Build** and **Debug**
 
@@ -27,9 +27,9 @@ Two different configurations are needed for **Build** and **Debug**
 ### Build/Run Configuration 
 
 Now, in Intellij:
-***Maven Projects > tornado (root) > Lifecycle > package > right click > create tornado [package]***
+***Maven Projects > tornadovm (root) > Lifecycle > package > right click > create tornadovm [package]***
 
-Then: ***Run > Edit Configurations > Maven > tornado Package***
+Then: ***Run > Edit Configurations > Maven > tornadovm Package***
 
 You need to manually add and check the following information:
 
@@ -39,15 +39,15 @@ You need to manually add and check the following information:
 
 * **Runner**: Ensure that in **JRE** tab the selected JRE corresponds to `Use Project JDK` (e.g.1.8.0_131)
 
-Finally, one the top right corner drop-down menu select the adove custome `tornado [package]` configuration.
+Finally, one the top right corner drop-down menu select the adove custome `tornadovm [package]` configuration.
 To  build either press the **play button** on the top right corner or **Shift+F10**
 
 ### Debug/Run Configuration 
 
-In order to Run and Debug Java code running through Tornado another custom configuration is needed.
-For this configuration the Tornado `JAVA_FLAGS` and `CLASSPATHS` are needed.
+In order to Run and Debug Java code running through TornadoVM another custom configuration is needed.
+For this configuration the TornadoVM `JAVA_FLAGS` and `CLASSPATHS` are needed.
 
-**Firstly, you need to obtain the `JAVA_FLAGS` used by Tornado. Use the following commands to print the flags:**
+**Firstly, you need to obtain the `JAVA_FLAGS` used by TornadoVM. Use the following commands to print the flags:**
 
 
 ```
@@ -71,7 +71,7 @@ Then, add your own paraters similar to the following:
 
 * **Main Class:** uk.ac.manchester.tornado.examples.HelloWord
 * **VM Options:** What you copied from `-server` and on
-* **Working Directory:** `/home/tornado`
+* **Working Directory:** `/home/tornadovm`
 * **JRE:** Default (Should point to the 1.8.0_131)
 * **Use classpath of module** Select from drop-down menu e.g `tornado-examples`
 

@@ -99,6 +99,10 @@ public class TaskMetaData extends AbstractMetaData {
         this.canAssumeExact = Boolean.parseBoolean(getDefault("coarsener.exact", getId(), "False"));
     }
 
+    public TaskMetaData(ScheduleMetaData scheduleMetaData, String id) {
+        this(scheduleMetaData, id, 0);
+    }
+
     public static TaskMetaData create(ScheduleMetaData scheduleMeta, String id, Method method, boolean readMetaData) {
         final TaskMetaData meta = new TaskMetaData(scheduleMeta, id, Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1);
         return meta;

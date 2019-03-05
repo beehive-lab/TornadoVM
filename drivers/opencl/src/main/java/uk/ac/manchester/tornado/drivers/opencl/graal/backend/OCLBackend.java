@@ -32,6 +32,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG_KERNEL_ARGS;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import java.lang.reflect.Method;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -78,6 +79,7 @@ import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
@@ -120,8 +122,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     public final static boolean SHOW_OPENCL = Boolean.parseBoolean(System.getProperty("tornado.opencl.print", "False"));
     public final static String OPENCL_PATH = System.getProperty("tornado.opencl.path", "./opencl");
-    private final static String FPGA_ATTRIBUTE = "__attribute__((reqd_work_group_size(16,1,1)))  ";
+    private final static String FPGA_ATTRIBUTE = "__attribute__((reqd_work_group_size(64,1,1)))  ";
     private final static String INTEL = "Intel(R)";
+    private boolean flag = false;
 
     @Override
     public OCLTargetDescription getTarget() {
@@ -223,21 +226,21 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         lookupCode.resolveEvent(bb, meta, task);
 
         final long address = bb.getLong(0);
-        Tornado.info("Heap address @ 0x%x on %s ", address, deviceContext.getDevice().getName());
+        Tornado.info("Heap address @ 0x%x on %s ", address, deviceContext.getDevice().getDeviceName());
         return address;
     }
 
     /**
-     * It allocates the smallest of the requested heap size or the max global memory
-     * size.
+     * It allocates the smallest of the requested heap size or the max global
+     * memory size.
      */
     public void allocateHeapMemoryOnDevice() {
 
-        final long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getMaxAllocationSize());
+        final long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
         if (memorySize < DEFAULT_HEAP_ALLOCATION) {
             Tornado.info("Unable to allocate %s of heap space - resized to %s", humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false), humanReadableByteCount(memorySize, false));
         }
-        Tornado.info("%s: allocating %s of heap space", deviceContext.getDevice().getName(), humanReadableByteCount(memorySize, false));
+        Tornado.info("%s: allocating %s of heap space", deviceContext.getDevice().getDeviceName(), humanReadableByteCount(memorySize, false));
         deviceContext.getMemoryManager().allocateRegion(memorySize);
     }
 
@@ -267,62 +270,82 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         // To Avoid errors, check the target device is not the FPGA, because
         // JIT compilation for FPGAs is not supported yet.
         // Get driver index + deviceIndex
-        boolean flag = false;
         String deviceDriver = deviceFullName.split("=")[1];
         int driverIndex = Integer.parseInt(deviceDriver.split(":")[0]);
         int deviceIndex = Integer.parseInt(deviceDriver.split(":")[1]);
         OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
         String platformName = device.getPlatformName();
-        if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && platformName.contains("FPGA") && !platformName.contains(INTEL)) {
-            if (Tornado.DEBUG) {
-                System.out.println("JIT Compilation for FPGAs is only supported for Intel/Altera FPGAs");
-            }
-            flag = false;
-        } else {
-            flag = true;
+
+        if (device.getDevice().getDeviceType() != OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR || !platformName.contains("FPGA")) {
+            return false;
+        } else if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && platformName.contains("FPGA")) {
+            return true;
         }
-        return flag;
+        return false;
     }
 
     /*
      * Retrieve the address of the heap on the device
      */
     public TaskMetaData compileLookupBufferKernel() {
-        int numKernelParameters = 0;
-        TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME, numKernelParameters);
-        OCLCodeCache check = new OCLCodeCache(deviceContext);
+
+        TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        OCLCodeCache codeCache = new OCLCodeCache(deviceContext);
         int[] deviceInfo = getDriverAndDevice();
         String deviceFullName = getDriverAndDevice(meta, deviceInfo);
+
         if (deviceContext.isCached("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
+
             // Option 1) Getting the lookupBufferAddress from the cache
             lookupCode = deviceContext.getCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
             if (lookupCode != null) {
                 lookupCodeAvailable = true;
             }
-        } else if (check.isLoadBinaryOptionEnabled() && check.getOpenCLBinary(deviceFullName) != null) {
+        } else if (codeCache.isLoadBinaryOptionEnabled() && codeCache.getOpenCLBinary(deviceFullName) != null) {
+
             // Option 2) Loading pre-compiled lookupBufferAddress kernel FPGA
-            // binary
-            Path lookupPath = Paths.get(check.getOpenCLBinary(deviceFullName));
-            lookupCode = check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+            Path lookupPath = Paths.get(codeCache.getOpenCLBinary(deviceFullName));
+            lookupCode = codeCache.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
             if (lookupCode != null) {
                 lookupCodeAvailable = true;
             }
         } else {
             // Option 3) JIT Compilation of the lookupBufferAddress kernel
             // Avoid JIT compilation for FPGAs due to unsupported feature
-            // There is a bug in this check
-            // TO DO:
             ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
             OCLProviders providers = (OCLProviders) getProviders();
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
-            lookupCode = Tornado.ACCELERATOR_IS_FPGA ? deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA)
-                    : deviceContext.installCode(result);
-            if (deviceContext.isKernelAvailable()) {
+
+            if (Tornado.ACCELERATOR_IS_FPGA) {
+                lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA);
+            } else {
+                lookupCode = deviceContext.installCode(result);
+            }
+
+            boolean isCompilationForFPGAs = isJITCompilationForFPGAs(deviceFullName);
+
+            if (deviceContext.isKernelAvailable() && !isCompilationForFPGAs) {
                 lookupCodeAvailable = true;
             }
         }
-
         return meta;
+    }
+
+    public void fpgaJITinit() {
+        TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME, 0);
+        OCLCodeCache check = new OCLCodeCache(deviceContext);
+        lookupCode = check.installEntryPointForBinaryForFPGAs(Paths.get(OCLCodeCache.FPGA_BIN_LOCATION), OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        if (lookupCode != null) {
+            lookupCodeAvailable = true;
+        }
+        initFPGAJITCompiledMode(meta, deviceContext);
+    }
+
+    private void initFPGAJITCompiledMode(TaskMetaData meta, OCLDeviceContext deviceContext) {
+        if (!flag) {
+            fpgaInitializationJITMode(meta);
+            flag = true;
+        }
     }
 
     public boolean isLookupCodeAvailable() {
@@ -334,20 +357,43 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     private void initFPGA() {
-        // Initialize FPGA with a precompiled kernel
+        // Initialize FPGA with a pre-compiled kernel
         OCLCodeCache check = new OCLCodeCache(deviceContext);
         try {
             Path lookupPath = Paths.get(KERNEL_WARMUP);
             if (lookupPath != null) {
                 check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
             }
-        } catch (Exception e) {
+        } catch (InvalidPathException e) {
+            throw new TornadoRuntimeException(e);
         }
+    }
+
+    public void fpgaInitializationJITMode(TaskMetaData meta) {
+        if (isLookupCodeAvailable()) {
+            runAndReadLookUpKernel(meta);
+        }
+    }
+
+    public TaskMetaData fpgaInstallCode() {
+        TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
+        OCLProviders providers = (OCLProviders) getProviders();
+        OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
+        lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA);
+        return meta;
     }
 
     public void init() {
         allocateHeapMemoryOnDevice();
-        TaskMetaData meta = compileLookupBufferKernel();
+        TaskMetaData meta;
+
+        if (Tornado.ACCELERATOR_IS_FPGA) {
+            meta = fpgaInstallCode();
+        } else {
+            meta = compileLookupBufferKernel();
+        }
+
         if (isLookupCodeAvailable()) {
             // Only run kernel is the compilation was correct.
             runAndReadLookUpKernel(meta);
@@ -447,14 +493,16 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         if (crb.isKernel()) {
             /*
-             * BUG There is a bug on some OpenCL devices which requires us to insert an
-             * extra OpenCL buffer into the kernel arguments. This has the effect of
-             * shifting the devices address mappings, which allows us to avoid the heap
-             * starting at address 0x0. (I assume that this is a interesting case that leads
-             * to a few issues.) Iris Pro is the only culprit at the moment.
+             * BUG There is a bug on some OpenCL devices which requires us to
+             * insert an extra OpenCL buffer into the kernel arguments. This has
+             * the effect of shifting the devices address mappings, which allows
+             * us to avoid the heap starting at address 0x0. (I assume that this
+             * is a interesting case that leads to a few issues.) Iris Pro is
+             * the only culprit at the moment.
              */
             if (Tornado.ACCELERATOR_IS_FPGA && !methodName.equals(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
-                // TODO: FIX with info at the runtime, currently is a static decision
+                // TODO: FIX with info at the runtime, currently is a static
+                // decision
                 asm.emitLine(FPGA_ATTRIBUTE);
             }
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
@@ -580,7 +628,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     @Override
     public String toString() {
-        return String.format("Backend: arch=%s, device=%s", architecture.getName(), deviceContext.getDevice().getName());
+        return String.format("Backend: arch=%s, device=%s", architecture.getName(), deviceContext.getDevice().getDeviceName());
     }
 
     @Override

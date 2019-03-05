@@ -106,7 +106,7 @@ public final class Tornado implements TornadoCI {
         }
 
         /*
-         * merge local and system properties, note that command line args
+         * merge local and system properties, note that command line arguments
          * override saved properties
          */
         Set<String> localKeys = loadProperties.stringPropertyNames();

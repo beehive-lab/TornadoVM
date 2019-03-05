@@ -1,7 +1,7 @@
-# Tornado Flags
+# TornadoVM Flags
 
 
-There is a number of runtime flags and compiler flags to enable experimental features, as well as fine and coarse grain profilling in the context of Tornado.
+There is a number of runtime flags and compiler flags to enable experimental features, as well as fine and coarse grain profilling in the context of TornadoVM.
 
 
 **Note:** for the following examples ```s0``` represents an arbitrary schedule, as well as ```t0``` represents a given task's name.   
@@ -14,7 +14,7 @@ All flags needs Java prefix of ```-D```. An example of tornado using a flag is t
 
   
 
-## List of Tornado Flags:
+## List of TornadoVM Flags:
 
 * ``` tornado.fullDebug=true ```:  
 Enables full debugging log to be output in the. command line.  
