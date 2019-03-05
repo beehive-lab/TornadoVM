@@ -2,6 +2,8 @@
 
 Tornado supports execution and prototyping with OpenCL compatible Intel/Altera FPGAs. For debuging you can use common IDEs from Java ecosystem. 
 
+**IMPORTANT NOTE:** The minimum input size to run on the FPGA is 64 elements (which correspondonds internally with the local work size in OpenCL). 
+
 ### Pre-requisites
 
 We have currently tested with a Nalatech a385 FPGA with Intel Arria 10 GT1150.
