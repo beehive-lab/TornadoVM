@@ -46,7 +46,7 @@ public class DeviceMemoryTest {
 
         final int numWords = (int) (heapSize >> 2);
 
-        System.out.printf("device memory test:\n\tdevice: %s\n\tmax heap=%s\n\tnum words=%d\n", device.getDevice().getName(), humanReadableByteCount(heapSize, false), numWords);
+        System.out.printf("device memory test:\n\tdevice: %s\n\tmax heap=%s\n\tnum words=%d\n", device.getDevice().getDeviceName(), humanReadableByteCount(heapSize, false), numWords);
 
         final int[] data = new int[numWords];
 

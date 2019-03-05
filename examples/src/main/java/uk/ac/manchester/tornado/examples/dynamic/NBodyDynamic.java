@@ -18,8 +18,6 @@
 
 package uk.ac.manchester.tornado.examples.dynamic;
 
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
-
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.Policy;
@@ -29,12 +27,7 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 public class NBodyDynamic {
 
-    private static float delT,espSqr;
-    private static float[] posSeq,velSeq;
-    private static int[] inputSize;
-    private static int numBodies;
-    private static TaskSchedule graph;
-    private static boolean VALIDATION = false;
+    private static boolean VALIDATION = true;
 
     private static void usage(String[] args) {
         System.err.printf("Usage: <numBodies> <performance|end|sequential> <iterations>\n");
@@ -71,53 +64,29 @@ public class NBodyDynamic {
         }
     }
 
-    public static boolean validate() {
-        boolean val = true;
-        float[] posSeqSeq,velSeqSeq;
-        delT = 0.005f;
-        espSqr = 500.0f;
-
-        float[] auxPositionRandom = new float[numBodies * 4];
-        float[] auxVelocityZero = new float[numBodies * 3];
-
-        for (int i = 0; i < auxPositionRandom.length; i++) {
-            auxPositionRandom[i] = (float) Math.random();
-        }
-
-        Arrays.fill(auxVelocityZero, 0.0f);
-
-        posSeq = new float[numBodies * 4];
-        velSeq = new float[numBodies * 4];
+    public static boolean validate(int numBodies, float[] positionsResult, float[] velocityResult, float delT, float espSqr, int[] inputSize, float[] initialPosition, float[] initialVelocity) {
+        boolean isValid = true;
+        float[] posSeqSeq;
+        float[] velSeqSeq;
         posSeqSeq = new float[numBodies * 4];
         velSeqSeq = new float[numBodies * 4];
 
-        for (int i = 0; i < auxPositionRandom.length; i++) {
-            posSeq[i] = auxPositionRandom[i];
-            posSeqSeq[i] = auxPositionRandom[i];
-        }
-        for (int i = 0; i < auxVelocityZero.length; i++) {
-            velSeq[i] = auxVelocityZero[i];
-            velSeqSeq[i] = auxVelocityZero[i];
-        }
-        graph = new TaskSchedule("s0");
-        graph.task("t0", NBodyDynamic::nBody, numBodies, posSeq, velSeq, delT, espSqr, inputSize).streamOut(posSeq, velSeq).streamOut(posSeq, velSeq);
-        graph.warmup();
-        graph.execute();
+        System.arraycopy(initialPosition, 0, posSeqSeq, 0, initialPosition.length);
+        System.arraycopy(initialVelocity, 0, velSeqSeq, 0, initialVelocity.length);
 
         nBody(numBodies, posSeqSeq, velSeqSeq, delT, espSqr, inputSize);
 
         for (int i = 0; i < numBodies * 4; i++) {
-            if (abs(posSeqSeq[i] - posSeq[i]) > 0.01) {
-                val = false;
+            if (Math.abs(posSeqSeq[i] - positionsResult[i]) > 0.1) {
+                isValid = false;
                 break;
             }
-            if (abs(velSeq[i] - velSeqSeq[i]) > 0.01) {
-                val = false;
+            if (Math.abs(velSeqSeq[i] - velocityResult[i]) > 0.1) {
+                isValid = false;
                 break;
             }
         }
-        System.out.printf("Number validation: " + val + "\n");
-        return val;
+        return isValid;
     }
 
     public static void main(String[] args) {
@@ -125,6 +94,12 @@ public class NBodyDynamic {
         if (args.length < 3) {
             usage(args);
         }
+
+        float delT;
+        float espSqr;
+        float[] positions,velocity;
+        int[] inputSize;
+        int numBodies;
 
         numBodies = Integer.parseInt(args[0]);
         String executionType = args[1];
@@ -138,27 +113,23 @@ public class NBodyDynamic {
         delT = 0.005f;
         espSqr = 500.0f;
 
-        float[] auxPositionRandom = new float[numBodies * 4];
-        float[] auxVelocityZero = new float[numBodies * 3];
+        float[] initialPosition = new float[numBodies * 4];
+        float[] initialVelocity = new float[numBodies * 3];
 
-        for (int i = 0; i < auxPositionRandom.length; i++) {
-            auxPositionRandom[i] = (float) Math.random();
+        for (int i = 0; i < initialPosition.length; i++) {
+            initialPosition[i] = (float) Math.random();
         }
 
-        Arrays.fill(auxVelocityZero, 0.0f);
+        Arrays.fill(initialVelocity, 0.0f);
 
-        posSeq = new float[numBodies * 4];
-        velSeq = new float[numBodies * 4];
+        positions = new float[numBodies * 4];
+        velocity = new float[numBodies * 4];
 
-        for (int i = 0; i < auxPositionRandom.length; i++) {
-            posSeq[i] = auxPositionRandom[i];
-        }
-        for (int i = 0; i < auxVelocityZero.length; i++) {
-            velSeq[i] = auxVelocityZero[i];
-        }
+        System.arraycopy(initialPosition, 0, positions, 0, initialPosition.length);
+        System.arraycopy(initialVelocity, 0, velocity, 0, initialVelocity.length);
 
         long startInit = System.nanoTime();
-        final TaskSchedule s0 = new TaskSchedule("s0").task("t0", NBodyDynamic::nBody, numBodies, posSeq, velSeq, delT, espSqr, inputSize).streamOut(posSeq, velSeq);
+        final TaskSchedule s0 = new TaskSchedule("s0").task("t0", NBodyDynamic::nBody, numBodies, positions, velocity, delT, espSqr, inputSize).streamOut(positions, velocity);
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
@@ -178,7 +149,7 @@ public class NBodyDynamic {
                 case "sequential":
                     System.gc();
                     start = System.nanoTime();
-                    nBody(numBodies, posSeq, velSeq, delT, espSqr, inputSize);
+                    nBody(numBodies, positions, velocity, delT, espSqr, inputSize);
                     end = System.nanoTime();
                     break;
                 default:
@@ -190,7 +161,12 @@ public class NBodyDynamic {
         }
 
         if (VALIDATION) {
-            validate();
+            boolean isValid = validate(numBodies, positions, velocity, delT, espSqr, inputSize, initialPosition, initialVelocity);
+            if (isValid) {
+                System.out.println("Result is correct");
+            } else {
+                System.out.println("Result is wrong");
+            }
         }
     }
 }

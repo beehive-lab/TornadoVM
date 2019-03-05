@@ -144,8 +144,8 @@ public class OCLContext extends TornadoLogger {
 
             final int platformVersion = Integer.parseInt(platform.getVersion().split(" ")[1].replace(".", "")) * 10;
             final int deviceVersion = Integer.parseInt(device.getVersion().split(" ")[1].replace(".", "")) * 10;
-            info("platform: version=%s (%s) on %s", platformVersion, platform.getVersion(), device.getName());
-            info("device  : version=%s (%s) on %s", deviceVersion, device.getVersion(), device.getName());
+            info("platform: version=%s (%s) on %s", platformVersion, platform.getVersion(), device.getDeviceName());
+            info("device  : version=%s (%s) on %s", deviceVersion, device.getVersion(), device.getDeviceName());
 
             queues[index] = new OCLCommandQueue(queueId, properties, deviceVersion);
         } catch (OCLException e) {

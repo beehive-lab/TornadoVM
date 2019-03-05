@@ -90,7 +90,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     public int executeTask(final OCLByteBuffer stack, final TaskMetaData meta) {
-        debug("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getName());
+        debug("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         debug("\tstack    : buffer id=0x%x, address=0x%x relative=0x%x", stack.toBuffer(), stack.toAbsoluteAddress(), stack.toRelativeAddress());
 
         setKernelArgs(stack, meta);
@@ -129,7 +129,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
     public void resolveEvent(final OCLByteBuffer stack, final TaskMetaData meta, int task) {
         Event event = deviceContext.resolveEvent(task);
-        debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getName());
+        debug("kernel completed: id=0x%x, method = %s, device = %s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         if (event != null) {
             debug("\tstatus   : %s", event.getStatus());
 
@@ -204,7 +204,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     public int submitWithEvents(final OCLCallStack stack, final TaskMetaData meta, final int[] events) {
 
         if (DEBUG) {
-            info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getName());
+            info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getDeviceName());
             info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(), stack.toAbsoluteAddress(), stack.toRelativeAddress());
         }
 
@@ -237,7 +237,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                     System.out.println("Running on: ");
                     System.out.println("\tPlatform: " + meta.getDevice().getPlatformName());
                     if (meta.getDevice() instanceof OCLTornadoDevice) {
-                        System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getDevice()).getDevice().getName());
+                        System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getDevice()).getDevice().getDeviceName());
                     }
                 }
                 if (meta.getGlobalWork() == null) {
@@ -264,7 +264,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     public void submitWithoutEvents(final OCLCallStack stack, final TaskMetaData meta) {
 
         if (DEBUG) {
-            info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getName());
+            info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getDeviceName());
             info("\tstack    : buffer id=0x%x, device=0x%x (0x%x)", stack.toBuffer(), stack.toAbsoluteAddress(), stack.toRelativeAddress());
         }
 
@@ -293,7 +293,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
                     System.out.println("Running on: ");
                     System.out.println("\tPlatform: " + meta.getDevice().getPlatformName());
                     if (meta.getDevice() instanceof OCLTornadoDevice) {
-                        System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getDevice()).getDevice().getName());
+                        System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getDevice()).getDevice().getDeviceName());
                     }
                 }
                 if (meta.getGlobalWork() == null) {

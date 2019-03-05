@@ -5,7 +5,7 @@ In the Tornado SDK you can find a number of examples in the `examples` directory
 This document describes how to program and run a full example in Tornado. 
 
 
-## 1. Run a simple example within Tornado: Vector Addition
+## 1. Run a simple example within TornadoVM: Vector Addition
 
 
 Below you can find a snapshot of the `TestArrays` example code in Tornado (full code listing can be found in the `examples` directory). 
