@@ -332,12 +332,16 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private void precompilationForFPGA() {
         // If current FPGA execution and JIT mode => run warmup
         if (Tornado.FPGA_EMULATION && Tornado.ACCELERATOR_IS_FPGA) {
-            System.out.println("Compilation for Emulation");
+            if (Tornado.DEBUG) {
+                System.out.println("Compilation for Emulation");
+            }
             compileTaskToOpenCL();
         } else if (graphContext.getDeviceFirtTask() instanceof TornadoAcceleratorDevice && Tornado.ACCELERATOR_IS_FPGA) {
             TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) graphContext.getDeviceFirtTask();
             if (device.isFullJITMode(graphContext.getTask(0))) {
-                System.out.println("Compilation for full JIT");
+                if (Tornado.DEBUG) {
+                    System.out.println("Compilation for full JIT");
+                }
                 compileTaskToOpenCL();
             }
         }
