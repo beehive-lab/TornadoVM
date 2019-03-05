@@ -338,12 +338,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         if (lookupCode != null) {
             lookupCodeAvailable = true;
         }
-        runAndReadLookUpKernel2(meta, deviceContext);
+        initFPGAJITCompiledMode(meta, deviceContext);
     }
 
-    private void runAndReadLookUpKernel2(TaskMetaData meta, OCLDeviceContext deviceContext) {
+    private void initFPGAJITCompiledMode(TaskMetaData meta, OCLDeviceContext deviceContext) {
         if (!flag) {
-            fpgaInit(meta);
+            fpgaInitializationJITMode(meta);
             flag = true;
         }
     }
@@ -369,7 +369,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         }
     }
 
-    public void fpgaInit(TaskMetaData meta) {
+    public void fpgaInitializationJITMode(TaskMetaData meta) {
         if (isLookupCodeAvailable()) {
             runAndReadLookUpKernel(meta);
         }
