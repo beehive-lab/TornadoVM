@@ -52,21 +52,30 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
     @Override
     public void calculateLocalWork(final TaskMetaData meta) {
         final long[] localWork = meta.getLocalWork();
+
         switch (meta.getDims()) {
             case 3:
-                localWork[2] = 1;
-                localWork[1] = LOCAL_WORK_SIZE;
-                localWork[0] = LOCAL_WORK_SIZE;
-
+                localWork[2] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[2]);
+                localWork[1] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[1]);
+                localWork[0] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[0]);
+                break;
             case 2:
-                localWork[1] = LOCAL_WORK_SIZE;
-                localWork[0] = LOCAL_WORK_SIZE;
+                localWork[1] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[1]);
+                localWork[0] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[0]);
                 break;
             case 1:
-                localWork[0] = LOCAL_WORK_SIZE;
+                localWork[0] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[0]);
                 break;
             default:
                 break;
         }
+    }
+
+    private int calculateGroupSize(long maxWorkItemSizes, long globalWorkSize) {
+        int value = (int) Math.min(maxWorkItemSizes, globalWorkSize);
+        while (globalWorkSize % value != 0) {
+            value--;
+        }
+        return value;
     }
 }
