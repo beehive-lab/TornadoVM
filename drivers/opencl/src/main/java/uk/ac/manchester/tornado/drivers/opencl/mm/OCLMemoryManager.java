@@ -88,7 +88,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     public final void reset() {
         callStackPosition = 0;
         heapPosition = callStackLimit;
-        Tornado.info("Reset heap @ 0x%x (%s) on %s", deviceBufferAddress, RuntimeUtilities.humanReadableByteCount(heapLimit, true), deviceContext.getDevice().getName());
+        Tornado.info("Reset heap @ 0x%x (%s) on %s", deviceBufferAddress, RuntimeUtilities.humanReadableByteCount(heapLimit, true), deviceContext.getDevice().getDeviceName());
     }
 
     @Override
@@ -107,7 +107,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         if (headerStart + bytes < heapLimit) {
             heapPosition = headerStart + bytes;
         } else {
-            throw new TornadoOutOfMemoryException("Out of memory on device: " + deviceContext.getDevice().getName());
+            throw new TornadoOutOfMemoryException("Out of memory on device: " + deviceContext.getDevice().getDeviceName());
         }
 
         return headerStart;
@@ -160,7 +160,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     public void init(OCLBackend backend, long address) {
         deviceBufferAddress = address;
         initialised = true;
-        info("Located heap @ 0x%x (%s) on %s", deviceBufferAddress, RuntimeUtilities.humanReadableByteCount(heapLimit, false), deviceContext.getDevice().getName());
+        info("Located heap @ 0x%x (%s) on %s", deviceBufferAddress, RuntimeUtilities.humanReadableByteCount(heapLimit, false), deviceContext.getDevice().getDeviceName());
         scheduleMeta.setDevice(backend.getDeviceContext().asMapping());
     }
 

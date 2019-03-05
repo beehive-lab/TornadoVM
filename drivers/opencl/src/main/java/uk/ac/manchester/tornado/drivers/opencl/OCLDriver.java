@@ -94,7 +94,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
     private OCLBackend createOCLBackend(final OptionValues options, final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, final OCLContext context, final int deviceIndex) {
         final OCLDevice device = context.devices().get(deviceIndex);
-        info("Creating backend for %s", device.getName());
+        info("Creating backend for %s", device.getDeviceName());
         return OCLHotSpotBackendFactory.createBackend(options, jvmciRuntime.getHostJVMCIBackend(), vmConfig, context, device);
     }
 
@@ -118,7 +118,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         backends[platformIndex] = new OCLBackend[numDevices];
         for (int j = 0; j < numDevices; j++) {
             final OCLDevice device = context.devices().get(j);
-            info("OpenCL[%d]: device=%s", platformIndex, device.getName());
+            info("OpenCL[%d]: device=%s", platformIndex, device.getDeviceName());
             backends[platformIndex][j] = createOCLBackend(options, vmRuntime, vmConfig, context, j);
         }
     }

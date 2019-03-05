@@ -39,14 +39,14 @@ public class OCLCPUScheduler extends OCLKernelScheduler {
 
     @Override
     public void calculateGlobalWork(final TaskMetaData meta) {
-        long[] maxItems = deviceContext.getDevice().getMaxWorkItemSizes();
+        long[] maxItems = deviceContext.getDevice().getDeviceMaxWorkItemSizes();
 
         final long[] globalWork = meta.getGlobalWork();
         for (int i = 0; i < meta.getDims(); i++) {
             if (meta.enableThreadCoarsener()) {
                 globalWork[i] = maxItems[i] > 1 ? (long) (meta.getDomain().get(i).cardinality()) : 1;
             } else {
-                globalWork[i] = i == 0 ? (long) (deviceContext.getDevice().getMaxComputeUnits() * CPU_COMPUTE_UNIT_COEFF) : 1;
+                globalWork[i] = i == 0 ? (long) (deviceContext.getDevice().getDeviceMaxComputeUnits() * CPU_COMPUTE_UNIT_COEFF) : 1;
             }
         }
     }

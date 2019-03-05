@@ -79,6 +79,9 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
         if (value == globalWorkSize) {
             value /= 2;
         }
+        if (value < LOCAL_WORK_SIZE) {
+            throw new RuntimeException("[ERROR] Minimum input of 64 elements to run on the FPGA");
+        }
         return value;
     }
 }

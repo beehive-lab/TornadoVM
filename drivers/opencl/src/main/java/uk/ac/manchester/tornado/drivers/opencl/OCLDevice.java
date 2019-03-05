@@ -109,7 +109,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return deviceType;
     }
 
-    public int getVendorId() {
+    public int getDeviceVendorId() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_VENDOR_ID.getValue(), buffer.array());
@@ -117,7 +117,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return buffer.getInt();
     }
 
-    public int getMemoryBaseAlignment() {
+    public int getDeviceMemoryBaseAlignment() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MEM_BASE_ADDR_ALIGN.getValue(), buffer.array());
@@ -125,7 +125,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return buffer.getInt();
     }
 
-    public boolean isAvailable() {
+    public boolean isDeviceAvailable() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_AVAILABLE.getValue(), buffer.array());
@@ -134,7 +134,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
     }
 
     @Override
-    public String getName() {
+    public String getDeviceName() {
         if (name == null) {
             Arrays.fill(buffer.array(), (byte) 0);
             buffer.clear();
@@ -150,7 +150,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return name;
     }
 
-    public String getVendor() {
+    public String getDeviceVendor() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
 
@@ -181,7 +181,6 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
     public String getDeviceVersion() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_VERSION.getValue(), buffer.array());
         String name;
         try {
@@ -192,25 +191,21 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return name.trim();
     }
 
-    public String getOpenCLCVersion() {
+    public String getDeviceOpenCLCVersion() {
         if (openCLVersion == null) {
             Arrays.fill(buffer.array(), (byte) 0);
             buffer.clear();
-
             clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_OPENCL_C_VERSION.getValue(), buffer.array());
-
             try {
                 openCLVersion = new String(buffer.array(), "ASCII").trim();
             } catch (UnsupportedEncodingException e) {
                 openCLVersion = "unknown";
             }
-
         }
-
         return openCLVersion;
     }
 
-    public String getExtensions() {
+    public String getDeviceExtensions() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_EXTENSIONS.getValue(), buffer.array());
@@ -224,7 +219,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
     }
 
     @Override
-    public int getMaxComputeUnits() {
+    public int getDeviceMaxComputeUnits() {
         if (maxComputeUnits != -1) {
             return maxComputeUnits;
         }
@@ -238,7 +233,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return maxComputeUnits;
     }
 
-    public int getMaxClockFrequency() {
+    public int getDeviceMaxClockFrequency() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MAX_CLOCK_FREQUENCY.getValue(), buffer.array());
@@ -246,7 +241,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return buffer.getInt();
     }
 
-    public long getMaxAllocationSize() {
+    public long getDeviceMaxAllocationSize() {
         if (maxAllocationSize != -1) {
             return maxAllocationSize;
         }
@@ -260,7 +255,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
     }
 
     @Override
-    public long getGlobalMemorySize() {
+    public long getDeviceGlobalMemorySize() {
         if (globalMemorySize != -1) {
             return globalMemorySize;
         }
@@ -274,7 +269,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
     }
 
     @Override
-    public long getLocalMemorySize() {
+    public long getDeviceLocalMemorySize() {
         if (localMemorySize != -1) {
             return localMemorySize;
         }
@@ -287,7 +282,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return localMemorySize;
     }
 
-    public int getMaxWorkItemDimensions() {
+    public int getDeviceMaxWorkItemDimensions() {
         if (maxWorkItemDimensions != -1) {
             return maxWorkItemDimensions;
         }
@@ -301,7 +296,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return maxWorkItemDimensions;
     }
 
-    public long[] getMaxWorkItemSizes() {
+    public long[] getDeviceMaxWorkItemSizes() {
         if (maxWorkItemSizes != null) {
             return maxWorkItemSizes;
         }
@@ -309,7 +304,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
 
-        final int elements = getMaxWorkItemDimensions();
+        final int elements = getDeviceMaxWorkItemDimensions();
 
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MAX_WORK_ITEM_SIZES.getValue(), buffer.array());
 
@@ -323,7 +318,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return maxWorkItemSizes;
     }
 
-    public long getMaxWorkGroupSize() {
+    public long getDeviceMaxWorkGroupSize() {
         if (maxWorkGroupSize != -1) {
             return maxWorkGroupSize;
         }
@@ -336,7 +331,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return maxWorkGroupSize;
     }
 
-    public long getMaxConstantBufferSize() {
+    public long getDeviceMaxConstantBufferSize() {
         if (maxConstantBufferSize != -1) {
             return maxConstantBufferSize;
         }
@@ -349,21 +344,18 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return maxConstantBufferSize;
     }
 
-    public long getDoubleFPConfig() {
+    public long getDeviceDoubleFPConfig() {
         if (doubleFPConfig != -1) {
             return doubleFPConfig;
         }
-
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_DOUBLE_FP_CONFIG.getValue(), buffer.array());
-
         doubleFPConfig = buffer.getLong();
         return doubleFPConfig;
     }
 
-    public long getSingleFPConfig() {
+    public long getDeviceSingleFPConfig() {
         if (singleFPConfig != -1) {
             return singleFPConfig;
         }
@@ -385,19 +377,17 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return buffer.getInt();
     }
 
-    public boolean hasUnifiedMemory() {
+    public boolean hasDeviceUnifiedMemory() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_HOST_UNIFIED_MEMORY.getValue(), buffer.array());
         return buffer.getInt() == OpenCL.CL_TRUE;
     }
 
-    public OCLLocalMemType getLocalMemoryType() {
+    public OCLLocalMemType getDeviceLocalMemoryType() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-
-        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_HOST_UNIFIED_MEMORY.getValue(), buffer.array());
+        clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_LOCAL_MEM_TYPE.getValue(), buffer.array());
         return OCLLocalMemType.toLocalMemType(buffer.getInt());
     }
 
@@ -425,29 +415,29 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("id=0x%x, name=%s, type=%s, available=%s", id, getName(), getDeviceType().toString(), isAvailable()));
+        sb.append(String.format("id=0x%x, name=%s, type=%s, available=%s", id, getDeviceName(), getDeviceType().toString(), isDeviceAvailable()));
         return sb.toString();
     }
 
     public Object toVerboseString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("id=0x%x, name=%s, type=%s, available=%s\n", id, getName(), getDeviceType().toString(), isAvailable()));
-        sb.append(String.format("freq=%s, max compute units=%d\n", humanReadableFreq(getMaxClockFrequency()), getMaxComputeUnits()));
-        sb.append(
-                String.format("global mem. size=%s, local mem. size=%s\n", RuntimeUtilities.humanReadableByteCount(getGlobalMemorySize(), false), humanReadableByteCount(getLocalMemorySize(), false)));
+        sb.append(String.format("id=0x%x, name=%s, type=%s, available=%s\n", id, getDeviceName(), getDeviceType().toString(), isDeviceAvailable()));
+        sb.append(String.format("freq=%s, max compute units=%d\n", humanReadableFreq(getDeviceMaxClockFrequency()), getDeviceMaxComputeUnits()));
+        sb.append(String.format("global mem. size=%s, local mem. size=%s\n", RuntimeUtilities.humanReadableByteCount(getDeviceGlobalMemorySize(), false),
+                humanReadableByteCount(getDeviceLocalMemorySize(), false)));
         sb.append(String.format("extensions:\n"));
-        for (String extension : getExtensions().split(" ")) {
+        for (String extension : getDeviceExtensions().split(" ")) {
             sb.append("\t" + extension + "\n");
         }
-        sb.append(String.format("unified memory   : %s\n", hasUnifiedMemory()));
-        sb.append(String.format("device vendor    : %s\n", getVendor()));
+        sb.append(String.format("unified memory   : %s\n", hasDeviceUnifiedMemory()));
+        sb.append(String.format("device vendor    : %s\n", getDeviceVendor()));
         sb.append(String.format("device version   : %s\n", getDeviceVersion()));
         sb.append(String.format("driver version   : %s\n", getDriverVersion()));
-        sb.append(String.format("OpenCL C version : %s\n", getOpenCLCVersion()));
+        sb.append(String.format("OpenCL C version : %s\n", getDeviceOpenCLCVersion()));
         sb.append(String.format("Endianess        : %s\n", isLittleEndian() ? "little" : "big"));
         sb.append(String.format("address size     : %d\n", getDeviceAddressBits()));
-        sb.append(String.format("single fp config : 0x%x\n", getSingleFPConfig()));
-        sb.append(String.format("double fp config : 0x%x\n", getDoubleFPConfig()));
+        sb.append(String.format("single fp config : 0x%x\n", getDeviceSingleFPConfig()));
+        sb.append(String.format("double fp config : 0x%x\n", getDeviceDoubleFPConfig()));
         return sb.toString();
     }
 

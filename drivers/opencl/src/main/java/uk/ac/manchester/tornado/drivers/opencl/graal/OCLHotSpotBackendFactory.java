@@ -77,12 +77,12 @@ public class OCLHotSpotBackendFactory {
                 wordKind = OCLKind.ULONG;
                 break;
             default:
-                shouldNotReachHere("unknown word size for device: word size is %d on %s", device.getWordSize(), device.getName());
+                shouldNotReachHere("unknown word size for device: word size is %d on %s", device.getWordSize(), device.getDeviceName());
                 break;
         }
 
         OCLArchitecture arch = new OCLArchitecture(wordKind, device.getByteOrder());
-        OCLTargetDescription target = new OCLTargetDescription(arch, device.getDoubleFPConfig() != 0, device.getExtensions());
+        OCLTargetDescription target = new OCLTargetDescription(arch, device.getDeviceDoubleFPConfig() != 0, device.getDeviceExtensions());
         OCLCodeProvider codeCache = new OCLCodeProvider(target);
         OCLDeviceContext deviceContext = openclContext.createDeviceContext(device.getIndex());
 

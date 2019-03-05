@@ -148,7 +148,7 @@ public class OpenCL {
                 System.out.printf("[%d]: platform: %s\n", platformIndex, platform.getName());
                 final OCLContext context = platform.createContext();
                 for (int deviceIndex = 0; deviceIndex < context.getNumDevices(); deviceIndex++) {
-                    System.out.printf("[%d:%d] device: %s\n", platformIndex, deviceIndex, context.createDeviceContext(deviceIndex).getDevice().getName());
+                    System.out.printf("[%d:%d] device: %s\n", platformIndex, deviceIndex, context.createDeviceContext(deviceIndex).getDevice().getDeviceName());
                 }
             }
 

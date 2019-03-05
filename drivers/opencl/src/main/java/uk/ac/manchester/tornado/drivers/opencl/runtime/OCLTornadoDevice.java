@@ -111,8 +111,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public String getDescription() {
-        final String availability = (device.isAvailable()) ? "available" : "not available";
-        return String.format("%s %s (%s)", device.getName(), device.getDeviceType(), availability);
+        final String availability = (device.isDeviceAvailable()) ? "available" : "not available";
+        return String.format("%s %s (%s)", device.getDeviceName(), device.getDeviceType(), availability);
     }
 
     @Override
@@ -154,7 +154,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public String toString() {
-        return String.format(getPlatformName() + " -- " + device.getName());
+        return String.format(getPlatformName() + " -- " + device.getDeviceName());
     }
 
     @Override

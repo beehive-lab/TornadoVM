@@ -66,7 +66,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
 
         needsBump = false;
         for (String bumpDevice : BUMP_DEVICES) {
-            if (device.getName().equalsIgnoreCase(bumpDevice.trim())) {
+            if (device.getDeviceName().equalsIgnoreCase(bumpDevice.trim())) {
                 needsBump = true;
                 break;
             }
@@ -74,7 +74,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
 
         if (needsBump) {
             bumpBuffer = context.createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, BUMP_BUFFER_SIZE);
-            info("device requires bump buffer: %s", device.getName());
+            info("device requires bump buffer: %s", device.getDeviceName());
         } else {
             bumpBuffer = -1;
         }
@@ -98,7 +98,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
 
     @Override
     public String toString() {
-        return String.format("[%d] %s", getDevice().getIndex(), getDevice().getName());
+        return String.format("[%d] %s", getDevice().getIndex(), getDevice().getDeviceName());
     }
 
     public OCLContext getPlatformContext() {

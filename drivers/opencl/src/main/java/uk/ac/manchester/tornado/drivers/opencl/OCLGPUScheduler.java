@@ -43,9 +43,9 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
         super(context);
         OCLDevice device = context.getDevice();
 
-        maxWorkItemSizes = device.getMaxWorkItemSizes();
-        maxComputeUnits = device.getMaxComputeUnits();
-        maxWorkGroupSize = device.getMaxWorkGroupSize();
+        maxWorkItemSizes = device.getDeviceMaxWorkItemSizes();
+        maxComputeUnits = device.getDeviceMaxComputeUnits();
+        maxWorkGroupSize = device.getDeviceMaxWorkGroupSize();
 
         workGroupUtil = GPU_WORK_GROUP_COEFF;
     }

@@ -226,7 +226,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         lookupCode.resolveEvent(bb, meta, task);
 
         final long address = bb.getLong(0);
-        Tornado.info("Heap address @ 0x%x on %s ", address, deviceContext.getDevice().getName());
+        Tornado.info("Heap address @ 0x%x on %s ", address, deviceContext.getDevice().getDeviceName());
         return address;
     }
 
@@ -236,11 +236,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
      */
     public void allocateHeapMemoryOnDevice() {
 
-        final long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getMaxAllocationSize());
+        final long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
         if (memorySize < DEFAULT_HEAP_ALLOCATION) {
             Tornado.info("Unable to allocate %s of heap space - resized to %s", humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false), humanReadableByteCount(memorySize, false));
         }
-        Tornado.info("%s: allocating %s of heap space", deviceContext.getDevice().getName(), humanReadableByteCount(memorySize, false));
+        Tornado.info("%s: allocating %s of heap space", deviceContext.getDevice().getDeviceName(), humanReadableByteCount(memorySize, false));
         deviceContext.getMemoryManager().allocateRegion(memorySize);
     }
 
@@ -628,7 +628,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     @Override
     public String toString() {
-        return String.format("Backend: arch=%s, device=%s", architecture.getName(), deviceContext.getDevice().getName());
+        return String.format("Backend: arch=%s, device=%s", architecture.getName(), deviceContext.getDevice().getDeviceName());
     }
 
     @Override

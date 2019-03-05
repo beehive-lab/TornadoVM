@@ -715,7 +715,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 String taskScheduleName = TASK_SCHEDULE_PREFIX + taskScheduleNumber;
                 TaskSchedule task = new TaskSchedule(taskScheduleName);
 
-                Thread.currentThread().setName("Thread-DEV: " + TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(taskScheduleNumber).getDevice().getName());
+                Thread.currentThread().setName("Thread-DEV: " + TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(taskScheduleNumber).getDevice().getDeviceName());
 
                 long start = timer.time();
                 performStreamInThread(task, streamInObjects);
