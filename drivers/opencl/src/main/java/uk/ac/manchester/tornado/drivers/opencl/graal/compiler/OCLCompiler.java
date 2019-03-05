@@ -413,7 +413,7 @@ public class OCLCompiler {
     }
 
     public static OCLCompilationResult compileCodeForDevice(ResolvedJavaMethod resolvedMethod, Object[] args, TaskMetaData meta, OCLProviders providers, OCLBackend backend) {
-        Tornado.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getName());
+        Tornado.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
         final TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
 
         Builder builder = new Builder(getTornadoRuntime().getOptions(), AllowAssumptions.YES);
@@ -467,7 +467,7 @@ public class OCLCompiler {
         final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().getReadonlyCopy().copy();
         ResolvedJavaMethod resolvedMethod = kernelGraph.method();
 
-        info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getName());
+        info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
 
         final TaskMetaData taskMeta = task.meta();
         final Object[] args = task.getArguments();

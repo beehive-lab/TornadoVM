@@ -45,10 +45,12 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
     public OCLGPUScheduler(final OCLDeviceContext context) {
         super(context);
         OCLDevice device = context.getDevice();
-        this.maxWorkItemSizes = device.getMaxWorkItemSizes();
-        this.maxComputeUnits = device.getMaxComputeUnits();
-        this.maxWorkGroupSize = device.getMaxWorkGroupSize();
-        this.workGroupUtil = GPU_WORK_GROUP_COEFF;
+
+        maxWorkItemSizes = device.getDeviceMaxWorkItemSizes();
+        maxComputeUnits = device.getDeviceMaxComputeUnits();
+        maxWorkGroupSize = device.getDeviceMaxWorkGroupSize();
+
+        workGroupUtil = GPU_WORK_GROUP_COEFF;
     }
 
     @Override
@@ -77,6 +79,7 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
             case 2:
                 localWork[1] = calculateGroupSize(maxWorkItemSizes[1], meta.getOpenCLGpuBlock2DY(), meta.getGlobalWork()[1]);
                 localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenCLGpuBlock2DX(), meta.getGlobalWork()[0]);
+
                 break;
             case 1:
                 localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenCLGpuBlockX(), meta.getGlobalWork()[0]);

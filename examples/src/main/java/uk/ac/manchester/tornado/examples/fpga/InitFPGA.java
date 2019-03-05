@@ -28,12 +28,48 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
  * array to check device buffers and offset within Tornado.
  * 
  * <p>
+ * In the pre-compiled mode:
+ * <p>
  * <code>
  * tornado --debug -Ds0.t0.device=0:1 -Dtornado.opencl.codecache.loadbin=True
  * -Dtornado.precompiled.binary=path/to/lookupBufferAddress,s0.t0.device=0:1
  * -Dtornado.opencl.userelative=True uk.ac.manchester.tornado.examples.fpga.InitFPGA
  * </code>
  * </p>
+ * </p>
+ * <p>
+ * In Full JIT Mode (debug):
+ * <p>
+ * <code>
+ * env CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1 tornado  
+ * -Ds0.t0.device=0:1 
+ * -Dtornado.assembler.removeloops=true 
+ * -Dtornado.opencl.accelerator.fpga=true 
+ * -Dtornado.fpga.emulation=true  
+ * -Dtornado.fpga.flags=v,report  
+ * -Dtornado.opencl.userelative=True 
+ * -Dtornado.opencl.source.print=True 
+ *  uk.ac.manchester.tornado.examples.fpga.InitFPGA
+ * </code>
+ * </p>
+ * </p>
+ * 
+ * <p>
+ * In Full JIT Mode:
+ * <p>
+ * <code>
+ * tornado  
+ * -Ds0.t0.device=0:1 
+ * -Dtornado.assembler.removeloops=true 
+ * -Dtornado.opencl.accelerator.fpga=true   
+ * -Dtornado.fpga.flags=v,report  
+ * -Dtornado.opencl.userelative=True 
+ * -Dtornado.opencl.source.print=True 
+ *  uk.ac.manchester.tornado.examples.fpga.InitFPGA
+ * </code>
+ * </p>
+ * </p>
+ * 
  * 
  */
 public class InitFPGA {

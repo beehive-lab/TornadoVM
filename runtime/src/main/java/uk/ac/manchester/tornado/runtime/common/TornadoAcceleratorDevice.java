@@ -36,4 +36,6 @@ public interface TornadoAcceleratorDevice extends TornadoDevice {
 
     public TornadoInstalledCode installCode(SchedulableTask task);
 
+    public boolean isFullJITMode(SchedulableTask task);
+
 }

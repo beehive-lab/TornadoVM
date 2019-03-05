@@ -127,7 +127,7 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
     @Override
     public String toString() {
-        return String.format("Call Stack: num args = %d, device = %s, size = %s @ 0x%x (0x%x)", numArgs, deviceContext.getDevice().getName(), humanReadableByteCount(bytes, true), toAbsoluteAddress(),
+        return String.format("Call Stack: num args = %d, device = %s, size = %s @ 0x%x (0x%x)", numArgs, deviceContext.getDevice().getDeviceName(), humanReadableByteCount(bytes, true), toAbsoluteAddress(),
                 toRelativeAddress());
     }
 

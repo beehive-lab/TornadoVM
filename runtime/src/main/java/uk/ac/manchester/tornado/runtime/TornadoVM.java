@@ -179,6 +179,10 @@ public class TornadoVM extends TornadoLogger {
         execute(true);
     }
 
+    public void compile() {
+        execute(true);
+    }
+
     public Event execute() {
         return execute(false);
     }

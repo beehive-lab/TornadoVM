@@ -66,10 +66,6 @@ public class RenderTrackDynamic {
         }
     }
 
-    public static boolean validate() {
-        return true;
-    }
-
     public static void main(String[] args) {
 
         if (args.length < 3) {
@@ -86,7 +82,8 @@ public class RenderTrackDynamic {
 
         executionType = args[1];
         iterations = Integer.parseInt(args[2]);
-        long end,start;
+        long end;
+        long start;
 
         ImageByte3 output = new ImageByte3(n, m);
         ImageFloat3 input = new ImageFloat3(n, m);
@@ -128,10 +125,6 @@ public class RenderTrackDynamic {
                     end = System.nanoTime();
             }
             System.out.println("Total time:  " + (end - start) + " ns" + " \n");
-        }
-
-        if (VALIDATION) {
-            System.out.println("Results are valid: " + validate() + " \n");
         }
 
     }

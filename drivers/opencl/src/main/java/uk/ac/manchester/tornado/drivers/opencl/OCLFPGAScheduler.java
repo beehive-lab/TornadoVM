@@ -29,10 +29,11 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLFPGAScheduler extends OCLKernelScheduler {
 
+    private static final int LOCAL_WORK_SIZE = 64;
+    private static final int WARP = 32;
+
     public OCLFPGAScheduler(final OCLDeviceContext context) {
         super(context);
-        OCLDevice device = context.getDevice();
-
     }
 
     @Override
@@ -41,8 +42,8 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
 
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (long) (meta.getDomain().get(i).cardinality());
-            if (value % 32 != 0) {
-                value = ((value / 32) + 1) * 32;
+            if (value % WARP != 0) {
+                value = ((value / WARP) + 1) * WARP;
             }
             globalWork[i] = value;
         }
@@ -51,21 +52,33 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
     @Override
     public void calculateLocalWork(final TaskMetaData meta) {
         final long[] localWork = meta.getLocalWork();
+
         switch (meta.getDims()) {
             case 3:
-                localWork[2] = 1;
-                localWork[1] = 16;
-                localWork[0] = 16;
-
+                localWork[2] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[2]);
+                localWork[1] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[1]);
+                localWork[0] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[0]);
+                break;
             case 2:
-                localWork[1] = 16;
-                localWork[0] = 16;
+                localWork[1] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[1]);
+                localWork[0] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[0]);
                 break;
             case 1:
-                localWork[0] = 16;
+                localWork[0] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[0]);
                 break;
             default:
                 break;
         }
+    }
+
+    private int calculateGroupSize(long maxWorkItemSizes, long globalWorkSize) {
+        int value = (int) Math.min(maxWorkItemSizes, globalWorkSize);
+        while (globalWorkSize % value != 0) {
+            value--;
+        }
+        if (value < LOCAL_WORK_SIZE) {
+            throw new RuntimeException("[ERROR] Minimum input of 64 elements to run on the FPGA");
+        }
+        return value;
     }
 }

@@ -100,7 +100,7 @@ public class MontecarloDynamic {
             sum += output[j];
         }
         sum *= 4;
-        System.out.println("Pi value(Tornado) : " + (sum / size));
+        System.out.println("Pi value (TornadoVM) : " + (sum / size));
 
         start = System.nanoTime();
         computeMontecarlo(seq, size);
@@ -112,7 +112,7 @@ public class MontecarloDynamic {
         }
         sum *= 4;
 
-        System.out.println("Pi value(seq) : " + (sum / size));
+        System.out.println("Pi value (Sequential) : " + (sum / size));
 
     }
 

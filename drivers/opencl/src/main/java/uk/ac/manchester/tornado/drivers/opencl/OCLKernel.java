@@ -76,13 +76,13 @@ public class OCLKernel extends TornadoLogger {
     }
 
     public void setConstantRegion(int index, ByteBuffer buffer) {
-        long maxSize = deviceContext.getDevice().getMaxConstantBufferSize();
+        long maxSize = deviceContext.getDevice().getDeviceMaxConstantBufferSize();
         guarantee(buffer.position() <= maxSize, "constant buffer is too large for device");
         setArg(index, buffer);
     }
 
     public void setLocalRegion(int index, long size) {
-        long maxSize = deviceContext.getDevice().getLocalMemorySize();
+        long maxSize = deviceContext.getDevice().getDeviceLocalMemorySize();
         guarantee(size <= maxSize, "local allocation is too large for device");
         try {
             clSetKernelArg(id, index, size, null);

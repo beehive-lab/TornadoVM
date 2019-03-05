@@ -186,7 +186,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
         OCLTornadoDevice device = (OCLTornadoDevice) context.getDeviceMapping();
         final TornadoSchedulingStrategy strategy = device.getPreferedSchedule();
-        long[] maxWorkItemSizes = device.getDevice().getMaxWorkItemSizes();
+        long[] maxWorkItemSizes = device.getDevice().getDeviceMaxWorkItemSizes();
 
         graph.getNodes().filter(ParallelRangeNode.class).forEach(node -> {
             if (context.getMeta().enableParallelization() && maxWorkItemSizes[node.index()] > 1) {
