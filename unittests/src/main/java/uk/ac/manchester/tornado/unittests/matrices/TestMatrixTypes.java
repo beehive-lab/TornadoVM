@@ -182,6 +182,10 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
     }
 
+    /**
+     * This test checks the {@linkplain Matrix2DFloat4} type. Each position in a
+     * 2D matrix is an explicit Vector4 in OpenCL.
+     */
     @Test
     public void testMatrix05() {
         Matrix2DFloat4 matrixA = new Matrix2DFloat4(N, N);
