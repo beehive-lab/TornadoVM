@@ -19,6 +19,7 @@
 package uk.ac.manchester.tornado.unittests.matrices;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Random;
 
@@ -26,6 +27,8 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat4;
 import uk.ac.manchester.tornado.api.collections.types.Matrix3DFloat;
 import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -60,6 +63,20 @@ public class TestMatrixTypes extends TornadoTestBase {
                     sum += a.get(i, k) + a.get(k, j);
                 }
                 c.set(i, j, sum);
+            }
+        }
+    }
+
+    /**
+     * Computing with Matrix and vector types.
+     * 
+     * @param a
+     * @param b
+     */
+    public static void computeMatrixSum(Matrix2DFloat4 a, Matrix2DFloat4 b) {
+        for (@Parallel int i = 0; i < N; i++) {
+            for (@Parallel int j = 0; j < N; j++) {
+                b.set(i, j, Float4.add(a.get(i, j), a.get(i, j)));
             }
         }
     }
@@ -160,6 +177,36 @@ public class TestMatrixTypes extends TornadoTestBase {
             for (int j = 0; j < N; j++) {
                 for (int k = 0; k < N; k++) {
                     assertEquals(matrixA.get(i, j, k) + matrixA.get(i, j, k), matrixB.get(i, j, k), 0.01f);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testMatrix05() {
+        Matrix2DFloat4 matrixA = new Matrix2DFloat4(N, N);
+        Matrix2DFloat4 matrixB = new Matrix2DFloat4(N, N);
+        Random r = new Random();
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                Float4 vector = new Float4();
+                for (int k = 0; k < vector.size(); k++) {
+                    vector.set(k, r.nextFloat());
+                }
+                matrixA.set(i, j, vector);
+            }
+        }
+
+        TaskSchedule ts = new TaskSchedule("s0");
+        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB);
+        ts.streamOut(matrixB);
+        ts.execute();
+
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                Float4 expected = Float4.add(matrixA.get(i, j), matrixA.get(i, j));
+                if (Float4.isEqual(expected, matrixB.get(i, j))) {
+                    assertTrue(true);
                 }
             }
         }

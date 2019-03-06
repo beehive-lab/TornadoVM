@@ -77,6 +77,10 @@ public final class StorageFormats {
         return (i * xSize) + j;
     }
 
+    public final static int toRowMajorVector(int i, int j, int xSize, int width) {
+        return (i * xSize * width) + j;
+    }
+
     public final static int toRowMajor3D(int i, int j, int k, int xSize, int ySize) {
         return (i * xSize * ySize) + (j * xSize) + k;
     }
