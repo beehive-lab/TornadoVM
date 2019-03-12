@@ -30,12 +30,15 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat4;
 import uk.ac.manchester.tornado.api.collections.types.Matrix3DFloat;
+import uk.ac.manchester.tornado.api.collections.types.Matrix3DFloat4;
 import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestMatrixTypes extends TornadoTestBase {
 
     private static final int N = 256;
+
+    private static final int SMALL_SIZE = 128;
 
     public static void computeMatrixSum(MatrixFloat a, MatrixFloat b) {
         for (@Parallel int i = 0; i < N; i++) {
@@ -77,6 +80,16 @@ public class TestMatrixTypes extends TornadoTestBase {
         for (@Parallel int i = 0; i < N; i++) {
             for (@Parallel int j = 0; j < N; j++) {
                 b.set(i, j, Float4.add(a.get(i, j), a.get(i, j)));
+            }
+        }
+    }
+
+    public static void computeMatrixSum(Matrix3DFloat4 a, Matrix3DFloat4 b, int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                for (@Parallel int k = 0; k < size; k++) {
+                    b.set(i, j, k, Float4.add(a.get(i, j, k), a.get(i, j, k)));
+                }
             }
         }
     }
@@ -211,6 +224,48 @@ public class TestMatrixTypes extends TornadoTestBase {
                 Float4 expected = Float4.add(matrixA.get(i, j), matrixA.get(i, j));
                 if (Float4.isEqual(expected, matrixB.get(i, j))) {
                     assertTrue(true);
+                } else {
+                    assertTrue(false);
+                }
+            }
+        }
+    }
+
+    /**
+     * This test checks the {@linkplain Matrix3DFloat4} type. Each position in a
+     * 3D matrix is an explicit Vector4 in OpenCL.
+     */
+    @Test
+    public void testMatrix06() {
+        Matrix3DFloat4 matrixA = new Matrix3DFloat4(SMALL_SIZE, SMALL_SIZE, SMALL_SIZE);
+        Matrix3DFloat4 matrixB = new Matrix3DFloat4(SMALL_SIZE, SMALL_SIZE, SMALL_SIZE);
+        Random r = new Random();
+        for (int i = 0; i < SMALL_SIZE; i++) {
+            for (int j = 0; j < SMALL_SIZE; j++) {
+                for (int k = 0; k < SMALL_SIZE; k++) {
+                    Float4 vector = new Float4();
+                    for (int v = 0; v < vector.size(); v++) {
+                        vector.set(v, r.nextFloat());
+                    }
+                    matrixA.set(i, j, k, vector);
+                }
+            }
+        }
+
+        TaskSchedule ts = new TaskSchedule("s0");
+        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, SMALL_SIZE);
+        ts.streamOut(matrixB);
+        ts.execute();
+
+        for (int i = 0; i < SMALL_SIZE; i++) {
+            for (int j = 0; j < SMALL_SIZE; j++) {
+                for (int k = 0; k < SMALL_SIZE; k++) {
+                    Float4 expected = Float4.add(matrixA.get(i, j, k), matrixA.get(i, j, k));
+                    if (!Float4.isEqual(expected, matrixB.get(i, j, k))) {
+                        assertTrue(false);
+                    } else {
+                        assertTrue(true);
+                    }
                 }
             }
         }

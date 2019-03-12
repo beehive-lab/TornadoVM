@@ -73,7 +73,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         double[] result = allocResultArray(numGroups);
 
         Random r = new Random();
-        IntStream.range(0, SIZE).sequential().forEach(i -> {
+        IntStream.range(0, SIZE).parallel().forEach(i -> {
             input[i] = r.nextDouble();
         });
 
@@ -92,7 +92,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
         double[] sequential = new double[1];
         reductionAddDoubles(input, sequential);
-        assertEquals(sequential[0], result[0], 0.1f);
+        assertEquals(sequential[0], result[0], 0.01f);
     }
 
     public static void reductionAddDoubles2(double[] input, @Reduce double[] result) {

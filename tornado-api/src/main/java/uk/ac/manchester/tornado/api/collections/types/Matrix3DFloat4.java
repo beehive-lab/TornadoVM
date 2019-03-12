@@ -42,9 +42,8 @@
 package uk.ac.manchester.tornado.api.collections.types;
 
 import java.nio.FloatBuffer;
-import java.util.Arrays;
 
-public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
+public class Matrix3DFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
@@ -58,12 +57,17 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * Number of rows
      */
-    final protected int M;
+    final protected int X;
 
     /**
      * Number of columns
      */
-    final protected int N;
+    final protected int Y;
+
+    /**
+     * Depth
+     */
+    final protected int Z;
 
     /**
      * Vector-width each position in the matrix
@@ -80,11 +84,12 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
      * @param data
      *            array reference which contains data
      */
-    public Matrix2DFloat4(int width, int height, float[] array) {
+    public Matrix3DFloat4(int width, int height, int depth, float[] array) {
         storage = array;
-        N = width;
-        M = height;
-        numElements = width * height * VECTOR_ELEMENTS;
+        X = width;
+        Y = height;
+        Z = depth;
+        numElements = width * height * depth * VECTOR_ELEMENTS;
     }
 
     /**
@@ -95,122 +100,73 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
      * @param width
      *            number of rows
      */
-    public Matrix2DFloat4(int width, int height) {
-        this(width, height, new float[width * height * VECTOR_ELEMENTS]);
+    public Matrix3DFloat4(int width, int height, int depth) {
+        this(width, height, depth, new float[width * height * depth * VECTOR_ELEMENTS]);
     }
 
-    public Float4 get(int i, int j) {
-        int baseIndex = StorageFormats.toRowMajorVector(i, j, N, VECTOR_ELEMENTS);
+    public Float4 get(int i, int j, int k) {
+        int baseIndex = StorageFormats.toRowMajor3DVector(i, j, k, X, Y, VECTOR_ELEMENTS);
         return Float4.loadFromArray(storage, baseIndex);
     }
 
-    public void set(int i, int j, Float4 value) {
-        int baseIndex = StorageFormats.toRowMajorVector(i, j, N, VECTOR_ELEMENTS);
+    public void set(int i, int j, int k, Float4 value) {
+        int baseIndex = StorageFormats.toRowMajor3DVector(i, j, k, X, Y, VECTOR_ELEMENTS);
         value.storeToArray(storage, baseIndex);
     }
 
-    public int M() {
-        return M;
+    public int X() {
+        return X;
     }
 
-    public int N() {
-        return N;
+    public int Y() {
+        return Y;
     }
 
-    public VectorFloat row(int row) {
-        int index = StorageFormats.toRowMajor(row, 0, N);
-        return new VectorFloat(N, Arrays.copyOfRange(storage, index, N));
-    }
-
-    public VectorFloat column(int col) {
-        int index = StorageFormats.toRowMajor(0, col, N);
-        final VectorFloat v = new VectorFloat(M);
-        for (int i = 0; i < M; i++)
-            v.set(i, storage[index + (i * N)]);
-        return v;
-    }
-
-    public VectorFloat diag() {
-        final VectorFloat v = new VectorFloat(Math.min(M, N));
-        for (int i = 0; i < M; i++)
-            v.set(i, storage[i * (N + 1)]);
-        return v;
+    public int Z() {
+        return Z;
     }
 
     public void fill(float value) {
-        for (int i = 0; i < storage.length; i++)
+        for (int i = 0; i < storage.length; i++) {
             storage[i] = value;
-    }
-
-    public void multiply(Matrix2DFloat4 a, Matrix2DFloat4 b) {
-        for (int row = 0; row < M(); row++) {
-            for (int col = 0; col < N(); col++) {
-                Float4 sum = new Float4();
-                for (int k = 0; k < b.M(); k++) {
-                    Float4 fa = a.get(row, k);
-                    Float4 fb = b.get(k, col);
-                    Float4 fc = Float4.mult(fa, fb);
-                    sum = Float4.add(fc, sum);
-                }
-                set(row, col, sum);
-            }
         }
     }
 
-    /**
-     * Transposes the matrix in-place
-     * 
-     * @param m
-     *            matrix to transpose
-     */
-    public static void transpose(Matrix2DFloat4 matrix) {
-        if (matrix.N == matrix.M) {
-            for (int i = 0; i < matrix.M; i++) {
-                for (int j = 0; j < i; j++) {
-                    final Float4 tmp = matrix.get(i, j);
-                    matrix.set(i, j, matrix.get(j, i));
-                    matrix.set(j, i, tmp);
-                }
-            }
-        } else {
-            throw new RuntimeException("Square matrix expected");
-        }
-    }
-
-    public Matrix2DFloat4 duplicate() {
-        Matrix2DFloat4 matrix = new Matrix2DFloat4(N, M);
+    public Matrix3DFloat4 duplicate() {
+        Matrix3DFloat4 matrix = new Matrix3DFloat4(X, Y, Z);
         matrix.set(this);
         return matrix;
     }
 
-    public void set(Matrix2DFloat4 m) {
+    public void set(Matrix3DFloat4 m) {
         for (int i = 0; i < m.storage.length; i++)
             storage[i] = m.storage[i];
     }
 
     public String toString(String fmt) {
         String str = "";
-
-        for (int i = 0; i < M; i++) {
-            for (int j = 0; j < N; j++) {
-                str += String.format(fmt, get(i, j)) + " ";
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                for (int k = 0; k < Z; k++) {
+                    str += String.format(fmt, get(i, j, k)) + " ";
+                }
             }
             str += "\n";
         }
         str.trim();
-
         return str;
     }
 
-    public static void scale(Matrix2DFloat4 matrix, float value) {
-        for (int i = 0; i < matrix.storage.length; i++)
+    public static void scale(Matrix3DFloat4 matrix, float value) {
+        for (int i = 0; i < matrix.storage.length; i++) {
             matrix.storage[i] *= value;
+        }
     }
 
     @Override
     public String toString() {
-        String result = String.format("MatrixFloat <%d x %d>", M, N);
-        if (M < 16 && N < 16)
+        String result = String.format("MatrixFloat <%d x %d x %d>", X, Y, Z);
+        if (X < 16 && Y < 16 && Z < 16)
             result += "\n" + toString(FloatOps.fmt);
         return result;
     }

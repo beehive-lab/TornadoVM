@@ -85,6 +85,10 @@ public final class StorageFormats {
         return (i * xSize * ySize) + (j * xSize) + k;
     }
 
+    public final static int toRowMajor3DVector(int i, int j, int k, int xSize, int ySize, int vectorWidth) {
+        return (i * xSize * ySize * vectorWidth) + (j * xSize) + k;
+    }
+
     /**
      * Converts a given i,j index to row-major index
      * 
