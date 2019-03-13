@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat4;
 import uk.ac.manchester.tornado.api.collections.types.Matrix3DFloat;
 import uk.ac.manchester.tornado.api.collections.types.Matrix3DFloat4;
-import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestMatrixTypes extends TornadoTestBase {
@@ -40,7 +40,7 @@ public class TestMatrixTypes extends TornadoTestBase {
 
     private static final int SMALL_SIZE = 128;
 
-    public static void computeMatrixSum(MatrixFloat a, MatrixFloat b) {
+    public static void computeMatrixSum(Matrix2DFloat a, Matrix2DFloat b) {
         for (@Parallel int i = 0; i < N; i++) {
             for (@Parallel int j = 0; j < N; j++) {
                 b.set(i, j, a.get(i, j) + a.get(i, j));
@@ -58,7 +58,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
     }
 
-    public static void computeMatrixMultiplication(MatrixFloat a, MatrixFloat b, MatrixFloat c) {
+    public static void computeMatrixMultiplication(Matrix2DFloat a, Matrix2DFloat b, Matrix2DFloat c) {
         for (@Parallel int i = 0; i < a.M(); i++) {
             for (@Parallel int j = 0; j < a.N(); j++) {
                 float sum = 0.0f;
@@ -96,8 +96,8 @@ public class TestMatrixTypes extends TornadoTestBase {
 
     @Test
     public void testMatrix01() {
-        MatrixFloat matrixA = new MatrixFloat(N, N);
-        MatrixFloat matrixB = new MatrixFloat(N, N);
+        Matrix2DFloat matrixA = new Matrix2DFloat(N, N);
+        Matrix2DFloat matrixB = new Matrix2DFloat(N, N);
         Random r = new Random();
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
@@ -126,8 +126,8 @@ public class TestMatrixTypes extends TornadoTestBase {
                 a[i][j] = r.nextFloat();
             }
         }
-        MatrixFloat matrixA = new MatrixFloat(a);
-        MatrixFloat matrixB = new MatrixFloat(N, N);
+        Matrix2DFloat matrixA = new Matrix2DFloat(a);
+        Matrix2DFloat matrixB = new Matrix2DFloat(N, N);
         TaskSchedule ts = new TaskSchedule("s0");
         ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB);
         ts.streamOut(matrixB);
@@ -142,10 +142,10 @@ public class TestMatrixTypes extends TornadoTestBase {
 
     @Test
     public void testMatrix03() {
-        MatrixFloat matrixA = new MatrixFloat(N, N);
-        MatrixFloat matrixB = new MatrixFloat(N, N);
-        MatrixFloat matrixC = new MatrixFloat(N, N);
-        MatrixFloat sequential = new MatrixFloat(N, N);
+        Matrix2DFloat matrixA = new Matrix2DFloat(N, N);
+        Matrix2DFloat matrixB = new Matrix2DFloat(N, N);
+        Matrix2DFloat matrixC = new Matrix2DFloat(N, N);
+        Matrix2DFloat sequential = new Matrix2DFloat(N, N);
         Random r = new Random();
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {

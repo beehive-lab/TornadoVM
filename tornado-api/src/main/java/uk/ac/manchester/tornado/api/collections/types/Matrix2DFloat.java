@@ -43,19 +43,18 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import static java.lang.Math.min;
 import static java.lang.String.format;
-import static java.lang.System.out;
-import static java.nio.IntBuffer.wrap;
+import static java.nio.FloatBuffer.wrap;
 import static java.util.Arrays.copyOfRange;
-import static uk.ac.manchester.tornado.api.collections.types.IntOps.fmt;
+import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt;
 import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRowMajor;
 
-import java.nio.IntBuffer;
+import java.nio.FloatBuffer;
 
-public class MatrixInt implements PrimitiveStorage<IntBuffer> {
+public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    final protected int[] storage;
+    final protected float[] storage;
 
     /**
      * number of elements in the storage
@@ -82,7 +81,7 @@ public class MatrixInt implements PrimitiveStorage<IntBuffer> {
      * @param data
      *            array reference which contains data
      */
-    public MatrixInt(int width, int height, int[] array) {
+    public Matrix2DFloat(int width, int height, float[] array) {
         storage = array;
         N = width;
         M = height;
@@ -97,19 +96,19 @@ public class MatrixInt implements PrimitiveStorage<IntBuffer> {
      * @param width
      *            number of rows
      */
-    public MatrixInt(int width, int height) {
-        this(width, height, new int[width * height]);
+    public Matrix2DFloat(int width, int height) {
+        this(width, height, new float[width * height]);
     }
 
-    public MatrixInt(int[][] matrix) {
+    public Matrix2DFloat(float[][] matrix) {
         this(matrix.length, matrix[0].length, toRowMajor(matrix));
     }
 
-    public int get(int i, int j) {
+    public float get(int i, int j) {
         return storage[toRowMajor(i, j, N)];
     }
 
-    public void set(int i, int j, int value) {
+    public void set(int i, int j, float value) {
         storage[toRowMajor(i, j, N)] = value;
     }
 
@@ -121,51 +120,37 @@ public class MatrixInt implements PrimitiveStorage<IntBuffer> {
         return N;
     }
 
-    public VectorInt row(int row) {
+    public VectorFloat row(int row) {
         int index = toRowMajor(row, 0, N);
-        return new VectorInt(N, copyOfRange(storage, index, N));
+        return new VectorFloat(N, copyOfRange(storage, index, N));
     }
 
-    public VectorInt column(int col) {
+    public VectorFloat column(int col) {
         int index = toRowMajor(0, col, N);
-        final VectorInt v = new VectorInt(M);
+        final VectorFloat v = new VectorFloat(M);
         for (int i = 0; i < M; i++)
             v.set(i, storage[index + (i * N)]);
         return v;
     }
 
-    public VectorInt diag() {
-        final VectorInt v = new VectorInt(min(M, N));
+    public VectorFloat diag() {
+        final VectorFloat v = new VectorFloat(min(M, N));
         for (int i = 0; i < M; i++)
             v.set(i, storage[i * (N + 1)]);
         return v;
     }
 
-    public void fill(int value) {
+    public void fill(float value) {
         for (int i = 0; i < storage.length; i++)
             storage[i] = value;
     }
 
-    public void multiply(MatrixInt a, MatrixInt b) {
+    public void multiply(Matrix2DFloat a, Matrix2DFloat b) {
         for (int row = 0; row < M(); row++) {
             for (int col = 0; col < N(); col++) {
-                int sum = 0;
+                float sum = 0f;
                 for (int k = 0; k < b.M(); k++) {
                     sum += a.get(row, k) * b.get(k, col);
-                }
-                set(row, col, sum);
-            }
-        }
-    }
-
-    public void tmultiply(MatrixInt a, MatrixInt b) {
-        out.printf("tmult: M=%d (expect %d)\n", M(), a.M());
-        out.printf("tmult: N=%d (expect %d)\n", N(), b.M());
-        for (int row = 0; row < M(); row++) {
-            for (int col = 0; col < b.M(); col++) {
-                int sum = 0;
-                for (int k = 0; k < b.N(); k++) {
-                    sum += a.get(row, k) * b.get(col, k);
                 }
                 set(row, col, sum);
             }
@@ -178,13 +163,13 @@ public class MatrixInt implements PrimitiveStorage<IntBuffer> {
      * @param m
      *            matrix to transpose
      */
-    public static void transpose(MatrixInt matrix) {
+    public static void transpose(Matrix2DFloat matrix) {
 
         if (matrix.N == matrix.M) {
             // transpose square matrix
             for (int i = 0; i < matrix.M; i++) {
                 for (int j = 0; j < i; j++) {
-                    final int tmp = matrix.get(i, j);
+                    final float tmp = matrix.get(i, j);
                     matrix.set(i, j, matrix.get(j, i));
                     matrix.set(j, i, tmp);
                 }
@@ -192,13 +177,13 @@ public class MatrixInt implements PrimitiveStorage<IntBuffer> {
         }
     }
 
-    public MatrixInt duplicate() {
-        MatrixInt matrix = new MatrixInt(N, M);
+    public Matrix2DFloat duplicate() {
+        Matrix2DFloat matrix = new Matrix2DFloat(N, M);
         matrix.set(this);
         return matrix;
     }
 
-    public void set(MatrixInt m) {
+    public void set(Matrix2DFloat m) {
         for (int i = 0; i < m.storage.length; i++)
             storage[i] = m.storage[i];
     }
@@ -212,30 +197,30 @@ public class MatrixInt implements PrimitiveStorage<IntBuffer> {
             }
             str += "\n";
         }
+        str.trim();
 
-        return str.trim();
+        return str;
     }
 
-    @Override
     public String toString() {
-        String result = format("MatrixInt <%d x %d>", M, N);
+        String result = format("MatrixFloat <%d x %d>", M, N);
         if (M < 16 && N < 16)
             result += "\n" + toString(fmt);
         return result;
     }
 
-    public static void scale(MatrixInt matrix, int value) {
+    public static void scale(Matrix2DFloat matrix, float value) {
         for (int i = 0; i < matrix.storage.length; i++)
             matrix.storage[i] *= value;
     }
 
     @Override
-    public void loadFromBuffer(IntBuffer buffer) {
+    public void loadFromBuffer(FloatBuffer buffer) {
         asBuffer().put(buffer);
     }
 
     @Override
-    public IntBuffer asBuffer() {
+    public FloatBuffer asBuffer() {
         return wrap(storage);
     }
 
@@ -243,5 +228,4 @@ public class MatrixInt implements PrimitiveStorage<IntBuffer> {
     public int size() {
         return numElements;
     }
-
 }

@@ -21,13 +21,13 @@ import java.util.Random;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 
 public class MatrixMultiplication2D {
 
     public static final int WARMING_UP_ITERATIONS = 15;
 
-    public static void matrixMultiplication(MatrixFloat A, MatrixFloat B, MatrixFloat C, final int size) {
+    public static void matrixMultiplication(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
                 float sum = 0.0f;
@@ -52,10 +52,10 @@ public class MatrixMultiplication2D {
 
         System.out.println("Computing MxM of " + size + "x" + size);
 
-        MatrixFloat matrixA = new MatrixFloat(size, size);
-        MatrixFloat matrixB = new MatrixFloat(size, size);
-        MatrixFloat matrixC = new MatrixFloat(size, size);
-        MatrixFloat resultSeq = new MatrixFloat(size, size);
+        Matrix2DFloat matrixA = new Matrix2DFloat(size, size);
+        Matrix2DFloat matrixB = new Matrix2DFloat(size, size);
+        Matrix2DFloat matrixC = new Matrix2DFloat(size, size);
+        Matrix2DFloat resultSeq = new Matrix2DFloat(size, size);
 
         Random r = new Random();
         for (int i = 0; i < size; i++) {

@@ -43,18 +43,18 @@ package uk.ac.manchester.tornado.api.collections.types;
 
 import static java.lang.Math.min;
 import static java.lang.String.format;
-import static java.nio.FloatBuffer.wrap;
+import static java.nio.DoubleBuffer.wrap;
 import static java.util.Arrays.copyOfRange;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt;
+import static uk.ac.manchester.tornado.api.collections.types.DoubleOps.fmt;
 import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRowMajor;
 
-import java.nio.FloatBuffer;
+import java.nio.DoubleBuffer;
 
-public class MatrixFloat implements PrimitiveStorage<FloatBuffer> {
+public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
     /**
      * backing array
      */
-    final protected float[] storage;
+    final protected double[] storage;
 
     /**
      * number of elements in the storage
@@ -81,7 +81,7 @@ public class MatrixFloat implements PrimitiveStorage<FloatBuffer> {
      * @param data
      *            array reference which contains data
      */
-    public MatrixFloat(int width, int height, float[] array) {
+    public Matrix2DDouble(int width, int height, double[] array) {
         storage = array;
         N = width;
         M = height;
@@ -96,19 +96,19 @@ public class MatrixFloat implements PrimitiveStorage<FloatBuffer> {
      * @param width
      *            number of rows
      */
-    public MatrixFloat(int width, int height) {
-        this(width, height, new float[width * height]);
+    public Matrix2DDouble(int width, int height) {
+        this(width, height, new double[width * height]);
     }
 
-    public MatrixFloat(float[][] matrix) {
+    public Matrix2DDouble(double[][] matrix) {
         this(matrix.length, matrix[0].length, toRowMajor(matrix));
     }
 
-    public float get(int i, int j) {
+    public double get(int i, int j) {
         return storage[toRowMajor(i, j, N)];
     }
 
-    public void set(int i, int j, float value) {
+    public void set(int i, int j, double value) {
         storage[toRowMajor(i, j, N)] = value;
     }
 
@@ -120,35 +120,35 @@ public class MatrixFloat implements PrimitiveStorage<FloatBuffer> {
         return N;
     }
 
-    public VectorFloat row(int row) {
+    public VectorDouble row(int row) {
         int index = toRowMajor(row, 0, N);
-        return new VectorFloat(N, copyOfRange(storage, index, N));
+        return new VectorDouble(N, copyOfRange(storage, index, N));
     }
 
-    public VectorFloat column(int col) {
+    public VectorDouble column(int col) {
         int index = toRowMajor(0, col, N);
-        final VectorFloat v = new VectorFloat(M);
+        final VectorDouble v = new VectorDouble(M);
         for (int i = 0; i < M; i++)
             v.set(i, storage[index + (i * N)]);
         return v;
     }
 
-    public VectorFloat diag() {
-        final VectorFloat v = new VectorFloat(min(M, N));
+    public VectorDouble diag() {
+        final VectorDouble v = new VectorDouble(min(M, N));
         for (int i = 0; i < M; i++)
             v.set(i, storage[i * (N + 1)]);
         return v;
     }
 
-    public void fill(float value) {
+    public void fill(double value) {
         for (int i = 0; i < storage.length; i++)
             storage[i] = value;
     }
 
-    public void multiply(MatrixFloat a, MatrixFloat b) {
+    public void multiply(Matrix2DDouble a, Matrix2DDouble b) {
         for (int row = 0; row < M(); row++) {
             for (int col = 0; col < N(); col++) {
-                float sum = 0f;
+                double sum = 0f;
                 for (int k = 0; k < b.M(); k++) {
                     sum += a.get(row, k) * b.get(k, col);
                 }
@@ -163,13 +163,12 @@ public class MatrixFloat implements PrimitiveStorage<FloatBuffer> {
      * @param m
      *            matrix to transpose
      */
-    public static void transpose(MatrixFloat matrix) {
-
+    public static void transpose(Matrix2DDouble matrix) {
         if (matrix.N == matrix.M) {
             // transpose square matrix
             for (int i = 0; i < matrix.M; i++) {
                 for (int j = 0; j < i; j++) {
-                    final float tmp = matrix.get(i, j);
+                    final double tmp = matrix.get(i, j);
                     matrix.set(i, j, matrix.get(j, i));
                     matrix.set(j, i, tmp);
                 }
@@ -177,13 +176,13 @@ public class MatrixFloat implements PrimitiveStorage<FloatBuffer> {
         }
     }
 
-    public MatrixFloat duplicate() {
-        MatrixFloat matrix = new MatrixFloat(N, M);
+    public Matrix2DDouble duplicate() {
+        Matrix2DDouble matrix = new Matrix2DDouble(N, M);
         matrix.set(this);
         return matrix;
     }
 
-    public void set(MatrixFloat m) {
+    public void set(Matrix2DDouble m) {
         for (int i = 0; i < m.storage.length; i++)
             storage[i] = m.storage[i];
     }
@@ -197,30 +196,29 @@ public class MatrixFloat implements PrimitiveStorage<FloatBuffer> {
             }
             str += "\n";
         }
-        str.trim();
-
-        return str;
+        return str.trim();
     }
 
+    @Override
     public String toString() {
-        String result = format("MatrixFloat <%d x %d>", M, N);
+        String result = format("MatrixDouble <%d x %d>", M, N);
         if (M < 16 && N < 16)
             result += "\n" + toString(fmt);
         return result;
     }
 
-    public static void scale(MatrixFloat matrix, float value) {
+    public static void scale(Matrix2DDouble matrix, double value) {
         for (int i = 0; i < matrix.storage.length; i++)
             matrix.storage[i] *= value;
     }
 
     @Override
-    public void loadFromBuffer(FloatBuffer buffer) {
+    public void loadFromBuffer(DoubleBuffer buffer) {
         asBuffer().put(buffer);
     }
 
     @Override
-    public FloatBuffer asBuffer() {
+    public DoubleBuffer asBuffer() {
         return wrap(storage);
     }
 

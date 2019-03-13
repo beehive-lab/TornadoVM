@@ -24,7 +24,7 @@ import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat4;
-import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
@@ -35,7 +35,7 @@ public class MatrixAddition2D {
 
     public static final int WARMING_UP_ITERATIONS = 25;
 
-    public static void matrixAddition(MatrixFloat A, MatrixFloat B, MatrixFloat C, final int size) {
+    public static void matrixAddition(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
                 C.set(i, j, A.get(i, j) + B.get(j, j));
@@ -71,10 +71,10 @@ public class MatrixAddition2D {
 
         System.out.println("Computing Matrix Addition of " + size + "x" + size);
 
-        MatrixFloat matrixA = new MatrixFloat(size, size);
-        MatrixFloat matrixB = new MatrixFloat(size, size);
-        MatrixFloat matrixC = new MatrixFloat(size, size);
-        MatrixFloat resultSeq = new MatrixFloat(size, size);
+        Matrix2DFloat matrixA = new Matrix2DFloat(size, size);
+        Matrix2DFloat matrixB = new Matrix2DFloat(size, size);
+        Matrix2DFloat matrixC = new Matrix2DFloat(size, size);
+        Matrix2DFloat resultSeq = new Matrix2DFloat(size, size);
 
         Random r = new Random();
         for (int i = 0; i < size; i++) {
