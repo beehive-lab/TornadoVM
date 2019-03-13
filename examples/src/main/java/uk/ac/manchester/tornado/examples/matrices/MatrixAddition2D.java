@@ -20,8 +20,12 @@ package uk.ac.manchester.tornado.examples.matrices;
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat4;
 import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
  * Full example to show to matrix addition with non vector types
@@ -29,13 +33,28 @@ import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
  */
 public class MatrixAddition2D {
 
-    public static final int WARMING_UP_ITERATIONS = 15;
+    public static final int WARMING_UP_ITERATIONS = 25;
 
     public static void matrixAddition(MatrixFloat A, MatrixFloat B, MatrixFloat C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
                 C.set(i, j, A.get(i, j) + B.get(j, j));
             }
+        }
+    }
+
+    public static void matrixAddition(Matrix2DFloat4 A, Matrix2DFloat4 B, Matrix2DFloat4 C, final int size) {
+        for (@Parallel int i = 0; i < size; i++) {
+            for (@Parallel int j = 0; j < size; j++) {
+                C.set(i, j, Float4.add(A.get(i, j), B.get(j, j)));
+            }
+        }
+    }
+
+    public static void reset() {
+        for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumDrivers(); i++) {
+            final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(i);
+            driver.getDefaultDevice().reset();
         }
     }
 
@@ -77,9 +96,38 @@ public class MatrixAddition2D {
         }
 
         // 2. Run parallel on the GPU with Tornado
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
         t.execute();
-        long end = System.currentTimeMillis();
+        long end = System.nanoTime();
+
+        reset();
+
+        size /= 2;
+
+        Matrix2DFloat4 matrixAV = new Matrix2DFloat4(size, size);
+        Matrix2DFloat4 matrixBV = new Matrix2DFloat4(size, size);
+        Matrix2DFloat4 matrixCV = new Matrix2DFloat4(size, size);
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                matrixAV.set(i, j, new Float4(new float[] { r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat() }));
+                matrixBV.set(i, j, new Float4(new float[] { r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat() }));
+            }
+        }
+
+        //@formatter:off
+        TaskSchedule t1 = new TaskSchedule("s1")
+                .task("t1", MatrixAddition2D::matrixAddition, matrixAV, matrixBV, matrixCV, (size* 2))
+                .streamOut(matrixCV);
+        //@formatter:on
+
+        for (int i = 0; i < WARMING_UP_ITERATIONS; i++) {
+            t1.execute();
+        }
+
+        long startVector = System.nanoTime();
+        t1.execute();
+        long endVector = System.nanoTime();
 
         // Run sequential
         // 1. Warm up sequential
@@ -88,24 +136,17 @@ public class MatrixAddition2D {
         }
 
         // 2. Run the sequential code
-        long startSequential = System.currentTimeMillis();
+        long startSequential = System.nanoTime();
         matrixAddition(matrixA, matrixB, resultSeq, size);
-        long endSequential = System.currentTimeMillis();
-
-        // Compute Gigaflops and performance
-        long msecGPUElapsedTime = (end - start);
-        long msecCPUElaptedTime = (endSequential - startSequential);
-        double flops = 2 * Math.pow(size, 2);
-        double gpuGigaFlops = (1.0E-9 * flops) / (msecGPUElapsedTime / 1000.0f);
-        double cpuGigaFlops = (1.0E-9 * flops) / (msecCPUElaptedTime / 1000.0f);
+        long endSequential = System.nanoTime();
         double speedup = (double) (endSequential - startSequential) / (double) (end - start);
+        double speedupVector = (double) (endSequential - startSequential) / (double) (endVector - startVector);
 
-        String formatGPUFGlops = String.format("%.2f", gpuGigaFlops);
-        String formatCPUFGlops = String.format("%.2f", cpuGigaFlops);
-
-        System.out.println("\tCPU Execution: " + formatCPUFGlops + " GFlops, Total time = " + (endSequential - startSequential) + " ms");
-        System.out.println("\tGPU Execution: " + formatGPUFGlops + " GFlops, Total Time = " + (end - start) + " ms");
-        System.out.println("\tSpeedup: " + speedup + "x");
+        System.out.println("\tCPU Sequential Total Time = " + (endSequential - startSequential) + " ns");
+        System.out.println("\tGPU TornadoVM  Total Time = " + (end - start) + " ns");
+        System.out.println("\tGPU TornadoVM  Vector Total Time = " + (endVector - startVector) + " ns");
+        System.out.println("\tSpeedup Seq/TornadoVM: " + speedup + "x");
+        System.out.println("\tSpeedup Seq/TornadoVM Vector: " + speedupVector + "x");
     }
 
 }
