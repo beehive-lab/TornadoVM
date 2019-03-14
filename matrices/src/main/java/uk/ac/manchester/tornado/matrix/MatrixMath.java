@@ -20,14 +20,14 @@ package uk.ac.manchester.tornado.matrix;
 
 import static java.lang.Math.abs;
 import static uk.ac.manchester.tornado.api.collections.types.Float6.dot;
-import static uk.ac.manchester.tornado.api.collections.types.MatrixFloat.scale;
-import static uk.ac.manchester.tornado.api.collections.types.MatrixFloat.transpose;
+import static uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat.scale;
+import static uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat.transpose;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float6;
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.collections.types.MatrixDouble;
-import uk.ac.manchester.tornado.api.collections.types.MatrixFloat;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DDouble;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.collections.types.VectorFloat;
 
 public final class MatrixMath {
@@ -47,7 +47,7 @@ public final class MatrixMath {
      * @param beta
      * @param c
      */
-    public static final void sgemm(boolean transA, boolean transB, float alpha, MatrixFloat a, MatrixFloat b, float beta, MatrixFloat c) {
+    public static final void sgemm(boolean transA, boolean transB, float alpha, Matrix2DFloat a, Matrix2DFloat b, float beta, Matrix2DFloat c) {
         if (transA) {
             transpose(a);
         }
@@ -76,7 +76,7 @@ public final class MatrixMath {
      * @param b
      * @param c
      */
-    public static final void sgemm(MatrixFloat a, MatrixFloat b, MatrixFloat c) {
+    public static final void sgemm(Matrix2DFloat a, Matrix2DFloat b, Matrix2DFloat c) {
         sgemm(false, false, 1f, a, b, 0f, c);
     }
 
@@ -92,7 +92,7 @@ public final class MatrixMath {
         }
     }
 
-    public static final void dgemm(MatrixDouble a, MatrixDouble b, MatrixDouble c) {
+    public static final void dgemm(Matrix2DDouble a, Matrix2DDouble b, Matrix2DDouble c) {
         for (@Parallel int row = 0; row < c.M(); row++) {
             for (@Parallel int col = 0; col < c.N(); col++) {
                 double sum = 0;
@@ -224,13 +224,13 @@ public final class MatrixMath {
      * @param x
      *            vector
      */
-    public static void multiply(VectorFloat y, MatrixFloat m, VectorFloat x) {
+    public static void multiply(VectorFloat y, Matrix2DFloat m, VectorFloat x) {
         for (int i = 0; i < m.N(); i++) {
             y.set(i, VectorFloat.dot(m.row(i), x));
         }
     }
 
-    public static void multiply(Float6 y, MatrixFloat m, Float6 x) {
+    public static void multiply(Float6 y, Matrix2DFloat m, Float6 x) {
         final Float6 row = new Float6();
         for (int i = 0; i < 6; i++) {
             for (int j = 0; j < 6; j++) {
