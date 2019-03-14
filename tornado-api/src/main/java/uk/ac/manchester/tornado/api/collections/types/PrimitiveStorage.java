@@ -50,5 +50,4 @@ public interface PrimitiveStorage<T extends Buffer> {
     public T asBuffer();
 
     public int size();
-
 }

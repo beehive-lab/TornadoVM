@@ -63,22 +63,24 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
     private String version;
     private OCLDeviceType deviceType;
 
+    private static final int INIT_VALUE = -1;
+
     public OCLDevice(int index, long id) {
         this.index = index;
         this.id = id;
         this.buffer = ByteBuffer.allocate(8192);
         this.buffer.order(OpenCL.BYTE_ORDER);
         this.openCLVersion = null;
-        this.deviceEndianLittle = -1;
-        this.maxComputeUnits = -1;
-        this.maxAllocationSize = -1;
-        this.globalMemorySize = -1;
-        this.localMemorySize = -1;
-        this.maxWorkItemDimensions = -1;
-        this.maxWorkGroupSize = -1;
-        this.maxConstantBufferSize = -1;
-        this.doubleFPConfig = -1;
-        this.singleFPConfig = -1;
+        this.deviceEndianLittle = INIT_VALUE;
+        this.maxComputeUnits = INIT_VALUE;
+        this.maxAllocationSize = INIT_VALUE;
+        this.globalMemorySize = INIT_VALUE;
+        this.localMemorySize = INIT_VALUE;
+        this.maxWorkItemDimensions = INIT_VALUE;
+        this.maxWorkGroupSize = INIT_VALUE;
+        this.maxConstantBufferSize = INIT_VALUE;
+        this.doubleFPConfig = INIT_VALUE;
+        this.singleFPConfig = INIT_VALUE;
         this.maxWorkItemSizes = null;
         this.name = null;
         this.version = null;

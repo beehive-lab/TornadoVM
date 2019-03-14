@@ -18,23 +18,23 @@
 package uk.ac.manchester.tornado.examples.compute;
 
 import java.util.Random;
-import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 
-public class MatrixMultiplication {
+public class MatrixMultiplication2D {
 
     public static final int WARMING_UP_ITERATIONS = 15;
 
-    public static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
+    public static void matrixMultiplication(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
                 float sum = 0.0f;
                 for (int k = 0; k < size; k++) {
-                    sum += A[(i * size) + k] * B[(k * size) + j];
+                    sum += A.get(i, k) * B.get(k, j);
                 }
-                C[(i * size) + j] = sum;
+                C.set(i, j, sum);
             }
         }
     }
@@ -52,20 +52,22 @@ public class MatrixMultiplication {
 
         System.out.println("Computing MxM of " + size + "x" + size);
 
-        float[] matrixA = new float[size * size];
-        float[] matrixB = new float[size * size];
-        float[] matrixC = new float[size * size];
-        float[] resultSeq = new float[size * size];
+        Matrix2DFloat matrixA = new Matrix2DFloat(size, size);
+        Matrix2DFloat matrixB = new Matrix2DFloat(size, size);
+        Matrix2DFloat matrixC = new Matrix2DFloat(size, size);
+        Matrix2DFloat resultSeq = new Matrix2DFloat(size, size);
 
         Random r = new Random();
-        IntStream.range(0, size * size).parallel().forEach(idx -> {
-            matrixA[idx] = r.nextFloat();
-            matrixB[idx] = r.nextFloat();
-        });
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                matrixA.set(i, j, r.nextFloat());
+                matrixB.set(i, j, r.nextFloat());
+            }
+        }
 
         //@formatter:off
         TaskSchedule t = new TaskSchedule("s0")
-                .task("t0", MatrixMultiplication::matrixMultiplication, matrixA, matrixB, matrixC, size)
+                .task("t0", MatrixMultiplication2D::matrixMultiplication, matrixA, matrixB, matrixC, size)
                 .streamOut(matrixC);
         //@formatter:on
 
