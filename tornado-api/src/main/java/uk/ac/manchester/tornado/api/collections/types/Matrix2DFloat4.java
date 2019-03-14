@@ -41,21 +41,14 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.Math.min;
-import static java.lang.String.format;
-import static java.lang.System.out;
-import static java.nio.IntBuffer.wrap;
-import static java.util.Arrays.copyOfRange;
-import static uk.ac.manchester.tornado.api.collections.types.IntOps.fmt;
-import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRowMajor;
+import java.nio.FloatBuffer;
+import java.util.Arrays;
 
-import java.nio.IntBuffer;
-
-public class MatrixInt implements PrimitiveStorage<IntBuffer> {
+public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     /**
      * backing array
      */
-    final protected int[] storage;
+    final protected float[] storage;
 
     /**
      * number of elements in the storage
@@ -73,6 +66,11 @@ public class MatrixInt implements PrimitiveStorage<IntBuffer> {
     final protected int N;
 
     /**
+     * Vector-width each position in the matrix
+     */
+    private static final int VECTOR_ELEMENTS = 4;
+
+    /**
      * Storage format for matrix
      * 
      * @param height
@@ -82,11 +80,11 @@ public class MatrixInt implements PrimitiveStorage<IntBuffer> {
      * @param data
      *            array reference which contains data
      */
-    public MatrixInt(int width, int height, int[] array) {
+    public Matrix2DFloat4(int width, int height, float[] array) {
         storage = array;
         N = width;
         M = height;
-        numElements = width * height;
+        numElements = width * height * VECTOR_ELEMENTS;
     }
 
     /**
@@ -97,20 +95,18 @@ public class MatrixInt implements PrimitiveStorage<IntBuffer> {
      * @param width
      *            number of rows
      */
-    public MatrixInt(int width, int height) {
-        this(width, height, new int[width * height]);
+    public Matrix2DFloat4(int width, int height) {
+        this(width, height, new float[width * height * VECTOR_ELEMENTS]);
     }
 
-    public MatrixInt(int[][] matrix) {
-        this(matrix.length, matrix[0].length, toRowMajor(matrix));
+    public Float4 get(int i, int j) {
+        int baseIndex = StorageFormats.toRowMajorVector(i, j, N, VECTOR_ELEMENTS);
+        return Float4.loadFromArray(storage, baseIndex);
     }
 
-    public int get(int i, int j) {
-        return storage[toRowMajor(i, j, N)];
-    }
-
-    public void set(int i, int j, int value) {
-        storage[toRowMajor(i, j, N)] = value;
+    public void set(int i, int j, Float4 value) {
+        int baseIndex = StorageFormats.toRowMajorVector(i, j, N, VECTOR_ELEMENTS);
+        value.storeToArray(storage, baseIndex);
     }
 
     public int M() {
@@ -121,51 +117,40 @@ public class MatrixInt implements PrimitiveStorage<IntBuffer> {
         return N;
     }
 
-    public VectorInt row(int row) {
-        int index = toRowMajor(row, 0, N);
-        return new VectorInt(N, copyOfRange(storage, index, N));
+    public VectorFloat row(int row) {
+        int index = StorageFormats.toRowMajor(row, 0, N);
+        return new VectorFloat(N, Arrays.copyOfRange(storage, index, N));
     }
 
-    public VectorInt column(int col) {
-        int index = toRowMajor(0, col, N);
-        final VectorInt v = new VectorInt(M);
+    public VectorFloat column(int col) {
+        int index = StorageFormats.toRowMajor(0, col, N);
+        final VectorFloat v = new VectorFloat(M);
         for (int i = 0; i < M; i++)
             v.set(i, storage[index + (i * N)]);
         return v;
     }
 
-    public VectorInt diag() {
-        final VectorInt v = new VectorInt(min(M, N));
+    public VectorFloat diag() {
+        final VectorFloat v = new VectorFloat(Math.min(M, N));
         for (int i = 0; i < M; i++)
             v.set(i, storage[i * (N + 1)]);
         return v;
     }
 
-    public void fill(int value) {
+    public void fill(float value) {
         for (int i = 0; i < storage.length; i++)
             storage[i] = value;
     }
 
-    public void multiply(MatrixInt a, MatrixInt b) {
+    public void multiply(Matrix2DFloat4 a, Matrix2DFloat4 b) {
         for (int row = 0; row < M(); row++) {
             for (int col = 0; col < N(); col++) {
-                int sum = 0;
+                Float4 sum = new Float4();
                 for (int k = 0; k < b.M(); k++) {
-                    sum += a.get(row, k) * b.get(k, col);
-                }
-                set(row, col, sum);
-            }
-        }
-    }
-
-    public void tmultiply(MatrixInt a, MatrixInt b) {
-        out.printf("tmult: M=%d (expect %d)\n", M(), a.M());
-        out.printf("tmult: N=%d (expect %d)\n", N(), b.M());
-        for (int row = 0; row < M(); row++) {
-            for (int col = 0; col < b.M(); col++) {
-                int sum = 0;
-                for (int k = 0; k < b.N(); k++) {
-                    sum += a.get(row, k) * b.get(col, k);
+                    Float4 fa = a.get(row, k);
+                    Float4 fb = b.get(k, col);
+                    Float4 fc = Float4.mult(fa, fb);
+                    sum = Float4.add(fc, sum);
                 }
                 set(row, col, sum);
             }
@@ -178,27 +163,27 @@ public class MatrixInt implements PrimitiveStorage<IntBuffer> {
      * @param m
      *            matrix to transpose
      */
-    public static void transpose(MatrixInt matrix) {
-
+    public static void transpose(Matrix2DFloat4 matrix) {
         if (matrix.N == matrix.M) {
-            // transpose square matrix
             for (int i = 0; i < matrix.M; i++) {
                 for (int j = 0; j < i; j++) {
-                    final int tmp = matrix.get(i, j);
+                    final Float4 tmp = matrix.get(i, j);
                     matrix.set(i, j, matrix.get(j, i));
                     matrix.set(j, i, tmp);
                 }
             }
+        } else {
+            throw new RuntimeException("Square matrix expected");
         }
     }
 
-    public MatrixInt duplicate() {
-        MatrixInt matrix = new MatrixInt(N, M);
+    public Matrix2DFloat4 duplicate() {
+        Matrix2DFloat4 matrix = new Matrix2DFloat4(N, M);
         matrix.set(this);
         return matrix;
     }
 
-    public void set(MatrixInt m) {
+    public void set(Matrix2DFloat4 m) {
         for (int i = 0; i < m.storage.length; i++)
             storage[i] = m.storage[i];
     }
@@ -208,40 +193,40 @@ public class MatrixInt implements PrimitiveStorage<IntBuffer> {
 
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                str += format(fmt, get(i, j)) + " ";
+                str += String.format(fmt, get(i, j)) + " ";
             }
             str += "\n";
         }
+        str.trim();
 
-        return str.trim();
+        return str;
     }
 
-    @Override
-    public String toString() {
-        String result = format("MatrixInt <%d x %d>", M, N);
-        if (M < 16 && N < 16)
-            result += "\n" + toString(fmt);
-        return result;
-    }
-
-    public static void scale(MatrixInt matrix, int value) {
+    public static void scale(Matrix2DFloat4 matrix, float value) {
         for (int i = 0; i < matrix.storage.length; i++)
             matrix.storage[i] *= value;
     }
 
     @Override
-    public void loadFromBuffer(IntBuffer buffer) {
+    public String toString() {
+        String result = String.format("MatrixFloat <%d x %d>", M, N);
+        if (M < 16 && N < 16)
+            result += "\n" + toString(FloatOps.fmt);
+        return result;
+    }
+
+    @Override
+    public void loadFromBuffer(FloatBuffer buffer) {
         asBuffer().put(buffer);
     }
 
     @Override
-    public IntBuffer asBuffer() {
-        return wrap(storage);
+    public FloatBuffer asBuffer() {
+        return FloatBuffer.wrap(storage);
     }
 
     @Override
     public int size() {
         return numElements;
     }
-
 }

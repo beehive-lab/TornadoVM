@@ -21,7 +21,7 @@ package uk.ac.manchester.tornado.matrix;
 import org.ejml.simple.SimpleMatrix;
 
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;
-import uk.ac.manchester.tornado.api.collections.types.MatrixDouble;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DDouble;
 
 public class EjmlUtil {
 
@@ -45,7 +45,7 @@ public class EjmlUtil {
         return result;
     }
 
-    public static SimpleMatrix toMatrix(MatrixDouble m) {
+    public static SimpleMatrix toMatrix(Matrix2DDouble m) {
         SimpleMatrix result = new SimpleMatrix(m.M(), m.N());
         for (int i = 0; i < m.M(); i++) {
             for (int j = 0; j < m.N(); j++) {

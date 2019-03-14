@@ -1,7 +1,7 @@
 #!/bin/bash
 
 mvn clean
-mvn -Dcmake.root.dir=$CMAKE_ROOT package
+mvn -Dcmake.root.dir=$CMAKE_ROOT package -o
 
 if [ $? -eq 0 ] 
 then

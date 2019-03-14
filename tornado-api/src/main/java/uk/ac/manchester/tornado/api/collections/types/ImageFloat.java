@@ -41,19 +41,10 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-import static java.lang.Float.MAX_VALUE;
-import static java.lang.Float.MIN_VALUE;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-import static java.nio.FloatBuffer.wrap;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sqrt;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.findMaxULP;
-import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt;
-import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRowMajor;
-
 import java.nio.FloatBuffer;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
 
@@ -107,7 +98,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public ImageFloat(float[][] matrix) {
-        this(matrix.length, matrix[0].length, toRowMajor(matrix));
+        this(matrix.length, matrix[0].length, StorageFormats.toRowMajor(matrix));
     }
 
     public float get(int i) {
@@ -128,7 +119,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
      * @return
      */
     public float get(int i, int j) {
-        return storage[toRowMajor(j, i, X)];
+        return storage[StorageFormats.toRowMajor(j, i, X)];
     }
 
     /***
@@ -142,11 +133,11 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
      *            new value
      */
     public void set(int i, int j, float value) {
-        storage[toRowMajor(j, i, X)] = value;
+        storage[StorageFormats.toRowMajor(j, i, X)] = value;
     }
 
     public void put(float[] array) {
-        arraycopy(array, 0, storage, 0, array.length);
+        System.arraycopy(array, 0, storage, 0, array.length);
     }
 
     public int Y() {
@@ -181,7 +172,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
 
         for (int i = 0; i < Y; i++) {
             for (int j = 0; j < X; j++) {
-                str += format(fmt, get(j, i)) + " ";
+                str += String.format(fmt, get(j, i)) + " ";
             }
             str += "\n";
         }
@@ -190,9 +181,9 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public String toString() {
-        String result = format("ImageFloat <%d x %d>", X, Y);
+        String result = String.format("ImageFloat <%d x %d>", X, Y);
         if (Y < 16 && X < 16)
-            result += "\n" + toString(fmt);
+            result += "\n" + toString(FloatOps.fmt);
         return result;
     }
 
@@ -209,14 +200,14 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public float min() {
-        float result = MAX_VALUE;
+        float result = Float.MAX_VALUE;
         for (int i = 0; i < storage.length; i++)
             result = Math.min(result, storage[i]);
         return result;
     }
 
     public float max() {
-        float result = MIN_VALUE;
+        float result = Float.MIN_VALUE;
         for (int i = 0; i < storage.length; i++)
             result = Math.max(result, storage[i]);
         return result;
@@ -231,11 +222,11 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
             v *= v;
             varience = v / (float) X;
         }
-        return sqrt(varience);
+        return TornadoMath.sqrt(varience);
     }
 
     public String summerise() {
-        return format("ImageFloat<%dx%d>: min=%e, max=%e, mean=%e, sd=%e", X, Y, min(), max(), mean(), stdDev());
+        return String.format("ImageFloat<%dx%d>: min=%e, max=%e, mean=%e, sd=%e", X, Y, min(), max(), mean(), stdDev());
     }
 
     @Override
@@ -245,7 +236,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
 
     @Override
     public FloatBuffer asBuffer() {
-        return wrap(storage);
+        return FloatBuffer.wrap(storage);
     }
 
     @Override
@@ -254,8 +245,8 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public FloatingPointError calculateULP(ImageFloat ref) {
-        float maxULP = MIN_VALUE;
-        float minULP = MAX_VALUE;
+        float maxULP = Float.MIN_VALUE;
+        float minULP = Float.MAX_VALUE;
         float averageULP = 0f;
 
         /*
@@ -269,7 +260,7 @@ public class ImageFloat implements PrimitiveStorage<FloatBuffer> {
             for (int i = 0; i < X; i++) {
                 final float v = get(i, j);
                 final float r = ref.get(i, j);
-                final float ulpFactor = findMaxULP(v, r);
+                final float ulpFactor = FloatOps.findMaxULP(v, r);
                 averageULP += ulpFactor;
                 minULP = Math.min(ulpFactor, minULP);
                 maxULP = Math.max(ulpFactor, maxULP);

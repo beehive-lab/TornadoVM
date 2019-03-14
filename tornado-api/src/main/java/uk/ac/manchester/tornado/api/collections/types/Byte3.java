@@ -53,7 +53,7 @@ import uk.ac.manchester.tornado.api.type.annotations.Vector;
 /**
  * Class that represents a vector of 3x bytes e.g. <byte,byte,byte>
  *
- * @author jamesclarkson
+ * @author James Clarkson
  *
  */
 @Vector

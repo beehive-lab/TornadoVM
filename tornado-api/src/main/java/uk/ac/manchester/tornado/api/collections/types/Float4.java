@@ -277,6 +277,10 @@ public final class Float4 implements PrimitiveStorage<FloatBuffer> {
         return mult(a, value);
     }
 
+    public static float sum(Float4 a) {
+        return a.getX() + a.getY() + a.getZ() + a.getW();
+    }
+
     /*
      * vector = op(vector)
      */
