@@ -44,7 +44,7 @@ public class VectorAddInt {
         //@formatter:off
         TaskSchedule graph = new TaskSchedule("s0")
                 .task("t0", VectorAddInt::vectorAdd, a, b, c)
-        .streamOut(c);
+                .streamOut(c);
         //@formatter:on
 
         for (int idx = 0; idx < 10; idx++) {
@@ -62,6 +62,8 @@ public class VectorAddInt {
             }
             if (wrongResult) {
                 System.out.println("Result is wrong");
+            } else {
+                System.out.println("Result is correct");
             }
         }
     }
