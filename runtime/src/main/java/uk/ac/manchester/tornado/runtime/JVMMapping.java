@@ -139,7 +139,6 @@ public class JVMMapping implements TornadoAcceleratorDevice {
 
     @Override
     public CallStack createStack(int numArgs) {
-
         return null;
     }
 

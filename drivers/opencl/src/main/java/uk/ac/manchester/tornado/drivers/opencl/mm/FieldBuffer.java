@@ -33,6 +33,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -52,7 +53,7 @@ public class FieldBuffer {
         return Modifier.isFinal(field.getModifiers());
     }
 
-    public void allocate(final Object ref) throws TornadoOutOfMemoryException {
+    public void allocate(final Object ref) throws TornadoOutOfMemoryException, TornadoMemoryException {
         objectBuffer.allocate(getFieldValue(ref));
     }
 

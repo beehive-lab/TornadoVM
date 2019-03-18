@@ -38,6 +38,7 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
@@ -395,7 +396,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 }
 
                 state.setValid(true);
-            } catch (TornadoOutOfMemoryException e) {
+            } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
                 e.printStackTrace();
             }
         }
@@ -408,7 +409,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                     state.getBuffer().write(object);
                 }
                 state.setValid(true);
-            } catch (TornadoOutOfMemoryException e) {
+            } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
                 e.printStackTrace();
             }
         }

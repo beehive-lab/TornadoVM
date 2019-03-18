@@ -32,6 +32,7 @@ import java.lang.reflect.Array;
 import java.util.function.Function;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 
@@ -91,8 +92,12 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
         return tableWrapper.size();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void allocate(Object value) throws TornadoOutOfMemoryException {
+    public void allocate(Object value) throws TornadoOutOfMemoryException, TornadoMemoryException {
+        if (Array.getLength(value) < 0) {
+            throw new TornadoMemoryException("[ERROR] Bytes Allocated < 0: " + Array.getLength(value));
+        }
         addresses = new long[Array.getLength(value)];
         wrappers = new OCLArrayWrapper[Array.getLength(value)];
         tableWrapper.allocate(addresses);
@@ -107,7 +112,7 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
                 wrappers[i].allocate(elements[i]);
                 addresses[i] = (OPENCL_USE_RELATIVE_ADDRESSES) ? wrappers[i].toRelativeAddress() : wrappers[i].toAbsoluteAddress();
             }
-        } catch (TornadoOutOfMemoryException e) {
+        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
             fatal("OOM: multi-dim array: %s", e.getMessage());
             System.exit(-1);
         }

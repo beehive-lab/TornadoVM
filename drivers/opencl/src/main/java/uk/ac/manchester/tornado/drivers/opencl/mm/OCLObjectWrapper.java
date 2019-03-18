@@ -43,6 +43,7 @@ import java.util.Arrays;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
@@ -55,7 +56,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
     private final boolean vectorObject;
     private int vectorStorageIndex;
     private long bufferOffset;
-    private long bytes;
+    private long bytesToAllocate;
     private ByteBuffer buffer;
     private HotSpotResolvedJavaType resolvedType;
     private HotSpotResolvedJavaField[] fields;
@@ -101,7 +102,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
         int index = 0;
 
         // calculate object size
-        bytes = (fields.length > 0) ? fields[0].offset() : fieldsOffset;
+        bytesToAllocate = (fields.length > 0) ? fields[0].offset() : fieldsOffset;
         for (HotSpotResolvedJavaField field : fields) {
             final Field reflectedField = getField(type, field.getName());
             final Class<?> type = reflectedField.getType();
@@ -116,8 +117,8 @@ public class OCLObjectWrapper implements ObjectBuffer {
             if (DEBUG) {
                 trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.offset());
             }
-            bytes = field.offset();
-            bytes += (field.getJavaKind().isObject()) ? 8 : field.getJavaKind().getByteCount();
+            bytesToAllocate = field.offset();
+            bytesToAllocate += (field.getJavaKind().isObject()) ? 8 : field.getJavaKind().getByteCount();
 
             ObjectBuffer wrappedField = null;
             if (type.isArray()) {
@@ -153,24 +154,28 @@ public class OCLObjectWrapper implements ObjectBuffer {
         }
 
         if (DEBUG) {
-            trace("object: type=%s, size=%s", resolvedType.getName(), humanReadableByteCount(bytes, true));
+            trace("object: type=%s, size=%s", resolvedType.getName(), humanReadableByteCount(bytesToAllocate, true));
         }
 
     }
 
     @Override
-    public void allocate(Object ref) throws TornadoOutOfMemoryException {
+    public void allocate(Object ref) throws TornadoOutOfMemoryException, TornadoMemoryException {
         if (DEBUG) {
-            debug("object: object=0x%x, class=%s, size=%s", ref.hashCode(), ref.getClass().getName(), humanReadableByteCount(bytes, true));
+            debug("object: object=0x%x, class=%s, size=%s", ref.hashCode(), ref.getClass().getName(), humanReadableByteCount(bytesToAllocate, true));
+        }
+
+        if (bytesToAllocate < 0) {
+            throw new TornadoMemoryException("[ERROR] Bytes Allocated < 0: " + bytesToAllocate);
         }
 
         if (buffer == null) {
-            buffer = ByteBuffer.allocate((int) bytes);
+            buffer = ByteBuffer.allocate((int) bytesToAllocate);
             buffer.order(deviceContext.getByteOrder());
         }
 
         if (bufferOffset == -1) {
-            bufferOffset = deviceContext.getMemoryManager().tryAllocate(ref.getClass(), bytes, 32, getAlignment());
+            bufferOffset = deviceContext.getMemoryManager().tryAllocate(ref.getClass(), bytesToAllocate, 32, getAlignment());
         }
 
         if (DEBUG) {
@@ -324,7 +329,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
         } else {
             if (!valid) {
                 serialise(object);
-                deviceContext.writeBuffer(toBuffer(), bufferOffset, bytes, buffer.array(), null);
+                deviceContext.writeBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), null);
             }
             for (int i = 0; i < fields.length; i++) {
                 if (wrappedFields[i] != null) {
@@ -347,7 +352,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
             fieldBuffer.read(object, events, useDeps);
         } else {
             buffer.position(buffer.capacity());
-            deviceContext.readBuffer(toBuffer(), bufferOffset, bytes, buffer.array(), (useDeps) ? events : null);
+            deviceContext.readBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), (useDeps) ? events : null);
             for (int i = 0; i < fields.length; i++) {
                 if (wrappedFields[i] != null) {
                     wrappedFields[i].read(object);
@@ -389,7 +394,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
     }
 
     protected void dump(int width) {
-        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(bytes, true),
+        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(bytesToAllocate, true),
                 RuntimeUtilities.humanReadableByteCount(buffer.position(), true), deviceContext.getDevice().getDeviceName());
         for (int i = 0; i < buffer.position(); i += width) {
             System.out.printf("[0x%04x]: ", i);
@@ -425,7 +430,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
             }
 
             if (!isFinal) {
-                internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bytes, buffer.array(), (useDeps) ? events : null);
+                internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), (useDeps) ? events : null);
                 index++;
 
                 // TODO this needs to run asynchronously
@@ -468,7 +473,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
             if (!valid || (valid && !isFinal)) {
                 serialise(ref);
 
-                internalEvents[index] = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bytes, buffer.array(), (useDeps) ? events : null);
+                internalEvents[index] = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), (useDeps) ? events : null);
                 index++;
 
                 valid = true;
@@ -540,7 +545,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
 
     @Override
     public long size() {
-        return bytes;
+        return bytesToAllocate;
     }
 
 }

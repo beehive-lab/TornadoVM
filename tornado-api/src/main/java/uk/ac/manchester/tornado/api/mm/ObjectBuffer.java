@@ -41,6 +41,7 @@
  */
 package uk.ac.manchester.tornado.api.mm;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 
 public interface ObjectBuffer {
@@ -63,7 +64,7 @@ public interface ObjectBuffer {
 
     int enqueueWrite(Object ref, int[] events, boolean useDeps);
 
-    void allocate(Object ref) throws TornadoOutOfMemoryException;
+    void allocate(Object ref) throws TornadoOutOfMemoryException, TornadoMemoryException;
 
     int getAlignment();
 

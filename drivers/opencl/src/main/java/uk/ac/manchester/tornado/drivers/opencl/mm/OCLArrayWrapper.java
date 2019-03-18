@@ -34,9 +34,9 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 import java.lang.reflect.Array;
-import java.util.Arrays;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
@@ -51,7 +51,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     private long bufferOffset;
 
-    private long bytes;
+    private long bytesToAllocate;
 
     protected final OCLDeviceContext deviceContext;
 
@@ -88,12 +88,15 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public void allocate(Object value) throws TornadoOutOfMemoryException {
+    public void allocate(Object value) throws TornadoOutOfMemoryException, TornadoMemoryException {
         if (bufferOffset == -1) {
             final T ref = cast(value);
-            bytes = sizeOf(ref);
-            bufferOffset = deviceContext.getMemoryManager().tryAllocate(ref.getClass(), bytes, arrayHeaderSize, getAlignment());
-            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x", kind.getJavaName(), humanReadableByteCount(bytes, true), arrayLengthOffset, arrayHeaderSize,
+            bytesToAllocate = sizeOf(ref);
+            if (bytesToAllocate <= 0) {
+                throw new TornadoMemoryException("[ERROR] Bytes Allocated < 0: " + bytesToAllocate);
+            }
+            bufferOffset = deviceContext.getMemoryManager().tryAllocate(ref.getClass(), bytesToAllocate, arrayHeaderSize, getAlignment());
+            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x", kind.getJavaName(), humanReadableByteCount(bytesToAllocate, true), arrayLengthOffset, arrayHeaderSize,
                     bufferOffset);
             info("allocated: %s", toString());
         }
@@ -101,7 +104,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public long size() {
-        return bytes;
+        return bytesToAllocate;
     }
 
     /*
@@ -124,10 +127,10 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         final T array = cast(value);
         final int returnEvent;
         if (isFinal) {
-            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
+            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, (useDeps) ? events : null);
         } else {
             internalEvents[1] = -1;
-            internalEvents[0] = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
+            internalEvents[0] = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, (useDeps) ? events : null);
             returnEvent = internalEvents[0];
         }
         return useDeps ? returnEvent : -1;
@@ -142,7 +145,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
         if (isFinal && onDevice) {
 
-            returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
+            returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, (useDeps) ? events : null);
         } else {
             int index = 0;
             internalEvents[0] = -1;
@@ -150,7 +153,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
                 internalEvents[0] = buildArrayHeader(array).enqueueWrite((useDeps) ? events : null);
                 index++;
             }
-            internalEvents[index] = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
+            internalEvents[index] = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, (useDeps) ? events : null);
             onDevice = true;
             returnEvent = (index == 0) ? internalEvents[0] : deviceContext.enqueueMarker(internalEvents);
 
@@ -207,12 +210,12 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
         if (VALIDATE_ARRAY_HEADERS) {
             if (validateArrayHeader(array)) {
-                readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
+                readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, (useDeps) ? events : null);
             } else {
                 shouldNotReachHere("Array header is invalid");
             }
         } else {
-            readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
+            readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, (useDeps) ? events : null);
         }
     }
 
@@ -239,7 +242,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public String toString() {
-        return String.format("buffer<%s> %s @ 0x%x (0x%x)", kind.getJavaName(), humanReadableByteCount(bytes, true), toAbsoluteAddress(), toRelativeAddress());
+        return String.format("buffer<%s> %s @ 0x%x (0x%x)", kind.getJavaName(), humanReadableByteCount(bytesToAllocate, true), toAbsoluteAddress(), toRelativeAddress());
     }
 
     @Override
@@ -268,7 +271,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     public void write(final Object value) {
         final T array = cast(value);
         buildArrayHeader(array).write();
-        writeArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, null);
+        writeArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, null);
         onDevice = true;
 
     }

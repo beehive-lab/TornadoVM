@@ -217,6 +217,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
                 lastEvent = device.ensureAllocated(object, objectState);
+
             } else if (op == TornadoVMBytecodes.COPY_IN.index()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
