@@ -46,15 +46,16 @@ public class Init {
         }
 
         System.out.println("Running with size: " + size);
+        System.out.println("Input size: " + (size * 4 * 1E-6) + " (MB)");
         float[] array = new float[size];
 
         TaskSchedule ts = new TaskSchedule("s0");
-        ts.task("s0", Init::compute, array).streamOut(array);
+        ts.task("s0", Init::compute, array).streamOut((Object) array);
         ts.execute();
 
         if (CHECK) {
-            for (int i = 0; i < array.length; i++) {
-                if (array[i] != 100) {
+            for (float v : array) {
+                if (v != 100) {
                     System.out.println("Result is wrong");
                     break;
                 }
