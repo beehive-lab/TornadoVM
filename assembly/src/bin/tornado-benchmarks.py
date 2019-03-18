@@ -29,6 +29,22 @@ import argparse
 import os
 import textwrap
 
+## Options
+__TORNADO_FLAGS__ = "-Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
+__JVM_FLAGS__ = "-Xms24G -Xmx24G -server"
+__RUNNER__ = " uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
+__DEVICES__ = [
+	"-Ddevices=0:0",
+	"-Ddevices=0:1",
+]
+__TORNADO__ = "tornado "
+__SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
+__SKIP_PARALLEL = " -Dtornado.enable=False "
+__VALIDATE__ = " -Dtornado.benchmarks.validate=True "
+__VERBOSE__ = " -Dtornado.verbose=True "
+__ITERATIONS__ =5
+
+
 ## Include here benchmarks to run
 __BENCHMARKS__ = [
 	"montecarlo",
@@ -69,31 +85,16 @@ dict = {
 }
 
 dict_jenkins = {
-	"montecarlo": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [11]],
-	"nbody": [[512, 1024, 2040, 4096, 16384], [11]],
-	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [11]],
-	"sgemm": [[128, 256, 512, 1024], [11]],
-	"scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304, 16777216], [11]],
-	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [11]],
-	"vectormult": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [11]],
-	"bitset": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536], [11]],
-	"dft": [[256, 512, 1024, 2048, 4096, 8192, 16384, 32798, 65536], [11]],
+	"montecarlo": [[512, 1024, 2048, 4096, 8192, 16384, 32798], [__ITERATIONS__]],
+	"nbody": [[512, 1024, 2040, 4096], [__ITERATIONS__]],
+	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__ITERATIONS__]],
+	"sgemm": [[128, 256, 512, 1024], [__ITERATIONS__]],
+	"scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__ITERATIONS__]],
+	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [__ITERATIONS__]],
+	"vectormult": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [__ITERATIONS__]],
+	"bitset": [[512, 1024, 2048, 4096, 8192, 16384, 32798], [__ITERATIONS__]],
+	"dft": [[256, 512, 1024, 2048, 4096, 8192, 16384, 32798], [__ITERATIONS__]],
 }
-## Options
-__TORNADO_FLAGS__ = "-Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
-__JVM_FLAGS__ = "-Xms30G -Xmx30G -server"
-__RUNNER__ = " uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
-__DEVICES__ = [
-	"-Ddevices=0:0",
-	"-Ddevices=0:1",
-]
-__ITERATIONS__ = " 101 "
-__TORNADO__ = "tornado "
-__SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
-__SKIP_PARALLEL = " -Dtornado.enable=False "
-__VALIDATE__ = " -Dtornado.benchmarks.validate=True "
-__VERBOSE__ = " -Dtornado.verbose=True "
-
 
 def composeAllOption(args):
 	options = __JVM_FLAGS__
