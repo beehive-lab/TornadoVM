@@ -51,69 +51,69 @@ import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 
 public interface AbstractTaskGraph {
 
-    public SchedulableTask getTask(String i);
+    SchedulableTask getTask(String i);
 
-    public TornadoDevice getDevice();
+    TornadoDevice getDevice();
 
-    public void setDevice(TornadoDevice device);
+    void setDevice(TornadoDevice device);
 
-    public TornadoDevice getDeviceForTask(String id);
+    TornadoDevice getDeviceForTask(String id);
 
-    public long getReturnValue(String id);
+    long getReturnValue(String id);
 
-    public void addInner(SchedulableTask task);
+    void addInner(SchedulableTask task);
 
-    public boolean isLastDeviceListEmpty();
+    boolean isLastDeviceListEmpty();
 
-    public void scheduleInner();
+    void scheduleInner();
 
-    public void apply(Consumer<SchedulableTask> consumer);
+    void apply(Consumer<SchedulableTask> consumer);
 
-    public void mapAllToInner(TornadoDevice device);
+    void mapAllToInner(TornadoDevice device);
 
-    public void dumpTimes();
+    void dumpTimes();
 
-    public void dumpProfiles();
+    void dumpProfiles();
 
-    public void dumpEvents();
+    void dumpEvents();
 
-    public void clearProfiles();
+    void clearProfiles();
 
-    public void waitOn();
+    void waitOn();
 
-    public void streamInInner(Object... objects);
+    void streamInInner(Object... objects);
 
-    public void streamOutInner(Object... objects);
+    void streamOutInner(Object... objects);
 
-    public void dump();
+    void dump();
 
-    public void warmup();
+    void warmup();
 
-    public void invalidateObjects();
+    void invalidateObjects();
 
-    public void syncObject(Object object);
+    void syncObject(Object object);
 
-    public void syncObjects();
+    void syncObjects();
 
-    public void syncObjects(Object... objects);
+    void syncObjects(Object... objects);
 
-    public String getId();
+    String getId();
 
-    public TaskMetaDataInterface meta();
+    TaskMetaDataInterface meta();
 
-    public abstract AbstractTaskGraph schedule();
+    AbstractTaskGraph schedule();
 
-    public abstract AbstractTaskGraph scheduleWithProfile(Policy policy);
+    AbstractTaskGraph scheduleWithProfile(Policy policy);
 
-    public abstract AbstractTaskGraph scheduleWithProfileSequential(Policy policy);
+    AbstractTaskGraph scheduleWithProfileSequential(Policy policy);
 
-    public abstract AbstractTaskGraph scheduleWithProfileSequentialGlobal(Policy policy);
+    AbstractTaskGraph scheduleWithProfileSequentialGlobal(Policy policy);
 
-    public void addTask(TaskPackage taskPackage);
+    void addTask(TaskPackage taskPackage);
 
-    public void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
+    void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
 
-    public void addScalaTask(String id, Object function, Object[] args);
+    void addScalaTask(String id, Object function, Object[] args);
 
-    public String getTaskScheduleName();
+    String getTaskScheduleName();
 }

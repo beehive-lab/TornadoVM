@@ -45,34 +45,34 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 
 public interface ObjectBuffer {
 
-    public long toBuffer();
+    long toBuffer();
 
-    public long getBufferOffset();
+    long getBufferOffset();
 
-    public long toAbsoluteAddress();
+    long toAbsoluteAddress();
 
-    public long toRelativeAddress();
+    long toRelativeAddress();
 
-    public void read(Object ref);
+    void read(Object ref);
 
-    public void read(Object ref, int[] events, boolean useDeps);
+    void read(Object ref, int[] events, boolean useDeps);
 
-    public void write(Object ref);
+    void write(Object ref);
 
-    public int enqueueRead(Object ref, int[] events, boolean useDeps);
+    int enqueueRead(Object ref, int[] events, boolean useDeps);
 
-    public int enqueueWrite(Object ref, int[] events, boolean useDeps);
+    int enqueueWrite(Object ref, int[] events, boolean useDeps);
 
-    public void allocate(Object ref) throws TornadoOutOfMemoryException;
+    void allocate(Object ref) throws TornadoOutOfMemoryException;
 
-    public int getAlignment();
+    int getAlignment();
 
-    public boolean isValid();
+    boolean isValid();
 
-    public void invalidate();
+    void invalidate();
 
-    public void printHeapTrace();
+    void printHeapTrace();
 
-    public long size();
+    long size();
 
 }

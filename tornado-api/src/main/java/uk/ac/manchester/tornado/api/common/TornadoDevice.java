@@ -49,64 +49,64 @@ import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 
 public interface TornadoDevice {
 
-    public boolean isDistibutedMemory();
+    boolean isDistibutedMemory();
 
-    public void ensureLoaded();
+    void ensureLoaded();
 
-    public void markEvent();
+    void markEvent();
 
-    public void flushEvents();
+    void flushEvents();
 
-    public int enqueueBarrier();
+    int enqueueBarrier();
 
-    public int enqueueBarrier(int[] events);
+    int enqueueBarrier(int[] events);
 
-    public int enqueueMarker();
+    int enqueueMarker();
 
-    public int enqueueMarker(int[] events);
+    int enqueueMarker(int[] events);
 
-    public void sync();
+    void sync();
 
-    public void flush();
+    void flush();
 
-    public String getDeviceName();
+    String getDeviceName();
 
-    public String getDescription();
+    String getDescription();
 
-    public void reset();
+    void reset();
 
-    public void dumpEvents();
+    void dumpEvents();
 
-    public void dumpMemory(String file);
+    void dumpMemory(String file);
 
-    public String getPlatformName();
+    String getPlatformName();
 
-    public int ensureAllocated(Object object, TornadoDeviceObjectState state);
+    int ensureAllocated(Object object, TornadoDeviceObjectState state);
 
-    public int ensurePresent(Object object, TornadoDeviceObjectState objectState);
+    int ensurePresent(Object object, TornadoDeviceObjectState objectState);
 
-    public int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events);
+    int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events);
 
-    public int streamIn(Object object, TornadoDeviceObjectState objectState);
+    int streamIn(Object object, TornadoDeviceObjectState objectState);
 
-    public int streamIn(Object object, TornadoDeviceObjectState objectState, int[] events);
+    int streamIn(Object object, TornadoDeviceObjectState objectState, int[] events);
 
-    public int streamOut(Object object, TornadoDeviceObjectState objectState);
+    int streamOut(Object object, TornadoDeviceObjectState objectState);
 
-    public int streamOut(Object object, TornadoDeviceObjectState objectState, int[] list);
+    int streamOut(Object object, TornadoDeviceObjectState objectState, int[] list);
 
-    public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState);
+    void streamOutBlocking(Object object, TornadoDeviceObjectState objectState);
 
-    public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState, int[] list);
+    void streamOutBlocking(Object object, TornadoDeviceObjectState objectState, int[] list);
 
-    public Event resolveEvent(int event);
+    Event resolveEvent(int event);
 
-    public TornadoDeviceContext getDeviceContext();
+    TornadoDeviceContext getDeviceContext();
 
-    public TornadoTargetDevice getDevice();
+    TornadoTargetDevice getDevice();
 
-    public TornadoMemoryProvider getMemoryProvider();
+    TornadoMemoryProvider getMemoryProvider();
 
-    public TornadoDeviceType getDeviceType();
+    TornadoDeviceType getDeviceType();
 
 }

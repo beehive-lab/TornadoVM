@@ -53,7 +53,7 @@ import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 
 public class ImagingOps {
 
-    public static final void resizeImage6(ImageFloat dest, ImageFloat src, int scaleFactor, float eDelta, int radius) {
+    public static void resizeImage6(ImageFloat dest, ImageFloat src, int scaleFactor, float eDelta, int radius) {
 
         for (@Parallel int y = 0; y < dest.Y(); y++) {
             for (@Parallel int x = 0; x < dest.X(); x++) {
@@ -88,7 +88,7 @@ public class ImagingOps {
         }
     }
 
-    public static final void mm2metersKernel(ImageFloat dest, ImageFloat src, int scaleFactor) {
+    public static void mm2metersKernel(ImageFloat dest, ImageFloat src, int scaleFactor) {
         for (@Parallel int y = 0; y < dest.Y(); y++) {
             for (@Parallel int x = 0; x < dest.X(); x++) {
                 // co-ords of center pixel
@@ -100,7 +100,7 @@ public class ImagingOps {
         }
     }
 
-    public static final void resizeImage(ImageFloat dest, ImageFloat src, int scaleFactor) {
+    public static void resizeImage(ImageFloat dest, ImageFloat src, int scaleFactor) {
         for (@Parallel int y = 0; y < dest.Y(); y++) {
             for (@Parallel int x = 0; x < dest.X(); x++) {
                 // co-ords of center pixel
@@ -112,7 +112,7 @@ public class ImagingOps {
         }
     }
 
-    public static final void resizeImage(ImageByte3 dest, ImageByte3 src, int scaleFactor) {
+    public static void resizeImage(ImageByte3 dest, ImageByte3 src, int scaleFactor) {
         for (@Parallel int y = 0; y < dest.Y(); y++) {
             for (@Parallel int x = 0; x < dest.X(); x++) {
                 // co-ords of center pixel
@@ -124,7 +124,7 @@ public class ImagingOps {
         }
     }
 
-    public static final void bilateralFilter(ImageFloat dest, ImageFloat src, float[] gaussian, float eDelta, int radius) {
+    public static void bilateralFilter(ImageFloat dest, ImageFloat src, float[] gaussian, float eDelta, int radius) {
         final float e_d_squared_2 = eDelta * eDelta * 2f;
         // for every point
         for (@Parallel int y = 0; y < src.Y(); y++) {

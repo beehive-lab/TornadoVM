@@ -41,15 +41,11 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
-/**
- *
- * @author jamesclarkson
- */
 interface Container<T> {
 
-    public void set(int index, T value);
+    void set(int index, T value);
 
-    public T get(int index);
+    T get(int index);
 
-    public int numElements();
+    int numElements();
 }

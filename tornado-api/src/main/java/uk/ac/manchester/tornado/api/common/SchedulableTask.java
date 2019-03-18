@@ -45,18 +45,18 @@ import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 
 public interface SchedulableTask {
 
-    public Object[] getArguments();
+    Object[] getArguments();
 
-    public Access[] getArgumentsAccess();
+    Access[] getArgumentsAccess();
 
-    public TaskMetaDataInterface meta();
+    TaskMetaDataInterface meta();
 
-    public SchedulableTask mapTo(TornadoDevice mapping);
+    SchedulableTask mapTo(TornadoDevice mapping);
 
-    public TornadoDevice getDevice();
+    TornadoDevice getDevice();
 
-    public String getName();
+    String getName();
 
-    public String getId();
+    String getId();
 
 }
