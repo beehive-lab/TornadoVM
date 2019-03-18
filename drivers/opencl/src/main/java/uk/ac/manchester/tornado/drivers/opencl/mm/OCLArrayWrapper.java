@@ -221,8 +221,8 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     abstract protected void readArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents);
 
-    private int sizeOf(final T array) {
-        return arrayHeaderSize + (Array.getLength(array) * kind.getByteCount());
+    private long sizeOf(final T array) {
+        return (long) arrayHeaderSize + ((long) Array.getLength(array) * (long) kind.getByteCount());
     }
 
     @Override
