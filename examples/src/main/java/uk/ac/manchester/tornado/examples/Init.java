@@ -18,6 +18,8 @@
 
 package uk.ac.manchester.tornado.examples;
 
+import java.math.BigDecimal;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
@@ -45,8 +47,9 @@ public class Init {
             size = Integer.parseInt(args[0]);
         }
 
+        BigDecimal bytesToAllocate = new BigDecimal(((float) ((long) (size) * 4) * (float) 1E-6));
         System.out.println("Running with size: " + size);
-        System.out.println("Input size: " + (size * 4 * 1E-6) + " (MB)");
+        System.out.println("Input size: " + bytesToAllocate + " (MB)");
         float[] array = new float[size];
 
         TaskSchedule ts = new TaskSchedule("s0");
@@ -54,14 +57,18 @@ public class Init {
         ts.execute();
 
         if (CHECK) {
+            boolean check = true;
             for (float v : array) {
                 if (v != 100) {
-                    System.out.println("Result is wrong");
+                    check = false;
                     break;
                 }
             }
+            if (!check) {
+                System.out.println("Result is wrong");
+            } else {
+                System.out.println("Result is correct");
+            }
         }
-
-        System.out.println("--");
     }
 }
