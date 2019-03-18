@@ -55,6 +55,7 @@ __PROBLEM_SIZES__ = [
 	"4194304",
 ]
 
+## Dicts with sizes
 dict = {
 	"montecarlo": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [131]],
 	"nbody": [[512, 1024, 2040, 4096, 16384, 327684], [131]],
@@ -67,6 +68,17 @@ dict = {
 	"dft": [[256, 512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [131]],
 }
 
+dict_jenkins = {
+	"montecarlo": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [11]],
+	"nbody": [[512, 1024, 2040, 4096, 16384], [11]],
+	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [11]],
+	"sgemm": [[128, 256, 512, 1024], [11]],
+	"scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304, 16777216], [11]],
+	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [11]],
+	"vectormult": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [11]],
+	"bitset": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536], [11]],
+	"dft": [[256, 512, 1024, 2048, 4096, 8192, 16384, 32798, 65536], [11]],
+}
 ## Options
 __TORNADO_FLAGS__ = "-Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
 __JVM_FLAGS__ = "-Xms30G -Xmx30G -server"
@@ -144,6 +156,18 @@ def runBenchmarksFullCoverage(args):
 					dict[key][1][0]) + " " + str(size)
 			os.system(command)
 
+def runJenkinsConfiguration(args):
+        options = composeAllOption(args)
+	for key in dict_jenkins.keys():
+		for size in dict_jenkins[key][0]:
+			if key is 'sgemm':
+				command = __TORNADO__ + options + " " + __RUNNER__ + key + " " + str(
+					dict_jenkins[key][1][0]) + " " + str(size) + " " + str(size)
+			else:
+				command = __TORNADO__ + options + " " + __RUNNER__ + key + " " + str(
+					dict_jenkins[key][1][0]) + " " + str(size)
+			os.system(command)
+
 
 def parseArguments():
 	parser = argparse.ArgumentParser(description='Tool to execute benchmarks in Tornado')
@@ -158,8 +182,9 @@ def parseArguments():
 						help="Skip java version")
 	parser.add_argument('--validate', "-VL", action="store_true", dest="validate", default=False,
 						help="Enable result validation")
-	parser.add_argument('--skipPar', "-SP", action="store_true", dest="skip_parallel", default=False,
-						help="Skip Tornado version")
+	parser.add_argument('--skipPar', "-SP", action="store_true", dest="skip_parallel", default=False, help="Skip parallel version")
+	parser.add_argument('--jenkins', "-J", action="store_true", dest="jenkins", default=False,
+						help="Run jenkins benchmark configuration")
 	parser.add_argument('--verbose', "-V", action="store_true", dest="verbose", default=False, help="Enable verbose")
 	args = parser.parse_args()
 	return args
@@ -174,6 +199,8 @@ def main():
 		runForAllSizes(args)
 	elif args.benchmarks:
 		printBenchmakrks()
+        elif args.jenkins:
+                runJenkinsConfiguration(args)
 	elif args.metrics:
 		runBenchmarksFullCoverage(args)
 	else:
