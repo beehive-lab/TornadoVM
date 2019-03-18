@@ -247,7 +247,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * Compile a task-schedule into TornadoVM bytecode
      * 
-     * @param setNewDevice
+     * @param setNewDevice:
+     *            boolean that specifies if set a new device or not.
      */
     private void compile(boolean setNewDevice) {
         final ByteBuffer buffer = ByteBuffer.wrap(hlcode);
@@ -283,7 +284,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         private boolean compile;
         private boolean updateDevice;
 
-        public CompileInfo(boolean compile, boolean updateDevice) {
+        private CompileInfo(boolean compile, boolean updateDevice) {
             super();
             this.compile = compile;
             this.updateDevice = updateDevice;
@@ -303,12 +304,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * task</li>
      * </p>
      * 
-     * @return
+     * @return {@CompileInfo}
      */
     private CompileInfo extractCompileInfo() {
         if (result == null && isLastDeviceListEmpty()) {
             return new CompileInfo(true, false);
-        } else if (result != null && isLastDeviceListEmpty() == false && !(compareDevices(graphContext.getLastDevices(), meta().getDevice()))) {
+        } else if (result != null && !isLastDeviceListEmpty() && !(compareDevices(graphContext.getLastDevices(), meta().getDevice()))) {
             return new CompileInfo(true, true);
         }
         return new CompileInfo(false, false);
@@ -398,7 +399,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (VM_USE_DEPS && event != null) {
             event.waitOn();
         } else {
-            graphContext.getDevices().forEach((TornadoAcceleratorDevice device) -> device.sync());
+            graphContext.getDevices().forEach(TornadoDevice::sync);
         }
     }
 
@@ -434,12 +435,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             System.out.printf("[0x%04x]: ", i);
             for (int j = 0; j < Math.min(hlBuffer.capacity() - i, width); j++) {
                 if (j % 2 == 0) {
-                    System.out.printf(" ");
+                    System.out.print(" ");
                 }
                 if (j < hlBuffer.position() - i) {
                     System.out.printf("%02x", hlBuffer.get(i + j));
                 } else {
-                    System.out.printf("..");
+                    System.out.print("..");
                 }
             }
             System.out.println();
@@ -472,8 +473,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         final GlobalObjectState globalState = localState.getGlobalState();
         final DeviceObjectState deviceState = globalState.getDeviceState();
         final TornadoAcceleratorDevice device = globalState.getOwner();
-        final Event event = device.resolveEvent(device.streamOut(object, deviceState, null));
-        return event;
+        return device.resolveEvent(device.streamOut(object, deviceState, null));
     }
 
     @Override
@@ -687,8 +687,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void runAllTasksSequentially() {
-        for (int k = 0; k < taskPackages.size(); k++) {
-            runSequentialCodeInThread(taskPackages.get(k));
+        for (TaskPackage taskPackage : taskPackages) {
+            runSequentialCodeInThread(taskPackage);
         }
     }
 
@@ -806,8 +806,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void runSequential() {
-        for (int k = 0; k < taskPackages.size(); k++) {
-            runSequentialCodeInThread(taskPackages.get(k));
+        for (TaskPackage taskPackage : taskPackages) {
+            runSequentialCodeInThread(taskPackage);
         }
     }
 
@@ -816,18 +816,17 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         String taskScheduleName = TASK_SCHEDULE_PREFIX + deviceWinnerIndex;
         TaskSchedule taskToCompile = new TaskSchedule(taskScheduleName);
         performStreamInThread(taskToCompile, streamInObjects);
-        for (int k = 0; k < taskPackages.size(); k++) {
-            String taskID = taskPackages.get(k).getId();
+        for (TaskPackage taskPackage : taskPackages) {
+            String taskID = taskPackage.getId();
             TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + deviceWinnerIndex);
-            taskToCompile.addTask(taskPackages.get(k));
+            taskToCompile.addTask(taskPackage);
         }
         performStreamOutThreads(taskToCompile, streamOutObjects);
         return taskToCompile;
     }
 
     private void runTaskScheduleParallelSelected(int deviceWinnerIndex) {
-        for (int k = 0; k < taskPackages.size(); k++) {
-            TaskPackage taskPackage = taskPackages.get(k);
+        for (TaskPackage taskPackage : taskPackages) {
             TornadoRuntime.setProperty(this.getTaskScheduleName() + "." + taskPackage.getId() + ".device", "0:" + deviceWinnerIndex);
         }
         if (DEBUG_POLICY) {
@@ -1114,10 +1113,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     /**
-     * Class that keeps the history of executions based on their data sizes. It
-     * has a sorted map (TreeMap) that keeps the relationship between the input
-     * size and the actual Tornado device in which the task was executed based
-     * on the profiler for the dynamic reconfiguration.
+     * Class that keeps the history of executions based on their data sizes. It has
+     * a sorted map (TreeMap) that keeps the relationship between the input size and
+     * the actual Tornado device in which the task was executed based on the
+     * profiler for the dynamic reconfiguration.
      */
     private static class HistoryTable {
         /**
@@ -1125,24 +1124,24 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
          */
         private TreeMap<Integer, Integer> table = new TreeMap<>();
 
-        public int getClosestKey(int goal) {
+        private int getClosestKey(int goal) {
             Set<Integer> keySet = table.keySet();
             return keySet.stream().reduce((prev, current) -> Math.abs(current - goal) < Math.abs(prev - goal) ? current : prev).get();
         }
 
-        public TreeMap<Integer, Integer> getTree() {
+        private TreeMap<Integer, Integer> getTree() {
             return table;
         }
 
-        public int getNumKeys() {
+        private int getNumKeys() {
             return table.keySet().size();
         }
 
-        public int getDeviceNumber(int key) {
+        private int getDeviceNumber(int key) {
             return table.get(key);
         }
 
-        public boolean isKeyInTable(int key) {
+        private boolean isKeyInTable(int key) {
             return table.containsKey(key);
         }
     }
