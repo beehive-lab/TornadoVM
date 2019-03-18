@@ -167,6 +167,8 @@ public class OCLObjectWrapper implements ObjectBuffer {
 
         if (bytesToAllocate < 0) {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated < 0: " + bytesToAllocate);
+        } else if (bytesToAllocate > Integer.MAX_VALUE) {
+            throw new TornadoOutOfMemoryException("[ERROR] Tornado cannot allocate: " + bytesToAllocate + " bytes");
         }
 
         if (buffer == null) {
