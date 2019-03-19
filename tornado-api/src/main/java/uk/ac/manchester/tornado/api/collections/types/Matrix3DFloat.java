@@ -104,11 +104,11 @@ public class Matrix3DFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public float get(int i, int j, int k) {
-        return storage[StorageFormats.toRowMajor3D(i, j, j, X, Y)];
+        return storage[StorageFormats.toRowMajor3D(i, j, k, Z, Y)];
     }
 
     public void set(int i, int j, int k, float value) {
-        storage[StorageFormats.toRowMajor3D(i, j, k, X, Y)] = value;
+        storage[StorageFormats.toRowMajor3D(i, j, k, Z, Y)] = value;
     }
 
     public int X() {

@@ -44,7 +44,6 @@ package uk.ac.manchester.tornado.api.collections.types;
 public final class StorageFormats {
 
     private StorageFormats() {
-
     }
 
     /**
@@ -81,8 +80,8 @@ public final class StorageFormats {
         return (i * xSize * width) + j;
     }
 
-    public final static int toRowMajor3D(int i, int j, int k, int xSize, int ySize) {
-        return (i * xSize * ySize) + (j * xSize) + k;
+    public final static int toRowMajor3D(int i, int j, int k, int zMax, int yMax) {
+        return (i * zMax * yMax) + (j * zMax) + k;
     }
 
     public final static int toRowMajor3DVector(int i, int j, int k, int xSize, int ySize, int vectorWidth) {
@@ -204,19 +203,20 @@ public final class StorageFormats {
     }
 
     public static float[] toRowMajor3D(float[][][] matrix) {
-        final int m = matrix[0][0].length;
-        final int n = matrix[0].length;
-        final int p = matrix.length;
-        float[] matrixRM = new float[m * n * p];
+        final int Z = matrix[0][0].length;
+        final int Y = matrix[0].length;
+        final int X = matrix.length;
+        float[] flattenMatrix = new float[X * Y * Z];
 
-        for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++) {
-                for (int k = 0; k < n; k++) {
-                    matrixRM[toRowMajor3D(i, j, k, m, n)] = matrix[i][j][k];
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                for (int k = 0; k < Z; k++) {
+                    int index = toRowMajor3D(i, j, k, Z, Y);
+                    flattenMatrix[index] = matrix[i][j][k];
                 }
             }
         }
-        return matrixRM;
+        return flattenMatrix;
     }
 
     /**
