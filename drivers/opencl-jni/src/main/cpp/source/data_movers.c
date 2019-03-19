@@ -26,9 +26,9 @@
 #include <jni.h>
 #define CL_TARGET_OPENCL_VERSION 120
 #ifdef __APPLE__
-#include <OpenCL/cl.h>
+    #include <OpenCL/cl.h>
 #else
-#include <CL/cl.h>
+    #include <CL/cl.h>
 #endif
 #include <stdio.h>
 #include "macros.h"
@@ -62,17 +62,23 @@ CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, D, double)
 
 #define WRITE_ARRAY(CLASSNAME,SIG,TYPE) \
     JNIEXPORT jlong JNICALL CLASSNAME ## _writeArrayToDevice__J_3 ## SIG ## ZJJJ_3J \
-        (JNIEnv *env, jclass clazz, jlong queue_id, j ## TYPE ## Array array1, jboolean blocking, jlong offset, jlong cb, jlong device_ptr, jlongArray array2){ \
+        (JNIEnv *env, jclass clazz, jlong queue_id, j ## TYPE ## Array array1, jboolean blocking, jlong offset, jlong cb, jlong device_ptr, jlongArray array2) { \
             OPENCL_PROLOGUE; \
             cl_bool blocking_write = blocking ? CL_TRUE : CL_FALSE; \
             jsize num_bytes = (cb != -1) ? cb : (*env)->GetArrayLength(env, array1) * sizeof ( j ## TYPE ); \
             OPENCL_DECODE_WAITLIST(array2, events, num_events) \
             JNI_ACQUIRE_ARRAY(jbyte,buffer,array1);\
-	    if(PRINT_DATA_SIZES) { \
-	    	printf("uk.ac.manchester.tornado.drivers.opencl> write array 0x%lx (%d bytes) from %p \n",offset, num_bytes, buffer);\
+	        if(PRINT_DATA_SIZES) { \
+	    	    printf("uk.ac.manchester.tornado.drivers.opencl> write array 0x%lx (%d bytes) from %p \n",offset, num_bytes, buffer);\
             } \
-	    cl_event event; \
-            OPENCL_SOFT_ERROR("clEnqueueWriteBuffer (" #TYPE  ")", clEnqueueWriteBuffer((cl_command_queue) queue_id, (cl_mem) device_ptr, blocking_write, (size_t) offset, (size_t) num_bytes, (void *) buffer,(cl_uint) num_events, (cl_event*) events, &event),-1); \
+	        cl_event event; \
+            cl_int status = clEnqueueWriteBuffer((cl_command_queue) queue_id, (cl_mem) device_ptr, blocking_write, (size_t) offset, (size_t) num_bytes, (void *) buffer,(cl_uint) num_events, (cl_event*) events, &event); \
+            if (status != CL_SUCCESS) {\
+                if (status == CL_MEM_OBJECT_ALLOCATION_FAILURE) {\
+                    printf("[ERROR] clEnqueueWriteBuffer: CL_MEM_OBJECT_ALLOCATION_FAILURE\n");\
+                }\
+            }\
+            OPENCL_SOFT_ERROR("clEnqueueWriteBuffer (" #TYPE  ")", status, -1); \
             if(PRINT_DATA_TIMES) { \
                 long writeTime = getTimeEvent(event); \
                 printf("H2D time: %ld (ns) \n", writeTime); \
