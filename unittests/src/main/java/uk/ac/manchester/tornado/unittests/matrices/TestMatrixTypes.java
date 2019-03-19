@@ -38,11 +38,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestMatrixTypes extends TornadoTestBase {
 
-    private static final int N = 256;
-
-    private static final int SMALL_SIZE = 128;
-
-    public static void computeMatrixSum(Matrix2DFloat a, Matrix2DFloat b) {
+    public static void computeMatrixSum(Matrix2DFloat a, Matrix2DFloat b, final int N) {
         for (@Parallel int i = 0; i < N; i++) {
             for (@Parallel int j = 0; j < N; j++) {
                 b.set(i, j, a.get(i, j) + a.get(i, j));
@@ -50,7 +46,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
     }
 
-    public static void computeMatrixSum(Matrix3DFloat a, Matrix3DFloat b) {
+    public static void computeMatrixSum(Matrix3DFloat a, Matrix3DFloat b, final int N) {
         for (@Parallel int i = 0; i < N; i++) {
             for (@Parallel int j = 0; j < N; j++) {
                 for (@Parallel int k = 0; k < N; k++) {
@@ -112,18 +108,18 @@ public class TestMatrixTypes extends TornadoTestBase {
      * @param a
      * @param b
      */
-    public static void computeMatrixSum(Matrix2DFloat4 a, Matrix2DFloat4 b) {
-        for (@Parallel int i = 0; i < N; i++) {
-            for (@Parallel int j = 0; j < N; j++) {
+    public static void computeMatrixSum(Matrix2DFloat4 a, Matrix2DFloat4 b, final int X, final int Y) {
+        for (@Parallel int i = 0; i < X; i++) {
+            for (@Parallel int j = 0; j < Y; j++) {
                 b.set(i, j, Float4.add(a.get(i, j), a.get(i, j)));
             }
         }
     }
 
-    public static void computeMatrixSum(Matrix3DFloat4 a, Matrix3DFloat4 b, int size) {
-        for (@Parallel int i = 0; i < size; i++) {
-            for (@Parallel int j = 0; j < size; j++) {
-                for (@Parallel int k = 0; k < size; k++) {
+    public static void computeMatrixSum(Matrix3DFloat4 a, Matrix3DFloat4 b, final int X, final int Y, final int Z) {
+        for (@Parallel int i = 0; i < X; i++) {
+            for (@Parallel int j = 0; j < Y; j++) {
+                for (@Parallel int k = 0; k < Z; k++) {
                     b.set(i, j, k, Float4.add(a.get(i, j, k), a.get(i, j, k)));
                 }
             }
@@ -132,6 +128,7 @@ public class TestMatrixTypes extends TornadoTestBase {
 
     @Test
     public void testMatrix01() {
+        final int N = 256;
         Matrix2DFloat matrixA = new Matrix2DFloat(N, N);
         Matrix2DFloat matrixB = new Matrix2DFloat(N, N);
         Random r = new Random();
@@ -142,7 +139,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
 
         TaskSchedule ts = new TaskSchedule("s0");
-        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB);
+        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N);
         ts.streamOut(matrixB);
         ts.execute();
 
@@ -155,6 +152,7 @@ public class TestMatrixTypes extends TornadoTestBase {
 
     @Test
     public void testMatrix02() {
+        final int N = 256;
         float[][] a = new float[N][N];
         Random r = new Random();
         for (int i = 0; i < N; i++) {
@@ -165,7 +163,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         Matrix2DFloat matrixA = new Matrix2DFloat(a);
         Matrix2DFloat matrixB = new Matrix2DFloat(N, N);
         TaskSchedule ts = new TaskSchedule("s0");
-        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB);
+        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N);
         ts.streamOut(matrixB);
         ts.execute();
 
@@ -178,6 +176,7 @@ public class TestMatrixTypes extends TornadoTestBase {
 
     @Test
     public void testMatrix03() {
+        final int N = 256;
         Matrix2DFloat matrixA = new Matrix2DFloat(N, N);
         Matrix2DFloat matrixB = new Matrix2DFloat(N, N);
         Matrix2DFloat matrixC = new Matrix2DFloat(N, N);
@@ -206,6 +205,7 @@ public class TestMatrixTypes extends TornadoTestBase {
 
     @Test
     public void testMatrix04() {
+        final int N = 256;
         Matrix3DFloat matrixA = new Matrix3DFloat(N, N, N);
         Matrix3DFloat matrixB = new Matrix3DFloat(N, N, N);
         Random r = new Random();
@@ -218,7 +218,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
 
         TaskSchedule ts = new TaskSchedule("s0");
-        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB);
+        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, N);
         ts.streamOut(matrixB);
         ts.execute();
 
@@ -231,17 +231,12 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
     }
 
-    /**
-     * This test checks the {@linkplain Matrix2DFloat4} type. Each position in a
-     * 2D matrix is an explicit Vector4 in OpenCL.
-     */
-    @Test
-    public void testMatrix05() {
-        Matrix2DFloat4 matrixA = new Matrix2DFloat4(N, N);
-        Matrix2DFloat4 matrixB = new Matrix2DFloat4(N, N);
+    public static void testMatrix2DVectorType(final int X, final int Y) {
+        Matrix2DFloat4 matrixA = new Matrix2DFloat4(X, Y);
+        Matrix2DFloat4 matrixB = new Matrix2DFloat4(X, Y);
         Random r = new Random();
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
                 Float4 vector = new Float4();
                 for (int k = 0; k < vector.size(); k++) {
                     vector.set(k, r.nextFloat());
@@ -251,12 +246,12 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
 
         TaskSchedule ts = new TaskSchedule("s0");
-        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB);
+        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
         ts.streamOut(matrixB);
         ts.execute();
 
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
                 Float4 expected = Float4.add(matrixA.get(i, j), matrixA.get(i, j));
                 if (Float4.isEqual(expected, matrixB.get(i, j))) {
                     assertTrue(true);
@@ -268,11 +263,93 @@ public class TestMatrixTypes extends TornadoTestBase {
     }
 
     /**
+     * This test checks the {@linkplain Matrix2DFloat4} type. Each position in a
+     * 2D matrix is an explicit Vector4 in OpenCL.
+     */
+    @Test
+    public void testMatrix05() {
+        final int X = 512;
+        testMatrix2DVectorType(X, X);
+    }
+
+    @Test
+    public void testMatrix06() {
+        final int X = 512;
+        final int Y = 128;
+        testMatrix2DVectorType(X, Y);
+    }
+
+    @Test
+    public void testMatrix07() {
+        final int X = 512;
+        final int Y = 128;
+        testMatrix2DVectorType(Y, X);
+    }
+
+    public static void testMatrix3DVectorType(final int X, final int Y, final int Z) {
+        Matrix3DFloat4 matrixA = new Matrix3DFloat4(X, Y, Z);
+        Matrix3DFloat4 matrixB = new Matrix3DFloat4(X, Y, Z);
+        Random r = new Random();
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                for (int k = 0; k < Z; k++) {
+                    Float4 vector = new Float4();
+                    for (int v = 0; v < vector.size(); v++) {
+                        vector.set(v, r.nextFloat());
+                    }
+                    matrixA.set(i, j, k, vector);
+                }
+            }
+        }
+
+        TaskSchedule ts = new TaskSchedule("s0");
+        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y, Z);
+        ts.streamOut(matrixB);
+        ts.execute();
+
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                for (int k = 0; k < Z; k++) {
+                    Float4 expected = Float4.add(matrixA.get(i, j, k), matrixA.get(i, j, k));
+                    if (!Float4.isEqual(expected, matrixB.get(i, j, k))) {
+                        assertTrue(false);
+                    } else {
+                        assertTrue(true);
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testMatrix08() {
+        final int X = 128;
+        testMatrix3DVectorType(X, X, X);
+    }
+
+    @Test
+    public void testMatrix09() {
+        final int X = 128;
+        final int Y = 64;
+        final int Z = 2;
+        testMatrix3DVectorType(X, Y, Z);
+    }
+
+    @Test
+    public void testMatrix10() {
+        final int X = 128;
+        final int Y = 64;
+        final int Z = 2;
+        testMatrix3DVectorType(Y, X, Z);
+    }
+
+    /**
      * This test checks the {@linkplain Matrix3DFloat4} type. Each position in a
      * 3D matrix is an explicit Vector4 in OpenCL.
      */
     @Test
-    public void testMatrix06() {
+    public void testMatrix11() {
+        final int SMALL_SIZE = 128;
         Matrix3DFloat4 matrixA = new Matrix3DFloat4(SMALL_SIZE, SMALL_SIZE, SMALL_SIZE);
         Matrix3DFloat4 matrixB = new Matrix3DFloat4(SMALL_SIZE, SMALL_SIZE, SMALL_SIZE);
         Random r = new Random();
@@ -289,7 +366,7 @@ public class TestMatrixTypes extends TornadoTestBase {
         }
 
         TaskSchedule ts = new TaskSchedule("s0");
-        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, SMALL_SIZE);
+        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, SMALL_SIZE, SMALL_SIZE, SMALL_SIZE);
         ts.streamOut(matrixB);
         ts.execute();
 
@@ -308,7 +385,7 @@ public class TestMatrixTypes extends TornadoTestBase {
     }
 
     @Test
-    public void testMatrix07() {
+    public void testMatrix12() {
         final int X = 480;
         final int Y = 854;
         final int Z = 3;
@@ -361,21 +438,21 @@ public class TestMatrixTypes extends TornadoTestBase {
     }
 
     @Test
-    public void testMatrix08() {
+    public void testMatrix13() {
         final int X = 854;
         final int Y = 480;
         testMatricesFloats(X, Y);
     }
 
     @Test
-    public void testMatrix09() {
+    public void testMatrix14() {
         final int X = 854;
         final int Y = 480;
         testMatricesFloats(Y, X);
     }
 
     @Test
-    public void testMatrix10() {
+    public void testMatrix15() {
         final int X = 854;
         testMatricesFloats(X, X);
     }
@@ -403,17 +480,17 @@ public class TestMatrixTypes extends TornadoTestBase {
     }
 
     @Test
-    public void testMatrix11() {
+    public void testMatrix16() {
         testMatrixIntegers(640, 480);
     }
 
     @Test
-    public void testMatrix12() {
+    public void testMatrix17() {
         testMatrixIntegers(480, 640);
     }
 
     @Test
-    public void testMatrix13() {
+    public void testMatrix18() {
         testMatrixIntegers(640, 640);
     }
 
@@ -440,17 +517,17 @@ public class TestMatrixTypes extends TornadoTestBase {
     }
 
     @Test
-    public void testMatrix14() {
+    public void testMatrix19() {
         testMatrixDoubles(640, 480);
     }
 
     @Test
-    public void testMatrix15() {
+    public void testMatrix20() {
         testMatrixDoubles(480, 640);
     }
 
     @Test
-    public void testMatrix16() {
+    public void testMatrix21() {
         testMatrixDoubles(640, 640);
     }
 
