@@ -42,7 +42,7 @@ __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
 __SKIP_PARALLEL = " -Dtornado.enable=False "
 __VALIDATE__ = " -Dtornado.benchmarks.validate=True "
 __VERBOSE__ = " -Dtornado.verbose=True "
-__ITERATIONS__ =5
+__ITERATIONS__ =3
 
 
 ## Include here benchmarks to run
