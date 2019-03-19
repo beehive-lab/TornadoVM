@@ -52,7 +52,17 @@ public class TestMatrixTypes extends TornadoTestBase {
         for (@Parallel int i = 0; i < N; i++) {
             for (@Parallel int j = 0; j < N; j++) {
                 for (@Parallel int k = 0; k < N; k++) {
-                    b.set(i, j, k, a.get(i, j, j) + a.get(i, j, k));
+                    b.set(i, j, k, a.get(i, j, k) + a.get(i, j, k));
+                }
+            }
+        }
+    }
+
+    public static void computeMatrixSum(Matrix3DFloat a, Matrix3DFloat b, final int X, final int Y, final int Z) {
+        for (@Parallel int i = 0; i < X; i++) {
+            for (@Parallel int j = 0; j < Y; j++) {
+                for (@Parallel int k = 0; k < Z; k++) {
+                    b.set(i, j, k, a.get(i, j, k) + a.get(i, j, k));
                 }
             }
         }
@@ -266,6 +276,41 @@ public class TestMatrixTypes extends TornadoTestBase {
                     } else {
                         assertTrue(true);
                     }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testMatrix07() {
+        final int X = 480;
+        final int Y = 854;
+        final int Z = 3;
+
+        // final int X = 3;
+        // final int Y = 4;
+        // final int Z = 2;
+
+        float[][][] a = new float[X][Y][Z];
+        Random r = new Random();
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                for (int k = 0; k < Z; k++) {
+                    a[i][j][k] = r.nextFloat();
+                }
+            }
+        }
+        Matrix3DFloat matrixA = new Matrix3DFloat(a);
+        Matrix3DFloat matrixB = new Matrix3DFloat(X, Y, Z);
+        TaskSchedule ts = new TaskSchedule("s0");
+        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y, Z);
+        ts.streamOut(matrixB);
+        ts.execute();
+
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                for (int k = 0; k < Z; k++) {
+                    assertEquals(matrixA.get(i, j, k) + matrixA.get(i, j, k), matrixB.get(i, j, k), 0.01f);
                 }
             }
         }
