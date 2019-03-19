@@ -28,10 +28,12 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.types.Float4;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DDouble;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat4;
+import uk.ac.manchester.tornado.api.collections.types.Matrix2DInt;
 import uk.ac.manchester.tornado.api.collections.types.Matrix3DFloat;
 import uk.ac.manchester.tornado.api.collections.types.Matrix3DFloat4;
-import uk.ac.manchester.tornado.api.collections.types.Matrix2DFloat;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestMatrixTypes extends TornadoTestBase {
@@ -64,6 +66,30 @@ public class TestMatrixTypes extends TornadoTestBase {
                 for (@Parallel int k = 0; k < Z; k++) {
                     b.set(i, j, k, a.get(i, j, k) + a.get(i, j, k));
                 }
+            }
+        }
+    }
+
+    public static void computeMatrixSum(Matrix2DFloat a, Matrix2DFloat b, final int X, final int Y) {
+        for (@Parallel int i = 0; i < X; i++) {
+            for (@Parallel int j = 0; j < Y; j++) {
+                b.set(i, j, a.get(i, j) + a.get(i, j));
+            }
+        }
+    }
+
+    public static void computeMatrixSum(Matrix2DInt a, Matrix2DInt b, final int X, final int Y) {
+        for (@Parallel int i = 0; i < X; i++) {
+            for (@Parallel int j = 0; j < Y; j++) {
+                b.set(i, j, a.get(i, j) + a.get(i, j));
+            }
+        }
+    }
+
+    public static void computeMatrixSum(Matrix2DDouble a, Matrix2DDouble b, final int X, final int Y) {
+        for (@Parallel int i = 0; i < X; i++) {
+            for (@Parallel int j = 0; j < Y; j++) {
+                b.set(i, j, a.get(i, j) + a.get(i, j));
             }
         }
     }
@@ -287,10 +313,6 @@ public class TestMatrixTypes extends TornadoTestBase {
         final int Y = 854;
         final int Z = 3;
 
-        // final int X = 3;
-        // final int Y = 4;
-        // final int Z = 2;
-
         float[][][] a = new float[X][Y][Z];
         Random r = new Random();
         for (int i = 0; i < X; i++) {
@@ -314,6 +336,122 @@ public class TestMatrixTypes extends TornadoTestBase {
                 }
             }
         }
+    }
+
+    private static void testMatricesFloats(final int X, final int Y) {
+        float[][] a = new float[X][Y];
+        Random r = new Random();
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                a[i][j] = r.nextFloat();
+            }
+        }
+        Matrix2DFloat matrixA = new Matrix2DFloat(a);
+        Matrix2DFloat matrixB = new Matrix2DFloat(X, Y);
+        TaskSchedule ts = new TaskSchedule("s0");
+        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
+        ts.streamOut(matrixB);
+        ts.execute();
+
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                assertEquals(matrixA.get(i, j) + matrixA.get(i, j), matrixB.get(i, j), 0.01f);
+            }
+        }
+    }
+
+    @Test
+    public void testMatrix08() {
+        final int X = 854;
+        final int Y = 480;
+        testMatricesFloats(X, Y);
+    }
+
+    @Test
+    public void testMatrix09() {
+        final int X = 854;
+        final int Y = 480;
+        testMatricesFloats(Y, X);
+    }
+
+    @Test
+    public void testMatrix10() {
+        final int X = 854;
+        testMatricesFloats(X, X);
+    }
+
+    private static void testMatrixIntegers(final int X, final int Y) {
+        int[][] a = new int[X][Y];
+        Random r = new Random();
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                a[i][j] = r.nextInt();
+            }
+        }
+        Matrix2DInt matrixA = new Matrix2DInt(a);
+        Matrix2DInt matrixB = new Matrix2DInt(X, Y);
+        TaskSchedule ts = new TaskSchedule("s0");
+        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
+        ts.streamOut(matrixB);
+        ts.execute();
+
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                assertEquals(matrixA.get(i, j) + matrixA.get(i, j), matrixB.get(i, j));
+            }
+        }
+    }
+
+    @Test
+    public void testMatrix11() {
+        testMatrixIntegers(640, 480);
+    }
+
+    @Test
+    public void testMatrix12() {
+        testMatrixIntegers(480, 640);
+    }
+
+    @Test
+    public void testMatrix13() {
+        testMatrixIntegers(640, 640);
+    }
+
+    private static void testMatrixDoubles(final int X, final int Y) {
+        double[][] a = new double[X][Y];
+        Random r = new Random();
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                a[i][j] = r.nextInt();
+            }
+        }
+        Matrix2DDouble matrixA = new Matrix2DDouble(a);
+        Matrix2DDouble matrixB = new Matrix2DDouble(X, Y);
+        TaskSchedule ts = new TaskSchedule("s0");
+        ts.task("t0", TestMatrixTypes::computeMatrixSum, matrixA, matrixB, X, Y);
+        ts.streamOut(matrixB);
+        ts.execute();
+
+        for (int i = 0; i < X; i++) {
+            for (int j = 0; j < Y; j++) {
+                assertEquals(matrixA.get(i, j) + matrixA.get(i, j), matrixB.get(i, j), 0.01);
+            }
+        }
+    }
+
+    @Test
+    public void testMatrix14() {
+        testMatrixDoubles(640, 480);
+    }
+
+    @Test
+    public void testMatrix15() {
+        testMatrixDoubles(480, 640);
+    }
+
+    @Test
+    public void testMatrix16() {
+        testMatrixDoubles(640, 640);
     }
 
 }

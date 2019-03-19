@@ -106,11 +106,11 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     }
 
     public int get(int i, int j) {
-        return storage[toRowMajor(i, j, N)];
+        return storage[toRowMajor(i, j, M)];
     }
 
     public void set(int i, int j, int value) {
-        storage[toRowMajor(i, j, N)] = value;
+        storage[toRowMajor(i, j, M)] = value;
     }
 
     public int M() {
