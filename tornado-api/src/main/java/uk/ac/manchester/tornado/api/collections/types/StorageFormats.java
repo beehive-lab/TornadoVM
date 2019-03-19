@@ -206,17 +206,17 @@ public final class StorageFormats {
         final int Z = matrix[0][0].length;
         final int Y = matrix[0].length;
         final int X = matrix.length;
-        float[] flattedMatrix = new float[X * Y * Z];
+        float[] flattenMatrix = new float[X * Y * Z];
 
         for (int i = 0; i < X; i++) {
             for (int j = 0; j < Y; j++) {
                 for (int k = 0; k < Z; k++) {
                     int index = toRowMajor3D(i, j, k, Z, Y);
-                    flattedMatrix[index] = matrix[i][j][k];
+                    flattenMatrix[index] = matrix[i][j][k];
                 }
             }
         }
-        return flattedMatrix;
+        return flattenMatrix;
     }
 
     /**
