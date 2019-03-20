@@ -105,12 +105,12 @@ public class Matrix3DFloat4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public Float4 get(int i, int j, int k) {
-        int baseIndex = StorageFormats.toRowMajor3DVector(i, j, k, X, Y, VECTOR_ELEMENTS);
+        int baseIndex = StorageFormats.toRowMajor3DVector(i, j, k, Z, Y, VECTOR_ELEMENTS);
         return Float4.loadFromArray(storage, baseIndex);
     }
 
     public void set(int i, int j, int k, Float4 value) {
-        int baseIndex = StorageFormats.toRowMajor3DVector(i, j, k, X, Y, VECTOR_ELEMENTS);
+        int baseIndex = StorageFormats.toRowMajor3DVector(i, j, k, Z, Y, VECTOR_ELEMENTS);
         value.storeToArray(storage, baseIndex);
     }
 

@@ -100,12 +100,12 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public Float4 get(int i, int j) {
-        int baseIndex = StorageFormats.toRowMajorVector(i, j, N, VECTOR_ELEMENTS);
+        int baseIndex = StorageFormats.toRowMajorVector(i, j, M, VECTOR_ELEMENTS);
         return Float4.loadFromArray(storage, baseIndex);
     }
 
     public void set(int i, int j, Float4 value) {
-        int baseIndex = StorageFormats.toRowMajorVector(i, j, N, VECTOR_ELEMENTS);
+        int baseIndex = StorageFormats.toRowMajorVector(i, j, M, VECTOR_ELEMENTS);
         value.storeToArray(storage, baseIndex);
     }
 

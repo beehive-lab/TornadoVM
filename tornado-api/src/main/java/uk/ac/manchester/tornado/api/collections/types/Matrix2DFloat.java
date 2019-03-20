@@ -83,8 +83,8 @@ public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
      */
     public Matrix2DFloat(int width, int height, float[] array) {
         storage = array;
-        N = width;
-        M = height;
+        M = width;
+        N = height;
         numElements = width * height;
     }
 
@@ -121,16 +121,17 @@ public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public VectorFloat row(int row) {
-        int index = toRowMajor(row, 0, N);
+        int index = toRowMajor(row, 0, M);
         return new VectorFloat(N, copyOfRange(storage, index, N));
     }
 
     public VectorFloat column(int col) {
         int index = toRowMajor(0, col, N);
-        final VectorFloat v = new VectorFloat(M);
-        for (int i = 0; i < M; i++)
-            v.set(i, storage[index + (i * N)]);
-        return v;
+        final VectorFloat vector = new VectorFloat(M);
+        for (int i = 0; i < M; i++) {
+            vector.set(i, storage[index + (i * N)]);
+        }
+        return vector;
     }
 
     public VectorFloat diag() {
@@ -141,8 +142,9 @@ public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void fill(float value) {
-        for (int i = 0; i < storage.length; i++)
-            storage[i] = value;
+        for (int i = 0; i < this.storage.length; i++) {
+            this.storage[i] = value;
+        }
     }
 
     public void multiply(Matrix2DFloat a, Matrix2DFloat b) {
@@ -164,7 +166,6 @@ public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
      *            matrix to transpose
      */
     public static void transpose(Matrix2DFloat matrix) {
-
         if (matrix.N == matrix.M) {
             // transpose square matrix
             for (int i = 0; i < matrix.M; i++) {
@@ -184,13 +185,13 @@ public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void set(Matrix2DFloat m) {
-        for (int i = 0; i < m.storage.length; i++)
-            storage[i] = m.storage[i];
+        for (int i = 0; i < m.storage.length; i++) {
+            this.storage[i] = m.storage[i];
+        }
     }
 
     public String toString(String fmt) {
         String str = "";
-
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
                 str += format(fmt, get(i, j)) + " ";
@@ -198,20 +199,22 @@ public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
             str += "\n";
         }
         str.trim();
-
         return str;
     }
 
+    @Override
     public String toString() {
         String result = format("MatrixFloat <%d x %d>", M, N);
-        if (M < 16 && N < 16)
+        if (M < 16 && N < 16) {
             result += "\n" + toString(fmt);
+        }
         return result;
     }
 
     public static void scale(Matrix2DFloat matrix, float value) {
-        for (int i = 0; i < matrix.storage.length; i++)
+        for (int i = 0; i < matrix.storage.length; i++) {
             matrix.storage[i] *= value;
+        }
     }
 
     @Override
