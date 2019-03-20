@@ -1,5 +1,10 @@
 # TornadoVM
 
+[![Build Status](http://130.88.192.214:9080/buildStatus/icon?job=Tornado-pipeline)](http://130.88.192.214:9080/job/Tornado-pipeline/)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/beehive-lab/TornadoVM/issues)
+[![HitCount](http://hits.dwyl.io/beehive-lab/TornadoVM.svg)](http://hits.dwyl.io/beehive-lab/TornadoVM)
+
+
 TornadoVM is a practical heterogeneous programming framework for automatically accelerating Java programs on heterogeneous (OpenCL-compatible)  hardware. 
 
 ### Releases
