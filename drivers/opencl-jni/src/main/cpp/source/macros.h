@@ -23,7 +23,7 @@
  * Authors: James Clarkson
  *
  */
-#define VERBOSE 0
+#define VERBOSE 1
 
 #define debug(fmt,args...) if(VERBOSE) printf(fmt,args);
 #define warn(fmt,args...)  printf(fmt,args);
