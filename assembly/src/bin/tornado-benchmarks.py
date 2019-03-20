@@ -84,7 +84,7 @@ dict = {
 	"dft": [[256, 512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [131]],
 }
 
-dict_jenkins = {
+jenkins_sizes = {
 	"montecarlo": [[512, 1024, 2048, 4096, 8192, 16384, 32798], [__ITERATIONS__]],
 	"nbody": [[512, 1024, 2040, 4096], [__ITERATIONS__]],
 	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__ITERATIONS__]],
@@ -159,14 +159,14 @@ def runBenchmarksFullCoverage(args):
 
 def runJenkinsConfiguration(args):
         options = composeAllOption(args)
-	for key in dict_jenkins.keys():
-		for size in dict_jenkins[key][0]:
+	for key in jenkins_sizes.keys():
+		for size in jenkins_sizes[key][0]:
 			if key is 'sgemm':
 				command = __TORNADO__ + options + " " + __RUNNER__ + key + " " + str(
-					dict_jenkins[key][1][0]) + " " + str(size) + " " + str(size)
+					jenkins_sizes[key][1][0]) + " " + str(size) + " " + str(size)
 			else:
 				command = __TORNADO__ + options + " " + __RUNNER__ + key + " " + str(
-					dict_jenkins[key][1][0]) + " " + str(size)
+					jenkins_sizes[key][1][0]) + " " + str(size)
 			os.system(command)
 
 
