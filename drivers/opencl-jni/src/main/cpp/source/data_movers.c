@@ -112,6 +112,8 @@ WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, D, dou
             cl_int status = clEnqueueReadBuffer((cl_command_queue) queue_id, (cl_mem) device_ptr, blocking, (size_t) offset, (size_t) num_bytes, (void *) buffer, (cl_uint) num_events, (cl_event*) events, &event);\
             if (status != CL_SUCCESS) {\
                 printf("[ERROR] clEnqueueWriteBuffer, code = %d\n", status);\
+                printf("[ERROR] offset = %ld, size = %ld\n", offset, size);\
+                printf("[ERROR] ptr = %ld\n", ptr);\
                 if (status == CL_MEM_OBJECT_ALLOCATION_FAILURE) {\
                     printf("[ERROR] clEnqueueWriteBuffer: CL_MEM_OBJECT_ALLOCATION_FAILURE\n");\
                 }\
