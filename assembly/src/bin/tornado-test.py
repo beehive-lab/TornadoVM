@@ -56,10 +56,11 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
 	"uk.ac.manchester.tornado.unittests.instances.TestInstances",
 	"uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes",
+	"uk.ac.manchester.tornado.unittests.api.TestAPI",
 ]
 
 ## Options
-__MAIN_TORNADO_TEST_RUNNER__ = "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
+__MAIN_TORNADO_TEST_RUNNER__ = " uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
 __MAIN_TORNADO_JUNIT__ = "org.junit.runner.JUnitCore "
 __IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintCFG=true "
 __PRINT_OPENCL_KERNEL__ = "-Dtornado.opencl.source.print=True "
