@@ -157,7 +157,7 @@ public class TestDynamic extends TornadoTestBase {
 
     @Test
     public void testDynamicWithProfiler4() {
-        int numElements = 16000;
+        int numElements = 16384;
         int[] a = new int[numElements];
         int[] b = new int[numElements];
         int[] seq = new int[numElements];
