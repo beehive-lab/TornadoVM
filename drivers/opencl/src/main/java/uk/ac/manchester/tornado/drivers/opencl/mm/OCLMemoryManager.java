@@ -154,11 +154,8 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
      * @param numBytes
      */
     public void allocateRegion(long numBytes) {
-        heapLimit = numBytes;
-        // deviceHeapPointer =
-        // deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE
-        // | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, numBytes);
-        deviceHeapPointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE, numBytes);
+        this.heapLimit = numBytes;
+        this.deviceHeapPointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, numBytes);
     }
 
     public void init(OCLBackend backend, long address) {
