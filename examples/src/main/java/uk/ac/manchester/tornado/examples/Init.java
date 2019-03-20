@@ -53,7 +53,7 @@ public class Init {
         float[] array = new float[size];
 
         TaskSchedule ts = new TaskSchedule("s0");
-        ts.task("s0", Init::compute, array).streamOut((Object) array);
+        ts.task("t0", Init::compute, array).streamOut((Object) array);
         ts.execute();
 
         if (CHECK) {
