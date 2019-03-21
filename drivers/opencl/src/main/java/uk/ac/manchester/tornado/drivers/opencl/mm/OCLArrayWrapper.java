@@ -125,7 +125,6 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     @Override
     public int enqueueRead(final Object value, final int[] events, boolean useDeps) {
         final T array = cast(value);
-        System.out.println("CAST READ: " + array);
         final int returnEvent;
 
         if (isFinal) {
@@ -143,7 +142,6 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     @Override
     public int enqueueWrite(final Object value, final int[] events, boolean useDeps) {
         final T array = cast(value);
-        System.out.println("CAST WRITE: " + array);
         final int returnEvent;
 
         if (isFinal && onDevice) {

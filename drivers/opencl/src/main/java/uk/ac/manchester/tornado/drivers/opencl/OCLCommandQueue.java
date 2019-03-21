@@ -395,9 +395,6 @@ public class OCLCommandQueue extends TornadoLogger {
     public int enqueueWrite(long devicePtr, boolean blocking, long offset, long bytes, byte[] array, int[] waitEvents) {
         guarantee(array != null, "null array");
         int event = -1;
-
-        System.out.println(" >>>>>>>>>>>>>>>>> writing bytes");
-
         try {
             event = registerEvent(writeArrayToDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_WRITE_BYTE, offset);
         } catch (OCLException e) {
@@ -467,7 +464,6 @@ public class OCLCommandQueue extends TornadoLogger {
         guarantee(array != null, "null array");
         int event = -1;
         try {
-            System.out.println(" >>>>>>>>>>>>>>>>> writing floats");
             event = registerEvent(writeArrayToDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_WRITE_FLOAT, offset);
         } catch (OCLException e) {
             error(e.getMessage());
@@ -489,8 +485,6 @@ public class OCLCommandQueue extends TornadoLogger {
     public int enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, byte[] array, int[] waitEvents) {
         guarantee(array != null, "null array");
         int event = -1;
-
-        System.out.println(" <<<<<<<<<<<<<<<<<<<<<< reading bytes");
         try {
             event = registerEvent(readArrayFromDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_BYTE, offset);
         } catch (OCLException e) {
@@ -558,8 +552,6 @@ public class OCLCommandQueue extends TornadoLogger {
     public int enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, float[] array, int[] waitEvents) {
         guarantee(array != null, "array is null");
         int event = -1;
-
-        System.out.println(" <<<<<<<<<<<<<<<<<<<<<< reading floats");
         try {
             event = registerEvent(readArrayFromDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_FLOAT, offset);
         } catch (OCLException e) {
