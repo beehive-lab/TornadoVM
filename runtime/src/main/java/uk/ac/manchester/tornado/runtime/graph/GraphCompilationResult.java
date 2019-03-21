@@ -31,16 +31,16 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.*;
 
 public class GraphCompilationResult {
 
-    public static final int MAX_TVM_BYTECODE_SIZE = Integer.parseInt(getProperty("tornado.tvm.maxbytecodesize", "1024"));
+    private static final int MAX_TORNADOVM_BYTECODE_SIZE = Integer.parseInt(getProperty("tornado.tvm.maxbytecodesize", "1024"));
 
     private byte[] code;
     private TornadoGraphAssembler asm;
-    private int gtid;
+    private int globalTaskID;
 
     public GraphCompilationResult() {
-        code = new byte[MAX_TVM_BYTECODE_SIZE];
+        code = new byte[MAX_TORNADOVM_BYTECODE_SIZE];
         asm = new TornadoGraphAssembler(code);
-        gtid = 0;
+        globalTaskID = 0;
     }
 
     public void begin(int numContexts, int numStacks, int numDeps) {
@@ -59,6 +59,10 @@ public class GraphCompilationResult {
         asm.end();
     }
 
+    private void incTaskID() {
+        globalTaskID++;
+    }
+
     public void emitAsyncNode(TornadoGraph graph, ExecutionContext context, AbstractNode node, int ctx, int depIn) {
         if (node instanceof CopyInNode) {
             asm.copyToContext(((CopyInNode) node).getValue().getIndex(), ctx, depIn);
@@ -70,10 +74,8 @@ public class GraphCompilationResult {
             asm.streamInToContext(((StreamInNode) node).getValue().getIndex(), ctx, depIn);
         } else if (node instanceof TaskNode) {
             final TaskNode taskNode = (TaskNode) node;
-
-            asm.launch(gtid, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), depIn);
-            gtid++;
-
+            asm.launch(globalTaskID, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), depIn);
+            incTaskID();
             emitArgList(graph, context, taskNode);
         }
     }

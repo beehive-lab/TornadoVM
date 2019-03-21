@@ -103,6 +103,12 @@ public class TornadoGraphCompiler {
         // Generate all byte-codes for the input tasks
         scheduleAndEmitTornadoVMBytecodes(result, graph, context, nodeIds, deps, tasks);
 
+        if (batchSize != -1) {
+            // Process in batches
+            // how many of these? => ( inputSize / batchSize )
+            scheduleAndEmitTornadoVMBytecodes(result, graph, context, nodeIds, deps, tasks);
+        }
+
         // Last operation -> perform synchronisation
         synchronizeOperationLastByteCode(result, numDepLists);
 

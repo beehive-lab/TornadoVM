@@ -19,6 +19,7 @@
 package uk.ac.manchester.tornado.examples;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -52,6 +53,7 @@ public class InitBatch {
         System.out.println("Running with size: " + size);
         System.out.println("Input size: " + bytesToAllocate + " (MB)");
         float[] array = new float[size];
+        Arrays.fill(array, 1.0f);
 
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
         long maxDeviceMemory = device.getMaxAllocMemory();
@@ -69,8 +71,9 @@ public class InitBatch {
         if (CHECK) {
             boolean check = true;
             for (float v : array) {
-                if (v != 100) {
+                if (v != 101.0f) {
                     check = false;
+                    System.out.println("Result got: " + v);
                     break;
                 }
             }

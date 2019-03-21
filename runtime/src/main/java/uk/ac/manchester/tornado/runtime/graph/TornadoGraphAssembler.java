@@ -170,5 +170,4 @@ public class TornadoGraphAssembler {
             System.out.println();
         }
     }
-
 }
