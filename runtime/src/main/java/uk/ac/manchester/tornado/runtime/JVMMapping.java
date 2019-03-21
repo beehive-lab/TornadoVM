@@ -226,4 +226,14 @@ public class JVMMapping implements TornadoAcceleratorDevice {
         return false;
     }
 
+    @Override
+    public long getMaxAllocMemory() {
+        return Runtime.getRuntime().maxMemory();
+    }
+
+    @Override
+    public long getMaxGlobalMemory() {
+        return Runtime.getRuntime().maxMemory();
+    }
+
 }

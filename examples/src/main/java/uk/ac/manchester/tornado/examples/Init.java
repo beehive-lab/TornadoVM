@@ -22,12 +22,13 @@ import java.math.BigDecimal;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
  * Run with:
  * 
  * tornado uk.ac.manchester.tornado.examples.Init <size>
- *
  * 
  */
 public class Init {
@@ -51,6 +52,11 @@ public class Init {
         System.out.println("Running with size: " + size);
         System.out.println("Input size: " + bytesToAllocate + " (MB)");
         float[] array = new float[size];
+
+        TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
+        long maxDeviceMemory = device.getMaxAllocMemory();
+        double mb = maxDeviceMemory * 1E-6;
+        System.out.println("Maximum alloc device memory: " + mb + " (MB)");
 
         TaskSchedule ts = new TaskSchedule("s0");
         ts.task("t0", Init::compute, array).streamOut((Object) array);

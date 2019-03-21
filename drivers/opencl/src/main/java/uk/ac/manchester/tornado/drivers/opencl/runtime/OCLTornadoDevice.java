@@ -588,4 +588,14 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         }
     }
 
+    @Override
+    public long getMaxAllocMemory() {
+        return device.getDeviceMaxAllocationSize();
+    }
+
+    @Override
+    public long getMaxGlobalMemory() {
+        return device.getDeviceGlobalMemorySize();
+    }
+
 }

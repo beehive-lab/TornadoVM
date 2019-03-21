@@ -49,8 +49,6 @@ import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 
 public interface TornadoDevice {
 
-    boolean isDistibutedMemory();
-
     void ensureLoaded();
 
     void markEvent();
@@ -69,17 +67,11 @@ public interface TornadoDevice {
 
     void flush();
 
-    String getDeviceName();
-
-    String getDescription();
-
     void reset();
 
     void dumpEvents();
 
     void dumpMemory(String file);
-
-    String getPlatformName();
 
     int ensureAllocated(Object object, TornadoDeviceObjectState state);
 
@@ -99,7 +91,17 @@ public interface TornadoDevice {
 
     void streamOutBlocking(Object object, TornadoDeviceObjectState objectState, int[] list);
 
+    boolean isDistibutedMemory();
+
     Event resolveEvent(int event);
+
+    // Getters
+
+    String getDeviceName();
+
+    String getDescription();
+
+    String getPlatformName();
 
     TornadoDeviceContext getDeviceContext();
 
@@ -108,5 +110,9 @@ public interface TornadoDevice {
     TornadoMemoryProvider getMemoryProvider();
 
     TornadoDeviceType getDeviceType();
+
+    long getMaxAllocMemory();
+
+    long getMaxGlobalMemory();
 
 }
