@@ -58,12 +58,12 @@ public class TornadoGraphCompiler {
      * @param context
      * @return {@link GraphCompilationResult}
      */
-    public static GraphCompilationResult compile(TornadoGraph graph, ExecutionContext context) {
+    public static GraphCompilationResult compile(TornadoGraph graph, ExecutionContext context, long batchSize) {
         final BitSet deviceContexts = graph.filter(ContextNode.class);
         if (deviceContexts.cardinality() == 1) {
             final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
             int deviceIndex = contextNode.getDeviceIndex();
-            return compileSingleContext(graph, context, context.getDevice(deviceIndex));
+            return compileSingleContext(graph, context, context.getDevice(deviceIndex), batchSize);
         } else {
             throw new RuntimeException("Multiple-Contexts are not currently supported");
         }
@@ -72,7 +72,7 @@ public class TornadoGraphCompiler {
     /*
      * Simplest case where all tasks are executed on the same device
      */
-    private static GraphCompilationResult compileSingleContext(TornadoGraph graph, ExecutionContext context, TornadoAcceleratorDevice device) {
+    private static GraphCompilationResult compileSingleContext(TornadoGraph graph, ExecutionContext context, TornadoAcceleratorDevice device, long batchSize) {
 
         final GraphCompilationResult result = new GraphCompilationResult();
 
@@ -109,7 +109,6 @@ public class TornadoGraphCompiler {
     private static void peephole(GraphCompilationResult result, int numDepLists) {
         final byte[] code = result.getCode();
         final int codeSize = result.getCodeSize();
-
         if (code[codeSize - 13] == TornadoVMBytecodes.STREAM_OUT.index()) {
             code[codeSize - 13] = TornadoVMBytecodes.STREAM_OUT_BLOCKING.index();
         } else {

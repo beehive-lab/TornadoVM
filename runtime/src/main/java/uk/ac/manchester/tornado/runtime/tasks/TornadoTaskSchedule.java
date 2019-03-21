@@ -100,7 +100,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private byte[] hlcode = new byte[2048];
     private ByteBuffer hlBuffer;
     private GraphCompilationResult result;
-    private long batchSizeBytes;
+    private long batchSizeBytes = -1;
 
     // One TornadoVM instance per TaskSchedule
     private TornadoVM vm;
@@ -267,7 +267,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             updateDeviceContext(graph);
         }
 
-        result = TornadoGraphCompiler.compile(graph, graphContext);
+        result = TornadoGraphCompiler.compile(graph, graphContext, batchSizeBytes);
 
         // final long t2 = System.nanoTime();
         vm = new TornadoVM(graphContext, result.getCode(), result.getCodeSize());
