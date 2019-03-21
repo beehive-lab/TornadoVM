@@ -97,16 +97,29 @@ public class TornadoGraphCompiler {
             index++;
         }
 
+        // Generate begin
         result.begin(1, tasks.cardinality(), numDepLists + 1);
 
-        schedule(result, graph, context, nodeIds, deps, tasks);
-        peephole(result, numDepLists);
+        // Generate all byte-codes for the input tasks
+        scheduleAndEmitTornadoVMBytecodes(result, graph, context, nodeIds, deps, tasks);
 
+        // Last operation -> perform synchronisation
+        synchronizeOperationLastByteCode(result, numDepLists);
+
+        // End
         result.end();
+
         return result;
     }
 
-    private static void peephole(GraphCompilationResult result, int numDepLists) {
+    /**
+     * It replaces the last STREAM_OUT for STREAM_OUT_BLOCKING byte-code.
+     * Otherwise, it adds a barrier
+     * 
+     * @param result
+     * @param numDepLists
+     */
+    private static void synchronizeOperationLastByteCode(GraphCompilationResult result, int numDepLists) {
         final byte[] code = result.getCode();
         final int codeSize = result.getCodeSize();
         if (code[codeSize - 13] == TornadoVMBytecodes.STREAM_OUT.index()) {
@@ -177,7 +190,7 @@ public class TornadoGraphCompiler {
         }
     }
 
-    private static void schedule(GraphCompilationResult result, TornadoGraph graph, ExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
+    private static void scheduleAndEmitTornadoVMBytecodes(GraphCompilationResult result, TornadoGraph graph, ExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
 
         final BitSet scheduled = new BitSet(deps.length);
         scheduled.clear();
@@ -187,12 +200,10 @@ public class TornadoGraphCompiler {
         int index = 0;
         for (int i = 0; i < deps.length; i++) {
             if (!deps[i].isEmpty()) {
-
                 final AbstractNode current = graph.getNode(nodeIds[i]);
                 if (current instanceof DependentReadNode) {
                     continue;
                 }
-
                 depLists[i] = index;
                 index++;
             }
@@ -201,7 +212,6 @@ public class TornadoGraphCompiler {
         while (scheduled.cardinality() < deps.length) {
             for (int i = 0; i < deps.length; i++) {
                 if (!scheduled.get(i)) {
-
                     final BitSet outstandingDeps = new BitSet(nodes.length());
                     outstandingDeps.or(deps[i]);
                     outstandingDeps.andNot(nodes);

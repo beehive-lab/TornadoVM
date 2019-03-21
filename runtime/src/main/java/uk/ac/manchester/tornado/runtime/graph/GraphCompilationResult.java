@@ -60,8 +60,6 @@ public class GraphCompilationResult {
     }
 
     public void emitAsyncNode(TornadoGraph graph, ExecutionContext context, AbstractNode node, int ctx, int depIn) {
-
-        // System.out.printf("emit: %s\n",node);
         if (node instanceof CopyInNode) {
             asm.copyToContext(((CopyInNode) node).getValue().getIndex(), ctx, depIn);
         } else if (node instanceof AllocateNode) {
