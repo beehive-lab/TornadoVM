@@ -30,7 +30,7 @@ import java.nio.ByteOrder;
 
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
-public class GraphAssembler {
+public class TornadoGraphAssembler {
 
     // @formatter:off 
     public enum TornadoVMBytecodes {
@@ -63,7 +63,7 @@ public class GraphAssembler {
 
     private final ByteBuffer buffer;
 
-    public GraphAssembler(byte[] code) {
+    public TornadoGraphAssembler(byte[] code) {
         buffer = ByteBuffer.wrap(code);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
     }

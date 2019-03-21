@@ -34,12 +34,12 @@ public class GraphCompilationResult {
     public static final int MAX_TVM_BYTECODE_SIZE = Integer.parseInt(getProperty("tornado.tvm.maxbytecodesize", "1024"));
 
     private byte[] code;
-    private GraphAssembler asm;
+    private TornadoGraphAssembler asm;
     private int gtid;
 
     public GraphCompilationResult() {
         code = new byte[MAX_TVM_BYTECODE_SIZE];
-        asm = new GraphAssembler(code);
+        asm = new TornadoGraphAssembler(code);
         gtid = 0;
     }
 
