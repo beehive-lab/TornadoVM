@@ -68,24 +68,24 @@ public final class StorageFormats {
      *            row index
      * @param j
      *            column index
-     * @param xSize
+     * @param yMax
      *            length of a row
      * @return
      */
-    public final static int toRowMajor(int i, int j, int xSize) {
-        return (i * xSize) + j;
+    public final static int toRowMajor(int i, int j, int yMax) {
+        return (i * yMax) + j;
     }
 
-    public final static int toRowMajorVector(int i, int j, int xSize, int width) {
-        return (i * xSize * width) + j;
+    public final static int toRowMajorVector(int i, int j, int xMax, int width) {
+        return (i * xMax * width) + j;
     }
 
     public final static int toRowMajor3D(int i, int j, int k, int zMax, int yMax) {
         return (i * zMax * yMax) + (j * zMax) + k;
     }
 
-    public final static int toRowMajor3DVector(int i, int j, int k, int xSize, int ySize, int vectorWidth) {
-        return (i * xSize * ySize * vectorWidth) + (j * xSize) + k;
+    public final static int toRowMajor3DVector(int i, int j, int k, int zSize, int ySize, int vectorWidth) {
+        return (i * zSize * ySize * vectorWidth) + (j * zSize) + k;
     }
 
     /**
@@ -168,17 +168,15 @@ public final class StorageFormats {
      * @return
      */
     public static double[] toRowMajor(double[][] matrix) {
-
-        final int m = matrix[0].length;
-        final int n = matrix.length;
-        double[] matrixRM = new double[m * n];
-
-        for (int i = 0; i < m; i++)
-            for (int j = 0; j < n; j++) {
-                matrixRM[toRowMajor(i, j, m)] = matrix[i][j];
+        final int N = matrix[0].length;
+        final int M = matrix.length;
+        double[] flattenMatrix = new double[M * N];
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < N; j++) {
+                flattenMatrix[toRowMajor(i, j, N)] = matrix[i][j];
             }
-
-        return matrixRM;
+        }
+        return flattenMatrix;
     }
 
     /**
@@ -189,23 +187,24 @@ public final class StorageFormats {
      * @return
      */
     public static float[] toRowMajor(float[][] matrix) {
+        final int M = matrix.length;
+        final int N = matrix[0].length;
 
-        final int m = matrix[0].length;
-        final int n = matrix.length;
-        float[] matrixRM = new float[m * n];
+        float[] flattenMatrix = new float[M * N];
 
-        for (int i = 0; i < m; i++)
-            for (int j = 0; j < n; j++) {
-                matrixRM[toRowMajor(i, j, m)] = matrix[i][j];
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < N; j++) {
+                flattenMatrix[toRowMajor(i, j, N)] = matrix[i][j];
             }
+        }
 
-        return matrixRM;
+        return flattenMatrix;
     }
 
     public static float[] toRowMajor3D(float[][][] matrix) {
-        final int Z = matrix[0][0].length;
-        final int Y = matrix[0].length;
         final int X = matrix.length;
+        final int Y = matrix[0].length;
+        final int Z = matrix[0][0].length;
         float[] flattenMatrix = new float[X * Y * Z];
 
         for (int i = 0; i < X; i++) {
@@ -228,13 +227,13 @@ public final class StorageFormats {
      */
     public static int[] toRowMajor(int[][] matrix) {
 
-        final int m = matrix[0].length;
-        final int n = matrix.length;
-        int[] matrixRM = new int[m * n];
+        final int M = matrix.length;
+        final int N = matrix[0].length;
 
-        for (int i = 0; i < m; i++)
-            for (int j = 0; j < n; j++) {
-                matrixRM[toRowMajor(i, j, m)] = matrix[i][j];
+        int[] matrixRM = new int[M * N];
+        for (int i = 0; i < M; i++)
+            for (int j = 0; j < N; j++) {
+                matrixRM[toRowMajor(i, j, N)] = matrix[i][j];
             }
 
         return matrixRM;

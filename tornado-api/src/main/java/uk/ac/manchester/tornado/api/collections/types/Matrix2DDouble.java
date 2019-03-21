@@ -105,11 +105,11 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
     }
 
     public double get(int i, int j) {
-        return storage[toRowMajor(i, j, N)];
+        return storage[toRowMajor(i, j, M)];
     }
 
     public void set(int i, int j, double value) {
-        storage[toRowMajor(i, j, N)] = value;
+        storage[toRowMajor(i, j, M)] = value;
     }
 
     public int M() {

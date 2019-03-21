@@ -557,7 +557,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
-    public static void testThreadSchuler(int[] a, int[] b, int[] result) {
+    public static void testThreadScheduler(int[] a, int[] b, int[] result) {
 
         // map
         for (@Parallel int i = 0; i < a.length; i++) {
@@ -592,13 +592,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(a)
-            .task("t0", TestReductionsIntegers::testThreadSchuler, a, b, result)
+            .task("t0", TestReductionsIntegers::testThreadScheduler, a, b, result)
             .streamOut(result)
             .execute();
         //@formatter:on
 
         int[] sequential = new int[SMALL_SIZE * 2];
-        testThreadSchuler(a, b, sequential);
+        testThreadScheduler(a, b, sequential);
 
         assertEquals(sequential[0], result[0], 0.001f);
     }
