@@ -266,20 +266,11 @@ public class OCLObjectWrapper implements ObjectBuffer {
 
     private void serialise(Object object) {
         buffer.rewind();
-
         buffer.position(hubOffset);
-        // if (DEBUG) {
-        // trace("object: hub offset=%d, value=0x%x", hubOffset,
-        // ((PrimitiveConstant) resolvedType.getObjectHub()).asLong());
-        // }
-        // buffer.putLong(((PrimitiveConstant) resolvedType.getObjectHub())
-        // .asLong());
-        // need to implement object hub
         buffer.putLong(0);
 
         if (fields.length > 0) {
             buffer.position(fields[0].offset());
-
             for (int i = 0; i < fields.length; i++) {
                 HotSpotResolvedJavaField field = fields[i];
                 Field f = getField(type, field.getName());
@@ -290,9 +281,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 buffer.position(field.offset());
                 writeFieldToBuffer(i, f, object);
             }
-
         }
-        // dump();
     }
 
     private void deserialise(Object object) {
@@ -457,7 +446,6 @@ public class OCLObjectWrapper implements ObjectBuffer {
 
     @Override
     public int enqueueWrite(Object ref, int[] events, boolean useDeps) {
-        System.out.println("Object write?????");
         final int returnEvent;
         if (vectorObject) {
             final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
