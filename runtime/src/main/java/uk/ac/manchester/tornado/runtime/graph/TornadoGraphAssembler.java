@@ -40,13 +40,13 @@ public class TornadoGraphAssembler {
         STREAM_OUT((byte)13),           // STREAM_OUT(obj, src, dest)
         STREAM_OUT_BLOCKING((byte)14),  // STREAM_OUT(obj, src, dest)
         LAUNCH    ((byte)15),           // LAUNCH(dep list index)
-        BARRIER   ((byte)16),
+        BARRIER   ((byte)16),           // BARRIER <events>
         SETUP     ((byte)17),  
         BEGIN     ((byte)18),           // BEGIN(num contexts, num stacks, num dep lists)
         ADD_DEP   ((byte)19),           // ADD_DEP(list index)
         CONTEXT   ((byte)20),           // CONTEXT(ctx)
-        END       ((byte)21),
-        CONSTANT_ARG ((byte)22),
+        END       ((byte)21),           // END(ctx)
+        CONSTANT_ARG ((byte)22),        
         REFERENCE_ARG((byte)23);
         
         private byte index;
