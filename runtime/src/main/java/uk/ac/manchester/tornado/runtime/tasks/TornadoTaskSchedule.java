@@ -40,11 +40,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.graalvm.compiler.phases.util.Providers;
 
@@ -69,6 +72,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
@@ -95,8 +99,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private byte[] hlcode = new byte[2048];
     private ByteBuffer hlBuffer;
-
     private GraphCompilationResult result;
+    private long batchSizeBytes;
 
     // One TornadoVM instance per TaskSchedule
     private TornadoVM vm;
@@ -1113,10 +1117,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     /**
-     * Class that keeps the history of executions based on their data sizes. It has
-     * a sorted map (TreeMap) that keeps the relationship between the input size and
-     * the actual Tornado device in which the task was executed based on the
-     * profiler for the dynamic reconfiguration.
+     * Class that keeps the history of executions based on their data sizes. It
+     * has a sorted map (TreeMap) that keeps the relationship between the input
+     * size and the actual Tornado device in which the task was executed based
+     * on the profiler for the dynamic reconfiguration.
      */
     private static class HistoryTable {
         /**
@@ -1288,6 +1292,36 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public void addScalaTask(String id, Object function, Object[] args) {
         addInner(TaskUtils.scalaTask(id, function, args));
+    }
+
+    @Override
+    public void batch(String batchSize) {
+
+        // parse value and units
+        Pattern pattern = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
+        Matcher matcher = pattern.matcher(batchSize);
+        long value = 0;
+        String units = null;
+        if (matcher.find()) {
+            value = Long.parseLong(matcher.group(1));
+            units = matcher.group(2).toUpperCase();
+            if (Tornado.DEBUG) {
+                System.out.println("VAUE: " + value);
+                System.out.println("UNITS: " + units);
+            }
+        }
+
+        // compute bytes
+        switch (units) {
+            case "MB":
+                this.batchSizeBytes = value * 1_000_000;
+                break;
+            case "GB":
+                this.batchSizeBytes = value * 1_000_000_000;
+                break;
+            default:
+                throw new TornadoRuntimeException("Units not supported: " + units);
+        }
     }
 
 }

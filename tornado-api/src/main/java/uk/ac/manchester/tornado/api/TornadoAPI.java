@@ -70,7 +70,7 @@ public interface TornadoAPI {
      * @param taskPackage
      * @return {@link @TornadoAPI}
      */
-    public TornadoAPI addTask(TaskPackage taskPackage);
+    TornadoAPI addTask(TaskPackage taskPackage);
 
     /**
      * 
@@ -79,7 +79,7 @@ public interface TornadoAPI {
      * @param arg
      * @return {@}
      */
-    public <T1> TornadoAPI task(String id, Task1<T1> code, T1 arg);
+    <T1> TornadoAPI task(String id, Task1<T1> code, T1 arg);
 
     /**
      * 
@@ -89,28 +89,27 @@ public interface TornadoAPI {
      * @param arg2
      * @return
      */
-    public <T1, T2> TornadoAPI task(String id, Task2<T1, T2> code, T1 arg1, T2 arg2);
+    <T1, T2> TornadoAPI task(String id, Task2<T1, T2> code, T1 arg1, T2 arg2);
 
-    public <T1, T2, T3> TornadoAPI task(String id, Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3);
+    <T1, T2, T3> TornadoAPI task(String id, Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3);
 
-    public <T1, T2, T3, T4> TornadoAPI task(String id, Task4<T1, T2, T3, T4> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4);
+    <T1, T2, T3, T4> TornadoAPI task(String id, Task4<T1, T2, T3, T4> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4);
 
-    public <T1, T2, T3, T4, T5> TornadoAPI task(String id, Task5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5);
+    <T1, T2, T3, T4, T5> TornadoAPI task(String id, Task5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5);
 
-    public <T1, T2, T3, T4, T5, T6> TornadoAPI task(String id, Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6);
+    <T1, T2, T3, T4, T5, T6> TornadoAPI task(String id, Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6);
 
-    public <T1, T2, T3, T4, T5, T6, T7> TornadoAPI task(String id, Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7);
+    <T1, T2, T3, T4, T5, T6, T7> TornadoAPI task(String id, Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7);
 
-    public <T1, T2, T3, T4, T5, T6, T7, T8> TornadoAPI task(String id, Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8);
+    <T1, T2, T3, T4, T5, T6, T7, T8> TornadoAPI task(String id, Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8);
 
-    public <T1, T2, T3, T4, T5, T6, T7, T8, T9> TornadoAPI task(String id, Task9<T1, T2, T3, T4, T5, T6, T7, T8, T9> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8,
-            T9 arg9);
+    <T1, T2, T3, T4, T5, T6, T7, T8, T9> TornadoAPI task(String id, Task9<T1, T2, T3, T4, T5, T6, T7, T8, T9> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9);
 
-    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> TornadoAPI task(String id, Task10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7,
-            T8 arg8, T9 arg9, T10 arg10);
+    <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> TornadoAPI task(String id, Task10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8,
+            T9 arg9, T10 arg10);
 
-    public <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> TornadoAPI task(String id, Task15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> code, T1 arg1,
-            T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15);
+    <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> TornadoAPI task(String id, Task15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> code, T1 arg1, T2 arg2,
+            T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15);
 
     /**
      * Add a prebuilt OpenCL task into a task-schedule
@@ -124,64 +123,66 @@ public interface TornadoAPI {
      * @param dimensions
      * @return {@link TornadoAPI}
      */
-    public TornadoAPI prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
+    TornadoAPI prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
 
     /**
      * Obtains the task-schedule name that was assigned.
      * 
      * @return {@link String}
      */
-    public String getTaskScheduleName();
+    String getTaskScheduleName();
 
     /**
      * 
      * @param task
      * @return
      */
-    public TornadoAPI task(SchedulableTask task);
+    TornadoAPI task(SchedulableTask task);
 
-    public TornadoAPI mapAllTo(TornadoDevice device);
+    TornadoAPI mapAllTo(TornadoDevice device);
 
-    public TornadoAPI streamIn(Object... objects);
+    TornadoAPI streamIn(Object... objects);
 
-    public TornadoAPI streamOut(Object... objects);
+    TornadoAPI streamOut(Object... objects);
 
-    public TornadoAPI schedule();
+    TornadoAPI schedule();
 
-    public void execute();
+    TornadoAPI batch(String batchSize);
 
-    public void executeWithProfiler(Policy policy);
+    void execute();
 
-    public void executeWithProfilerSequential(Policy policy);
+    void executeWithProfiler(Policy policy);
 
-    public void executeWithProfilerSequentialGlobal(Policy policy);
+    void executeWithProfilerSequential(Policy policy);
 
-    public void warmup();
+    void executeWithProfilerSequentialGlobal(Policy policy);
 
-    public long getReturnValue(String id);
+    void warmup();
 
-    public void dumpEvents();
+    long getReturnValue(String id);
 
-    public void dumpTimes();
+    void dumpEvents();
 
-    public void dumpProfiles();
+    void dumpTimes();
 
-    public void clearProfiles();
+    void dumpProfiles();
 
-    public void syncObjects();
+    void clearProfiles();
 
-    public void syncObject(Object object);
+    void syncObjects();
 
-    public void syncObjects(Object... objects);
+    void syncObject(Object object);
 
-    public SchedulableTask getTask(String id);
+    void syncObjects(Object... objects);
 
-    public TornadoDevice getDevice();
+    SchedulableTask getTask(String id);
 
-    public void setDevice(TornadoDevice device);
+    TornadoDevice getDevice();
 
-    public TornadoDevice getDeviceForTask(String id);
+    void setDevice(TornadoDevice device);
 
-    public void waitOn();
+    TornadoDevice getDeviceForTask(String id);
+
+    void waitOn();
 
 }

@@ -126,7 +126,6 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     public int enqueueRead(final Object value, final int[] events, boolean useDeps) {
         final T array = cast(value);
         final int returnEvent;
-
         if (isFinal) {
             returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, (useDeps) ? events : null);
         } else {

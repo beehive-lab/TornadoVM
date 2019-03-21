@@ -67,6 +67,8 @@ public interface AbstractTaskGraph {
 
     void scheduleInner();
 
+    void batch(String batchSize);
+
     void apply(Consumer<SchedulableTask> consumer);
 
     void mapAllToInner(TornadoDevice device);
