@@ -20,10 +20,10 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: James Clarkson, Juan Fumero
  *
  */
-#define VERBOSE 1
+#define VERBOSE 0
 
 #define debug(fmt,args...) if(VERBOSE) printf(fmt,args);
 #define warn(fmt,args...)  printf(fmt,args);

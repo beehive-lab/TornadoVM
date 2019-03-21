@@ -99,7 +99,7 @@ WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, D, dou
 
 #define READ_ARRAY(CLASSNAME, SIG, TYPE) \
     JNIEXPORT jlong JNICALL CLASSNAME ## _readArrayFromDevice__J_3 ## SIG ## ZJJJ_3J \
-        (JNIEnv *env, jclass clazz, jlong queue_id, j ## TYPE ##Array array1, jboolean blocking, jlong offset, jlong cb, jlong device_ptr, jlongArray array2) { \
+        (JNIEnv *env, jclass clazz, jlong queue_id, j ## TYPE ## Array array1, jboolean blocking, jlong offset, jlong cb, jlong device_ptr, jlongArray array2) { \
             OPENCL_PROLOGUE; \
             cl_bool blocking_read = blocking ? CL_TRUE : CL_FALSE; \
             jsize num_bytes = (cb != -1) ? cb : (*env)->GetArrayLength(env, array1) * sizeof ( j ## TYPE ); \

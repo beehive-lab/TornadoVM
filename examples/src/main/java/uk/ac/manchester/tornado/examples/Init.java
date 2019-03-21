@@ -37,7 +37,7 @@ public class Init {
 
     public static void compute(float[] array) {
         for (@Parallel int i = 0; i < array.length; i++) {
-            array[i] = 100;
+            array[i] = array[i] + 100;
         }
     }
 

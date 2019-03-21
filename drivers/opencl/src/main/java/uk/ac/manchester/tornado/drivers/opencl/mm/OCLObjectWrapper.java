@@ -457,6 +457,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
 
     @Override
     public int enqueueWrite(Object ref, int[] events, boolean useDeps) {
+        System.out.println("Object write?????");
         final int returnEvent;
         if (vectorObject) {
             final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];

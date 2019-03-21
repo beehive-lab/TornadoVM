@@ -187,6 +187,13 @@ public class TornadoVM extends TornadoLogger {
         return execute(false);
     }
 
+    private void popArgumentsFromStack(int numArgs) {
+        for (int i = 0; i < numArgs; i++) {
+            buffer.get();
+            buffer.getInt();
+        }
+    }
+
     private Event execute(boolean isWarmup) {
 
         final long t0 = System.nanoTime();
@@ -282,7 +289,6 @@ public class TornadoVM extends TornadoLogger {
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
-
             } else if (op == TornadoVMBytecodes.STREAM_OUT.index()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
@@ -379,19 +385,14 @@ public class TornadoVM extends TornadoLogger {
                     if (graphContext.meta().isDebug()) {
                         debug("vm: compiled in %.9f s", (compileEnd - compileStart) * 1e-9);
                     }
-
                 }
 
                 if (isWarmup) {
-                    for (int i = 0; i < numArgs; i++) {
-                        buffer.get();
-                        buffer.getInt();
-                    }
+                    popArgumentsFromStack(numArgs);
                     continue;
                 }
 
                 final TornadoInstalledCode installedCode = installedCodes[taskIndex];
-
                 final Access[] accesses = task.getArgumentsAccess();
 
                 if (redeployOnDevice || !stack.isOnDevice()) {

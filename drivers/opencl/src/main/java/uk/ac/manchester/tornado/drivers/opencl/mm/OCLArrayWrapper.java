@@ -90,12 +90,12 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     @Override
     public void allocate(Object value) throws TornadoOutOfMemoryException, TornadoMemoryException {
         if (bufferOffset == -1) {
-            final T ref = cast(value);
-            bytesToAllocate = sizeOf(ref);
+            final T hostArray = cast(value);
+            bytesToAllocate = sizeOf(hostArray);
             if (bytesToAllocate <= 0) {
-                throw new TornadoMemoryException("[ERROR] Bytes Allocated < 0: " + bytesToAllocate);
+                throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bytesToAllocate);
             }
-            bufferOffset = deviceContext.getMemoryManager().tryAllocate(ref.getClass(), bytesToAllocate, arrayHeaderSize, getAlignment());
+            bufferOffset = deviceContext.getMemoryManager().tryAllocate(hostArray.getClass(), bytesToAllocate, arrayHeaderSize, getAlignment());
             info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x", kind.getJavaName(), humanReadableByteCount(bytesToAllocate, true), arrayLengthOffset, arrayHeaderSize,
                     bufferOffset);
             info("allocated: %s", toString());
@@ -125,7 +125,9 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     @Override
     public int enqueueRead(final Object value, final int[] events, boolean useDeps) {
         final T array = cast(value);
+        System.out.println("CAST READ: " + array);
         final int returnEvent;
+
         if (isFinal) {
             returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, (useDeps) ? events : null);
         } else {
@@ -141,10 +143,10 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     @Override
     public int enqueueWrite(final Object value, final int[] events, boolean useDeps) {
         final T array = cast(value);
+        System.out.println("CAST WRITE: " + array);
         final int returnEvent;
 
         if (isFinal && onDevice) {
-
             returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, (useDeps) ? events : null);
         } else {
             int index = 0;
