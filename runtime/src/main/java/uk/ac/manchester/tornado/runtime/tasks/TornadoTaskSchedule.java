@@ -80,7 +80,7 @@ import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
-import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
+import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompilationResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
@@ -95,7 +95,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
  */
 public class TornadoTaskSchedule implements AbstractTaskGraph {
 
-    private ExecutionContext graphContext;
+    private TornadoExecutionContext graphContext;
 
     private byte[] hlcode = new byte[2048];
     private ByteBuffer hlBuffer;
@@ -141,7 +141,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * @param taskScheduleName
      */
     public TornadoTaskSchedule(String taskScheduleName) {
-        graphContext = new ExecutionContext(taskScheduleName);
+        graphContext = new TornadoExecutionContext(taskScheduleName);
         hlBuffer = ByteBuffer.wrap(hlcode);
         hlBuffer.order(ByteOrder.LITTLE_ENDIAN);
         hlBuffer.rewind();
@@ -505,7 +505,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    public ExecutionContext getGraphContext() {
+    public TornadoExecutionContext getGraphContext() {
         return this.graphContext;
     }
 

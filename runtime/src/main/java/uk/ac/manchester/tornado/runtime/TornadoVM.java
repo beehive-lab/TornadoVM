@@ -48,7 +48,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
+import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
@@ -72,7 +72,7 @@ public class TornadoVM extends TornadoLogger {
     private static final int MAX_EVENTS = 32;
     private final boolean useDependencies;
 
-    private final ExecutionContext graphContext;
+    private final TornadoExecutionContext graphContext;
     private final List<Object> objects;
     private final GlobalObjectState[] globalStates;
     private final CallStack[] stacks;
@@ -89,7 +89,7 @@ public class TornadoVM extends TornadoLogger {
     private double totalTime;
     private long invocations;
 
-    public TornadoVM(ExecutionContext graphContext, byte[] code, int limit) {
+    public TornadoVM(TornadoExecutionContext graphContext, byte[] code, int limit) {
 
         this.graphContext = graphContext;
 

@@ -80,7 +80,7 @@ public class TornadoVMGraphCompilationResult {
         }
     }
 
-    public void emitAsyncNodeBatch(TornadoGraph tornadoGraph, ExecutionContext tornadoContext, AbstractNode node, int contextID, int dependencyBC, int offset) {
+    public void emitAsyncNodeBatch(TornadoGraph tornadoGraph, TornadoExecutionContext tornadoContext, AbstractNode node, int contextID, int dependencyBC, int offset) {
         if (node instanceof CopyInNode) {
             asm.copyToContext(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC);
         } else if (node instanceof AllocateNode) {

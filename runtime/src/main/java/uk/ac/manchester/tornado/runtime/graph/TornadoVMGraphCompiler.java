@@ -58,7 +58,7 @@ public class TornadoVMGraphCompiler {
      * @param context
      * @return {@link TornadoVMGraphCompilationResult}
      */
-    public static TornadoVMGraphCompilationResult compile(TornadoGraph graph, ExecutionContext context, long batchSize) {
+    public static TornadoVMGraphCompilationResult compile(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
         final BitSet deviceContexts = graph.filter(ContextNode.class);
         if (deviceContexts.cardinality() == 1) {
             final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
@@ -72,7 +72,7 @@ public class TornadoVMGraphCompiler {
     /*
      * Simplest case where all tasks are executed on the same device
      */
-    private static TornadoVMGraphCompilationResult compileSingleContext(TornadoGraph graph, ExecutionContext context, TornadoAcceleratorDevice device, long batchSize) {
+    private static TornadoVMGraphCompilationResult compileSingleContext(TornadoGraph graph, TornadoExecutionContext context, TornadoAcceleratorDevice device, long batchSize) {
 
         final TornadoVMGraphCompilationResult result = new TornadoVMGraphCompilationResult();
 
@@ -136,7 +136,7 @@ public class TornadoVMGraphCompiler {
     }
 
     @SuppressWarnings("unused")
-    private static void optimise(TornadoVMGraphCompilationResult result, TornadoGraph graph, ExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
+    private static void optimise(TornadoVMGraphCompilationResult result, TornadoGraph graph, TornadoExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
         printMatrix(graph, nodeIds, deps, tasks);
         for (int i = tasks.nextSetBit(0); i >= 0; i = tasks.nextSetBit(i + 1)) {
             BitSet dependents = new BitSet(deps[i].length());
@@ -263,7 +263,7 @@ public class TornadoVMGraphCompiler {
         }
     }
 
-    private static BitSet calculateDeps(TornadoGraph graph, ExecutionContext context, int i) {
+    private static BitSet calculateDeps(TornadoGraph graph, TornadoExecutionContext context, int i) {
         final BitSet deps = new BitSet(graph.getValid().length());
         final AbstractNode node = graph.getNode(i);
         for (AbstractNode input : node.getInputs()) {
