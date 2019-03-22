@@ -49,7 +49,7 @@ import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 
-public class TornadoGraphCompiler {
+public class TornadoVMGraphCompiler {
 
     /**
      * Generate Tornado bytecode from a Tornado Task Graph.

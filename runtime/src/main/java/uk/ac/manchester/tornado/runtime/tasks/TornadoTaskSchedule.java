@@ -84,7 +84,7 @@ import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompilationResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
-import uk.ac.manchester.tornado.runtime.graph.TornadoGraphCompiler;
+import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
@@ -267,7 +267,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             updateDeviceContext(graph);
         }
 
-        result = TornadoGraphCompiler.compile(graph, graphContext, batchSizeBytes);
+        result = TornadoVMGraphCompiler.compile(graph, graphContext, batchSizeBytes);
 
         // final long t2 = System.nanoTime();
         vm = new TornadoVM(graphContext, result.getCode(), result.getCodeSize());
