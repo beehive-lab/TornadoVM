@@ -366,7 +366,7 @@ public class TornadoVM extends TornadoLogger {
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
                 final SchedulableTask task = tasks.get(taskIndex);
 
-                String verbose = String.format("vm: LAUNCH_BATCH %s on %s [event list=%d]", task.getName(), contexts.get(contextIndex), eventList);
+                String verbose = String.format("vm: LAUNCH_BATCH %s on %s, size=%d, offset=%d [event list=%d]", task.getName(), contexts.get(contextIndex), sizeBatch, offset, eventList);
                 if (graphContext.meta().isDebug()) {
                     debug(verbose);
                 }
