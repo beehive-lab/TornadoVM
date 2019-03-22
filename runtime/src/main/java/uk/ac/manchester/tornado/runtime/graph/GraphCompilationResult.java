@@ -63,25 +63,24 @@ public class GraphCompilationResult {
         globalTaskID++;
     }
 
-    public void emitAsyncNode(TornadoGraph graph, ExecutionContext context, AbstractNode node, int ctx, int depIn) {
+    public void emitAsyncNode(TornadoGraph tornadoGraph, ExecutionContext tornadoContext, AbstractNode node, int contextID, int dependencyBC) {
         if (node instanceof CopyInNode) {
-            asm.copyToContext(((CopyInNode) node).getValue().getIndex(), ctx, depIn);
+            asm.copyToContext(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC);
         } else if (node instanceof AllocateNode) {
-            asm.allocate(((AllocateNode) node).getValue().getIndex(), ctx);
+            asm.allocate(((AllocateNode) node).getValue().getIndex(), contextID);
         } else if (node instanceof CopyOutNode) {
-            asm.streamOutOfContext(((CopyOutNode) node).getValue().getValue().getIndex(), ctx, depIn);
+            asm.streamOutOfContext(((CopyOutNode) node).getValue().getValue().getIndex(), contextID, dependencyBC);
         } else if (node instanceof StreamInNode) {
-            asm.streamInToContext(((StreamInNode) node).getValue().getIndex(), ctx, depIn);
+            asm.streamInToContext(((StreamInNode) node).getValue().getIndex(), contextID, dependencyBC);
         } else if (node instanceof TaskNode) {
             final TaskNode taskNode = (TaskNode) node;
-            asm.launch(globalTaskID, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), depIn);
+            asm.launch(globalTaskID, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC);
+            emitArgList(taskNode);
             incTaskID();
-            emitArgList(graph, context, taskNode);
         }
     }
 
-    private void emitArgList(TornadoGraph graph, ExecutionContext context, TaskNode taskNode) {
-
+    private void emitArgList(TaskNode taskNode) {
         final int numArgs = taskNode.getNumArgs();
         for (int i = 0; i < numArgs; i++) {
             final AbstractNode argNode = taskNode.getArg(i);
@@ -99,7 +98,6 @@ public class GraphCompilationResult {
                 asm.referenceArg(((DependentReadNode) argNode).getValue().getIndex());
             }
         }
-
     }
 
     public void emitAddDep(int dep) {

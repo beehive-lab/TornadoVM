@@ -249,7 +249,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     /**
-     * Compile a task-schedule into TornadoVM bytecode
+     * Compile a task-schedule into TornadoVM byte-code
      * 
      * @param setNewDevice:
      *            boolean that specifies if set a new device or not.

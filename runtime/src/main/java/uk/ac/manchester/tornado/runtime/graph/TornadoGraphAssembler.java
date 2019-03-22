@@ -32,8 +32,8 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 
 public class TornadoGraphAssembler {
 
-    // @formatter:off 
     public enum TornadoVMBytecodes {
+        // @formatter:off
         ALLOCATE  ((byte)10),           // ALLOCATE(obj,dest)
         COPY_IN   ((byte)11),           // COPY(obj, src, dest)
         STREAM_IN ((byte)12),           // STREAM_IN(obj, src, dest)
@@ -47,19 +47,27 @@ public class TornadoGraphAssembler {
         CONTEXT   ((byte)20),           // CONTEXT(ctx)
         END       ((byte)21),           // END(ctx)
         CONSTANT_ARG ((byte)22),        
-        REFERENCE_ARG((byte)23);
+        REFERENCE_ARG((byte)23),
         
+        // TornadoVM byte-codes for batch processing (slots)
+        ALLOCATE_BATCH((byte) 24),
+        COPYIN_BATCH((byte) 25),
+        STEAM_IN_BATCH((byte) 26),
+        STREAM_OUT_BATCH((byte) 27),
+        STREAM_OUT_BLOCKING_BATCH((byte) 28),
+        LAUNCH_BATCH((byte) 29);
+        // @formatter:on
+
         private byte index;
-        
+
         TornadoVMBytecodes(byte index) {
             this.index = index;
         }
-        
+
         public byte index() {
             return index;
         }
     }
-    // @formatter:on
 
     private final ByteBuffer buffer;
 
@@ -77,27 +85,27 @@ public class TornadoGraphAssembler {
     }
 
     public void begin() {
-        buffer.put(TornadoVMBytecodes.BEGIN.index());
+        buffer.put(TornadoVMBytecodes.BEGIN.index);
     }
 
     public void end() {
-        buffer.put(TornadoVMBytecodes.END.index());
+        buffer.put(TornadoVMBytecodes.END.index);
     }
 
     public void setup(int numContexts, int numStacks, int numDeps) {
-        buffer.put(TornadoVMBytecodes.SETUP.index());
+        buffer.put(TornadoVMBytecodes.SETUP.index);
         buffer.putInt(numContexts);
         buffer.putInt(numStacks);
         buffer.putInt(numDeps);
     }
 
     public void addDependency(int index) {
-        buffer.put(TornadoVMBytecodes.ADD_DEP.index());
+        buffer.put(TornadoVMBytecodes.ADD_DEP.index);
         buffer.putInt(index);
     }
 
     public void context(int index) {
-        buffer.put(TornadoVMBytecodes.CONTEXT.index());
+        buffer.put(TornadoVMBytecodes.CONTEXT.index);
         buffer.putInt(index);
     }
 
@@ -115,21 +123,21 @@ public class TornadoGraphAssembler {
     }
 
     public void streamInToContext(int obj, int ctx, int dep) {
-        buffer.put(TornadoVMBytecodes.STREAM_IN.index());
+        buffer.put(TornadoVMBytecodes.STREAM_IN.index);
         buffer.putInt(obj);
         buffer.putInt(ctx);
         buffer.putInt(dep);
     }
 
     public void streamOutOfContext(int obj, int ctx, int dep) {
-        buffer.put(TornadoVMBytecodes.STREAM_OUT.index());
+        buffer.put(TornadoVMBytecodes.STREAM_OUT.index);
         buffer.putInt(obj);
         buffer.putInt(ctx);
         buffer.putInt(dep);
     }
 
     public void launch(int gtid, int ctx, int task, int numParameters, int dep) {
-        buffer.put(TornadoVMBytecodes.LAUNCH.index());
+        buffer.put(TornadoVMBytecodes.LAUNCH.index);
         buffer.putInt(gtid);
         buffer.putInt(ctx);
         buffer.putInt(task);
@@ -138,17 +146,17 @@ public class TornadoGraphAssembler {
     }
 
     public void barrier(int dep) {
-        buffer.put(TornadoVMBytecodes.BARRIER.index());
+        buffer.put(TornadoVMBytecodes.BARRIER.index);
         buffer.putInt(dep);
     }
 
     public void constantArg(int index) {
-        buffer.put(TornadoVMBytecodes.CONSTANT_ARG.index());
+        buffer.put(TornadoVMBytecodes.CONSTANT_ARG.index);
         buffer.putInt(index);
     }
 
     public void referenceArg(int index) {
-        buffer.put(TornadoVMBytecodes.REFERENCE_ARG.index());
+        buffer.put(TornadoVMBytecodes.REFERENCE_ARG.index);
         buffer.putInt(index);
     }
 
