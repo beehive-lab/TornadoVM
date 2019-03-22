@@ -40,7 +40,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -81,9 +80,9 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
-import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompilationResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
+import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompilationResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
@@ -365,7 +364,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             precompilationForFPGA();
         }
 
-        event = vm.execute();
+        if (this.batchSizeBytes != -1) {
+            event = vm.executeBatches();
+        } else {
+            event = vm.execute();
+        }
     }
 
     @Override

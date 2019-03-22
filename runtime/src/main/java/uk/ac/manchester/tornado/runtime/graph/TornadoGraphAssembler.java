@@ -52,7 +52,7 @@ public class TornadoGraphAssembler {
         // TornadoVM byte-codes for batch processing (slots)
         ALLOCATE_BATCH((byte) 24),
         COPYIN_BATCH((byte) 25),
-        STEAM_IN_BATCH((byte) 26),
+        STREAM_IN_BATCH((byte) 26),
         STREAM_OUT_BATCH((byte) 27),
         STREAM_OUT_BLOCKING_BATCH((byte) 28),
         LAUNCH_BATCH((byte) 29);
@@ -115,11 +115,28 @@ public class TornadoGraphAssembler {
         buffer.putInt(ctx);
     }
 
+    public void allocateBatch(int object, int ctx, long offset, long size) {
+        buffer.put(TornadoVMBytecodes.ALLOCATE_BATCH.index);
+        buffer.putInt(object);
+        buffer.putInt(ctx);
+        buffer.putLong(offset);
+        buffer.putLong(size);
+    }
+
     public void copyToContext(int obj, int ctx, int dep) {
         buffer.put(TornadoVMBytecodes.COPY_IN.index);
         buffer.putInt(obj);
         buffer.putInt(ctx);
         buffer.putInt(dep);
+    }
+
+    public void copyToContextBatch(int obj, int ctx, int dep, long offset, long size) {
+        buffer.put(TornadoVMBytecodes.COPYIN_BATCH.index);
+        buffer.putInt(obj);
+        buffer.putInt(ctx);
+        buffer.putInt(dep);
+        buffer.putLong(offset);
+        buffer.putLong(size);
     }
 
     public void streamInToContext(int obj, int ctx, int dep) {
@@ -129,11 +146,29 @@ public class TornadoGraphAssembler {
         buffer.putInt(dep);
     }
 
+    public void streamInToContextBatch(int obj, int ctx, int dep, long offset, long size) {
+        buffer.put(TornadoVMBytecodes.STREAM_IN_BATCH.index);
+        buffer.putInt(obj);
+        buffer.putInt(ctx);
+        buffer.putInt(dep);
+        buffer.putLong(offset);
+        buffer.putLong(size);
+    }
+
     public void streamOutOfContext(int obj, int ctx, int dep) {
         buffer.put(TornadoVMBytecodes.STREAM_OUT.index);
         buffer.putInt(obj);
         buffer.putInt(ctx);
         buffer.putInt(dep);
+    }
+
+    public void streamOutOfContextBatch(int obj, int ctx, int dep, long offset, long size) {
+        buffer.put(TornadoVMBytecodes.STREAM_OUT_BATCH.index);
+        buffer.putInt(obj);
+        buffer.putInt(ctx);
+        buffer.putInt(dep);
+        buffer.putLong(offset);
+        buffer.putLong(size);
     }
 
     public void launch(int gtid, int ctx, int task, int numParameters, int dep) {
@@ -143,6 +178,17 @@ public class TornadoGraphAssembler {
         buffer.putInt(task);
         buffer.putInt(numParameters);
         buffer.putInt(dep);
+    }
+
+    public void launchBatch(int gtid, int ctx, int task, int numParameters, int dep, long offset, long size) {
+        buffer.put(TornadoVMBytecodes.LAUNCH_BATCH.index);
+        buffer.putInt(gtid);
+        buffer.putInt(ctx);
+        buffer.putInt(task);
+        buffer.putInt(numParameters);
+        buffer.putInt(dep);
+        buffer.putLong(offset);
+        buffer.putLong(size);
     }
 
     public void barrier(int dep) {

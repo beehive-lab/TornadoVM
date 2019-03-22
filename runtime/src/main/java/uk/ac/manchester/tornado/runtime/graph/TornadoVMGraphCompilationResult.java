@@ -80,18 +80,18 @@ public class TornadoVMGraphCompilationResult {
         }
     }
 
-    public void emitAsyncNodeBatch(TornadoGraph tornadoGraph, TornadoExecutionContext tornadoContext, AbstractNode node, int contextID, int dependencyBC, int offset) {
+    public void emitAsyncNodeBatch(AbstractNode node, int contextID, int dependencyBC, long offset, long batchSize) {
         if (node instanceof CopyInNode) {
-            asm.copyToContext(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC);
+            asm.copyToContextBatch(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
         } else if (node instanceof AllocateNode) {
-            asm.allocate(((AllocateNode) node).getValue().getIndex(), contextID);
+            asm.allocateBatch(((AllocateNode) node).getValue().getIndex(), contextID, offset, batchSize);
         } else if (node instanceof CopyOutNode) {
-            asm.streamOutOfContext(((CopyOutNode) node).getValue().getValue().getIndex(), contextID, dependencyBC);
+            asm.streamOutOfContextBatch(((CopyOutNode) node).getValue().getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
         } else if (node instanceof StreamInNode) {
-            asm.streamInToContext(((StreamInNode) node).getValue().getIndex(), contextID, dependencyBC);
+            asm.streamInToContextBatch(((StreamInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
         } else if (node instanceof TaskNode) {
             final TaskNode taskNode = (TaskNode) node;
-            asm.launch(globalTaskID, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC);
+            asm.launchBatch(globalTaskID, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC, offset, batchSize);
             emitArgList(taskNode);
             incTaskID();
         }
