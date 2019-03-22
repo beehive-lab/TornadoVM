@@ -75,19 +75,11 @@ public interface TornadoDevice {
 
     int ensureAllocated(Object object, TornadoDeviceObjectState state);
 
-    int ensurePresent(Object object, TornadoDeviceObjectState objectState);
-
     int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events);
-
-    int streamIn(Object object, TornadoDeviceObjectState objectState);
 
     int streamIn(Object object, TornadoDeviceObjectState objectState, int[] events);
 
-    int streamOut(Object object, TornadoDeviceObjectState objectState);
-
     int streamOut(Object object, TornadoDeviceObjectState objectState, int[] list);
-
-    void streamOutBlocking(Object object, TornadoDeviceObjectState objectState);
 
     void streamOutBlocking(Object object, TornadoDeviceObjectState objectState, int[] list);
 

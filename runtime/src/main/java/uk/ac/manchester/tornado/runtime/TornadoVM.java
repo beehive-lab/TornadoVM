@@ -203,7 +203,6 @@ public class TornadoVM extends TornadoLogger {
 
         while (buffer.hasRemaining()) {
             final byte op = buffer.get();
-
             if (op == TornadoVMBytecodes.ALLOCATE_BATCH.index()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
@@ -253,11 +252,7 @@ public class TornadoVM extends TornadoLogger {
                 }
                 bytecodesList.append(verbose + "\n");
 
-                if (useDependencies) {
-                    lastEvent = device.ensurePresent(object, objectState, waitList);
-                } else {
-                    lastEvent = device.ensurePresent(object, objectState);
-                }
+                lastEvent = device.ensurePresent(object, objectState, waitList);
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
@@ -290,11 +285,7 @@ public class TornadoVM extends TornadoLogger {
                     debug("vm: state=%s", objectState);
                 }
 
-                if (useDependencies) {
-                    lastEvent = device.streamIn(object, objectState, waitList);
-                } else {
-                    lastEvent = device.streamIn(object, objectState);
-                }
+                lastEvent = device.streamIn(object, objectState, waitList);
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
@@ -323,11 +314,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
-                if (useDependencies) {
-                    lastEvent = device.streamOut(object, objectState, waitList);
-                } else {
-                    lastEvent = device.streamOut(object, objectState);
-                }
+                lastEvent = device.streamOut(object, objectState, waitList);
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
@@ -356,15 +343,11 @@ public class TornadoVM extends TornadoLogger {
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
-                if (useDependencies) {
-                    lastEvent = device.streamOut(object, objectState, waitList);
-                } else {
-                    lastEvent = device.streamOut(object, objectState);
-                }
-
+                lastEvent = device.streamOut(object, objectState, waitList);
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
+
             } else if (op == TornadoVMBytecodes.LAUNCH_BATCH.index()) {
                 final int gtid = buffer.getInt();
                 final int contextIndex = buffer.getInt();
@@ -614,11 +597,7 @@ public class TornadoVM extends TornadoLogger {
                     debug("vm: state=%s", objectState);
                 }
 
-                if (useDependencies) {
-                    lastEvent = device.ensurePresent(object, objectState, waitList);
-                } else {
-                    lastEvent = device.ensurePresent(object, objectState);
-                }
+                lastEvent = device.ensurePresent(object, objectState, waitList);
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
@@ -646,11 +625,7 @@ public class TornadoVM extends TornadoLogger {
                     debug("vm: state=%s", objectState);
                 }
 
-                if (useDependencies) {
-                    lastEvent = device.streamIn(object, objectState, waitList);
-                } else {
-                    lastEvent = device.streamIn(object, objectState);
-                }
+                lastEvent = device.streamIn(object, objectState, waitList);
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
@@ -674,11 +649,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
-                if (useDependencies) {
-                    lastEvent = device.streamOut(object, objectState, waitList);
-                } else {
-                    lastEvent = device.streamOut(object, objectState);
-                }
+                lastEvent = device.streamOut(object, objectState, waitList);
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
@@ -702,12 +673,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
-                if (useDependencies) {
-                    lastEvent = device.streamOut(object, objectState, waitList);
-                } else {
-                    lastEvent = device.streamOut(object, objectState);
-                }
-
+                lastEvent = device.streamOut(object, objectState, waitList);
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }

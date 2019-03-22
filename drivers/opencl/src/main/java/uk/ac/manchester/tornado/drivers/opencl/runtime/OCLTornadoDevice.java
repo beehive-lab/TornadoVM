@@ -417,12 +417,6 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int ensurePresent(Object object, TornadoDeviceObjectState state) {
-        ensurePresent(object, state, null);
-        return -1;
-    }
-
-    @Override
     public int ensurePresent(Object object, TornadoDeviceObjectState state, int[] events) {
         if (!state.isValid()) {
             ensureAllocated(object, state);
@@ -436,36 +430,18 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int streamIn(Object object, TornadoDeviceObjectState state) {
-        streamIn(object, state, null);
-        return -1;
-    }
-
-    @Override
     public int streamIn(Object object, TornadoDeviceObjectState state, int[] events) {
         if (!state.isValid()) {
             ensureAllocated(object, state);
         }
         state.setContents(true);
         return state.getBuffer().enqueueWrite(object, events, events == null);
-
-    }
-
-    @Override
-    public int streamOut(Object object, TornadoDeviceObjectState state) {
-        streamOut(object, state, null);
-        return -1;
     }
 
     @Override
     public int streamOut(Object object, TornadoDeviceObjectState state, int[] list) {
         TornadoInternalError.guarantee(state.isValid(), "invalid variable");
         return state.getBuffer().enqueueRead(object, list, list == null);
-    }
-
-    @Override
-    public void streamOutBlocking(Object object, TornadoDeviceObjectState state) {
-        streamOutBlocking(object, state, null);
     }
 
     @Override
@@ -483,7 +459,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     public void sync(Object object) {
         final DeviceObjectState state = TornadoCoreRuntime.getTornadoRuntime().resolveObject(object).getDeviceState(this);
-        resolveEvent(streamOut(object, state)).waitOn();
+        resolveEvent(streamOut(object, state, null)).waitOn();
     }
 
     @Override

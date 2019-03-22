@@ -107,17 +107,6 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int streamOut(Object object, TornadoDeviceObjectState objectState) {
-        TornadoInternalError.unimplemented();
-        return -1;
-    }
-
-    @Override
-    public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState) {
-        TornadoInternalError.unimplemented();
-    }
-
-    @Override
     public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState, int[] list) {
         TornadoInternalError.unimplemented();
     }
@@ -149,18 +138,6 @@ public class JVMMapping implements TornadoAcceleratorDevice {
 
     @Override
     public int ensureAllocated(Object object, TornadoDeviceObjectState state) {
-        // TODO Auto-generated method stub
-        return -1;
-    }
-
-    @Override
-    public int ensurePresent(Object object, TornadoDeviceObjectState objectState) {
-        // TODO Auto-generated method stub
-        return -1;
-    }
-
-    @Override
-    public int streamIn(Object object, TornadoDeviceObjectState objectState) {
         // TODO Auto-generated method stub
         return -1;
     }
