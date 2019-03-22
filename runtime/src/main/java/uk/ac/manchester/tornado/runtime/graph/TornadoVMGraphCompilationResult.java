@@ -29,7 +29,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.runtime.graph.nodes.*;
 
-public class GraphCompilationResult {
+public class TornadoVMGraphCompilationResult {
 
     private static final int MAX_TORNADOVM_BYTECODE_SIZE = Integer.parseInt(getProperty("tornado.tvm.maxbytecodesize", "1024"));
 
@@ -37,7 +37,7 @@ public class GraphCompilationResult {
     private TornadoGraphAssembler asm;
     private int globalTaskID;
 
-    public GraphCompilationResult() {
+    public TornadoVMGraphCompilationResult() {
         code = new byte[MAX_TORNADOVM_BYTECODE_SIZE];
         asm = new TornadoGraphAssembler(code);
         globalTaskID = 0;

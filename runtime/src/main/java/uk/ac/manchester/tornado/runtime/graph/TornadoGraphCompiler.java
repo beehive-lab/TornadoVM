@@ -56,9 +56,9 @@ public class TornadoGraphCompiler {
      * 
      * @param graph
      * @param context
-     * @return {@link GraphCompilationResult}
+     * @return {@link TornadoVMGraphCompilationResult}
      */
-    public static GraphCompilationResult compile(TornadoGraph graph, ExecutionContext context, long batchSize) {
+    public static TornadoVMGraphCompilationResult compile(TornadoGraph graph, ExecutionContext context, long batchSize) {
         final BitSet deviceContexts = graph.filter(ContextNode.class);
         if (deviceContexts.cardinality() == 1) {
             final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
@@ -72,9 +72,9 @@ public class TornadoGraphCompiler {
     /*
      * Simplest case where all tasks are executed on the same device
      */
-    private static GraphCompilationResult compileSingleContext(TornadoGraph graph, ExecutionContext context, TornadoAcceleratorDevice device, long batchSize) {
+    private static TornadoVMGraphCompilationResult compileSingleContext(TornadoGraph graph, ExecutionContext context, TornadoAcceleratorDevice device, long batchSize) {
 
-        final GraphCompilationResult result = new GraphCompilationResult();
+        final TornadoVMGraphCompilationResult result = new TornadoVMGraphCompilationResult();
 
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
@@ -125,7 +125,7 @@ public class TornadoGraphCompiler {
      * @param result
      * @param numDepLists
      */
-    private static void synchronizeOperationLastByteCode(GraphCompilationResult result, int numDepLists) {
+    private static void synchronizeOperationLastByteCode(TornadoVMGraphCompilationResult result, int numDepLists) {
         final byte[] code = result.getCode();
         final int codeSize = result.getCodeSize();
         if (code[codeSize - 13] == TornadoVMBytecodes.STREAM_OUT.index()) {
@@ -136,7 +136,7 @@ public class TornadoGraphCompiler {
     }
 
     @SuppressWarnings("unused")
-    private static void optimise(GraphCompilationResult result, TornadoGraph graph, ExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
+    private static void optimise(TornadoVMGraphCompilationResult result, TornadoGraph graph, ExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
         printMatrix(graph, nodeIds, deps, tasks);
         for (int i = tasks.nextSetBit(0); i >= 0; i = tasks.nextSetBit(i + 1)) {
             BitSet dependents = new BitSet(deps[i].length());
@@ -196,7 +196,7 @@ public class TornadoGraphCompiler {
         }
     }
 
-    private static void scheduleAndEmitTornadoVMBytecodes(GraphCompilationResult result, TornadoGraph graph, ExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
+    private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMGraphCompilationResult result, TornadoGraph graph, ExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
 
         final BitSet scheduled = new BitSet(deps.length);
         scheduled.clear();

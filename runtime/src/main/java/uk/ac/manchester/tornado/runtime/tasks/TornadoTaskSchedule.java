@@ -81,7 +81,7 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
-import uk.ac.manchester.tornado.runtime.graph.GraphCompilationResult;
+import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompilationResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphCompiler;
@@ -99,7 +99,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private byte[] hlcode = new byte[2048];
     private ByteBuffer hlBuffer;
-    private GraphCompilationResult result;
+    private TornadoVMGraphCompilationResult result;
     private long batchSizeBytes = -1;
 
     // One TornadoVM instance per TaskSchedule
