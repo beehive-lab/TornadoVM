@@ -63,7 +63,24 @@ public class TornadoVMGraphCompilationResult {
         globalTaskID++;
     }
 
-    public void emitAsyncNode(TornadoGraph tornadoGraph, ExecutionContext tornadoContext, AbstractNode node, int contextID, int dependencyBC) {
+    public void emitAsyncNode(AbstractNode node, int contextID, int dependencyBC) {
+        if (node instanceof CopyInNode) {
+            asm.copyToContext(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC);
+        } else if (node instanceof AllocateNode) {
+            asm.allocate(((AllocateNode) node).getValue().getIndex(), contextID);
+        } else if (node instanceof CopyOutNode) {
+            asm.streamOutOfContext(((CopyOutNode) node).getValue().getValue().getIndex(), contextID, dependencyBC);
+        } else if (node instanceof StreamInNode) {
+            asm.streamInToContext(((StreamInNode) node).getValue().getIndex(), contextID, dependencyBC);
+        } else if (node instanceof TaskNode) {
+            final TaskNode taskNode = (TaskNode) node;
+            asm.launch(globalTaskID, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC);
+            emitArgList(taskNode);
+            incTaskID();
+        }
+    }
+
+    public void emitAsyncNodeBatch(TornadoGraph tornadoGraph, ExecutionContext tornadoContext, AbstractNode node, int contextID, int dependencyBC, int offset) {
         if (node instanceof CopyInNode) {
             asm.copyToContext(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC);
         } else if (node instanceof AllocateNode) {

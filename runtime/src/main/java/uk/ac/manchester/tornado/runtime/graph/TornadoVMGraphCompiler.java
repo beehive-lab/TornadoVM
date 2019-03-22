@@ -52,7 +52,7 @@ import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 public class TornadoVMGraphCompiler {
 
     /**
-     * Generate Tornado bytecode from a Tornado Task Graph.
+     * Generate TornadoVM byte-code from a Tornado Task Graph.
      * 
      * @param graph
      * @param context
@@ -78,20 +78,20 @@ public class TornadoVMGraphCompiler {
 
         final BitSet asyncNodes = graph.filter((AbstractNode n) -> n instanceof ContextOpNode);
 
-        final BitSet[] deps = new BitSet[asyncNodes.cardinality()];
+        final BitSet[] dependencies = new BitSet[asyncNodes.cardinality()];
         final BitSet tasks = new BitSet(asyncNodes.cardinality());
         final int[] nodeIds = new int[asyncNodes.cardinality()];
         int index = 0;
         int numDepLists = 0;
         for (int i = asyncNodes.nextSetBit(0); i != -1 && i < asyncNodes.length(); i = asyncNodes.nextSetBit(i + 1)) {
-            deps[index] = calculateDeps(graph, context, i);
+            dependencies[index] = calculateDeps(graph, context, i);
             nodeIds[index] = i;
 
             if (graph.getNode(i) instanceof TaskNode) {
                 tasks.set(index);
             }
 
-            if (!deps[index].isEmpty()) {
+            if (!dependencies[index].isEmpty()) {
                 numDepLists++;
             }
             index++;
@@ -101,12 +101,12 @@ public class TornadoVMGraphCompiler {
         result.begin(1, tasks.cardinality(), numDepLists + 1);
 
         // Generate all byte-codes for the input tasks
-        scheduleAndEmitTornadoVMBytecodes(result, graph, context, nodeIds, deps, tasks);
+        scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies);
 
         if (batchSize != -1) {
             // Process in batches
             // how many of these? => ( inputSize / batchSize )
-            scheduleAndEmitTornadoVMBytecodes(result, graph, context, nodeIds, deps, tasks);
+            scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies);
         }
 
         // Last operation -> perform synchronisation
@@ -196,7 +196,7 @@ public class TornadoVMGraphCompiler {
         }
     }
 
-    private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMGraphCompilationResult result, TornadoGraph graph, ExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
+    private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMGraphCompilationResult result, TornadoGraph graph, int[] nodeIds, BitSet[] deps) {
 
         final BitSet scheduled = new BitSet(deps.length);
         scheduled.clear();
@@ -225,7 +225,7 @@ public class TornadoVMGraphCompiler {
                     if (outstandingDeps.isEmpty()) {
                         final ContextOpNode asyncNode = (ContextOpNode) graph.getNode(nodeIds[i]);
 
-                        result.emitAsyncNode(graph, context, asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i]);
+                        result.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i]);
 
                         for (int j = 0; j < deps.length; j++) {
                             if (j == i) {
