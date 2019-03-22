@@ -194,8 +194,8 @@ public class TornadoVMGraphCompiler {
         final int codeSize = result.getCodeSize();
         if (code[codeSize - 13] == TornadoVMBytecodes.STREAM_OUT.index()) {
             code[codeSize - 13] = TornadoVMBytecodes.STREAM_OUT_BLOCKING.index();
-        } else if (code[codeSize - 13] == TornadoVMBytecodes.STREAM_OUT_BATCH.index()) {
-            code[codeSize - 13] = TornadoVMBytecodes.STREAM_OUT_BLOCKING_BATCH.index();
+        } else if (code[codeSize - 29] == TornadoVMBytecodes.STREAM_OUT_BATCH.index()) {
+            code[codeSize - 29] = TornadoVMBytecodes.STREAM_OUT_BLOCKING_BATCH.index();
         } else {
             result.barrier(numDepLists);
         }

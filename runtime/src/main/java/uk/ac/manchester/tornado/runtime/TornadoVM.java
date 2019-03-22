@@ -241,16 +241,15 @@ public class TornadoVM extends TornadoLogger {
                 final TornadoAcceleratorDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
 
-                if (graphContext.meta().isDebug()) {
-                    debug("vm: COPY_IN_BATCH [0x%x] %s on %s [event list=%d]", object.hashCode(), object, device, eventList);
-                }
-                bytecodesList.append(String.format("COPY_IN_BATCH [0x%x] %s on %s [event list=%d]\n", object.hashCode(), object, device, eventList));
-
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
+                String verbose = String.format("vm: COPY_IN_BATCH [Object Hash Code=0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset,
+                        eventList);
                 if (graphContext.meta().isDebug()) {
                     debug("vm: state=%s", objectState);
+                    debug(verbose);
                 }
+                bytecodesList.append(verbose + "\n");
 
                 if (useDependencies) {
                     lastEvent = device.ensurePresent(object, objectState, waitList);
@@ -276,10 +275,12 @@ public class TornadoVM extends TornadoLogger {
 
                 final TornadoAcceleratorDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
+
+                String verbose = String.format("vm: STREAM_IN_BATCH [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
                 if (graphContext.meta().isDebug()) {
-                    debug("vm: STREAM_IN_BATCH [0x%x] %s on %s [event list=%d]", object.hashCode(), object, device, eventList);
+                    debug(verbose);
                 }
-                bytecodesList.append(String.format("STREAM_IN_BATCH [0x%x] %s on %s [event list=%d]\n", object.hashCode(), object, device, eventList));
+                bytecodesList.append(verbose + "\n");
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
@@ -312,10 +313,11 @@ public class TornadoVM extends TornadoLogger {
                 final TornadoAcceleratorDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
 
+                String verbose = String.format("vm: STREAM_OUT_BATCH [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
                 if (graphContext.meta().isDebug()) {
-                    debug("vm: STREAM_OUT_BATCH [0x%x] %s on %s [event list=%d]", object.hashCode(), object, device, eventList);
+                    debug(verbose);
                 }
-                bytecodesList.append(String.format("STREAM_OUT_BATCH [0x%x] %s on %s [event list=%d]\n", object.hashCode(), object, device, eventList));
+                bytecodesList.append(verbose + "\n");
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
@@ -344,10 +346,11 @@ public class TornadoVM extends TornadoLogger {
                 final TornadoAcceleratorDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
 
+                String verbose = String.format("vm: STREAM_OUT_BLOCKING_BATCH [0x%x] %s on %s, size=%d, offset=%d [event list=%d]", object.hashCode(), object, device, sizeBatch, offset, eventList);
                 if (graphContext.meta().isDebug()) {
-                    debug("vm: STREAM_OUT_BLOCKING_BATCH [0x%x] %s on %s [event list=%d]", object.hashCode(), object, device, eventList);
+                    debug(verbose);
                 }
-                bytecodesList.append(String.format("STREAM_OUT_BLOCKING_BATCH [0x%x] %s on %s [event list=%d]\n", object.hashCode(), object, device, eventList));
+                bytecodesList.append(verbose + "\n");
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
@@ -378,10 +381,11 @@ public class TornadoVM extends TornadoLogger {
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
                 final SchedulableTask task = tasks.get(taskIndex);
 
+                String verbose = String.format("vm: LAUNCH_BATCH %s on %s [event list=%d]", task.getName(), contexts.get(contextIndex), eventList);
                 if (graphContext.meta().isDebug()) {
-                    debug("vm: LAUNCH_BATCH %s on %s [event list=%d]", task.getName(), contexts.get(contextIndex), eventList);
+                    debug(verbose);
                 }
-                bytecodesList.append(String.format("LAUNCH_BATCH %s on %s [event list=%d]\n", task.getName(), contexts.get(contextIndex), eventList));
+                bytecodesList.append(verbose + "\n");
 
                 if (installedCodes[taskIndex] == null) {
                     final long compileStart = System.nanoTime();
@@ -463,10 +467,11 @@ public class TornadoVM extends TornadoLogger {
                     continue;
                 }
                 if (useDependencies && lastEvent != -1) {
+                    String verbose = String.format("vm: ADD_DEP %s to event list %d", lastEvent, eventList);
                     if (graphContext.meta().isDebug()) {
-                        debug("vm: ADD_DEP %s to event list %d", lastEvent, eventList);
+                        debug(verbose);
                     }
-                    bytecodesList.append(String.format("ADD_DEP %s to event list %d\n", lastEvent, eventList));
+                    bytecodesList.append(verbose + "\n");
 
                     TornadoInternalError.guarantee(eventsIndicies[eventList] < events[eventList].length, "event list is too small");
                     events[eventList][eventsIndicies[eventList]] = lastEvent;
