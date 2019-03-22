@@ -207,7 +207,8 @@ public class TornadoVM extends TornadoLogger {
             if (op == TornadoVMBytecodes.ALLOCATE_BATCH.index()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
-                final long offset = buffer.getLong();
+                final long offset = buffer.getLong(); // << XXX We may not need
+                                                      // offset
                 final long sizeBatch = buffer.getLong();
 
                 if (isWarmup) {
@@ -217,10 +218,11 @@ public class TornadoVM extends TornadoLogger {
                 final TornadoAcceleratorDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
 
+                String verbose = String.format("vm: ALLOCATE_BATCH [0x%x] %s on %s, size=%d", object.hashCode(), object, device, sizeBatch);
                 if (graphContext.meta().isDebug()) {
-                    debug("vm: ALLOCATE_BATCH [0x%x] %s on %s", object.hashCode(), object, device);
+                    debug(verbose);
                 }
-                bytecodesList.append(String.format("ALLOCATE BATCH [0x%x] %s on %s\n", object.hashCode(), object, device));
+                bytecodesList.append(verbose + "\n");
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
                 lastEvent = device.ensureAllocated(object, objectState);
