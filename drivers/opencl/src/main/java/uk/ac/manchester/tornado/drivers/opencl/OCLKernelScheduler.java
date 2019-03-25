@@ -43,14 +43,14 @@ public abstract class OCLKernelScheduler {
         deviceContext = context;
     }
 
-    public abstract void calculateGlobalWork(final TaskMetaData meta);
+    public abstract void calculateGlobalWork(final TaskMetaData meta, long batchThreads);
 
     public abstract void calculateLocalWork(final TaskMetaData meta);
 
-    public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents) {
+    public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
 
         if (!meta.isGlobalWorkDefined()) {
-            calculateGlobalWork(meta);
+            calculateGlobalWork(meta, batchThreads);
         }
 
         if (!meta.isLocalWorkDefined()) {

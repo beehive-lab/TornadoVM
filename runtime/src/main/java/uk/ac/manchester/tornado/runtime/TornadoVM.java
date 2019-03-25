@@ -358,7 +358,7 @@ public class TornadoVM extends TornadoLogger {
                 final int eventList = buffer.getInt();
 
                 final long offset = buffer.getLong();
-                final long sizeBatch = buffer.getLong();
+                final long batchThreads = buffer.getLong();
 
                 final TornadoAcceleratorDevice device = contexts.get(contextIndex);
                 boolean redeployOnDevice = graphContext.redeployOnDevice();
@@ -368,7 +368,7 @@ public class TornadoVM extends TornadoLogger {
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
                 final SchedulableTask task = tasks.get(taskIndex);
 
-                String verbose = String.format("vm: LAUNCH_BATCH %s on %s, size=%d, offset=%d [event list=%d]", task.getName(), contexts.get(contextIndex), sizeBatch, offset, eventList);
+                String verbose = String.format("vm: LAUNCH_BATCH %s on %s, size=%d, offset=%d [event list=%d]", task.getName(), contexts.get(contextIndex), batchThreads, offset, eventList);
                 if (graphContext.meta().isDebug()) {
                     debug(verbose);
                 }
@@ -441,9 +441,9 @@ public class TornadoVM extends TornadoLogger {
                 }
 
                 if (useDependencies) {
-                    lastEvent = installedCode.launchWithDeps(stack, metadata, waitList);
+                    lastEvent = installedCode.launchWithDeps(stack, metadata, batchThreads, waitList);
                 } else {
-                    lastEvent = installedCode.launchWithoutDeps(stack, metadata);
+                    lastEvent = installedCode.launchWithoutDeps(stack, metadata, batchThreads);
                 }
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
@@ -766,9 +766,9 @@ public class TornadoVM extends TornadoLogger {
                 }
 
                 if (useDependencies) {
-                    lastEvent = installedCode.launchWithDeps(stack, metadata, waitList);
+                    lastEvent = installedCode.launchWithDeps(stack, metadata, 0, waitList);
                 } else {
-                    lastEvent = installedCode.launchWithoutDeps(stack, metadata);
+                    lastEvent = installedCode.launchWithoutDeps(stack, metadata, 0);
                 }
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;

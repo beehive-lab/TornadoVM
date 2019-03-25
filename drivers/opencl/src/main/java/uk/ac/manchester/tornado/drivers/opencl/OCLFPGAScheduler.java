@@ -37,7 +37,7 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
     }
 
     @Override
-    public void calculateGlobalWork(final TaskMetaData meta) {
+    public void calculateGlobalWork(final TaskMetaData meta, long batchThreads) {
         final long[] globalWork = meta.getGlobalWork();
 
         for (int i = 0; i < meta.getDims(); i++) {

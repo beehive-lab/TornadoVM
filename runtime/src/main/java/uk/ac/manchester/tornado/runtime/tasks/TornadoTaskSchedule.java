@@ -1308,10 +1308,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (matcher.find()) {
             value = Long.parseLong(matcher.group(1));
             units = matcher.group(2).toUpperCase();
-            if (Tornado.DEBUG) {
-                System.out.println("VAUE: " + value);
-                System.out.println("UNITS: " + units);
-            }
         }
 
         // compute bytes

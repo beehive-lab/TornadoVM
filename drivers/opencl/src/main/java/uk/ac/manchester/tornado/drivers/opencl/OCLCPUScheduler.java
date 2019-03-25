@@ -38,7 +38,7 @@ public class OCLCPUScheduler extends OCLKernelScheduler {
     }
 
     @Override
-    public void calculateGlobalWork(final TaskMetaData meta) {
+    public void calculateGlobalWork(final TaskMetaData meta, long batchThreads) {
         long[] maxItems = deviceContext.getDevice().getDeviceMaxWorkItemSizes();
 
         final long[] globalWork = meta.getGlobalWork();

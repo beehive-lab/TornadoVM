@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.examples;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -53,7 +54,8 @@ public class InitBatch {
         System.out.println("Running with size: " + size);
         System.out.println("Input size: " + bytesToAllocate + " (MB)");
         float[] array = new float[size];
-        Arrays.fill(array, 1.0f);
+
+        IntStream.range(0, array.length).sequential().forEach(idx -> array[idx] = idx);
 
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
         long maxDeviceMemory = device.getMaxAllocMemory();
@@ -72,7 +74,7 @@ public class InitBatch {
             boolean check = true;
             for (int i = 0; i < array.length; i++) {
                 float v = array[i];
-                if (v != 101.0f) {
+                if (v != i + 100) {
                     check = false;
                     System.out.println("Result got: " + v + " in INDEX: " + i);
                     break;

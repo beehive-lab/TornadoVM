@@ -34,7 +34,6 @@ import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.OCLFPGAScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLGPUScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernelScheduler;
@@ -104,9 +103,9 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         } else {
             if (meta != null && meta.isParallel()) {
                 if (meta.enableThreadCoarsener()) {
-                    task = DEFAULT_SCHEDULER.submit(kernel, meta, null);
+                    task = DEFAULT_SCHEDULER.submit(kernel, meta, null, 0);
                 } else {
-                    task = scheduler.submit(kernel, meta, null);
+                    task = scheduler.submit(kernel, meta, null, 0);
                 }
             } else {
                 task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
@@ -201,7 +200,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         kernel.setArgUnused(index);
     }
 
-    public int submitWithEvents(final OCLCallStack stack, final TaskMetaData meta, final int[] events) {
+    public int submitWithEvents(final OCLCallStack stack, final TaskMetaData meta, final int[] events, long batchThreads) {
 
         if (DEBUG) {
             info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getDeviceName());
@@ -209,7 +208,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
 
         /*
-         * Only set the kernel arguments if they are either: - not set or - have changed
+         * Only set the kernel arguments if they are either: - not set or - have
+         * changed
          */
         final int[] waitEvents;
         if (!stack.isOnDevice()) {
@@ -228,9 +228,9 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         } else {
             if (meta.isParallel()) {
                 if (meta.enableThreadCoarsener()) {
-                    task = DEFAULT_SCHEDULER.submit(kernel, meta, waitEvents);
+                    task = DEFAULT_SCHEDULER.submit(kernel, meta, waitEvents, batchThreads);
                 } else {
-                    task = scheduler.submit(kernel, meta, waitEvents);
+                    task = scheduler.submit(kernel, meta, waitEvents, batchThreads);
                 }
             } else {
                 if (meta.isDebug()) {
@@ -261,7 +261,46 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return task;
     }
 
-    public void submitWithoutEvents(final OCLCallStack stack, final TaskMetaData meta) {
+    private void executeSingleThread() {
+        deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
+    }
+
+    private void executeInParallel(final OCLCallStack stack, final TaskMetaData meta, long batchThreads) {
+        final int task;
+        if (meta.isParallel()) {
+            if (meta.enableThreadCoarsener()) {
+                task = DEFAULT_SCHEDULER.submit(kernel, meta, null, batchThreads);
+            } else {
+                task = scheduler.submit(kernel, meta, null, batchThreads);
+            }
+        } else {
+            if (meta.isDebug()) {
+                System.out.println("Running on: ");
+                System.out.println("\tPlatform: " + meta.getDevice().getPlatformName());
+                if (meta.getDevice() instanceof OCLTornadoDevice) {
+                    System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getDevice()).getDevice().getDeviceName());
+                }
+            }
+
+            if (meta.getGlobalWork() == null) {
+                task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
+            } else {
+                task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, meta.getGlobalWork(), meta.getLocalWork(), null);
+            }
+        }
+
+        if (meta.shouldDumpProfiles()) {
+            deviceContext.retainEvent(task);
+            meta.addProfile(task);
+        }
+
+        // read the stack
+        if (meta.enableExceptions()) {
+            stack.enqueueRead(null);
+        }
+    }
+
+    public void submitWithoutEvents(final OCLCallStack stack, final TaskMetaData meta, long batchThreads) {
 
         if (DEBUG) {
             info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getDeviceName());
@@ -269,7 +308,8 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
 
         /*
-         * Only set the kernel arguments if they are either: - not set or - have changed
+         * Only set the kernel arguments if they are either: - not set or - have
+         * changed
          */
         if (!stack.isOnDevice()) {
             setKernelArgs(stack, meta);
@@ -277,51 +317,21 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
 
         guarantee(kernel != null, "kernel is null");
-
         if (meta == null) {
-            deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
+            executeSingleThread();
         } else {
-            final int task;
-            if (meta.isParallel()) {
-                if (meta.enableThreadCoarsener()) {
-                    task = DEFAULT_SCHEDULER.submit(kernel, meta, null);
-                } else {
-                    task = scheduler.submit(kernel, meta, null);
-                }
-            } else {
-                if (meta.isDebug()) {
-                    System.out.println("Running on: ");
-                    System.out.println("\tPlatform: " + meta.getDevice().getPlatformName());
-                    if (meta.getDevice() instanceof OCLTornadoDevice) {
-                        System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getDevice()).getDevice().getDeviceName());
-                    }
-                }
-                if (meta.getGlobalWork() == null) {
-                    task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
-                } else {
-                    task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, meta.getGlobalWork(), meta.getLocalWork(), null);
-                }
-            }
-
-            if (meta.shouldDumpProfiles()) {
-                deviceContext.retainEvent(task);
-                meta.addProfile(task);
-            }
-            // reads the results
-            if (meta.enableExceptions()) {
-                stack.enqueueRead(null);
-            }
+            executeInParallel(stack, meta, batchThreads);
         }
     }
 
     @Override
-    public int launchWithDeps(CallStack stack, TaskMetaData meta, int[] waitEvents) {
-        return submitWithEvents((OCLCallStack) stack, meta, waitEvents);
+    public int launchWithDeps(CallStack stack, TaskMetaData meta, long batchThreads, int[] waitEvents) {
+        return submitWithEvents((OCLCallStack) stack, meta, waitEvents, batchThreads);
     }
 
     @Override
-    public int launchWithoutDeps(CallStack stack, TaskMetaData meta) {
-        submitWithoutEvents((OCLCallStack) stack, meta);
+    public int launchWithoutDeps(CallStack stack, TaskMetaData meta, long batchThreads) {
+        submitWithoutEvents((OCLCallStack) stack, meta, batchThreads);
         return -1;
     }
 
