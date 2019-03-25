@@ -61,7 +61,7 @@ public class FieldBuffer {
         if (DEBUG) {
             trace("fieldBuffer: enqueueRead* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
-        return (useDeps) ? objectBuffer.enqueueRead(getFieldValue(ref), (useDeps) ? events : null, useDeps) : -1;
+        return (useDeps) ? objectBuffer.enqueueRead(getFieldValue(ref), 0, 0, (useDeps) ? events : null, useDeps) : -1;
     }
 
     public int enqueueWrite(final Object ref, final int[] events, boolean useDeps) {
@@ -101,7 +101,8 @@ public class FieldBuffer {
         if (DEBUG) {
             debug("fieldBuffer: read - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
-        objectBuffer.read(getFieldValue(ref), events, useDeps);
+        // XXX: Offset 0
+        objectBuffer.read(getFieldValue(ref), 0, events, useDeps);
     }
 
     public long toAbsoluteAddress() {

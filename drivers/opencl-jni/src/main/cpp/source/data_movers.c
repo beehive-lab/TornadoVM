@@ -100,8 +100,8 @@ WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, D, dou
 
 
 #define READ_ARRAY(CLASSNAME, SIG, TYPE) \
-    JNIEXPORT jlong JNICALL CLASSNAME ## _readArrayFromDevice__J_3 ## SIG ## ZJJJ_3J \
-        (JNIEnv *env, jclass clazz, jlong queue_id, j ## TYPE ## Array array1, jboolean blocking, jlong offset, jlong cb, jlong device_ptr, jlongArray array2) { \
+    JNIEXPORT jlong JNICALL CLASSNAME ## _readArrayFromDevice__J_3 ## SIG ## JZJJJ_3J \
+        (JNIEnv *env, jclass clazz, jlong queue_id, j ## TYPE ## Array array1, jlong hostOffset, jboolean blocking, jlong offset, jlong cb, jlong device_ptr, jlongArray array2) { \
             OPENCL_PROLOGUE; \
             cl_bool blocking_read = blocking ? CL_TRUE : CL_FALSE; \
             jsize num_bytes = (cb != -1) ? cb : (*env)->GetArrayLength(env, array1) * sizeof ( j ## TYPE ); \
@@ -111,7 +111,7 @@ WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, D, dou
                 printf("uk.ac.manchester.tornado.drivers.opencl> read array 0x%lx (%d bytes) to %p\n",offset, num_bytes, buffer);\
             }\
             cl_event event; \
-            cl_int status = clEnqueueReadBuffer((cl_command_queue) queue_id, (cl_mem) device_ptr, blocking, (size_t) offset, (size_t) num_bytes, (void *) buffer, (cl_uint) num_events, (cl_event*) events, &event);\
+            cl_int status = clEnqueueReadBuffer((cl_command_queue) queue_id, (cl_mem) device_ptr, blocking, (size_t) offset, (size_t) num_bytes, &buffer[hostOffset], (cl_uint) num_events, (cl_event*) events, &event);\
             if (status != CL_SUCCESS) {\
                 printf("[ERROR] clEnqueueReadBuffer, code = %d\n", status);\
                 printf("[ERROR] offset = %lld, size = %lld\n", offset, num_bytes);\

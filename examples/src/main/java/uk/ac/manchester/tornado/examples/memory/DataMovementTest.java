@@ -55,7 +55,7 @@ public class DataMovementTest {
         Arrays.fill(array, -1);
         printArray(array);
 
-        int readEvent = device.streamOut(array, deviceState, null);
+        int readEvent = device.streamOut(array, 0, 0, deviceState, null);
         device.resolveEvent(readEvent).waitOn();
 
         printArray(array);

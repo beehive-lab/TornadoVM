@@ -102,7 +102,7 @@ public class LocalObjectState {
     public Event sync(Object object) {
         if (isModified()) {
             TornadoAcceleratorDevice owner = getOwner();
-            int eventId = owner.streamOut(object, global.getDeviceState(owner), null);
+            int eventId = owner.streamOut(object, 0, 0, global.getDeviceState(owner), null);
             setModified(false);
             return owner.resolveEvent(eventId);
         }

@@ -39,8 +39,8 @@ public class OCLDoubleArrayWrapper extends OCLArrayWrapper<double[]> {
     }
 
     @Override
-    protected void readArrayData(long bufferId, long offset, long bytes, double[] value, int[] waitEvents) {
-        deviceContext.readBuffer(bufferId, offset, bytes, value, waitEvents);
+    protected void readArrayData(long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
+        deviceContext.readBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     @Override
@@ -49,8 +49,8 @@ public class OCLDoubleArrayWrapper extends OCLArrayWrapper<double[]> {
     }
 
     @Override
-    protected int enqueueReadArrayData(long bufferId, long offset, long bytes, double[] value, int[] waitEvents) {
-        return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, value, waitEvents);
+    protected int enqueueReadArrayData(long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     @Override

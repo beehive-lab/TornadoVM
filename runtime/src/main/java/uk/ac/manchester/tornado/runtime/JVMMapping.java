@@ -142,8 +142,7 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int streamOut(Object object, TornadoDeviceObjectState objectState, int[] list) {
-        // TODO Auto-generated method stub
+    public int streamOut(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] list) {
         return -1;
     }
 

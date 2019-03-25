@@ -347,17 +347,18 @@ public class OCLObjectWrapper implements ObjectBuffer {
 
     @Override
     public void read(Object object) {
-        read(object, null, false);
+        // XXX: offset 0
+        read(object, 0, null, false);
     }
 
     @Override
-    public void read(Object object, int[] events, boolean useDeps) {
+    public void read(Object object, long hostOffset, int[] events, boolean useDeps) {
         if (vectorObject) {
             final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
             fieldBuffer.read(object, events, useDeps);
         } else {
             buffer.position(buffer.capacity());
-            deviceContext.readBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), (useDeps) ? events : null);
+            deviceContext.readBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), hostOffset, (useDeps) ? events : null);
             for (int i = 0; i < fields.length; i++) {
                 if (wrappedFields[i] != null) {
                     wrappedFields[i].read(object);
@@ -418,28 +419,28 @@ public class OCLObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public int enqueueRead(Object ref, int[] events, boolean useDeps) {
+    public int enqueueRead(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
         final int returnEvent;
         if (vectorObject) {
             final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
-            returnEvent = fieldBuffer.enqueueRead(ref, (useDeps) ? events : null, useDeps);
+            returnEvent = fieldBuffer.enqueueRead(reference, (useDeps) ? events : null, useDeps);
         } else {
             int index = 0;
             Arrays.fill(internalEvents, -1);
 
             for (FieldBuffer fb : wrappedFields) {
                 if (fb != null) {
-                    internalEvents[index] = fb.enqueueRead(ref, (useDeps) ? events : null, useDeps);
+                    internalEvents[index] = fb.enqueueRead(reference, (useDeps) ? events : null, useDeps);
                     index++;
                 }
             }
 
             if (!isFinal) {
-                internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), (useDeps) ? events : null);
+                internalEvents[index] = deviceContext.enqueueReadBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), hostOffset, (useDeps) ? events : null);
                 index++;
 
                 // TODO this needs to run asynchronously
-                deserialise(ref);
+                deserialise(reference);
             }
 
             switch (index) {

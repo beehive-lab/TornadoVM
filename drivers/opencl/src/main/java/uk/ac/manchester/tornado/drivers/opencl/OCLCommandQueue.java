@@ -171,19 +171,19 @@ public class OCLCommandQueue extends TornadoLogger {
 
     native static long writeArrayToDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
-    native static long readArrayFromDevice(long queueId, byte[] buffer, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    native static long readArrayFromDevice(long queueId, byte[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
-    native static long readArrayFromDevice(long queueId, char[] buffer, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    native static long readArrayFromDevice(long queueId, char[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
-    native static long readArrayFromDevice(long queueId, short[] buffer, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    native static long readArrayFromDevice(long queueId, short[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
-    native static long readArrayFromDevice(long queueId, int[] buffer, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    native static long readArrayFromDevice(long queueId, int[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
-    native static long readArrayFromDevice(long queueId, long[] buffer, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    native static long readArrayFromDevice(long queueId, long[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
-    native static long readArrayFromDevice(long queueId, float[] buffer, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    native static long readArrayFromDevice(long queueId, float[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
-    native static long readArrayFromDevice(long queueId, double[] buffer, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
+    native static long readArrayFromDevice(long queueId, double[] buffer, long hostOffset, boolean blocking, long offset, long bytes, long ptr, long[] events) throws OCLException;
 
     /*
      * for OpenCL 1.1 compatibility
@@ -483,11 +483,12 @@ public class OCLCommandQueue extends TornadoLogger {
         return event;
     }
 
-    public int enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, byte[] array, int[] waitEvents) {
+    public int enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
         guarantee(array != null, "null array");
         int event = -1;
         try {
-            event = registerEvent(readArrayFromDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_BYTE, offset);
+            long eventID = readArrayFromDevice(id, array, hostOffset, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null);
+            event = registerEvent(eventID, DESC_READ_BYTE, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -495,27 +496,26 @@ public class OCLCommandQueue extends TornadoLogger {
         return event;
     }
 
-    public int enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, char[] array, int[] waitEvents) {
-        guarantee(array != null, "null array");
-        int event = -1;
-
-        try {
-            event = registerEvent(readArrayFromDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_BYTE, offset);
-        } catch (OCLException e) {
-            error(e.getMessage());
-        }
-
-        return event;
-    }
-
-    public int enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, int[] array, int[] waitEvents) {
+    public int enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, char[] array, long hostOffset, int[] waitEvents) {
         guarantee(array != null, "null array");
         int event = -1;
 
         try {
-            flush();
+            long eventID = readArrayFromDevice(id, array, hostOffset, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null);
+            event = registerEvent(eventID, DESC_READ_BYTE, offset);
+        } catch (OCLException e) {
+            error(e.getMessage());
+        }
 
-            event = registerEvent(readArrayFromDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_INT, offset);
+        return event;
+    }
+
+    public int enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
+        guarantee(array != null, "null array");
+        int event = -1;
+        try {
+            long eventID = readArrayFromDevice(id, array, hostOffset, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null);
+            event = registerEvent(eventID, DESC_READ_INT, offset);
 
         } catch (OCLException e) {
             error(e.getMessage());
@@ -524,12 +524,13 @@ public class OCLCommandQueue extends TornadoLogger {
         return event;
     }
 
-    public int enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, short[] array, int[] waitEvents) {
+    public int enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, short[] array, long hostOffset, int[] waitEvents) {
         guarantee(array != null, "array is null");
         int event = -1;
 
         try {
-            event = registerEvent(readArrayFromDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_SHORT, offset);
+            long eventID = readArrayFromDevice(id, array, hostOffset, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null);
+            event = registerEvent(eventID, DESC_READ_SHORT, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -537,12 +538,13 @@ public class OCLCommandQueue extends TornadoLogger {
         return event;
     }
 
-    public int enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, long[] array, int[] waitEvents) {
+    public int enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
         guarantee(array != null, "array is null");
         int event = -1;
 
         try {
-            event = registerEvent(readArrayFromDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_LONG, offset);
+            long eventID = readArrayFromDevice(id, array, hostOffset, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null);
+            event = registerEvent(eventID, DESC_READ_LONG, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -550,11 +552,12 @@ public class OCLCommandQueue extends TornadoLogger {
         return event;
     }
 
-    public int enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, float[] array, int[] waitEvents) {
+    public int enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {
         guarantee(array != null, "array is null");
         int event = -1;
         try {
-            event = registerEvent(readArrayFromDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_FLOAT, offset);
+            long eventID = readArrayFromDevice(id, array, hostOffset, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null);
+            event = registerEvent(eventID, DESC_READ_FLOAT, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -562,16 +565,15 @@ public class OCLCommandQueue extends TornadoLogger {
         return event;
     }
 
-    public int enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, double[] array, int[] waitEvents) {
+    public int enqueueRead(long devicePtr, boolean blocking, long offset, long bytes, double[] array, long hostOffset, int[] waitEvents) {
         guarantee(array != null, "array is null");
         int event = -1;
-
         try {
-            event = registerEvent(readArrayFromDevice(id, array, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null), DESC_READ_DOUBLE, offset);
+            long eventID = readArrayFromDevice(id, array, hostOffset, blocking, offset, bytes, devicePtr, serialiseEvents(waitEvents) ? waitEventsBuffer : null);
+            event = registerEvent(eventID, DESC_READ_DOUBLE, offset);
         } catch (OCLException e) {
             error(e.getMessage());
         }
-
         return event;
     }
 

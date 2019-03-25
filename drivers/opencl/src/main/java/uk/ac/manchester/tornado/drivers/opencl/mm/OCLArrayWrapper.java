@@ -160,14 +160,14 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public int enqueueRead(final Object value, final int[] events, boolean useDeps) {
+    public int enqueueRead(final Object value, long batchSize, long hostOffset, final int[] events, boolean useDeps) {
         final T array = cast(value);
         final int returnEvent;
         if (isFinal) {
-            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, (useDeps) ? events : null);
+            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         } else {
             internalEvents[1] = -1;
-            internalEvents[0] = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, (useDeps) ? events : null);
+            internalEvents[0] = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
             returnEvent = internalEvents[0];
         }
         return useDeps ? returnEvent : -1;
@@ -188,7 +188,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
      *            List of events to wait for.
      * @return Event information
      */
-    abstract protected int enqueueReadArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents);
+    abstract protected int enqueueReadArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
     @Override
     public int enqueueWrite(final Object value, long batchSize, long hostOffset, final int[] events, boolean useDeps) {
@@ -278,25 +278,26 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public void read(final Object value) {
-        read(value, null, false);
+        // XXX: offset null
+        read(value, 0, null, false);
     }
 
     @Override
-    public void read(final Object value, int[] events, boolean useDeps) {
+    public void read(final Object value, long hostOffset, int[] events, boolean useDeps) {
         final T array = cast(value);
 
         if (VALIDATE_ARRAY_HEADERS) {
             if (validateArrayHeader(array)) {
-                readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, (useDeps) ? events : null);
+                readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
             } else {
                 shouldNotReachHere("Array header is invalid");
             }
         } else {
-            readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, (useDeps) ? events : null);
+            readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         }
     }
 
-    abstract protected void readArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents);
+    abstract protected void readArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
     private long sizeOf(final T array) {
         return (long) arrayHeaderSize + ((long) Array.getLength(array) * (long) kind.getByteCount());

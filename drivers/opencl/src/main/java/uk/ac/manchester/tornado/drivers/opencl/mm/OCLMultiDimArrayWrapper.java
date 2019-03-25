@@ -129,8 +129,9 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
 
     private int readElements(T values) {
         final E[] elements = innerCast(values);
+        // XXX: Offset is 0
         for (int i = 0; i < elements.length; i++) {
-            wrappers[i].enqueueRead(elements[i], null, false);
+            wrappers[i].enqueueRead(elements[i], 0, 0, null, false);
         }
         return deviceContext.enqueueBarrier();
     }
@@ -141,7 +142,7 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
     }
 
     @Override
-    protected int enqueueReadArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents) {
+    protected int enqueueReadArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents) {
         return readElements(value);
     }
 
@@ -153,7 +154,7 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
     }
 
     @Override
-    protected void readArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents) {
+    protected void readArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents) {
         readElements(value);
     }
 

@@ -77,7 +77,7 @@ public class OCLByteBuffer {
     }
 
     public void read(final int[] events) {
-        deviceContext.readBuffer(toBuffer(), offset, bytes, buffer.array(), events);
+        deviceContext.readBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
     public int enqueueRead() {
@@ -85,7 +85,7 @@ public class OCLByteBuffer {
     }
 
     public int enqueueRead(final int[] events) {
-        return deviceContext.enqueueReadBuffer(toBuffer(), offset, bytes, buffer.array(), events);
+        return deviceContext.enqueueReadBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
     public void write() {

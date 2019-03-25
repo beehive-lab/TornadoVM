@@ -79,7 +79,7 @@ public interface TornadoDevice {
 
     int streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
 
-    int streamOut(Object object, TornadoDeviceObjectState objectState, int[] list);
+    int streamOut(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] list);
 
     void streamOutBlocking(Object object, TornadoDeviceObjectState objectState, int[] list);
 

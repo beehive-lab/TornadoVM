@@ -169,12 +169,14 @@ public class TornadoVMGraphCompiler {
             System.out.println("Genereting in batches");
             long offset = 0;
             for (int i = 0; i < sizeBatch.getTotalChunks(); i++) {
-                offset = (batchSize * i) / sizeBatch.getNumBytesType();
+                // offset = (batchSize * i) / sizeBatch.getNumBytesType();
+                offset = (batchSize * i);
                 System.out.println("Pointing in offset: " + offset);
                 scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies, offset, batchSize);
             }
             if (sizeBatch.getRemainingChunkSize() != 0) {
-                offset += (batchSize) / sizeBatch.getNumBytesType();
+                // offset += (batchSize) / sizeBatch.getNumBytesType();
+                offset += (batchSize);
                 System.out.println("Pointing in offset: " + offset);
                 scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies, offset, sizeBatch.remainingChunkSize);
             }

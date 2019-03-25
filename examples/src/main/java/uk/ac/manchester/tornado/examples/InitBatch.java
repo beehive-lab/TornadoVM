@@ -62,7 +62,7 @@ public class InitBatch {
 
         TaskSchedule ts = new TaskSchedule("s0");
         // @formatter:off
-        ts.batch("512MB")
+        ts.batch("100MB")
           .task("t0", InitBatch::compute, array)
           .streamOut((Object) array);
         // @formatter:on
