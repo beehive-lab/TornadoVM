@@ -36,10 +36,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 
-/**
- *
- * @author James Clarkson
- */
 public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
 
     private Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> innerWrapperFactory;
@@ -47,14 +43,14 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
     private long[] addresses;
     private OCLArrayWrapper<E>[] wrappers;
 
-    public OCLMultiDimArrayWrapper(OCLDeviceContext device, Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> factory) {
-        this(device, factory, false);
+    public OCLMultiDimArrayWrapper(OCLDeviceContext device, Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> factory, long batchSize) {
+        this(device, factory, false, batchSize);
     }
 
-    public OCLMultiDimArrayWrapper(OCLDeviceContext device, Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> factory, boolean isFinal) {
-        super(device, JavaKind.Object, isFinal);
+    public OCLMultiDimArrayWrapper(OCLDeviceContext device, Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> factory, boolean isFinal, long batchSize) {
+        super(device, JavaKind.Object, isFinal, batchSize);
         innerWrapperFactory = factory;
-        tableWrapper = new OCLLongArrayWrapper(device, false);
+        tableWrapper = new OCLLongArrayWrapper(device, false, batchSize);
     }
 
     @Override
@@ -94,22 +90,27 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void allocate(Object value) throws TornadoOutOfMemoryException, TornadoMemoryException {
+    public void allocate(Object value, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+
+        if (batchSize > 0) {
+            throw new TornadoMemoryException("[ERROR] BatchSize Allocation currently not supported. BatchSize = " + batchSize + " (bytes)");
+        }
+
         if (Array.getLength(value) < 0) {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated < 0: " + Array.getLength(value));
         }
         addresses = new long[Array.getLength(value)];
         wrappers = new OCLArrayWrapper[Array.getLength(value)];
-        tableWrapper.allocate(addresses);
-        allocateElements((T) value);
+        tableWrapper.allocate(addresses, batchSize);
+        allocateElements((T) value, batchSize);
     }
 
-    private void allocateElements(T values) {
+    private void allocateElements(T values, long batchSize) {
         final E[] elements = innerCast(values);
         try {
             for (int i = 0; i < elements.length; i++) {
                 wrappers[i] = innerWrapperFactory.apply(deviceContext);
-                wrappers[i].allocate(elements[i]);
+                wrappers[i].allocate(elements[i], batchSize);
                 addresses[i] = (OPENCL_USE_RELATIVE_ADDRESSES) ? wrappers[i].toRelativeAddress() : wrappers[i].toAbsoluteAddress();
             }
         } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
@@ -121,7 +122,7 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
     private int writeElements(T values) {
         final E[] elements = innerCast(values);
         for (int i = 0; i < elements.length; i++) {
-            wrappers[i].enqueueWrite(elements[i], null, false);
+            wrappers[i].enqueueWrite(elements[i], 0, 0, null, false);
         }
         return deviceContext.enqueueBarrier();
     }
@@ -134,6 +135,7 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
         return deviceContext.enqueueBarrier();
     }
 
+    @SuppressWarnings("unchecked")
     private E[] innerCast(T value) {
         return (E[]) value;
     }
@@ -144,21 +146,21 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
     }
 
     @Override
-    protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents) {
-        tableWrapper.enqueueWrite(addresses, null, false);
+    protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents) {
+        System.out.println("[WARNING] writing in offset 0");
+        tableWrapper.enqueueWrite(addresses, 0, 0, null, false);
         return writeElements(value);
     }
 
     @Override
     protected void readArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents) {
         readElements(value);
-        // tableWrapper.writeArrayData(bufferId, offset, bytes, addresses,
-        // waitEvents);
     }
 
     @Override
-    protected void writeArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents) {
-        tableWrapper.enqueueWrite(addresses, null, false);
+    protected void writeArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents) {
+        System.out.println("[WARNING] writing in offset 0");
+        tableWrapper.enqueueWrite(addresses, 0, 0, null, false);
         writeElements(value);
     }
 

@@ -160,32 +160,32 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     /*
      * Asynchronous writes to device
      */
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, byte[] array, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, char[] array, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, char[] array, long hostOffset, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, int[] array, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, long[] array, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, short[] array, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, short[] array, long hostOffset, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, float[] array, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
     }
 
-    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, double[] array, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array, waitEvents);
+    public int enqueueWriteBuffer(long bufferId, long offset, long bytes, double[] array, long hostOffset, int[] waitEvents) {
+        return queue.enqueueWrite(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
     }
 
     /*
@@ -225,32 +225,32 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     /*
      * Synchronous writes to device
      */
-    public void writeBuffer(long bufferId, long offset, long bytes, byte[] array, int[] waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
+    public void writeBuffer(long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes, char[] array, int[] waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
+    public void writeBuffer(long bufferId, long offset, long bytes, char[] array, long hostOffset, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes, int[] array, int[] waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
+    public void writeBuffer(long bufferId, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes, long[] array, int[] waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
+    public void writeBuffer(long bufferId, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes, short[] array, int[] waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
+    public void writeBuffer(long bufferId, long offset, long bytes, short[] array, long hostOffset, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes, float[] array, int[] waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
+    public void writeBuffer(long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
     }
 
-    public void writeBuffer(long bufferId, long offset, long bytes, double[] array, int[] waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, waitEvents);
+    public void writeBuffer(long bufferId, long offset, long bytes, double[] array, long hostOffset, int[] waitEvents) {
+        queue.enqueueWrite(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
     }
 
     /*

@@ -73,11 +73,11 @@ public interface TornadoDevice {
 
     void dumpMemory(String file);
 
-    int ensureAllocated(Object object, TornadoDeviceObjectState state);
+    int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state);
 
-    int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events);
+    int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long size, long hostOffset);
 
-    int streamIn(Object object, TornadoDeviceObjectState objectState, int[] events);
+    int streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
 
     int streamOut(Object object, TornadoDeviceObjectState objectState, int[] list);
 

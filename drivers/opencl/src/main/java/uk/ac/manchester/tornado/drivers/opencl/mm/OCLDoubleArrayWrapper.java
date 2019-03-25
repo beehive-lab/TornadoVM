@@ -30,12 +30,12 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 
 public class OCLDoubleArrayWrapper extends OCLArrayWrapper<double[]> {
 
-    public OCLDoubleArrayWrapper(OCLDeviceContext deviceContext) {
-        this(deviceContext, false);
+    public OCLDoubleArrayWrapper(OCLDeviceContext deviceContext, long batchSize) {
+        this(deviceContext, false, batchSize);
     }
 
-    public OCLDoubleArrayWrapper(OCLDeviceContext deviceContext, boolean isFinal) {
-        super(deviceContext, JavaKind.Double, isFinal);
+    public OCLDoubleArrayWrapper(OCLDeviceContext deviceContext, boolean isFinal, long batchSize) {
+        super(deviceContext, JavaKind.Double, isFinal, batchSize);
     }
 
     @Override
@@ -44,8 +44,8 @@ public class OCLDoubleArrayWrapper extends OCLArrayWrapper<double[]> {
     }
 
     @Override
-    protected void writeArrayData(long bufferId, long offset, long bytes, double[] value, int[] waitEvents) {
-        deviceContext.writeBuffer(bufferId, offset, bytes, value, waitEvents);
+    protected void writeArrayData(long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
+        deviceContext.writeBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     @Override
@@ -54,8 +54,8 @@ public class OCLDoubleArrayWrapper extends OCLArrayWrapper<double[]> {
     }
 
     @Override
-    protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, double[] value, int[] waitEvents) {
-        return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, value, waitEvents);
+    protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, double[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
 }

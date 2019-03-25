@@ -93,7 +93,8 @@ public class OCLByteBuffer {
     }
 
     public void write(final int[] events) {
-        deviceContext.writeBuffer(toBuffer(), offset, bytes, buffer.array(), events);
+        // XXX: offset 0
+        deviceContext.writeBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
     public int enqueueWrite() {
@@ -101,7 +102,8 @@ public class OCLByteBuffer {
     }
 
     public int enqueueWrite(final int[] events) {
-        return deviceContext.enqueueWriteBuffer(toBuffer(), offset, bytes, buffer.array(), events);
+        // XXX: offset 0
+        return deviceContext.enqueueWriteBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
     public void dump() {

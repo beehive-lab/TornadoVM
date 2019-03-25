@@ -20,7 +20,7 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: James Clarkson, Juan Fumero
  *
  */
 #include <jni.h>
@@ -38,7 +38,7 @@
 #define PRINT_DATA_SIZES 0
 
 #ifdef PRINT_DATA_TIMES
-#include "opencl_time_utils.h"
+    #include "opencl_time_utils.h"
 #endif
 
 #define CREATE_ARRAY(classname,sig,type) \
@@ -56,23 +56,25 @@
 CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, B, byte)
 CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, C, char)
 CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, I, int)
+CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, S, short)
 CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, J, long)
 CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, F, float)
 CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, D, double)
 
 #define WRITE_ARRAY(CLASSNAME,SIG,TYPE) \
-    JNIEXPORT jlong JNICALL CLASSNAME ## _writeArrayToDevice__J_3 ## SIG ## ZJJJ_3J \
-        (JNIEnv *env, jclass clazz, jlong queue_id, j ## TYPE ## Array array1, jboolean blocking, jlong offset, jlong cb, jlong device_ptr, jlongArray array2) { \
+    JNIEXPORT jlong JNICALL CLASSNAME ## _writeArrayToDevice__J_3 ## SIG ## JZJJJ_3J \
+        (JNIEnv *env, jclass clazz, jlong queue_id, j ## TYPE ## Array array1, jlong hostOffset, jboolean blocking, jlong offset, jlong cb, jlong device_ptr, jlongArray array2) {\
             OPENCL_PROLOGUE; \
             cl_bool blocking_write = blocking ? CL_TRUE : CL_FALSE; \
             jsize num_bytes = (cb != -1) ? cb : (*env)->GetArrayLength(env, array1) * sizeof ( j ## TYPE ); \
             OPENCL_DECODE_WAITLIST(array2, events, num_events) \
-            JNI_ACQUIRE_ARRAY(jbyte,buffer,array1);\
+            JNI_ACQUIRE_ARRAY(jbyte, buffer, array1);\
 	        if(PRINT_DATA_SIZES) { \
 	    	    printf("uk.ac.manchester.tornado.drivers.opencl> write array 0x%lx (%d bytes) from %p \n",offset, num_bytes, buffer);\
             } \
 	        cl_event event; \
-            cl_int status = clEnqueueWriteBuffer((cl_command_queue) queue_id, (cl_mem) device_ptr, blocking_write, (size_t) offset, (size_t) num_bytes, (void *) buffer,(cl_uint) num_events, (cl_event*) events, &event); \
+            printf("[JNI CALL] HOST OFFSET: %ld with size = %ld\n ", hostOffset, cb); \
+            cl_int status = clEnqueueWriteBuffer((cl_command_queue) queue_id, (cl_mem) device_ptr, blocking_write, (size_t) offset, (size_t) num_bytes, &buffer[hostOffset],(cl_uint) num_events, (cl_event*) events, &event);\
             if (status != CL_SUCCESS) {\
                 if (status == CL_MEM_OBJECT_ALLOCATION_FAILURE) {\
                     printf("[ERROR] clEnqueueWriteBuffer: CL_MEM_OBJECT_ALLOCATION_FAILURE\n");\

@@ -33,6 +33,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.sql.BatchUpdateException;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
@@ -224,7 +225,7 @@ public class TornadoVM extends TornadoLogger {
                 bytecodesList.append(verbose + "\n");
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
-                lastEvent = device.ensureAllocated(object, objectState);
+                lastEvent = device.ensureAllocated(object, sizeBatch, objectState);
 
             } else if (op == TornadoVMBytecodes.COPYIN_BATCH.index()) {
                 final int objectIndex = buffer.getInt();
@@ -252,7 +253,8 @@ public class TornadoVM extends TornadoLogger {
                 }
                 bytecodesList.append(verbose + "\n");
 
-                lastEvent = device.ensurePresent(object, objectState, waitList);
+                // We streamIN
+                lastEvent = device.streamIn(object, sizeBatch, offset, objectState, waitList);
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
@@ -285,7 +287,7 @@ public class TornadoVM extends TornadoLogger {
                     debug("vm: state=%s", objectState);
                 }
 
-                lastEvent = device.streamIn(object, objectState, waitList);
+                lastEvent = device.streamIn(object, sizeBatch, offset, objectState, waitList);
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
@@ -571,7 +573,7 @@ public class TornadoVM extends TornadoLogger {
                 bytecodesList.append(String.format("ALLOCATE [0x%x] %s on %s\n", object.hashCode(), object, device));
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
-                lastEvent = device.ensureAllocated(object, objectState);
+                lastEvent = device.ensureAllocated(object, 0, objectState);
 
             } else if (op == TornadoVMBytecodes.COPY_IN.index()) {
                 final int objectIndex = buffer.getInt();
@@ -597,7 +599,7 @@ public class TornadoVM extends TornadoLogger {
                     debug("vm: state=%s", objectState);
                 }
 
-                lastEvent = device.ensurePresent(object, objectState, waitList);
+                lastEvent = device.ensurePresent(object, objectState, waitList, 0, 0);
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
@@ -625,7 +627,7 @@ public class TornadoVM extends TornadoLogger {
                     debug("vm: state=%s", objectState);
                 }
 
-                lastEvent = device.streamIn(object, objectState, waitList);
+                lastEvent = device.streamIn(object, 0, 0, objectState, waitList);
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }

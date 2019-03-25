@@ -69,7 +69,7 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events) {
+    public int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long size, long offset) {
         TornadoInternalError.unimplemented();
         return -1;
     }
@@ -101,7 +101,7 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int streamIn(Object object, TornadoDeviceObjectState objectState, int[] events) {
+    public int streamIn(Object object, long batchSize, long offset, TornadoDeviceObjectState objectState, int[] events) {
         TornadoInternalError.unimplemented();
         return -1;
     }
@@ -137,8 +137,7 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int ensureAllocated(Object object, TornadoDeviceObjectState state) {
-        // TODO Auto-generated method stub
+    public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
         return -1;
     }
 

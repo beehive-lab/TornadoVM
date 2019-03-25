@@ -38,6 +38,7 @@ import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.StructuredGraph;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
@@ -75,10 +76,12 @@ public class TornadoVMGraphCompiler {
 
         private int totalChunks;
         private int remainingChunkSize;
+        private short numBytesType;
 
-        public SizeBatch(int totalChunks, int remainingChunkSize) {
+        public SizeBatch(int totalChunks, int remainingChunkSize, short numBytesType) {
             this.totalChunks = totalChunks;
             this.remainingChunkSize = remainingChunkSize;
+            this.numBytesType = numBytesType;
         }
 
         public int getTotalChunks() {
@@ -89,19 +92,26 @@ public class TornadoVMGraphCompiler {
             return remainingChunkSize;
         }
 
+        public short getNumBytesType() {
+            return numBytesType;
+        }
     }
 
     private static SizeBatch computeChunkSizes(TornadoExecutionContext context, long batchSize) {
         // Get the size of the batch
         List<Object> objects = context.getObjects();
         long totalSize = 0;
+        byte typeSize = 4;
+        // XXX: Get a list for all objects
         for (Object o : objects) {
             if (o.getClass().isArray()) {
                 Class<?> componentType = o.getClass().getComponentType();
                 long size = Array.getLength(o);
-                byte typeSize = 4;
+                typeSize = 4;
                 if (componentType == float.class) {
                     typeSize = 4;
+                } else {
+                    throw new TornadoRuntimeException("[UNSUPPORTED] Data type not supported for processing in batches");
                 }
                 totalSize = size * typeSize;
                 System.out.println("Size Array!!!: " + totalSize);
@@ -114,7 +124,7 @@ public class TornadoVMGraphCompiler {
         System.out.println("Batch Size: " + batchSize);
         System.out.println("Total chunks: " + totalChunks);
         System.out.println("remainingChunkSize: " + remainingChunkSize);
-        return new SizeBatch(totalChunks, remainingChunkSize);
+        return new SizeBatch(totalChunks, remainingChunkSize, typeSize);
     }
 
     /*
@@ -159,12 +169,12 @@ public class TornadoVMGraphCompiler {
             System.out.println("Genereting in batches");
             long offset = 0;
             for (int i = 0; i < sizeBatch.getTotalChunks(); i++) {
-                offset = batchSize * i;
+                offset = (batchSize * i) / sizeBatch.getNumBytesType();
                 System.out.println("Pointing in offset: " + offset);
                 scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies, offset, batchSize);
             }
             if (sizeBatch.getRemainingChunkSize() != 0) {
-                offset += batchSize;
+                offset += (batchSize) / sizeBatch.getNumBytesType();
                 System.out.println("Pointing in offset: " + offset);
                 scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies, offset, sizeBatch.remainingChunkSize);
             }

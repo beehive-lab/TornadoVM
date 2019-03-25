@@ -20,7 +20,7 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: James Clarkson, Juan Fumero
  *
  */
 #include <jni.h>
@@ -114,59 +114,59 @@ extern "C" {
     /*
      * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
      * Method:    writeArrayToDevice
-     * Signature: (J[BZJJJ[J)J
+     * Signature: (J[BZJJJJ[J)J
      */
-    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_writeArrayToDevice__J_3BZJJJ_3J
-    (JNIEnv *, jclass, jlong, jbyteArray, jboolean, jlong, jlong, jlong, jlongArray);
+    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_writeArrayToDevice__J_3BZJJJJ_3J
+    (JNIEnv *, jclass, jlong, jbyteArray, jlong hostOffset, jboolean, jlong, jlong, jlong, jlongArray);
 
     /*
      * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
      * Method:    writeArrayToDevice
-     * Signature: (J[BZJJJ[J)J
+     * Signature: (J[BZJJJJ[J)J
      */
-    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_writeArrayToDevice__J_3CZJJJ_3J
-    (JNIEnv *, jclass, jlong, jcharArray, jboolean, jlong, jlong, jlong, jlongArray);
+    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_writeArrayToDevice__J_3CZJJJJ_3J
+    (JNIEnv *, jclass, jlong, jcharArray, jlong hostOffset, jboolean, jlong, jlong, jlong, jlongArray);
 
 
     /*
      * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
      * Method:    writeArrayToDevice
-     * Signature: (J[SZJJJ[J)J
+     * Signature: (J[SZJJJJ[J)J
      */
-    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_writeArrayToDevice__J_3SZJJJ_3J
-    (JNIEnv *, jclass, jlong, jshortArray, jboolean, jlong, jlong, jlong, jlongArray);
+    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_writeArrayToDevice__J_3SZJJJJ_3J
+    (JNIEnv *, jclass, jlong, jshortArray, jlong hostOffset, jboolean, jlong, jlong, jlong, jlongArray);
 
     /*
      * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
      * Method:    writeArrayToDevice
-     * Signature: (J[IZJJJ[J)J
+     * Signature: (J[IZJJJJ[J)J
      */
-    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_writeArrayToDevice__J_3IZJJJ_3J
-    (JNIEnv *, jclass, jlong, jintArray, jboolean, jlong, jlong, jlong, jlongArray);
+    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_writeArrayToDevice__J_3IZJJJJ_3J
+    (JNIEnv *, jclass, jlong, jintArray, jlong hostOffset, jboolean, jlong, jlong, jlong, jlongArray);
 
     /*
      * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
      * Method:    writeArrayToDevice
-     * Signature: (J[JZJJJ[J)J
+     * Signature: (J[JZJJJJ[J)J
      */
-    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_writeArrayToDevice__J_3JZJJJ_3J
-    (JNIEnv *, jclass, jlong, jlongArray, jboolean, jlong, jlong, jlong, jlongArray);
+    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_writeArrayToDevice__J_3JZJJJJ_3J
+    (JNIEnv *, jclass, jlong, jlongArray, jlong hostOffset, jboolean, jlong, jlong, jlong, jlongArray);
 
     /*
      * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
      * Method:    writeArrayToDevice
-     * Signature: (J[FZJJJ[J)J
+     * Signature: (J[FZJJJJ[J)J
      */
-    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_writeArrayToDevice__J_3FZJJJ_3J
-    (JNIEnv *, jclass, jlong, jfloatArray, jboolean, jlong, jlong, jlong, jlongArray);
+    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_writeArrayToDevice__J_3FZJJJJ_3J
+    (JNIEnv *, jclass, jlong, jfloatArray, jlong hostOffset, jboolean, jlong, jlong, jlong, jlongArray);
 
     /*
      * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
      * Method:    writeArrayToDevice
-     * Signature: (J[DZJJJ[J)J
+     * Signature: (J[DZJJJJ[J)J
      */
-    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_writeArrayToDevice__J_3DZJJJ_3J
-    (JNIEnv *, jclass, jlong, jdoubleArray, jboolean, jlong, jlong, jlong, jlongArray);
+    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_writeArrayToDevice__J_3DZJJJJ_3J
+    (JNIEnv *, jclass, jlong, jdoubleArray,  jlong hostOffset, jboolean, jlong, jlong, jlong, jlongArray);
 
     /*
      * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue

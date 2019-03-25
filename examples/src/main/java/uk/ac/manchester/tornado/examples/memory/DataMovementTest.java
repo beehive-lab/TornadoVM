@@ -47,7 +47,7 @@ public class DataMovementTest {
         TornadoGlobalObjectState state = TornadoRuntime.getTornadoRuntime().resolveObject(array);
         TornadoDeviceObjectState deviceState = state.getDeviceState(device);
 
-        int writeEvent = device.ensurePresent(array, deviceState, null);
+        int writeEvent = device.ensurePresent(array, deviceState, null, 0, 0);
         if (writeEvent != -1) {
             device.resolveEvent(writeEvent).waitOn();
         }

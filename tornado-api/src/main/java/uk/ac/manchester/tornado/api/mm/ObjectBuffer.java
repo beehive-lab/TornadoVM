@@ -54,17 +54,17 @@ public interface ObjectBuffer {
 
     long toRelativeAddress();
 
-    void read(Object ref);
+    void read(Object reference);
 
-    void read(Object ref, int[] events, boolean useDeps);
+    void read(Object reference, int[] events, boolean useDeps);
 
-    void write(Object ref);
+    void write(Object reference);
 
-    int enqueueRead(Object ref, int[] events, boolean useDeps);
+    int enqueueRead(Object reference, int[] events, boolean useDeps);
 
-    int enqueueWrite(Object ref, int[] events, boolean useDeps);
+    int enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps);
 
-    void allocate(Object ref) throws TornadoOutOfMemoryException, TornadoMemoryException;
+    void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException;
 
     int getAlignment();
 

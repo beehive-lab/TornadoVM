@@ -53,8 +53,8 @@ public class FieldBuffer {
         return Modifier.isFinal(field.getModifiers());
     }
 
-    public void allocate(final Object ref) throws TornadoOutOfMemoryException, TornadoMemoryException {
-        objectBuffer.allocate(getFieldValue(ref));
+    public void allocate(final Object ref, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+        objectBuffer.allocate(getFieldValue(ref), batchSize);
     }
 
     public int enqueueRead(final Object ref, final int[] events, boolean useDeps) {
@@ -68,7 +68,7 @@ public class FieldBuffer {
         if (DEBUG) {
             trace("fieldBuffer: enqueueWrite* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
-        return (useDeps) ? objectBuffer.enqueueWrite(getFieldValue(ref), (useDeps) ? events : null, useDeps) : -1;
+        return (useDeps) ? objectBuffer.enqueueWrite(getFieldValue(ref), 0, 0, (useDeps) ? events : null, useDeps) : -1;
     }
 
     public int getAlignment() {

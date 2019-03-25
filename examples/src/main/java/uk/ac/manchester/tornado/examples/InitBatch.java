@@ -70,10 +70,11 @@ public class InitBatch {
 
         if (CHECK) {
             boolean check = true;
-            for (float v : array) {
+            for (int i = 0; i < array.length; i++) {
+                float v = array[i];
                 if (v != 101.0f) {
                     check = false;
-                    System.out.println("Result got: " + v);
+                    System.out.println("Result got: " + v + " in INDEX: " + i);
                     break;
                 }
             }

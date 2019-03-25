@@ -20,16 +20,16 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: James Clarkson, Juan Fumero
  *
  */
 #include <jni.h>
 
 #define CL_TARGET_OPENCL_VERSION 120
 #ifdef __APPLE__
-#include <OpenCL/cl.h>
+    #include <OpenCL/cl.h>
 #else
-#include <CL/cl.h>
+    #include <CL/cl.h>
 #endif
 
 #include <stdio.h>
@@ -39,10 +39,8 @@
 #define PRINT_KERNEL_EVENTS 0
 
 #ifdef PRINT_KERNEL_EVENTS 
-#include "opencl_time_utils.h"
+    #include "opencl_time_utils.h"
 #endif
-
-
 
 /*
  * Class:     jacc_runtime_drivers_opencl_OCLCommandQueue
