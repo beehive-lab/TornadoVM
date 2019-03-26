@@ -26,6 +26,7 @@
 package uk.ac.manchester.tornado.runtime.graph;
 
 import java.lang.reflect.Array;
+import java.nio.BufferOverflowException;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -305,10 +306,15 @@ public class TornadoVMGraphCompiler {
                     if (outstandingDeps.isEmpty()) {
                         final ContextOpNode asyncNode = (ContextOpNode) graph.getNode(nodeIds[i]);
 
-                        if (bufferBatchSize != -1) {
-                            result.emitAsyncNodeBatch(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
-                        } else {
-                            result.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i]);
+                        try {
+                            if (bufferBatchSize != -1) {
+                                result.emitAsyncNodeBatch(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
+                            } else {
+                                result.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i]);
+                            }
+                        } catch (BufferOverflowException e) {
+                            throw new TornadoRuntimeException("[ERROR] Buffer Overflow exception. Use -Dtornado.tvm.maxbytecodesize=<value> with value > "
+                                    + TornadoVMGraphCompilationResult.MAX_TORNADOVM_BYTECODE_SIZE + " to increase the buffer code size");
                         }
 
                         for (int j = 0; j < deps.length; j++) {

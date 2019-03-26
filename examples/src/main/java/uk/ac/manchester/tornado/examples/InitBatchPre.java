@@ -75,7 +75,7 @@ public class InitBatchPre {
                         new Object[] { arrayA, arrayB },
                         new Access[] { Access.READ, Access.WRITE }, 
                         defaultDevice,
-                        new int[] { size })
+                        new int[] { 25000000 })  // Number of elements in 100MB
             .streamOut(arrayB)
             .execute();
         // @formatter:on
