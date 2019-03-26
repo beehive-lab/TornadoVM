@@ -378,7 +378,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
         ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
         OCLProviders providers = (OCLProviders) getProviders();
-        OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
+        /// XXX: BATCH SIZE??
+        OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this, 0);
         lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA);
         return meta;
     }

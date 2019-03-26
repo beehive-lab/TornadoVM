@@ -62,6 +62,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     private final TornadoValueTypeReplacement valueTypeReplacement;
     private final DeadCodeEliminationPhase deadCodeElimination;
     private final TornadoLoopUnroller loopUnroller;
+    private long batchThreads;
 
     public TornadoTaskSpecialisation(CanonicalizerPhase canonicalizer) {
         this.canonicalizer = canonicalizer;
@@ -166,34 +167,36 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
     private void evaluate(final StructuredGraph graph, final Node node, final Object value) {
 
-        // final Object value = (param instanceof ObjectReference) ?
-        // ((ObjectReference<?,?>) param)
-        // .get() : param;
-        // Tornado.debug("evaluate: node=%s, object=%s", node, value);
         if (node instanceof ArrayLengthNode) {
             ArrayLengthNode arrayLength = (ArrayLengthNode) node;
             int length = Array.getLength(value);
-            final ConstantNode constant = ConstantNode.forInt(length);
+            final ConstantNode constant;
+
+            if (batchThreads <= 0) {
+                constant = ConstantNode.forInt(length);
+            } else {
+                constant = ConstantNode.forInt((int) batchThreads);
+            }
+
+            System.out.println("Replacing .. " + constant);
+
             node.replaceAtUsages(graph.addOrUnique(constant));
             arrayLength.clearInputs();
             GraphUtil.removeFixedWithUnusedInputs(arrayLength);
+
         } else if (node instanceof LoadFieldNode) {
             final LoadFieldNode loadField = (LoadFieldNode) node;
             final ResolvedJavaField field = loadField.field();
-            // Tornado.debug("load field: name=%s, type=%s, declaring class=%s",
-            // field.getName(),
-            // field.getType().toJavaName(),
-            // field.getDeclaringClass().getName());
             if (field.getType().getJavaKind().isPrimitive()) {
                 ConstantNode constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());
                 constant = graph.addOrUnique(constant);
-                // Tornado.debug("Replaced %s with %s", node, constant);
+
                 node.replaceAtUsages(constant);
                 loadField.clearInputs();
                 graph.removeFixed(loadField);
-                // Tornado.debug("removed %s", loadField);
+
             } else if (field.isFinal()) {
-                // Tornado.debug("propagating final fields...");
+
                 Object object = lookupRefField(graph, node, value, field.getName());
                 node.usages().forEach(n -> evaluate(graph, n, object));
             }
@@ -245,6 +248,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
         int lastNodeCount = graph.getNodeCount();
         boolean hasWork = true;
+        this.batchThreads = context.getBatchThreads();
+
         while (hasWork) {
             final Mark mark = graph.getMark();
 

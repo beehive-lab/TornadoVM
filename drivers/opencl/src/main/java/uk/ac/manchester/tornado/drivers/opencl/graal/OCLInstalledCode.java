@@ -33,6 +33,7 @@ import java.nio.ByteBuffer;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLGPUScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
@@ -300,7 +301,15 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
     }
 
+    private void checkKernelNotNull() {
+        if (kernel == null) {
+            throw new TornadoRuntimeException("[ERROR] Generated Kernel is NULL. \n\nPlease report the issue to https://github.com/beehive-lab/TornadoVM");
+        }
+    }
+
     public void submitWithoutEvents(final OCLCallStack stack, final TaskMetaData meta, long batchThreads) {
+
+        checkKernelNotNull();
 
         if (DEBUG) {
             info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getDeviceName());

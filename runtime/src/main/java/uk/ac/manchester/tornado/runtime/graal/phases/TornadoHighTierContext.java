@@ -37,14 +37,16 @@ public class TornadoHighTierContext extends HighTierContext {
     protected final Object[] args;
     protected final TaskMetaData meta;
     protected final boolean isKernel;
+    private long batchThreads;
 
     public TornadoHighTierContext(Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ResolvedJavaMethod method, Object[] args,
-            TaskMetaData meta, boolean isKernel) {
+            TaskMetaData meta, boolean isKernel, long batchThreads) {
         super(providers, graphBuilderSuite, optimisticOpts);
         this.method = method;
         this.args = args;
         this.meta = meta;
         this.isKernel = isKernel;
+        this.batchThreads = batchThreads;
     }
 
     public ResolvedJavaMethod getMethod() {
@@ -81,6 +83,10 @@ public class TornadoHighTierContext extends HighTierContext {
 
     public boolean isKernel() {
         return isKernel;
+    }
+
+    public long getBatchThreads() {
+        return batchThreads;
     }
 
 }
