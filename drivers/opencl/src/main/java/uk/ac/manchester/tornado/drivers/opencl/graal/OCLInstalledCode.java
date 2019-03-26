@@ -52,7 +52,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
     private final OCLKernelScheduler DEFAULT_SCHEDULER;
 
-    // TODO replace with a system property/Tornado setting
     private final ByteBuffer buffer = ByteBuffer.allocate(8);
     private final byte[] code;
     private final OCLDeviceContext deviceContext;
@@ -89,6 +88,16 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return valid;
     }
 
+    /**
+     * It executes a kernel with 1 thread (the equivalent of calling
+     * clEnqueueTask.
+     * 
+     * @param stack
+     *            {@link OCLByteBuffer} stack
+     * @param meta
+     *            {@link TaskMetaData} netadata
+     * @return int with the event ID.
+     */
     public int executeTask(final OCLByteBuffer stack, final TaskMetaData meta) {
         debug("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         debug("\tstack    : buffer id=0x%x, address=0x%x relative=0x%x", stack.toBuffer(), stack.toAbsoluteAddress(), stack.toRelativeAddress());
@@ -168,7 +177,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             index++;
         }
 
-        // heap
+        // heap (global memory)
         buffer.clear();
         buffer.putLong(stack.toBuffer());
         kernel.setArg(index, buffer);
@@ -180,7 +189,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         kernel.setArg(index, buffer);
         index++;
 
-        // constant
+        // constant memory
         if (meta != null && meta.getConstantSize() > 0) {
             kernel.setArg(index, ByteBuffer.wrap(meta.getConstantData()));
         } else {
@@ -188,7 +197,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
         index++;
 
-        // local
+        // local memory
         if (meta != null && meta.getLocalSize() > 0) {
             info("\tallocating %s of local memory", RuntimeUtilities.humanReadableByteCount(meta.getLocalSize(), true));
             kernel.setLocalRegion(index, meta.getLocalSize());
@@ -197,11 +206,13 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
         index++;
 
-        // private
+        // private memory
         kernel.setArgUnused(index);
     }
 
     public int submitWithEvents(final OCLCallStack stack, final TaskMetaData meta, final int[] events, long batchThreads) {
+
+        guarantee(kernel != null, "kernel is null");
 
         if (DEBUG) {
             info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getId(), kernel.getName(), deviceContext.getDevice().getDeviceName());
@@ -220,8 +231,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         } else {
             waitEvents = events;
         }
-
-        guarantee(kernel != null, "kernel is null");
 
         int task;
         if (meta == null) {
