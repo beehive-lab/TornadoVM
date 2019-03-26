@@ -23,6 +23,7 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
@@ -32,19 +33,13 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * tornado uk.ac.manchester.tornado.examples.Init <size>
  * 
  */
-public class InitBatch {
+public class InitBatchPre {
 
     private static final boolean CHECK = true;
 
     public static void compute(float[] array) {
         for (@Parallel int i = 0; i < array.length; i++) {
-            array[i] = array[i];
-        }
-    }
-
-    public static void compute(float[] arrayA, float[] arrayB) {
-        for (@Parallel int i = 0; i < arrayA.length; i++) {
-            arrayB[i] = arrayA[i] + 100;
+            array[i] = array[i] + 100;
         }
     }
 
@@ -62,19 +57,28 @@ public class InitBatch {
         float[] arrayB = new float[size];
 
         IntStream.range(0, arrayA.length).sequential().forEach(idx -> arrayA[idx] = idx);
+        // Arrays.fill(array, 1.0f);
 
         TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
         long maxDeviceMemory = device.getMaxAllocMemory();
         double mb = maxDeviceMemory * 1E-6;
         System.out.println("Maximum alloc device memory: " + mb + " (MB)");
 
-        TaskSchedule ts = new TaskSchedule("s0");
+        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+
         // @formatter:off
-        ts.batch("100MB")
-          .task("t0", InitBatch::compute, arrayA, arrayB)
-          .streamOut((Object) arrayB);
+        new TaskSchedule("s0")
+            .batch("100MB")
+            .prebuiltTask("t0", 
+                        "compute", 
+                        "/tmp/kernel.cl",
+                        new Object[] { arrayA, arrayB },
+                        new Access[] { Access.READ, Access.WRITE }, 
+                        defaultDevice,
+                        new int[] { size })
+            .streamOut(arrayB)
+            .execute();
         // @formatter:on
-        ts.execute();
 
         if (CHECK) {
             boolean check = true;
@@ -82,7 +86,7 @@ public class InitBatch {
                 float v = arrayB[i];
                 if (Math.abs(arrayB[i] - (arrayA[i] + 100)) > 0.1f) {
                     check = false;
-                    System.out.println("Result got: " + v + " in INDEX: " + i);
+                    System.out.println("Result got: " + v + " in INDEX: " + i + " expected: " + (i + 100));
                     break;
                 }
             }

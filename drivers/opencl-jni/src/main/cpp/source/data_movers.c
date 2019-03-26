@@ -73,7 +73,7 @@ CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, D, double)
 	    	    printf("uk.ac.manchester.tornado.drivers.opencl> write array 0x%lx (%d bytes) from %p \n",offset, num_bytes, buffer);\
             } \
 	        cl_event event; \
-            printf("[JNI CALL] HOST OFFSET: %ld with size = %ld\n ", hostOffset, cb); \
+            printf("[JNI CALL] WRITING HOST OFFSET: %ld with size = %ld from base: %ld\n ", hostOffset, cb, offset); \
             cl_int status = clEnqueueWriteBuffer((cl_command_queue) queue_id, (cl_mem) device_ptr, blocking_write, (size_t) offset, (size_t) num_bytes, &buffer[hostOffset],(cl_uint) num_events, (cl_event*) events, &event);\
             if (status != CL_SUCCESS) {\
                 if (status == CL_MEM_OBJECT_ALLOCATION_FAILURE) {\
@@ -111,6 +111,7 @@ WRITE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue, D, dou
                 printf("uk.ac.manchester.tornado.drivers.opencl> read array 0x%lx (%d bytes) to %p\n",offset, num_bytes, buffer);\
             }\
             cl_event event; \
+            printf("[JNI CALL] READING OFFSET: %ld with size = %ld from base: %ld\n ", hostOffset, cb, offset); \
             cl_int status = clEnqueueReadBuffer((cl_command_queue) queue_id, (cl_mem) device_ptr, blocking, (size_t) offset, (size_t) num_bytes, &buffer[hostOffset], (cl_uint) num_events, (cl_event*) events, &event);\
             if (status != CL_SUCCESS) {\
                 printf("[ERROR] clEnqueueReadBuffer, code = %d\n", status);\
