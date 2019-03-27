@@ -55,7 +55,7 @@ import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 
 public class TornadoVMGraphCompiler {
 
-    static HashMap<Class<?>, Byte> dataTypesSize = new HashMap<>();
+    private static HashMap<Class<?>, Byte> dataTypesSize = new HashMap<>();
 
     static {
         dataTypesSize.put(byte.class, (byte) 1);
@@ -97,15 +97,15 @@ public class TornadoVMGraphCompiler {
             this.numBytesType = numBytesType;
         }
 
-        public int getTotalChunks() {
+        private int getTotalChunks() {
             return totalChunks;
         }
 
-        public int getRemainingChunkSize() {
+        private int getRemainingChunkSize() {
             return remainingChunkSize;
         }
 
-        public short getNumBytesType() {
+        private short getNumBytesType() {
             return numBytesType;
         }
     }
