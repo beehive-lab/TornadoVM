@@ -57,7 +57,9 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.instances.TestInstances",
 	"uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes",
 	"uk.ac.manchester.tornado.unittests.api.TestAPI",
-	"uk.ac.manchester.tornado.unittests.batches.TestBaches",
+	"uk.ac.manchester.tornado.unittests.batches.TestBatches",
+	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypes",
+	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypesDecimal",
 ]
 
 ## Options

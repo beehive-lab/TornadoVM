@@ -54,6 +54,24 @@ public class TestBatches extends TornadoTestBase {
         }
     }
 
+    public static void compute(long[] arrayA, long[] arrayB, long[] arrayC) {
+        for (@Parallel int i = 0; i < arrayA.length; i++) {
+            arrayC[i] = arrayA[i] + arrayB[i];
+        }
+    }
+
+    public static void compute(double[] arrayA, double[] arrayB, double[] arrayC) {
+        for (@Parallel int i = 0; i < arrayA.length; i++) {
+            arrayC[i] = arrayA[i] + arrayB[i];
+        }
+    }
+
+    public static void compute(short[] arrayA, short[] arrayB, short[] arrayC) {
+        for (@Parallel int i = 0; i < arrayA.length; i++) {
+            arrayC[i] = (short) (arrayA[i] + arrayB[i]);
+        }
+    }
+
     @Test
     public void test100MB() {
 
