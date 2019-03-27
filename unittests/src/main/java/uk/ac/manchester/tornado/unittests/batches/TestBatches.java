@@ -48,6 +48,12 @@ public class TestBatches extends TornadoTestBase {
         }
     }
 
+    public static void compute(int[] arrayA, int[] arrayB, int[] arrayC) {
+        for (@Parallel int i = 0; i < arrayA.length; i++) {
+            arrayC[i] = arrayA[i] + arrayB[i];
+        }
+    }
+
     @Test
     public void test100MB() {
 
@@ -144,6 +150,34 @@ public class TestBatches extends TornadoTestBase {
 
         for (int i = 0; i < arrayA.length; i++) {
             assertEquals(arrayA[i] + arrayB[i], arrayC[i], 0.1f);
+        }
+    }
+
+    @Test
+    public void test50MBInteger() {
+
+        // Fill 80MB of input Array
+        int size = 20000000;
+        int[] arrayA = new int[size];
+        int[] arrayB = new int[size];
+        int[] arrayC = new int[size];
+
+        IntStream.range(0, arrayA.length).sequential().forEach(idx -> {
+            arrayA[idx] = idx;
+            arrayB[idx] = idx;
+        });
+
+        TaskSchedule ts = new TaskSchedule("s0");
+
+        // @formatter:off
+        ts.batch("50MB")   // Process Slots of 50 MB
+          .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
+          .streamOut((Object) arrayC)
+          .execute();
+        // @formatter:on
+
+        for (int i = 0; i < arrayA.length; i++) {
+            assertEquals(arrayA[i] + arrayB[i], arrayC[i]);
         }
     }
 

@@ -27,9 +27,9 @@ package uk.ac.manchester.tornado.runtime.graph;
 
 import java.lang.reflect.Array;
 import java.nio.BufferOverflowException;
-import java.sql.Types;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.List;
 
 import org.graalvm.compiler.graph.Node;
@@ -54,6 +54,18 @@ import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 
 public class TornadoVMGraphCompiler {
+
+    static HashMap<Class<?>, Byte> dataTypesSize = new HashMap<>();
+
+    static {
+        dataTypesSize.put(byte.class, (byte) 1);
+        dataTypesSize.put(char.class, (byte) 2);
+        dataTypesSize.put(short.class, (byte) 2);
+        dataTypesSize.put(int.class, (byte) 4);
+        dataTypesSize.put(float.class, (byte) 4);
+        dataTypesSize.put(long.class, (byte) 8);
+        dataTypesSize.put(double.class, (byte) 8);
+    }
 
     /**
      * Generate TornadoVM byte-code from a Tornado Task Graph.
@@ -104,16 +116,15 @@ public class TornadoVMGraphCompiler {
         long totalSize = 0;
         byte typeSize = 4;
         // XXX: Get a list for all objects
+
         for (Object o : objects) {
             if (o.getClass().isArray()) {
                 Class<?> componentType = o.getClass().getComponentType();
-                long size = Array.getLength(o);
-                typeSize = 4;
-                if (componentType == float.class) {
-                    typeSize = 4;
-                } else {
+                if (dataTypesSize.get(componentType) == null) {
                     throw new TornadoRuntimeException("[UNSUPPORTED] Data type not supported for processing in batches");
                 }
+                long size = Array.getLength(o);
+                typeSize = dataTypesSize.get(componentType);
                 totalSize = size * typeSize;
                 System.out.println("Size Array!!!: " + totalSize);
             }
