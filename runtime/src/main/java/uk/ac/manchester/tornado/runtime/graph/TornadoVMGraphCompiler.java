@@ -168,7 +168,7 @@ public class TornadoVMGraphCompiler {
             index++;
         }
 
-        // Generate begin
+        // Generate BEGIN bytecode
         result.begin(1, tasks.cardinality(), numDepLists + 1);
 
         SizeBatch sizeBatch = null;
@@ -181,28 +181,31 @@ public class TornadoVMGraphCompiler {
             System.out.println("Genereting in batches");
             long offset = 0;
             for (int i = 0; i < sizeBatch.getTotalChunks(); i++) {
-                // offset = (batchSize * i) / sizeBatch.getNumBytesType();
                 offset = (batchSize * i);
                 long nthreads = batchSize / sizeBatch.getNumBytesType();
                 System.out.println("Pointing in offset: " + offset);
                 scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies, offset, batchSize, nthreads);
             }
             if (sizeBatch.getRemainingChunkSize() != 0) {
-                // offset += (batchSize) / sizeBatch.getNumBytesType();
                 offset += (batchSize);
                 long nthreads = sizeBatch.getRemainingChunkSize() / sizeBatch.getNumBytesType();
                 System.out.println("Pointing in offset: " + offset);
-                scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies, offset, sizeBatch.remainingChunkSize, nthreads);
+
+                long realBatchSize = sizeBatch.getTotalChunks() == 0 ? 0 : sizeBatch.getRemainingChunkSize();
+                long realOffsetSize = sizeBatch.getTotalChunks() == 0 ? 0 : offset;
+
+                scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies, realOffsetSize, realBatchSize, nthreads);
             }
 
         } else {
+            // Generate bytecodes with no batches
             scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies, -1, -1, 0);
         }
 
         // Last operation -> perform synchronisation
         synchronizeOperationLastByteCode(result, numDepLists);
 
-        // End
+        // Generate END bytecode
         result.end();
 
         return result;

@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.unittests.batches;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Random;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
@@ -104,7 +105,8 @@ public class TestBatches extends TornadoTestBase {
         float[] arrayA = new float[size];
         float[] arrayB = new float[size];
 
-        IntStream.range(0, arrayA.length).sequential().forEach(idx -> arrayA[idx] = idx);
+        Random r = new Random();
+        IntStream.range(0, arrayA.length).sequential().forEach(idx -> arrayA[idx] = r.nextFloat());
 
         TaskSchedule ts = new TaskSchedule("s0");
 
