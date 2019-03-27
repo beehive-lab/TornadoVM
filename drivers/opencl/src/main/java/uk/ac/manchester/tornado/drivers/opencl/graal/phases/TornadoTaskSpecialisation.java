@@ -178,8 +178,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 constant = ConstantNode.forInt((int) batchThreads);
             }
 
-            System.out.println("Replacing .. " + constant);
-
             node.replaceAtUsages(graph.addOrUnique(constant));
             arrayLength.clearInputs();
             GraphUtil.removeFixedWithUnusedInputs(arrayLength);

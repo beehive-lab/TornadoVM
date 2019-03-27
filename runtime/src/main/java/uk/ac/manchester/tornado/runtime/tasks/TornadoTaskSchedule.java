@@ -33,6 +33,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.PRINT_COMPILE_TIME
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -1074,36 +1075,19 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * It obtains the maximum input size for an input task.
      * 
-     * @return int
+     * @return max size of all input arrays.
      */
     private int getMaxInputSize() {
         Object[] parameters = taskPackages.get(0).getTaskParameters();
         int size = 0;
         for (int i = 1; i < parameters.length; i++) {
             Object o = parameters[i];
-            if (o instanceof float[]) {
-                float[] a = (float[]) o;
-                size = Math.max(a.length, size);
-            } else if (o instanceof int[]) {
-                int[] a = (int[]) o;
-                size = Math.max(a.length, size);
-            } else if (o instanceof double[]) {
-                double[] a = (double[]) o;
-                size = Math.max(a.length, size);
-            } else if (o instanceof long[]) {
-                long[] a = (long[]) o;
-                size = Math.max(a.length, size);
-            } else if (o instanceof short[]) {
-                short[] a = (short[]) o;
-                size = Math.max(a.length, size);
-            } else if (o instanceof byte[]) {
-                byte[] a = (byte[]) o;
-                size = Math.max(a.length, size);
-            } else if (o instanceof char[]) {
-                char[] a = (char[]) o;
-                size = Math.max(a.length, size);
-            } else
+            if (o.getClass().isArray()) {
+                int currentSize = Array.getLength(o);
+                size = Math.max(currentSize, size);
+            } else {
                 size = Math.max(1, size);
+            }
         }
         return size;
     }

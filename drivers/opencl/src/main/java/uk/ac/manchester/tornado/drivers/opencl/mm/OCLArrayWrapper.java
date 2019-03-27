@@ -103,7 +103,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
             newBufferSize = sizeOfBatch(batchSize);
         }
 
-        if (bufferOffset != -1 && (newBufferSize < bytesToAllocate)) {
+        if ((batchSize > 0) && (bufferOffset != -1) && (newBufferSize < bytesToAllocate)) {
             bytesToAllocate = newBufferSize;
         }
 
@@ -126,6 +126,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
                 info("allocated: %s", toString());
             }
         }
+
     }
 
     @Override
@@ -194,7 +195,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     public int enqueueWrite(final Object value, long batchSize, long hostOffset, final int[] events, boolean useDeps) {
         final T array = cast(value);
         if (array == null) {
-            throw new TornadoRuntimeException("ERROR] Data to be copied is null");
+            throw new TornadoRuntimeException("ERROR] Data to be copied is NULL");
         }
 
         final int returnEvent;
@@ -207,8 +208,6 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
                 if (batchSize <= 0) {
                     internalEvents[0] = buildArrayHeader(Array.getLength(array)).enqueueWrite((useDeps) ? events : null);
                 } else {
-                    // XXX: Check if this call work
-                    System.out.println("THIS CALL: " + hostOffset);
                     internalEvents[0] = buildArrayHeaderBatch(batchSize).enqueueWrite((useDeps) ? events : null);
                 }
                 index++;

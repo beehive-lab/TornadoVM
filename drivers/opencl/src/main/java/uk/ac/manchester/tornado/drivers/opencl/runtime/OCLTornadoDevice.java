@@ -432,7 +432,10 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
         if (BENCHMARKING_MODE || !state.hasContents()) {
             state.setContents(true);
-            return state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
+            int event = state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
+            if (events != null) {
+                return event;
+            }
         }
         return -1;
     }
@@ -447,9 +450,13 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int streamOut(Object object, long batchSize, long offset, TornadoDeviceObjectState state, int[] list) {
+    public int streamOut(Object object, long batchSize, long offset, TornadoDeviceObjectState state, int[] events) {
         TornadoInternalError.guarantee(state.isValid(), "invalid variable");
-        return state.getBuffer().enqueueRead(object, batchSize, offset, list, list == null);
+        int event = state.getBuffer().enqueueRead(object, batchSize, offset, events, events == null);
+        if (events != null) {
+            return event;
+        }
+        return -1;
     }
 
     @Override

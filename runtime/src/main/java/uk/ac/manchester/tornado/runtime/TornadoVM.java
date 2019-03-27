@@ -557,6 +557,7 @@ public class TornadoVM extends TornadoLogger {
         StringBuilder bytecodesList = new StringBuilder();
 
         while (buffer.hasRemaining()) {
+
             final byte op = buffer.get();
 
             if (op == TornadoVMBytecodes.ALLOCATE.index()) {

@@ -48,12 +48,11 @@ public class VectorAddInt {
         //@formatter:on
 
         for (int idx = 0; idx < 10; idx++) {
+
             graph.execute();
 
             vectorAdd(a, b, result);
-
             boolean wrongResult = false;
-
             for (int i = 0; i < c.length; i++) {
                 if (c[i] != 30) {
                     wrongResult = true;
