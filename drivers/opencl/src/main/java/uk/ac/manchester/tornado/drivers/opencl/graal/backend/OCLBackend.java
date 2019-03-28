@@ -123,6 +123,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public final static boolean SHOW_OPENCL = Boolean.parseBoolean(System.getProperty("tornado.opencl.print", "False"));
     public final static String OPENCL_PATH = System.getProperty("tornado.opencl.path", "./opencl");
     private final static String FPGA_ATTRIBUTE = "__attribute__((reqd_work_group_size(64,1,1)))  ";
+    private static final long FOUR_GB = 4000000000L;
     private final static String INTEL = "Intel(R)";
     private boolean flag = false;
 
@@ -235,7 +236,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
      * memory size.
      */
     public void allocateHeapMemoryOnDevice() {
-        final long memorySize = Math.max(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
+        long memorySize = Math.max(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
+        if (memorySize > FOUR_GB) {
+            memorySize = FOUR_GB;
+        }
         if (memorySize < DEFAULT_HEAP_ALLOCATION) {
             Tornado.info("Unable to allocate %s of heap space - resized to %s", humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false), humanReadableByteCount(memorySize, false));
         }
