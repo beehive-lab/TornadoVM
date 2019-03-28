@@ -282,6 +282,20 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         read(value, 0, null, false);
     }
 
+    /**
+     * Read an buffer from the target device to the host.
+     * 
+     * @param value
+     *            in which the data are copied
+     * @param hostOffset
+     *            offset, in bytes, from the input value in which to perform the
+     *            read.
+     * @param events
+     *            list of pending events.
+     * @param useDeps
+     *            flag to indicate dependencies should be carried for the next
+     *            operation.
+     */
     @Override
     public int read(final Object value, long hostOffset, int[] events, boolean useDeps) {
         final T array = cast(value);
@@ -356,6 +370,9 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     @Override
     public void write(final Object value) {
         final T array = cast(value);
+        if (array == null) {
+            throw new TornadoRuntimeException("[ERROR] data is NULL");
+        }
         buildArrayHeader(Array.getLength(array)).write();
         // XXX: Offset 0
         writeArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, 0, null);

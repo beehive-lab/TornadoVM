@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
@@ -382,6 +383,12 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return result;
     }
 
+    private void checkBatchSize(long batchSize) {
+        if (batchSize > 0) {
+            throw new TornadoRuntimeException("[ERROR] Batch computation with non-arrays not supported yet.");
+        }
+    }
+
     @Override
     public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
         if (!state.hasBuffer()) {
@@ -392,6 +399,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
                 final Class<?> type = object.getClass();
                 if (!type.isArray()) {
+                    checkBatchSize(batchSize);
                     buffer.write(object);
                 }
 
@@ -400,7 +408,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 e.printStackTrace();
             }
         } else {
-            // We re-alloc if buffer size has changed
+            // We re-allocate if buffer size has changed
             final ObjectBuffer buffer = state.getBuffer();
             try {
                 buffer.allocate(object, batchSize);
@@ -414,6 +422,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 state.getBuffer().allocate(object, batchSize);
                 final Class<?> type = object.getClass();
                 if (!type.isArray()) {
+                    checkBatchSize(batchSize);
                     state.getBuffer().write(object);
                 }
                 state.setValid(true);
