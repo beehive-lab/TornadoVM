@@ -331,7 +331,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void compileTaskToOpenCL() {
-        vm.compile();
+        if (this.batchSizeBytes != -1) {
+            vm.compileWithBatches();
+        } else {
+            vm.compile();
+        }
     }
 
     private void precompilationForFPGA() {
