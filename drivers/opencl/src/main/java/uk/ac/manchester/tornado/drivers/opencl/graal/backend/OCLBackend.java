@@ -236,7 +236,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
      * memory size.
      */
     public void allocateHeapMemoryOnDevice() {
-        long memorySize = Math.max(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
+        long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
         if (memorySize > FOUR_GB) {
             memorySize = FOUR_GB;
         }
