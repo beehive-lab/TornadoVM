@@ -215,11 +215,9 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
                 }
                 index++;
             }
-            System.out.println("Writing data");
             internalEvents[index] = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
             onDevice = true;
             returnEvent = (index == 0) ? internalEvents[0] : deviceContext.enqueueMarker(internalEvents);
-
         }
         return useDeps ? returnEvent : -1;
     }
@@ -359,10 +357,9 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     public void write(final Object value) {
         final T array = cast(value);
         buildArrayHeader(Array.getLength(array)).write();
-        System.out.println("[XXX] Writing 0 in hostOffset");
+        // XXX: Offset 0
         writeArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, 0, null);
         onDevice = true;
-
     }
 
     abstract protected void writeArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);

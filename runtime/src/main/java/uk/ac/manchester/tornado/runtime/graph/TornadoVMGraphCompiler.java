@@ -41,6 +41,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecodes;
@@ -115,6 +116,7 @@ public class TornadoVMGraphCompiler {
         List<Object> objects = context.getObjects();
         long totalSize = 0;
         byte typeSize = 4;
+
         // XXX: Get a list for all objects
 
         for (Object o : objects) {
@@ -126,16 +128,17 @@ public class TornadoVMGraphCompiler {
                 long size = Array.getLength(o);
                 typeSize = dataTypesSize.get(componentType);
                 totalSize = size * typeSize;
-                System.out.println("Size Array!!!: " + totalSize);
             }
         }
 
         int totalChunks = (int) (totalSize / batchSize);
         int remainingChunkSize = (int) (totalSize % batchSize);
 
-        System.out.println("Batch Size: " + batchSize);
-        System.out.println("Total chunks: " + totalChunks);
-        System.out.println("remainingChunkSize: " + remainingChunkSize);
+        if (Tornado.DEBUG) {
+            System.out.println("Batch Size: " + batchSize);
+            System.out.println("Total chunks: " + totalChunks);
+            System.out.println("remainingChunkSize: " + remainingChunkSize);
+        }
         return new SizeBatch(totalChunks, remainingChunkSize, typeSize);
     }
 
@@ -178,18 +181,15 @@ public class TornadoVMGraphCompiler {
 
         if (batchSize != -1) {
             // compute in batches
-            System.out.println("Genereting in batches");
             long offset = 0;
             for (int i = 0; i < sizeBatch.getTotalChunks(); i++) {
                 offset = (batchSize * i);
                 long nthreads = batchSize / sizeBatch.getNumBytesType();
-                System.out.println("Pointing in offset: " + offset);
                 scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies, offset, batchSize, nthreads);
             }
             if (sizeBatch.getRemainingChunkSize() != 0) {
                 offset += (batchSize);
                 long nthreads = sizeBatch.getRemainingChunkSize() / sizeBatch.getNumBytesType();
-                System.out.println("Pointing in offset: " + offset);
 
                 long realBatchSize = sizeBatch.getTotalChunks() == 0 ? 0 : sizeBatch.getRemainingChunkSize();
                 long realOffsetSize = sizeBatch.getTotalChunks() == 0 ? 0 : offset;
