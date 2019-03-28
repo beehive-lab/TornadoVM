@@ -107,8 +107,9 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public void streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] list) {
+    public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] list) {
         TornadoInternalError.unimplemented();
+        return -1;
     }
 
     @Override

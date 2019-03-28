@@ -81,7 +81,7 @@ public interface TornadoDevice {
 
     int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] list);
 
-    void streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] list);
+    int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] list);
 
     boolean isDistibutedMemory();
 

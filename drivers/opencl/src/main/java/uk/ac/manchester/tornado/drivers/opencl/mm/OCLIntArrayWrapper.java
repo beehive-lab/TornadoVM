@@ -40,8 +40,8 @@ public class OCLIntArrayWrapper extends OCLArrayWrapper<int[]> {
     }
 
     @Override
-    protected void readArrayData(long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
-        deviceContext.readBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    protected int readArrayData(long bufferId, long offset, long bytes, int[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.readBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     @Override

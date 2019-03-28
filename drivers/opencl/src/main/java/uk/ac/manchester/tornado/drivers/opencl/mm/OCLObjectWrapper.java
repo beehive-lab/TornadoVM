@@ -352,13 +352,14 @@ public class OCLObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public void read(Object object, long hostOffset, int[] events, boolean useDeps) {
+    public int read(Object object, long hostOffset, int[] events, boolean useDeps) {
+        int event = -1;
         if (vectorObject) {
             final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
-            fieldBuffer.read(object, events, useDeps);
+            event = fieldBuffer.read(object, events, useDeps);
         } else {
             buffer.position(buffer.capacity());
-            deviceContext.readBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), hostOffset, (useDeps) ? events : null);
+            event = deviceContext.readBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), hostOffset, (useDeps) ? events : null);
             for (int i = 0; i < fields.length; i++) {
                 if (wrappedFields[i] != null) {
                     wrappedFields[i].read(object);
@@ -366,6 +367,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
             }
             deserialise(object);
         }
+        return event;
     }
 
     @Override

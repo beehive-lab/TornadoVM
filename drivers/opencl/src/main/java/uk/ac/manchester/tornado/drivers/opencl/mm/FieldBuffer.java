@@ -98,12 +98,13 @@ public class FieldBuffer {
         read(ref, null, false);
     }
 
-    public void read(final Object ref, int[] events, boolean useDeps) {
+    public int read(final Object ref, int[] events, boolean useDeps) {
         if (DEBUG) {
             debug("fieldBuffer: read - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         // XXX: Offset 0
-        objectBuffer.read(getFieldValue(ref), 0, events, useDeps);
+        int event = objectBuffer.read(getFieldValue(ref), 0, events, useDeps);
+        return event;
     }
 
     public long toAbsoluteAddress() {

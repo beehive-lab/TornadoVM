@@ -285,7 +285,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public void read(final Object value, long hostOffset, int[] events, boolean useDeps) {
+    public int read(final Object value, long hostOffset, int[] events, boolean useDeps) {
         final T array = cast(value);
         if (array == null) {
             throw new TornadoRuntimeException("[ERROR] output data is NULL");
@@ -293,16 +293,17 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
         if (VALIDATE_ARRAY_HEADERS) {
             if (validateArrayHeader(array)) {
-                readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+                return readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
             } else {
                 shouldNotReachHere("Array header is invalid");
             }
         } else {
-            readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+            return readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         }
+        return -1;
     }
 
-    abstract protected void readArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
+    abstract protected int readArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
     private long sizeOf(final T array) {
         return (long) arrayHeaderSize + ((long) Array.getLength(array) * (long) kind.getByteCount());

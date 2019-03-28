@@ -154,8 +154,8 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
     }
 
     @Override
-    protected void readArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents) {
-        readElements(value);
+    protected int readArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents) {
+        return readElements(value);
     }
 
     @Override

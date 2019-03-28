@@ -460,9 +460,9 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public void streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState state, int[] events) {
+    public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState state, int[] events) {
         TornadoInternalError.guarantee(state.isValid(), "invalid variable");
-        state.getBuffer().read(object, hostOffset, events, events == null);
+        return state.getBuffer().read(object, hostOffset, events, events == null);
     }
 
     public void sync(Object... objects) {
