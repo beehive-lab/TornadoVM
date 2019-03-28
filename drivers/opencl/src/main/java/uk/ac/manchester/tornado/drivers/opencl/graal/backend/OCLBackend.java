@@ -177,7 +177,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public String decodeDeopt(long value) {
         DeoptimizationReason reason = getProviders().getMetaAccess().decodeDeoptReason(JavaConstant.forLong(value));
         DeoptimizationAction action = getProviders().getMetaAccess().decodeDeoptAction(JavaConstant.forLong(value));
-
         return String.format("deopt: reason=%s, action=%s", reason.toString(), action.toString());
     }
 
