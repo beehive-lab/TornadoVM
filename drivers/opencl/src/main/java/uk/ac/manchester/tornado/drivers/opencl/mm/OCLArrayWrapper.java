@@ -161,8 +161,11 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public int enqueueRead(final Object value, long batchSize, long hostOffset, final int[] events, boolean useDeps) {
+    public int enqueueRead(final Object value, long hostOffset, final int[] events, boolean useDeps) {
         final T array = cast(value);
+        if (array == null) {
+            throw new TornadoRuntimeException("[ERROR] output data is NULL");
+        }
         final int returnEvent;
         if (isFinal) {
             returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
@@ -284,6 +287,9 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     @Override
     public void read(final Object value, long hostOffset, int[] events, boolean useDeps) {
         final T array = cast(value);
+        if (array == null) {
+            throw new TornadoRuntimeException("[ERROR] output data is NULL");
+        }
 
         if (VALIDATE_ARRAY_HEADERS) {
             if (validateArrayHeader(array)) {

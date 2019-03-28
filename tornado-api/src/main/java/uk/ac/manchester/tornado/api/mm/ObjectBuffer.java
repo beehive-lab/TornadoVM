@@ -60,7 +60,7 @@ public interface ObjectBuffer {
 
     void write(Object reference);
 
-    int enqueueRead(Object reference, long batchSisze, long hostOffset, int[] events, boolean useDeps);
+    int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps);
 
     int enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps);
 

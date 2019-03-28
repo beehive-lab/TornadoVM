@@ -481,7 +481,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         final GlobalObjectState globalState = localState.getGlobalState();
         final DeviceObjectState deviceState = globalState.getDeviceState();
         final TornadoAcceleratorDevice device = globalState.getOwner();
-        return device.resolveEvent(device.streamOut(object, 0, 0, deviceState, null));
+        return device.resolveEvent(device.streamOut(object, 0, deviceState, null));
     }
 
     @Override

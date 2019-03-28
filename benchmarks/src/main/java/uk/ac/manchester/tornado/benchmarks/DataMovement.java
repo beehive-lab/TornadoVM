@@ -84,7 +84,7 @@ public class DataMovement {
 
                     final long t2 = System.nanoTime();
                     for (int i = 0; i < iterations; i++) {
-                        device.streamOut(array, 0, 0, deviceState, null);
+                        device.streamOut(array, 0, deviceState, null);
                     }
                     device.sync();
                     final long t3 = System.nanoTime();

@@ -61,7 +61,8 @@ public class FieldBuffer {
         if (DEBUG) {
             trace("fieldBuffer: enqueueRead* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
-        return (useDeps) ? objectBuffer.enqueueRead(getFieldValue(ref), 0, 0, (useDeps) ? events : null, useDeps) : -1;
+        // XXX: Offset 0
+        return (useDeps) ? objectBuffer.enqueueRead(getFieldValue(ref), 0, (useDeps) ? events : null, useDeps) : -1;
     }
 
     public int enqueueWrite(final Object ref, final int[] events, boolean useDeps) {

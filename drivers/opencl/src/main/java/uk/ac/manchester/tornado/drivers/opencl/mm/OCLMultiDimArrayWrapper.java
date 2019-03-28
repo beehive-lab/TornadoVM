@@ -131,7 +131,7 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
         final E[] elements = innerCast(values);
         // XXX: Offset is 0
         for (int i = 0; i < elements.length; i++) {
-            wrappers[i].enqueueRead(elements[i], 0, 0, null, false);
+            wrappers[i].enqueueRead(elements[i], 0, null, false);
         }
         return deviceContext.enqueueBarrier();
     }

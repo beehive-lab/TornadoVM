@@ -419,7 +419,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public int enqueueRead(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
+    public int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps) {
         final int returnEvent;
         if (vectorObject) {
             final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];

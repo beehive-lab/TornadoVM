@@ -58,7 +58,7 @@ public class DataMovementTest2 {
         System.out.println("Reset: ");
         System.out.printf(image.toString());
 
-        int readEvent = device.streamOut(image, 0, 0, deviceState, null);
+        int readEvent = device.streamOut(image, 0, deviceState, null);
         device.resolveEvent(readEvent).waitOn();
 
         System.out.println("After: ");

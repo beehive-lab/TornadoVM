@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * tornado uk.ac.manchester.tornado.examples.Init <size>
  * 
  */
-public class InitBatch {
+public class InitBatchSmall {
 
     private static final boolean CHECK = true;
 
@@ -50,7 +50,7 @@ public class InitBatch {
 
     public static void main(String[] args) {
 
-        int size = 300000000;
+        int size = 100000;
         if (args.length > 0) {
             size = Integer.parseInt(args[0]);
         }
@@ -70,8 +70,8 @@ public class InitBatch {
 
         TaskSchedule ts = new TaskSchedule("s0");
         // @formatter:off
-        ts.batch("400MB")
-          .task("t0", InitBatch::compute, arrayA, arrayB)
+        ts.batch("200MB")
+          .task("t0", InitBatchSmall::compute, arrayA, arrayB)
           .streamOut((Object) arrayB);
         // @formatter:on
         ts.execute();

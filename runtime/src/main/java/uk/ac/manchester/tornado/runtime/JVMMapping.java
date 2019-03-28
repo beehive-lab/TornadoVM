@@ -101,13 +101,13 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int streamIn(Object object, long batchSize, long offset, TornadoDeviceObjectState objectState, int[] events) {
+    public int streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
         TornadoInternalError.unimplemented();
         return -1;
     }
 
     @Override
-    public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState, int[] list) {
+    public void streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] list) {
         TornadoInternalError.unimplemented();
     }
 
@@ -142,7 +142,7 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int streamOut(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] list) {
+    public int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] list) {
         return -1;
     }
 
