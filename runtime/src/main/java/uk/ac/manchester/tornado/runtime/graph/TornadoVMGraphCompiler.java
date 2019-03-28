@@ -30,6 +30,7 @@ import java.nio.BufferOverflowException;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import org.graalvm.compiler.graph.Node;
@@ -113,13 +114,15 @@ public class TornadoVMGraphCompiler {
 
     private static SizeBatch computeChunkSizes(TornadoExecutionContext context, long batchSize) {
         // Get the size of the batch
-        List<Object> objects = context.getObjects();
+        List<Object> inputObjects = context.getObjects();
         long totalSize = 0;
-        byte typeSize = 4;
+        byte typeSize = 1;
+
+        HashSet<Class<?>> classObjects = new HashSet<>();
+        HashSet<Long> inputSizes = new HashSet<>();
 
         // XXX: Get a list for all objects
-
-        for (Object o : objects) {
+        for (Object o : inputObjects) {
             if (o.getClass().isArray()) {
                 Class<?> componentType = o.getClass().getComponentType();
                 if (dataTypesSize.get(componentType) == null) {
@@ -128,6 +131,15 @@ public class TornadoVMGraphCompiler {
                 long size = Array.getLength(o);
                 typeSize = dataTypesSize.get(componentType);
                 totalSize = size * typeSize;
+
+                classObjects.add(componentType);
+                inputSizes.add(totalSize);
+                if (classObjects.size() > 1) {
+                    throw new TornadoRuntimeException("[UNSUPPORTED] Input objects with different data types not currently supported");
+                }
+                if (inputSizes.size() > 1) {
+                    throw new TornadoRuntimeException("[UNSUPPORTED] Input objects with different sizes not currently supported");
+                }
             }
         }
 
