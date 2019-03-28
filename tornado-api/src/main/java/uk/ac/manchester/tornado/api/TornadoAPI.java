@@ -112,7 +112,7 @@ public interface TornadoAPI {
             T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15);
 
     /**
-     * Add a prebuilt OpenCL task into a task-schedule
+     * Add a pre-built OpenCL task into a task-schedule
      * 
      * @param id
      * @param entryPoint
@@ -141,12 +141,35 @@ public interface TornadoAPI {
 
     TornadoAPI mapAllTo(TornadoDevice device);
 
+    /**
+     * Open a stream channel between the host and the target device.
+     * 
+     * @param objects
+     *            list of input objects to be streamed.
+     * @return link to the {@TornadoAPI} to allow function composition.
+     */
     TornadoAPI streamIn(Object... objects);
 
+    /**
+     * Open a stream channel between the device and the host.
+     * 
+     * @param objects
+     *            list of input objects to be streamed.
+     * @return link to the {@TornadoAPI} to allow function composition.
+     */
     TornadoAPI streamOut(Object... objects);
 
     TornadoAPI schedule();
 
+    /**
+     * It enables batch processing on the target device.
+     * 
+     * @param batchSize
+     *            size of the batch represented as a string. For example
+     *            "512MB", "1GB". If the batchSize is <= 0 the whole array is
+     *            computed without splitting in smaller batches.
+     * @return link to the {@TornadoAPI} to allow function composition.
+     */
     TornadoAPI batch(String batchSize);
 
     void execute();

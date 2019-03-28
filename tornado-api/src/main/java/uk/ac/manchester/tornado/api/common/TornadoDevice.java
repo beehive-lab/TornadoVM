@@ -49,6 +49,110 @@ import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 
 public interface TornadoDevice {
 
+    /**
+     * It allocates an object in the pre-defined heap of the target device. It
+     * also ensure that there is enough space for the input object.
+     * 
+     * @param object
+     *            to be allocated
+     * @param batchSize
+     *            size of the object to be allocated. If this value is <= 0,
+     *            then it allocates the sizeof(object).
+     * @param state
+     *            state of the object in the target device
+     *            {@link TornadoDeviceObjectState}
+     * @return an event ID
+     */
+    int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state);
+
+    /**
+     * It allocates and copy in the content of the object to the target device.
+     * 
+     * @param object
+     *            to be allocated
+     * @param objectState
+     *            state of the object in the target device
+     *            {@link TornadoDeviceObjectState}
+     * @param events
+     *            list of pending events (dependencies)
+     * @param batchSize
+     *            size of the object to be allocated. If this value is <= 0,
+     *            then it allocates the sizeof(object).
+     * @param hostOffset
+     *            offset in bytes for the copy within the host input array (or
+     *            object)
+     * @return an event ID
+     */
+    int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long hostOffset);
+
+    /**
+     * It always copies in the input data (object) from the host to the target
+     * device.
+     * 
+     * @param object
+     *            to be copied
+     * @param batchSize
+     *            size of the object to be allocated. If this value is <= 0,
+     *            then it allocates the sizeof(object).
+     * @param hostOffset
+     *            offset in bytes for the copy within the host input array (or
+     *            object)
+     * @param objectState
+     *            state of the object in the target device
+     *            {@link TornadoDeviceObjectState}
+     * @param events
+     *            list of previous events
+     * @return and event ID
+     */
+    int streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
+
+    /**
+     * It copies a device buffer from the target device to the host. Copies are
+     * non-blocking
+     * 
+     * @param object
+     *            to be copied.
+     * @param hostOffset
+     *            offset in bytes for the copy within the host input array (or
+     *            object)
+     * @param objectState
+     *            state of the object in the target device
+     *            {@link TornadoDeviceObjectState}
+     * @param events
+     *            of pending events
+     * @return and event ID
+     */
+    int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
+
+    /**
+     * It copies a device buffer from the target device to the host. Copies are
+     * blocking between the device and the host.
+     * 
+     * @param object
+     *            to be copied.
+     * @param hostOffset
+     *            offset in bytes for the copy within the host input array (or
+     *            object)
+     * @param objectState
+     *            state of the object in the target device
+     *            {@link TornadoDeviceObjectState}
+     * @param events
+     *            of pending events
+     * @return and event ID
+     */
+    int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
+
+    boolean isDistibutedMemory();
+
+    /**
+     * It resolves an pending event.
+     * 
+     * @param event
+     *            ID
+     * @return an object of type {@link Event}
+     */
+    Event resolveEvent(int event);
+
     void ensureLoaded();
 
     void markEvent();
@@ -72,20 +176,6 @@ public interface TornadoDevice {
     void dumpEvents();
 
     void dumpMemory(String file);
-
-    int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state);
-
-    int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long size, long hostOffset);
-
-    int streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
-
-    int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] list);
-
-    int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] list);
-
-    boolean isDistibutedMemory();
-
-    Event resolveEvent(int event);
 
     // Getters
 
