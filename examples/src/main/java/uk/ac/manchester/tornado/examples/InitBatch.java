@@ -72,9 +72,9 @@ public class InitBatch {
         // @formatter:off
         ts.batch("100MB")
           .task("t0", InitBatch::compute, arrayA, arrayB)
-          .streamOut((Object) arrayB);
+          .streamOut((Object) arrayB)
+          .execute();
         // @formatter:on
-        ts.execute();
 
         if (CHECK) {
             boolean check = true;
