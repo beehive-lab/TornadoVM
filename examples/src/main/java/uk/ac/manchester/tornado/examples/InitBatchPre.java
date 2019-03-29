@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 /**
  * Run with:
  * 
- * tornado uk.ac.manchester.tornado.examples.Init <size>
+ * tornado uk.ac.manchester.tornado.examples.InitBatchPre <size>
  * 
  */
 public class InitBatchPre {
