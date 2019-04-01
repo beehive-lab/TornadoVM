@@ -26,12 +26,11 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 
-public class TestBatchesTypesDecimal {
+public class TestBatchesTypesDouble {
 
     @Test
     public void test50MBDouble() {
 
-        // Fill 160MB of input Array
         int size = 20000000;
         double[] arrayA = new double[size];
         double[] arrayB = new double[size];

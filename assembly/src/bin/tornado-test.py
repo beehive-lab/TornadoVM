@@ -59,7 +59,8 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.api.TestAPI",
 	"uk.ac.manchester.tornado.unittests.batches.TestBatches",
 	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypes",
-	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypesDecimal",
+	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypesDouble",
+	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypesLong",
 ]
 
 ## Options
