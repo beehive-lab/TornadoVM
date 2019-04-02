@@ -72,6 +72,8 @@ public class TestReductionsFloats extends TornadoTestBase {
             numGroups = SIZE / 256;
         }
         float[] result = allocResultArray(numGroups);
+        final int neutral = 0;
+        Arrays.fill(result, neutral);
 
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
@@ -195,12 +197,6 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
-    public static void init(float[] result) {
-        for (@Parallel int i = 0; i < result.length; i++) {
-            result[i] = 1.0f;
-        }
-    }
-
     public static void multiplyFloats(float[] input, @Reduce float[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] *= input[i];
@@ -216,6 +212,8 @@ public class TestReductionsFloats extends TornadoTestBase {
             numGroups = SIZE / 256;
         }
         float[] result = allocResultArray(numGroups);
+        final int neutral = 1;
+        Arrays.fill(result, neutral);
 
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
@@ -228,8 +226,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsFloats::init, result)
-            .task("t1", TestReductionsFloats::multiplyFloats, input, result)
+            .task("t0", TestReductionsFloats::multiplyFloats, input, result)
             .streamOut(result)
             .execute();
         //@formatter:on
@@ -331,8 +328,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(3.14, piValue, 0.01f);
     }
 
-    public static void maxReductionAnnotation(float[] input, @Reduce float[] result, int neutral) {
-        result[0] = neutral;
+    public static void maxReductionAnnotation(float[] input, @Reduce float[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] = Math.max(result[0], input[i]);
         }
@@ -351,11 +347,12 @@ public class TestReductionsFloats extends TornadoTestBase {
             numGroups = SIZE / 256;
         }
         float[] result = allocResultArray(numGroups);
+        Arrays.fill(result, Float.MIN_VALUE);
 
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsFloats::maxReductionAnnotation, input, result, Integer.MIN_VALUE)
+            .task("t0", TestReductionsFloats::maxReductionAnnotation, input, result)
             .streamOut(result)
             .execute();
         //@formatter:on
@@ -364,13 +361,13 @@ public class TestReductionsFloats extends TornadoTestBase {
             result[0] = Math.max(result[0], result[i]);
         }
 
-        float[] sequential = new float[1];
-        maxReductionAnnotation(input, sequential, Integer.MIN_VALUE);
+        float[] sequential = new float[] { Float.MIN_VALUE };
+        maxReductionAnnotation(input, sequential);
 
         assertEquals(sequential[0], result[0], 0.01f);
     }
 
-    public static void minReductionAnnotation(float[] input, @Reduce float[] result, int neutral) {
+    public static void minReductionAnnotation(float[] input, @Reduce float[] result, float neutral) {
         result[0] = neutral;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] = Math.min(result[0], input[i]);
@@ -390,11 +387,12 @@ public class TestReductionsFloats extends TornadoTestBase {
             numGroups = SIZE / 256;
         }
         float[] result = allocResultArray(numGroups);
+        Arrays.fill(result, Float.MAX_VALUE);
 
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsFloats::minReductionAnnotation, input, result, Integer.MAX_VALUE)
+            .task("t0", TestReductionsFloats::minReductionAnnotation, input, result, Float.MAX_VALUE)
             .streamOut(result)
             .execute();
         //@formatter:on
@@ -404,7 +402,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         }
 
         float[] sequential = new float[1];
-        minReductionAnnotation(input, sequential, Integer.MAX_VALUE);
+        minReductionAnnotation(input, sequential, Float.MAX_VALUE);
 
         assertEquals(sequential[0], result[0], 0.01f);
     }

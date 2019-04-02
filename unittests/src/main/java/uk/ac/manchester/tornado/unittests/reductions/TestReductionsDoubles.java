@@ -220,12 +220,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
-    public static void init(double[] result) {
-        for (@Parallel int i = 0; i < result.length; i++) {
-            result[i] = 1.0;
-        }
-    }
-
     public static void multiplyDoubles(double[] input, @Reduce double[] result) {
         result[0] = 1.0f;
         for (@Parallel int i = 0; i < input.length; i++) {
@@ -242,6 +236,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
             numGroups = SIZE / 256;
         }
         double[] result = allocResultArray(numGroups);
+        Arrays.fill(result, 1.0);
 
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
@@ -254,7 +249,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsDoubles::init, result)
             .task("t1", TestReductionsDoubles::multiplyDoubles, input, result)
             .streamOut(result)
             .execute();
@@ -289,6 +283,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
             numGroups = SIZE / 256;
         }
         double[] result = allocResultArray(numGroups);
+        Arrays.fill(result, Double.MIN_VALUE);
 
         //@formatter:off
         new TaskSchedule("s0")
@@ -306,12 +301,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
         maxReductionAnnotation(input, sequential);
 
         assertEquals(sequential[0], result[0], 0.01);
-    }
-
-    public static void initMin(double[] result) {
-        for (@Parallel int i = 0; i < result.length; i++) {
-            result[i] = Double.MAX_VALUE;
-        }
     }
 
     public static void minReductionAnnotation(double[] input, @Reduce double[] result) {
@@ -334,11 +323,11 @@ public class TestReductionsDoubles extends TornadoTestBase {
             numGroups = SIZE / 256;
         }
         double[] result = allocResultArray(numGroups);
+        Arrays.fill(result, Double.MAX_VALUE);
 
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t1", TestReductionsDoubles::initMin, result)
             .task("t0", TestReductionsDoubles::minReductionAnnotation, input, result)
             .streamOut(result)
             .execute();
