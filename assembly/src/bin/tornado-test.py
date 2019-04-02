@@ -72,17 +72,6 @@ __PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
 __VERSION__ = "0.3_21032018"
 
 __TORNADO_TESTS_WHITE_LIST__ = [
-	"uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest#testPrebuild01",
-
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testReductionAnnotationCPUSimple",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testReductionAnnotation", 
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testMultiplicationReduction",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testSequentialReduction",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testReduction01",    
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testMapReduce",               
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testThreadSchuler",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testSumInts2",     
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testSumInts3",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testSumFloats",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testMultFloats",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles#testSumDoubles",

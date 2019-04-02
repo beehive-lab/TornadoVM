@@ -174,8 +174,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         Arrays.fill(input, 1);
         input[10] = new Random().nextInt(100);
 
-        System.out.println(Arrays.toString(input));
-
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
@@ -184,8 +182,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .streamOut(result)
             .execute();
         //@formatter:on
-
-        System.out.println(Arrays.toString(result));
 
         // Final result
         for (int i = 1; i < result.length; i++) {
@@ -229,8 +225,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        System.out.println(Arrays.toString(result));
-
         // Final result
         for (int i = 1; i < result.length; i++) {
             result[1] = Math.max(result[1], result[i]);
@@ -239,8 +233,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         int[] sequential = new int[1];
         maxReductionAnnotation(input, sequential, Integer.MIN_VALUE);
-
-        System.out.println(result[0]);
 
         assertEquals(sequential[0], result[0]);
     }
@@ -276,8 +268,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .streamOut(result)
             .execute();
         //@formatter:on
-
-        System.out.println(Arrays.toString(result));
 
         for (int i = 1; i < result.length; i++) {
             result[1] = Math.min(result[1], result[i]);
