@@ -72,10 +72,6 @@ __PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
 __VERSION__ = "0.3_21032018"
 
 __TORNADO_TESTS_WHITE_LIST__ = [
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testSumFloats",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testMultFloats",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles#testSumDoubles",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles#testMultdoubles",
 	"uk.ac.manchester.tornado.unittests.loops.TestLoops#testInnertForEach",
 	"uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer#testArrayMigration",
 	]
