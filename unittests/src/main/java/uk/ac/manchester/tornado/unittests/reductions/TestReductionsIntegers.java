@@ -20,9 +20,7 @@ package uk.ac.manchester.tornado.unittests.reductions;
 
 import static org.junit.Assert.assertEquals;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.OptionalInt;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -62,10 +60,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
         return result;
     }
 
+    // This test has to be executed on CPUs
     @Test
     public void testReductionAnnotationCPUSimple() {
-
-        // This test has to be executed on CPU
         TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         TornadoDeviceType deviceType = driver.getTypeDefaultDevice();
         if (deviceType != TornadoDeviceType.CPU) {
@@ -75,7 +72,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int numProcessors = Runtime.getRuntime().availableProcessors();
 
         int[] input = new int[SMALL_SIZE];
-        int[] result = new int[numProcessors];
+        int[] result = new int[numProcessors + 1];
 
         IntStream.range(0, SMALL_SIZE).parallel().forEach(i -> {
             input[i] = 2;
@@ -155,10 +152,13 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
-    public static void multReductionAnnotation(int[] input, @Reduce int[] result, int neutral) {
+    public static void init(int[] result, int neutral) {
         for (@Parallel int i = 0; i < result.length; i++) {
             result[i] = neutral;
         }
+    }
+
+    public static void multReductionAnnotation(int[] input, @Reduce int[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] *= input[i];
         }
@@ -166,32 +166,34 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
     @Test
     public void testMultiplicationReduction() {
-        int[] input = new int[64];
 
+        int[] input = new int[64];
         int numGroups = 1;
-        if (SIZE > 256) {
-            numGroups = SIZE / 256;
-        }
         int[] result = allocResultArray(numGroups);
 
         Arrays.fill(input, 1);
-        input[10] = new Random().nextInt() * 10;
+        input[10] = new Random().nextInt(100);
+
+        System.out.println(Arrays.toString(input));
 
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsIntegers::multReductionAnnotation, input, result, 1)
+            .task("t1", TestReductionsIntegers::init, result, 1)
+            .task("t0", TestReductionsIntegers::multReductionAnnotation, input, result)
             .streamOut(result)
             .execute();
         //@formatter:on
+
+        System.out.println(Arrays.toString(result));
 
         // Final result
         for (int i = 1; i < result.length; i++) {
             result[0] *= result[i];
         }
 
-        int[] sequential = new int[1];
-        multReductionAnnotation(input, sequential, 1);
+        int[] sequential = new int[] { 1 };
+        multReductionAnnotation(input, sequential);
 
         // Check result
         assertEquals(sequential[0], result[0]);
@@ -578,52 +580,6 @@ public class TestReductionsIntegers extends TornadoTestBase {
         mapReduce2(a, b, sequential);
 
         assertEquals(sequential[0], result[0]);
-    }
-
-    public static void testThreadScheduler(int[] a, int[] b, int[] result) {
-
-        // map
-        for (@Parallel int i = 0; i < a.length; i++) {
-            result[i] = a[i] * b[i];
-        }
-
-        // map
-        for (@Parallel int i = 0; i < a.length; i++) {
-            result[i] = result[i] * b[i];
-        }
-
-    }
-
-    @Test
-    public void testThreadSchuler() {
-        int[] a = new int[SMALL_SIZE * 2];
-        int[] b = new int[SMALL_SIZE * 2];
-
-        Random r = new Random();
-
-        int numGroups = 1;
-        if (SMALL_SIZE * 2 > 256) {
-            numGroups = SIZE * 2 / 256;
-        }
-        int[] result = allocResultArray(numGroups);
-
-        IntStream.range(0, SMALL_SIZE * 2).parallel().forEach(i -> {
-            a[i] = r.nextInt();
-            b[i] = r.nextInt();
-        });
-
-        //@formatter:off
-        new TaskSchedule("s0")
-            .streamIn(a)
-            .task("t0", TestReductionsIntegers::testThreadScheduler, a, b, result)
-            .streamOut(result)
-            .execute();
-        //@formatter:on
-
-        int[] sequential = new int[SMALL_SIZE * 2];
-        testThreadScheduler(a, b, sequential);
-
-        assertEquals(sequential[0], result[0], 0.001f);
     }
 
     public static void reductionAddInts2(int[] input, @Reduce int[] result) {
