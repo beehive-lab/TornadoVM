@@ -50,7 +50,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         double[] result = null;
         switch (deviceType) {
             case CPU:
-                result = new double[Runtime.getRuntime().availableProcessors()];
+                result = new double[Runtime.getRuntime().availableProcessors() + 1];
                 break;
             case GPU:
             case ACCELERATOR:
@@ -220,6 +220,12 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
+    public static void init(double[] result) {
+        for (@Parallel int i = 0; i < result.length; i++) {
+            result[i] = 1.0;
+        }
+    }
+
     public static void multiplyDoubles(double[] input, @Reduce double[] result) {
         result[0] = 1.0f;
         for (@Parallel int i = 0; i < input.length; i++) {
@@ -242,15 +248,14 @@ public class TestReductionsDoubles extends TornadoTestBase {
             input[i] = 1.0;
         });
 
-        Arrays.fill(result, 1.0);
-
         input[10] = r.nextDouble();
         input[12] = r.nextDouble();
 
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsDoubles::multiplyDoubles, input, result)
+            .task("t0", TestReductionsDoubles::init, result)
+            .task("t1", TestReductionsDoubles::multiplyDoubles, input, result)
             .streamOut(result)
             .execute();
         //@formatter:on
@@ -264,8 +269,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
-    public static void maxReductionAnnotation(double[] input, @Reduce double[] result, int neutral) {
-        result[0] = neutral;
+    public static void maxReductionAnnotation(double[] input, @Reduce double[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] = Math.max(result[0], input[i]);
         }
@@ -275,8 +279,9 @@ public class TestReductionsDoubles extends TornadoTestBase {
     public void testMaxReduction() {
         double[] input = new double[SIZE];
 
+        Random r = new Random();
         IntStream.range(0, SIZE).forEach(idx -> {
-            input[idx] = idx;
+            input[idx] = r.nextDouble();
         });
 
         int numGroups = 1;
@@ -288,7 +293,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsDoubles::maxReductionAnnotation, input, result, Integer.MIN_VALUE)
+            .task("t0", TestReductionsDoubles::maxReductionAnnotation, input, result)
             .streamOut(result)
             .execute();
         //@formatter:on
@@ -297,14 +302,19 @@ public class TestReductionsDoubles extends TornadoTestBase {
             result[0] = Math.max(result[0], result[i]);
         }
 
-        double[] sequential = new double[1];
-        maxReductionAnnotation(input, sequential, Integer.MIN_VALUE);
+        double[] sequential = new double[] { Double.MIN_VALUE };
+        maxReductionAnnotation(input, sequential);
 
         assertEquals(sequential[0], result[0], 0.01);
     }
 
-    public static void minReductionAnnotation(double[] input, @Reduce double[] result, int neutral) {
-        result[0] = neutral;
+    public static void initMin(double[] result) {
+        for (@Parallel int i = 0; i < result.length; i++) {
+            result[i] = Double.MAX_VALUE;
+        }
+    }
+
+    public static void minReductionAnnotation(double[] input, @Reduce double[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] = Math.min(result[0], input[i]);
         }
@@ -314,8 +324,9 @@ public class TestReductionsDoubles extends TornadoTestBase {
     public void testMinReduction() {
         double[] input = new double[SIZE];
 
-        IntStream.range(0, SIZE).parallel().forEach(idx -> {
-            input[idx] = idx + 100;
+        Random r = new Random();
+        IntStream.range(0, SIZE).forEach(idx -> {
+            input[idx] = r.nextDouble();
         });
 
         int numGroups = 1;
@@ -327,7 +338,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsDoubles::minReductionAnnotation, input, result, Integer.MAX_VALUE)
+            .task("t1", TestReductionsDoubles::initMin, result)
+            .task("t0", TestReductionsDoubles::minReductionAnnotation, input, result)
             .streamOut(result)
             .execute();
         //@formatter:on
@@ -336,8 +348,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
             result[0] = Math.min(result[0], result[i]);
         }
 
-        double[] sequential = new double[1];
-        minReductionAnnotation(input, sequential, Integer.MAX_VALUE);
+        double[] sequential = new double[] { Double.MAX_VALUE };
+        minReductionAnnotation(input, sequential);
 
         assertEquals(sequential[0], result[0], 0.01);
     }
