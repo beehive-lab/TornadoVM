@@ -315,7 +315,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         double[] input = new double[SIZE];
 
         IntStream.range(0, SIZE).parallel().forEach(idx -> {
-            input[idx] = idx;
+            input[idx] = idx + 100;
         });
 
         int numGroups = 1;

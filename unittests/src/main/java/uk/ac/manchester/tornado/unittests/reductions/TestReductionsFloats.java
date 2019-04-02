@@ -44,7 +44,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         float[] result = null;
         switch (deviceType) {
             case CPU:
-                result = new float[Runtime.getRuntime().availableProcessors()];
+                result = new float[Runtime.getRuntime().availableProcessors() + 1];
                 break;
             case GPU:
             case ACCELERATOR:
@@ -86,6 +86,8 @@ public class TestReductionsFloats extends TornadoTestBase {
 		//@formatter:on
 
         task.execute();
+
+        System.out.println(Arrays.toString(result));
 
         for (int i = 1; i < result.length; i++) {
             result[0] += result[i];

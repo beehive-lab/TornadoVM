@@ -20,7 +20,9 @@ package uk.ac.manchester.tornado.unittests.reductions;
 
 import static org.junit.Assert.assertEquals;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.OptionalInt;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -48,7 +50,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] result = null;
         switch (deviceType) {
             case CPU:
-                result = new int[Runtime.getRuntime().availableProcessors()];
+                result = new int[Runtime.getRuntime().availableProcessors() + 1];
                 break;
             case GPU:
             case ACCELERATOR:
@@ -100,8 +102,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
     }
 
     /**
-     * First approach: use annotations in the user code to identify the reduction
-     * variables. This is a similar approach to OpenMP and OpenACC.
+     * First approach: use annotations in the user code to identify the
+     * reduction variables. This is a similar approach to OpenMP and OpenACC.
      * 
      * @param input
      * @param result
@@ -206,8 +208,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
     public void testMaxReduction() {
         int[] input = new int[SIZE];
 
+        Random r = new Random();
         IntStream.range(0, SIZE).forEach(idx -> {
-            input[idx] = idx;
+            input[idx] = r.nextInt(10000);
         });
 
         int numGroups = 1;
@@ -224,19 +227,26 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .execute();
         //@formatter:on
 
+        System.out.println(Arrays.toString(result));
+
         // Final result
         for (int i = 1; i < result.length; i++) {
-            result[0] = Math.max(result[0], result[i]);
+            result[1] = Math.max(result[1], result[i]);
         }
+        result[0] = result[1];
 
         int[] sequential = new int[1];
         maxReductionAnnotation(input, sequential, Integer.MIN_VALUE);
+
+        System.out.println(result[0]);
 
         assertEquals(sequential[0], result[0]);
     }
 
     public static void minReductionAnnotation(int[] input, @Reduce int[] result, int neutral) {
-        result[0] = neutral;
+        for (@Parallel int i = 0; i < result.length; i++) {
+            result[i] = neutral;
+        }
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] = Math.min(result[0], input[i]);
         }
@@ -246,8 +256,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
     public void testMinReduction() {
         int[] input = new int[SIZE];
 
+        Random r = new Random();
         IntStream.range(0, SIZE).forEach(idx -> {
-            input[idx] = idx;
+            input[idx] = r.nextInt(1000) + 10;
         });
 
         int numGroups = 1;
@@ -264,9 +275,12 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .execute();
         //@formatter:on
 
+        System.out.println(Arrays.toString(result));
+
         for (int i = 1; i < result.length; i++) {
-            result[0] = Math.min(result[0], result[i]);
+            result[1] = Math.min(result[1], result[i]);
         }
+        result[0] = result[1];
 
         int[] sequential = new int[1];
         minReductionAnnotation(input, sequential, Integer.MAX_VALUE);
@@ -437,6 +451,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     public void testMapReduce3() {
         int[] a = new int[BIG_SIZE];
         int[] b = new int[BIG_SIZE];
+        int[] seq = new int[BIG_SIZE];
 
         int numGroups = 1;
         if (SIZE > 256) {
@@ -458,14 +473,20 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .execute();        
         //@formatter:on
 
+        int[] sequential = new int[BIG_SIZE];
+        map02(a, seq);
+        reduce02(seq, sequential);
+
         for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
+
+        assertEquals(sequential[0], result[0]);
     }
 
     /**
-     * Currently we cannot do this due to synchronisation between the first part and
-     * the second part, unless an explicit barrier is used.
+     * Currently we cannot do this due to synchronisation between the first part
+     * and the second part, unless an explicit barrier is used.
      */
     @Ignore
     public void testMapReduceSameKernel() {
@@ -494,9 +515,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        for (int i = 1; i < result.length; i++) {
-            result[0] += result[i];
+        for (int i = 2; i < result.length; i++) {
+            result[1] += result[i];
         }
+        result[0] = result[1];
 
         int[] sequential = new int[BIG_SIZE];
 
@@ -547,9 +569,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
 	         .execute();
 	    //@formatter:on
 
-        for (int i = 1; i < result.length; i++) {
-            result[0] += result[i];
+        for (int i = 2; i < result.length; i++) {
+            result[1] += result[i];
         }
+        result[0] = result[1];
 
         int[] sequential = new int[BIG_SIZE];
         mapReduce2(a, b, sequential);
