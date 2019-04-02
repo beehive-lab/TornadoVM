@@ -225,8 +225,6 @@ public class TestReductionsFloats extends TornadoTestBase {
         input[10] = r.nextFloat();
         input[12] = r.nextFloat();
 
-        Arrays.fill(result, 1.0f);
-
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
@@ -240,7 +238,7 @@ public class TestReductionsFloats extends TornadoTestBase {
             result[0] *= result[i];
         }
 
-        float[] sequential = new float[1];
+        float[] sequential = new float[] { 1.0f };
         multiplyFloats(input, sequential);
 
         // Check result
