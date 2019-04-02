@@ -128,6 +128,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
             numGroups = SIZE / 256;
         }
         int[] result = allocResultArray(numGroups);
+        final int neutral = 0;
+        Arrays.fill(result, neutral);
 
         IntStream.range(0, SIZE).parallel().forEach(i -> {
             input[i] = 2;
@@ -174,10 +176,12 @@ public class TestReductionsIntegers extends TornadoTestBase {
         Arrays.fill(input, 1);
         input[10] = new Random().nextInt(100);
 
+        final int neutral = 1;
+        Arrays.fill(result, neutral);
+
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t1", TestReductionsIntegers::init, result, 1)
             .task("t0", TestReductionsIntegers::multReductionAnnotation, input, result)
             .streamOut(result)
             .execute();
@@ -217,6 +221,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
         }
         int[] result = allocResultArray(numGroups);
 
+        Arrays.fill(result, Integer.MIN_VALUE);
+
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
@@ -227,9 +233,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
         // Final result
         for (int i = 1; i < result.length; i++) {
-            result[1] = Math.max(result[1], result[i]);
+            result[0] = Math.max(result[0], result[i]);
         }
-        result[0] = result[1];
 
         int[] sequential = new int[1];
         maxReductionAnnotation(input, sequential, Integer.MIN_VALUE);
@@ -237,14 +242,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
-    public static void initMin(int[] result, int neutral) {
-        for (@Parallel int i = 0; i < result.length; i++) {
-            result[i] = neutral;
-        }
-    }
-
     public static void minReductionAnnotation(int[] input, @Reduce int[] result) {
-
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] = Math.min(result[0], input[i]);
         }
@@ -253,10 +251,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
     @Test
     public void testMinReduction() {
         int[] input = new int[SIZE];
-
-        Random r = new Random();
         IntStream.range(0, SIZE).forEach(idx -> {
-            input[idx] = r.nextInt(1000) + 10;
+            input[idx] = idx + 1;
         });
 
         int numGroups = 1;
@@ -264,20 +260,18 @@ public class TestReductionsIntegers extends TornadoTestBase {
             numGroups = SIZE / 256;
         }
         int[] result = allocResultArray(numGroups);
+        Arrays.fill(result, Integer.MAX_VALUE);
 
         //@formatter:off
         new TaskSchedule("s0")
-            .streamIn(input)
-            .task("t0", TestReductionsIntegers::initMin, result, Integer.MAX_VALUE)
-            .task("t1", TestReductionsIntegers::minReductionAnnotation, input, result)
+            .task("t0", TestReductionsIntegers::minReductionAnnotation, input, result)
             .streamOut(result)
             .execute();
         //@formatter:on
 
         for (int i = 1; i < result.length; i++) {
-            result[1] = Math.min(result[1], result[i]);
+            result[0] = Math.min(result[0], result[i]);
         }
-        result[0] = result[1];
 
         int[] sequential = new int[] { Integer.MAX_VALUE };
         minReductionAnnotation(input, sequential);
@@ -339,8 +333,10 @@ public class TestReductionsIntegers extends TornadoTestBase {
             numGroups = SIZE / 256;
         }
         int[] result = allocResultArray(numGroups);
-
         Random r = new Random();
+
+        final int neutral = 0;
+        Arrays.fill(result, neutral);
 
         IntStream.range(0, SMALL_SIZE).parallel().forEach(i -> {
             input[i] = r.nextInt();
@@ -405,6 +401,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
             numGroups = SIZE / 256;
         }
         int[] result = allocResultArray(numGroups);
+        final int neutral = 0;
+        Arrays.fill(result, neutral);
 
         IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
             a[i] = 10;
@@ -455,6 +453,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
             numGroups = SIZE / 256;
         }
         int[] result = allocResultArray(numGroups);
+        final int neutral = 0;
+        Arrays.fill(result, neutral);
 
         IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
             a[i] = 10;
@@ -552,6 +552,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
             numGroups = SIZE / 256;
         }
         int[] result = allocResultArray(numGroups);
+        final int neutral = 0;
+        Arrays.fill(result, neutral);
 
         IntStream.range(0, BIG_SIZE).parallel().forEach(i -> {
             a[i] = 1;
@@ -566,10 +568,9 @@ public class TestReductionsIntegers extends TornadoTestBase {
 	         .execute();
 	    //@formatter:on
 
-        for (int i = 2; i < result.length; i++) {
-            result[1] += result[i];
+        for (int i = 1; i < result.length; i++) {
+            result[0] += result[i];
         }
-        result[0] = result[1];
 
         int[] sequential = new int[BIG_SIZE];
         mapReduce2(a, b, sequential);
@@ -631,6 +632,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
             numGroups = SIZE / 256;
         }
         int[] result = allocResultArray(numGroups);
+        final int neutral = 0;
+        Arrays.fill(result, neutral);
 
         Random r = new Random();
         IntStream.range(0, SIZE).sequential().forEach(i -> {
