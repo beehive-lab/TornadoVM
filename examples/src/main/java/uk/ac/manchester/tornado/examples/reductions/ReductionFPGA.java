@@ -106,6 +106,6 @@ public class ReductionFPGA {
             inputSize = Integer.parseInt(args[0]);
         }
         System.out.println("Size = " + inputSize);
-        new ReductionAddFloats().run(inputSize);
+        new ReductionFPGA().run(inputSize);
     }
 }
