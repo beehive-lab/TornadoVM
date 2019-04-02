@@ -237,10 +237,14 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
-    public static void minReductionAnnotation(int[] input, @Reduce int[] result, int neutral) {
+    public static void initMin(int[] result, int neutral) {
         for (@Parallel int i = 0; i < result.length; i++) {
             result[i] = neutral;
         }
+    }
+
+    public static void minReductionAnnotation(int[] input, @Reduce int[] result) {
+
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] = Math.min(result[0], input[i]);
         }
@@ -264,7 +268,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsIntegers::minReductionAnnotation, input, result, Integer.MAX_VALUE)
+            .task("t0", TestReductionsIntegers::initMin, result, Integer.MAX_VALUE)
+            .task("t1", TestReductionsIntegers::minReductionAnnotation, input, result)
             .streamOut(result)
             .execute();
         //@formatter:on
@@ -274,8 +279,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
         }
         result[0] = result[1];
 
-        int[] sequential = new int[1];
-        minReductionAnnotation(input, sequential, Integer.MAX_VALUE);
+        int[] sequential = new int[] { Integer.MAX_VALUE };
+        minReductionAnnotation(input, sequential);
 
         assertEquals(sequential[0], result[0]);
     }
