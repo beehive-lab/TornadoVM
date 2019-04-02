@@ -89,8 +89,6 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         task.execute();
 
-        System.out.println(Arrays.toString(result));
-
         for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
