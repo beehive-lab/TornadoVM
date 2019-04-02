@@ -195,8 +195,13 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
+    public static void init(float[] result) {
+        for (@Parallel int i = 0; i < result.length; i++) {
+            result[i] = 1.0f;
+        }
+    }
+
     public static void multiplyFloats(float[] input, @Reduce float[] result) {
-        result[0] = 1.0f;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] *= input[i];
         }
@@ -225,7 +230,8 @@ public class TestReductionsFloats extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsFloats::multiplyFloats, input, result)
+            .task("t0", TestReductionsFloats::init, result)
+            .task("t1", TestReductionsFloats::multiplyFloats, input, result)
             .streamOut(result)
             .execute();
         //@formatter:on
