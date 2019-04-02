@@ -79,7 +79,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
         //@formatter:off
 		TaskSchedule task = new TaskSchedule("s0")
-			.streamIn(input)
 			.task("t0", TestReductionsDoubles::reductionAddDoubles, input, result)
 			.streamOut(result);
 		//@formatter:on
@@ -92,6 +91,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
         double[] sequential = new double[1];
         reductionAddDoubles(input, sequential);
+
         assertEquals(sequential[0], result[0], 0.01f);
     }
 
