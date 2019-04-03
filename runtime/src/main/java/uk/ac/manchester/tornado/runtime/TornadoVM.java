@@ -257,7 +257,6 @@ public class TornadoVM extends TornadoLogger {
                 }
                 bytecodesList.append(verbose + "\n");
 
-                // We streamIN
                 lastEvent = device.streamIn(object, sizeBatch, offset, objectState, waitList);
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
@@ -561,7 +560,6 @@ public class TornadoVM extends TornadoLogger {
         StringBuilder bytecodesList = new StringBuilder();
 
         while (buffer.hasRemaining()) {
-
             final byte op = buffer.get();
 
             if (op == TornadoVMBytecodes.ALLOCATE.index()) {

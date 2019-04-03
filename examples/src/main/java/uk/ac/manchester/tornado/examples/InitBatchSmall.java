@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.examples.common.Messages;
 
 /**
  * Run with:
@@ -87,9 +88,9 @@ public class InitBatchSmall {
                 }
             }
             if (!check) {
-                System.out.println("Result is wrong");
+                System.out.println(Messages.WRONG);
             } else {
-                System.out.println("Result is correct");
+                System.out.println(Messages.CORRECT);
             }
         }
     }

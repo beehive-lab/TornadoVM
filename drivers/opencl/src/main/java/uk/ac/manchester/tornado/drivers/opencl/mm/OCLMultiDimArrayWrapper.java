@@ -148,7 +148,9 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
 
     @Override
     protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents) {
-        System.out.println("[WARNING] writing in offset 0");
+        if (hostOffset > 0) {
+            System.out.println("[WARNING] writing in offset 0");
+        }
         tableWrapper.enqueueWrite(addresses, 0, 0, null, false);
         return writeElements(value);
     }
@@ -160,7 +162,9 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
 
     @Override
     protected void writeArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents) {
-        System.out.println("[WARNING] writing in offset 0");
+        if (hostOffset > 0) {
+            System.out.println("[WARNING] writing in offset 0");
+        }
         tableWrapper.enqueueWrite(addresses, 0, 0, null, false);
         writeElements(value);
     }

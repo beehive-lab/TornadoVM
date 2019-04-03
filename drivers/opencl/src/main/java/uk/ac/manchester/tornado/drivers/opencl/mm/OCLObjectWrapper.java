@@ -192,9 +192,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
         }
         for (FieldBuffer buffer : wrappedFields) {
             if (buffer != null) {
-                /// XXX: This is not clear to me - Maybe the field have to be
-                /// broadcast => Passing 0 as batchSize? With 0 we broadcast the
-                /// variable.
+                // TODO: support batch sizes for scope/field arguments
                 if (batchSize > 0) {
                     throw new TornadoMemoryException("[ERROR] BatchSize Allocation currently not supported for Objects Fields. BatchSize = " + batchSize + " (bytes)");
                 }

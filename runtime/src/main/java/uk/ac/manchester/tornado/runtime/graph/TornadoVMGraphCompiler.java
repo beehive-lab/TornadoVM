@@ -87,13 +87,13 @@ public class TornadoVMGraphCompiler {
         }
     }
 
-    private static class SizeBatch {
+    private static class BatchSizeMetaData {
 
         private int totalChunks;
         private int remainingChunkSize;
         private short numBytesType;
 
-        public SizeBatch(int totalChunks, int remainingChunkSize, short numBytesType) {
+        public BatchSizeMetaData(int totalChunks, int remainingChunkSize, short numBytesType) {
             this.totalChunks = totalChunks;
             this.remainingChunkSize = remainingChunkSize;
             this.numBytesType = numBytesType;
@@ -112,7 +112,7 @@ public class TornadoVMGraphCompiler {
         }
     }
 
-    private static SizeBatch computeChunkSizes(TornadoExecutionContext context, long batchSize) {
+    private static BatchSizeMetaData computeChunkSizes(TornadoExecutionContext context, long batchSize) {
         // Get the size of the batch
         List<Object> inputObjects = context.getObjects();
         long totalSize = 0;
@@ -151,7 +151,7 @@ public class TornadoVMGraphCompiler {
             System.out.println("Total chunks: " + totalChunks);
             System.out.println("remainingChunkSize: " + remainingChunkSize);
         }
-        return new SizeBatch(totalChunks, remainingChunkSize, typeSize);
+        return new BatchSizeMetaData(totalChunks, remainingChunkSize, typeSize);
     }
 
     /*
@@ -186,7 +186,7 @@ public class TornadoVMGraphCompiler {
         // Generate BEGIN bytecode
         result.begin(1, tasks.cardinality(), numDepLists + 1);
 
-        SizeBatch sizeBatch = null;
+        BatchSizeMetaData sizeBatch = null;
         if (batchSize != -1) {
             sizeBatch = computeChunkSizes(context, batchSize);
         }
