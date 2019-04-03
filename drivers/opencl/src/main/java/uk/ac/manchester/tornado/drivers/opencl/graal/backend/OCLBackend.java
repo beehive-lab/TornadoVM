@@ -367,18 +367,22 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         }
     }
 
-    public void fpgaInitializationJITMode(TaskMetaData meta) {
+    private void fpgaInitializationJITMode(TaskMetaData meta) {
         if (isLookupCodeAvailable()) {
             runAndReadLookUpKernel(meta);
         }
     }
 
-    public TaskMetaData fpgaInstallCode() {
+    /**
+     * JIT compilation of the Look Up Buffer Address into the FPGA
+     * 
+     * @return {@link TaskMetaData}
+     */
+    private TaskMetaData fpgaInstallCodeLookUpBuffer() {
         TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
         ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
         OCLProviders providers = (OCLProviders) getProviders();
-        /// XXX: BATCH SIZE??
-        OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this, 0);
+        OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
         lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA);
         return meta;
     }
@@ -388,7 +392,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         TaskMetaData meta;
 
         if (Tornado.ACCELERATOR_IS_FPGA) {
-            meta = fpgaInstallCode();
+            meta = fpgaInstallCodeLookUpBuffer();
         } else {
             meta = compileLookupBufferKernel();
         }
