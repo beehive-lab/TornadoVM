@@ -62,9 +62,11 @@ public abstract class OCLKernelScheduler {
         }
 
         final int task;
-        if (meta.shouldUseOpenclScheduling()) {
+        if (meta.shouldUseDefaultOpenCLScheduling()) {
+            System.out.println("A");
             task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
         } else {
+            System.out.println("B");
             task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
         }
 

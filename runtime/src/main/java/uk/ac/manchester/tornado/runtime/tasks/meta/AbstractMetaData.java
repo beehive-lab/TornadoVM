@@ -184,7 +184,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return openclEnableBifs;
     }
 
-    public boolean shouldUseOpenclScheduling() {
+    public boolean shouldUseDefaultOpenCLScheduling() {
         return openclUseScheduling;
     }
 

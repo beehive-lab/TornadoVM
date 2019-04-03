@@ -430,8 +430,8 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public boolean shouldUseOpenclScheduling() {
-        return super.shouldUseOpenclScheduling() || scheduleMetaData.shouldUseOpenclScheduling();
+    public boolean shouldUseDefaultOpenCLScheduling() {
+        return super.shouldUseDefaultOpenCLScheduling() || scheduleMetaData.shouldUseDefaultOpenCLScheduling();
     }
 
     @Override

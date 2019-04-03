@@ -43,7 +43,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     public static final int SIZE2 = 524288;
     public static final int SIZE = 4096;
 
-    public int[] allocResultArray(int numGroups) {
+    public static int[] allocResultArray(int numGroups) {
         TornadoDeviceType deviceType = getDefaultDeviceType();
         int[] result = null;
         switch (deviceType) {
