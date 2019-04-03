@@ -73,6 +73,8 @@ public class OCLObjectWrapper implements ObjectBuffer {
     private final int[] internalEvents;
     private long batchSize;
 
+    private static final int BYTES_OBJECT_REFERENCE = 8;
+
     public OCLObjectWrapper(final OCLDeviceContext device, Object object, long batchSize) {
         this.type = object.getClass();
         this.deviceContext = device;
@@ -120,7 +122,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
                 trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.offset());
             }
             bytesToAllocate = field.offset();
-            bytesToAllocate += (field.getJavaKind().isObject()) ? 8 : field.getJavaKind().getByteCount();
+            bytesToAllocate += (field.getJavaKind().isObject()) ? BYTES_OBJECT_REFERENCE : field.getJavaKind().getByteCount();
 
             ObjectBuffer wrappedField = null;
             if (type.isArray()) {

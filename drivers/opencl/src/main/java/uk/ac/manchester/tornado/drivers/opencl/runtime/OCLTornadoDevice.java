@@ -389,46 +389,58 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         }
     }
 
+    private void reserveMemory(Object object, long batchSize, TornadoDeviceObjectState state) {
+        try {
+            final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
+            buffer.allocate(object, batchSize);
+            state.setBuffer(buffer);
+
+            final Class<?> type = object.getClass();
+            if (!type.isArray()) {
+                checkBatchSize(batchSize);
+                buffer.write(object);
+            }
+
+            state.setValid(true);
+        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void checkForResizeBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
+        // We re-allocate if buffer size has changed
+        final ObjectBuffer buffer = state.getBuffer();
+        try {
+            buffer.allocate(object, batchSize);
+        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void reAllocateInvalidBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
+        try {
+            state.getBuffer().allocate(object, batchSize);
+            final Class<?> type = object.getClass();
+            if (!type.isArray()) {
+                checkBatchSize(batchSize);
+                state.getBuffer().write(object);
+            }
+            state.setValid(true);
+        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
         if (!state.hasBuffer()) {
-            try {
-                final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
-                buffer.allocate(object, batchSize);
-                state.setBuffer(buffer);
-
-                final Class<?> type = object.getClass();
-                if (!type.isArray()) {
-                    checkBatchSize(batchSize);
-                    buffer.write(object);
-                }
-
-                state.setValid(true);
-            } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
-                e.printStackTrace();
-            }
+            reserveMemory(object, batchSize, state);
         } else {
-            // We re-allocate if buffer size has changed
-            final ObjectBuffer buffer = state.getBuffer();
-            try {
-                buffer.allocate(object, batchSize);
-            } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
-                e.printStackTrace();
-            }
+            checkForResizeBuffer(object, batchSize, state);
         }
 
         if (!state.isValid()) {
-            try {
-                state.getBuffer().allocate(object, batchSize);
-                final Class<?> type = object.getClass();
-                if (!type.isArray()) {
-                    checkBatchSize(batchSize);
-                    state.getBuffer().write(object);
-                }
-                state.setValid(true);
-            } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
-                e.printStackTrace();
-            }
+            reAllocateInvalidBuffer(object, batchSize, state);
         }
         return -1;
     }
