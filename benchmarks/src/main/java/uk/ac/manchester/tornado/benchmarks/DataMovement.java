@@ -27,7 +27,6 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 public class DataMovement {
 
     public static Object createArray(String type, int size) {
-
         switch (type) {
             case "i8":
                 return new byte[size];
@@ -39,7 +38,6 @@ public class DataMovement {
                 return new float[size];
             case "f64":
                 return new double[size];
-
             default:
                 System.err.printf("type %s is not supported", type);
                 System.exit(-1);
@@ -74,11 +72,11 @@ public class DataMovement {
                     final TornadoGlobalObjectState globalState = runtime.resolveObject(array);
                     final TornadoDeviceObjectState deviceState = globalState.getDeviceState(device);
 
-                    device.ensureAllocated(array, deviceState);
+                    device.ensureAllocated(array, 0, deviceState);
 
                     final long t0 = System.nanoTime();
                     for (int i = 0; i < iterations; i++) {
-                        device.streamIn(array, deviceState);
+                        device.streamIn(array, 0, 0, deviceState, null);
                     }
                     device.sync();
                     final long t1 = System.nanoTime();
@@ -86,7 +84,7 @@ public class DataMovement {
 
                     final long t2 = System.nanoTime();
                     for (int i = 0; i < iterations; i++) {
-                        device.streamOut(array, deviceState, null);
+                        device.streamOut(array, 0, deviceState, null);
                     }
                     device.sync();
                     final long t3 = System.nanoTime();

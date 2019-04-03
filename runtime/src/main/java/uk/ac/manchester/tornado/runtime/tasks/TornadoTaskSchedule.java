@@ -33,6 +33,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.PRINT_COMPILE_TIME
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -45,6 +46,8 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.graalvm.compiler.phases.util.Providers;
 
@@ -69,6 +72,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
@@ -76,11 +80,11 @@ import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
-import uk.ac.manchester.tornado.runtime.graph.ExecutionContext;
-import uk.ac.manchester.tornado.runtime.graph.GraphCompilationResult;
+import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
-import uk.ac.manchester.tornado.runtime.graph.TornadoGraphCompiler;
+import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompilationResult;
+import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
@@ -91,12 +95,12 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
  */
 public class TornadoTaskSchedule implements AbstractTaskGraph {
 
-    private ExecutionContext graphContext;
+    private TornadoExecutionContext graphContext;
 
     private byte[] hlcode = new byte[2048];
     private ByteBuffer hlBuffer;
-
-    private GraphCompilationResult result;
+    private TornadoVMGraphCompilationResult result;
+    private long batchSizeBytes = -1;
 
     // One TornadoVM instance per TaskSchedule
     private TornadoVM vm;
@@ -137,7 +141,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * @param taskScheduleName
      */
     public TornadoTaskSchedule(String taskScheduleName) {
-        graphContext = new ExecutionContext(taskScheduleName);
+        graphContext = new TornadoExecutionContext(taskScheduleName);
         hlBuffer = ByteBuffer.wrap(hlcode);
         hlBuffer.order(ByteOrder.LITTLE_ENDIAN);
         hlBuffer.rewind();
@@ -245,9 +249,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     /**
-     * Compile a task-schedule into TornadoVM bytecode
+     * Compile a task-schedule into TornadoVM byte-code
      * 
-     * @param setNewDevice
+     * @param setNewDevice:
+     *            boolean that specifies if set a new device or not.
      */
     private void compile(boolean setNewDevice) {
         final ByteBuffer buffer = ByteBuffer.wrap(hlcode);
@@ -262,7 +267,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             updateDeviceContext(graph);
         }
 
-        result = TornadoGraphCompiler.compile(graph, graphContext);
+        result = TornadoVMGraphCompiler.compile(graph, graphContext, batchSizeBytes);
 
         // final long t2 = System.nanoTime();
         vm = new TornadoVM(graphContext, result.getCode(), result.getCodeSize());
@@ -283,7 +288,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         private boolean compile;
         private boolean updateDevice;
 
-        public CompileInfo(boolean compile, boolean updateDevice) {
+        private CompileInfo(boolean compile, boolean updateDevice) {
             super();
             this.compile = compile;
             this.updateDevice = updateDevice;
@@ -303,12 +308,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * task</li>
      * </p>
      * 
-     * @return
+     * @return {@CompileInfo}
      */
     private CompileInfo extractCompileInfo() {
         if (result == null && isLastDeviceListEmpty()) {
             return new CompileInfo(true, false);
-        } else if (result != null && isLastDeviceListEmpty() == false && !(compareDevices(graphContext.getLastDevices(), meta().getDevice()))) {
+        } else if (result != null && !isLastDeviceListEmpty() && !(compareDevices(graphContext.getLastDevices(), meta().getDevice()))) {
             return new CompileInfo(true, true);
         }
         return new CompileInfo(false, false);
@@ -326,7 +331,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void compileTaskToOpenCL() {
-        vm.compile();
+        if (this.batchSizeBytes != -1) {
+            vm.compileWithBatches();
+        } else {
+            vm.compile();
+        }
     }
 
     private void precompilationForFPGA() {
@@ -360,7 +369,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             precompilationForFPGA();
         }
 
-        event = vm.execute();
+        if (this.batchSizeBytes != -1) {
+            event = vm.executeBatches();
+        } else {
+            event = vm.execute();
+        }
     }
 
     @Override
@@ -398,7 +411,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (VM_USE_DEPS && event != null) {
             event.waitOn();
         } else {
-            graphContext.getDevices().forEach((TornadoAcceleratorDevice device) -> device.sync());
+            graphContext.getDevices().forEach(TornadoDevice::sync);
         }
     }
 
@@ -434,12 +447,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             System.out.printf("[0x%04x]: ", i);
             for (int j = 0; j < Math.min(hlBuffer.capacity() - i, width); j++) {
                 if (j % 2 == 0) {
-                    System.out.printf(" ");
+                    System.out.print(" ");
                 }
                 if (j < hlBuffer.position() - i) {
                     System.out.printf("%02x", hlBuffer.get(i + j));
                 } else {
-                    System.out.printf("..");
+                    System.out.print("..");
                 }
             }
             System.out.println();
@@ -472,8 +485,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         final GlobalObjectState globalState = localState.getGlobalState();
         final DeviceObjectState deviceState = globalState.getDeviceState();
         final TornadoAcceleratorDevice device = globalState.getOwner();
-        final Event event = device.resolveEvent(device.streamOut(object, deviceState, null));
-        return event;
+        return device.resolveEvent(device.streamOutBlocking(object, 0, deviceState, null));
     }
 
     @Override
@@ -501,7 +513,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    public ExecutionContext getGraphContext() {
+    public TornadoExecutionContext getGraphContext() {
         return this.graphContext;
     }
 
@@ -687,8 +699,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void runAllTasksSequentially() {
-        for (int k = 0; k < taskPackages.size(); k++) {
-            runSequentialCodeInThread(taskPackages.get(k));
+        for (TaskPackage taskPackage : taskPackages) {
+            runSequentialCodeInThread(taskPackage);
         }
     }
 
@@ -806,8 +818,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void runSequential() {
-        for (int k = 0; k < taskPackages.size(); k++) {
-            runSequentialCodeInThread(taskPackages.get(k));
+        for (TaskPackage taskPackage : taskPackages) {
+            runSequentialCodeInThread(taskPackage);
         }
     }
 
@@ -816,18 +828,17 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         String taskScheduleName = TASK_SCHEDULE_PREFIX + deviceWinnerIndex;
         TaskSchedule taskToCompile = new TaskSchedule(taskScheduleName);
         performStreamInThread(taskToCompile, streamInObjects);
-        for (int k = 0; k < taskPackages.size(); k++) {
-            String taskID = taskPackages.get(k).getId();
+        for (TaskPackage taskPackage : taskPackages) {
+            String taskID = taskPackage.getId();
             TornadoRuntime.setProperty(taskScheduleName + "." + taskID + ".device", "0:" + deviceWinnerIndex);
-            taskToCompile.addTask(taskPackages.get(k));
+            taskToCompile.addTask(taskPackage);
         }
         performStreamOutThreads(taskToCompile, streamOutObjects);
         return taskToCompile;
     }
 
     private void runTaskScheduleParallelSelected(int deviceWinnerIndex) {
-        for (int k = 0; k < taskPackages.size(); k++) {
-            TaskPackage taskPackage = taskPackages.get(k);
+        for (TaskPackage taskPackage : taskPackages) {
             TornadoRuntime.setProperty(this.getTaskScheduleName() + "." + taskPackage.getId() + ".device", "0:" + deviceWinnerIndex);
         }
         if (DEBUG_POLICY) {
@@ -1068,36 +1079,19 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * It obtains the maximum input size for an input task.
      * 
-     * @return int
+     * @return max size of all input arrays.
      */
     private int getMaxInputSize() {
         Object[] parameters = taskPackages.get(0).getTaskParameters();
         int size = 0;
         for (int i = 1; i < parameters.length; i++) {
             Object o = parameters[i];
-            if (o instanceof float[]) {
-                float[] a = (float[]) o;
-                size = Math.max(a.length, size);
-            } else if (o instanceof int[]) {
-                int[] a = (int[]) o;
-                size = Math.max(a.length, size);
-            } else if (o instanceof double[]) {
-                double[] a = (double[]) o;
-                size = Math.max(a.length, size);
-            } else if (o instanceof long[]) {
-                long[] a = (long[]) o;
-                size = Math.max(a.length, size);
-            } else if (o instanceof short[]) {
-                short[] a = (short[]) o;
-                size = Math.max(a.length, size);
-            } else if (o instanceof byte[]) {
-                byte[] a = (byte[]) o;
-                size = Math.max(a.length, size);
-            } else if (o instanceof char[]) {
-                char[] a = (char[]) o;
-                size = Math.max(a.length, size);
-            } else
+            if (o.getClass().isArray()) {
+                int currentSize = Array.getLength(o);
+                size = Math.max(currentSize, size);
+            } else {
                 size = Math.max(1, size);
+            }
         }
         return size;
     }
@@ -1125,24 +1119,24 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
          */
         private TreeMap<Integer, Integer> table = new TreeMap<>();
 
-        public int getClosestKey(int goal) {
+        private int getClosestKey(int goal) {
             Set<Integer> keySet = table.keySet();
             return keySet.stream().reduce((prev, current) -> Math.abs(current - goal) < Math.abs(prev - goal) ? current : prev).get();
         }
 
-        public TreeMap<Integer, Integer> getTree() {
+        private TreeMap<Integer, Integer> getTree() {
             return table;
         }
 
-        public int getNumKeys() {
+        private int getNumKeys() {
             return table.keySet().size();
         }
 
-        public int getDeviceNumber(int key) {
+        private int getDeviceNumber(int key) {
             return table.get(key);
         }
 
-        public boolean isKeyInTable(int key) {
+        private boolean isKeyInTable(int key) {
             return table.containsKey(key);
         }
     }
@@ -1289,6 +1283,32 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public void addScalaTask(String id, Object function, Object[] args) {
         addInner(TaskUtils.scalaTask(id, function, args));
+    }
+
+    @Override
+    public void batch(String batchSize) {
+
+        // parse value and units
+        Pattern pattern = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
+        Matcher matcher = pattern.matcher(batchSize);
+        long value = 0;
+        String units = null;
+        if (matcher.find()) {
+            value = Long.parseLong(matcher.group(1));
+            units = matcher.group(2).toUpperCase();
+        }
+
+        // compute bytes
+        switch (units) {
+            case "MB":
+                this.batchSizeBytes = value * 1_000_000;
+                break;
+            case "GB":
+                this.batchSizeBytes = value * 1_000_000_000;
+                break;
+            default:
+                throw new TornadoRuntimeException("Units not supported: " + units);
+        }
     }
 
 }

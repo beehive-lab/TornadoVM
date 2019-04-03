@@ -205,6 +205,12 @@ public class TaskSchedule implements TornadoAPI {
     }
 
     @Override
+    public TaskSchedule batch(String batchSize) {
+        taskScheduleImpl.batch(batchSize);
+        return this;
+    }
+
+    @Override
     public void execute() {
         taskScheduleImpl.schedule().waitOn();
     }

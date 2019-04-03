@@ -47,17 +47,17 @@ import uk.ac.manchester.tornado.api.common.TornadoEvents;
 
 public interface TaskMetaDataInterface {
 
-    public List<TornadoEvents> getProfiles();
+    List<TornadoEvents> getProfiles();
 
-    public String getCompilerFlags();
+    String getCompilerFlags();
 
-    public void setCompilerFlags(String flags);
+    void setCompilerFlags(String flags);
 
-    public void setGlobalWork(long[] global);
+    void setGlobalWork(long[] global);
 
-    public void setLocalWork(long[] local);
+    void setLocalWork(long[] local);
 
-    public long[] getGlobalWork();
+    long[] getGlobalWork();
 
-    public long[] getLocalWork();
+    long[] getLocalWork();
 }

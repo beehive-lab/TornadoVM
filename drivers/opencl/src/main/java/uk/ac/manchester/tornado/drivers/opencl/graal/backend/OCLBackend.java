@@ -176,7 +176,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public String decodeDeopt(long value) {
         DeoptimizationReason reason = getProviders().getMetaAccess().decodeDeoptReason(JavaConstant.forLong(value));
         DeoptimizationAction action = getProviders().getMetaAccess().decodeDeoptAction(JavaConstant.forLong(value));
-
         return String.format("deopt: reason=%s, action=%s", reason.toString(), action.toString());
     }
 
@@ -235,7 +234,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
      * memory size.
      */
     public void allocateHeapMemoryOnDevice() {
-        final long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
+        long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
         if (memorySize < DEFAULT_HEAP_ALLOCATION) {
             Tornado.info("Unable to allocate %s of heap space - resized to %s", humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false), humanReadableByteCount(memorySize, false));
         }
@@ -368,13 +367,18 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         }
     }
 
-    public void fpgaInitializationJITMode(TaskMetaData meta) {
+    private void fpgaInitializationJITMode(TaskMetaData meta) {
         if (isLookupCodeAvailable()) {
             runAndReadLookUpKernel(meta);
         }
     }
 
-    public TaskMetaData fpgaInstallCode() {
+    /**
+     * JIT compilation of the Look Up Buffer Address into the FPGA
+     * 
+     * @return {@link TaskMetaData}
+     */
+    private TaskMetaData fpgaInstallCodeLookUpBuffer() {
         TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
         ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
         OCLProviders providers = (OCLProviders) getProviders();
@@ -388,7 +392,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         TaskMetaData meta;
 
         if (Tornado.ACCELERATOR_IS_FPGA) {
-            meta = fpgaInstallCode();
+            meta = fpgaInstallCodeLookUpBuffer();
         } else {
             meta = compileLookupBufferKernel();
         }

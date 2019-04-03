@@ -46,16 +46,16 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 
 public interface TornadoDriver {
 
-    public TornadoDevice getDefaultDevice();
+    TornadoDevice getDefaultDevice();
 
-    public int getDeviceCount();
+    int getDeviceCount();
 
-    public TornadoDevice getDevice(int index);
+    TornadoDevice getDevice(int index);
 
-    public TornadoDeviceType getTypeDefaultDevice();
+    TornadoDeviceType getTypeDefaultDevice();
 
-    public String getName();
+    String getName();
 
-    public int getNumPlatforms();
+    int getNumPlatforms();
 
 }

@@ -45,7 +45,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
-public class ExecutionContext {
+public class TornadoExecutionContext {
 
     private final String name;
     private final int MAX_TASKS = 100;
@@ -65,7 +65,7 @@ public class ExecutionContext {
 
     private boolean redeployOnDevice;
 
-    public ExecutionContext(String id) {
+    public TornadoExecutionContext(String id) {
         name = id;
         meta = new ScheduleMetaData(name);
         tasks = new ArrayList<>();

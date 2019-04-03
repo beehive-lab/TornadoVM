@@ -57,6 +57,10 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.instances.TestInstances",
 	"uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes",
 	"uk.ac.manchester.tornado.unittests.api.TestAPI",
+	"uk.ac.manchester.tornado.unittests.batches.TestBatches",
+	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypes",
+	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypesDouble",
+	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypesLong",
 ]
 
 ## Options
@@ -69,7 +73,7 @@ __IGNORE_INTEL_PLATFORM__ = "-Dtornado.ignore.platform=Intel "  # Due to a bug w
 __PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
 
 ## 
-__VERSION__ = "0.3_21032018"
+__VERSION__ = "0.4_26032019"
 
 __TORNADO_TESTS_WHITE_LIST__ = [
 	"uk.ac.manchester.tornado.unittests.loops.TestLoops#testInnertForEach",

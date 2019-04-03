@@ -87,31 +87,30 @@ public class GraphicsMath {
         }
     }
 
-    public static void depth2vertex(ImageFloat3 verticies, ImageFloat depths, Matrix4x4Float invK) {
+    public static void depth2vertex(ImageFloat3 vertices, ImageFloat depths, Matrix4x4Float invK) {
         for (@Parallel int y = 0; y < depths.Y(); y++) {
             for (@Parallel int x = 0; x < depths.X(); x++) {
                 final float depth = depths.get(x, y);
                 final Float3 pix = new Float3(x, y, 1f);
                 final Float3 vertex = (depth > 0) ? mult(rotate(invK, pix), depth) : new Float3();
-                verticies.set(x, y, vertex);
+                vertices.set(x, y, vertex);
             }
         }
     }
 
-    public static final Float3 rotate(Matrix4x4Float m, Float3 x) {
-        final Float3 result = new Float3(dot(m.row(0).asFloat3(), x), dot(m.row(1).asFloat3(), x), dot(m.row(2).asFloat3(), x));
-        return result;
+    public static Float3 rotate(Matrix4x4Float m, Float3 x) {
+        return new Float3(dot(m.row(0).asFloat3(), x), dot(m.row(1).asFloat3(), x), dot(m.row(2).asFloat3(), x));
     }
 
-    public final static float clamp(float val, float min, float max) {
+    public static float clamp(float val, float min, float max) {
         return Math.max(min, Math.min(max, val));
     }
 
-    public final static int clamp(int val, int min, int max) {
+    public static int clamp(int val, int min, int max) {
         return Math.max(min, Math.min(max, val));
     }
 
-    public static final void getInverseCameraMatrix(Float4 k, Matrix4x4Float m) {
+    public static void getInverseCameraMatrix(Float4 k, Matrix4x4Float m) {
         m.fill(0f);
         m.set(0, 0, 1f / k.getX());
         m.set(0, 2, -k.getZ() / k.getX());
@@ -125,13 +124,12 @@ public class GraphicsMath {
      * * Creates a 4x4 matrix representing the intrinsic camera matrix
      *
      * @param k
-     *            - camera parameters {f_x,f_y,x_0,y_0} where {f_x,f_y}
-     *            specifies the focal length of the camera and {x_0,y_0} the
-     *            principle point
+     *            - camera parameters {f_x,f_y,x_0,y_0} where {f_x,f_y} specifies
+     *            the focal length of the camera and {x_0,y_0} the principle point
      * @param m
      *            - returned matrix
      */
-    public static final void getCameraMatrix(Float4 k, Matrix4x4Float m) {
+    public static void getCameraMatrix(Float4 k, Matrix4x4Float m) {
         m.fill(0f);
 
         // focal length - f_x
@@ -150,19 +148,18 @@ public class GraphicsMath {
     }
 
     /*
-     * Performs a rigid transformation which maps one co-ordinate system to
-     * another [ R11 R12 R13 t1 ] R => 3x3 rotation matrix T = [ R21 R22 R23 t2
-     * ] t => 3x1 translation (column vector) [ R31 R32 R33 t3 ] [ 0 0 0 1 ] P =
-     * [ x ] column vector representing the point to be transformed [ y ] [ z ]
-     * [ 1 ]
+     * Performs a rigid transformation which maps one co-ordinate system to another
+     * [ R11 R12 R13 t1 ] R => 3x3 rotation matrix T = [ R21 R22 R23 t2 ] t => 3x1
+     * translation (column vector) [ R31 R32 R33 t3 ] [ 0 0 0 1 ] P = [ x ] column
+     * vector representing the point to be transformed [ y ] [ z ] [ 1 ]
      */
-    public static final Float3 rigidTransform(Matrix4x4Float T, Float3 point) {
+    public static Float3 rigidTransform(Matrix4x4Float T, Float3 point) {
         final Float3 translation = T.column(3).asFloat3();
         final Float3 rotation = new Float3(dot(T.row(0).asFloat3(), point), dot(T.row(1).asFloat3(), point), dot(T.row(2).asFloat3(), point));
         return add(rotation, translation);
     }
 
-    public static final Float4 raycastPoint(final VolumeShort2 volume, final Float3 dim, final int x, final int y, final Matrix4x4Float view, float nearPlane, float farPlane, float smallStep,
+    public static Float4 raycastPoint(final VolumeShort2 volume, final Float3 dim, final int x, final int y, final Matrix4x4Float view, float nearPlane, float farPlane, float smallStep,
             float largeStep) {
 
         final Float3 position = new Float3(x, y, 1f);

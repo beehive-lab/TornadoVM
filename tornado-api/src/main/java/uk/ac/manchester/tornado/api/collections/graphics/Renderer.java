@@ -224,54 +224,55 @@ public class Renderer {
         }
     }
 
-    public final static void gs2rgb(Short3 rgb, float d) {
+    public static void gs2rgb(Short3 rgb, float d) {
         final float v = 0.75f;
         float r = 0;
         float g = 0;
         float b = 0;
-        if (v > 0) {
-            float m = 0.25f;
-            float sv = 0.6667f;
-            int sextant;
-            float fract,vsf,mid1,mid2;
-            d *= 6.0;
-            sextant = (int) d;
-            fract = d - sextant;
-            vsf = v * sv * fract;
-            mid1 = m + vsf;
-            mid2 = v - vsf;
-            switch (sextant) {
-                case 0:
-                    r = v;
-                    g = mid1;
-                    b = m;
-                    break;
-                case 1:
-                    r = mid2;
-                    g = v;
-                    b = m;
-                    break;
-                case 2:
-                    r = m;
-                    g = v;
-                    b = mid1;
-                    break;
-                case 3:
-                    r = m;
-                    g = mid2;
-                    b = v;
-                    break;
-                case 4:
-                    r = mid1;
-                    g = m;
-                    b = v;
-                    break;
-                case 5:
-                    r = v;
-                    g = m;
-                    b = mid2;
-                    break;
-            }
+        float m = 0.25f;
+        float sv = 0.6667f;
+        int sextant;
+        float fract;
+        float vsf;
+        float mid1;
+        float mid2;
+        d *= 6.0;
+        sextant = (int) d;
+        fract = d - sextant;
+        vsf = v * sv * fract;
+        mid1 = m + vsf;
+        mid2 = v - vsf;
+        switch (sextant) {
+            case 0:
+                r = v;
+                g = mid1;
+                b = m;
+                break;
+            case 1:
+                r = mid2;
+                g = v;
+                b = m;
+                break;
+            case 2:
+                r = m;
+                g = v;
+                b = mid1;
+                break;
+            case 3:
+                r = m;
+                g = mid2;
+                b = v;
+                break;
+            case 4:
+                r = mid1;
+                g = m;
+                b = v;
+                break;
+            case 5:
+                r = v;
+                g = m;
+                b = mid2;
+                break;
         }
         rgb.setX((short) (r * 255));
         rgb.setY((short) (g * 255));

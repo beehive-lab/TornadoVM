@@ -69,7 +69,7 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events) {
+    public int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long size, long offset) {
         TornadoInternalError.unimplemented();
         return -1;
     }
@@ -101,25 +101,15 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int streamIn(Object object, TornadoDeviceObjectState objectState, int[] events) {
+    public int streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
         TornadoInternalError.unimplemented();
         return -1;
     }
 
     @Override
-    public int streamOut(Object object, TornadoDeviceObjectState objectState) {
+    public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] list) {
         TornadoInternalError.unimplemented();
         return -1;
-    }
-
-    @Override
-    public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState) {
-        TornadoInternalError.unimplemented();
-    }
-
-    @Override
-    public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState, int[] list) {
-        TornadoInternalError.unimplemented();
     }
 
     @Override
@@ -139,7 +129,6 @@ public class JVMMapping implements TornadoAcceleratorDevice {
 
     @Override
     public CallStack createStack(int numArgs) {
-
         return null;
     }
 
@@ -149,26 +138,12 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int ensureAllocated(Object object, TornadoDeviceObjectState state) {
-        // TODO Auto-generated method stub
+    public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
         return -1;
     }
 
     @Override
-    public int ensurePresent(Object object, TornadoDeviceObjectState objectState) {
-        // TODO Auto-generated method stub
-        return -1;
-    }
-
-    @Override
-    public int streamIn(Object object, TornadoDeviceObjectState objectState) {
-        // TODO Auto-generated method stub
-        return -1;
-    }
-
-    @Override
-    public int streamOut(Object object, TornadoDeviceObjectState objectState, int[] list) {
-        // TODO Auto-generated method stub
+    public int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] list) {
         return -1;
     }
 
@@ -225,6 +200,16 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     @Override
     public boolean isFullJITMode(SchedulableTask task) {
         return false;
+    }
+
+    @Override
+    public long getMaxAllocMemory() {
+        return Runtime.getRuntime().maxMemory();
+    }
+
+    @Override
+    public long getMaxGlobalMemory() {
+        return Runtime.getRuntime().maxMemory();
     }
 
 }

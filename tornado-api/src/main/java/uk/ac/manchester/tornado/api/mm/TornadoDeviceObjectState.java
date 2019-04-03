@@ -43,27 +43,27 @@ package uk.ac.manchester.tornado.api.mm;
 
 public interface TornadoDeviceObjectState {
 
-    public void setBuffer(ObjectBuffer value);
+    void setBuffer(ObjectBuffer value);
 
-    public boolean hasBuffer();
+    boolean hasBuffer();
 
-    public ObjectBuffer getBuffer();
+    ObjectBuffer getBuffer();
 
-    public boolean isValid();
+    boolean isValid();
 
-    public boolean isModified();
+    boolean isModified();
 
-    public void invalidate();
+    void invalidate();
 
-    public boolean hasContents();
+    boolean hasContents();
 
-    public void setContents(boolean value);
+    void setContents(boolean value);
 
-    public void setModified(boolean value);
+    void setModified(boolean value);
 
-    public void setValid(boolean value);
+    void setValid(boolean value);
 
-    public long getAddress();
+    long getAddress();
 
-    public long getOffset();
+    long getOffset();
 }

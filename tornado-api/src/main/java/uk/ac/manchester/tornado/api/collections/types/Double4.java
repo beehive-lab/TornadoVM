@@ -64,7 +64,8 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * backing array
      */
-    @Payload final protected double[] storage;
+    @Payload
+    final protected double[] storage;
 
     /**
      * number of elements in the storage
@@ -137,7 +138,7 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Duplicates this vector
      *
-     * @return
+     * @return {@link Double4}
      */
     public Double4 duplicate() {
         final Double4 vector = new Double4();
@@ -157,7 +158,7 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Cast vector into a Double2
      *
-     * @return
+     * @return {@link Double2}
      */
     public Double2 asDouble2() {
         return new Double2(getX(), getY());
@@ -175,7 +176,7 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
         return new Double2(getZ(), getW());
     }
 
-    protected static final Double4 loadFromArray(final double[] array, int index) {
+    protected static Double4 loadFromArray(final double[] array, int index) {
         final Double4 result = new Double4();
         result.setX(array[index]);
         result.setY(array[index + 1]);
@@ -325,7 +326,7 @@ public final class Double4 implements PrimitiveStorage<DoubleBuffer> {
     /**
      * Returns the vector length e.g. the sqrt of all elements squared
      *
-     * @return
+     * @return {@link double}
      */
     public static double length(Double4 value) {
         return TornadoMath.sqrt(dot(value, value));

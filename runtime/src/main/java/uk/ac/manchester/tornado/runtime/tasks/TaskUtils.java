@@ -222,7 +222,7 @@ public class TaskUtils {
     }
 
     public static CompilableTask createTask(ScheduleMetaData meta, String id, Runnable runnable) {
-        final Method method = resolveRunnable(runnable);
+        final Method method = resolveRunnableMethod(runnable);
         return createTask(meta, id, method, runnable, false);
     }
 
@@ -254,7 +254,7 @@ public class TaskUtils {
         return new CompilableTask(meta, id, method, parameters);
     }
 
-    private static Method resolveRunnable(Runnable runnable) {
+    private static Method resolveRunnableMethod(Runnable runnable) {
         final Class<?> type = runnable.getClass();
         try {
             final Method method = type.getDeclaredMethod("run");

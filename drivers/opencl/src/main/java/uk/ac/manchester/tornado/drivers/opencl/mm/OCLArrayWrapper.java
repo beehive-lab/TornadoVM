@@ -20,7 +20,7 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: James Clarkson, Juan Fumero
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
@@ -34,12 +34,14 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 import java.lang.reflect.Array;
-import java.util.Arrays;
 
 import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
@@ -51,25 +53,27 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     private long bufferOffset;
 
-    private long bytes;
+    private long bytesToAllocate;
 
     protected final OCLDeviceContext deviceContext;
 
     private final JavaKind kind;
     private boolean onDevice;
     private boolean isFinal;
+    private long batchSize;
 
     // TODO remove this
     private final int[] internalEvents = new int[2];
 
-    public OCLArrayWrapper(final OCLDeviceContext device, final JavaKind kind) {
-        this(device, kind, false);
+    public OCLArrayWrapper(final OCLDeviceContext device, final JavaKind kind, long batchSize) {
+        this(device, kind, false, batchSize);
     }
 
-    public OCLArrayWrapper(final OCLDeviceContext device, final JavaKind kind, final boolean isFinal) {
+    public OCLArrayWrapper(final OCLDeviceContext device, final JavaKind kind, final boolean isFinal, long batchSize) {
         this.deviceContext = device;
         this.kind = kind;
         this.isFinal = isFinal;
+        this.batchSize = batchSize;
 
         arrayLengthOffset = getVMConfig().arrayOopDescLengthOffset();
         arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
@@ -77,88 +81,164 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         bufferOffset = -1;
     }
 
+    public long getBatchSize() {
+        return batchSize;
+    }
+
     @SuppressWarnings("unchecked")
     private T cast(Object array) {
         try {
             return (T) array;
         } catch (Exception | Error e) {
-            shouldNotReachHere("Unable to cast object: " + e.getMessage());
+            shouldNotReachHere("[ERROR] Unable to cast object: " + e.getMessage());
         }
         return null;
     }
 
     @Override
-    public void allocate(Object value) throws TornadoOutOfMemoryException {
-        if (bufferOffset == -1) {
-            final T ref = cast(value);
-            bytes = sizeOf(ref);
-            bufferOffset = deviceContext.getMemoryManager().tryAllocate(ref.getClass(), bytes, arrayHeaderSize, getAlignment());
-            info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x", kind.getJavaName(), humanReadableByteCount(bytes, true), arrayLengthOffset, arrayHeaderSize,
-                    bufferOffset);
-            info("allocated: %s", toString());
+    public void allocate(Object value, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+
+        long newBufferSize = 0;
+        if (batchSize > 0) {
+            newBufferSize = sizeOfBatch(batchSize);
         }
+
+        if ((batchSize > 0) && (bufferOffset != -1) && (newBufferSize < bytesToAllocate)) {
+            bytesToAllocate = newBufferSize;
+        }
+
+        if (bufferOffset == -1) {
+            final T hostArray = cast(value);
+            if (batchSize <= 0) {
+                bytesToAllocate = sizeOf(hostArray);
+            } else {
+                bytesToAllocate = sizeOfBatch(batchSize);
+            }
+
+            if (bytesToAllocate <= 0) {
+                throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bytesToAllocate);
+            }
+            bufferOffset = deviceContext.getMemoryManager().tryAllocate(hostArray.getClass(), bytesToAllocate, arrayHeaderSize, getAlignment());
+
+            if (Tornado.FULL_DEBUG) {
+                info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d, bo=0x%x", kind.getJavaName(), humanReadableByteCount(bytesToAllocate, true), arrayLengthOffset,
+                        arrayHeaderSize, bufferOffset);
+                info("allocated: %s", toString());
+            }
+        }
+
     }
 
     @Override
     public long size() {
-        return bytes;
+        return bytesToAllocate;
     }
 
     /*
      * Retrieves a buffer that will contain the contents of the array header.
      * The header is also populated using the header from the given array.
      */
-    private OCLByteBuffer buildArrayHeader(final T array) {
+    private OCLByteBuffer buildArrayHeader(final int arraySize) {
         final OCLByteBuffer header = getArrayHeader();
         int index = 0;
         while (index < arrayLengthOffset) {
             header.buffer.put((byte) 0);
             index++;
         }
-        header.buffer.putInt(Array.getLength(array));
+        header.buffer.putInt(arraySize);
+        return header;
+    }
+
+    private OCLByteBuffer buildArrayHeaderBatch(final long arraySize) {
+        final OCLByteBuffer header = getArrayHeader();
+        int index = 0;
+        while (index < arrayLengthOffset) {
+            header.buffer.put((byte) 0);
+            index++;
+        }
+        header.buffer.putLong(arraySize);
         return header;
     }
 
     @Override
-    public int enqueueRead(final Object value, final int[] events, boolean useDeps) {
+    public int enqueueRead(final Object value, long hostOffset, final int[] events, boolean useDeps) {
         final T array = cast(value);
+        if (array == null) {
+            throw new TornadoRuntimeException("[ERROR] output data is NULL");
+        }
         final int returnEvent;
         if (isFinal) {
-            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
+            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         } else {
             internalEvents[1] = -1;
-            internalEvents[0] = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
+            internalEvents[0] = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
             returnEvent = internalEvents[0];
         }
         return useDeps ? returnEvent : -1;
     }
 
-    abstract protected int enqueueReadArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents);
+    /**
+     * Copy data from the device to the main host.
+     * 
+     * @param bufferId
+     *            Device Buffer ID
+     * @param offset
+     *            Offset within the device buffer
+     * @param bytes
+     *            Bytes to be copied back to the host
+     * @param value
+     *            Host array that resides the final data
+     * @param waitEvents
+     *            List of events to wait for.
+     * @return Event information
+     */
+    abstract protected int enqueueReadArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
     @Override
-    public int enqueueWrite(final Object value, final int[] events, boolean useDeps) {
+    public int enqueueWrite(final Object value, long batchSize, long hostOffset, final int[] events, boolean useDeps) {
         final T array = cast(value);
+        if (array == null) {
+            throw new TornadoRuntimeException("ERROR] Data to be copied is NULL");
+        }
+
         final int returnEvent;
-
         if (isFinal && onDevice) {
-
-            returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
+            returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         } else {
             int index = 0;
             internalEvents[0] = -1;
             if (!onDevice || !isFinal) {
-                internalEvents[0] = buildArrayHeader(array).enqueueWrite((useDeps) ? events : null);
+                if (batchSize <= 0) {
+                    internalEvents[0] = buildArrayHeader(Array.getLength(array)).enqueueWrite((useDeps) ? events : null);
+                } else {
+                    internalEvents[0] = buildArrayHeaderBatch(batchSize).enqueueWrite((useDeps) ? events : null);
+                }
                 index++;
             }
-            internalEvents[index] = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
+            internalEvents[index] = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
             onDevice = true;
             returnEvent = (index == 0) ? internalEvents[0] : deviceContext.enqueueMarker(internalEvents);
-
         }
         return useDeps ? returnEvent : -1;
     }
 
-    abstract protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents);
+    /**
+     * Copy data that resides in the host to the target device.
+     * 
+     * @param bufferId
+     *            Device Buffer ID
+     * @param offset
+     *            Offset within the device buffer
+     * @param bytes
+     *            Bytes to be copied
+     * @param value
+     *            Host array to be copied
+     * 
+     * @param waitEvents
+     *            List of events to wait for.
+     * @return Event information
+     */
+    abstract protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
     @Override
     public int getAlignment() {
@@ -198,28 +278,51 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public void read(final Object value) {
-        read(value, null, false);
+        // TODO: reading with offset != 0
+        read(value, 0, null, false);
     }
 
+    /**
+     * Read an buffer from the target device to the host.
+     * 
+     * @param value
+     *            in which the data are copied
+     * @param hostOffset
+     *            offset, in bytes, from the input value in which to perform the
+     *            read.
+     * @param events
+     *            list of pending events.
+     * @param useDeps
+     *            flag to indicate dependencies should be carried for the next
+     *            operation.
+     */
     @Override
-    public void read(final Object value, int[] events, boolean useDeps) {
+    public int read(final Object value, long hostOffset, int[] events, boolean useDeps) {
         final T array = cast(value);
+        if (array == null) {
+            throw new TornadoRuntimeException("[ERROR] output data is NULL");
+        }
 
         if (VALIDATE_ARRAY_HEADERS) {
             if (validateArrayHeader(array)) {
-                readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
+                return readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
             } else {
                 shouldNotReachHere("Array header is invalid");
             }
         } else {
-            readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, (useDeps) ? events : null);
+            return readArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         }
+        return -1;
     }
 
-    abstract protected void readArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents);
+    abstract protected int readArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
-    private int sizeOf(final T array) {
-        return arrayHeaderSize + (Array.getLength(array) * kind.getByteCount());
+    private long sizeOf(final T array) {
+        return (long) arrayHeaderSize + ((long) Array.getLength(array) * (long) kind.getByteCount());
+    }
+
+    private long sizeOfBatch(long batchSize) {
+        return (long) arrayHeaderSize + batchSize;
     }
 
     @Override
@@ -239,7 +342,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public String toString() {
-        return String.format("buffer<%s> %s @ 0x%x (0x%x)", kind.getJavaName(), humanReadableByteCount(bytes, true), toAbsoluteAddress(), toRelativeAddress());
+        return String.format("buffer<%s> %s @ 0x%x (0x%x)", kind.getJavaName(), humanReadableByteCount(bytesToAllocate, true), toAbsoluteAddress(), toRelativeAddress());
     }
 
     @Override
@@ -267,12 +370,15 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     @Override
     public void write(final Object value) {
         final T array = cast(value);
-        buildArrayHeader(array).write();
-        writeArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytes - arrayHeaderSize, array, null);
+        if (array == null) {
+            throw new TornadoRuntimeException("[ERROR] data is NULL");
+        }
+        buildArrayHeader(Array.getLength(array)).write();
+        // TODO: Writing with offset != 0
+        writeArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, 0, null);
         onDevice = true;
-
     }
 
-    abstract protected void writeArrayData(long bufferId, long offset, long bytes, T value, int[] waitEvents);
+    abstract protected void writeArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
 }
