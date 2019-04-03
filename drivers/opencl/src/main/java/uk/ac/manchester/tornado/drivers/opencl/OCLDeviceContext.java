@@ -161,64 +161,64 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
      * Asynchronous writes to device
      */
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, char[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, short[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public int enqueueWriteBuffer(long bufferId, long offset, long bytes, double[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueWrite(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     /*
      * ASync reads from device
      */
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, char[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);
 
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, double[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);
 
     }
 
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, short[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, false, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);
 
     }
 
@@ -226,46 +226,46 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
      * Synchronous writes to device
      */
     public void writeBuffer(long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
+        queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, char[] array, long hostOffset, int[] waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
+        queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
+        queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
+        queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, short[] array, long hostOffset, int[] waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
+        queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
+        queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public void writeBuffer(long bufferId, long offset, long bytes, double[] array, long hostOffset, int[] waitEvents) {
-        queue.enqueueWrite(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
+        queue.enqueueWrite(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     /*
      * Synchronous reads from device
      */
     public int readBuffer(long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, char[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, int[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
@@ -273,17 +273,17 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, waitEvents);
 
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, double[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, waitEvents);
 
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, short[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public int enqueueBarrier(int[] events) {
