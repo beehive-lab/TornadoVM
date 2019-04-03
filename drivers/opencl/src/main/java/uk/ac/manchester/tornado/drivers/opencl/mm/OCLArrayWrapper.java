@@ -278,7 +278,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
 
     @Override
     public void read(final Object value) {
-        // XXX: offset null
+        // TODO: reading with offset != 0
         read(value, 0, null, false);
     }
 
@@ -374,7 +374,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
             throw new TornadoRuntimeException("[ERROR] data is NULL");
         }
         buildArrayHeader(Array.getLength(array)).write();
-        // XXX: Offset 0
+        // TODO: Writing with offset != 0
         writeArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, 0, null);
         onDevice = true;
     }

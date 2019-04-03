@@ -102,7 +102,7 @@ public class FieldBuffer {
         if (DEBUG) {
             debug("fieldBuffer: read - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
-        // XXX: Offset 0
+        // TODO: reading with offset != 0
         int event = objectBuffer.read(getFieldValue(ref), 0, events, useDeps);
         return event;
     }
