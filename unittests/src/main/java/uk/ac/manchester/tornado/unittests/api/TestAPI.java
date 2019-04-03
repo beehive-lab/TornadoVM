@@ -44,12 +44,11 @@ public class TestAPI extends TornadoTestBase {
         TaskSchedule s0 = new TaskSchedule("s0");
         assertNotNull(s0);
 
-        s0.task("t0", TestArrays::addAccumulator, data, 1);
-        s0.execute();
+        s0.task("t0", TestArrays::addAccumulator, data, 1).execute();
         s0.syncObject(data);
 
         for (int i = 0; i < N; i++) {
-            assertEquals(21, data[i], 0.0001);
+            assertEquals(21, data[i]);
         }
     }
 
@@ -72,7 +71,7 @@ public class TestAPI extends TornadoTestBase {
         s0.syncObjects(data);
 
         for (int i = 0; i < N; i++) {
-            assertEquals(21, data[i], 0.0001);
+            assertEquals(21, data[i]);
         }
     }
 
@@ -96,7 +95,7 @@ public class TestAPI extends TornadoTestBase {
         s0.syncObject(data);
 
         for (int i = 0; i < N; i++) {
-            assertEquals(21, data[i], 0.0001);
+            assertEquals(21, data[i]);
         }
     }
 

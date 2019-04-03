@@ -46,18 +46,18 @@ import uk.ac.manchester.tornado.api.mm.TornadoGlobalObjectState;
 
 public interface TornadoRuntimeCI {
 
-    public TornadoRuntimeCI callRuntime();
+    TornadoRuntimeCI callRuntime();
 
-    public void clearObjectState();
+    void clearObjectState();
 
-    public TornadoDriver getDriver(int index);
+    TornadoDriver getDriver(int index);
 
-    public <D extends TornadoDriver> D getDriver(Class<D> type);
+    <D extends TornadoDriver> D getDriver(Class<D> type);
 
-    public int getNumDrivers();
+    int getNumDrivers();
 
-    public TornadoDevice getDefaultDevice();
+    TornadoDevice getDefaultDevice();
 
-    public TornadoGlobalObjectState resolveObject(Object object);
+    TornadoGlobalObjectState resolveObject(Object object);
 
 }

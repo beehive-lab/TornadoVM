@@ -49,64 +49,152 @@ import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 
 public interface TornadoDevice {
 
-    public boolean isDistibutedMemory();
+    /**
+     * It allocates an object in the pre-defined heap of the target device. It
+     * also ensure that there is enough space for the input object.
+     * 
+     * @param object
+     *            to be allocated
+     * @param batchSize
+     *            size of the object to be allocated. If this value is <= 0,
+     *            then it allocates the sizeof(object).
+     * @param state
+     *            state of the object in the target device
+     *            {@link TornadoDeviceObjectState}
+     * @return an event ID
+     */
+    int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state);
 
-    public void ensureLoaded();
+    /**
+     * It allocates and copy in the content of the object to the target device.
+     * 
+     * @param object
+     *            to be allocated
+     * @param objectState
+     *            state of the object in the target device
+     *            {@link TornadoDeviceObjectState}
+     * @param events
+     *            list of pending events (dependencies)
+     * @param batchSize
+     *            size of the object to be allocated. If this value is <= 0,
+     *            then it allocates the sizeof(object).
+     * @param hostOffset
+     *            offset in bytes for the copy within the host input array (or
+     *            object)
+     * @return an event ID
+     */
+    int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long hostOffset);
 
-    public void markEvent();
+    /**
+     * It always copies in the input data (object) from the host to the target
+     * device.
+     * 
+     * @param object
+     *            to be copied
+     * @param batchSize
+     *            size of the object to be allocated. If this value is <= 0,
+     *            then it allocates the sizeof(object).
+     * @param hostOffset
+     *            offset in bytes for the copy within the host input array (or
+     *            object)
+     * @param objectState
+     *            state of the object in the target device
+     *            {@link TornadoDeviceObjectState}
+     * @param events
+     *            list of previous events
+     * @return and event ID
+     */
+    int streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
 
-    public void flushEvents();
+    /**
+     * It copies a device buffer from the target device to the host. Copies are
+     * non-blocking
+     * 
+     * @param object
+     *            to be copied.
+     * @param hostOffset
+     *            offset in bytes for the copy within the host input array (or
+     *            object)
+     * @param objectState
+     *            state of the object in the target device
+     *            {@link TornadoDeviceObjectState}
+     * @param events
+     *            of pending events
+     * @return and event ID
+     */
+    int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
 
-    public int enqueueBarrier();
+    /**
+     * It copies a device buffer from the target device to the host. Copies are
+     * blocking between the device and the host.
+     * 
+     * @param object
+     *            to be copied.
+     * @param hostOffset
+     *            offset in bytes for the copy within the host input array (or
+     *            object)
+     * @param objectState
+     *            state of the object in the target device
+     *            {@link TornadoDeviceObjectState}
+     * @param events
+     *            of pending events
+     * @return and event ID
+     */
+    int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
 
-    public int enqueueBarrier(int[] events);
+    boolean isDistibutedMemory();
 
-    public int enqueueMarker();
+    /**
+     * It resolves an pending event.
+     * 
+     * @param event
+     *            ID
+     * @return an object of type {@link Event}
+     */
+    Event resolveEvent(int event);
 
-    public int enqueueMarker(int[] events);
+    void ensureLoaded();
 
-    public void sync();
+    void markEvent();
 
-    public void flush();
+    void flushEvents();
 
-    public String getDeviceName();
+    int enqueueBarrier();
 
-    public String getDescription();
+    int enqueueBarrier(int[] events);
 
-    public void reset();
+    int enqueueMarker();
 
-    public void dumpEvents();
+    int enqueueMarker(int[] events);
 
-    public void dumpMemory(String file);
+    void sync();
 
-    public String getPlatformName();
+    void flush();
 
-    public int ensureAllocated(Object object, TornadoDeviceObjectState state);
+    void reset();
 
-    public int ensurePresent(Object object, TornadoDeviceObjectState objectState);
+    void dumpEvents();
 
-    public int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events);
+    void dumpMemory(String file);
 
-    public int streamIn(Object object, TornadoDeviceObjectState objectState);
+    // Getters
 
-    public int streamIn(Object object, TornadoDeviceObjectState objectState, int[] events);
+    String getDeviceName();
 
-    public int streamOut(Object object, TornadoDeviceObjectState objectState);
+    String getDescription();
 
-    public int streamOut(Object object, TornadoDeviceObjectState objectState, int[] list);
+    String getPlatformName();
 
-    public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState);
+    TornadoDeviceContext getDeviceContext();
 
-    public void streamOutBlocking(Object object, TornadoDeviceObjectState objectState, int[] list);
+    TornadoTargetDevice getDevice();
 
-    public Event resolveEvent(int event);
+    TornadoMemoryProvider getMemoryProvider();
 
-    public TornadoDeviceContext getDeviceContext();
+    TornadoDeviceType getDeviceType();
 
-    public TornadoTargetDevice getDevice();
+    long getMaxAllocMemory();
 
-    public TornadoMemoryProvider getMemoryProvider();
-
-    public TornadoDeviceType getDeviceType();
+    long getMaxGlobalMemory();
 
 }

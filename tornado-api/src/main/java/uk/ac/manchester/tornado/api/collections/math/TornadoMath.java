@@ -143,27 +143,27 @@ public class TornadoMath {
         return Math.sqrt(value);
     }
 
-    public final static long clamp(long val, long min, long max) {
+    public static long clamp(long val, long min, long max) {
         return Math.max(min, Math.min(max, val));
     }
 
-    public final static int clamp(int val, int min, int max) {
+    public static int clamp(int val, int min, int max) {
         return Math.max(min, Math.min(max, val));
     }
 
-    public final static short clamp(short val, short min, short max) {
+    public static short clamp(short val, short min, short max) {
         return max(min, min(max, val));
     }
 
-    public final static byte clamp(byte val, byte min, byte max) {
+    public static byte clamp(byte val, byte min, byte max) {
         return max(min, min(max, val));
     }
 
-    public final static float clamp(float val, float min, float max) {
+    public static float clamp(float val, float min, float max) {
         return max(min, min(max, val));
     }
 
-    public final static double clamp(double val, double min, double max) {
+    public static double clamp(double val, double min, double max) {
         return max(min, min(max, val));
     }
 

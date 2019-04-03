@@ -48,6 +48,8 @@ public class CompilableTask implements SchedulableTask {
 
     protected Access thisAccess;
 
+    protected long batchThreads;
+
     public CompilableTask(ScheduleMetaData meta, String id, Method method, Object... args) {
         this.method = method;
         this.args = args;
@@ -139,6 +141,16 @@ public class CompilableTask implements SchedulableTask {
         hash = 71 * hash + Objects.hashCode(getId());
         hash = 71 * hash + Objects.hashCode(this.method);
         return hash;
+    }
+
+    @Override
+    public void setBachtThreads(long batchThreads) {
+        this.batchThreads = batchThreads;
+    }
+
+    @Override
+    public long getBachtThreads() {
+        return batchThreads;
     }
 
 }

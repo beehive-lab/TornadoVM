@@ -29,18 +29,18 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.runtime.graph.nodes.*;
 
-public class GraphCompilationResult {
+public class TornadoVMGraphCompilationResult {
 
-    public static final int MAX_TVM_BYTECODE_SIZE = Integer.parseInt(getProperty("tornado.tvm.maxbytecodesize", "1024"));
+    public static final int MAX_TORNADOVM_BYTECODE_SIZE = Integer.parseInt(getProperty("tornado.tvm.maxbytecodesize", "4096"));
 
     private byte[] code;
-    private GraphAssembler asm;
-    private int gtid;
+    private TornadoGraphAssembler asm;
+    private int globalTaskID;
 
-    public GraphCompilationResult() {
-        code = new byte[MAX_TVM_BYTECODE_SIZE];
-        asm = new GraphAssembler(code);
-        gtid = 0;
+    public TornadoVMGraphCompilationResult() {
+        code = new byte[MAX_TORNADOVM_BYTECODE_SIZE];
+        asm = new TornadoGraphAssembler(code);
+        globalTaskID = 0;
     }
 
     public void begin(int numContexts, int numStacks, int numDeps) {
@@ -59,29 +59,45 @@ public class GraphCompilationResult {
         asm.end();
     }
 
-    public void emitAsyncNode(TornadoGraph graph, ExecutionContext context, AbstractNode node, int ctx, int depIn) {
+    private void incTaskID() {
+        globalTaskID++;
+    }
 
-        // System.out.printf("emit: %s\n",node);
+    public void emitAsyncNode(AbstractNode node, int contextID, int dependencyBC) {
         if (node instanceof CopyInNode) {
-            asm.copyToContext(((CopyInNode) node).getValue().getIndex(), ctx, depIn);
+            asm.copyToContext(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC);
         } else if (node instanceof AllocateNode) {
-            asm.allocate(((AllocateNode) node).getValue().getIndex(), ctx);
+            asm.allocate(((AllocateNode) node).getValue().getIndex(), contextID);
         } else if (node instanceof CopyOutNode) {
-            asm.streamOutOfContext(((CopyOutNode) node).getValue().getValue().getIndex(), ctx, depIn);
+            asm.streamOutOfContext(((CopyOutNode) node).getValue().getValue().getIndex(), contextID, dependencyBC);
         } else if (node instanceof StreamInNode) {
-            asm.streamInToContext(((StreamInNode) node).getValue().getIndex(), ctx, depIn);
+            asm.streamInToContext(((StreamInNode) node).getValue().getIndex(), contextID, dependencyBC);
         } else if (node instanceof TaskNode) {
             final TaskNode taskNode = (TaskNode) node;
-
-            asm.launch(gtid, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), depIn);
-            gtid++;
-
-            emitArgList(graph, context, taskNode);
+            asm.launch(globalTaskID, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC);
+            emitArgList(taskNode);
+            incTaskID();
         }
     }
 
-    private void emitArgList(TornadoGraph graph, ExecutionContext context, TaskNode taskNode) {
+    public void emitAsyncNodeBatch(AbstractNode node, int contextID, int dependencyBC, long offset, long batchSize, long nThreads) {
+        if (node instanceof CopyInNode) {
+            asm.copyToContextBatch(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
+        } else if (node instanceof AllocateNode) {
+            asm.allocateBatch(((AllocateNode) node).getValue().getIndex(), contextID, offset, batchSize);
+        } else if (node instanceof CopyOutNode) {
+            asm.streamOutOfContextBatch(((CopyOutNode) node).getValue().getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
+        } else if (node instanceof StreamInNode) {
+            asm.streamInToContextBatch(((StreamInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
+        } else if (node instanceof TaskNode) {
+            final TaskNode taskNode = (TaskNode) node;
+            asm.launchBatch(globalTaskID, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC, offset, nThreads);
+            emitArgList(taskNode);
+            incTaskID();
+        }
+    }
 
+    private void emitArgList(TaskNode taskNode) {
         final int numArgs = taskNode.getNumArgs();
         for (int i = 0; i < numArgs; i++) {
             final AbstractNode argNode = taskNode.getArg(i);
@@ -99,7 +115,6 @@ public class GraphCompilationResult {
                 asm.referenceArg(((DependentReadNode) argNode).getValue().getIndex());
             }
         }
-
     }
 
     public void emitAddDep(int dep) {

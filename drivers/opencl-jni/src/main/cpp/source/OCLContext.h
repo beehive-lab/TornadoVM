@@ -137,6 +137,22 @@ extern "C" {
 
     /*
      * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
+     * Method:    createArrayOnDevice
+     * Signature: (JJ[S)J
+     */
+    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_createArrayOnDevice__JJ_3S
+    (JNIEnv *, jclass, jlong, jlong, jshortArray);
+
+        /*
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
+     * Method:    createArrayOnDevice
+     * Signature: (JJ[C)J
+     */
+    JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_createArrayOnDevice__JJ_3C
+    (JNIEnv *, jclass, jlong, jlong, jcharArray);
+
+    /*
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
      * Method:    clCreateProgramWithSource
      * Signature: (J[B[J)J
      */

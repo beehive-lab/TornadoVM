@@ -52,7 +52,7 @@ import uk.ac.manchester.tornado.runtime.tasks.TornadoGraphBitcodes;
 
 public class TornadoGraphBuilder {
 
-    public static TornadoGraph buildGraph(ExecutionContext graphContext, ByteBuffer buffer) {
+    public static TornadoGraph buildGraph(TornadoExecutionContext graphContext, ByteBuffer buffer) {
         TornadoGraph graph = new TornadoGraph();
         Access[] accesses = null;
         SchedulableTask task;

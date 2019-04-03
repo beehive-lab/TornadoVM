@@ -120,6 +120,10 @@ public class OCLContext extends TornadoLogger {
 
     native static long createArrayOnDevice(long contextId, long flags, double[] buffer) throws OCLException;
 
+    native static long createArrayOnDevice(long contextId, long flags, short[] buffer) throws OCLException;
+
+    native static long createArrayOnDevice(long contextId, long flags, char[] buffer) throws OCLException;
+
     native static long clCreateProgramWithSource(long contextId, byte[] data, long lengths[]) throws OCLException;
 
     native static long clCreateProgramWithBinary(long contextId, long deviceId, byte[] data, long lengths[]) throws OCLException;

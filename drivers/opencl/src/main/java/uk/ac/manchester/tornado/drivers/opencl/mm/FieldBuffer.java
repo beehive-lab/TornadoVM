@@ -33,6 +33,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -52,22 +53,23 @@ public class FieldBuffer {
         return Modifier.isFinal(field.getModifiers());
     }
 
-    public void allocate(final Object ref) throws TornadoOutOfMemoryException {
-        objectBuffer.allocate(getFieldValue(ref));
+    public void allocate(final Object ref, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+        objectBuffer.allocate(getFieldValue(ref), batchSize);
     }
 
     public int enqueueRead(final Object ref, final int[] events, boolean useDeps) {
         if (DEBUG) {
             trace("fieldBuffer: enqueueRead* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
-        return (useDeps) ? objectBuffer.enqueueRead(getFieldValue(ref), (useDeps) ? events : null, useDeps) : -1;
+        // TODO: Offset 0
+        return (useDeps) ? objectBuffer.enqueueRead(getFieldValue(ref), 0, (useDeps) ? events : null, useDeps) : -1;
     }
 
     public int enqueueWrite(final Object ref, final int[] events, boolean useDeps) {
         if (DEBUG) {
             trace("fieldBuffer: enqueueWrite* - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
-        return (useDeps) ? objectBuffer.enqueueWrite(getFieldValue(ref), (useDeps) ? events : null, useDeps) : -1;
+        return (useDeps) ? objectBuffer.enqueueWrite(getFieldValue(ref), 0, 0, (useDeps) ? events : null, useDeps) : -1;
     }
 
     public int getAlignment() {
@@ -96,11 +98,13 @@ public class FieldBuffer {
         read(ref, null, false);
     }
 
-    public void read(final Object ref, int[] events, boolean useDeps) {
+    public int read(final Object ref, int[] events, boolean useDeps) {
         if (DEBUG) {
             debug("fieldBuffer: read - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
-        objectBuffer.read(getFieldValue(ref), events, useDeps);
+        // TODO: reading with offset != 0
+        int event = objectBuffer.read(getFieldValue(ref), 0, events, useDeps);
+        return event;
     }
 
     public long toAbsoluteAddress() {
