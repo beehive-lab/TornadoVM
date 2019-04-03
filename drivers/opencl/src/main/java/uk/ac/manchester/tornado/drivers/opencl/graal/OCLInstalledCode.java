@@ -211,7 +211,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     public int submitWithEvents(final OCLCallStack stack, final TaskMetaData meta, final int[] events, long batchThreads) {
-
         guarantee(kernel != null, "kernel is null");
 
         if (DEBUG) {
