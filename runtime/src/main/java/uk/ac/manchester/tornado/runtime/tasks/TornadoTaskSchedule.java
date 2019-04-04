@@ -33,6 +33,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.PRINT_COMPILE_TIME
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -49,6 +50,7 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -56,6 +58,7 @@ import uk.ac.manchester.tornado.api.AbstractTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -529,8 +532,39 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public AbstractTaskGraph schedule() {
+
+        // TODO: Before schedule : analyse expression to detect a possible
+        // reduction variable
+
+        // In this point I should have the input/output list of variables and
+        // the code
+        analysisTaskSchedule();
+
         scheduleInner();
         return this;
+    }
+
+    private void analysisTaskSchedule() {
+        // Get input parameters to each task
+        int taskIndex = 0;
+        for (TaskPackage tp : taskPackages) {
+            long start = System.nanoTime();
+            Object[] listOfParamters = tp.getTaskParameters();
+            Object taskCode = listOfParamters[0];
+            StructuredGraph graph = TaskUtils.buildHighLevelGraalGraph(taskCode);
+            long end = System.nanoTime();
+            System.out.println("Total time: " + (end - start));
+
+            Annotation[][] annotations = graph.method().getParameterAnnotations();
+            for (int index = 0; index < annotations.length; index++) {
+                for (Annotation annotation : annotations[index]) {
+                    if (annotation instanceof Reduce) {
+                        System.out.println("FOUND REDUCE:" + annotation + " PARAMETER: " + index);
+                    }
+                }
+            }
+            taskIndex++;
+        }
     }
 
     @SuppressWarnings("unchecked")

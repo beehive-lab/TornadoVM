@@ -34,10 +34,6 @@ public abstract class OCLKernelScheduler {
 
     protected double min;
     protected double max;
-    protected double sum;
-    protected double mean;
-    protected double std;
-    protected double samples;
 
     public OCLKernelScheduler(final OCLDeviceContext context) {
         deviceContext = context;
@@ -63,10 +59,8 @@ public abstract class OCLKernelScheduler {
 
         final int task;
         if (meta.shouldUseDefaultOpenCLScheduling()) {
-            System.out.println("A");
             task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
         } else {
-            System.out.println("B");
             task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
         }
 

@@ -34,10 +34,11 @@ public class TestReductionsAutomatic extends TornadoTestBase {
     public void testIrregularSize01() {
 
         int numProcessors = Runtime.getRuntime().availableProcessors();
-        final int size = 260;
+        final int size = 8192;
 
         int[] input = new int[size];
-        int[] result = new int[numProcessors + 1];
+        int partitions = size / 128;
+        int[] result = new int[partitions];
 
         final int neutral = 0;
         Arrays.fill(result, neutral);

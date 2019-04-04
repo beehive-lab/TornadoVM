@@ -137,6 +137,12 @@ public class TaskPackage {
         return taskType;
     }
 
+    /**
+     * Get all parameters to the lambda expression. First parameter is reserved
+     * to the input code.
+     * 
+     * @return an object array with all parameters.
+     */
     public Object[] getTaskParameters() {
         return taskParameters;
     }
