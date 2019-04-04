@@ -83,7 +83,7 @@ public class TornadoVMGraphCompiler {
             int deviceIndex = contextNode.getDeviceIndex();
             return compileSingleContext(graph, context, context.getDevice(deviceIndex), batchSize);
         } else {
-            throw new RuntimeException("Multiple-Contexts are not currently supported");
+            throw new TornadoRuntimeException("Multiple-Contexts are not currently supported");
         }
     }
 

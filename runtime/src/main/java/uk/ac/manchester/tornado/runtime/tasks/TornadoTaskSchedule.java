@@ -41,6 +41,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
@@ -126,6 +127,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * Options for Dynamic Reconfiguration
      */
     public static final boolean DEBUG_POLICY = Boolean.parseBoolean(System.getProperty("tornado.dynamic.verbose", "False"));
+    public static final boolean EXPERIMENTAL_REDUCE = Boolean.parseBoolean(System.getProperty("tornado.experimental.reduce", "False"));
     public static final boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int PERFORMANCE_WARMUP = 3;
@@ -532,20 +534,46 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public AbstractTaskGraph schedule() {
-
-        // TODO: Before schedule : analyse expression to detect a possible
-        // reduction variable
-
-        // In this point I should have the input/output list of variables and
-        // the code
-        analysisTaskSchedule();
-
+        if (EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
+            System.out.println("Analysis");
+            HashMap<Integer, ArrayList<Integer>> reduceList = analysisTaskSchedule();
+            if (reduceList != null) {
+                System.out.println("Rewriting");
+                TaskSchedule task = rewriteInputTaskSchedule(reduceList);
+                System.out.println("Running");
+                task.execute();
+                return this;
+            }
+        }
         scheduleInner();
         return this;
     }
 
-    private void analysisTaskSchedule() {
+    private TaskSchedule rewriteInputTaskSchedule(HashMap<Integer, ArrayList<Integer>> reduceList) {
+
+        // Running sequentially for all the devices
+        String taskScheduleName = TASK_SCHEDULE_PREFIX + "__REDUCE";
+        TaskSchedule task = new TaskSchedule(taskScheduleName);
+        performStreamInThread(task, streamInObjects);
+
+        for (int taskIndex = 0; taskIndex < taskPackages.size(); taskIndex++) {
+            System.out.println("Adding task");
+            task.addTask(taskPackages.get(taskIndex));
+            if (reduceList.containsKey(taskIndex)) {
+                // We duplicate the task if it's a reduce task
+                System.out.println("Adding extra task");
+                TaskPackage taskPackage = taskPackages.get(taskIndex);
+                task.addTask(taskPackage);
+            }
+        }
+
+        performStreamOutThreads(task, streamOutObjects);
+        return task;
+    }
+
+    private HashMap<Integer, ArrayList<Integer>> analysisTaskSchedule() {
         // Get input parameters to each task
+        HashMap<Integer, ArrayList<Integer>> reduceTasks = new HashMap<>();
         int taskIndex = 0;
         for (TaskPackage tp : taskPackages) {
             long start = System.nanoTime();
@@ -556,15 +584,23 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             System.out.println("Total time: " + (end - start));
 
             Annotation[][] annotations = graph.method().getParameterAnnotations();
-            for (int index = 0; index < annotations.length; index++) {
-                for (Annotation annotation : annotations[index]) {
+            ArrayList<Integer> reduceIndexes = new ArrayList<>();
+            for (int paramIndex = 0; paramIndex < annotations.length; paramIndex++) {
+                for (Annotation annotation : annotations[paramIndex]) {
                     if (annotation instanceof Reduce) {
-                        System.out.println("FOUND REDUCE:" + annotation + " PARAMETER: " + index);
+                        System.out.println("FOUND REDUCE:" + annotation + " PARAMETER: " + paramIndex);
+                        reduceIndexes.add(paramIndex);
                     }
                 }
             }
+
+            if (!reduceIndexes.isEmpty()) {
+                reduceTasks.put(taskIndex, reduceIndexes);
+            }
+
             taskIndex++;
         }
+        return reduceTasks;
     }
 
     @SuppressWarnings("unchecked")
@@ -984,7 +1020,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 String name = taskScheduleName + "." + taskID;
                 for (String s : ignoreTaskNames) {
                     if (s.equals(name)) {
-                        totalTimers[taskNumber] = Integer.MAX_VALUE;
+                        totalTimers[taskNumber] = Long.MAX_VALUE;
                         ignoreTask = true;
                         break;
                     }
@@ -1344,5 +1380,4 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 throw new TornadoRuntimeException("Units not supported: " + units);
         }
     }
-
 }
