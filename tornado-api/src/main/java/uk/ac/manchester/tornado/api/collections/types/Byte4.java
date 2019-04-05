@@ -65,7 +65,8 @@ public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
     /**
      * backing array
      */
-    @Payload final protected byte[] storage;
+    @Payload
+    final protected byte[] storage;
 
     /**
      * number of elements in the storage
@@ -138,7 +139,7 @@ public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
     /**
      * Duplicates this vector
      *
-     * @return
+     * @return {@link Byte4}
      */
     public Byte4 duplicate() {
         Byte4 vector = new Byte4();
@@ -155,7 +156,7 @@ public final class Byte4 implements PrimitiveStorage<ByteBuffer> {
         return toString(numberFormat);
     }
 
-    protected static final Byte4 loadFromArray(final byte[] array, int index) {
+    protected static Byte4 loadFromArray(final byte[] array, int index) {
         final Byte4 result = new Byte4();
         result.setX(array[index]);
         result.setY(array[index + 1]);

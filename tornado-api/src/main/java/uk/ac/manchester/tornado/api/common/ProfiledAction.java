@@ -45,50 +45,50 @@ import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
 
 public interface ProfiledAction {
 
-    public String getName();
+    String getName();
 
-    public long getSubmitTime();
+    long getSubmitTime();
 
-    public double getSubmitTimeInMilliSeconds();
+    double getSubmitTimeInMilliSeconds();
 
-    public long getStartTime();
+    long getStartTime();
 
-    public double getStartTimeInMilliSeconds();
+    double getStartTimeInMilliSeconds();
 
-    public long getEndTime();
+    long getEndTime();
 
-    public double getEndTimeInMilliSeconds();
+    double getEndTimeInMilliSeconds();
 
-    public long getExecutionTime();
+    long getExecutionTime();
 
-    public double getExecutionTimeInSeconds();
+    double getExecutionTimeInSeconds();
 
-    public double getExecutionTimeInMilliSeconds();
+    double getExecutionTimeInMilliSeconds();
 
-    public long getTotalQueuedTime();
+    long getTotalQueuedTime();
 
-    public double getTotalQueuedTimeInMilliSeconds();
+    double getTotalQueuedTimeInMilliSeconds();
 
-    public long getElapsedQueuedTime();
+    long getElapsedQueuedTime();
 
-    public double getElapsedQueuedTimeInMilliSeconds();
+    double getElapsedQueuedTimeInMilliSeconds();
 
-    public long getElapsedSubmitTime();
+    long getElapsedSubmitTime();
 
-    public double getElapsedSubmitTimeInMilliSeconds();
+    double getElapsedSubmitTimeInMilliSeconds();
 
-    public long getQueuedTime();
+    long getQueuedTime();
 
-    public double getQueuedTimeInMilliSeconds();
+    double getQueuedTimeInMilliSeconds();
 
-    public TornadoExecutionStatus getStatus();
+    TornadoExecutionStatus getStatus();
 
-    public long getTotalTime();
+    long getTotalTime();
 
-    public double getTotalTimeInSeconds();
+    double getTotalTimeInSeconds();
 
-    public double getTotalTimeInMilliSeconds();
+    double getTotalTimeInMilliSeconds();
 
-    public void retain();
+    void retain();
 
 }

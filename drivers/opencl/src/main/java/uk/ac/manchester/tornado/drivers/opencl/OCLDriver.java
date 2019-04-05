@@ -33,6 +33,7 @@ import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLSuitesProvider;
@@ -71,7 +72,11 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
     @Override
     public TornadoAcceleratorDevice getDevice(int index) {
-        return flatBackends[index].getDeviceContext().asMapping();
+        try {
+            return flatBackends[index].getDeviceContext().asMapping();
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new TornadoRuntimeException("[ERROR] device required not found: " + index + " - Max: " + flatBackends.length);
+        }
     }
 
     @Override

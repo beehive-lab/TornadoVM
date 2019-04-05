@@ -30,32 +30,32 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 
 public class OCLFloatArrayWrapper extends OCLArrayWrapper<float[]> {
 
-    public OCLFloatArrayWrapper(OCLDeviceContext deviceContext) {
-        this(deviceContext, false);
+    public OCLFloatArrayWrapper(OCLDeviceContext deviceContext, long batchSize) {
+        this(deviceContext, false, batchSize);
     }
 
-    public OCLFloatArrayWrapper(OCLDeviceContext deviceContext, boolean isFinal) {
-        super(deviceContext, JavaKind.Float, isFinal);
-    }
-
-    @Override
-    protected void readArrayData(long bufferId, long offset, long bytes, float[] value, int[] waitEvents) {
-        deviceContext.readBuffer(bufferId, offset, bytes, value, waitEvents);
+    public OCLFloatArrayWrapper(OCLDeviceContext deviceContext, boolean isFinal, long batchSize) {
+        super(deviceContext, JavaKind.Float, isFinal, batchSize);
     }
 
     @Override
-    protected void writeArrayData(long bufferId, long offset, long bytes, float[] value, int[] waitEvents) {
-        deviceContext.writeBuffer(bufferId, offset, bytes, value, waitEvents);
+    protected int readArrayData(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.readBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     @Override
-    protected int enqueueReadArrayData(long bufferId, long offset, long bytes, float[] value, int[] waitEvents) {
-        return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, value, waitEvents);
+    protected void writeArrayData(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
+        deviceContext.writeBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
     @Override
-    protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, float[] value, int[] waitEvents) {
-        return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, value, waitEvents);
+    protected int enqueueReadArrayData(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.enqueueReadBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
+    }
+
+    @Override
+    protected int enqueueWriteArrayData(long bufferId, long offset, long bytes, float[] value, long hostOffset, int[] waitEvents) {
+        return deviceContext.enqueueWriteBuffer(bufferId, offset, bytes, value, hostOffset, waitEvents);
     }
 
 }

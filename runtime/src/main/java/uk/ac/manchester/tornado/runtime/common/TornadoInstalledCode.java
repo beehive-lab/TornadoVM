@@ -29,8 +29,8 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public interface TornadoInstalledCode {
 
-    public int launchWithDeps(CallStack stack, TaskMetaData meta, int[] waitEvents);
+    public int launchWithDeps(CallStack stack, TaskMetaData meta, long batchThreads, int[] waitEvents);
 
-    public int launchWithoutDeps(CallStack stack, TaskMetaData meta);
+    public int launchWithoutDeps(CallStack stack, TaskMetaData meta, long batchThreads);
 
 }

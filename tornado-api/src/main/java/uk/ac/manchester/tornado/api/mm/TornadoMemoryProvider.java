@@ -43,18 +43,18 @@ package uk.ac.manchester.tornado.api.mm;
 
 public interface TornadoMemoryProvider {
 
-    public long getCallStackSize();
+    long getCallStackSize();
 
-    public long getCallStackAllocated();
+    long getCallStackAllocated();
 
-    public long getCallStackRemaining();
+    long getCallStackRemaining();
 
-    public long getHeapSize();
+    long getHeapSize();
 
-    public long getHeapRemaining();
+    long getHeapRemaining();
 
-    public long getHeapAllocated();
+    long getHeapAllocated();
 
-    public boolean isInitialised();
+    boolean isInitialised();
 
 }

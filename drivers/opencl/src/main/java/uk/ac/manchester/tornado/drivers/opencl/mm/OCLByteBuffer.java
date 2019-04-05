@@ -77,7 +77,7 @@ public class OCLByteBuffer {
     }
 
     public void read(final int[] events) {
-        deviceContext.readBuffer(toBuffer(), offset, bytes, buffer.array(), events);
+        deviceContext.readBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
     public int enqueueRead() {
@@ -85,7 +85,7 @@ public class OCLByteBuffer {
     }
 
     public int enqueueRead(final int[] events) {
-        return deviceContext.enqueueReadBuffer(toBuffer(), offset, bytes, buffer.array(), events);
+        return deviceContext.enqueueReadBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
     public void write() {
@@ -93,7 +93,8 @@ public class OCLByteBuffer {
     }
 
     public void write(final int[] events) {
-        deviceContext.writeBuffer(toBuffer(), offset, bytes, buffer.array(), events);
+        // XXX: offset 0
+        deviceContext.writeBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
     public int enqueueWrite() {
@@ -101,7 +102,8 @@ public class OCLByteBuffer {
     }
 
     public int enqueueWrite(final int[] events) {
-        return deviceContext.enqueueWriteBuffer(toBuffer(), offset, bytes, buffer.array(), events);
+        // XXX: offset 0
+        return deviceContext.enqueueWriteBuffer(toBuffer(), offset, bytes, buffer.array(), 0, events);
     }
 
     public void dump() {
@@ -110,9 +112,8 @@ public class OCLByteBuffer {
 
     public void dump(final int width) {
         buffer.position(buffer.capacity());
-        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities
-                .humanReadableByteCount(bytes, true), RuntimeUtilities.humanReadableByteCount(
-                buffer.position(), true), deviceContext.getDevice().getDeviceName());
+        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(bytes, true),
+                RuntimeUtilities.humanReadableByteCount(buffer.position(), true), deviceContext.getDevice().getDeviceName());
         for (int i = 0; i < buffer.position(); i += width) {
             System.out.printf("[0x%04x]: ", i + toAbsoluteAddress());
             for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {

@@ -42,6 +42,7 @@
 package uk.ac.manchester.tornado.api.common;
 
 public class TimedEvent {
+
     protected final long start;
     protected final long stop;
 

@@ -22,6 +22,7 @@ import java.util.stream.IntStream;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.examples.common.Messages;
 
 public class Saxpy {
 
@@ -70,9 +71,9 @@ public class Saxpy {
             }
         }
         if (!wrongResult) {
-            System.out.println("Test success");
+            System.out.println(Messages.CORRECT);
         } else {
-            System.out.println("Result is wrong");
+            System.out.println(Messages.WRONG);
         }
     }
 

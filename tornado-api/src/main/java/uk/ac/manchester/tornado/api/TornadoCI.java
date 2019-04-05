@@ -43,12 +43,12 @@ package uk.ac.manchester.tornado.api;
 
 public interface TornadoCI {
 
-    public void setTornadoProperty(String key, String value);
+    void setTornadoProperty(String key, String value);
 
-    public String getTornadoProperty(String key);
+    String getTornadoProperty(String key);
 
-    public String getTornadoProperty(String key, String defaultValue);
+    String getTornadoProperty(String key, String defaultValue);
 
-    public void loadTornadoSettngs(String filename);
+    void loadTornadoSettngs(String filename);
 
 }

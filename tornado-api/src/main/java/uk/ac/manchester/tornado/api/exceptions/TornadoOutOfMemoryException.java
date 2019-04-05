@@ -43,7 +43,7 @@ package uk.ac.manchester.tornado.api.exceptions;
 
 public class TornadoOutOfMemoryException extends Exception {
 
-    private static final long serialVersionUID = 1609608023741117577L;
+    private static final long serialVersionUID = 8861358557469551291L;
     private final String message;
 
     public TornadoOutOfMemoryException(final String msg) {

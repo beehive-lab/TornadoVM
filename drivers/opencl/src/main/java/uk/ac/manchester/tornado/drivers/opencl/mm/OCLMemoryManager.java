@@ -107,7 +107,8 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         if (headerStart + bytes < heapLimit) {
             heapPosition = headerStart + bytes;
         } else {
-            throw new TornadoOutOfMemoryException("Out of memory on device: " + deviceContext.getDevice().getDeviceName());
+            throw new TornadoOutOfMemoryException("Out of memory on the target device -> " + deviceContext.getDevice().getDeviceName() + ". [Heap Limit is: "
+                    + RuntimeUtilities.humanReadableByteCount(heapLimit, true) + " and the application requires: " + RuntimeUtilities.humanReadableByteCount(headerStart + bytes, true) + "]");
         }
 
         return headerStart;
@@ -153,8 +154,8 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
      * @param numBytes
      */
     public void allocateRegion(long numBytes) {
-        heapLimit = numBytes;
-        deviceHeapPointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, numBytes);
+        this.heapLimit = numBytes;
+        this.deviceHeapPointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, numBytes);
     }
 
     public void init(OCLBackend backend, long address) {

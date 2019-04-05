@@ -43,12 +43,12 @@ package uk.ac.manchester.tornado.api;
 
 public interface TornadoTargetDevice {
 
-    public String getDeviceName();
+    String getDeviceName();
 
-    public long getDeviceGlobalMemorySize();
+    long getDeviceGlobalMemorySize();
 
-    public long getDeviceLocalMemorySize();
+    long getDeviceLocalMemorySize();
 
-    public int getDeviceMaxComputeUnits();
+    int getDeviceMaxComputeUnits();
 
 }

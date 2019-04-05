@@ -20,16 +20,16 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: James Clarkson, Juan Fumero
  *
  */
 #include <jni.h>
 
 #define CL_TARGET_OPENCL_VERSION 120
 #ifdef __APPLE__
-#include <OpenCL/cl.h>
+    #include <OpenCL/cl.h>
 #else
-#include <CL/cl.h>
+    #include <CL/cl.h>
 #endif
 
 #include <stdio.h>
@@ -39,10 +39,8 @@
 #define PRINT_KERNEL_EVENTS 0
 
 #ifdef PRINT_KERNEL_EVENTS 
-#include "opencl_time_utils.h"
+    #include "opencl_time_utils.h"
 #endif
-
-
 
 /*
  * Class:     jacc_runtime_drivers_opencl_OCLCommandQueue
@@ -136,8 +134,11 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
     OPENCL_DECODE_WAITLIST(array4, events, numEvents);
 
     cl_event kernelEvent = NULL;
-    OPENCL_SOFT_ERROR("clEnqueueNDRangeKernel",
-            clEnqueueNDRangeKernel((cl_command_queue) queue_id, (cl_kernel) kernel_id, (cl_uint) work_dim, (size_t*) global_work_offset, (size_t*) global_work_size, (size_t*) local_work_size, (cl_uint) numEvents, (numEvents == 0)? NULL: (cl_event*) events, &kernelEvent), 0);
+    cl_int status = clEnqueueNDRangeKernel((cl_command_queue) queue_id, (cl_kernel) kernel_id, (cl_uint) work_dim, (size_t*) global_work_offset, (size_t*) global_work_size, (size_t*) local_work_size, (cl_uint) numEvents, (numEvents == 0)? NULL: (cl_event*) events, &kernelEvent);
+    if (status != CL_SUCCESS) {
+        printf("[ERROR clEnqueueNDRangeKernel]: %d\n", status);
+    }
+    OPENCL_SOFT_ERROR("clEnqueueNDRangeKernel", status, 0);
 
 	if (PRINT_KERNEL_EVENTS) {
 		long kernelTime = getTimeEvent(kernelEvent);

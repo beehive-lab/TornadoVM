@@ -45,16 +45,16 @@ import java.util.BitSet;
 
 public interface TornadoEvents {
 
-    public int cardinality();
+    int cardinality();
 
-    public void reset();
+    void reset();
 
-    public boolean hasNext();
+    boolean hasNext();
 
-    public Event next();
+    Event next();
 
-    public BitSet getProfiles();
+    BitSet getProfiles();
 
-    public TornadoDevice getDevice();
+    TornadoDevice getDevice();
 
 }
