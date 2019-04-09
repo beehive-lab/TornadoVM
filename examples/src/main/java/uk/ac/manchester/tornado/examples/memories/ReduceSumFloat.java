@@ -12,7 +12,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 public class ReduceSumFloat {
-    private static int SIZE = 8192;
+    // private static int size = 65536;
 
     public static float[] allocResultArray(int numGroups) {
         final TornadoDriver device = TornadoRuntime.getTornadoRuntime().getDriver(0);
@@ -41,7 +41,7 @@ public class ReduceSumFloat {
     }
 
     public static void main(String[] args) {
-        float[] input = new float[SIZE];
+        int size = 8192;
         String kernelLocation = null;
         boolean preBuilt = false;
         int numGroups = 1;
@@ -49,14 +49,23 @@ public class ReduceSumFloat {
         if (args.length == 1) {
             kernelLocation = args[0];
             preBuilt = true;
+            size = 8192;
         }
-        if (SIZE > 256) {
-            numGroups = SIZE / 256;
+
+        if (args.length == 2) {
+            kernelLocation = args[0];
+            preBuilt = true;
+            size = Integer.parseInt(args[1]);
+        }
+
+        float[] input = new float[size];
+        if (size > 256) {
+            numGroups = size / 256;
         }
         float[] result = allocResultArray(numGroups);
 
         Random r = new Random();
-        IntStream.range(0, SIZE).sequential().forEach(i -> {
+        IntStream.range(0, size).sequential().forEach(i -> {
             input[i] = r.nextFloat();
         });
 
@@ -66,7 +75,7 @@ public class ReduceSumFloat {
             task.prebuiltTask("t0", "reductionAddFloats", kernelLocation,
                     new Object[] { input, result}, new Access[] { Access.READ, Access.READ_WRITE},
                     TornadoRuntime.getTornadoRuntime().getDefaultDevice(),
-                    new int[] {SIZE})
+                    new int[] {size})
                     .streamOut(result);
         //formatter:on
         } else {
