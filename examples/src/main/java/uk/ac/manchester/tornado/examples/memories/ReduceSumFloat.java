@@ -77,6 +77,13 @@ public class ReduceSumFloat {
         //@formatter:on
         }
 
+        // for (int iter = 0; iter < 5; iter++) {
+        // task.execute();
+        // }
+        //
+        // Arrays.fill(result, 0);
+        // task.streamIn(input, result);
+
         long start = System.nanoTime();
         task.execute();
         long end = System.nanoTime();
