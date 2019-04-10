@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.examples.memories;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -41,7 +42,7 @@ public class ReduceSumFloat {
     }
 
     public static void main(String[] args) {
-        int size = 8192;
+        int size = 4194304;
         String kernelLocation = null;
         boolean preBuilt = false;
         int numGroups = 1;
@@ -49,7 +50,7 @@ public class ReduceSumFloat {
         if (args.length == 1) {
             kernelLocation = args[0];
             preBuilt = true;
-            size = 8192;
+            size = 65536;
         }
 
         if (args.length == 2) {
@@ -66,10 +67,12 @@ public class ReduceSumFloat {
 
         Random r = new Random();
         IntStream.range(0, size).sequential().forEach(i -> {
-            input[i] = r.nextFloat();
+            // input[i] = r.nextFloat();
+            input[i] = 1;
         });
 
         TaskSchedule task = new TaskSchedule("s0");
+
         if (preBuilt) {
         //@formatter:off
             task.prebuiltTask("t0", "reductionAddFloats", kernelLocation,
@@ -86,31 +89,29 @@ public class ReduceSumFloat {
         //@formatter:on
         }
 
-        // for (int iter = 0; iter < 5; iter++) {
-        // task.execute();
-        // }
-        //
-        // Arrays.fill(result, 0);
-        // task.streamIn(input, result);
-
         long start = System.nanoTime();
-        task.execute();
+
+        for (int it = 0; it < 11; it++) {
+            task.execute();
+        }
+
         long end = System.nanoTime();
+
+        System.out.println(Arrays.toString(result));
 
         for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
         }
 
         float[] sequential = new float[1];
+
         long startSequential = System.nanoTime();
         reductionAddFloats(input, sequential);
         long endSequential = System.nanoTime();
 
         System.out.println("Speedup: " + (double) (endSequential - startSequential) / (double) (end - start));
-        // System.out.println("Speedup: " + (double) (endSequential - startSequential));
 
         System.out.println(sequential[0] + " vs " + result[0]);
-        // Check result
-        // assertEquals(sequential[0], result[0], 0.1f);
+
     }
 }
