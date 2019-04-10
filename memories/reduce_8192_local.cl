@@ -14,7 +14,7 @@ __kernel void reductionAddFloats(__global uchar *_heap_base, ulong _frame_base, 
 
   *((__global float *) ul_1 + 24)  =  0.0F;
 
-  __local float localBuffer[2048];
+  __local float localBuffer[1024];
 
   // BLOCK 1 MERGES [0 7 ]
   // from here top-down everything is parallel
