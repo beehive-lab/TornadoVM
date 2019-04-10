@@ -159,6 +159,10 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return code;
     }
 
+    public String getSourceCode() {
+        return new String(code);
+    }
+
     /**
      * Set arguments into the OpenCL device Kernel.
      * 

@@ -48,14 +48,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
  */
 public class TestOCLJIT {
 
-    /**
-     * Method to be compile by Tornado into OpenCL
-     * 
-     * @param a
-     * @param b
-     * @param c
-     */
-    public static void testMethodToCompile(int[] a, int[] b, double[] c) {
+    public static void methodToCompile(int[] a, int[] b, double[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = 0.12 * a[i] * b[i];
         }
@@ -71,6 +64,36 @@ public class TestOCLJIT {
         return method;
     }
 
+    public OCLInstalledCode compileAndRunMethod(int[] a, int[] b, double[] c) {
+
+        Method methodToCompile = getMethodForName(TestOCLJIT.class, "methodToCompile");
+
+        // Get Tornado Runtime
+        TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
+
+        ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
+
+        // Get the backend from TornadoVM
+        OCLBackend openCLBackend = tornadoRuntime.getDriver(OCLDriver.class).getDefaultBackend();
+
+        // Create a new task for Tornado
+        TaskMetaData taskMeta = TaskMetaData.create(new ScheduleMetaData("S0"), methodToCompile.getName(), methodToCompile, false);
+
+        // Compile the code for OpenCL
+        OCLCompilationResult compilationResult = OCLCompiler.compileCodeForDevice(resolvedJavaMethod, new Object[] { a, b, c }, taskMeta, (OCLProviders) openCLBackend.getProviders(), openCLBackend);
+
+        // Obtain the code
+        OCLInstalledCode openCLCode = OpenCL.defaultDevice().getDeviceContext().installCode(compilationResult);
+
+        String code = openCLCode.getSourceCode();
+        System.out.println("GENERATED CODE : " + code);
+
+        // Run the code
+        // openCLCode.launchWithoutDeps(stack, taskMeta, 0);
+
+        return openCLCode;
+    }
+
     public void testJIT01() {
 
         // input data
@@ -82,25 +105,7 @@ public class TestOCLJIT {
         Arrays.fill(a, -10);
         Arrays.fill(b, 10);
 
-        Method methodToCompile = getMethodForName(TestOCLJIT.class, "testMethodToCompile");
-
-        // Test Tornado Runtime
-        TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
-
-        ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
-
-        // Get the backend from Tornado
-        OCLBackend openCLBackend = tornadoRuntime.getDriver(OCLDriver.class).getDefaultBackend();
-
-        // Create a new task for Tornado
-        TaskMetaData task = TaskMetaData.create(new ScheduleMetaData("ID0"), methodToCompile.getName(), methodToCompile, false);
-
-        // Compile the code for OpenCL
-        OCLCompilationResult compilationResult = OCLCompiler.compileCodeForDevice(resolvedJavaMethod, new Object[] { a, b, c }, task, (OCLProviders) openCLBackend.getProviders(), openCLBackend);
-
-        // Obtain the code
-        OCLInstalledCode openCLCode = OpenCL.defaultDevice().getDeviceContext().installCode(compilationResult);
-
+        compileAndRunMethod(a, b, c);
     }
 
     public static void main(String[] args) {
