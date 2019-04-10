@@ -159,7 +159,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return code;
     }
 
-    public String getSourceCode() {
+    public String getGeneratedSourceCode() {
         return new String(code);
     }
 

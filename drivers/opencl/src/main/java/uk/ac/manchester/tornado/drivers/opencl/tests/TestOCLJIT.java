@@ -37,7 +37,11 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
+import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -64,8 +68,19 @@ public class TestOCLJIT {
         return method;
     }
 
-    public OCLInstalledCode compileAndRunMethod(int[] a, int[] b, double[] c) {
+    private static class MetaCompilation {
+        TaskMetaData taskMeta;
+        OCLInstalledCode openCLCode;
 
+        public MetaCompilation(TaskMetaData taskMeta, OCLInstalledCode openCLCode) {
+            this.taskMeta = taskMeta;
+            this.openCLCode = openCLCode;
+        }
+    }
+
+    public MetaCompilation compileMethod(OCLTornadoDevice tornadoDevice, int[] a, int[] b, double[] c) {
+
+        // Get the method object to be compiled
         Method methodToCompile = getMethodForName(TestOCLJIT.class, "methodToCompile");
 
         // Get Tornado Runtime
@@ -82,16 +97,43 @@ public class TestOCLJIT {
         // Compile the code for OpenCL
         OCLCompilationResult compilationResult = OCLCompiler.compileCodeForDevice(resolvedJavaMethod, new Object[] { a, b, c }, taskMeta, (OCLProviders) openCLBackend.getProviders(), openCLBackend);
 
-        // Obtain the code
-        OCLInstalledCode openCLCode = OpenCL.defaultDevice().getDeviceContext().installCode(compilationResult);
+        // Install the OpenCL Code in the VM
+        OCLInstalledCode openCLCode = tornadoDevice.getDeviceContext().installCode(compilationResult);
 
-        String code = openCLCode.getSourceCode();
-        System.out.println("GENERATED CODE : " + code);
+        return new MetaCompilation(taskMeta, openCLCode);
+    }
+
+    public void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
+        // First we allocate, A, B and C
+
+        GlobalObjectState stateA = new GlobalObjectState();
+        DeviceObjectState objectStateA = stateA.getDeviceState(tornadoDevice);
+
+        GlobalObjectState stateB = new GlobalObjectState();
+        DeviceObjectState objectStateB = stateB.getDeviceState(tornadoDevice);
+
+        GlobalObjectState stateC = new GlobalObjectState();
+        DeviceObjectState objectStateC = stateC.getDeviceState(tornadoDevice);
+
+        // Copy-IN A
+        tornadoDevice.ensurePresent(a, objectStateA, null, 0, 0);
+        // Copy-IN B
+        tornadoDevice.ensurePresent(b, objectStateB, null, 0, 0);
+        // Alloc C
+        tornadoDevice.ensureAllocated(c, 0, objectStateC);
+
+        // Create stack
+        CallStack stack = tornadoDevice.createStack(3);
+        stack.push(a, objectStateA);
+        stack.push(b, objectStateB);
+        stack.push(c, objectStateC);
 
         // Run the code
-        // openCLCode.launchWithoutDeps(stack, taskMeta, 0);
+        openCLCode.launchWithoutDeps(stack, taskMeta, 0);
 
-        return openCLCode;
+        // Obtain the result
+        tornadoDevice.streamOutBlocking(c, 0, objectStateC, null);
+
     }
 
     public void testJIT01() {
@@ -105,7 +147,12 @@ public class TestOCLJIT {
         Arrays.fill(a, -10);
         Arrays.fill(b, 10);
 
-        compileAndRunMethod(a, b, c);
+        OCLTornadoDevice tornadoDevice = OpenCL.defaultDevice();
+
+        MetaCompilation compileMethod = compileMethod(tornadoDevice, a, b, c);
+        run(tornadoDevice, compileMethod.openCLCode, compileMethod.taskMeta, a, b, c);
+
+        System.out.println(Arrays.toString(c));
     }
 
     public static void main(String[] args) {
