@@ -1,6 +1,5 @@
 package uk.ac.manchester.tornado.examples.memories;
 
-import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -42,7 +41,7 @@ public class ReduceSumFloat {
     }
 
     public static void main(String[] args) {
-        int size = 4194304;
+        int size = 134217728;
         String kernelLocation = null;
         boolean preBuilt = false;
         int numGroups = 1;
@@ -77,7 +76,7 @@ public class ReduceSumFloat {
         //@formatter:off
             task.prebuiltTask("t0", "reductionAddFloats", kernelLocation,
                     new Object[] { input, result}, new Access[] { Access.READ, Access.READ_WRITE},
-                    TornadoRuntime.getTornadoRuntime().getDefaultDevice(),
+                    TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(1),
                     new int[] {size})
                     .streamOut(result);
         //formatter:on
@@ -97,7 +96,7 @@ public class ReduceSumFloat {
 
         long end = System.nanoTime();
 
-        System.out.println(Arrays.toString(result));
+        // System.out.println(Arrays.toString(result));
 
         for (int i = 1; i < result.length; i++) {
             result[0] += result[i];
