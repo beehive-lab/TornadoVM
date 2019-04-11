@@ -25,6 +25,8 @@ import java.util.stream.IntStream;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.examples.reductions.ConfigurationReduce;
 import uk.ac.manchester.tornado.examples.reductions.Stats;
 
@@ -37,7 +39,7 @@ public class PiComputationLocal {
         }
     }
 
-    public void run(int size) {
+    public void run(int size, String kernelLocation) {
         float[] input = new float[size];
 
         int numGroups = 1;
@@ -48,19 +50,33 @@ public class PiComputationLocal {
         float[] result = ConfigurationReduce.allocResultArray(numGroups);
         Arrays.fill(result, 0.0f);
 
-        //@formatter:off
-        TaskSchedule task = new TaskSchedule("s0")
-            .streamIn(input)
-            .task("t0", PiComputationLocal::computePi, input, result)
-            .streamOut(result);
-        //@formatter:on
+        TaskSchedule task = new TaskSchedule("s0");
+
+        if (kernelLocation != null) {
+            //@formatter:off
+            task.prebuiltTask("t0", "computePi", kernelLocation,
+                    new Object[] { input, result}, new Access[] { Access.READ, Access.READ_WRITE},
+                    TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0),
+                    new int[] {size})
+                    .streamOut(result);
+            //formatter:on
+        } else {
+            //@formatter:off
+            task.streamIn(input)
+                    .task("t0",PiComputationLocal::computePi, input, result)
+                    .streamOut(result);
+            //@formatter:on
+        }
 
         ArrayList<Long> timers = new ArrayList<>();
-        for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {
+        for (int i = 0; i < 5; i++) {
 
             IntStream.range(0, size).sequential().forEach(idx -> {
                 input[idx] = 0;
             });
+
+            Arrays.fill(result, 0.0f);
+            task.streamIn(input, result);
 
             long start = System.nanoTime();
             task.execute();
@@ -79,10 +95,16 @@ public class PiComputationLocal {
 
     public static void main(String[] args) {
         int inputSize = 8192;
-        if (args.length > 0) {
+        String kernelLocation = null;
+
+        if (args.length == 1) {
             inputSize = Integer.parseInt(args[0]);
+        } else if (args.length == 2) {
+            inputSize = Integer.parseInt(args[0]);
+            kernelLocation = args[1];
         }
+
         System.out.print("Size = " + inputSize + " ");
-        new PiComputationLocal().run(inputSize);
+        new PiComputationLocal().run(inputSize, kernelLocation);
     }
 }
