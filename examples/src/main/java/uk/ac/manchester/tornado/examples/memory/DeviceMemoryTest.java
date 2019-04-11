@@ -84,7 +84,6 @@ public class DeviceMemoryTest {
                 }
             }
         }
-
         System.out.printf("data=%s, errors=%d, first=%d\n", humanReadableByteCount(data.length << 2, false), errors, first);
     }
 

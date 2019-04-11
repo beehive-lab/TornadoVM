@@ -68,7 +68,7 @@ public class TestOpenCLJITCompiler {
         return method;
     }
 
-    private static class MetaCompilation {
+    public static class MetaCompilation {
         TaskMetaData taskMeta;
         OCLInstalledCode openCLCode;
 
@@ -76,12 +76,21 @@ public class TestOpenCLJITCompiler {
             this.taskMeta = taskMeta;
             this.openCLCode = openCLCode;
         }
+
+        public TaskMetaData getTaskMeta() {
+            return taskMeta;
+        }
+
+        public OCLInstalledCode getOpenCLCode() {
+            return openCLCode;
+        }
+
     }
 
-    public MetaCompilation compileMethod(OCLTornadoDevice tornadoDevice, int[] a, int[] b, double[] c) {
+    public MetaCompilation compileMethod(Class<?> klass, String methodName, OCLTornadoDevice tornadoDevice, int[] a, int[] b, double[] c) {
 
         // Get the method object to be compiled
-        Method methodToCompile = getMethodForName(TestOpenCLJITCompiler.class, "methodToCompile");
+        Method methodToCompile = getMethodForName(klass, methodName);
 
         // Get Tornado Runtime
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
@@ -136,7 +145,7 @@ public class TestOpenCLJITCompiler {
         tornadoDevice.streamOutBlocking(c, 0, objectStateC, null);
     }
 
-    public void testJIT01() {
+    public void test() {
 
         // input data
         final int N = 128;
@@ -149,7 +158,7 @@ public class TestOpenCLJITCompiler {
 
         OCLTornadoDevice tornadoDevice = OpenCL.defaultDevice();
 
-        MetaCompilation compileMethod = compileMethod(tornadoDevice, a, b, c);
+        MetaCompilation compileMethod = compileMethod(TestOpenCLJITCompiler.class, "methodToCompile", tornadoDevice, a, b, c);
         run(tornadoDevice, compileMethod.openCLCode, compileMethod.taskMeta, a, b, c);
 
         // System.out.println(Arrays.toString(c));
@@ -171,7 +180,7 @@ public class TestOpenCLJITCompiler {
 
     public static void main(String[] args) {
         System.out.print("Running Native: uk.ac.manchester.tornado.drivers.opencl.tests.TestOpenCLJITCompiler");
-        new TestOpenCLJITCompiler().testJIT01();
+        new TestOpenCLJITCompiler().test();
     }
 
 }
