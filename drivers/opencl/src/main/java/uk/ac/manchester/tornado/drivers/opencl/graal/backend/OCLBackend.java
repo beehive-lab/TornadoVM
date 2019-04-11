@@ -124,6 +124,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public final static String OPENCL_PATH = System.getProperty("tornado.opencl.path", "./opencl");
     private final static String FPGA_ATTRIBUTE = "__attribute__((reqd_work_group_size(64,1,1)))  ";
     private final static String INTEL = "Intel(R)";
+    public final static boolean LOCAL_EXPERIMENTAL = Boolean.parseBoolean(System.getProperty("tornado.local", "False"));
     private boolean flag = false;
 
     @Override
@@ -230,8 +231,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     /**
-     * It allocates the smallest of the requested heap size or the max global
-     * memory size.
+     * It allocates the smallest of the requested heap size or the max global memory
+     * size.
      */
     public void allocateHeapMemoryOnDevice() {
         long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
@@ -314,6 +315,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             OCLProviders providers = (OCLProviders) getProviders();
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
 
+            deviceContext.getPlatformContext().getPlatform().getName();
             if (Tornado.ACCELERATOR_IS_FPGA) {
                 lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA);
             } else {
@@ -495,12 +497,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         if (crb.isKernel()) {
             /*
-             * BUG There is a bug on some OpenCL devices which requires us to
-             * insert an extra OpenCL buffer into the kernel arguments. This has
-             * the effect of shifting the devices address mappings, which allows
-             * us to avoid the heap starting at address 0x0. (I assume that this
-             * is a interesting case that leads to a few issues.) Iris Pro is
-             * the only culprit at the moment.
+             * BUG There is a bug on some OpenCL devices which requires us to insert an
+             * extra OpenCL buffer into the kernel arguments. This has the effect of
+             * shifting the devices address mappings, which allows us to avoid the heap
+             * starting at address 0x0. (I assume that this is a interesting case that leads
+             * to a few issues.) Iris Pro is the only culprit at the moment.
              */
             if (Tornado.ACCELERATOR_IS_FPGA && !methodName.equals(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
                 // TODO: FIX with info at the runtime, currently is a static
