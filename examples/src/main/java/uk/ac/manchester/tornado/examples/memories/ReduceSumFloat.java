@@ -41,7 +41,7 @@ public class ReduceSumFloat {
     }
 
     public static void main(String[] args) {
-        int size = 134217728;
+        int size = 65536;
         String kernelLocation = null;
         boolean preBuilt = false;
         int numGroups = 1;
@@ -90,7 +90,7 @@ public class ReduceSumFloat {
 
         long start = System.nanoTime();
 
-        for (int it = 0; it < 11; it++) {
+        for (int it = 0; it < 5; it++) {
             task.execute();
         }
 
