@@ -107,18 +107,6 @@ public class OCLCodeCache {
      */
     private final String OPENCL_FILE_BINARIES = getProperty("tornado.precompiled.listFile", null);
 
-    /**
-     * List of all flags targeting AOC compiler
-     * -Dtornado.fpga.flags=flag1,....flagn
-     *
-     * <p>
-     * <code>
-     * -Dtornado.fpga.flags=flag1,....flagn
-     * </code>
-     * </p>
-     *
-     */
-
     private final boolean PRINT_WARNINGS = false;
 
     private final ConcurrentHashMap<String, OCLInstalledCode> cache;
