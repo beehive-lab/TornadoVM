@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
  * Environment.
  *
  */
-public class TestOCLJIT {
+public class TestOpenCLJITCompiler {
 
     public static void methodToCompile(int[] a, int[] b, double[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
@@ -81,11 +81,12 @@ public class TestOCLJIT {
     public MetaCompilation compileMethod(OCLTornadoDevice tornadoDevice, int[] a, int[] b, double[] c) {
 
         // Get the method object to be compiled
-        Method methodToCompile = getMethodForName(TestOCLJIT.class, "methodToCompile");
+        Method methodToCompile = getMethodForName(TestOpenCLJITCompiler.class, "methodToCompile");
 
         // Get Tornado Runtime
         TornadoCoreRuntime tornadoRuntime = TornadoCoreRuntime.getTornadoRuntime();
 
+        // Get the Graal Resoved Java Method
         ResolvedJavaMethod resolvedJavaMethod = tornadoRuntime.resolveMethod(methodToCompile);
 
         // Get the backend from TornadoVM
@@ -133,7 +134,6 @@ public class TestOCLJIT {
 
         // Obtain the result
         tornadoDevice.streamOutBlocking(c, 0, objectStateC, null);
-
     }
 
     public void testJIT01() {
@@ -156,7 +156,7 @@ public class TestOCLJIT {
     }
 
     public static void main(String[] args) {
-        new TestOCLJIT().testJIT01();
+        new TestOpenCLJITCompiler().testJIT01();
     }
 
 }
