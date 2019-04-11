@@ -152,10 +152,25 @@ public class TestOpenCLJITCompiler {
         MetaCompilation compileMethod = compileMethod(tornadoDevice, a, b, c);
         run(tornadoDevice, compileMethod.openCLCode, compileMethod.taskMeta, a, b, c);
 
-        System.out.println(Arrays.toString(c));
+        // System.out.println(Arrays.toString(c));
+
+        boolean correct = true;
+        for (int i = 0; i < c.length; i++) {
+            double seq = 0.12 * a[i] * b[i];
+            if (Math.abs(c[i] - seq) > 0.01) {
+                correct = false;
+            }
+        }
+        if (!correct) {
+            System.out.println(" ................ [FAIL]");
+        } else {
+            System.out.println(" ................ [PASS]");
+        }
+
     }
 
     public static void main(String[] args) {
+        System.out.print("Running Native: uk.ac.manchester.tornado.drivers.opencl.tests.TestOpenCLJITCompiler");
         new TestOpenCLJITCompiler().testJIT01();
     }
 

@@ -137,30 +137,32 @@ public class OpenCL {
         return platforms;
     }
 
-    public static void main(String[] args) {
-
-        if (args.length != 2) {
-            System.out.println("usage: OpenCL <platform> <device>");
-            System.out.println();
-
-            for (int platformIndex = 0; platformIndex < platforms.size(); platformIndex++) {
-                final OCLPlatform platform = platforms.get(platformIndex);
-                System.out.printf("[%d]: platform: %s\n", platformIndex, platform.getName());
-                final OCLContext context = platform.createContext();
-                for (int deviceIndex = 0; deviceIndex < context.getNumDevices(); deviceIndex++) {
-                    System.out.printf("[%d:%d] device: %s\n", platformIndex, deviceIndex, context.createDeviceContext(deviceIndex).getDevice().getDeviceName());
-                }
+    public static void exploreAllPlatforms() {
+        for (int platformIndex = 0; platformIndex < platforms.size(); platformIndex++) {
+            final OCLPlatform platform = platforms.get(platformIndex);
+            System.out.printf("[%d]: platform: %s\n", platformIndex, platform.getName());
+            final OCLContext context = platform.createContext();
+            for (int deviceIndex = 0; deviceIndex < context.getNumDevices(); deviceIndex++) {
+                System.out.printf("\t[%d:%d] device: %s\n", platformIndex, deviceIndex, context.createDeviceContext(deviceIndex).getDevice().getDeviceName());
             }
+        }
+    }
 
-        } else {
+    public static OCLDevice getDevice(int platformIndex, int deviceIndex) {
+        final OCLPlatform platform = platforms.get(platformIndex);
+        return platform.createContext().createDeviceContext(deviceIndex).getDevice();
+    }
 
+    public static void main(String[] args) {
+        if (args.length == 0) {
+            exploreAllPlatforms();
+        } else if (args.length == 2) {
             final int platformIndex = Integer.parseInt(args[0]);
             final int deviceIndex = Integer.parseInt(args[1]);
-
-            final OCLPlatform platform = platforms.get(platformIndex);
-            final OCLDevice device = platform.createContext().createDeviceContext(deviceIndex).getDevice();
-
+            OCLDevice device = getDevice(platformIndex, deviceIndex);
             System.out.println(device.toVerboseString());
+        } else {
+            System.out.println("usage: OpenCL <platform> <device>");
         }
     }
 }
