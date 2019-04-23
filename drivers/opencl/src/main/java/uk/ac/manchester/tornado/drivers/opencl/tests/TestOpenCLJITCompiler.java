@@ -114,7 +114,7 @@ public class TestOpenCLJITCompiler {
         return new MetaCompilation(taskMeta, openCLCode);
     }
 
-    public void runWithAPI(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
+    public void runWithOpenCLAPI(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
         OpenCL.run(tornadoDevice, openCLCode, taskMeta, new Access[] { Access.READ, Access.READ, Access.WRITE }, new Object[] { a, b, c });
     }
 
@@ -163,11 +163,12 @@ public class TestOpenCLJITCompiler {
         OCLTornadoDevice tornadoDevice = OpenCL.defaultDevice();
 
         MetaCompilation compileMethod = compileMethod(TestOpenCLJITCompiler.class, "methodToCompile", tornadoDevice, a, b, c);
+
+        // Check with all internal APIs
         run(tornadoDevice, compileMethod.openCLCode, compileMethod.taskMeta, a, b, c);
 
-        runWithAPI(tornadoDevice, compileMethod.openCLCode, compileMethod.taskMeta, a, b, c);
-
-        // System.out.println(Arrays.toString(c));
+        // Check with OpenCL API
+        runWithOpenCLAPI(tornadoDevice, compileMethod.openCLCode, compileMethod.taskMeta, a, b, c);
 
         boolean correct = true;
         for (int i = 0; i < c.length; i++) {

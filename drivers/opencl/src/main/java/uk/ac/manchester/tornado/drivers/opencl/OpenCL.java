@@ -145,26 +145,24 @@ public class OpenCL {
      * @param tornadoDevice
      * @param openCLCode
      * @param taskMeta
-     * @param input
+     * @param parameters
      */
-    public static void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, Access[] accesses, Object... input) {
-
-        // First we allocate, A, B and C
-        if (input.length != accesses.length) {
+    public static void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, Access[] accesses, Object... parameters) {
+        if (parameters.length != accesses.length) {
             throw new TornadoRuntimeException("[ERROR] Accesses and objects array should match in size");
         }
 
+        // Copy-in variables
         ArrayList<DeviceObjectState> states = new ArrayList<>();
-
         for (int i = 0; i < accesses.length; i++) {
-
             Access access = accesses[i];
-            Object object = input[i];
+            Object object = parameters[i];
 
             GlobalObjectState globalState = new GlobalObjectState();
             DeviceObjectState deviceState = globalState.getDeviceState(tornadoDevice);
 
             switch (access) {
+                case READ_WRITE:
                 case READ:
                     tornadoDevice.ensurePresent(object, deviceState, null, 0, 0);
                     break;
@@ -174,14 +172,13 @@ public class OpenCL {
                     break;
             }
             states.add(deviceState);
-
         }
 
         // Create stack
-        final int numArgs = input.length;
+        final int numArgs = parameters.length;
         CallStack stack = tornadoDevice.createStack(numArgs);
         for (int i = 0; i < numArgs; i++) {
-            stack.push(input[i], states.get(i));
+            stack.push(parameters[i], states.get(i));
         }
 
         // Run the code
@@ -193,14 +190,13 @@ public class OpenCL {
             switch (access) {
                 case READ_WRITE:
                 case WRITE:
-                    Object object = input[i];
+                    Object object = parameters[i];
                     DeviceObjectState deviceState = states.get(i);
                     tornadoDevice.streamOutBlocking(object, 0, deviceState, null);
                 default:
                     break;
             }
         }
-
     }
 
     public static List<OCLPlatform> platforms() {
