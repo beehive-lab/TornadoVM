@@ -31,10 +31,16 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OpenCL {
 
@@ -131,6 +137,70 @@ public class OpenCL {
         final int platformIndex = Integer.parseInt(Tornado.getProperty("tornado.platform", "0"));
         final int deviceIndex = Integer.parseInt(Tornado.getProperty("tornado.device", "0"));
         return new OCLTornadoDevice(platformIndex, deviceIndex);
+    }
+
+    /**
+     * Execute an OpenCL code compiled by Tornado on the target device
+     * 
+     * @param tornadoDevice
+     * @param openCLCode
+     * @param taskMeta
+     * @param input
+     */
+    public static void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, Access[] accesses, Object... input) {
+
+        // First we allocate, A, B and C
+        if (input.length != accesses.length) {
+            throw new TornadoRuntimeException("[ERROR] Accesses and objects array should match in size");
+        }
+
+        ArrayList<DeviceObjectState> states = new ArrayList<>();
+
+        for (int i = 0; i < accesses.length; i++) {
+
+            Access access = accesses[i];
+            Object object = input[i];
+
+            GlobalObjectState globalState = new GlobalObjectState();
+            DeviceObjectState deviceState = globalState.getDeviceState(tornadoDevice);
+
+            switch (access) {
+                case READ:
+                    tornadoDevice.ensurePresent(object, deviceState, null, 0, 0);
+                    break;
+                case WRITE:
+                    tornadoDevice.ensureAllocated(object, 0, deviceState);
+                default:
+                    break;
+            }
+            states.add(deviceState);
+
+        }
+
+        // Create stack
+        final int numArgs = input.length;
+        CallStack stack = tornadoDevice.createStack(numArgs);
+        for (int i = 0; i < numArgs; i++) {
+            stack.push(input[i], states.get(i));
+        }
+
+        // Run the code
+        openCLCode.launchWithoutDeps(stack, taskMeta, 0);
+
+        // Obtain the result
+        for (int i = 0; i < accesses.length; i++) {
+            Access access = accesses[i];
+            switch (access) {
+                case READ_WRITE:
+                case WRITE:
+                    Object object = input[i];
+                    DeviceObjectState deviceState = states.get(i);
+                    tornadoDevice.streamOutBlocking(object, 0, deviceState, null);
+                default:
+                    break;
+            }
+        }
+
     }
 
     public static List<OCLPlatform> platforms() {

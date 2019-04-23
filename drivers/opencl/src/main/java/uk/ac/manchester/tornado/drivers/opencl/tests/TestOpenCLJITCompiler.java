@@ -30,6 +30,7 @@ import java.util.Arrays;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.OpenCL;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
@@ -113,9 +114,12 @@ public class TestOpenCLJITCompiler {
         return new MetaCompilation(taskMeta, openCLCode);
     }
 
+    public void runWithAPI(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
+        OpenCL.run(tornadoDevice, openCLCode, taskMeta, new Access[] { Access.READ, Access.READ, Access.WRITE }, new Object[] { a, b, c });
+    }
+
     public void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, int[] a, int[] b, double[] c) {
         // First we allocate, A, B and C
-
         GlobalObjectState stateA = new GlobalObjectState();
         DeviceObjectState objectStateA = stateA.getDeviceState(tornadoDevice);
 
@@ -160,6 +164,8 @@ public class TestOpenCLJITCompiler {
 
         MetaCompilation compileMethod = compileMethod(TestOpenCLJITCompiler.class, "methodToCompile", tornadoDevice, a, b, c);
         run(tornadoDevice, compileMethod.openCLCode, compileMethod.taskMeta, a, b, c);
+
+        runWithAPI(tornadoDevice, compileMethod.openCLCode, compileMethod.taskMeta, a, b, c);
 
         // System.out.println(Arrays.toString(c));
 
