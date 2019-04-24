@@ -31,10 +31,16 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.CallStack;
+import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OpenCL {
 
@@ -133,34 +139,96 @@ public class OpenCL {
         return new OCLTornadoDevice(platformIndex, deviceIndex);
     }
 
+    /**
+     * Execute an OpenCL code compiled by Tornado on the target device
+     * 
+     * @param tornadoDevice
+     * @param openCLCode
+     * @param taskMeta
+     * @param parameters
+     */
+    public static void run(OCLTornadoDevice tornadoDevice, OCLInstalledCode openCLCode, TaskMetaData taskMeta, Access[] accesses, Object... parameters) {
+        if (parameters.length != accesses.length) {
+            throw new TornadoRuntimeException("[ERROR] Accesses and objects array should match in size");
+        }
+
+        // Copy-in variables
+        ArrayList<DeviceObjectState> states = new ArrayList<>();
+        for (int i = 0; i < accesses.length; i++) {
+            Access access = accesses[i];
+            Object object = parameters[i];
+
+            GlobalObjectState globalState = new GlobalObjectState();
+            DeviceObjectState deviceState = globalState.getDeviceState(tornadoDevice);
+
+            switch (access) {
+                case READ_WRITE:
+                case READ:
+                    tornadoDevice.ensurePresent(object, deviceState, null, 0, 0);
+                    break;
+                case WRITE:
+                    tornadoDevice.ensureAllocated(object, 0, deviceState);
+                default:
+                    break;
+            }
+            states.add(deviceState);
+        }
+
+        // Create stack
+        final int numArgs = parameters.length;
+        CallStack stack = tornadoDevice.createStack(numArgs);
+        for (int i = 0; i < numArgs; i++) {
+            stack.push(parameters[i], states.get(i));
+        }
+
+        // Run the code
+        openCLCode.launchWithoutDeps(stack, taskMeta, 0);
+
+        // Obtain the result
+        for (int i = 0; i < accesses.length; i++) {
+            Access access = accesses[i];
+            switch (access) {
+                case READ_WRITE:
+                case WRITE:
+                    Object object = parameters[i];
+                    DeviceObjectState deviceState = states.get(i);
+                    tornadoDevice.streamOutBlocking(object, 0, deviceState, null);
+                default:
+                    break;
+            }
+        }
+    }
+
     public static List<OCLPlatform> platforms() {
         return platforms;
     }
 
-    public static void main(String[] args) {
-
-        if (args.length != 2) {
-            System.out.println("usage: OpenCL <platform> <device>");
-            System.out.println();
-
-            for (int platformIndex = 0; platformIndex < platforms.size(); platformIndex++) {
-                final OCLPlatform platform = platforms.get(platformIndex);
-                System.out.printf("[%d]: platform: %s\n", platformIndex, platform.getName());
-                final OCLContext context = platform.createContext();
-                for (int deviceIndex = 0; deviceIndex < context.getNumDevices(); deviceIndex++) {
-                    System.out.printf("[%d:%d] device: %s\n", platformIndex, deviceIndex, context.createDeviceContext(deviceIndex).getDevice().getDeviceName());
-                }
+    public static void exploreAllPlatforms() {
+        for (int platformIndex = 0; platformIndex < platforms.size(); platformIndex++) {
+            final OCLPlatform platform = platforms.get(platformIndex);
+            System.out.printf("[%d]: platform: %s\n", platformIndex, platform.getName());
+            final OCLContext context = platform.createContext();
+            for (int deviceIndex = 0; deviceIndex < context.getNumDevices(); deviceIndex++) {
+                System.out.printf("\t[%d:%d] device: %s\n", platformIndex, deviceIndex, context.createDeviceContext(deviceIndex).getDevice().getDeviceName());
             }
+        }
+    }
 
-        } else {
+    public static OCLDevice getDevice(int platformIndex, int deviceIndex) {
+        final OCLPlatform platform = platforms.get(platformIndex);
+        return platform.createContext().createDeviceContext(deviceIndex).getDevice();
+    }
 
+    public static void main(String[] args) {
+        if (args.length == 0) {
+            exploreAllPlatforms();
+        } else if (args.length == 2) {
             final int platformIndex = Integer.parseInt(args[0]);
             final int deviceIndex = Integer.parseInt(args[1]);
-
-            final OCLPlatform platform = platforms.get(platformIndex);
-            final OCLDevice device = platform.createContext().createDeviceContext(deviceIndex).getDevice();
-
+            OCLDevice device = getDevice(platformIndex, deviceIndex);
             System.out.println(device.toVerboseString());
+        } else {
+            System.out.println("usage: OpenCL <platform> <device>");
         }
     }
 }
