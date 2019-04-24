@@ -1,26 +1,42 @@
-# TornadoVM
+# TornadoVM 
 
-TornadoVM is a practical heterogeneous programming framework for automatically accelerating Java programs on heterogeneous (OpenCL-compatible)  hardware. 
+🌪️ TornadoVM is a practical heterogeneous programming framework for automatically accelerating Java programs on heterogeneous (OpenCL-compatible)  hardware. 
 
 ### Releases
-  * TornadoVM 0.2   - 25/02/2019 : See [CHANGELOG](CHANGELOG.md)
-  * Tornado 0.1.0 - 07/09/2018 : See [CHANGELOG](CHANGELOG.md)
-
+  * TornadoVM 0.2  - 25/02/2019 : See [CHANGELOG](CHANGELOG.md)
+  * Tornado 0.1.0  - 07/09/2018 : See [CHANGELOG](CHANGELOG.md)
 
 ## How to start? 
 
+#### From scratch:
+
 The [INSTALL](INSTALL.md) page contains instructions on how to install TornadoVM while the [Examples](assembly/src/docs/2_EXAMPLES.md) page includes examples regarding running Java programs on GPUs. 
+
 We also maintain a live TornadoVM whitepaper document which you can download [here](https://www.dropbox.com/s/rbb2qv0q2wicgvy/main.pdf).
 
+#### Docker with NVIDIA GPUs:
+
+We also have a docker container to execute TornadoVM on NVIDIA GPUs. 
+
+```bash
+$ docker pull beehivelab/tornado-gpu:latest
+$ git clone https://github.com/beehive-lab/docker-tornado
+$ cd docker-tornado
+$ ./run.sh javac.py example/MatrixMultiplication.java
+$ ./run.sh tornado example/MatrixMultiplication 
+```
+
+See our [docker-tornado](https://github.com/beehive-lab/docker-tornado) for more details.
 
 ## Selected Publications
 
-* Juan Fumero, Michail Papadimitriou, Foivos Zakkak, Maria Xekalaki, James Clarkson, Christos Kotselidis. **Dynamic Application Reconfiguration on Heterogeneous Hardware.** To appear in Virtual Execution Environments (VEE) 2019, Providence, Rhode Island, United States, 2019.
-* James Clarkson, Juan Fumero, Michalis Papadimitriou, Foivos S. Zakkak, Maria Xekalaki, Christos Kotselidis, Mikel Luján (The University of Manchester). **Exploiting High-Performance Heterogeneous Hardware for Java Programs using Graal**. *Proceedings of the 15th International Conference on Managed Languages & Runtime.* [preprint](https://www.researchgate.net/publication/327097904_Exploiting_High-Performance_Heterogeneous_Hardware_for_Java_Programs_using_Graal)
+* Juan Fumero, Michail Papadimitriou, Foivos Zakkak, Maria Xekalaki, James Clarkson, Christos Kotselidis. [**Dynamic Application Reconfiguration on Heterogeneous Hardware.**](https://dl.acm.org/citation.cfm?id=3313819) _In Proceedings of the 15th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments._
+* Juan Fumero, Christos Kotselidis. [**Using Compiler Snippets to Exploit Parallelism on Heterogeneous Hardware: A Java Reduction Case Study**](https://dl.acm.org/citation.cfm?id=3281292) In _Proceedings of the 10th ACM SIGPLAN International Workshop on Virtual Machines and Intermediate Languages (VMIL'18)_
+* James Clarkson, Juan Fumero, Michalis Papadimitriou, Foivos S. Zakkak, Maria Xekalaki, Christos Kotselidis, Mikel Luján (The University of Manchester). **Exploiting High-Performance Heterogeneous Hardware for Java Programs using Graal**. *Proceedings of the 15th International Conference on Managed Languages & Runtime.* [Preprint](https://www.researchgate.net/publication/327097904_Exploiting_High-Performance_Heterogeneous_Hardware_for_Java_Programs_using_Graal)
 
 * Sajad Saeedi, Bruno Bodin, Harry Wagstaff, Andy Nisbet, Luigi Nardi, John Mawer, Nicolas Melot, Oscar Palomar, Emanuele Vespa, Tom Spink, Cosmin Gorgovan, Andrew Webb, James Clarkson, Erik Tomusk, Thomas Debrunner, Kuba Kaszyk, Pablo Gonzalez-de-Aledo, Andrey Rodchenko, Graham Riley, Christos Kotselidis, Björn Franke, Michael FP O'Boyle, Andrew J Davison, Paul HJ Kelly, Mikel Luján, Steve Furber. **Navigating the Landscape for Real-Time Localization and Mapping for Robotics and Virtual and Augmented Reality.** In Proceedings of the IEEE, 2018.
 
-* C. Kotselidis, J. Clarkson, A. Rodchenko, A. Nisbet, J. Mawer, and M. Luján. **Heterogeneous Managed Runtime Systems: A Computer Vision Case Study.** In Proceedings of the 13th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments, VEE ’17, [link](https://dl.acm.org/citation.cfm?doid=3050748.3050764)
+* C. Kotselidis, J. Clarkson, A. Rodchenko, A. Nisbet, J. Mawer, and M. Luján. [**Heterogeneous Managed Runtime Systems: A Computer Vision Case Study.**](https://dl.acm.org/citation.cfm?id=3050764) In Proceedings of the 13th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments, VEE ’17, [link](https://dl.acm.org/citation.cfm?doid=3050748.3050764)
 
 
 ### Citation
