@@ -11,6 +11,7 @@ example:
 
 tests:
 	tornado-test.py --verbose
+	test-native.sh 
 
 test-slam:
 	tornado-test.py -V --fast uk.ac.manchester.tornado.unittests.slam.graphics.GraphicsTests 

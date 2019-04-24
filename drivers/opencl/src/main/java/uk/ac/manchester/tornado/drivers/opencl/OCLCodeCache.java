@@ -107,18 +107,6 @@ public class OCLCodeCache {
      */
     private final String OPENCL_FILE_BINARIES = getProperty("tornado.precompiled.listFile", null);
 
-    /**
-     * List of all flags targeting AOC compiler
-     * -Dtornado.fpga.flags=flag1,....flagn
-     *
-     * <p>
-     * <code>
-     * -Dtornado.fpga.flags=flag1,....flagn
-     * </code>
-     * </p>
-     *
-     */
-
     private final boolean PRINT_WARNINGS = false;
 
     private final ConcurrentHashMap<String, OCLInstalledCode> cache;
@@ -142,7 +130,7 @@ public class OCLCodeCache {
             processPrecompiledBinariesFromFile();
         }
 
-        // Composing the binary entrypoint for the FPGA needs a
+        // Composing the binary entry-point for the FPGA needs a
         // a Taskschedule and Task id as prefix which is currently
         // passed as constant FPGA_TASKSCHEDULE (e.g s0.t0.)
         if (Tornado.ACCELERATOR_IS_FPGA) {
@@ -480,7 +468,6 @@ public class OCLCodeCache {
                 final Path outDir = resolveCacheDirectory();
                 RuntimeUtilities.writeToFile(outDir.toAbsolutePath().toString() + "/" + entryPoint, binary);
             }
-
         } else {
             warn("\tunable to install binary for %s", entryPoint);
             code.invalidate();

@@ -88,6 +88,10 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return valid;
     }
 
+    public OCLKernel getKernel() {
+        return kernel;
+    }
+
     /**
      * It executes a kernel with 1 thread (the equivalent of calling
      * clEnqueueTask.
@@ -157,6 +161,10 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     @Override
     public byte[] getCode() {
         return code;
+    }
+
+    public String getGeneratedSourceCode() {
+        return new String(code);
     }
 
     /**
