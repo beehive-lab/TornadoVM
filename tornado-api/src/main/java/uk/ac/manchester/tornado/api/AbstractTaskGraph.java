@@ -51,7 +51,7 @@ import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 
 public interface AbstractTaskGraph {
 
-    SchedulableTask getTask(String i);
+    SchedulableTask getTask(String taskNameID);
 
     TornadoDevice getDevice();
 

@@ -127,7 +127,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * Options for Dynamic Reconfiguration
      */
     public static final boolean DEBUG_POLICY = Boolean.parseBoolean(System.getProperty("tornado.dynamic.verbose", "False"));
-    public static final boolean EXPERIMENTAL_REDUCE = Boolean.parseBoolean(System.getProperty("tornado.experimental.reduce", "False"));
+    public static final boolean EXPERIMENTAL_REDUCE = Boolean.parseBoolean(System.getProperty("tornado.experimental.reduce", "True"));
     public static final boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int PERFORMANCE_WARMUP = 3;
@@ -532,25 +532,61 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return graphContext.meta();
     }
 
+    // Mapping between the input tasks and the parameters indexes in which
+    // reduce variables are found.
+    private static class TaskReduceMap {
+        HashMap<Integer, ArrayList<Integer>> reduceList;
+
+        public TaskReduceMap() {
+            reduceList = new HashMap<>();
+        }
+
+        public ArrayList<Integer> getListOfReduceParameters(int taskID) {
+            return reduceList.get(taskID);
+        }
+
+        public void add(int taskIndex, ArrayList<Integer> reduceIndexes) {
+            reduceList.put(taskIndex, reduceIndexes);
+        }
+
+    }
+
     @Override
     public AbstractTaskGraph schedule() {
         if (EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
             System.out.println("Analysis");
-            HashMap<Integer, ArrayList<Integer>> reduceList = analysisTaskSchedule();
-            if (reduceList != null) {
-                System.out.println("Rewriting");
-                TaskSchedule task = rewriteInputTaskSchedule(reduceList);
-                System.out.println("Running");
-                task.execute();
-                return this;
+
+            // TASK ID -> [LIST OF REDUCE INDEX PARAMTERS]
+            TaskReduceMap reduceList = analysisTaskSchedule();
+
+            // 1. Goal - get the reduce variable and adjust the size to the
+            // work-group depending on the device
+            for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
+                ArrayList<Integer> listOfReduceParameters = reduceList.getListOfReduceParameters(taskNumber);
+                TaskPackage taskPackage = taskPackages.get(taskNumber);
+                if (!listOfReduceParameters.isEmpty()) {
+                    for (Integer paramIndex : listOfReduceParameters) {
+                        // First index is reserved for the input code
+                        Object reduceVariable = taskPackage.getTaskParameters()[paramIndex + 1];
+                    }
+                }
             }
+
+            // if (reduceList != null) {
+            // // rewriting disabled
+            // System.out.println("Rewriting");
+            // // TaskSchedule task = rewriteInputTaskSchedule(reduceList);
+            // System.out.println("Running");
+            // // task.execute();
+            // return this;
+            // }
         }
         scheduleInner();
         return this;
     }
 
+    @SuppressWarnings("unused")
     private TaskSchedule rewriteInputTaskSchedule(HashMap<Integer, ArrayList<Integer>> reduceList) {
-
         // Running sequentially for all the devices
         String taskScheduleName = TASK_SCHEDULE_PREFIX + "__REDUCE";
         TaskSchedule task = new TaskSchedule(taskScheduleName);
@@ -571,9 +607,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return task;
     }
 
-    private HashMap<Integer, ArrayList<Integer>> analysisTaskSchedule() {
+    private TaskReduceMap analysisTaskSchedule() {
         // Get input parameters to each task
-        HashMap<Integer, ArrayList<Integer>> reduceTasks = new HashMap<>();
+
+        TaskReduceMap reduceTasks = new TaskReduceMap();
+
+        // HashMap<Integer, ArrayList<Integer>> reduceTasks = new HashMap<>();
         int taskIndex = 0;
         for (TaskPackage tp : taskPackages) {
             long start = System.nanoTime();
@@ -595,12 +634,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             }
 
             if (!reduceIndexes.isEmpty()) {
-                reduceTasks.put(taskIndex, reduceIndexes);
+                reduceTasks.add(taskIndex, reduceIndexes);
             }
 
             taskIndex++;
         }
         return reduceTasks;
+
     }
 
     @SuppressWarnings("unchecked")

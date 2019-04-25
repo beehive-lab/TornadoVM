@@ -48,6 +48,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] result = null;
         switch (deviceType) {
             case CPU:
+                // We allocate one more position to store all elements. Final
+                // Reduction in position 0.
                 result = new int[Runtime.getRuntime().availableProcessors() + 1];
                 break;
             case GPU:
@@ -172,9 +174,11 @@ public class TestReductionsIntegers extends TornadoTestBase {
         int[] input = new int[64];
         int numGroups = 1;
         int[] result = allocResultArray(numGroups);
+        result = new int[9];
 
         Arrays.fill(input, 1);
         input[10] = new Random().nextInt(100);
+        input[50] = new Random().nextInt(100);
 
         final int neutral = 1;
         Arrays.fill(result, neutral);
@@ -186,6 +190,8 @@ public class TestReductionsIntegers extends TornadoTestBase {
             .streamOut(result)
             .execute();
         //@formatter:on
+
+        System.out.println(Arrays.toString(result));
 
         // Final result
         for (int i = 1; i < result.length; i++) {
