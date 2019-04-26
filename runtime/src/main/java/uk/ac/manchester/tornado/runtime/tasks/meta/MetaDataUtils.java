@@ -42,4 +42,8 @@ public final class MetaDataUtils {
         final String[] ids = device.split(":");
         return new int[] { Integer.parseInt(ids[0]), Integer.parseInt(ids[1]) };
     }
+
+    public static String getProperty(String key) {
+        return System.getProperty(key);
+    }
 }

@@ -91,6 +91,7 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompilationResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
+import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 /**
@@ -133,11 +134,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private static final int PERFORMANCE_WARMUP = 3;
     private final static boolean TIME_IN_NANOSECONDS = Tornado.TIME_IN_NANOSECONDS;
     public static final String TASK_SCHEDULE_PREFIX = "XXX";
-
     private static final ConcurrentHashMap<Policy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
-
     public static final int HISTORY_POINTS_PREDICTION = 5;
-
     public static final boolean USE_GLOBAL_TASK_CACHE = false;
 
     /**
@@ -548,26 +546,98 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         public void add(int taskIndex, ArrayList<Integer> reduceIndexes) {
             reduceList.put(taskIndex, reduceIndexes);
         }
+    }
 
+    private void changeDeviceIfNeeded(String taskScheduleName, String tsName, String taskName) {
+        String idTaskName = tsName + "." + taskName;
+        boolean isDeviceDefined = MetaDataUtils.getProperty(idTaskName + ".device") != null;
+        if (isDeviceDefined) {
+            int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskName + ".device"));
+            int taskScheduleNumber = info[1];
+            TornadoRuntime.setProperty(taskScheduleName + "." + taskName + ".device", "0:" + taskScheduleNumber);
+        }
+    }
+
+    private Object createNewReduceArray(Object reduceVariable) {
+        Object newArray = null;
+        if (reduceVariable instanceof int[]) {
+            newArray = new int[9];
+            Arrays.fill((int[]) newArray, ((int[]) reduceVariable)[0]);
+        } else {
+            throw new TornadoRuntimeException("[ERROR] reduce type not supported yet.");
+        }
+        return newArray;
+    }
+
+    public static void op(int[] object, int size) {
+        for (int i = 1; i < size; i++) {
+            object[0] *= object[i];
+        }
     }
 
     @Override
     public AbstractTaskGraph schedule() {
         if (EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
-            System.out.println("Analysis");
 
-            // TASK ID -> [LIST OF REDUCE INDEX PARAMTERS]
             TaskReduceMap reduceList = analysisTaskSchedule();
 
-            // 1. Goal - get the reduce variable and adjust the size to the
-            // work-group depending on the device
+            String taskScheduleReduceName = TASK_SCHEDULE_PREFIX + "__REDUCE";
+            TaskSchedule task = null;
+            String tsName = this.getId();
+
             for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
                 ArrayList<Integer> listOfReduceParameters = reduceList.getListOfReduceParameters(taskNumber);
-                TaskPackage taskPackage = taskPackages.get(taskNumber);
-                if (!listOfReduceParameters.isEmpty()) {
+
+                if (listOfReduceParameters != null && !listOfReduceParameters.isEmpty()) {
                     for (Integer paramIndex : listOfReduceParameters) {
-                        // First index is reserved for the input code
+                        TaskPackage taskPackage = taskPackages.get(taskNumber);
                         Object reduceVariable = taskPackage.getTaskParameters()[paramIndex + 1];
+
+                        String taskName = taskPackage.getId();
+                        changeDeviceIfNeeded(taskScheduleReduceName, tsName, taskName);
+
+                        // Set the new array size
+                        Object newArray = createNewReduceArray(reduceVariable);
+                        taskPackage.getTaskParameters()[paramIndex + 1] = newArray;
+
+                        if (task == null) {
+                            task = new TaskSchedule(taskScheduleReduceName);
+                        }
+                        performStreamInThread(task, streamInObjects);
+                        task.addTask(taskPackages.get(taskNumber));
+
+                        for (int i = 0; i < streamOutObjects.size(); i++) {
+                            if (streamOutObjects.get(i).equals(reduceVariable)) {
+                                streamOutObjects.set(i, newArray);
+                            }
+                        }
+                        performStreamOutThreads(task, streamOutObjects);
+
+                        switch (newArray.getClass().getTypeName()) {
+                            case "int[]":
+                                TornadoRuntime.setProperty(taskScheduleReduceName + ".reduce-seq.device", "0:" + 1);
+                                task.task("reduce-seq", TornadoTaskSchedule::op, (int[]) newArray, 9);
+                                task.streamOut(newArray);
+                                break;
+                            default:
+                                throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
+                        }
+
+                        task.execute();
+
+                        System.out.println("RESULT: " + Arrays.toString((int[]) newArray));
+
+                        // Copy out the result
+                        switch (newArray.getClass().getTypeName()) {
+                            case "int[]":
+                                ((int[]) reduceVariable)[0] = ((int[]) newArray)[0];
+                                break;
+                            default:
+                                throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
+                        }
+
+                        return this;
+
                     }
                 }
             }
@@ -581,8 +651,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             // return this;
             // }
         }
+
         scheduleInner();
         return this;
+
     }
 
     @SuppressWarnings("unused")
@@ -607,12 +679,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return task;
     }
 
+    /**
+     * It obtains a list of reduce parameters for each task.
+     * 
+     * @return {@link TaskReduceMap}
+     */
     private TaskReduceMap analysisTaskSchedule() {
-        // Get input parameters to each task
-
         TaskReduceMap reduceTasks = new TaskReduceMap();
-
-        // HashMap<Integer, ArrayList<Integer>> reduceTasks = new HashMap<>();
         int taskIndex = 0;
         for (TaskPackage tp : taskPackages) {
             long start = System.nanoTime();
@@ -620,14 +693,16 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             Object taskCode = listOfParamters[0];
             StructuredGraph graph = TaskUtils.buildHighLevelGraalGraph(taskCode);
             long end = System.nanoTime();
-            System.out.println("Total time: " + (end - start));
+
+            if (Tornado.DEBUG) {
+                System.out.println("[REDUCE HIGH-LEVEL ANALYSIS TIME]: " + (end - start));
+            }
 
             Annotation[][] annotations = graph.method().getParameterAnnotations();
             ArrayList<Integer> reduceIndexes = new ArrayList<>();
             for (int paramIndex = 0; paramIndex < annotations.length; paramIndex++) {
                 for (Annotation annotation : annotations[paramIndex]) {
                     if (annotation instanceof Reduce) {
-                        System.out.println("FOUND REDUCE:" + annotation + " PARAMETER: " + paramIndex);
                         reduceIndexes.add(paramIndex);
                     }
                 }
