@@ -76,6 +76,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
@@ -560,10 +561,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return 0;
     }
 
-    private Object createNewReduceArray(Object reduceVariable) {
+    private Object createNewReduceArray(Object reduceVariable, int size) {
         Object newArray = null;
         if (reduceVariable instanceof int[]) {
-            newArray = new int[9];
+            newArray = new int[size];
             Arrays.fill((int[]) newArray, ((int[]) reduceVariable)[0]);
         } else {
             throw new TornadoRuntimeException("[ERROR] reduce type not supported yet.");
@@ -571,10 +572,24 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return newArray;
     }
 
-    public static void op(int[] object, int size) {
+    public static void op(int[] object, final int size) {
         for (int i = 1; i < size; i++) {
             object[0] *= object[i];
         }
+    }
+
+    public static int sizeArrayResult(int device) {
+        TornadoDeviceType deviceType = getTornadoRuntime().getDriver(0).getDevice(device).getDeviceType();
+        switch (deviceType) {
+            case CPU:
+                return Runtime.getRuntime().availableProcessors() + 1;
+            case GPU:
+            case ACCELERATOR:
+                return 256;
+            default:
+                break;
+        }
+        return 0;
     }
 
     @Override
@@ -597,9 +612,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
                         String taskName = taskPackage.getId();
                         int deviceToRun = changeDeviceIfNeeded(taskScheduleReduceName, tsName, taskName);
+                        int sizeReduceArray = sizeArrayResult(deviceToRun);
 
                         // Set the new array size
-                        Object newArray = createNewReduceArray(reduceVariable);
+                        Object newArray = createNewReduceArray(reduceVariable, sizeReduceArray);
                         taskPackage.getTaskParameters()[paramIndex + 1] = newArray;
 
                         if (task == null) {
@@ -618,7 +634,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                         switch (newArray.getClass().getTypeName()) {
                             case "int[]":
                                 TornadoRuntime.setProperty(taskScheduleReduceName + ".reduce-seq.device", "0:" + deviceToRun);
-                                task.task("reduce-seq", TornadoTaskSchedule::op, (int[]) newArray, 9);
+                                task.task("reduce-seq", TornadoTaskSchedule::op, (int[]) newArray, sizeReduceArray);
                                 task.streamOut(newArray);
                                 break;
                             default:
