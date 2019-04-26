@@ -548,14 +548,16 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private void changeDeviceIfNeeded(String taskScheduleName, String tsName, String taskName) {
+    private int changeDeviceIfNeeded(String taskScheduleName, String tsName, String taskName) {
         String idTaskName = tsName + "." + taskName;
         boolean isDeviceDefined = MetaDataUtils.getProperty(idTaskName + ".device") != null;
         if (isDeviceDefined) {
             int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskName + ".device"));
             int taskScheduleNumber = info[1];
             TornadoRuntime.setProperty(taskScheduleName + "." + taskName + ".device", "0:" + taskScheduleNumber);
+            return taskScheduleNumber;
         }
+        return 0;
     }
 
     private Object createNewReduceArray(Object reduceVariable) {
@@ -594,7 +596,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                         Object reduceVariable = taskPackage.getTaskParameters()[paramIndex + 1];
 
                         String taskName = taskPackage.getId();
-                        changeDeviceIfNeeded(taskScheduleReduceName, tsName, taskName);
+                        int deviceToRun = changeDeviceIfNeeded(taskScheduleReduceName, tsName, taskName);
 
                         // Set the new array size
                         Object newArray = createNewReduceArray(reduceVariable);
@@ -615,7 +617,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
                         switch (newArray.getClass().getTypeName()) {
                             case "int[]":
-                                TornadoRuntime.setProperty(taskScheduleReduceName + ".reduce-seq.device", "0:" + 1);
+                                TornadoRuntime.setProperty(taskScheduleReduceName + ".reduce-seq.device", "0:" + deviceToRun);
                                 task.task("reduce-seq", TornadoTaskSchedule::op, (int[]) newArray, 9);
                                 task.streamOut(newArray);
                                 break;
