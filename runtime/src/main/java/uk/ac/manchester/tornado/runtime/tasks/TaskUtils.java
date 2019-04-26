@@ -295,8 +295,16 @@ public class TaskUtils {
         return null;
     }
 
+    /**
+     * Build Graal-IR for an input Java method
+     * 
+     * @param taskInputCode
+     *            Input Java method to be compiled by Graal
+     * @return {@link StructuredGraph} Control Flow and DataFlow Graphs for the
+     *         input method in the Graal-IR format,
+     */
     public static StructuredGraph buildHighLevelGraalGraph(Object taskInputCode) {
-        Method methodToCompile = TaskUtils.resolveMethodHandle(taskInputCode);
+        Method methodToCompile = resolveMethodHandle(taskInputCode);
         GraalJVMCICompiler graalCompiler = (GraalJVMCICompiler) JVMCI.getRuntime().getCompiler();
         RuntimeProvider capability = graalCompiler.getGraalRuntime().getCapability(RuntimeProvider.class);
         Backend backend = capability.getHostBackend();
