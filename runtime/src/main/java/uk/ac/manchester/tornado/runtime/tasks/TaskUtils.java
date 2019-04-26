@@ -136,7 +136,6 @@ public class TaskUtils {
                     m.setAccessible(true);
                     return m;
                 } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-
                     e.printStackTrace();
                 }
                 break;

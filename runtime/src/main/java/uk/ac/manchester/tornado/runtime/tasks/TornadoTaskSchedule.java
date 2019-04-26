@@ -33,7 +33,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.PRINT_COMPILE_TIME
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -51,7 +50,6 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -59,7 +57,6 @@ import uk.ac.manchester.tornado.api.AbstractTaskGraph;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -76,7 +73,6 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
-import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
@@ -92,7 +88,6 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompilationResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
-import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 /**
@@ -531,208 +526,20 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return graphContext.meta();
     }
 
-    // Mapping between the input tasks and the parameters indexes in which
-    // reduce variables are found.
-    private static class TaskReduceMap {
-        HashMap<Integer, ArrayList<Integer>> reduceList;
-
-        public TaskReduceMap() {
-            reduceList = new HashMap<>();
-        }
-
-        public ArrayList<Integer> getListOfReduceParameters(int taskID) {
-            return reduceList.get(taskID);
-        }
-
-        public void add(int taskIndex, ArrayList<Integer> reduceIndexes) {
-            reduceList.put(taskIndex, reduceIndexes);
-        }
-    }
-
-    private int changeDeviceIfNeeded(String taskScheduleName, String tsName, String taskName) {
-        String idTaskName = tsName + "." + taskName;
-        boolean isDeviceDefined = MetaDataUtils.getProperty(idTaskName + ".device") != null;
-        if (isDeviceDefined) {
-            int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskName + ".device"));
-            int taskScheduleNumber = info[1];
-            TornadoRuntime.setProperty(taskScheduleName + "." + taskName + ".device", "0:" + taskScheduleNumber);
-            return taskScheduleNumber;
-        }
-        return 0;
-    }
-
-    private Object createNewReduceArray(Object reduceVariable, int size) {
-        Object newArray = null;
-        if (reduceVariable instanceof int[]) {
-            newArray = new int[size];
-            Arrays.fill((int[]) newArray, ((int[]) reduceVariable)[0]);
-        } else {
-            throw new TornadoRuntimeException("[ERROR] reduce type not supported yet.");
-        }
-        return newArray;
-    }
-
-    public static void op(int[] object, final int size) {
-        for (int i = 1; i < size; i++) {
-            object[0] *= object[i];
-        }
-    }
-
-    public static int sizeArrayResult(int device) {
-        TornadoDeviceType deviceType = getTornadoRuntime().getDriver(0).getDevice(device).getDeviceType();
-        switch (deviceType) {
-            case CPU:
-                return Runtime.getRuntime().availableProcessors() + 1;
-            case GPU:
-            case ACCELERATOR:
-                return 256;
-            default:
-                break;
-        }
-        return 0;
-    }
-
     @Override
     public AbstractTaskGraph schedule() {
+
         if (EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
+            HashMap<Integer, MetaReduceTasks> analysisTaskSchedule = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects).analysisTaskSchedule();
 
-            TaskReduceMap reduceList = analysisTaskSchedule();
-
-            String taskScheduleReduceName = TASK_SCHEDULE_PREFIX + "__REDUCE";
-            TaskSchedule task = null;
-            String tsName = this.getId();
-
-            for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
-                ArrayList<Integer> listOfReduceParameters = reduceList.getListOfReduceParameters(taskNumber);
-
-                if (listOfReduceParameters != null && !listOfReduceParameters.isEmpty()) {
-                    for (Integer paramIndex : listOfReduceParameters) {
-                        TaskPackage taskPackage = taskPackages.get(taskNumber);
-                        Object reduceVariable = taskPackage.getTaskParameters()[paramIndex + 1];
-
-                        String taskName = taskPackage.getId();
-                        int deviceToRun = changeDeviceIfNeeded(taskScheduleReduceName, tsName, taskName);
-                        int sizeReduceArray = sizeArrayResult(deviceToRun);
-
-                        // Set the new array size
-                        Object newArray = createNewReduceArray(reduceVariable, sizeReduceArray);
-                        taskPackage.getTaskParameters()[paramIndex + 1] = newArray;
-
-                        if (task == null) {
-                            task = new TaskSchedule(taskScheduleReduceName);
-                        }
-                        performStreamInThread(task, streamInObjects);
-                        task.addTask(taskPackages.get(taskNumber));
-
-                        for (int i = 0; i < streamOutObjects.size(); i++) {
-                            if (streamOutObjects.get(i).equals(reduceVariable)) {
-                                streamOutObjects.set(i, newArray);
-                            }
-                        }
-                        performStreamOutThreads(task, streamOutObjects);
-
-                        switch (newArray.getClass().getTypeName()) {
-                            case "int[]":
-                                TornadoRuntime.setProperty(taskScheduleReduceName + ".reduce-seq.device", "0:" + deviceToRun);
-                                task.task("reduce-seq", TornadoTaskSchedule::op, (int[]) newArray, sizeReduceArray);
-                                task.streamOut(newArray);
-                                break;
-                            default:
-                                throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
-                        }
-
-                        task.execute();
-
-                        System.out.println("RESULT: " + Arrays.toString((int[]) newArray));
-
-                        // Copy out the result
-                        switch (newArray.getClass().getTypeName()) {
-                            case "int[]":
-                                ((int[]) reduceVariable)[0] = ((int[]) newArray)[0];
-                                break;
-                            default:
-                                throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
-                        }
-
-                        return this;
-
-                    }
-                }
+            if ((analysisTaskSchedule != null) && !(analysisTaskSchedule.isEmpty())) {
+                TaskSchedule tsRewritten = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects).scheduleWithReduction(analysisTaskSchedule);
+                return this;
             }
 
-            // if (reduceList != null) {
-            // // rewriting disabled
-            // System.out.println("Rewriting");
-            // // TaskSchedule task = rewriteInputTaskSchedule(reduceList);
-            // System.out.println("Running");
-            // // task.execute();
-            // return this;
-            // }
         }
-
         scheduleInner();
         return this;
-
-    }
-
-    @SuppressWarnings("unused")
-    private TaskSchedule rewriteInputTaskSchedule(HashMap<Integer, ArrayList<Integer>> reduceList) {
-        // Running sequentially for all the devices
-        String taskScheduleName = TASK_SCHEDULE_PREFIX + "__REDUCE";
-        TaskSchedule task = new TaskSchedule(taskScheduleName);
-        performStreamInThread(task, streamInObjects);
-
-        for (int taskIndex = 0; taskIndex < taskPackages.size(); taskIndex++) {
-            System.out.println("Adding task");
-            task.addTask(taskPackages.get(taskIndex));
-            if (reduceList.containsKey(taskIndex)) {
-                // We duplicate the task if it's a reduce task
-                System.out.println("Adding extra task");
-                TaskPackage taskPackage = taskPackages.get(taskIndex);
-                task.addTask(taskPackage);
-            }
-        }
-
-        performStreamOutThreads(task, streamOutObjects);
-        return task;
-    }
-
-    /**
-     * It obtains a list of reduce parameters for each task.
-     * 
-     * @return {@link TaskReduceMap}
-     */
-    private TaskReduceMap analysisTaskSchedule() {
-        TaskReduceMap reduceTasks = new TaskReduceMap();
-        int taskIndex = 0;
-        for (TaskPackage tp : taskPackages) {
-            long start = System.nanoTime();
-            Object[] listOfParamters = tp.getTaskParameters();
-            Object taskCode = listOfParamters[0];
-            StructuredGraph graph = TaskUtils.buildHighLevelGraalGraph(taskCode);
-            long end = System.nanoTime();
-
-            if (Tornado.DEBUG) {
-                System.out.println("[REDUCE HIGH-LEVEL ANALYSIS TIME]: " + (end - start));
-            }
-
-            Annotation[][] annotations = graph.method().getParameterAnnotations();
-            ArrayList<Integer> reduceIndexes = new ArrayList<>();
-            for (int paramIndex = 0; paramIndex < annotations.length; paramIndex++) {
-                for (Annotation annotation : annotations[paramIndex]) {
-                    if (annotation instanceof Reduce) {
-                        reduceIndexes.add(paramIndex);
-                    }
-                }
-            }
-
-            if (!reduceIndexes.isEmpty()) {
-                reduceTasks.add(taskIndex, reduceIndexes);
-            }
-
-            taskIndex++;
-        }
-        return reduceTasks;
 
     }
 
@@ -843,7 +650,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return winner;
     }
 
-    private void performStreamInThread(TaskSchedule task, ArrayList<Object> inputObjects) {
+    public static void performStreamInThread(TaskSchedule task, ArrayList<Object> inputObjects) {
         int numObjectsCopyIn = inputObjects.size();
         switch (numObjectsCopyIn) {
             case 0:
@@ -872,7 +679,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private void performStreamOutThreads(TaskSchedule task, ArrayList<Object> outputArrays) {
+    public static void performStreamOutThreads(TaskSchedule task, ArrayList<Object> outputArrays) {
         int numObjectsCopyOut = outputArrays.size();
         switch (numObjectsCopyOut) {
             case 0:
@@ -894,6 +701,20 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 break;
             case 6:
                 task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5));
+                break;
+            case 7:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6));
+                break;
+            case 8:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7));
+                break;
+            case 9:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8));
+                break;
+            case 10:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8), outputArrays.get(9));
                 break;
             default:
                 System.out.println("COPY-OUT Not supported yet: " + numObjectsCopyOut);
