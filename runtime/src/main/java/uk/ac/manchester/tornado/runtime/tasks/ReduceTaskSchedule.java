@@ -66,6 +66,7 @@ public class ReduceTaskSchedule {
     private ArrayList<TaskPackage> taskPackages = new ArrayList<>();
     private ArrayList<Object> streamOutObjects = new ArrayList<>();
     private ArrayList<Object> streamInObjects = new ArrayList<>();
+    private HashMap<Object, Object> originalReduceVariables;
 
     // @formatter:off
     private enum REDUCE_OPERATION {
@@ -114,18 +115,17 @@ public class ReduceTaskSchedule {
 
     public TaskSchedule scheduleWithReduction(HashMap<Integer, MetaReduceTasks> tableReduce) {
 
-        if (tableReduce == null) {
-            tableReduce = analysisTaskSchedule();
-        }
+        assert tableReduce != null;
 
         String taskScheduleReduceName = TASK_SCHEDULE_PREFIX;
         TaskSchedule rewrittenTaskSchedule = new TaskSchedule(taskScheduleReduceName);
-
         String tsName = idTaskSchedule;
 
         ArrayList<Object> streamReduceUpdatedList = new ArrayList<>();
         ArrayList<Integer> sizesReductionArray = new ArrayList<>();
-        HashMap<Object, Object> originalReduceVariables = new HashMap<>();
+        if (originalReduceVariables == null) {
+            originalReduceVariables = new HashMap<>();
+        }
 
         int deviceToRun = 0;
 
@@ -221,7 +221,12 @@ public class ReduceTaskSchedule {
 
         TornadoTaskSchedule.performStreamOutThreads(rewrittenTaskSchedule, streamOutObjects);
         rewrittenTaskSchedule.execute();
+        updateOutputArray();
 
+        return rewrittenTaskSchedule;
+    }
+
+    public void updateOutputArray() {
         // Copy out the result back to the original buffer
         Iterator<Entry<Object, Object>> it = originalReduceVariables.entrySet().iterator();
         while (it.hasNext()) {
@@ -242,7 +247,6 @@ public class ReduceTaskSchedule {
                     throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
             }
         }
-        return rewrittenTaskSchedule;
     }
 
     private ArrayList<REDUCE_OPERATION> getReduceOperation(StructuredGraph graph, ArrayList<Integer> reduceIndexes) {
@@ -300,7 +304,7 @@ public class ReduceTaskSchedule {
      * @param reduceIndexes
      * @return ArrayList<ValueNode>
      */
-    private ArrayList<ValueNode> findLoopUpperBoundNode(StructuredGraph graph, ArrayList<Integer> reduceIndexes) {
+    public static ArrayList<ValueNode> findLoopUpperBoundNode(StructuredGraph graph, ArrayList<Integer> reduceIndexes) {
         ArrayList<ValueNode> loopBound = new ArrayList<>();
         for (Integer paramIndex : reduceIndexes) {
             ParameterNode parameterNode = graph.getParameter(paramIndex);
@@ -342,7 +346,8 @@ public class ReduceTaskSchedule {
      * 
      * @return {@link MetaReduceTasks}
      */
-    public HashMap<Integer, MetaReduceTasks> analysisTaskSchedule() {
+    public static HashMap<Integer, MetaReduceTasks> analysisTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects,
+            ArrayList<Object> streamOutObjects) {
         int taskIndex = 0;
         int inputSize = 0;
 

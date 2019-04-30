@@ -138,7 +138,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      */
     public static final boolean EXPERIMENTAL_REDUCE = Boolean.parseBoolean(System.getProperty("tornado.experimental.reduce", "True"));
     private boolean reduceExpressionRewritten = false;
-    private TaskSchedule rewritten = null;
+    private TaskSchedule reduceTaskSchedule = null;
+    private ReduceTaskSchedule reduceMeta;
 
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
@@ -532,22 +533,30 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return graphContext.meta();
     }
 
+    private void runReduceTaskSchedule(TaskSchedule ts) {
+        reduceTaskSchedule.execute();
+        reduceMeta.updateOutputArray();
+    }
+
+    private void rewriteTaskForReduceSkeleton(HashMap<Integer, MetaReduceTasks> analysisTaskSchedule) {
+        reduceMeta = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects);
+        reduceTaskSchedule = reduceMeta.scheduleWithReduction(analysisTaskSchedule);
+        reduceExpressionRewritten = true;
+    }
+
     private AbstractTaskGraph runReduction() {
         if (!reduceExpressionRewritten) {
-            HashMap<Integer, MetaReduceTasks> analysisTaskSchedule = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects).analysisTaskSchedule();
+            HashMap<Integer, MetaReduceTasks> analysisTaskSchedule = ReduceTaskSchedule.analysisTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects);
             if ((analysisTaskSchedule != null) && !(analysisTaskSchedule.isEmpty())) {
-                TaskSchedule tsRewritten = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects).scheduleWithReduction(analysisTaskSchedule);
-                this.rewritten = tsRewritten;
-                reduceExpressionRewritten = true;
+                rewriteTaskForReduceSkeleton(analysisTaskSchedule);
                 return this;
-            } else {
-                // Expression does not contain a reduction
-                return null;
             }
         } else {
-            rewritten.execute();
+            runReduceTaskSchedule(reduceTaskSchedule);
             return this;
         }
+
+        return null;
     }
 
     @Override
@@ -556,12 +565,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
             executionGraph = runReduction();
         }
-        if (executionGraph == null) {
-            scheduleInner();
-            return this;
-        } else {
+        if (executionGraph != null) {
             return executionGraph;
         }
+        scheduleInner();
+        return this;
     }
 
     @SuppressWarnings("unchecked")
