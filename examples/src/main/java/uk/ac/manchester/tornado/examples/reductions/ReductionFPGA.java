@@ -24,8 +24,7 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;;
+import uk.ac.manchester.tornado.api.annotations.Reduce;;
 
 public class ReductionFPGA {
 
@@ -43,27 +42,7 @@ public class ReductionFPGA {
 
     public void run(int size) {
         float[] input = new float[size];
-
-        int numGroups = 1;
-        if (size > 256) {
-            numGroups = size / 256;
-        }
-        float[] result = null;
-
-        TornadoDeviceType deviceType = ConfigurationReduce.getDefaultDeviceType();
-        switch (deviceType) {
-            case CPU:
-                result = new float[Runtime.getRuntime().availableProcessors()];
-                numGroups = Runtime.getRuntime().availableProcessors();
-                break;
-            case DEFAULT:
-                break;
-            case GPU:
-                result = new float[numGroups];
-                break;
-            default:
-                break;
-        }
+        float[] result = new float[1];
 
         Random r = new Random();
         IntStream.range(0, size).sequential().forEach(i -> {
@@ -82,9 +61,6 @@ public class ReductionFPGA {
         long start = System.nanoTime();
         task.execute();
         long end = System.nanoTime();
-        for (int j = 1; j < result.length; j++) {
-            result[0] += result[j];
-        }
 
         timers.add((end - start));
 

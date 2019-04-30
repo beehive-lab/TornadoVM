@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,23 +28,6 @@ public class ConfigurationReduce {
     public static TornadoDeviceType getDefaultDeviceType() {
         TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         return driver.getTypeDefaultDevice();
-    }
-
-    public static float[] allocResultArray(int numGroups) {
-        TornadoDeviceType deviceType = getDefaultDeviceType();
-        float[] result = null;
-        switch (deviceType) {
-            case CPU:
-                result = new float[Runtime.getRuntime().availableProcessors()];
-                break;
-            case GPU:
-            case ACCELERATOR:
-                result = new float[numGroups];
-                break;
-            default:
-                break;
-        }
-        return result;
     }
 
 }

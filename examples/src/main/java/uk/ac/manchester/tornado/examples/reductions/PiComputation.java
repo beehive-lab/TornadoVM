@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,13 +37,7 @@ public class PiComputation {
 
     public void run(int size) {
         float[] input = new float[size];
-
-        int numGroups = 1;
-        if (size > 256) {
-            numGroups = size / 256;
-        }
-
-        float[] result = ConfigurationReduce.allocResultArray(numGroups);
+        float[] result = new float[1];
         Arrays.fill(result, 0.0f);
 
         //@formatter:off
@@ -64,9 +58,6 @@ public class PiComputation {
             task.execute();
             long end = System.nanoTime();
 
-            for (int j = 1; j < result.length; j++) {
-                result[0] += result[j];
-            }
             final float piValue = result[0] * 4;
             System.out.println("PI VALUE: " + piValue);
             timers.add((end - start));

@@ -124,7 +124,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * Options for Dynamic Reconfiguration
      */
     public static final boolean DEBUG_POLICY = Boolean.parseBoolean(System.getProperty("tornado.dynamic.verbose", "False"));
-    public static final boolean EXPERIMENTAL_REDUCE = Boolean.parseBoolean(System.getProperty("tornado.experimental.reduce", "True"));
     public static final boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int PERFORMANCE_WARMUP = 3;
@@ -133,6 +132,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private static final ConcurrentHashMap<Policy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
     public static final int HISTORY_POINTS_PREDICTION = 5;
     public static final boolean USE_GLOBAL_TASK_CACHE = false;
+
+    /**
+     * Options for new reductions - experimental
+     */
+    public static final boolean EXPERIMENTAL_REDUCE = Boolean.parseBoolean(System.getProperty("tornado.experimental.reduce", "True"));
+    private boolean reduceExpressionRewritten = false;
+    private TaskSchedule rewritten = null;
 
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
@@ -526,21 +532,36 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return graphContext.meta();
     }
 
-    @Override
-    public AbstractTaskGraph schedule() {
-
-        if (EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
+    private AbstractTaskGraph runReduction() {
+        if (!reduceExpressionRewritten) {
             HashMap<Integer, MetaReduceTasks> analysisTaskSchedule = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects).analysisTaskSchedule();
-
             if ((analysisTaskSchedule != null) && !(analysisTaskSchedule.isEmpty())) {
                 TaskSchedule tsRewritten = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects).scheduleWithReduction(analysisTaskSchedule);
+                this.rewritten = tsRewritten;
+                reduceExpressionRewritten = true;
                 return this;
+            } else {
+                // Expression does not contain a reduction
+                return null;
             }
-
+        } else {
+            rewritten.execute();
+            return this;
         }
-        scheduleInner();
-        return this;
+    }
 
+    @Override
+    public AbstractTaskGraph schedule() {
+        AbstractTaskGraph executionGraph = null;
+        if (EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
+            executionGraph = runReduction();
+        }
+        if (executionGraph == null) {
+            scheduleInner();
+            return this;
+        } else {
+            return executionGraph;
+        }
     }
 
     @SuppressWarnings("unchecked")
