@@ -546,7 +546,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private AbstractTaskGraph runReduction() {
         if (!reduceExpressionRewritten) {
-            HashMap<Integer, MetaReduceTasks> analysisTaskSchedule = ReduceTaskSchedule.analysisTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects);
+            HashMap<Integer, MetaReduceTasks> analysisTaskSchedule = CodeAnalysis.analysisTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects);
             if ((analysisTaskSchedule != null) && !(analysisTaskSchedule.isEmpty())) {
                 rewriteTaskForReduceSkeleton(analysisTaskSchedule);
                 return this;

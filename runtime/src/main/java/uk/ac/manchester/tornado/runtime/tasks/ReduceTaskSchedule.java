@@ -25,8 +25,6 @@ package uk.ac.manchester.tornado.runtime.tasks;
 
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,27 +32,14 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodes.InvokeNode;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
-import org.graalvm.compiler.nodes.calc.BinaryNode;
-import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.java.ArrayLengthNode;
-import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.runtime.tasks.CodeAnalysis.REDUCE_OPERATION;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
 public class ReduceTaskSchedule {
@@ -67,15 +52,6 @@ public class ReduceTaskSchedule {
     private ArrayList<Object> streamOutObjects = new ArrayList<>();
     private ArrayList<Object> streamInObjects = new ArrayList<>();
     private HashMap<Object, Object> originalReduceVariables;
-
-    // @formatter:off
-    private enum REDUCE_OPERATION {
-        ADD, 
-        MUL, 
-        MIN, 
-        MAX;
-    };
-    // @formatter:on
 
     public ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects) {
         this.taskPackages = taskPackages;
@@ -191,7 +167,7 @@ public class ReduceTaskSchedule {
                 MetaReduceTasks metaReduceTasks = tableReduce.get(taskNumber);
                 ArrayList<Integer> listOfReduceParameters = metaReduceTasks.getListOfReduceParameters(taskNumber);
                 StructuredGraph graph = metaReduceTasks.getGraph();
-                ArrayList<REDUCE_OPERATION> operations = getReduceOperation(graph, listOfReduceParameters);
+                ArrayList<REDUCE_OPERATION> operations = CodeAnalysis.getReduceOperation(graph, listOfReduceParameters);
 
                 for (int i = 0; i < streamReduceUpdatedList.size(); i++) {
                     Object newArray = streamReduceUpdatedList.get(i);
@@ -247,152 +223,6 @@ public class ReduceTaskSchedule {
                     throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
             }
         }
-    }
-
-    private ArrayList<REDUCE_OPERATION> getReduceOperation(StructuredGraph graph, ArrayList<Integer> reduceIndexes) {
-        ArrayList<ValueNode> reduceOperation = new ArrayList<>();
-        for (Integer paramIndex : reduceIndexes) {
-
-            ParameterNode parameterNode = graph.getParameter(paramIndex);
-            NodeIterable<Node> usages = parameterNode.usages();
-            Iterator<Node> iterator = usages.iterator();
-            // Get Input-Range for the reduction loop
-            while (iterator.hasNext()) {
-                Node node = iterator.next();
-                if (node instanceof StoreIndexedNode) {
-                    StoreIndexedNode store = (StoreIndexedNode) node;
-                    if (store.value() instanceof BinaryNode || store.value() instanceof BinaryArithmeticNode) {
-                        ValueNode value = store.value();
-                        reduceOperation.add(value);
-                    } else if (store.value() instanceof InvokeNode) {
-                        InvokeNode invoke = (InvokeNode) store.value();
-                        invoke.callTarget().targetName().startsWith("Math");
-                        reduceOperation.add(invoke);
-                    }
-                }
-            }
-        }
-
-        // Match VALUE_NODE with OPERATION
-        ArrayList<REDUCE_OPERATION> operations = new ArrayList<>();
-        for (ValueNode operation : reduceOperation) {
-            if (operation instanceof AddNode) {
-                operations.add(REDUCE_OPERATION.ADD);
-            } else if (operation instanceof MulNode) {
-                operations.add(REDUCE_OPERATION.MUL);
-            } else if (operation instanceof InvokeNode) {
-                InvokeNode invoke = (InvokeNode) operation;
-                if (invoke.callTarget().targetName().equals("Math.max")) {
-                    operations.add(REDUCE_OPERATION.MAX);
-                } else if (invoke.callTarget().targetName().equals("Math.min")) {
-                    operations.add(REDUCE_OPERATION.MIN);
-                } else {
-                    throw new TornadoRuntimeException("[ERROR] Automatic reduce operation not supported yet: " + operation);
-                }
-            } else {
-                throw new TornadoRuntimeException("[ERROR] Automatic reduce operation not supported yet: " + operation);
-            }
-        }
-        return operations;
-    }
-
-    /**
-     * A method can apply multiple reduction variables. We return a list of all
-     * its loop bounds.
-     * 
-     * @param graph
-     * @param reduceIndexes
-     * @return ArrayList<ValueNode>
-     */
-    public static ArrayList<ValueNode> findLoopUpperBoundNode(StructuredGraph graph, ArrayList<Integer> reduceIndexes) {
-        ArrayList<ValueNode> loopBound = new ArrayList<>();
-        for (Integer paramIndex : reduceIndexes) {
-            ParameterNode parameterNode = graph.getParameter(paramIndex);
-            NodeIterable<Node> usages = parameterNode.usages();
-            Iterator<Node> iterator = usages.iterator();
-
-            // Get Input-Range for the reduction loop
-            while (iterator.hasNext()) {
-                Node node = iterator.next();
-                if (node instanceof StoreIndexedNode) {
-                    StoreIndexedNode store = (StoreIndexedNode) node;
-
-                    Node aux = store;
-                    LoopBeginNode loopBegin = null;
-                    ArrayLengthNode arrayLength = null;
-
-                    while (!(aux instanceof LoopBeginNode)) {
-                        aux = aux.predecessor();
-                        if (aux instanceof StartNode) {
-                            break;
-                        } else if (aux instanceof LoopBeginNode) {
-                            loopBegin = (LoopBeginNode) aux;
-                        } else if (aux instanceof ArrayLengthNode) {
-                            arrayLength = (ArrayLengthNode) aux;
-                        }
-                    }
-
-                    if (loopBegin != null) {
-                        loopBound.add(arrayLength.array());
-                    }
-                }
-            }
-        }
-        return loopBound;
-    }
-
-    /**
-     * It obtains a list of reduce parameters for each task.
-     * 
-     * @return {@link MetaReduceTasks}
-     */
-    public static HashMap<Integer, MetaReduceTasks> analysisTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects,
-            ArrayList<Object> streamOutObjects) {
-        int taskIndex = 0;
-        int inputSize = 0;
-
-        HashMap<Integer, MetaReduceTasks> tableMetaReduce = new HashMap<>();
-
-        for (TaskPackage tpackage : taskPackages) {
-
-            Object taskCode = tpackage.getTaskParameters()[0];
-            StructuredGraph graph = TaskUtils.buildHighLevelGraalGraph(taskCode);
-
-            Annotation[][] annotations = graph.method().getParameterAnnotations();
-            ArrayList<Integer> reduceIndexes = new ArrayList<>();
-            for (int paramIndex = 0; paramIndex < annotations.length; paramIndex++) {
-                for (Annotation annotation : annotations[paramIndex]) {
-                    if (annotation instanceof Reduce) {
-                        reduceIndexes.add(paramIndex);
-                    }
-                }
-            }
-
-            if (reduceIndexes.isEmpty()) {
-                taskIndex++;
-                continue;
-            }
-
-            // Perform PE to obtain the value of the upper-bound loop
-            ArrayList<ValueNode> loopBound = findLoopUpperBoundNode(graph, reduceIndexes);
-            for (int i = 0; i < graph.method().getParameters().length; i++) {
-                for (int k = 0; k < loopBound.size(); k++) {
-                    if (loopBound.get(k).equals(graph.getParameter(i))) {
-                        Object object = taskPackages.get(taskIndex).getTaskParameters()[i + 1];
-                        inputSize = Array.getLength(object);
-                    }
-                }
-            }
-
-            if (!reduceIndexes.isEmpty()) {
-                MetaReduceTasks reduceTasks = new MetaReduceTasks(taskIndex, graph, reduceIndexes, inputSize);
-                tableMetaReduce.put(taskIndex, reduceTasks);
-            }
-            taskIndex++;
-        }
-
-        return (tableMetaReduce.isEmpty() ? null : tableMetaReduce);
-
     }
 
     public static int obtainSizeArrayResult(int device, int inputSize) {
