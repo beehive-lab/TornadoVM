@@ -48,7 +48,7 @@ public class CompilableTask implements SchedulableTask {
 
     protected Access thisAccess;
 
-    protected long batchThreads;
+    protected long batchNumThreads;
 
     public CompilableTask(ScheduleMetaData meta, String id, Method method, Object... args) {
         this.method = method;
@@ -145,12 +145,12 @@ public class CompilableTask implements SchedulableTask {
 
     @Override
     public void setBachtThreads(long batchThreads) {
-        this.batchThreads = batchThreads;
+        this.batchNumThreads = batchThreads;
     }
 
     @Override
     public long getBachtThreads() {
-        return batchThreads;
+        return batchNumThreads;
     }
 
 }
