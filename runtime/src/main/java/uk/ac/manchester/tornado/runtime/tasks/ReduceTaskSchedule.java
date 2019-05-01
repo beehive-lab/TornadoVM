@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.tasks.CodeAnalysis.REDUCE_OPERATION;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
+import uk.ac.manchester.tornado.runtime.tasks.meta.MetaReduceCodeAnalysis;
 
 public class ReduceTaskSchedule {
 
@@ -89,9 +90,11 @@ public class ReduceTaskSchedule {
         return newArray;
     }
 
-    public TaskSchedule scheduleWithReduction(HashMap<Integer, MetaReduceTasks> tableReduce) {
+    public TaskSchedule scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
 
-        assert tableReduce != null;
+        assert metaReduceTable != null;
+
+        HashMap<Integer, MetaReduceTasks> tableReduce = metaReduceTable.getTable();
 
         String taskScheduleReduceName = TASK_SCHEDULE_PREFIX;
         TaskSchedule rewrittenTaskSchedule = new TaskSchedule(taskScheduleReduceName);

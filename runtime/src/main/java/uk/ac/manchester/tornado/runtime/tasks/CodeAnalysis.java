@@ -68,7 +68,12 @@ import jdk.vm.ci.runtime.JVMCI;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.tasks.meta.MetaReduceCodeAnalysis;
 
+/**
+ * Code analysis class for Tornado
+ *
+ */
 public class CodeAnalysis {
 
     // @formatter:off
@@ -177,8 +182,7 @@ public class CodeAnalysis {
      * 
      * @return {@link MetaReduceTasks}
      */
-    public static HashMap<Integer, MetaReduceTasks> analysisTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects,
-            ArrayList<Object> streamOutObjects) {
+    public static MetaReduceCodeAnalysis analysisTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects) {
         int taskIndex = 0;
         int inputSize = 0;
 
@@ -222,7 +226,7 @@ public class CodeAnalysis {
             taskIndex++;
         }
 
-        return (tableMetaReduce.isEmpty() ? null : tableMetaReduce);
+        return (tableMetaReduce.isEmpty() ? null : new MetaReduceCodeAnalysis(tableMetaReduce));
 
     }
 

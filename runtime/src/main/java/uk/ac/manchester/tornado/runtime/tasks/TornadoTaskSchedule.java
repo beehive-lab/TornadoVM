@@ -88,6 +88,7 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompilationResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
+import uk.ac.manchester.tornado.runtime.tasks.meta.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 /**
@@ -538,32 +539,32 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         reduceMeta.updateOutputArray();
     }
 
-    private void rewriteTaskForReduceSkeleton(HashMap<Integer, MetaReduceTasks> analysisTaskSchedule) {
+    private void rewriteTaskForReduceSkeleton(MetaReduceCodeAnalysis analysisTaskSchedule) {
         reduceMeta = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects);
         reduceTaskSchedule = reduceMeta.scheduleWithReduction(analysisTaskSchedule);
         reduceExpressionRewritten = true;
     }
 
-    private AbstractTaskGraph runReduction() {
+    private AbstractTaskGraph analyzeAndRun() {
+        AbstractTaskGraph graph = null;
         if (!reduceExpressionRewritten) {
-            HashMap<Integer, MetaReduceTasks> analysisTaskSchedule = CodeAnalysis.analysisTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects);
-            if ((analysisTaskSchedule != null) && !(analysisTaskSchedule.isEmpty())) {
+            MetaReduceCodeAnalysis analysisTaskSchedule = CodeAnalysis.analysisTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects);
+            if (analysisTaskSchedule != null && analysisTaskSchedule.isValid()) {
                 rewriteTaskForReduceSkeleton(analysisTaskSchedule);
-                return this;
+                graph = this;
             }
         } else {
             runReduceTaskSchedule(reduceTaskSchedule);
-            return this;
+            graph = this;
         }
-
-        return null;
+        return graph;
     }
 
     @Override
     public AbstractTaskGraph schedule() {
         AbstractTaskGraph executionGraph = null;
         if (EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
-            executionGraph = runReduction();
+            executionGraph = analyzeAndRun();
         }
         if (executionGraph != null) {
             return executionGraph;
