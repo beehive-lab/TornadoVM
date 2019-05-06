@@ -26,142 +26,141 @@ package uk.ac.manchester.tornado.runtime.tasks;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
-public class ReduceFactory {
+class ReduceFactory {
 
-    public static void radd(int[] array, final int size) {
+    private static void rAdd(int[] array, final int size) {
         for (int i = 1; i < size; i++) {
             array[0] += array[i];
         }
     }
 
-    public static void radd(float[] array, final int size) {
+    private static void rAdd(float[] array, final int size) {
         for (int i = 1; i < size; i++) {
             array[0] += array[i];
         }
     }
 
-    public static void radd(double[] array, final int size) {
+    private static void rAdd(double[] array, final int size) {
         for (int i = 1; i < size; i++) {
             array[0] += array[i];
         }
     }
 
-    public static void rmul(int[] array, final int size) {
+    private static void rMul(int[] array, final int size) {
         for (int i = 1; i < size; i++) {
             array[0] *= array[i];
         }
     }
 
-    public static void rmul(float[] array, final int size) {
+    private static void rMul(float[] array, final int size) {
         for (int i = 1; i < size; i++) {
             array[0] *= array[i];
         }
     }
 
-    public static void rmul(double[] array, final int size) {
+    private static void rMul(double[] array, final int size) {
         for (int i = 1; i < size; i++) {
             array[0] *= array[i];
         }
     }
 
-    public static void rmax(int[] array, final int size) {
+    private static void rMax(int[] array, final int size) {
         for (int i = 1; i < size; i++) {
             array[0] = Math.max(array[0], array[i]);
         }
     }
 
-    public static void rmax(float[] array, final int size) {
+    private static void rMax(float[] array, final int size) {
         for (int i = 1; i < size; i++) {
             array[0] = Math.max(array[0], array[i]);
         }
     }
 
-    public static void rmax(double[] array, final int size) {
+    private static void rMax(double[] array, final int size) {
         for (int i = 1; i < size; i++) {
             array[0] = Math.max(array[0], array[i]);
         }
     }
 
-    public static void rmin(int[] array, final int size) {
+    private static void rMin(int[] array, final int size) {
         for (int i = 1; i < size; i++) {
             array[0] = Math.min(array[0], array[i]);
         }
     }
 
-    public static void rmin(float[] array, final int size) {
+    private static void rMin(float[] array, final int size) {
         for (int i = 1; i < size; i++) {
             array[0] = Math.min(array[0], array[i]);
         }
     }
 
-    public static void rmin(double[] array, final int size) {
+    private static void rMin(double[] array, final int size) {
         for (int i = 1; i < size; i++) {
             array[0] = Math.min(array[0], array[i]);
         }
     }
 
-    public static void handleAdd(Object newArray, TaskSchedule task, int sizeReduceArray) {
+    static void handleAdd(Object newArray, TaskSchedule task, int sizeReduceArray) {
         switch (newArray.getClass().getTypeName()) {
             case "int[]":
-                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::radd, (int[]) newArray, sizeReduceArray);
+                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rAdd, (int[]) newArray, sizeReduceArray);
                 break;
             case "float[]":
-                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::radd, (float[]) newArray, sizeReduceArray);
+                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rAdd, (float[]) newArray, sizeReduceArray);
                 break;
             case "double[]":
-                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::radd, (double[]) newArray, sizeReduceArray);
+                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rAdd, (double[]) newArray, sizeReduceArray);
                 break;
             default:
                 throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
         }
     }
 
-    public static void handleMul(Object newArray, TaskSchedule task, int sizeReduceArray) {
+    static void handleMul(Object newArray, TaskSchedule task, int sizeReduceArray) {
         switch (newArray.getClass().getTypeName()) {
             case "int[]":
-                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rmul, (int[]) newArray, sizeReduceArray);
+                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rMul, (int[]) newArray, sizeReduceArray);
                 break;
             case "float[]":
-                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rmul, (float[]) newArray, sizeReduceArray);
+                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rMul, (float[]) newArray, sizeReduceArray);
                 break;
             case "double[]":
-                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rmul, (double[]) newArray, sizeReduceArray);
+                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rMul, (double[]) newArray, sizeReduceArray);
                 break;
             default:
                 throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
         }
     }
 
-    public static void handleMax(Object newArray, TaskSchedule task, int sizeReduceArray) {
+    static void handleMax(Object newArray, TaskSchedule task, int sizeReduceArray) {
         switch (newArray.getClass().getTypeName()) {
             case "int[]":
-                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rmax, (int[]) newArray, sizeReduceArray);
+                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rMax, (int[]) newArray, sizeReduceArray);
                 break;
             case "float[]":
-                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rmax, (float[]) newArray, sizeReduceArray);
+                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rMax, (float[]) newArray, sizeReduceArray);
                 break;
             case "double[]":
-                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rmax, (double[]) newArray, sizeReduceArray);
+                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rMax, (double[]) newArray, sizeReduceArray);
                 break;
             default:
                 throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
         }
     }
 
-    public static void handleMin(Object newArray, TaskSchedule task, int sizeReduceArray) {
+    static void handleMin(Object newArray, TaskSchedule task, int sizeReduceArray) {
         switch (newArray.getClass().getTypeName()) {
             case "int[]":
-                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rmin, (int[]) newArray, sizeReduceArray);
+                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rMin, (int[]) newArray, sizeReduceArray);
                 break;
             case "float[]":
-                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rmin, (float[]) newArray, sizeReduceArray);
+                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rMin, (float[]) newArray, sizeReduceArray);
                 break;
             case "double[]":
-                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rmin, (double[]) newArray, sizeReduceArray);
+                task.task(ReduceTaskSchedule.SEQUENTIAL_TASK_REDUCE_NAME, ReduceFactory::rMin, (double[]) newArray, sizeReduceArray);
                 break;
             default:
                 throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
         }
     }
-
 }

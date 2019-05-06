@@ -89,7 +89,9 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
     private final JVMCIBackend vmBackend;
     private final HotSpotJVMCIRuntime vmRuntime;
     private final TornadoVMConfig vmConfig;
-    private final int defaultDriver = 0;
+
+    private static final int DEFAULT_DRIVER = 0;
+
     private final OptionValues options;
 
     public TornadoCoreRuntime() {
@@ -106,7 +108,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
         opts.put(PostAllocationOptimizationStage.Options.LIROptRedundantMoveElimination, false);
 
         options = new OptionValues(opts);
-        guarantee(GraalOptions.OmitHotExceptionStacktrace.getValue(options) == false, "error");
+        guarantee(!GraalOptions.OmitHotExceptionStacktrace.getValue(options), "error");
 
         if (!(JVMCI.getRuntime() instanceof HotSpotJVMCIRuntime)) {
             shouldNotReachHere("Unsupported JVMCIRuntime: ", JVMCI.getRuntime().getClass().getName());
@@ -186,7 +188,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
 
     @Override
     public TornadoAcceleratorDevice getDefaultDevice() {
-        return (drivers == null || drivers[defaultDriver] == null) ? JVM : (TornadoAcceleratorDevice) drivers[defaultDriver].getDefaultDevice();
+        return (drivers == null || drivers[DEFAULT_DRIVER] == null) ? JVM : (TornadoAcceleratorDevice) drivers[DEFAULT_DRIVER].getDefaultDevice();
     }
 
     @Override

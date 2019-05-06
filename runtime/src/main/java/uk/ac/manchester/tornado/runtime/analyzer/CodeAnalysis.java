@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Objects;
 
 import org.graalvm.compiler.api.runtime.GraalJVMCICompiler;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
@@ -165,7 +166,7 @@ public class CodeAnalysis {
                     }
 
                     if (loopBegin != null) {
-                        loopBound.add(arrayLength.array());
+                        loopBound.add(Objects.requireNonNull(arrayLength).array());
                     }
                 }
         }

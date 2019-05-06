@@ -28,8 +28,6 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRunt
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -45,18 +43,18 @@ import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceTasks;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
-public class ReduceTaskSchedule {
+class ReduceTaskSchedule {
 
-    public static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
-    public static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce-seq";
+    private static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
+    static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce-seq";
 
     private String idTaskSchedule;
-    private ArrayList<TaskPackage> taskPackages = new ArrayList<>();
-    private ArrayList<Object> streamOutObjects = new ArrayList<>();
-    private ArrayList<Object> streamInObjects = new ArrayList<>();
+    private ArrayList<TaskPackage> taskPackages;
+    private ArrayList<Object> streamOutObjects;
+    private ArrayList<Object> streamInObjects;
     private HashMap<Object, Object> originalReduceVariables;
 
-    public ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects) {
+    ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects) {
         this.taskPackages = taskPackages;
         this.idTaskSchedule = taskScheduleID;
         this.streamInObjects = streamInObjects;
@@ -76,7 +74,7 @@ public class ReduceTaskSchedule {
     }
 
     private Object createNewReduceArray(Object reduceVariable, int size) {
-        Object newArray = null;
+        Object newArray;
         if (reduceVariable instanceof int[]) {
             newArray = new int[size];
             Arrays.fill((int[]) newArray, ((int[]) reduceVariable)[0]);
@@ -92,7 +90,7 @@ public class ReduceTaskSchedule {
         return newArray;
     }
 
-    public TaskSchedule scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
+    TaskSchedule scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
 
         assert metaReduceTable != null;
 
@@ -114,8 +112,8 @@ public class ReduceTaskSchedule {
         // streamOut
         for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
 
-            ArrayList<Integer> listOfReduceParameters = null;
-            MetaReduceTasks metaReduceTasks = null;
+            ArrayList<Integer> listOfReduceParameters;
+            MetaReduceTasks metaReduceTasks;
             TaskPackage taskPackage = taskPackages.get(taskNumber);
 
             deviceToRun = changeDeviceIfNeeded(taskScheduleReduceName, tsName, taskPackage.getId());
@@ -207,11 +205,9 @@ public class ReduceTaskSchedule {
         return rewrittenTaskSchedule;
     }
 
-    public void updateOutputArray() {
+    void updateOutputArray() {
         // Copy out the result back to the original buffer
-        Iterator<Entry<Object, Object>> it = originalReduceVariables.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<Object, Object> pair = it.next();
+        for (Entry<Object, Object> pair : originalReduceVariables.entrySet()) {
             Object reduceVariable = pair.getKey();
             Object newArray = pair.getValue();
             switch (newArray.getClass().getTypeName()) {
@@ -230,7 +226,7 @@ public class ReduceTaskSchedule {
         }
     }
 
-    public static int obtainSizeArrayResult(int device, int inputSize) {
+    private static int obtainSizeArrayResult(int device, int inputSize) {
         TornadoDeviceType deviceType = getTornadoRuntime().getDriver(0).getDevice(device).getDeviceType();
         switch (deviceType) {
             case CPU:

@@ -37,12 +37,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -1087,11 +1082,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MillesecTimer();
         int numDevices = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX).getDeviceCount();
         final int totalTornadoDevices = numDevices + 1;
-        final int indexSequential = numDevices;
         long[] totalTimers = new long[totalTornadoDevices];
 
         // Run Sequential
-        runSequentialTaskSchedule(policy, timer, totalTimers, indexSequential);
+        runSequentialTaskSchedule(policy, timer, totalTimers, numDevices);
 
         // Run Task Schedules on the accelerator
         runAllTaskSchedulesInAcceleratorsSequentually(numDevices, timer, policy, totalTimers);
@@ -1113,7 +1107,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * output objects per device.
      * 
      * @param policy
+     *            input policy
      * @param numDevices
+     *            number of devices
      */
     private void restoreVarsIntoJavaHeap(Policy policy, int numDevices) {
         if (policyTimeTable.get(policy) < numDevices) {
@@ -1151,7 +1147,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return size;
     }
 
-    public void runInParallel(int deviceWinnerIndex, int numDevices) {
+    private void runInParallel(int deviceWinnerIndex, int numDevices) {
         // Run with the winner device
         if (deviceWinnerIndex >= numDevices) {
             // Last index corresponds to the sequential in HostVM
@@ -1209,7 +1205,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         } else {
             Object codeTask0 = taskPackages.get(0).getTaskParameters()[0];
-            String fullMethodName = TaskUtils.resolveMethodHandle(codeTask0).toGenericString();
+            String fullMethodName = Objects.requireNonNull(TaskUtils.resolveMethodHandle(codeTask0)).toGenericString();
             // if policy registered but method not explored yet
             ConcurrentHashMap<String, HistoryTable> methodHistory = executionHistoryPolicy.get(policy);
             if (!methodHistory.containsKey(fullMethodName)) {
@@ -1344,7 +1340,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     public void batch(String batchSize) {
 
         // parse value and units
-        Pattern pattern = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
+        Pattern pattern;
+        pattern = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
         Matcher matcher = pattern.matcher(batchSize);
         long value = 0;
         String units = null;
@@ -1354,7 +1351,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
 
         // compute bytes
-        switch (units) {
+        switch (Objects.requireNonNull(units)) {
             case "MB":
                 this.batchSizeBytes = value * 1_000_000;
                 break;

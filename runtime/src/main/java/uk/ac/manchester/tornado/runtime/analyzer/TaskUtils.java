@@ -196,7 +196,7 @@ public class TaskUtils {
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
     }
 
-    public static Object[] extractCapturedVariables(Object code) {
+    private static Object[] extractCapturedVariables(Object code) {
         final Class<?> type = code.getClass();
         int count = 0;
         for (Field field : type.getDeclaredFields()) {

@@ -142,12 +142,12 @@ public class PrebuiltTask implements SchedulableTask {
     }
 
     @Override
-    public void setBachtThreads(long batchThreads) {
+    public void setBatchThreads(long batchThreads) {
         this.batchThreads = batchThreads;
     }
 
     @Override
-    public long getBachtThreads() {
+    public long getBatchThreads() {
         return batchThreads;
     }
 }

@@ -30,8 +30,8 @@ import org.graalvm.compiler.options.OptionValues;
 
 public interface TornadoDriverProvider {
 
-    public String getName();
+    String getName();
 
-    public TornadoAcceleratorDriver createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfig config);
+    TornadoAcceleratorDriver createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfig config);
 
 }

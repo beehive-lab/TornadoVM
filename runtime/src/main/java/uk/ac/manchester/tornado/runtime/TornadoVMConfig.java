@@ -32,15 +32,14 @@ import sun.misc.Unsafe;
 
 public class TornadoVMConfig extends HotSpotVMConfigAccess {
 
-    public TornadoVMConfig(HotSpotVMConfigStore store) {
+    TornadoVMConfig(HotSpotVMConfigStore store) {
         super(store);
     }
 
-    public final boolean useCompressedClassPointers = getFlag("UseCompressedClassPointers", Boolean.class);
-    final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
-    public final int arrayOopDescSize = getFieldValue("CompilerToVM::Data::sizeof_arrayOopDesc", Integer.class, "int");
+    private final boolean useCompressedClassPointers = getFlag("UseCompressedClassPointers", Boolean.class);
+    private final int arrayOopDescSize = getFieldValue("CompilerToVM::Data::sizeof_arrayOopDesc", Integer.class, "int");
     public final int hubOffset = getFieldOffset("oopDesc::_metadata._klass", Integer.class, "Klass*");
-    public final int narrowKlassSize = getFieldValue("CompilerToVM::Data::sizeof_narrowKlass", Integer.class, "int");
+    private final int narrowKlassSize = getFieldValue("CompilerToVM::Data::sizeof_narrowKlass", Integer.class, "int");
     public final int instanceKlassFieldsOffset = getFieldOffset("InstanceKlass::_fields", Integer.class, "Array<u2>*");
 
     public final int arrayOopDescLengthOffset() {
@@ -67,6 +66,8 @@ public class TornadoVMConfig extends HotSpotVMConfigAccess {
                 return Unsafe.ARRAY_DOUBLE_BASE_OFFSET;
             case Object:
                 return Unsafe.ARRAY_OBJECT_BASE_OFFSET;
+            case Void:
+            case Illegal:
             default:
                 throw shouldNotReachHere();
         }
