@@ -17,7 +17,7 @@ __kernel void reductionAddFloats(__global uchar *_heap_base, ulong _frame_base, 
   i_3  =  get_global_id(0);
   // BLOCK 1 MERGES [0 7 ]
   i_4  =  i_3;
-  for(;i_4 < 65536;)  {
+  for(;i_4 < 8192;)  {
     // BLOCK 2
     i_5  =  get_local_id(0);
     i_6  =  get_local_size(0);

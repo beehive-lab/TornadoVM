@@ -9,15 +9,18 @@ __kernel void computePi(__global uchar *_heap_base, ulong _frame_base, __constan
 
   __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
 
+  int local_id; // XXX
 
   // BLOCK 0
   ul_0  =  (ulong) _frame[6];
   ul_1  =  (ulong) _frame[7];
   i_2  =  get_global_id(0);
+
+  __local localBuffer[1024]; // XXX
+  
+  localBuffer[get_local_id(0)] = *((__global float *) ul_10);
+
   i_3  =  i_2 + 1;
-
-  __local float localBuffer[1024];
-
   // BLOCK 1 MERGES [0 7 ]
   i_4  =  i_3;
     // BLOCK 2
@@ -28,6 +31,7 @@ __kernel void computePi(__global uchar *_heap_base, ulong _frame_base, __constan
     l_9  =  l_8 + 24L;
     ul_10  =  ul_0 + l_9;
     //f_11  =  *((__global float *) ul_10);
+    f_11 = localBuffer[get_local_id(0)];
     i_12  =  get_group_id(0);
     i_13  =  i_6 * i_12;
     i_14  =  i_13 + i_5;
@@ -43,11 +47,10 @@ __kernel void computePi(__global uchar *_heap_base, ulong _frame_base, __constan
     d_24  =  (double) i_23;
     d_25  =  d_21 / d_24;
     f_26  =  (float) d_25;
-    
-    //f_27  =  f_26 + f_11;
-    
-    localBuffer[i_5] = f_26  + *((__global float *) ul_10);
-    
+    __priavte float fd_27  =  f_26 + f_11;
+    *((__global float *) ul_18)  =  f_27;
+  //  localBuffer[get_local_id(0)] = f_27;
+  //  localBuffer[get_local_id(0)] = *((__global float *) ul_10) + f_27;
     i_28  =  i_6 >> 31;
     i_29  =  i_28 >> 31;
     i_30  =  i_29 + i_6;
@@ -56,7 +59,7 @@ __kernel void computePi(__global uchar *_heap_base, ulong _frame_base, __constan
     i_32  =  i_31;
     for(;i_32 >= 1;)    {
       // BLOCK 8
-      barrier(CLK_LOCAL_MEM_FENCE);
+      barrier(CLK_GLOBAL_MEM_FENCE);
       i_33  =  i_32 >> 31;
       i_34  =  i_33 >> 31;
       i_35  =  i_34 + i_32;
@@ -65,13 +68,17 @@ __kernel void computePi(__global uchar *_heap_base, ulong _frame_base, __constan
       if(z_37)
       {
         // BLOCK 9
-        f_38 = localBuffer[i_5];
+        //f_38  =  *((__global float *) ul_18);
+        f_38  =  fd_27;
         i_39  =  i_14 + i_32;
         l_40  =  (long) i_39;
         l_41  =  l_40 << 2;
         l_42  =  l_41 + 24L;
         ul_43  =  ul_0 + l_42;
-        localBuffer[get_local_id(0)] = localBuffer[i_5] + localBuffer[i_5 + i_32];
+      //  f_44  =  *((__global float *) ul_43);
+        f_45  =  f_38 + f_44;
+       // *((__global float *) ul_18)  =  f_45;
+        localBuffer[get_local_id(0)] = localBuffer[get_local_id(0)] + localBuffer[get_local_id(0) + i_32];
       }
       else
       {
@@ -82,19 +89,20 @@ __kernel void computePi(__global uchar *_heap_base, ulong _frame_base, __constan
       i_32  =  i_46;
     }
     // BLOCK 4
-    barrier(CLK_LOCAL_MEM_FENCE);
+    barrier(CLK_GLOBAL_MEM_FENCE);
     i_47  =  get_global_size(0);
     i_48  =  i_47 + i_4;
     z_49  =  i_5 == 0;
     if(z_49)
     {
       // BLOCK 5
-      f_50 = localBuffer[get_local_id(0)];
+     // f_50  =  *((__global float *) ul_18);
       l_51  =  (long) i_12;
       l_52  =  l_51 << 2;
       l_53  =  l_52 + 24L;
       ul_54  =  ul_1 + l_53;
-      *((__global float *) ul_54)  =  f_50;
+      //*((__global float *) ul_54)  =  f_50;
+      *((__global float *) ul_54)  =  localBuffer[0];
     }
     else
     {
@@ -103,7 +111,6 @@ __kernel void computePi(__global uchar *_heap_base, ulong _frame_base, __constan
     // BLOCK 7 MERGES [6 5 ]
     i_55  =  i_48;
     i_4  =  i_55;
-    
   // BLOCK 12
   return;
 }

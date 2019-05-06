@@ -16,7 +16,7 @@ __kernel void computePi(__global uchar *_heap_base, ulong _frame_base, __constan
   i_2  =  get_global_id(0);
   i_3  =  i_2 + 1;
 
-  __local float localBuffer[1024];
+  __local float localBuffer[512];
 
   // BLOCK 1 MERGES [0 7 ]
   i_4  =  i_3;

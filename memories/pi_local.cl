@@ -9,15 +9,15 @@ __kernel void computePi(__global uchar *_heap_base, ulong _frame_base, __constan
 
   __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
 
+  __local float localBuffer[1024];
 
   // BLOCK 0
   ul_0  =  (ulong) _frame[6];
   ul_1  =  (ulong) _frame[7];
   i_2  =  get_global_id(0);
-  i_3  =  i_2 + 1;
+  i_3  =  i_2 + 1;  
   // BLOCK 1 MERGES [0 7 ]
   i_4  =  i_3;
-  for(;i_4 < 8192;)  {
     // BLOCK 2
     i_5  =  get_local_id(0);
     i_6  =  get_local_size(0);
@@ -25,7 +25,8 @@ __kernel void computePi(__global uchar *_heap_base, ulong _frame_base, __constan
     l_8  =  l_7 << 2;
     l_9  =  l_8 + 24L;
     ul_10  =  ul_0 + l_9;
-    f_11  =  *((__global float *) ul_10);
+    // f_11  =  *((__global float *) ul_10);
+    localBuffer[get_local_id(0)] = *((__global float *) ul_10);
     i_12  =  get_group_id(0);
     i_13  =  i_6 * i_12;
     i_14  =  i_13 + i_5;
@@ -41,8 +42,10 @@ __kernel void computePi(__global uchar *_heap_base, ulong _frame_base, __constan
     d_24  =  (double) i_23;
     d_25  =  d_21 / d_24;
     f_26  =  (float) d_25;
-    f_27  =  f_26 + f_11;
-    *((__global float *) ul_18)  =  f_27;
+    //f_27  =  f_26 + f_11;
+    //localBuffer[get_local_id(0)] = f_27;
+    *((__global float *) ul_18)  =  f_26 + localBuffer[get_local_id(0)];
+   // localBuffer[get_local_id(0)] = f_26 + _local_regionlBuffer[get_local_id(0)];
     i_28  =  i_6 >> 31;
     i_29  =  i_28 >> 31;
     i_30  =  i_29 + i_6;
@@ -60,6 +63,7 @@ __kernel void computePi(__global uchar *_heap_base, ulong _frame_base, __constan
       if(z_37)
       {
         // BLOCK 9
+        //f_38 = localBuffer[get_local_id(0)];
         f_38  =  *((__global float *) ul_18);
         i_39  =  i_14 + i_32;
         l_40  =  (long) i_39;
@@ -100,7 +104,7 @@ __kernel void computePi(__global uchar *_heap_base, ulong _frame_base, __constan
     // BLOCK 7 MERGES [6 5 ]
     i_55  =  i_48;
     i_4  =  i_55;
-  }
+
   // BLOCK 12
   return;
 }

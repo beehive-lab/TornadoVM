@@ -1,10 +1,10 @@
 __kernel void reductionAddFloats(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global uchar *_private_region)
 {
-  float f_36, f_24, f_30, f_31;
-  int i_25, i_22, i_21, i_4, i_3, i_34, i_33, i_32, i_9, i_41, i_8, i_7, i_6, i_5, i_20, i_19, i_18, i_17, i_16, i_15, i_14;
-  long l_11, l_27, l_12, l_28, l_37, l_38, l_10, l_26, l_39;
-  ulong ul_40, ul_1, ul_2, ul_13, ul_29, ul_0;
-  bool z_23, z_35;
+  ulong ul_2, ul_1, ul_0, ul_40, ul_13, ul_29; 
+  int i_19, i_20, i_21, i_22, i_15, i_16, i_17, i_18, i_14, i_7, i_8, i_9, i_41, i_3, i_4, i_5, i_6, i_32, i_33, i_34, i_25; 
+  long l_12, l_28, l_10, l_26, l_11, l_27, l_38, l_39, l_37; 
+  bool z_23, z_35; 
+  float f_31, f_30, f_24, f_36; 
 
   __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
 
@@ -17,7 +17,7 @@ __kernel void reductionAddFloats(__global uchar *_heap_base, ulong _frame_base, 
   i_3  =  get_global_id(0);
   // BLOCK 1 MERGES [0 7 ]
   i_4  =  i_3;
-  for(;i_4 < 65536;)  {
+  //for(;i_4 < 65536;)  {
     // BLOCK 2
     i_5  =  get_local_id(0);
     i_6  =  get_local_size(0);
@@ -85,7 +85,7 @@ __kernel void reductionAddFloats(__global uchar *_heap_base, ulong _frame_base, 
     // BLOCK 7 MERGES [6 5 ]
     i_41  =  i_34;
     i_4  =  i_41;
-  }
+  //}
   // BLOCK 12
   return;
 }

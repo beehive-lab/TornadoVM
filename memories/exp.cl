@@ -16,7 +16,7 @@ __kernel void reductionAddFloats(__global uchar *_heap_base, ulong _frame_base, 
   ul_1  =  (ulong) _frame[7];
   ul_2  =  ul_1 + 24L;
   *((__global float *) ul_2)  =  0.0F;
-  __local float localBuffer[1024];
+  __local float localBuffer[512];
 
   i_3  =  get_global_id(0);
   // BLOCK 1 MERGES [0 7 ]
