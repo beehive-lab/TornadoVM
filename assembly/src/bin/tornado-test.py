@@ -61,7 +61,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypes",
 	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypesDouble",
 	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypesLong",
-    "uk.ac.manchester.tornado.unittests.lambdas.TestLambdas",
+	"uk.ac.manchester.tornado.unittests.lambdas.TestLambdas",
 ]
 
 ## List of tests that can be ignored. Format: class#testMethod
