@@ -74,10 +74,10 @@ public class TaskUtils {
     }
 
     /**
-     * When obtaining the method to be compiled it returns a lambda expression
-     * that contains the invocation to the actual code. The actual code is an
-     * INVOKE that is inside the apply method of the lambda. This method
-     * searches for the nested method with the actual code to be compiled.
+     * When obtaining the method to be compiled it returns a lambda expression that
+     * contains the invocation to the actual code. The actual code is an INVOKE that
+     * is inside the apply method of the lambda. This method searches for the nested
+     * method with the actual code to be compiled.
      * 
      * @param task
      *            code
@@ -86,10 +86,9 @@ public class TaskUtils {
         final Class<?> type = task.getClass();
 
         /*
-         * task should implement one of the TaskX interfaces... ...so we look
-         * for the apply function. Note: apply will perform some type casting
-         * and then call the function we really want to use, so we need to
-         * resolve the nested function.
+         * task should implement one of the TaskX interfaces... ...so we look for the
+         * apply function. Note: apply will perform some type casting and then call the
+         * function we really want to use, so we need to resolve the nested function.
          */
         Method entryPoint = null;
         for (Method m : type.getDeclaredMethods()) {
@@ -100,8 +99,8 @@ public class TaskUtils {
 
         guarantee(entryPoint != null, "unable to find entry point");
         /*
-         * Fortunately we can do a bit of JVMCI magic to resolve the function to
-         * a Method.
+         * Fortunately we can do a bit of JVMCI magic to resolve the function to a
+         * Method.
          */
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getVMBackend().getMetaAccess().lookupJavaMethod(entryPoint);
         final ConstantPool cp = resolvedMethod.getConstantPool();
@@ -231,11 +230,6 @@ public class TaskUtils {
         return new PrebuiltTask(meta, id, entryPoint, filename, args, accesses, device, domain);
     }
 
-    public static CompilableTask createTask(ScheduleMetaData meta, String id, Runnable runnable) {
-        final Method method = resolveRunnableMethod(runnable);
-        return createTask(meta, id, method, runnable, false);
-    }
-
     private static CompilableTask createTask(ScheduleMetaData meta, String id, Method method, Object code, boolean extractCVs, Object... args) {
         final int numArgs;
         final Object[] cvs;
@@ -262,18 +256,6 @@ public class TaskUtils {
             index++;
         }
         return new CompilableTask(meta, id, method, parameters);
-    }
-
-    private static Method resolveRunnableMethod(Runnable runnable) {
-        final Class<?> type = runnable.getClass();
-        try {
-            final Method method = type.getDeclaredMethod("run");
-            method.setAccessible(true);
-            return method;
-        } catch (NoSuchMethodException | SecurityException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
 }

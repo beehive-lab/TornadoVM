@@ -29,15 +29,12 @@ public class MetaReduceCodeAnalysis {
 
     private HashMap<Integer, MetaReduceTasks> analysisTaskScheduleTable;
 
-    public MetaReduceCodeAnalysis(HashMap<Integer, MetaReduceTasks> analysisTaskSchedule) {
+    MetaReduceCodeAnalysis(HashMap<Integer, MetaReduceTasks> analysisTaskSchedule) {
         this.analysisTaskScheduleTable = analysisTaskSchedule;
     }
 
     public boolean isValid() {
-        if ((analysisTaskScheduleTable != null) && !(analysisTaskScheduleTable.isEmpty())) {
-            return true;
-        }
-        return false;
+        return (analysisTaskScheduleTable != null) && !(analysisTaskScheduleTable.isEmpty());
     }
 
     public HashMap<Integer, MetaReduceTasks> getTable() {

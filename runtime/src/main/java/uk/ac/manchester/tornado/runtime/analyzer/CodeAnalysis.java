@@ -80,8 +80,8 @@ public class CodeAnalysis {
         ADD, 
         MUL, 
         MIN, 
-        MAX;
-    };
+        MAX
+    }
     // @formatter:on
 
     public static ArrayList<REDUCE_OPERATION> getReduceOperation(StructuredGraph graph, ArrayList<Integer> reduceIndexes) {
@@ -90,10 +90,8 @@ public class CodeAnalysis {
 
             ParameterNode parameterNode = graph.getParameter(paramIndex);
             NodeIterable<Node> usages = parameterNode.usages();
-            Iterator<Node> iterator = usages.iterator();
             // Get Input-Range for the reduction loop
-            while (iterator.hasNext()) {
-                Node node = iterator.next();
+            for (Node node : usages) {
                 if (node instanceof StoreIndexedNode) {
                     StoreIndexedNode store = (StoreIndexedNode) node;
                     if (store.value() instanceof BinaryNode || store.value() instanceof BinaryArithmeticNode) {
@@ -101,8 +99,9 @@ public class CodeAnalysis {
                         reduceOperation.add(value);
                     } else if (store.value() instanceof InvokeNode) {
                         InvokeNode invoke = (InvokeNode) store.value();
-                        invoke.callTarget().targetName().startsWith("Math");
-                        reduceOperation.add(invoke);
+                        if (invoke.callTarget().targetName().startsWith("Math")) {
+                            reduceOperation.add(invoke);
+                        }
                     }
                 }
             }
@@ -132,11 +131,13 @@ public class CodeAnalysis {
     }
 
     /**
-     * A method can apply multiple reduction variables. We return a list of all
-     * its loop bounds.
+     * A method can apply multiple reduction variables. We return a list of all its
+     * loop bounds.
      * 
      * @param graph
+     *            Graal-IR graph to analyze
      * @param reduceIndexes
+     *            list of reduce indexes within the method parameter list
      * @return ArrayList<ValueNode>
      */
     public static ArrayList<ValueNode> findLoopUpperBoundNode(StructuredGraph graph, ArrayList<Integer> reduceIndexes) {
@@ -144,15 +145,11 @@ public class CodeAnalysis {
         for (Integer paramIndex : reduceIndexes) {
             ParameterNode parameterNode = graph.getParameter(paramIndex);
             NodeIterable<Node> usages = parameterNode.usages();
-            Iterator<Node> iterator = usages.iterator();
 
             // Get Input-Range for the reduction loop
-            while (iterator.hasNext()) {
-                Node node = iterator.next();
+            for (Node node : usages)
                 if (node instanceof StoreIndexedNode) {
-                    StoreIndexedNode store = (StoreIndexedNode) node;
-
-                    Node aux = store;
+                    Node aux = node;
                     LoopBeginNode loopBegin = null;
                     ArrayLengthNode arrayLength = null;
 
@@ -171,7 +168,6 @@ public class CodeAnalysis {
                         loopBound.add(arrayLength.array());
                     }
                 }
-            }
         }
         return loopBound;
     }
@@ -181,7 +177,7 @@ public class CodeAnalysis {
      * 
      * @return {@link MetaReduceTasks}
      */
-    public static MetaReduceCodeAnalysis analysisTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects) {
+    public static MetaReduceCodeAnalysis analysisTaskSchedule(ArrayList<TaskPackage> taskPackages) {
         int taskIndex = 0;
         int inputSize = 0;
 
@@ -210,8 +206,8 @@ public class CodeAnalysis {
             // Perform PE to obtain the value of the upper-bound loop
             ArrayList<ValueNode> loopBound = findLoopUpperBoundNode(graph, reduceIndexes);
             for (int i = 0; i < graph.method().getParameters().length; i++) {
-                for (int k = 0; k < loopBound.size(); k++) {
-                    if (loopBound.get(k).equals(graph.getParameter(i))) {
+                for (ValueNode valueNode : loopBound) {
+                    if (valueNode.equals(graph.getParameter(i))) {
                         Object object = taskPackages.get(taskIndex).getTaskParameters()[i + 1];
                         inputSize = Array.getLength(object);
                     }

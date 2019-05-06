@@ -39,7 +39,7 @@ public class MetaReduceTasks {
     private HashMap<Integer, Integer> reduceSize;
     private StructuredGraph graph;
 
-    public MetaReduceTasks(int taskIndex, StructuredGraph graph, ArrayList<Integer> reduceIndexes, int inputSize) {
+    MetaReduceTasks(int taskIndex, StructuredGraph graph, ArrayList<Integer> reduceIndexes, int inputSize) {
         reduceList = new HashMap<>();
         reduceSize = new HashMap<>();
         reduceList.put(taskIndex, reduceIndexes);
@@ -53,10 +53,6 @@ public class MetaReduceTasks {
 
     public int getInputSize(int taskIndex) {
         return reduceSize.get(taskIndex);
-    }
-
-    public boolean isReduceListEmpty() {
-        return reduceList.isEmpty();
     }
 
     public StructuredGraph getGraph() {
