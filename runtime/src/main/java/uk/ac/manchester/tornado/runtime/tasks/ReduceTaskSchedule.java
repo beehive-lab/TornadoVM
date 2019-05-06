@@ -39,9 +39,11 @@ import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.runtime.tasks.CodeAnalysis.REDUCE_OPERATION;
+import uk.ac.manchester.tornado.runtime.analyzer.CodeAnalysis;
+import uk.ac.manchester.tornado.runtime.analyzer.CodeAnalysis.REDUCE_OPERATION;
+import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
+import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceTasks;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
-import uk.ac.manchester.tornado.runtime.tasks.meta.MetaReduceCodeAnalysis;
 
 public class ReduceTaskSchedule {
 

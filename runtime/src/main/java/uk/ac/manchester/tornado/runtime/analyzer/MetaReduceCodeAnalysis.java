@@ -21,45 +21,27 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.runtime.tasks;
+package uk.ac.manchester.tornado.runtime.analyzer;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.graalvm.compiler.nodes.StructuredGraph;
+public class MetaReduceCodeAnalysis {
 
-/**
- * Mapping between the input tasks and the parameters indexes in which reduce
- * variables are found.
- *
- */
-public class MetaReduceTasks {
+    private HashMap<Integer, MetaReduceTasks> analysisTaskScheduleTable;
 
-    private HashMap<Integer, ArrayList<Integer>> reduceList;
-    private HashMap<Integer, Integer> reduceSize;
-    private StructuredGraph graph;
-
-    public MetaReduceTasks(int taskIndex, StructuredGraph graph, ArrayList<Integer> reduceIndexes, int inputSize) {
-        reduceList = new HashMap<>();
-        reduceSize = new HashMap<>();
-        reduceList.put(taskIndex, reduceIndexes);
-        reduceSize.put(taskIndex, inputSize);
-        this.graph = graph;
+    public MetaReduceCodeAnalysis(HashMap<Integer, MetaReduceTasks> analysisTaskSchedule) {
+        this.analysisTaskScheduleTable = analysisTaskSchedule;
     }
 
-    public ArrayList<Integer> getListOfReduceParameters(int taskID) {
-        return reduceList.get(taskID);
+    public boolean isValid() {
+        if ((analysisTaskScheduleTable != null) && !(analysisTaskScheduleTable.isEmpty())) {
+            return true;
+        }
+        return false;
     }
 
-    public int getInputSize(int taskIndex) {
-        return reduceSize.get(taskIndex);
+    public HashMap<Integer, MetaReduceTasks> getTable() {
+        return analysisTaskScheduleTable;
     }
 
-    public boolean isReduceListEmpty() {
-        return reduceList.isEmpty();
-    }
-
-    public StructuredGraph getGraph() {
-        return graph;
-    }
 }

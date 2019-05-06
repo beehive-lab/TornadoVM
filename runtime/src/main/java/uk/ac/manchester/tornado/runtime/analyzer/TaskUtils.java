@@ -23,7 +23,7 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.runtime.tasks;
+package uk.ac.manchester.tornado.runtime.analyzer;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
@@ -54,6 +54,8 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.domain.IntDomain;
+import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
+import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 public class TaskUtils {
@@ -239,7 +241,7 @@ public class TaskUtils {
         final Object[] cvs;
 
         if (extractCVs) {
-            cvs = TaskUtils.extractCapturedVariables(code);
+            cvs = extractCapturedVariables(code);
             numArgs = cvs.length + args.length;
         } else {
             cvs = null;

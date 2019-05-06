@@ -44,7 +44,7 @@ public class PrebuiltTask implements SchedulableTask {
     protected final TaskMetaData meta;
     protected long batchThreads;
 
-    protected PrebuiltTask(ScheduleMetaData scheduleMeta, String id, String entryPoint, String filename, Object[] args, Access[] access, TornadoDevice device, DomainTree domain) {
+    public PrebuiltTask(ScheduleMetaData scheduleMeta, String id, String entryPoint, String filename, Object[] args, Access[] access, TornadoDevice device, DomainTree domain) {
         this.entryPoint = entryPoint;
         this.filename = filename;
         this.args = args;

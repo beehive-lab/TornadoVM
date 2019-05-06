@@ -40,7 +40,6 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
@@ -76,6 +75,9 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
+import uk.ac.manchester.tornado.runtime.analyzer.CodeAnalysis;
+import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
+import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -88,7 +90,6 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompilationResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
-import uk.ac.manchester.tornado.runtime.tasks.meta.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 /**
