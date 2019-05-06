@@ -27,33 +27,33 @@ package uk.ac.manchester.tornado.runtime.common;
 
 public interface CallStack {
 
-    public void reset();
+    void reset();
 
-    public long getDeoptValue();
+    long getDeoptValue();
 
-    public long getReturnValue();
+    long getReturnValue();
 
-    public int getArgCount();
+    int getArgCount();
 
-    public void push(Object arg);
+    void push(Object arg);
 
-    public void push(Object arg, DeviceObjectState state);
+    void push(Object arg, DeviceObjectState state);
 
-    public boolean isOnDevice();
+    boolean isOnDevice();
 
-    public void dump();
+    void dump();
 
-    public void clearProfiling();
+    void clearProfiling();
 
-    public long getInvokeCount();
+    long getInvokeCount();
 
-    public double getTimeTotal();
+    double getTimeTotal();
 
-    public double getTimeMean();
+    double getTimeMean();
 
-    public double getTimeMin();
+    double getTimeMin();
 
-    public double getTimeMax();
+    double getTimeMax();
 
-    public double getTimeSD();
+    double getTimeSD();
 }

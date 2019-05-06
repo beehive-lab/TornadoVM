@@ -160,7 +160,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public TornadoSchedulingStrategy getPreferedSchedule() {
+    public TornadoSchedulingStrategy getPreferredSchedule() {
         if (null != device.getDeviceType()) {
 
             if (Tornado.FORCE_ALL_TO_GPU) {

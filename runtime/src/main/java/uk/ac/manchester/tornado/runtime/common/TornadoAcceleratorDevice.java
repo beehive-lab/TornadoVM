@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 
 public interface TornadoAcceleratorDevice extends TornadoDevice {
 
-    TornadoSchedulingStrategy getPreferedSchedule();
+    TornadoSchedulingStrategy getPreferredSchedule();
 
     CallStack createStack(int numArgs);
 
