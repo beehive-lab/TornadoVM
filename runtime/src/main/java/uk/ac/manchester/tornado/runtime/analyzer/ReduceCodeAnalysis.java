@@ -49,7 +49,7 @@ import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 /**
- * Code analysis class for Tornado
+ * Code analysis class for reductions in TornadoVM
  *
  */
 public class ReduceCodeAnalysis {
