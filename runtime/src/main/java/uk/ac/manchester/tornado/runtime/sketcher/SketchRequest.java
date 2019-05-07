@@ -25,27 +25,26 @@
  */
 package uk.ac.manchester.tornado.runtime.sketcher;
 
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 public class SketchRequest implements Future<Sketch>, Runnable {
 
     public final TaskMetaData meta;
-    public final ResolvedJavaMethod resolvedMethod;
     public final Providers providers;
-    public final PhaseSuite<HighTierContext> graphBuilderSuite;
-    public final TornadoSketchTier sketchTier;
+
+    final ResolvedJavaMethod resolvedMethod;
+    final PhaseSuite<HighTierContext> graphBuilderSuite;
+    final TornadoSketchTier sketchTier;
     public Sketch result;
 
     public SketchRequest(TaskMetaData meta, ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier) {
@@ -67,7 +66,7 @@ public class SketchRequest implements Future<Sketch>, Runnable {
     }
 
     @Override
-    public Sketch get() throws InterruptedException, ExecutionException {
+    public Sketch get() throws InterruptedException {
         while (!isDone()) {
             Thread.sleep(100);
         }
@@ -75,7 +74,7 @@ public class SketchRequest implements Future<Sketch>, Runnable {
     }
 
     @Override
-    public Sketch get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public Sketch get(long timeout, TimeUnit unit) {
         unimplemented();
         return null;
     }

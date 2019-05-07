@@ -27,7 +27,7 @@ package uk.ac.manchester.tornado.runtime.directives;
 
 public class CompilerInternals {
 
-    public static final Object getSlotsAddress() {
+    public static Object getSlotsAddress() {
         return null;
     }
 

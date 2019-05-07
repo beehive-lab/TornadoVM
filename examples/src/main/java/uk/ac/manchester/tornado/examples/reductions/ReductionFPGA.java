@@ -19,49 +19,59 @@
 package uk.ac.manchester.tornado.examples.reductions;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Random;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.annotations.Reduce;;
 
-public class PiComputation {
+public class ReductionFPGA {
 
-    public static void computePi(float[] input, @Reduce float[] result) {
-        for (@Parallel int i = 1; i < input.length; i++) {
-            float value = (float) (Math.pow(-1, i + 1) / (2 * i - 1));
-            result[0] += value + input[i];
+    public static void reductionSum(float[] input, @Reduce float[] result) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] += input[i];
+        }
+    }
+
+    public static void reductionSumSequential(float[] input, @Reduce float[] result) {
+        for (int i = 0; i < input.length; i++) {
+            result[0] += input[i];
         }
     }
 
     public void run(int size) {
         float[] input = new float[size];
         float[] result = new float[1];
-        Arrays.fill(result, 0.0f);
+
+        Random r = new Random();
+        IntStream.range(0, size).sequential().forEach(i -> {
+            input[i] = r.nextFloat();
+        });
 
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", PiComputation::computePi, input, result)
+            .task("t0", ReductionFPGA::reductionSum, input, result)
             .streamOut(result);
         //@formatter:on
 
         ArrayList<Long> timers = new ArrayList<>();
-        for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {
 
-            IntStream.range(0, size).sequential().forEach(idx -> {
-                input[idx] = 0;
-            });
+        long start = System.nanoTime();
+        task.execute();
+        long end = System.nanoTime();
 
-            long start = System.nanoTime();
-            task.execute();
-            long end = System.nanoTime();
+        timers.add((end - start));
 
-            final float piValue = result[0] * 4;
-            System.out.println("PI VALUE: " + piValue);
-            timers.add((end - start));
-        }
+        //@formatter:off
+        TaskSchedule taskSequential = new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t1", ReductionFPGA::reductionSumSequential, input, result)
+            .streamOut(result);
+        //@formatter:on
+
+        taskSequential.execute();
 
         System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
     }
@@ -71,7 +81,7 @@ public class PiComputation {
         if (args.length > 0) {
             inputSize = Integer.parseInt(args[0]);
         }
-        System.out.print("Size = " + inputSize + " ");
-        new PiComputation().run(inputSize);
+        System.out.println("Size = " + inputSize);
+        new ReductionFPGA().run(inputSize);
     }
 }

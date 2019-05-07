@@ -117,8 +117,8 @@ public class OCLCompiler {
     private static final OCLLIRGenerationPhase LIR_GENERATION_PHASE = new OCLLIRGenerationPhase();
 
     /**
-     * Encapsulates all the inputs to a
-     * {@linkplain GraalCompiler#compile(Request) compilation}.
+     * Encapsulates all the inputs to a {@linkplain GraalCompiler#compile(Request)
+     * compilation}.
      */
     public static class Request<T extends OCLCompilationResult> {
 
@@ -475,7 +475,7 @@ public class OCLCompiler {
 
         final TaskMetaData taskMeta = task.meta();
         final Object[] args = task.getArguments();
-        final long batchThreads = task.getBachtThreads();
+        final long batchThreads = task.getBatchThreads();
 
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedMethod.getProfilingInfo();

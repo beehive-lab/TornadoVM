@@ -20,20 +20,42 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ */
+package uk.ac.manchester.tornado.runtime.analyzer;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import org.graalvm.compiler.nodes.StructuredGraph;
+
+/**
+ * Mapping between the input tasks and the parameters indexes in which reduce
+ * variables are found.
  *
  */
-package uk.ac.manchester.tornado.runtime;
+public class MetaReduceTasks {
 
-import org.graalvm.compiler.phases.util.Providers;
+    private HashMap<Integer, ArrayList<Integer>> reduceList;
+    private HashMap<Integer, Integer> reduceSize;
+    private StructuredGraph graph;
 
-import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
+    MetaReduceTasks(int taskIndex, StructuredGraph graph, ArrayList<Integer> reduceIndexes, int inputSize) {
+        reduceList = new HashMap<>();
+        reduceSize = new HashMap<>();
+        reduceList.put(taskIndex, reduceIndexes);
+        reduceSize.put(taskIndex, inputSize);
+        this.graph = graph;
+    }
 
-public interface TornadoAcceleratorDriver extends TornadoDriver {
+    public ArrayList<Integer> getListOfReduceParameters(int taskID) {
+        return reduceList.get(taskID);
+    }
 
-    Providers getProviders();
+    public int getInputSize(int taskIndex) {
+        return reduceSize.get(taskIndex);
+    }
 
-    TornadoSuitesProvider getSuitesProvider();
-
+    public StructuredGraph getGraph() {
+        return graph;
+    }
 }

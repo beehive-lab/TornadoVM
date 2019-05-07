@@ -33,7 +33,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.sql.BatchUpdateException;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
@@ -372,7 +371,7 @@ public class TornadoVM extends TornadoLogger {
                 final SchedulableTask task = tasks.get(taskIndex);
 
                 // Set the batch size in the task information
-                task.setBachtThreads(batchThreads);
+                task.setBatchThreads(batchThreads);
 
                 String verbose = String.format("vm: LAUNCH_BATCH %s on %s, size=%d, offset=%d [event list=%d]", task.getName(), contexts.get(contextIndex), batchThreads, offset, eventList);
                 if (graphContext.meta().isDebug()) {

@@ -26,5 +26,5 @@
 package uk.ac.manchester.tornado.runtime.common;
 
 public interface Initialisable {
-	public boolean isInitialised();
+    boolean isInitialised();
 }

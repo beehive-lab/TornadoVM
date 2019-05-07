@@ -11,7 +11,6 @@ class Colors:
 	BOLD    = "\033[;1m"
 	REVERSE = "\033[;7m"
 
-## Wait still we merge with @James to include formatting in all the projects
 __TORNADO_PROJECTS__ = [
 			"benchmarks",
 			"matrices",
@@ -20,7 +19,7 @@ __TORNADO_PROJECTS__ = [
 			"runtime",
 			"unittests",
 			"tornado-api",
-		   ]
+	]
 
 __PATH_TO_ECLIPSE_SETTINGS__ = "scripts/templates/eclipse-settings/files/"
 
@@ -40,6 +39,4 @@ def setEclipseSettings():
 		os.system(command)
 
 if __name__ == "__main__":
-
 	setEclipseSettings()
-

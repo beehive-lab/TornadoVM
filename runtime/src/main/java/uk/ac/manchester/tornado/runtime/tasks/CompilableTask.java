@@ -26,7 +26,6 @@
 package uk.ac.manchester.tornado.runtime.tasks;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.Objects;
 
 import uk.ac.manchester.tornado.api.common.Access;
@@ -43,12 +42,10 @@ public class CompilableTask implements SchedulableTask {
     protected TaskMetaData meta;
 
     protected final Method method;
-    protected final Object[] resolvedArgs;
     protected boolean shouldCompile;
 
-    protected Access thisAccess;
-
-    protected long batchThreads;
+    private final Object[] resolvedArgs;
+    private long batchNumThreads;
 
     public CompilableTask(ScheduleMetaData meta, String id, Method method, Object... args) {
         this.method = method;
@@ -70,18 +67,6 @@ public class CompilableTask implements SchedulableTask {
         return buffer.toString();
     }
 
-    protected Object[] copyToArguments() {
-        final int argOffset = (Modifier.isStatic(method.getModifiers())) ? 0 : 1;
-        final int numArgs = args.length + argOffset;
-        final Object[] arguments = new Object[numArgs];
-
-        for (int i = 0; i < args.length; i++) {
-            final Object object = args[i];
-            arguments[i + argOffset] = object;
-        }
-        return arguments;
-    }
-
     @Override
     public Object[] getArguments() {
         return resolvedArgs;
@@ -95,10 +80,6 @@ public class CompilableTask implements SchedulableTask {
     @Override
     public TornadoAcceleratorDevice getDevice() {
         return meta.getDevice();
-    }
-
-    public String getMethodName() {
-        return method.getName();
     }
 
     @Override
@@ -144,13 +125,13 @@ public class CompilableTask implements SchedulableTask {
     }
 
     @Override
-    public void setBachtThreads(long batchThreads) {
-        this.batchThreads = batchThreads;
+    public void setBatchThreads(long batchThreads) {
+        this.batchNumThreads = batchThreads;
     }
 
     @Override
-    public long getBachtThreads() {
-        return batchThreads;
+    public long getBatchThreads() {
+        return batchNumThreads;
     }
 
 }

@@ -20,20 +20,25 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
-package uk.ac.manchester.tornado.runtime;
+package uk.ac.manchester.tornado.runtime.analyzer;
 
-import org.graalvm.compiler.phases.util.Providers;
+import java.util.HashMap;
 
-import uk.ac.manchester.tornado.api.TornadoDriver;
-import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
+public class MetaReduceCodeAnalysis {
 
-public interface TornadoAcceleratorDriver extends TornadoDriver {
+    private HashMap<Integer, MetaReduceTasks> analysisTaskScheduleTable;
 
-    Providers getProviders();
+    MetaReduceCodeAnalysis(HashMap<Integer, MetaReduceTasks> analysisTaskSchedule) {
+        this.analysisTaskScheduleTable = analysisTaskSchedule;
+    }
 
-    TornadoSuitesProvider getSuitesProvider();
+    public boolean isValid() {
+        return (analysisTaskScheduleTable != null) && !(analysisTaskScheduleTable.isEmpty());
+    }
+
+    public HashMap<Integer, MetaReduceTasks> getTable() {
+        return analysisTaskScheduleTable;
+    }
 
 }

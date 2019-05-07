@@ -247,7 +247,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 performNodeReplacement(graph, store, pred, reductionNode);
 
             } else if (node instanceof StoreFieldNode) {
-                throw new RuntimeException("\n\n[NOT SUPPORTED] Node StoreFieldNode: not suported yet.");
+                throw new RuntimeException("\n\n[NOT SUPPORTED] Node StoreFieldNode is not suported yet.");
             }
         }
     }
@@ -295,10 +295,11 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         for (int index = 0; index < parameterAnnotations.length; index++) {
             for (Annotation annotation : parameterAnnotations[index]) {
                 if (annotation instanceof Reduce) {
-                    // XXX: If the number of arguments do not match, then we
+                    // If the number of arguments do not match, then we
                     // increase the index to obtain the correct one when
                     // indexing from getParameters. This is an issue when having
-                    // inheritance with interfaces from Flink. See issue #185
+                    // inheritance with interfaces from Apache Flink. See issue
+                    // #185 on Github
                     if (getNumberOfParameterNodes(graph) > parameterAnnotations.length) {
                         index++;
                     }

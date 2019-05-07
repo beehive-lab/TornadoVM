@@ -34,7 +34,7 @@ public class Sketch {
     private final CachedGraph<?> graph;
     private final TaskMetaData meta;
 
-    public Sketch(CachedGraph<?> graph, TaskMetaData meta) {
+    Sketch(CachedGraph<?> graph, TaskMetaData meta) {
         this.graph = graph;
         this.meta = meta;
     }

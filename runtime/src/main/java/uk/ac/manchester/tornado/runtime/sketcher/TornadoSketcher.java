@@ -76,7 +76,7 @@ public class TornadoSketcher {
         }
     }
 
-    public static void buildSketch(SketchRequest request) {
+    static void buildSketch(SketchRequest request) {
         DebugEnvironment.ensureInitialized(getTornadoRuntime().getOptions());
 
         if (cache.containsKey(request.resolvedMethod)) {
