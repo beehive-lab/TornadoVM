@@ -37,7 +37,13 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -137,6 +143,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private boolean reduceExpressionRewritten = false;
     private TaskSchedule reduceTaskSchedule = null;
     private ReduceTaskSchedule reduceMeta;
+    private boolean reduceAnalysis = false;
+    MetaReduceCodeAnalysis analysisTaskSchedule;
 
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
@@ -541,14 +549,23 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         reduceExpressionRewritten = true;
     }
 
-    private AbstractTaskGraph analyzeAndRun() {
+    private AbstractTaskGraph reduceAnalysis() {
         AbstractTaskGraph graph = null;
-        if (!reduceExpressionRewritten) {
-            MetaReduceCodeAnalysis analysisTaskSchedule = CodeAnalysis.analysisTaskSchedule(taskPackages);
+        if (analysisTaskSchedule == null && !reduceAnalysis) {
+            analysisTaskSchedule = CodeAnalysis.analysisTaskSchedule(taskPackages);
+            reduceAnalysis = true;
             if (analysisTaskSchedule != null && analysisTaskSchedule.isValid()) {
                 rewriteTaskForReduceSkeleton(analysisTaskSchedule);
                 graph = this;
             }
+        }
+        return graph;
+    }
+
+    private AbstractTaskGraph analyzeSkeletonAndRun() {
+        AbstractTaskGraph graph = null;
+        if (!reduceExpressionRewritten) {
+            graph = reduceAnalysis();
         } else {
             runReduceTaskSchedule(reduceTaskSchedule);
             graph = this;
@@ -560,8 +577,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     public AbstractTaskGraph schedule() {
         AbstractTaskGraph executionGraph = null;
         if (EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
-            executionGraph = analyzeAndRun();
+            executionGraph = analyzeSkeletonAndRun();
         }
+
         if (executionGraph != null) {
             return executionGraph;
         }
@@ -1159,10 +1177,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     /**
-     * Class that keeps the history of executions based on their data sizes. It has
-     * a sorted map (TreeMap) that keeps the relationship between the input size and
-     * the actual Tornado device in which the task was executed based on the
-     * profiler for the dynamic reconfiguration.
+     * Class that keeps the history of executions based on their data sizes. It
+     * has a sorted map (TreeMap) that keeps the relationship between the input
+     * size and the actual Tornado device in which the task was executed based
+     * on the profiler for the dynamic reconfiguration.
      */
     private static class HistoryTable {
         /**
