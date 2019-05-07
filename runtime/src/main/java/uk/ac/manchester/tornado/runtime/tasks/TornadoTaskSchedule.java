@@ -76,7 +76,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
-import uk.ac.manchester.tornado.runtime.analyzer.CodeAnalysis;
+import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
@@ -552,7 +552,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private AbstractTaskGraph reduceAnalysis() {
         AbstractTaskGraph graph = null;
         if (analysisTaskSchedule == null && !reduceAnalysis) {
-            analysisTaskSchedule = CodeAnalysis.analysisTaskSchedule(taskPackages);
+            analysisTaskSchedule = ReduceCodeAnalysis.analysisTaskSchedule(taskPackages);
             reduceAnalysis = true;
             if (analysisTaskSchedule != null && analysisTaskSchedule.isValid()) {
                 rewriteTaskForReduceSkeleton(analysisTaskSchedule);

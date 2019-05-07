@@ -74,21 +74,22 @@ public class TaskUtils {
     }
 
     /**
-     * When obtaining the method to be compiled it returns a lambda expression that
-     * contains the invocation to the actual code. The actual code is an INVOKE that
-     * is inside the apply method of the lambda. This method searches for the nested
-     * method with the actual code to be compiled.
+     * When obtaining the method to be compiled it returns a lambda expression
+     * that contains the invocation to the actual code. The actual code is an
+     * INVOKE that is inside the apply method of the lambda. This method
+     * searches for the nested method with the actual code to be compiled.
      * 
      * @param task
-     *            code
+     *            Input Tornado task that corresponds to the user code.
      */
     public static Method resolveMethodHandle(Object task) {
         final Class<?> type = task.getClass();
 
         /*
-         * task should implement one of the TaskX interfaces... ...so we look for the
-         * apply function. Note: apply will perform some type casting and then call the
-         * function we really want to use, so we need to resolve the nested function.
+         * task should implement one of the TaskX interfaces... ...so we look
+         * for the apply function. Note: apply will perform some type casting
+         * and then call the function we really want to use, so we need to
+         * resolve the nested function.
          */
         Method entryPoint = null;
         for (Method m : type.getDeclaredMethods()) {
@@ -99,8 +100,8 @@ public class TaskUtils {
 
         guarantee(entryPoint != null, "unable to find entry point");
         /*
-         * Fortunately we can do a bit of JVMCI magic to resolve the function to a
-         * Method.
+         * Fortunately we can do a bit of JVMCI magic to resolve the function to
+         * a Method.
          */
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getVMBackend().getMetaAccess().lookupJavaMethod(entryPoint);
         final ConstantPool cp = resolvedMethod.getConstantPool();

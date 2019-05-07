@@ -37,8 +37,8 @@ import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.runtime.analyzer.CodeAnalysis;
-import uk.ac.manchester.tornado.runtime.analyzer.CodeAnalysis.REDUCE_OPERATION;
+import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
+import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERATION;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceTasks;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
@@ -170,7 +170,7 @@ class ReduceTaskSchedule {
                 MetaReduceTasks metaReduceTasks = tableReduce.get(taskNumber);
                 ArrayList<Integer> listOfReduceParameters = metaReduceTasks.getListOfReduceParameters(taskNumber);
                 StructuredGraph graph = metaReduceTasks.getGraph();
-                ArrayList<REDUCE_OPERATION> operations = CodeAnalysis.getReduceOperation(graph, listOfReduceParameters);
+                ArrayList<REDUCE_OPERATION> operations = ReduceCodeAnalysis.getReduceOperation(graph, listOfReduceParameters);
 
                 for (int i = 0; i < streamReduceUpdatedList.size(); i++) {
                     Object newArray = streamReduceUpdatedList.get(i);
