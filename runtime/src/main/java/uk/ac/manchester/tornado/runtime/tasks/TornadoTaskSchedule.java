@@ -380,6 +380,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             precompilationForFPGA();
         }
 
+        // XXX: Unify TornadoVM interpreters
         if (this.batchSizeBytes != -1) {
             event = vm.executeBatches();
         } else {

@@ -37,10 +37,10 @@ import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
-import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
-import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERATION;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceTasks;
+import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
+import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERATION;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
 class ReduceTaskSchedule {
@@ -53,6 +53,8 @@ class ReduceTaskSchedule {
     private ArrayList<Object> streamOutObjects;
     private ArrayList<Object> streamInObjects;
     private HashMap<Object, Object> originalReduceVariables;
+    private boolean reduceLeftOver = false;
+    private int elementsReductionLeftOver = 0;
 
     ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects) {
         this.taskPackages = taskPackages;
@@ -127,7 +129,22 @@ class ReduceTaskSchedule {
 
                     Object originalReduceVariable = taskPackage.getTaskParameters()[paramIndex + 1];
                     int inputSize = metaReduceTasks.getInputSize(taskNumber);
+                    final int originalInputSize = inputSize;
+
+                    // Analyse Input Size
+                    if (inputSize % 2 != 0) {
+                        inputSize = inputSize / 2;
+                        elementsReductionLeftOver = originalInputSize % 2;
+                    }
+
                     int sizeReduceArray = obtainSizeArrayResult(deviceToRun, inputSize);
+
+                    if (elementsReductionLeftOver > 0) {
+                        TornadoDeviceType deviceType = getTornadoRuntime().getDriver(0).getDevice(deviceToRun).getDeviceType();
+                        if (deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.FPGA) {
+                            reduceLeftOver = true;
+                        }
+                    }
 
                     // Set the new array size
                     Object newArray = createNewReduceArray(originalReduceVariable, sizeReduceArray);
@@ -233,7 +250,7 @@ class ReduceTaskSchedule {
                 return Runtime.getRuntime().availableProcessors() + 1;
             case GPU:
             case ACCELERATOR:
-                return inputSize > 266 ? inputSize / 256 : 1;
+                return inputSize > 256 ? inputSize / 256 : 1;
             default:
                 break;
         }

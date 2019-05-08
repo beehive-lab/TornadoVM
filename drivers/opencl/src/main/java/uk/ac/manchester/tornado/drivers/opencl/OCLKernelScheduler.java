@@ -20,7 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl;
@@ -57,19 +56,19 @@ public abstract class OCLKernelScheduler {
             meta.printThreadDims();
         }
 
-        final int task;
+        final int taskEvent;
         if (meta.shouldUseDefaultOpenCLScheduling()) {
-            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
+            taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
         } else {
-            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
+            taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
         }
 
         if (deviceContext.printOCLKernelTime()) {
-            Event resolveEvent = deviceContext.resolveEvent(task);
+            Event resolveEvent = deviceContext.resolveEvent(taskEvent);
             System.out.println("[OCL Kernel Execution Time] " + resolveEvent.getExecutionTime() + " (ns)");
         }
 
-        return task;
+        return taskEvent;
     }
 
 }

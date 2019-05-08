@@ -20,52 +20,47 @@ package uk.ac.manchester.tornado.unittests.reductions;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
-import java.util.Random;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsAutomatic extends TornadoTestBase {
 
+    public static void test(int[] input, @Reduce int[] output) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            int value = (input[i] + 10);
+            output[0] += value;
+        }
+    }
+
     @Test
     public void testIrregularSize01() {
 
-        int numProcessors = Runtime.getRuntime().availableProcessors();
-        final int size = 8192;
-
+        final int size = 20;
         int[] input = new int[size];
-        int partitions = size / 128;
-        int[] result = new int[partitions];
+        int[] result = new int[] { 0 };
 
-        final int neutral = 0;
-        Arrays.fill(result, neutral);
-
-        Random r = new Random();
         IntStream.range(0, size).parallel().forEach(i -> {
-            // input[i] = r.nextInt(100);
             input[i] = 2;
         });
 
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsIntegers::reductionAnnotation, input, result)
+            .task("t0", TestReductionsAutomatic::test, input, result)
             .streamOut(result)
             .execute();
         //@formatter:on
 
-        System.out.println(Arrays.toString(result));
+        System.out.println("FINAL RESULT: " + Arrays.toString(result));
 
         int[] sequential = new int[1];
-        TestReductionsIntegers.reductionAnnotation(input, sequential);
-
-        // Final result
-        for (int i = 1; i < result.length; i++) {
-            result[0] += result[i];
-        }
+        TestReductionsAutomatic.test(input, sequential);
 
         // Check result
         assertEquals(sequential[0], result[0]);
