@@ -85,7 +85,7 @@ public class OpenCLIntrinsics {
 
     }
 
-    public static void createLocalMemory(int[] array, int size) {
+    public static void createLocalMemory(int size) {
 
     }
 

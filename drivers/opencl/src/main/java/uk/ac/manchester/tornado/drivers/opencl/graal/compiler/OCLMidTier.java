@@ -87,6 +87,9 @@ public class OCLMidTier extends TornadoMidTier {
         appendPhase(canonicalizer);
         // }
 
+        // if(Tornado.LocalMemAlloc) {}
+        // appendPhase(new TornadoLocalMemAllocation());
+
         // TODO disable as it introduces loop limit checks
         // appendPhase(new IncrementalCanonicalizerPhase<>(canonicalizer, new
         // LoopSafepointEliminationPhase()));

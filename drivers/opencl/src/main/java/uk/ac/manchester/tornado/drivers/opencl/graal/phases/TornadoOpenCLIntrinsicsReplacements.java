@@ -31,17 +31,12 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.phases.BasePhase;
 
-import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryTemplate;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GroupIdNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayAlloc;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIDFixedNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.NewLocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OpenCLPrintf;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
@@ -87,12 +82,17 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
                 GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(dimension));
                 graph.replaceFixed(invoke, groupIdNode);
             } else if (methodName.equals("Direct#OpenCLIntrinsics.createLocalMemory")) {
-                NodeInputList<ValueNode> arguments = invoke.callTarget().arguments();
-                FixedArrayNode array = (FixedArrayNode) arguments.get(0);
-                ConstantNode size = getConstantNodeFromArguments(invoke, 1);
-                array.setLocalType(OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY);
-                NewLocalArrayNode newLocalArrayNode = graph.addOrUnique(new NewLocalArrayNode(size, JavaKind.Int, OCLArchitecture.lp, OCLKind.INT, array));
-                graph.replaceFixed(invoke, newLocalArrayNode);
+                // NodeInputList<ValueNode> arguments = invoke.callTarget().arguments();
+                // FixedArrayNode array = (FixedArrayNode) arguments.get(0);
+                System.out.println("HERE");
+                /// ConstantNode size = getConstantNodeFromArguments(invoke, 1);
+                // array.setLocalType(OCLBinaryTemplate.NEW_LOCAL_FLOAT_ARRAY);
+                // NewLocalArrayNode newLocalArrayNode = graph.addOrUnique(new
+                /// NewLocalArrayNode(size, JavaKind.Float, OCLKind.FLOAT, array));
+                LocalArrayAlloc locAlloc = graph.addOrUnique(new LocalArrayAlloc(1024));
+                // OpenCLPrintf printfNode = graph.addOrUnique(new OpenCLPrintf("\"\""));
+                // graph.replaceFixed(invoke, printfNode);
+                graph.replaceFixed(invoke, locAlloc);
             } else if (methodName.equals("Direct#OpenCLIntrinsics.printEmpty")) {
                 OpenCLPrintf printfNode = graph.addOrUnique(new OpenCLPrintf("\"\""));
                 graph.replaceFixed(invoke, printfNode);

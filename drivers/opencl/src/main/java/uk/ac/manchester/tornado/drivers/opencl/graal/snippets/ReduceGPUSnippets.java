@@ -72,7 +72,7 @@ public class ReduceGPUSnippets implements Snippets {
 
         // Allocate a chunk of data in local memory
         int[] localMemory = new int[sizeLocalMemory];
-        OpenCLIntrinsics.createLocalMemory(localMemory, sizeLocalMemory);
+        // OpenCLIntrinsics.createLocalMemory(localMemory, sizeLocalMemory);
 
         // Copy input data to local memory
         localMemory[localIdx] = inputArray[gidx];
@@ -199,7 +199,16 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
+        // float[] temp;
+        // float[] temp = new float[65536];
+
+        OpenCLIntrinsics.createLocalMemory(1024);
+
+        // temp = inputArray;
+
         int myID = localIdx + (localGroupSize * groupID);
+
+        // temp[myID] = inputArray[myID];
 
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
@@ -565,7 +574,7 @@ public class ReduceGPUSnippets implements Snippets {
 
         int sizeLocalMemory = 512;
         int[] localMemory = new int[sizeLocalMemory];
-        OpenCLIntrinsics.createLocalMemory(localMemory, sizeLocalMemory);
+        // OpenCLIntrinsics.createLocalMemory(localMemory, sizeLocalMemory);
         localMemory[localIdx] = inputArray[myID];
 
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
@@ -594,8 +603,10 @@ public class ReduceGPUSnippets implements Snippets {
 
     public static class Templates extends AbstractTemplates implements TornadoSnippetTypeInference {
 
-        @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippet = snippet(ReduceGPUSnippets.class, "reduceIntAdd");
-        @SuppressWarnings("unused") private final SnippetInfo fullReduceIntSnippetGlobal = snippet(ReduceGPUSnippets.class, "fullReduceIntAddGlobalMemory");
+        @SuppressWarnings("unused")
+        private final SnippetInfo reduceIntSnippet = snippet(ReduceGPUSnippets.class, "reduceIntAdd");
+        @SuppressWarnings("unused")
+        private final SnippetInfo fullReduceIntSnippetGlobal = snippet(ReduceGPUSnippets.class, "fullReduceIntAddGlobalMemory");
 
         // Add
         private final SnippetInfo partialReduceIntSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceIntAddGlobal");
@@ -623,7 +634,8 @@ public class ReduceGPUSnippets implements Snippets {
         private final SnippetInfo partialReduceMinFloatSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceFloatMinGlobal");
         private final SnippetInfo partialReduceMinDoubleSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceDoubleMinGlobal");
 
-        @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippetLocalMemory = snippet(ReduceGPUSnippets.class, "reduceIntAddLocalMemory");
+        @SuppressWarnings("unused")
+        private final SnippetInfo reduceIntSnippetLocalMemory = snippet(ReduceGPUSnippets.class, "reduceIntAddLocalMemory");
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);

@@ -238,7 +238,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLUnaryIntrinsic SIN = new OCLUnaryIntrinsic("sin");
         public static final OCLUnaryIntrinsic COS = new OCLUnaryIntrinsic("cos");
         
-        public static final OCLUnaryIntrinsic LOCAL_MEMORY = new OCLUnaryIntrinsic("local");
+        public static final OCLUnaryIntrinsic LOCAL_MEMORY = new OCLUnaryIntrinsic("__local");
 
         public static final OCLUnaryIntrinsic POPCOUNT = new OCLUnaryIntrinsic("popcount");
 
@@ -458,6 +458,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLBinaryTemplate NEW_ARRAY = new OCLBinaryTemplate("new array", "char %s[%s]");
         public static final OCLBinaryTemplate NEW_LOCAL_INT_ARRAY = new OCLBinaryTemplate("local memory array", "ulong %s = (__local ulong) &_local_region[0]; //__local int %s ");
 
+        public static final OCLBinaryTemplate NEW_LOCAL_FLOAT_ARRAY = new OCLBinaryTemplate("local memory array float", "__local float localVar2[%s]; ");
         // @formatter:on
         private final String template;
 

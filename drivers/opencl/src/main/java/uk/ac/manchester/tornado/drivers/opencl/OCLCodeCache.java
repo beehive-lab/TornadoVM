@@ -70,7 +70,7 @@ public class OCLCodeCache {
     private final boolean OPENCL_LOAD_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.loadbin", FALSE));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", FALSE));
     private final boolean OPENCL_DUMP_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.dump", FALSE));
-    private final boolean OPENCL_PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.print", FALSE));
+    private final boolean OPENCL_PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.print", "true"));
     private final boolean PRINT_LOAD_TIME = false;
     private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "/var/opencl-codecache");
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
@@ -258,7 +258,6 @@ public class OCLCodeCache {
                 RuntimeUtilities.writeStreamToFile(file, source, true);
             }
         }
-
     }
 
     public String[] composeIntelHLSCommand(String inputFile, String outputFile) {
@@ -284,7 +283,6 @@ public class OCLCodeCache {
                                                          // currently have
         }
         bufferCommand.add("-o " + outputFile);
-
         return bufferCommand.toString().split(" ");
     }
 

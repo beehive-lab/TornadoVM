@@ -119,5 +119,9 @@ public class OCLHighTier extends TornadoHighTier {
         // that contains method calls to barriers.
         appendPhase(new TornadoOpenCLIntrinsicsReplacements());
         appendPhase(new ExceptionSuppression());
+
+        // if(Tornado.LocalMemAlloc) {}
+        // appendPhase(new TornadoLocalMemAllocation());
+
     }
 }

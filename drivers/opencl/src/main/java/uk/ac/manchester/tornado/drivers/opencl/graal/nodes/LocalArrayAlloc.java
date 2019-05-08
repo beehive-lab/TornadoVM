@@ -1,7 +1,9 @@
 /*
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * This file is part of Tornado: A heterogeneous programming framework: 
+ * https://github.com/beehive-lab/tornado
+ *
+ * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,41 +28,29 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.memory.MemoryNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.JavaKind;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 
 @NodeInfo
-public class NewLocalArrayNode extends FixedWithNextNode implements LIRLowerable {
+public class LocalArrayAlloc extends FixedWithNextNode implements LIRLowerable, MemoryNode {
 
-    public static final NodeClass<NewLocalArrayNode> TYPE = NodeClass.create(NewLocalArrayNode.class);
+    public static final NodeClass<LocalArrayAlloc> TYPE = NodeClass.create(LocalArrayAlloc.class);
 
-    @Input
-    protected ConstantNode size;
-    @Input
-    protected FixedArrayNode array;
+    private int size;
 
-    public NewLocalArrayNode(ConstantNode size, JavaKind kind, OCLKind oclKind, FixedArrayNode array) {
-        super(TYPE, StampFactory.forKind(kind));
+    public LocalArrayAlloc(Integer value) {
+        super(TYPE, StampFactory.forKind(JavaKind.Float));
         this.size = size;
-        this.array = array;
-    }
-
-    public ConstantNode getSize() {
-        return this.size;
-    }
-
-    public FixedArrayNode getArray() {
-        return this.array;
     }
 
     @Override
-    public void generate(NodeLIRBuilderTool gen) {
-        gen.getLIRGeneratorTool().append(new OCLLIRStmt.LocalAllocExpr(new OCLLocalMemAlloc(512)));
+    public void generate(NodeLIRBuilderTool nodeLIRBuilderTool) {
+        nodeLIRBuilderTool.getLIRGeneratorTool().append(new OCLLIRStmt.LocalAllocExpr(new OCLLocalMemAlloc(size)));
     }
+
 }
