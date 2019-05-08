@@ -38,6 +38,13 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         }
     }
 
+    public static void testConstant(int[] input, @Reduce int[] output) {
+        for (@Parallel int i = 0; i < 20; i++) {
+            int value = (input[i] + 10);
+            output[0] += value;
+        }
+    }
+
     @Test
     public void testIrregularSize01() {
 
