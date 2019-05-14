@@ -247,14 +247,13 @@ class ReduceTaskSchedule {
      * either the GPU or the FPGA.
      * 
      * @param targetDeviceToRun
+     *            index of the target device within the Tornado device list.
      * @return boolean
      */
     private boolean isTaskElegibleSplitHostAndDevice(final int targetDeviceToRun) {
         if (elementsReductionLeftOver > 0) {
             TornadoDeviceType deviceType = getTornadoRuntime().getDriver(0).getDevice(targetDeviceToRun).getDeviceType();
-            if (deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.FPGA) {
-                return true;
-            }
+            return deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.FPGA;
         }
         return false;
     }
@@ -406,8 +405,7 @@ class ReduceTaskSchedule {
             for (Thread t : threadSequentialCompilation) {
                 try {
                     t.join();
-                } catch (InterruptedException ie) {
-
+                } catch (InterruptedException ignored) {
                 }
             }
         }
