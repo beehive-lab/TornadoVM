@@ -89,6 +89,7 @@ class ReduceTaskSchedule {
     private static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
     static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce-seq";
 
+    private static final int DEFAULT_GPU_WORK_GROUP = 256;
     private String idTaskSchedule;
     private ArrayList<TaskPackage> taskPackages;
     private ArrayList<Object> streamOutObjects;
@@ -442,7 +443,7 @@ class ReduceTaskSchedule {
                 return Runtime.getRuntime().availableProcessors() + 1;
             case GPU:
             case ACCELERATOR:
-                return inputSize > 256 ? inputSize / 256 : 1;
+                return inputSize > DEFAULT_GPU_WORK_GROUP ? inputSize / DEFAULT_GPU_WORK_GROUP : 1;
             default:
                 break;
         }
