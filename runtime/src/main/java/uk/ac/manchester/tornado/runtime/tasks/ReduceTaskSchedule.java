@@ -138,44 +138,29 @@ class ReduceTaskSchedule {
     }
 
     private static InstalledCode compileAndInstallMethod(StructuredGraph graph) {
-
         ResolvedJavaMethod method = graph.method();
         GraalJVMCICompiler graalCompiler = (GraalJVMCICompiler) JVMCI.getRuntime().getCompiler();
         RuntimeProvider capability = graalCompiler.getGraalRuntime().getCapability(RuntimeProvider.class);
         Backend backend = capability.getHostBackend();
         Providers providers = backend.getProviders();
-
         CompilationIdentifier compilationID = backend.getCompilationIdentifier(method);
-
         EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
         opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
         OptionValues options = new OptionValues(opts);
 
         try (Scope s = Debug.scope("compileMethodAndInstall", new DebugDumpScope(String.valueOf(compilationID), true))) {
-
-            // StructuredGraph graph = new StructuredGraph.Builder(options,
-            // AllowAssumptions.YES).method(method).compilationId(compilationID).build();
-
             PhaseSuite<HighTierContext> graphBuilderPhase = backend.getSuites().getDefaultGraphBuilderSuite();
-
             Suites suites = backend.getSuites().getDefaultSuites(options);
-
             LIRSuites lirSuites = backend.getSuites().getDefaultLIRSuites(options);
-
             OptimisticOptimizations optimizationsOpts = OptimisticOptimizations.ALL;
             ProfilingInfo profilerInfo = graph.getProfilingInfo(method);
-
             CompilationResult compilationResult = new CompilationResult();
             CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
-
             GraalCompiler.compileGraph(graph, method, providers, backend, graphBuilderPhase, optimizationsOpts, profilerInfo, suites, lirSuites, compilationResult, factory);
-
             return backend.addInstalledCode(method, asCompilationRequest(compilationID), compilationResult);
-
         } catch (Throwable e) {
             throw Debug.handle(e);
         }
-
     }
 
     private void compileAndRunNewMethod(StructuredGraph graph, TaskPackage taskPackage) {
@@ -192,28 +177,65 @@ class ReduceTaskSchedule {
         graphBuilderSuite.apply(graph, new HighTierContext(providers, graphBuilderSuite, OptimisticOptimizations.ALL));
 
         Suites suites = backend.getSuites().getDefaultSuites(options);
-
         LIRSuites lirSuites = backend.getSuites().getDefaultLIRSuites(options);
-
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = graph.getProfilingInfo(resolvedJavaMethod);
-
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
-
         CompilationResult r = new CompilationResult(graph.name);
         CompilationRequest request = new CompilationRequest(resolvedJavaMethod);
-
         CompilationResult compileGraph = GraalCompiler.compileGraph(graph, resolvedJavaMethod, providers, backend, graphBuilderSuite, optimisticOpts, profilingInfo, suites, lirSuites, r, factory);
-
-        // Playing write the Graph
-        for (Node node : graph.getNodes()) {
-            System.out.println(node);
-        }
 
         InstalledCode addInstalledCode = backend.addInstalledCode(resolvedJavaMethod, request, compileGraph);
 
         try {
             addInstalledCode.executeVarargs(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2]);
+        } catch (InvalidInstalledCodeException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void performLoopBoundNodeSubstitution(StructuredGraph graph, int lowValue) {
+        for (Node n : graph.getNodes()) {
+            if (n instanceof LoopBeginNode) {
+                LoopBeginNode beginNode = (LoopBeginNode) n;
+                FixedNode node = beginNode.next();
+                while (!(node instanceof IfNode)) {
+                    node = (FixedNode) node.successors().first();
+                }
+
+                IfNode ifNode = (IfNode) node;
+                LogicNode condition = ifNode.condition();
+                if (condition instanceof IntegerLessThanNode) {
+                    IntegerLessThanNode integer = (IntegerLessThanNode) condition;
+                    ValueNode x = integer.getX();
+                    final ConstantNode low = graph.addOrUnique(ConstantNode.forInt(lowValue));
+                    if (x instanceof PhiNode) {
+                        // Node substitution
+                        PhiNode phi = (PhiNode) x;
+                        if (phi.valueAt(0) instanceof ConstantNode) {
+                            phi.setValueAt(0, low);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void runBinaryCodeForReduction(TaskPackage taskPackage, InstalledCode code) {
+        try {
+            // Execute the generated binary with Graal with
+            // the host loop-bound
+
+            // 1. Set args
+            int numArgs = taskPackage.getTaskParameters().length - 1;
+            Object[] args = new Object[numArgs];
+            for (int i = 0; i < numArgs; i++) {
+                args[i] = taskPackage.getTaskParameters()[i + 1];
+            }
+
+            // 2. Run the binary
+            code.executeVarargs(args);
+
             System.out.println("RESULT!!!!!!!!!!> " + Arrays.toString((int[]) taskPackage.getTaskParameters()[2]));
         } catch (InvalidInstalledCodeException e) {
             e.printStackTrace();
@@ -242,7 +264,7 @@ class ReduceTaskSchedule {
         // streamOut
         for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
 
-            ArrayList<Integer> listOfReduceParameters;
+            ArrayList<Integer> listOfReduceIndexParameters;
             MetaReduceTasks metaReduceTasks;
             TaskPackage taskPackage = taskPackages.get(taskNumber);
 
@@ -251,9 +273,9 @@ class ReduceTaskSchedule {
             if (tableReduce.containsKey(taskNumber)) {
 
                 metaReduceTasks = tableReduce.get(taskNumber);
-                listOfReduceParameters = metaReduceTasks.getListOfReduceParameters(taskNumber);
+                listOfReduceIndexParameters = metaReduceTasks.getListOfReduceParameters(taskNumber);
 
-                for (Integer paramIndex : listOfReduceParameters) {
+                for (Integer paramIndex : listOfReduceIndexParameters) {
 
                     Object originalReduceVariable = taskPackage.getTaskParameters()[paramIndex + 1];
                     Object codeTask = taskPackage.getTaskParameters()[0];
@@ -261,65 +283,41 @@ class ReduceTaskSchedule {
 
                     // Analyse Input Size
                     if (!isPowerOfTwo(inputSize)) {
-                        long logValue = (long) Math.log(inputSize);
-                        long pow = (long) Math.pow(2, Math.round(logValue));
-                        inputSize -= pow;
-                        elementsReductionLeftOver = pow;
+                        elementsReductionLeftOver = (long) (inputSize - Math.pow(2, Math.floor(Math.sqrt(inputSize))));
+                        inputSize -= elementsReductionLeftOver;
+                        System.out.println("Remaining elements: " + elementsReductionLeftOver);
+                        System.out.println("INPUT SIZE: " + inputSize);
                     }
 
-                    int sizeReduceArray = obtainSizeArrayResult(deviceToRun, inputSize);
+                    int sizeReductionArray = obtainSizeArrayResult(deviceToRun, inputSize);
 
-                    // XXX: Hack as a proof of concept. TODO -> Generalize this
+                    // XXX: Hack as a proof of concept. TODO -> Generalise this
                     // solution
                     if (elementsReductionLeftOver > 0) {
-                        System.out.println("LEFT OVER: " + elementsReductionLeftOver);
                         TornadoDeviceType deviceType = getTornadoRuntime().getDriver(0).getDevice(deviceToRun).getDeviceType();
+
                         if (deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.FPGA) {
                             reduceLeftOver = true;
 
-                            // Play with the Graal-IR
-                            StructuredGraph graph = CodeAnalysis.buildHighLevelGraalGraph(codeTask);
-                            for (Node n : graph.getNodes()) {
-                                if (n instanceof LoopBeginNode) {
-                                    LoopBeginNode beginNode = (LoopBeginNode) n;
-                                    FixedNode node = beginNode.next();
-                                    while (!(node instanceof IfNode)) {
-                                        node = (FixedNode) node.successors().first();
-                                    }
-
-                                    IfNode ifNode = (IfNode) node;
-                                    LogicNode condition = ifNode.condition();
-                                    if (condition instanceof IntegerLessThanNode) {
-                                        IntegerLessThanNode integer = (IntegerLessThanNode) condition;
-                                        ValueNode x = integer.getX();
-                                        final ConstantNode low = graph.addOrUnique(ConstantNode.forInt(16));
-                                        if (x instanceof PhiNode) {
-                                            PhiNode phi = (PhiNode) x;
-                                            if (phi.valueAt(0) instanceof ConstantNode) {
-                                                phi.setValueAt(0, low);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
+                            // Perform IR-loop bounds substitution with the
+                            // host-range
+                            StructuredGraph originalGraph = CodeAnalysis.buildHighLevelGraalGraph(codeTask);
+                            // We make a copy of the graph to not alter the
+                            // original one
+                            StructuredGraph graph = (StructuredGraph) originalGraph.copy();
+                            performLoopBoundNodeSubstitution(graph, inputSize);
                             InstalledCode code = compileAndInstallMethod(graph);
-                            try {
-                                code.executeVarargs(taskPackage.getTaskParameters()[1], taskPackage.getTaskParameters()[2]);
-                                System.out.println("RESULT!!!!!!!!!!> " + Arrays.toString((int[]) taskPackage.getTaskParameters()[2]));
-                            } catch (InvalidInstalledCodeException e) {
-                                e.printStackTrace();
-                            }
+                            runBinaryCodeForReduction(taskPackage, code);
                         }
                     }
 
                     // Set the new array size
-                    Object newArray = createNewReduceArray(originalReduceVariable, sizeReduceArray);
+                    Object newArray = createNewReduceArray(originalReduceVariable, sizeReductionArray);
                     taskPackage.getTaskParameters()[paramIndex + 1] = newArray;
 
                     // Store metadata
                     streamReduceUpdatedList.add(newArray);
-                    sizesReductionArray.add(sizeReduceArray);
+                    sizesReductionArray.add(sizeReductionArray);
                     originalReduceVariables.put(originalReduceVariable, newArray);
                 }
             }
