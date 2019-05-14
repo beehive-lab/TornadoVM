@@ -94,7 +94,6 @@ class ReduceTaskSchedule {
     private ArrayList<Object> streamOutObjects;
     private ArrayList<Object> streamInObjects;
     private HashMap<Object, Object> originalReduceVariables;
-    private boolean reduceLeftOver = false;
     private long elementsReductionLeftOver = 0;
 
     ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects) {
@@ -243,6 +242,23 @@ class ReduceTaskSchedule {
         }
     }
 
+    /**
+     * Returns true if the input size is not power of 2 and the target device is
+     * either the GPU or the FPGA.
+     * 
+     * @param targetDeviceToRun
+     * @return boolean
+     */
+    private boolean isTaskElegibleSplitHostAndDevice(final int targetDeviceToRun) {
+        if (elementsReductionLeftOver > 0) {
+            TornadoDeviceType deviceType = getTornadoRuntime().getDriver(0).getDevice(targetDeviceToRun).getDeviceType();
+            if (deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.FPGA) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     TaskSchedule scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
 
         assert metaReduceTable != null;
@@ -261,7 +277,7 @@ class ReduceTaskSchedule {
 
         int deviceToRun = 0;
 
-        Thread threadSequentialAnalysis = null;
+        ArrayList<Thread> threadSequentialCompilation = new ArrayList<>();
 
         // Create new buffer variables and update the corresponding streamIn and
         // streamOut
@@ -296,30 +312,20 @@ class ReduceTaskSchedule {
 
                     int sizeReductionArray = obtainSizeArrayResult(deviceToRun, inputSize);
 
-                    threadSequentialAnalysis = new Thread(() -> {
-                        // XXX: Hack as a proof of concept. TODO -> Generalise
-                        // this
-                        // solution
-                        if (elementsReductionLeftOver > 0) {
-                            TornadoDeviceType deviceType = getTornadoRuntime().getDriver(0).getDevice(targetDeviceToRun).getDeviceType();
-                            if (deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.FPGA) {
-                                reduceLeftOver = true;
-
-                                // Perform IR-loop bounds substitution with the
-                                // host-range
-                                StructuredGraph originalGraph = CodeAnalysis.buildHighLevelGraalGraph(codeTask);
-                                // We make a copy of the graph to not alter the
-                                // original one
-                                StructuredGraph graph = (StructuredGraph) originalGraph.copy();
-                                performLoopBoundNodeSubstitution(graph, sizeTargetDevice);
-                                InstalledCode code = compileAndInstallMethod(graph);
-                                runBinaryCodeForReduction(taskPackage, code);
-
-                                System.out.println("From THREAD RESULT!!!!!!!!!!> " + Arrays.toString((int[]) taskPackage.getTaskParameters()[2]));
-                            }
-                        }
-
-                    });
+                    if (isTaskElegibleSplitHostAndDevice(targetDeviceToRun)) {
+                        threadSequentialCompilation.add(new Thread(() -> {
+                            // Perform IR-loop bounds substitution with the
+                            // host-range
+                            StructuredGraph originalGraph = CodeAnalysis.buildHighLevelGraalGraph(codeTask);
+                            // We make a copy of the graph to not alter the
+                            // original one
+                            StructuredGraph graph = (StructuredGraph) originalGraph.copy();
+                            performLoopBoundNodeSubstitution(graph, sizeTargetDevice);
+                            InstalledCode code = compileAndInstallMethod(graph);
+                            runBinaryCodeForReduction(taskPackage, code);
+                            System.out.println("From THREAD RESULT!!!!!!!!!!> " + Arrays.toString((int[]) taskPackage.getTaskParameters()[2]));
+                        }));
+                    }
 
                     // Set the new array size
                     Object newArray = createNewReduceArray(originalReduceVariable, sizeReductionArray);
@@ -393,18 +399,20 @@ class ReduceTaskSchedule {
         TornadoTaskSchedule.performStreamOutThreads(rewrittenTaskSchedule, streamOutObjects);
         rewrittenTaskSchedule.execute();
 
-        if (threadSequentialAnalysis != null) {
-            threadSequentialAnalysis.start();
-            try {
-                threadSequentialAnalysis.join();
-            } catch (InterruptedException ie) {
-
+        if (!threadSequentialCompilation.isEmpty()) {
+            for (Thread t : threadSequentialCompilation) {
+                t.start();
             }
+            for (Thread t : threadSequentialCompilation) {
+                try {
+                    t.join();
+                } catch (InterruptedException ie) {
 
+                }
+            }
         }
 
         updateOutputArray();
-
         return rewrittenTaskSchedule;
     }
 
