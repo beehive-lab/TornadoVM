@@ -27,7 +27,6 @@ import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
@@ -41,7 +40,6 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 import uk.ac.manchester.tornado.drivers.opencl.builtins.OpenCLIntrinsics;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
@@ -159,7 +157,19 @@ public class ReduceGPUSnippets implements Snippets {
 
         int myID = localIdx + (localGroupSize * groupID);
 
-        for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
+        int floorPow2 = localGroupSize;
+
+        // if ((floorPow2 & (floorPow2 - 1)) != 0) {
+        // while ((floorPow2 & (floorPow2 - 1)) != 0) {
+        // floorPow2 &= floorPow2 - 1;
+        // }
+        // OpenCLIntrinsics.localBarrier();
+        // if (myID >= floorPow2) {
+        // inputArray[myID - floorPow2] += inputArray[myID];
+        // }
+        // }
+
+        for (int stride = (floorPow2 / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
                 inputArray[myID] += inputArray[myID + stride];

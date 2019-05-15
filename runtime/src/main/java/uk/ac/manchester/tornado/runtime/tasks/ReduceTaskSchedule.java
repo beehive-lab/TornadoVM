@@ -148,6 +148,10 @@ class ReduceTaskSchedule {
         opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
         OptionValues options = new OptionValues(opts);
 
+        for (Node n : graph.getNodes()) {
+            System.out.println(n);
+        }
+
         try (Scope s = Debug.scope("compileMethodAndInstall", new DebugDumpScope(String.valueOf(compilationID), true))) {
             PhaseSuite<HighTierContext> graphBuilderPhase = backend.getSuites().getDefaultGraphBuilderSuite();
             Suites suites = backend.getSuites().getDefaultSuites(options);
@@ -290,9 +294,11 @@ class ReduceTaskSchedule {
                             performLoopBoundNodeSubstitution(graph, sizeTargetDevice);
                             InstalledCode code = compileAndInstallMethod(graph);
                             runBinaryCodeForReduction(taskPackage, code);
-                            // System.out.println("From THREAD RESULT!!!!!!!!!!>
-                            // " + Arrays.toString((int[])
-                            // taskPackage.getTaskParameters()[2]));
+                            if (taskPackage.getTaskParameters()[2] instanceof int[]) {
+                                System.out.println("From THREAD RESULT!!!!!!!!!!> " + Arrays.toString((int[]) taskPackage.getTaskParameters()[2]));
+                            } else if (taskPackage.getTaskParameters()[2] instanceof float[]) {
+                                System.out.println("From THREAD RESULT!!!!!!!!!!> " + Arrays.toString((float[]) taskPackage.getTaskParameters()[2]));
+                            }
                         }));
                     }
 
@@ -304,6 +310,19 @@ class ReduceTaskSchedule {
                     streamReduceUpdatedList.add(newArray);
                     sizesReductionArray.add(sizeReductionArray);
                     originalReduceVariables.put(originalReduceVariable, newArray);
+                }
+            }
+        }
+
+        if (!threadSequentialCompilation.isEmpty()) {
+            for (Thread t : threadSequentialCompilation) {
+                t.start();
+            }
+            for (Thread t : threadSequentialCompilation) {
+                try {
+                    t.join();
+                } catch (InterruptedException ie) {
+                    ie.printStackTrace();
                 }
             }
         }
@@ -367,20 +386,6 @@ class ReduceTaskSchedule {
 
         TornadoTaskSchedule.performStreamOutThreads(rewrittenTaskSchedule, streamOutObjects);
         rewrittenTaskSchedule.execute();
-
-        if (!threadSequentialCompilation.isEmpty()) {
-            for (Thread t : threadSequentialCompilation) {
-                t.start();
-            }
-            for (Thread t : threadSequentialCompilation) {
-                try {
-                    t.join();
-                } catch (InterruptedException ie) {
-                    ie.printStackTrace();
-                }
-            }
-        }
-
         updateOutputArray();
         return rewrittenTaskSchedule;
     }
@@ -392,9 +397,13 @@ class ReduceTaskSchedule {
             Object newArray = pair.getValue();
             switch (newArray.getClass().getTypeName()) {
                 case "int[]":
+
+                    System.out.println("TARGET RESULT " + Arrays.toString((int[]) newArray));
+
                     ((int[]) reduceVariable)[0] = ((int[]) newArray)[0];
                     break;
                 case "float[]":
+                    System.out.println("TARGET RESULT > " + Arrays.toString((float[]) newArray));
                     ((float[]) reduceVariable)[0] = ((float[]) newArray)[0];
                     break;
                 case "double[]":

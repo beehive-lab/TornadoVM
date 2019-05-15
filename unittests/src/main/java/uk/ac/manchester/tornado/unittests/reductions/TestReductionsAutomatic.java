@@ -34,8 +34,7 @@ public class TestReductionsAutomatic extends TornadoTestBase {
 
     public static void test(int[] input, @Reduce int[] output) {
         for (@Parallel int i = 0; i < input.length; i++) {
-            int value = (input[i] + 10);
-            output[0] += value;
+            output[0] += input[i];
         }
     }
 
@@ -55,13 +54,15 @@ public class TestReductionsAutomatic extends TornadoTestBase {
     @Test
     public void testIrregularSize01() {
 
-        final int size = 20;
+        final int size = 18;
         int[] input = new int[size];
         int[] result = new int[] { 0 };
 
         IntStream.range(0, size).parallel().forEach(i -> {
-            input[i] = 2;
+            input[i] = i;
         });
+
+        System.out.println(Arrays.toString(input));
 
         //@formatter:off
         new TaskSchedule("s0")
@@ -83,13 +84,13 @@ public class TestReductionsAutomatic extends TornadoTestBase {
     @Test
     public void testIrregularSize02() {
 
-        final int size = 20;
+        final int size = 18;
         float[] input = new float[size];
         float[] result = new float[] { 0.0f };
 
         Random r = new Random();
         IntStream.range(0, size).parallel().forEach(i -> {
-            input[i] = r.nextFloat();
+            input[i] = i;
         });
 
         //@formatter:off
