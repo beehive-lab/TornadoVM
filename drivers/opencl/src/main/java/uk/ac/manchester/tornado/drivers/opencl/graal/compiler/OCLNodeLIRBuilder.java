@@ -344,8 +344,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_NE, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
         } else if (node instanceof IntegerTestNode) {
             final IntegerTestNode testNode = (IntegerTestNode) node;
-            final Value x = operandOrConjunction(testNode.getX());
-            final Value y = operandOrConjunction(testNode.getY());
+            final Value x = operand(testNode.getX());
+            final Value y = operand(testNode.getY());
             result = getGen().getArithmetic().genTestNegateBinaryExpr(OCLBinaryOp.BITWISE_AND, boolLirKind, x, y);
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
@@ -416,8 +416,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_OR, boolLirKind, x, y);
         } else if (node instanceof IntegerTestNode) {
             final IntegerTestNode testNode = (IntegerTestNode) node;
-            final Value x = operandOrConjunction(testNode.getX());
-            final Value y = operandOrConjunction(testNode.getY());
+            final Value x = operand(testNode.getX());
+            final Value y = operand(testNode.getY());
             result = getGen().getArithmetic().genTestBinaryExpr(OCLBinaryOp.BITWISE_AND, boolLirKind, x, y);
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
@@ -489,23 +489,18 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         }
     }
 
-    private void emitLoopBegin(final LoopBeginNode node) {
+    private void emitLoopBegin(final LoopBeginNode loopBeginNode) {
 
-        trace("emitLoopBegin");
+        trace("visiting emitLoopBegin %s", loopBeginNode);
 
         final Block block = (Block) gen.getCurrentBlock();
-
         final Block currentBlockDominator = block.getDominator();
-
         final LIR lir = getGen().getResult().getLIR();
-
         final LabelOp label = (LabelOp) lir.getLIRforBlock(block).get(0);
 
-        List<ValuePhiNode> valuePhis = node.valuePhis().snapshot();
-
+        List<ValuePhiNode> valuePhis = loopBeginNode.valuePhis().snapshot();
         for (ValuePhiNode phi : valuePhis) {
             final Value value = operand(phi.firstValue());
-
             if (phi.singleBackValueOrThis() == phi && value instanceof Variable) {
                 /*
                  * preserve loop-carried dependencies outside of loops
@@ -525,7 +520,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     public void visitLoopEnd(final LoopEndNode loopEnd) {
-        trace("visitLoopEnd: %s", loopEnd);
+        trace("visiting LoopEndNode: %s", loopEnd);
 
         final LoopBeginNode loopBegin = loopEnd.loopBegin();
         final List<ValuePhiNode> phis = loopBegin.valuePhis().snapshot();

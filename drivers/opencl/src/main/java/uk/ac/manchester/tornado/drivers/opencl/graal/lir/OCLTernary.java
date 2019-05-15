@@ -25,8 +25,8 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BRACKET_CLOSE;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BRACKET_OPEN;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CLOSE_PARENTHESIS;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.OPEN_PARENTHESIS;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.LIRInstruction.Use;
@@ -89,9 +89,9 @@ public class OCLTernary {
 
         @Override
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            asm.emit(BRACKET_OPEN);
+            asm.emit(OPEN_PARENTHESIS);
             condition.emit(crb, asm);
-            asm.emit(BRACKET_CLOSE);
+            asm.emit(CLOSE_PARENTHESIS);
             asm.emit(" ? ");
             asm.emitValue(crb, y);
             asm.emit(" : ");
