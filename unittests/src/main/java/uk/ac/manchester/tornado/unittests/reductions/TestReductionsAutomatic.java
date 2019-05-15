@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.unittests.reductions;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
+import java.util.Random;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
@@ -35,6 +36,12 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         for (@Parallel int i = 0; i < input.length; i++) {
             int value = (input[i] + 10);
             output[0] += value;
+        }
+    }
+
+    public static void testFloat(float[] input, @Reduce float[] output) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            output[0] += input[i];
         }
     }
 
@@ -71,6 +78,35 @@ public class TestReductionsAutomatic extends TornadoTestBase {
 
         // Check result
         assertEquals(sequential[0], result[0]);
+    }
+
+    @Test
+    public void testIrregularSize02() {
+
+        final int size = 20;
+        float[] input = new float[size];
+        float[] result = new float[] { 0.0f };
+
+        Random r = new Random();
+        IntStream.range(0, size).parallel().forEach(i -> {
+            input[i] = r.nextFloat();
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t0", TestReductionsAutomatic::testFloat, input, result)
+            .streamOut(result)
+            .execute();
+        //@formatter:on
+
+        System.out.println("FINAL RESULT: " + Arrays.toString(result));
+
+        float[] sequential = new float[1];
+        TestReductionsAutomatic.testFloat(input, sequential);
+
+        // Check result
+        assertEquals(sequential[0], result[0], 0.01f);
     }
 
 }

@@ -28,6 +28,9 @@ import java.lang.reflect.Method;
 import org.graalvm.compiler.api.runtime.GraalJVMCICompiler;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.target.Backend;
+import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugDumpScope;
+import org.graalvm.compiler.debug.Debug.Scope;
 import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
 import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -67,14 +70,21 @@ public class CodeAnalysis {
         MetaAccessProvider metaAccess = providers.getMetaAccess();
         ResolvedJavaMethod resolvedJavaMethod = metaAccess.lookupJavaMethod(methodToCompile);
         CompilationIdentifier compilationIdentifier = backend.getCompilationIdentifier(resolvedJavaMethod);
-        EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
-        opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
-        OptionValues options = new OptionValues(opts);
-        StructuredGraph graph = new StructuredGraph.Builder(options, AllowAssumptions.YES).method(resolvedJavaMethod).compilationId(compilationIdentifier).build();
-        PhaseSuite<HighTierContext> graphBuilderSuite = new PhaseSuite<>();
-        graphBuilderSuite.appendPhase(new GraphBuilderPhase(GraphBuilderConfiguration.getDefault(new Plugins(new InvocationPlugins()))));
-        graphBuilderSuite.apply(graph, new HighTierContext(providers, graphBuilderSuite, OptimisticOptimizations.ALL));
-        return graph;
+
+        try (Scope s = Debug.scope("compileMethodAndInstall", new DebugDumpScope("TornadoVM-Code-Analysis", true))) {
+            EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
+            opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
+            OptionValues options = new OptionValues(opts);
+            StructuredGraph graph = new StructuredGraph.Builder(options, AllowAssumptions.YES).method(resolvedJavaMethod).compilationId(compilationIdentifier).build();
+            PhaseSuite<HighTierContext> graphBuilderSuite = new PhaseSuite<>();
+            graphBuilderSuite.appendPhase(new GraphBuilderPhase(GraphBuilderConfiguration.getDefault(new Plugins(new InvocationPlugins()))));
+            graphBuilderSuite.apply(graph, new HighTierContext(providers, graphBuilderSuite, OptimisticOptimizations.ALL));
+            Debug.dump(Debug.BASIC_LEVEL, graph, "CodeToAnalyze");
+            return graph;
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }
