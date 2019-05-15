@@ -48,6 +48,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernary
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
+import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary.TestZeroExpression;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.LoadStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreAtomicAddFloatStmt;
@@ -69,6 +70,14 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     public OCLLIROp genBinaryExpr(OCLBinaryOp op, LIRKind lirKind, Value x, Value y) {
         return new OCLBinary.Expr(op, lirKind, x, y);
+    }
+
+    public OCLLIROp genTestBinaryExpr(OCLBinaryOp op, LIRKind lirKind, Value x, Value y) {
+        return new OCLBinary.TestZeroExpression(op, lirKind, x, y);
+    }
+
+    public OCLLIROp genTestNegateBinaryExpr(OCLBinaryOp op, LIRKind lirKind, Value x, Value y) {
+        return new OCLBinary.TestNegateZeroExpression(op, lirKind, x, y);
     }
 
     public OCLLIROp genBinaryIntrinsic(OCLBinaryIntrinsic op, LIRKind lirKind, Value x, Value y) {

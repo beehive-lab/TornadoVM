@@ -52,12 +52,33 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerator.Options;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.BlockScope;
-import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.AbstractEndNode;
+import org.graalvm.compiler.nodes.AbstractMergeNode;
+import org.graalvm.compiler.nodes.BreakpointNode;
+import org.graalvm.compiler.nodes.DirectCallTargetNode;
+import org.graalvm.compiler.nodes.EndNode;
+import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.IndirectCallTargetNode;
+import org.graalvm.compiler.nodes.Invoke;
+import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.LoopBeginNode;
+import org.graalvm.compiler.nodes.LoopEndNode;
+import org.graalvm.compiler.nodes.LoopExitNode;
+import org.graalvm.compiler.nodes.LoweredCallTargetNode;
+import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.PhiNode;
+import org.graalvm.compiler.nodes.SafepointNode;
+import org.graalvm.compiler.nodes.ShortCircuitOrNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.FloatEqualsNode;
 import org.graalvm.compiler.nodes.calc.FloatLessThanNode;
 import org.graalvm.compiler.nodes.calc.IntegerBelowNode;
 import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
+import org.graalvm.compiler.nodes.calc.IntegerTestNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
@@ -72,6 +93,7 @@ import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStampFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsicCmp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryOp;
@@ -320,8 +342,13 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final IsNullNode condition = (IsNullNode) node;
             final Value value = operand(condition.getValue());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.RELATIONAL_NE, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
+        } else if (node instanceof IntegerTestNode) {
+            final IntegerTestNode testNode = (IntegerTestNode) node;
+            final Value x = operandOrConjunction(testNode.getX());
+            final Value y = operandOrConjunction(testNode.getY());
+            result = getGen().getArithmetic().genTestNegateBinaryExpr(OCLBinaryOp.BITWISE_AND, boolLirKind, x, y);
         } else {
-            unimplemented(String.format("logic node (class=%s)", node.getClass().getName()));
+            throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
 
         setResult(node, result);
@@ -387,8 +414,13 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final Value x = operandOrConjunction(condition.getX());
             final Value y = operandOrConjunction(condition.getY());
             result = getGen().getArithmetic().genBinaryExpr(OCLBinaryOp.LOGICAL_OR, boolLirKind, x, y);
+        } else if (node instanceof IntegerTestNode) {
+            final IntegerTestNode testNode = (IntegerTestNode) node;
+            final Value x = operandOrConjunction(testNode.getX());
+            final Value y = operandOrConjunction(testNode.getY());
+            result = getGen().getArithmetic().genTestBinaryExpr(OCLBinaryOp.BITWISE_AND, boolLirKind, x, y);
         } else {
-            unimplemented(String.format("logic node (class=%s)", node.getClass().getName()));
+            throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
 
         setResult(node, result);
@@ -429,8 +461,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         trace("emitIf: %s, condition=%s\n", x, x.condition().getClass().getName());
 
         /**
-         * test to see if this is an exception check need to implement this properly? or
-         * omit!
+         * test to see if this is an exception check need to implement this
+         * properly? or omit!
          */
         final LabelRef falseBranch = getLIRBlock(x.falseSuccessor());
         if (falseBranch.getTargetBlock().isExceptionEntry()) {
