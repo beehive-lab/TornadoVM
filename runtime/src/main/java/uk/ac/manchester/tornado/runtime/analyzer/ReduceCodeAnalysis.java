@@ -110,16 +110,16 @@ public class ReduceCodeAnalysis {
     }
 
     /**
-     * A method can apply multiple reduction variables. We return a list of all
-     * its loop bounds.
+     * A method can apply multiple reduction variables. We return a list of all its
+     * loop bounds.
      * 
      * @param graph
      *            Graal-IR graph to analyze
      * @param reduceIndexes
-     *            list of reduce indexes within the method parameter list
+     *            List of reduce indexes within the method parameter list
      * @return ArrayList<ValueNode>
      */
-    public static ArrayList<ValueNode> findLoopUpperBoundNode(StructuredGraph graph, ArrayList<Integer> reduceIndexes) {
+    private static ArrayList<ValueNode> findLoopUpperBoundNode(StructuredGraph graph, ArrayList<Integer> reduceIndexes) {
         ArrayList<ValueNode> loopBound = new ArrayList<>();
         for (Integer paramIndex : reduceIndexes) {
             ParameterNode parameterNode = graph.getParameter(paramIndex);
@@ -162,11 +162,12 @@ public class ReduceCodeAnalysis {
 
         HashMap<Integer, MetaReduceTasks> tableMetaReduce = new HashMap<>();
 
-        for (TaskPackage tpackage : taskPackages) {
+        for (TaskPackage taskMetadata : taskPackages) {
 
-            Object taskCode = tpackage.getTaskParameters()[0];
+            Object taskCode = taskMetadata.getTaskParameters()[0];
             StructuredGraph graph = CodeAnalysis.buildHighLevelGraalGraph(taskCode);
 
+            assert graph != null;
             Annotation[][] annotations = graph.method().getParameterAnnotations();
             ArrayList<Integer> reduceIndices = new ArrayList<>();
             for (int paramIndex = 0; paramIndex < annotations.length; paramIndex++) {

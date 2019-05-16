@@ -25,9 +25,9 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class MatrixMultiplication1D {
 
-    public static final int WARMING_UP_ITERATIONS = 15;
+    private static final int WARMING_UP_ITERATIONS = 150;
 
-    public static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
+    private static void matrixMultiplication(final float[] A, final float[] B, final float[] C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
                 float sum = 0.0f;
@@ -45,8 +45,7 @@ public class MatrixMultiplication1D {
         if (args.length >= 1) {
             try {
                 size = Integer.parseInt(args[0]);
-            } catch (NumberFormatException nfe) {
-                size = 512;
+            } catch (NumberFormatException ignored) {
             }
         }
 

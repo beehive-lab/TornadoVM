@@ -51,7 +51,7 @@ public class LocalObjectState {
         return streamIn;
     }
 
-    public void setStreamIn(boolean streamIn) {
+    void setStreamIn(boolean streamIn) {
         this.streamIn = streamIn;
     }
 
@@ -76,7 +76,7 @@ public class LocalObjectState {
     }
 
     public boolean isValid() {
-        return (device == null) ? false : device.isValid();
+        return (device != null) && device.isValid();
     }
 
     public void setValid(boolean valid) {

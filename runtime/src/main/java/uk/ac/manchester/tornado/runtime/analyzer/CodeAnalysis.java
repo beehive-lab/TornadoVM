@@ -71,7 +71,7 @@ public class CodeAnalysis {
         ResolvedJavaMethod resolvedJavaMethod = metaAccess.lookupJavaMethod(methodToCompile);
         CompilationIdentifier compilationIdentifier = backend.getCompilationIdentifier(resolvedJavaMethod);
 
-        try (Scope s = Debug.scope("compileMethodAndInstall", new DebugDumpScope("TornadoVM-Code-Analysis", true))) {
+        try (Scope ignored = Debug.scope("compileMethodAndInstall", new DebugDumpScope("TornadoVM-Code-Analysis", true))) {
             EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
             opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
             OptionValues options = new OptionValues(opts);

@@ -58,9 +58,7 @@ import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeCI {
 
     private static final Executor EXECUTOR = Executors.newCachedThreadPool();
-
     private static final TornadoCoreRuntime runtime = new TornadoCoreRuntime();
-
     private static final JVMMapping JVM = new JVMMapping();
 
     public static TornadoCoreRuntime getTornadoRuntime() {
