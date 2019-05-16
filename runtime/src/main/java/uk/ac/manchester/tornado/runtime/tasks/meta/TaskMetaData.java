@@ -97,6 +97,9 @@ public class TaskMetaData extends AbstractMetaData {
 
         this.schedule = !(globalWorkDefined && localWorkDefined);
         this.canAssumeExact = Boolean.parseBoolean(getDefault("coarsener.exact", getId(), "False"));
+
+        // Set the number of threads to run (subset of the input space)
+        setNumForceThreads(scheduleMetaData.getNumForceThreads());
     }
 
     public TaskMetaData(ScheduleMetaData scheduleMetaData, String id) {

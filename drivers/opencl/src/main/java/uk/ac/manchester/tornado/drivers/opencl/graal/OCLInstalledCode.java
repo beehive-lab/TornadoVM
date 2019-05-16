@@ -322,7 +322,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
     private void checkKernelNotNull() {
         if (kernel == null) {
-            throw new TornadoRuntimeException("[ERROR] Generated Kernel is NULL. \n\nPlease report the issue to https://github.com/beehive-lab/TornadoVM");
+            throw new TornadoRuntimeException("[ERROR] Generated Kernel is NULL. \nPlease report this issue to https://github.com/beehive-lab/TornadoVM");
         }
     }
 

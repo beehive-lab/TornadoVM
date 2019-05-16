@@ -41,7 +41,6 @@ import org.graalvm.compiler.debug.Debug.Scope;
 import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
-import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
 import org.graalvm.compiler.lir.phases.LIRSuites;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -53,9 +52,6 @@ import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
@@ -66,7 +62,6 @@ import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 import org.graalvm.util.EconomicMap;
 
-import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.meta.ProfilingInfo;
@@ -134,7 +129,7 @@ class ReduceTaskSchedule {
     }
 
     private boolean isPowerOfTwo(final long number) {
-        return (number & (number - 1)) == 0;
+        return ((number & (number - 1)) == 0);
     }
 
     private static InstalledCode compileAndInstallMethod(StructuredGraph graph) {
@@ -147,11 +142,6 @@ class ReduceTaskSchedule {
         EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
         opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
         OptionValues options = new OptionValues(opts);
-
-        for (Node n : graph.getNodes()) {
-            System.out.println(n);
-        }
-
         try (Scope s = Debug.scope("compileMethodAndInstall", new DebugDumpScope(String.valueOf(compilationID), true))) {
             PhaseSuite<HighTierContext> graphBuilderPhase = backend.getSuites().getDefaultGraphBuilderSuite();
             Suites suites = backend.getSuites().getDefaultSuites(options);
@@ -199,7 +189,7 @@ class ReduceTaskSchedule {
             // Execute the generated binary with Graal with
             // the host loop-bound
 
-            // 1. Set args
+            // 1. Set arguments to the method-compiled code
             int numArgs = taskPackage.getTaskParameters().length - 1;
             Object[] args = new Object[numArgs];
             for (int i = 0; i < numArgs; i++) {
@@ -275,8 +265,11 @@ class ReduceTaskSchedule {
                     int inputSize = metaReduceTasks.getInputSize(taskNumber);
 
                     // Analyse Input Size
+
                     if (!isPowerOfTwo(inputSize)) {
-                        elementsReductionLeftOver = (long) (inputSize - Math.pow(2, Math.floor(Math.sqrt(inputSize))));
+                        int exp = (int) (Math.log(inputSize) / Math.log(2));
+                        double closestPowerOf2 = Math.pow(2, exp);
+                        elementsReductionLeftOver = (long) (inputSize - closestPowerOf2);
                         inputSize -= elementsReductionLeftOver;
                     }
                     final int sizeTargetDevice = inputSize;
@@ -294,12 +287,8 @@ class ReduceTaskSchedule {
                             performLoopBoundNodeSubstitution(graph, sizeTargetDevice);
                             InstalledCode code = compileAndInstallMethod(graph);
                             runBinaryCodeForReduction(taskPackage, code);
-                            if (taskPackage.getTaskParameters()[2] instanceof int[]) {
-                                System.out.println("From THREAD RESULT!!!!!!!!!!> " + Arrays.toString((int[]) taskPackage.getTaskParameters()[2]));
-                            } else if (taskPackage.getTaskParameters()[2] instanceof float[]) {
-                                System.out.println("From THREAD RESULT!!!!!!!!!!> " + Arrays.toString((float[]) taskPackage.getTaskParameters()[2]));
-                            }
                         }));
+                        taskPackage.setNumThreadsToRun(sizeTargetDevice);
                     }
 
                     // Set the new array size
@@ -310,19 +299,6 @@ class ReduceTaskSchedule {
                     streamReduceUpdatedList.add(newArray);
                     sizesReductionArray.add(sizeReductionArray);
                     originalReduceVariables.put(originalReduceVariable, newArray);
-                }
-            }
-        }
-
-        if (!threadSequentialCompilation.isEmpty()) {
-            for (Thread t : threadSequentialCompilation) {
-                t.start();
-            }
-            for (Thread t : threadSequentialCompilation) {
-                try {
-                    t.join();
-                } catch (InterruptedException ie) {
-                    ie.printStackTrace();
                 }
             }
         }
@@ -386,7 +362,22 @@ class ReduceTaskSchedule {
 
         TornadoTaskSchedule.performStreamOutThreads(rewrittenTaskSchedule, streamOutObjects);
         rewrittenTaskSchedule.execute();
+
+        if (!threadSequentialCompilation.isEmpty()) {
+            for (Thread t : threadSequentialCompilation) {
+                t.start();
+            }
+            for (Thread t : threadSequentialCompilation) {
+                try {
+                    t.join();
+                } catch (InterruptedException ie) {
+                    ie.printStackTrace();
+                }
+            }
+        }
+
         updateOutputArray();
+
         return rewrittenTaskSchedule;
     }
 
@@ -397,13 +388,9 @@ class ReduceTaskSchedule {
             Object newArray = pair.getValue();
             switch (newArray.getClass().getTypeName()) {
                 case "int[]":
-
-                    System.out.println("TARGET RESULT " + Arrays.toString((int[]) newArray));
-
                     ((int[]) reduceVariable)[0] = ((int[]) newArray)[0];
                     break;
                 case "float[]":
-                    System.out.println("TARGET RESULT > " + Arrays.toString((float[]) newArray));
                     ((float[]) reduceVariable)[0] = ((float[]) newArray)[0];
                     break;
                 case "double[]":

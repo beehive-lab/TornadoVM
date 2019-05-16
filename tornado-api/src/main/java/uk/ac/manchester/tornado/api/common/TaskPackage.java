@@ -58,6 +58,7 @@ public class TaskPackage {
     private String id;
     private int taskType;
     private Object[] taskParameters;
+    private long numThreadsToRun;
 
     public <T1> TaskPackage(String id, Task1<T1> code, T1 arg) {
         this.id = id;
@@ -135,6 +136,14 @@ public class TaskPackage {
 
     public int getTaskType() {
         return taskType;
+    }
+
+    public void setNumThreadsToRun(long numThreads) {
+        this.numThreadsToRun = numThreads;
+    }
+
+    public long getNumThreadsToRun() {
+        return numThreadsToRun;
     }
 
     /**

@@ -52,6 +52,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 /**
@@ -767,7 +768,7 @@ public class TornadoVM extends TornadoLogger {
                 if (task.meta() instanceof TaskMetaData) {
                     metadata = (TaskMetaData) task.meta();
                 } else {
-                    throw new RuntimeException("task.meta is not instanceof TaskMetada");
+                    throw new RuntimeException("task.meta is not instanceof TaskMetada: " + task.getClass());
                 }
 
                 if (useDependencies) {

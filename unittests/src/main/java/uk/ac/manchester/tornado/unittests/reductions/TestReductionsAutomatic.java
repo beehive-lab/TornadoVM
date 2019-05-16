@@ -62,8 +62,6 @@ public class TestReductionsAutomatic extends TornadoTestBase {
             input[i] = i;
         });
 
-        System.out.println(Arrays.toString(input));
-
         //@formatter:off
         new TaskSchedule("s0")
             .streamIn(input)
@@ -72,8 +70,6 @@ public class TestReductionsAutomatic extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        System.out.println("FINAL RESULT: " + Arrays.toString(result));
-
         int[] sequential = new int[1];
         TestReductionsAutomatic.test(input, sequential);
 
@@ -81,16 +77,14 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
-    @Test
-    public void testIrregularSize02() {
+    private void testIrregular(final int inputSize) {
 
-        final int size = 18;
-        float[] input = new float[size];
+        float[] input = new float[inputSize];
         float[] result = new float[] { 0.0f };
 
-        Random r = new Random();
-        IntStream.range(0, size).parallel().forEach(i -> {
-            input[i] = i;
+        Random r = new Random(101);
+        IntStream.range(0, inputSize).parallel().forEach(i -> {
+            input[i] = r.nextFloat();
         });
 
         //@formatter:off
@@ -101,13 +95,26 @@ public class TestReductionsAutomatic extends TornadoTestBase {
             .execute();
         //@formatter:on
 
-        System.out.println("FINAL RESULT: " + Arrays.toString(result));
-
         float[] sequential = new float[1];
         TestReductionsAutomatic.testFloat(input, sequential);
 
         // Check result
         assertEquals(sequential[0], result[0], 0.01f);
+    }
+
+    @Test
+    public void testIrregularSize02() {
+        testIrregular(2130);
+    }
+
+    @Test
+    public void testIrregularSize03() {
+        testIrregular(18);
+    }
+
+    @Test
+    public void testIrregularSize04() {
+        testIrregular(513);
     }
 
 }

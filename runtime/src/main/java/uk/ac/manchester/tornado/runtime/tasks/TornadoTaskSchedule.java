@@ -203,7 +203,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             CompilableTask compilableTask = (CompilableTask) task;
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             new SketchRequest(compilableTask.meta(), resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
-
         }
 
         hlBuffer.put(TornadoGraphBitcodes.CONTEXT.index());
@@ -1301,6 +1300,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         Method method = TaskUtils.resolveMethodHandle(parameters[0]);
         ScheduleMetaData meta = meta();
+        meta.setNumForceThreads(taskPackage.getNumThreadsToRun());
 
         switch (type) {
             case 1:

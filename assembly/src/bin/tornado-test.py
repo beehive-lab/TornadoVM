@@ -63,26 +63,27 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypesLong",
 	"uk.ac.manchester.tornado.unittests.lambdas.TestLambdas",
 	"uk.ac.manchester.tornado.unittests.logic.TestLogic",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic",
 ]
 
 ## List of tests that can be ignored. Format: class#testMethod
 __TORNADO_TESTS_WHITE_LIST__ = [
-	"uk.ac.manchester.tornado.unittests.loops.TestLoops#testInnertForEach",
+	"uk.ac.manchester.tornado.unittests.logic.TestLogic#testLogic03"
 	"uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer#testArrayMigration",
 	]
 
-# ########################################################################
+# ################################################################################################################
 ## Options
 __MAIN_TORNADO_TEST_RUNNER__ = " uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
 __MAIN_TORNADO_JUNIT__ 		 = "org.junit.runner.JUnitCore "
 __IGV_OPTIONS__ 			 = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintCFG=true "
 __PRINT_OPENCL_KERNEL__ 	 = "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ 			 = "-Dtornado.debug=True "
-__IGNORE_INTEL_PLATFORM__    = "-Dtornado.ignore.platform=Intel "  # Due to a bug when running with optirun
+__IGNORE_INTEL_PLATFORM__    = "-Dtornado.ignore.platform=Intel "  # Due to a bug when running with Linux-optirun
 __PRINT_EXECUTION_TIMER__    = "-Dtornado.debug.executionTime=True "
-# ########################################################################
+# ################################################################################################################
 
-__VERSION__ = "0.5_11042019"
+__VERSION__ = "0.6_16052019"
 
 __TEST_NOT_PASSED__= False
 

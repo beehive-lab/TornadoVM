@@ -48,6 +48,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private int driverIndex;
     private int deviceIndex;
     private boolean deviceManuallySet;
+    private long numThreads;
 
     public static final int DEFAULT_DRIVER_INDEX = 0;
     public static final int DEFAULT_DEVICE_INDEX = 0;
@@ -350,6 +351,16 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         } else {
             return getProperty(id + "." + keySuffix);
         }
+    }
+
+    @Override
+    public void setNumForceThreads(long threads) {
+        this.numThreads = threads;
+    }
+
+    @Override
+    public long getNumForceThreads() {
+        return numThreads;
     }
 
     public AbstractMetaData(String id) {

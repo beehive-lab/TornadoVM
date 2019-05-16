@@ -45,8 +45,11 @@ public class TestLogic extends TornadoTestBase {
         for (@Parallel int i = 0; i < data.length; i++) {
             int value = data[i];
             if ((value & (value - 1)) != 0) {
-                while ((value & (value - 1)) != 0) {
+
+                int condition = (value & (value - 1));
+                while (condition != 0) {
                     value &= value - 1;
+                    condition = (value & (value - 1));
                 }
             }
             output[i] = value;
