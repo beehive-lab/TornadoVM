@@ -55,8 +55,8 @@ public class TornadoAPIProvider {
     public static AbstractTaskGraph loadScheduleRuntime(String name) {
         AbstractTaskGraph taskGraphImpl = null;
         try {
-            String tornadoAPIimplementation = System.getProperty("tornado.load.api.implementation");
-            Class<?> klass = Class.forName(tornadoAPIimplementation);
+            String tornadoAPIImplementation = System.getProperty("tornado.load.api.implementation");
+            Class<?> klass = Class.forName(tornadoAPIImplementation);
             Constructor<?> constructor = klass.getConstructor(String.class);
             taskGraphImpl = (AbstractTaskGraph) constructor.newInstance(name);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException e) {
@@ -68,8 +68,8 @@ public class TornadoAPIProvider {
     public static TornadoRuntimeCI loadRuntime() {
         TornadoRuntimeCI runtime = null;
         try {
-            String tornadoRuntimeimplementation = System.getProperty("tornado.load.runtime.implementation");
-            Class<?> klass = Class.forName(tornadoRuntimeimplementation);
+            String tornadoRuntimeImplementation = System.getProperty("tornado.load.runtime.implementation");
+            Class<?> klass = Class.forName(tornadoRuntimeImplementation);
             Method method = klass.getDeclaredMethod("getTornadoRuntime");
             runtime = (TornadoRuntimeCI) method.invoke(null);
         } catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException e) {
@@ -81,8 +81,8 @@ public class TornadoAPIProvider {
     public static TornadoCI loadTornado() {
         TornadoCI tornado = null;
         try {
-            String tornadoImplemenatation = System.getProperty("tornado.load.tornado.implementation");
-            Class<?> klass = Class.forName(tornadoImplemenatation);
+            String tornadoImplementation = System.getProperty("tornado.load.tornado.implementation");
+            Class<?> klass = Class.forName(tornadoImplementation);
             Constructor<?> constructor = klass.getConstructor();
             tornado = (TornadoCI) constructor.newInstance();
         } catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException | InstantiationException e) {
@@ -94,8 +94,8 @@ public class TornadoAPIProvider {
     public static AbstractFactoryDevice loadDeviceImpl() {
         AbstractFactoryDevice device = null;
         try {
-            String tornadoDeviceimplementation = System.getProperty("tornado.load.device.implementation");
-            Class<?> klass = Class.forName(tornadoDeviceimplementation);
+            String tornadoDeviceImplementation = System.getProperty("tornado.load.device.implementation");
+            Class<?> klass = Class.forName(tornadoDeviceImplementation);
             Constructor<?> constructor = klass.getConstructor();
             device = (AbstractFactoryDevice) constructor.newInstance();
         } catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException | InstantiationException e) {
