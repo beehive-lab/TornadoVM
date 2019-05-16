@@ -122,6 +122,9 @@ class ReduceTaskSchedule {
         } else if (reduceVariable instanceof double[]) {
             newArray = new double[size];
             Arrays.fill((double[]) newArray, ((double[]) reduceVariable)[0]);
+        } else if (reduceVariable instanceof long[]) {
+            newArray = new long[size];
+            Arrays.fill((long[]) newArray, ((long[]) reduceVariable)[0]);
         } else {
             throw new TornadoRuntimeException("[ERROR] reduce type not supported yet: " + reduceVariable.getClass());
         }
@@ -132,6 +135,13 @@ class ReduceTaskSchedule {
         return ((number & (number - 1)) == 0);
     }
 
+    /**
+     * It compiles and installs the method that represents the object {@code graph}.
+     * 
+     * @param graph
+     *            Compile-graph
+     * @return {@link InstalledCode}
+     */
     private static InstalledCode compileAndInstallMethod(StructuredGraph graph) {
         ResolvedJavaMethod method = graph.method();
         GraalJVMCICompiler graalCompiler = (GraalJVMCICompiler) JVMCI.getRuntime().getCompiler();
@@ -142,7 +152,7 @@ class ReduceTaskSchedule {
         EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
         opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
         OptionValues options = new OptionValues(opts);
-        try (Scope s = Debug.scope("compileMethodAndInstall", new DebugDumpScope(String.valueOf(compilationID), true))) {
+        try (Scope ignored = Debug.scope("compileMethodAndInstall", new DebugDumpScope(String.valueOf(compilationID), true))) {
             PhaseSuite<HighTierContext> graphBuilderPhase = backend.getSuites().getDefaultGraphBuilderSuite();
             Suites suites = backend.getSuites().getDefaultSuites(options);
             LIRSuites lirSuites = backend.getSuites().getDefaultLIRSuites(options);
@@ -157,6 +167,14 @@ class ReduceTaskSchedule {
         }
     }
 
+    /**
+     * It performs a loop-range substitution for the lower part of the reduction.
+     * 
+     * @param graph
+     *            Input Graal {@link StructuredGraph}
+     * @param lowValue
+     *            Low value to include in the compile-graph
+     */
     private void performLoopBoundNodeSubstitution(StructuredGraph graph, int lowValue) {
         for (Node n : graph.getNodes()) {
             if (n instanceof LoopBeginNode) {
@@ -184,6 +202,14 @@ class ReduceTaskSchedule {
         }
     }
 
+    /**
+     * It runs a compiled method by Graal in HotSpot.
+     * 
+     * @param taskPackage
+     *            {@link TaskPackage} metadata that stores the method parameters.
+     * @param code
+     *            {@link InstalledCode} code to be executed
+     */
     private void runBinaryCodeForReduction(TaskPackage taskPackage, InstalledCode code) {
         try {
             // Execute the generated binary with Graal with
@@ -222,6 +248,20 @@ class ReduceTaskSchedule {
         return false;
     }
 
+    /**
+     * Compose and execute the new reduction. It dynamically creates a new
+     * task-schedule expression that contains: a) the parallel reduction; b) the
+     * final sequential reduction.
+     * 
+     * It also creates a new thread in the case the input size for the reduction is
+     * not power of two and the target device is either the FPGA or the GPU. In this
+     * case, the new thread will compile the host part with the corresponding
+     * sub-range that does not fit into the power-of-two part.
+     * 
+     * @param metaReduceTable
+     *            Metadata to create all new tasks for the reductions dynamically.
+     * @return {@link TaskSchedule} with the new reduction
+     */
     TaskSchedule scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
 
         assert metaReduceTable != null;
@@ -283,6 +323,7 @@ class ReduceTaskSchedule {
                             StructuredGraph originalGraph = CodeAnalysis.buildHighLevelGraalGraph(codeTask);
                             // We make a copy of the graph to not alter the
                             // original one
+                            assert originalGraph != null;
                             StructuredGraph graph = (StructuredGraph) originalGraph.copy();
                             performLoopBoundNodeSubstitution(graph, sizeTargetDevice);
                             InstalledCode code = compileAndInstallMethod(graph);
@@ -381,8 +422,10 @@ class ReduceTaskSchedule {
         return rewrittenTaskSchedule;
     }
 
+    /**
+     * Copy out the result back to the original buffer.
+     */
     void updateOutputArray() {
-        // Copy out the result back to the original buffer
         for (Entry<Object, Object> pair : originalReduceVariables.entrySet()) {
             Object reduceVariable = pair.getKey();
             Object newArray = pair.getValue();
@@ -396,12 +439,23 @@ class ReduceTaskSchedule {
                 case "double[]":
                     ((double[]) reduceVariable)[0] = ((double[]) newArray)[0];
                     break;
+                case "long[]":
+                    ((long[]) reduceVariable)[0] = ((long[]) newArray)[0];
+                    break;
                 default:
                     throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
             }
         }
     }
 
+    /**
+     * 
+     * @param device
+     *            Index of the device within the Tornado's device list.
+     * @param inputSize
+     *            Input size
+     * @return int
+     */
     private static int obtainSizeArrayResult(int device, int inputSize) {
         TornadoDeviceType deviceType = getTornadoRuntime().getDriver(0).getDevice(device).getDeviceType();
         switch (deviceType) {
@@ -415,5 +469,4 @@ class ReduceTaskSchedule {
         }
         return 0;
     }
-
 }
