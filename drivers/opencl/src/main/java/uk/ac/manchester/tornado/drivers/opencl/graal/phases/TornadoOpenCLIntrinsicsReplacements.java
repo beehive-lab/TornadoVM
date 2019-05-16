@@ -31,10 +31,11 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.phases.BasePhase;
 
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GroupIdNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayAlloc;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIDFixedNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
@@ -82,17 +83,72 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
                 GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(dimension));
                 graph.replaceFixed(invoke, groupIdNode);
             } else if (methodName.equals("Direct#OpenCLIntrinsics.createLocalMemory")) {
+                ConstantNode size = getConstantNodeFromArguments(invoke, 0);
+
+                FixedArrayNode js = (FixedArrayNode) invoke.callTarget().arguments().get(1);
+
+                FixedArrayNode arr = graph.addOrUnique(new FixedArrayNode(OCLArchitecture.lp, js.getElementType(), size, true));
+
+                graph.replaceFixed(invoke, arr);
+            } else if (methodName.equals("Direct#OpenclIntrinsics.copyFromGlobal")) {
+                // StructuredGraph graphs = invoke.graph();
+                // JavaKind elementKind = invoke.callTarget().arguments().get(1).getStackKind();
+                // ValueNode value =
+                // ValueNode array = invoke.callTarget().arguments().get(1);
+                // ValueNode idx = invoke.callTarget().arguments().get(0);
+                //
+                // AddressNode address = DefaultJavaLoweringProvider.createArrayAddress(graph,
+                // array, elementKind, invoke.callTarget().arguments().get(0));
+                //
+                // AbstractWriteNode memoryWrite = null;
+                // OCLWriteLocalNode memLocalWrite = null;
+                //
+                // memLocalWrite = graph.addOrUnique(new OCLWriteLocalNode())
+                // memoryWrite = graph.add(new WriteNode(address,
+                // NamedLocationIdentity.getArrayLocation(elementKind), value,
+                // arrayStoreBarrierType(elementKind));
+                //
+                // memoryWrite.setStateAfter(invoke.stateAfter());
+                //
+                // graph.replaceFixedWithFixed(invoke, memoryWrite);
+                //
+                // StructuredGraph graph = vectorStore.graph();
+                // JavaKind elementKind = vectorStore.elementKind();
+                // AddressNode address = createArrayAddress(graph, vectorStore.array(),
+                // elementKind, vectorStore.index());
+                // WriteNode vectorWrite = graph.addWithoutUnique(new WriteNode(address,
+                // NamedLocationIdentity.getArrayLocation(elementKind), vectorStore.value(),
+                // HeapAccess.BarrierType.PRECISE));
+
                 // NodeInputList<ValueNode> arguments = invoke.callTarget().arguments();
                 // FixedArrayNode array = (FixedArrayNode) arguments.get(0);
-                System.out.println("HERE");
-                /// ConstantNode size = getConstantNodeFromArguments(invoke, 1);
-                // array.setLocalType(OCLBinaryTemplate.NEW_LOCAL_FLOAT_ARRAY);
-                // NewLocalArrayNode newLocalArrayNode = graph.addOrUnique(new
-                /// NewLocalArrayNode(size, JavaKind.Float, OCLKind.FLOAT, array));
-                LocalArrayAlloc locAlloc = graph.addOrUnique(new LocalArrayAlloc(1024));
-                // OpenCLPrintf printfNode = graph.addOrUnique(new OpenCLPrintf("\"\""));
-                // graph.replaceFixed(invoke, printfNode);
-                graph.replaceFixed(invoke, locAlloc);
+                // System.out.println("HERE");
+                //// StructuredGraph graphs = invoke.graph();
+                //// JavaKind elementKind = e;
+                //// ValueNode value = storeIndexed.value();
+                //// ValueNode array = storeIndexed.array();
+                //// AddressNode address = createArrayAddress(graph, array, elementKind,
+                // storeIndexed.index());
+                ////
+                //// AbstractWriteNode memoryWrite = null;
+                ////
+                //// memoryWrite = graph.add(new WriteNode(address,
+                // NamedLocationIdentity.getArrayLocation(elementKind), value,
+                // arrayStoreBarrierType(storeIndexed.elementKind())));
+                ////
+                //// AbstractWriteNode localWrite = null;
+                ////
+                //// memoryWrite.setStateAfter(storeIndexed.stateAfter());
+                //// graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
+                ////
+                //// ConstantNode size = getConstantNodeFromArguments(invoke, 1);
+                //// array.setLocalType(OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_FLOAT_ARRAY);
+                //// NewLocalArrayNode newLocalArrayNode = graph.addOrUnique(new
+                // NewLocalArrayNode(size, JavaKind.Float, OCLKind.FLOAT, array));
+                //// // LocalArrayAlloc locAlloc = graph.addOrUnique(new LocalArrayAlloc(1024));
+                //// // OpenCLPrintf printfNode = graph.addOrUnique(new OpenCLPrintf("\"\""));
+                //// // graph.replaceFixed(invoke, printfNode);
+                // graph.replaceFixed(invoke, newLocalArrayNode);
             } else if (methodName.equals("Direct#OpenCLIntrinsics.printEmpty")) {
                 OpenCLPrintf printfNode = graph.addOrUnique(new OpenCLPrintf("\"\""));
                 graph.replaceFixed(invoke, printfNode);
