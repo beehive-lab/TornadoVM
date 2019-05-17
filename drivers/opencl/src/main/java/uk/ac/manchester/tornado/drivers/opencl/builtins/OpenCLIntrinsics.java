@@ -85,7 +85,11 @@ public class OpenCLIntrinsics {
 
     }
 
-    public static void createLocalMemory(int size) {
+    public static void createLocalMemory(int size, float[] tmp) {
+
+    }
+
+    public static void copyFromGlobal(int idx, float[] tmp) {
 
     }
 
