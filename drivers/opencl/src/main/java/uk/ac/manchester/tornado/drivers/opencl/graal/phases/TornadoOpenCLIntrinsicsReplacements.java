@@ -87,39 +87,30 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
 
                 FixedArrayNode js = (FixedArrayNode) invoke.callTarget().arguments().get(1);
 
-                FixedArrayNode arr = graph.addOrUnique(new FixedArrayNode(OCLArchitecture.lp, js.getElementType(), size, true));
+                FixedArrayNode arr = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.lp, js.getElementType(), size, true));
 
+                System.out.println("Here -- --- --- --- ---");
                 graph.replaceFixed(invoke, arr);
+
+                // graph.maybeCompress();
+
             } else if (methodName.equals("Direct#OpenclIntrinsics.copyFromGlobal")) {
                 // StructuredGraph graphs = invoke.graph();
                 // JavaKind elementKind = invoke.callTarget().arguments().get(1).getStackKind();
-                // ValueNode value =
+                // // ValueNode value = storeIndexed.value();
                 // ValueNode array = invoke.callTarget().arguments().get(1);
-                // ValueNode idx = invoke.callTarget().arguments().get(0);
                 //
-                // AddressNode address = DefaultJavaLoweringProvider.createArrayAddress(graph,
-                // array, elementKind, invoke.callTarget().arguments().get(0));
+                // // dressNode address = createArrayAddress(graph, array, elementKind,
+                // // invoke.callTarget().arguments().get(0));
                 //
                 // AbstractWriteNode memoryWrite = null;
-                // OCLWriteLocalNode memLocalWrite = null;
                 //
-                // memLocalWrite = graph.addOrUnique(new OCLWriteLocalNode())
-                // memoryWrite = graph.add(new WriteNode(address,
-                // NamedLocationIdentity.getArrayLocation(elementKind), value,
-                // arrayStoreBarrierType(elementKind));
+                // // emoryWrite = graph.add(new WriteNode(address,
+                // // NamedLocationIdentity.getArrayLocation(elementKind), value,
+                // // arrayStoreBarrierType(storeIndexed.elementKind())));
                 //
                 // memoryWrite.setStateAfter(invoke.stateAfter());
-                //
                 // graph.replaceFixedWithFixed(invoke, memoryWrite);
-                //
-                // StructuredGraph graph = vectorStore.graph();
-                // JavaKind elementKind = vectorStore.elementKind();
-                // AddressNode address = createArrayAddress(graph, vectorStore.array(),
-                // elementKind, vectorStore.index());
-                // WriteNode vectorWrite = graph.addWithoutUnique(new WriteNode(address,
-                // NamedLocationIdentity.getArrayLocation(elementKind), vectorStore.value(),
-                // HeapAccess.BarrierType.PRECISE));
-
                 // NodeInputList<ValueNode> arguments = invoke.callTarget().arguments();
                 // FixedArrayNode array = (FixedArrayNode) arguments.get(0);
                 // System.out.println("HERE");
