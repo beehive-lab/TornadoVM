@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.stream.IntStream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
@@ -105,7 +106,7 @@ public class TestLogic extends TornadoTestBase {
         }
     }
 
-    @Test
+    @Ignore
     public void testLogic03() {
         final int N = 1024;
         int[] data = new int[N];
