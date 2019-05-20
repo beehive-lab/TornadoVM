@@ -70,7 +70,7 @@ __TEST_THE_WORLD__ = [
 __TORNADO_TESTS_WHITE_LIST__ = [
 	"uk.ac.manchester.tornado.unittests.logic.TestLogic#testLogic03"
 	"uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer#testArrayMigration",
-	]
+]
 
 # ################################################################################################################
 ## Options

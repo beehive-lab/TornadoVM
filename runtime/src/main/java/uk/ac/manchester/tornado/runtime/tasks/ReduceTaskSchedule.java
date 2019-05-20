@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.runtime.tasks;
 import static org.graalvm.compiler.core.common.CompilationRequestIdentifier.asCompilationRequest;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -91,6 +92,7 @@ class ReduceTaskSchedule {
     private ArrayList<Object> streamInObjects;
     private HashMap<Object, Object> originalReduceVariables;
     private long elementsReductionLeftOver = 0;
+    private ArrayList<Thread> threadSequentialCompilation;
 
     ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects) {
         this.taskPackages = taskPackages;
@@ -109,6 +111,20 @@ class ReduceTaskSchedule {
             return taskScheduleNumber;
         }
         return 0;
+    }
+
+    private void fillOutputArrayWithNeutral(Object reduceArray, Object neutral) {
+        if (reduceArray instanceof int[]) {
+            Arrays.fill((int[]) reduceArray, (int) neutral);
+        } else if (reduceArray instanceof float[]) {
+            Arrays.fill((float[]) reduceArray, (float) neutral);
+        } else if (reduceArray instanceof double[]) {
+            Arrays.fill((double[]) reduceArray, (double) neutral);
+        } else if (reduceArray instanceof long[]) {
+            Arrays.fill((long[]) reduceArray, (long) neutral);
+        } else {
+            throw new TornadoRuntimeException("[ERROR] reduce type not supported yet: " + reduceArray.getClass());
+        }
     }
 
     private Object createNewReduceArray(Object reduceVariable, int size) {
@@ -136,7 +152,8 @@ class ReduceTaskSchedule {
     }
 
     /**
-     * It compiles and installs the method that represents the object {@code graph}.
+     * It compiles and installs the method that represents the object
+     * {@code graph}.
      * 
      * @param graph
      *            Compile-graph
@@ -168,7 +185,8 @@ class ReduceTaskSchedule {
     }
 
     /**
-     * It performs a loop-range substitution for the lower part of the reduction.
+     * It performs a loop-range substitution for the lower part of the
+     * reduction.
      * 
      * @param graph
      *            Input Graal {@link StructuredGraph}
@@ -206,7 +224,8 @@ class ReduceTaskSchedule {
      * It runs a compiled method by Graal in HotSpot.
      * 
      * @param taskPackage
-     *            {@link TaskPackage} metadata that stores the method parameters.
+     *            {@link TaskPackage} metadata that stores the method
+     *            parameters.
      * @param code
      *            {@link InstalledCode} code to be executed
      */
@@ -248,18 +267,34 @@ class ReduceTaskSchedule {
         return false;
     }
 
+    private void runHostThreads() {
+        if (threadSequentialCompilation != null && !threadSequentialCompilation.isEmpty()) {
+            for (Thread t : threadSequentialCompilation) {
+                t.start();
+            }
+            for (Thread t : threadSequentialCompilation) {
+                try {
+                    t.join();
+                } catch (InterruptedException ie) {
+                    ie.printStackTrace();
+                }
+            }
+        }
+    }
+
     /**
      * Compose and execute the new reduction. It dynamically creates a new
      * task-schedule expression that contains: a) the parallel reduction; b) the
      * final sequential reduction.
      * 
-     * It also creates a new thread in the case the input size for the reduction is
-     * not power of two and the target device is either the FPGA or the GPU. In this
-     * case, the new thread will compile the host part with the corresponding
-     * sub-range that does not fit into the power-of-two part.
+     * It also creates a new thread in the case the input size for the reduction
+     * is not power of two and the target device is either the FPGA or the GPU.
+     * In this case, the new thread will compile the host part with the
+     * corresponding sub-range that does not fit into the power-of-two part.
      * 
      * @param metaReduceTable
-     *            Metadata to create all new tasks for the reductions dynamically.
+     *            Metadata to create all new tasks for the reductions
+     *            dynamically.
      * @return {@link TaskSchedule} with the new reduction
      */
     TaskSchedule scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
@@ -280,8 +315,6 @@ class ReduceTaskSchedule {
 
         int deviceToRun = 0;
 
-        ArrayList<Thread> threadSequentialCompilation = new ArrayList<>();
-
         // Create new buffer variables and update the corresponding streamIn and
         // streamOut
         for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
@@ -292,6 +325,8 @@ class ReduceTaskSchedule {
 
             deviceToRun = changeDeviceIfNeeded(taskScheduleReduceName, tsName, taskPackage.getId());
             final int targetDeviceToRun = deviceToRun;
+
+            ArrayList<Object> neutralElements = new ArrayList<>();
 
             if (tableReduce.containsKey(taskNumber)) {
 
@@ -304,8 +339,10 @@ class ReduceTaskSchedule {
                     Object codeTask = taskPackage.getTaskParameters()[0];
                     int inputSize = metaReduceTasks.getInputSize(taskNumber);
 
-                    // Analyse Input Size
+                    Object neutralElement = Array.get(originalReduceVariable, 0);
 
+                    // Analyse Input Size - if not power of 2 -> split host and
+                    // device executions
                     if (!isPowerOfTwo(inputSize)) {
                         int exp = (int) (Math.log(inputSize) / Math.log(2));
                         double closestPowerOf2 = Math.pow(2, exp);
@@ -317,16 +354,18 @@ class ReduceTaskSchedule {
                     int sizeReductionArray = obtainSizeArrayResult(deviceToRun, inputSize);
 
                     if (isTaskElegibleSplitHostAndDevice(targetDeviceToRun)) {
+                        if (threadSequentialCompilation == null) {
+                            threadSequentialCompilation = new ArrayList<>();
+                        }
+
                         threadSequentialCompilation.add(new Thread(() -> {
-                            // Perform IR-loop bounds substitution with the
-                            // host-range
                             StructuredGraph originalGraph = CodeAnalysis.buildHighLevelGraalGraph(codeTask);
-                            // We make a copy of the graph to not alter the
-                            // original one
                             assert originalGraph != null;
                             StructuredGraph graph = (StructuredGraph) originalGraph.copy();
                             performLoopBoundNodeSubstitution(graph, sizeTargetDevice);
                             InstalledCode code = compileAndInstallMethod(graph);
+                            // fillOutputArrayWithNeutral(originalReduceVariable,
+                            // neutralElement);
                             runBinaryCodeForReduction(taskPackage, code);
                         }));
                         taskPackage.setNumThreadsToRun(sizeTargetDevice);
@@ -403,22 +442,8 @@ class ReduceTaskSchedule {
 
         TornadoTaskSchedule.performStreamOutThreads(rewrittenTaskSchedule, streamOutObjects);
         rewrittenTaskSchedule.execute();
-
-        if (!threadSequentialCompilation.isEmpty()) {
-            for (Thread t : threadSequentialCompilation) {
-                t.start();
-            }
-            for (Thread t : threadSequentialCompilation) {
-                try {
-                    t.join();
-                } catch (InterruptedException ie) {
-                    ie.printStackTrace();
-                }
-            }
-        }
-
+        runHostThreads();
         updateOutputArray();
-
         return rewrittenTaskSchedule;
     }
 
@@ -468,5 +493,9 @@ class ReduceTaskSchedule {
                 break;
         }
         return 0;
+    }
+
+    public ArrayList<Thread> getHostThreadReduction() {
+        return this.threadSequentialCompilation;
     }
 }
