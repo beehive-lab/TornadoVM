@@ -38,9 +38,6 @@ public class ReductionIrregular {
         float[] input = new float[inputSize];
         float[] result = new float[] { 0.0f };
         Random r = new Random(101);
-        IntStream.range(0, inputSize).parallel().forEach(i -> {
-            input[i] = r.nextFloat();
-        });
 
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
@@ -50,10 +47,15 @@ public class ReductionIrregular {
         //@formatter:on
 
         float[] sequential = new float[1];
-        ReductionIrregular.reduceFloats(input, sequential);
 
         ArrayList<Long> timers = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
+
+            IntStream.range(0, inputSize).parallel().forEach(idx -> {
+                input[idx] = r.nextFloat();
+            });
+            ReductionIrregular.reduceFloats(input, sequential);
+
             long start = System.nanoTime();
             task.execute();
             long end = System.nanoTime();
@@ -64,7 +66,6 @@ public class ReductionIrregular {
             } else {
                 System.out.println("Iteration: " + i + " is correct");
             }
-
         }
 
         System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
@@ -72,7 +73,7 @@ public class ReductionIrregular {
     }
 
     public static void main(String[] args) {
-        int inputSize = 256;
+        int inputSize = 18;
         if (args.length > 0) {
             inputSize = Integer.parseInt(args[0]);
         }

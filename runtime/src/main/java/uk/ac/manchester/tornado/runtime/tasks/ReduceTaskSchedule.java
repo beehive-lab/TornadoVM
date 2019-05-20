@@ -26,7 +26,6 @@ package uk.ac.manchester.tornado.runtime.tasks;
 import static org.graalvm.compiler.core.common.CompilationRequestIdentifier.asCompilationRequest;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -92,7 +91,7 @@ class ReduceTaskSchedule {
     private ArrayList<Object> streamInObjects;
     private HashMap<Object, Object> originalReduceVariables;
     private long elementsReductionLeftOver = 0;
-    private ArrayList<Thread> threadSequentialCompilation;
+    private ArrayList<Thread> threadSequentialExecution;
 
     ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects) {
         this.taskPackages = taskPackages;
@@ -193,7 +192,7 @@ class ReduceTaskSchedule {
      * @param lowValue
      *            Low value to include in the compile-graph
      */
-    private void performLoopBoundNodeSubstitution(StructuredGraph graph, int lowValue) {
+    private static void performLoopBoundNodeSubstitution(StructuredGraph graph, long lowValue) {
         for (Node n : graph.getNodes()) {
             if (n instanceof LoopBeginNode) {
                 LoopBeginNode beginNode = (LoopBeginNode) n;
@@ -207,7 +206,7 @@ class ReduceTaskSchedule {
                 if (condition instanceof IntegerLessThanNode) {
                     IntegerLessThanNode integer = (IntegerLessThanNode) condition;
                     ValueNode x = integer.getX();
-                    final ConstantNode low = graph.addOrUnique(ConstantNode.forInt(lowValue));
+                    final ConstantNode low = graph.addOrUnique(ConstantNode.forLong(lowValue));
                     if (x instanceof PhiNode) {
                         // Node substitution
                         PhiNode phi = (PhiNode) x;
@@ -229,7 +228,7 @@ class ReduceTaskSchedule {
      * @param code
      *            {@link InstalledCode} code to be executed
      */
-    private void runBinaryCodeForReduction(TaskPackage taskPackage, InstalledCode code) {
+    private static void runBinaryCodeForReduction(TaskPackage taskPackage, InstalledCode code) {
         try {
             // Execute the generated binary with Graal with
             // the host loop-bound
@@ -267,12 +266,12 @@ class ReduceTaskSchedule {
         return false;
     }
 
-    private void runHostThreads() {
-        if (threadSequentialCompilation != null && !threadSequentialCompilation.isEmpty()) {
-            for (Thread t : threadSequentialCompilation) {
-                t.start();
+    public void runHostThreads() {
+        if (threadSequentialExecution != null && !threadSequentialExecution.isEmpty()) {
+            for (Thread t : threadSequentialExecution) {
+                t.run();
             }
-            for (Thread t : threadSequentialCompilation) {
+            for (Thread t : threadSequentialExecution) {
                 try {
                     t.join();
                 } catch (InterruptedException ie) {
@@ -280,6 +279,67 @@ class ReduceTaskSchedule {
                 }
             }
         }
+    }
+
+    private static class CompilationThread extends Thread {
+
+        private Object codeTask;
+        private final long sizeTargetDevice;
+        private InstalledCode code;
+
+        public CompilationThread(Object codeTask, final long sizeTargetDevice) {
+            this.codeTask = codeTask;
+            this.sizeTargetDevice = sizeTargetDevice;
+        }
+
+        public InstalledCode getCode() {
+            return this.code;
+        }
+
+        @Override
+        public void run() {
+            StructuredGraph originalGraph = CodeAnalysis.buildHighLevelGraalGraph(codeTask);
+            assert originalGraph != null;
+            StructuredGraph graph = (StructuredGraph) originalGraph.copy();
+            performLoopBoundNodeSubstitution(graph, sizeTargetDevice);
+            code = compileAndInstallMethod(graph);
+        }
+    }
+
+    private static class SequentialExecutionThread extends Thread {
+
+        final CompilationThread compilationThread;
+        private TaskPackage taskPackage;
+
+        public SequentialExecutionThread(CompilationThread c, TaskPackage taskPackage) {
+            this.compilationThread = c;
+            this.taskPackage = taskPackage;
+        }
+
+        @Override
+        public void run() {
+            try {
+                compilationThread.join();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            runBinaryCodeForReduction(taskPackage, compilationThread.getCode());
+
+        }
+
+    }
+
+    private void createThreads(Object codeTask, final TaskPackage taskPackage, final long sizeTargetDevice) {
+        if (threadSequentialExecution == null) {
+            threadSequentialExecution = new ArrayList<>();
+        }
+
+        CompilationThread compilationThread = new CompilationThread(codeTask, sizeTargetDevice);
+        compilationThread.start();
+        threadSequentialExecution.add(new SequentialExecutionThread(compilationThread, taskPackage));
+
+        // We change the amount of threads to run on the device-side
+        taskPackage.setNumThreadsToRun(sizeTargetDevice);
     }
 
     /**
@@ -326,8 +386,6 @@ class ReduceTaskSchedule {
             deviceToRun = changeDeviceIfNeeded(taskScheduleReduceName, tsName, taskPackage.getId());
             final int targetDeviceToRun = deviceToRun;
 
-            ArrayList<Object> neutralElements = new ArrayList<>();
-
             if (tableReduce.containsKey(taskNumber)) {
 
                 metaReduceTasks = tableReduce.get(taskNumber);
@@ -339,8 +397,6 @@ class ReduceTaskSchedule {
                     Object codeTask = taskPackage.getTaskParameters()[0];
                     int inputSize = metaReduceTasks.getInputSize(taskNumber);
 
-                    Object neutralElement = Array.get(originalReduceVariable, 0);
-
                     // Analyse Input Size - if not power of 2 -> split host and
                     // device executions
                     if (!isPowerOfTwo(inputSize)) {
@@ -351,27 +407,12 @@ class ReduceTaskSchedule {
                     }
                     final int sizeTargetDevice = inputSize;
 
-                    int sizeReductionArray = obtainSizeArrayResult(deviceToRun, inputSize);
-
                     if (isTaskElegibleSplitHostAndDevice(targetDeviceToRun)) {
-                        if (threadSequentialCompilation == null) {
-                            threadSequentialCompilation = new ArrayList<>();
-                        }
-
-                        threadSequentialCompilation.add(new Thread(() -> {
-                            StructuredGraph originalGraph = CodeAnalysis.buildHighLevelGraalGraph(codeTask);
-                            assert originalGraph != null;
-                            StructuredGraph graph = (StructuredGraph) originalGraph.copy();
-                            performLoopBoundNodeSubstitution(graph, sizeTargetDevice);
-                            InstalledCode code = compileAndInstallMethod(graph);
-                            // fillOutputArrayWithNeutral(originalReduceVariable,
-                            // neutralElement);
-                            runBinaryCodeForReduction(taskPackage, code);
-                        }));
-                        taskPackage.setNumThreadsToRun(sizeTargetDevice);
+                        createThreads(codeTask, taskPackage, sizeTargetDevice);
                     }
 
                     // Set the new array size
+                    int sizeReductionArray = obtainSizeArrayResult(deviceToRun, inputSize);
                     Object newArray = createNewReduceArray(originalReduceVariable, sizeReductionArray);
                     taskPackage.getTaskParameters()[paramIndex + 1] = newArray;
 
@@ -442,7 +483,6 @@ class ReduceTaskSchedule {
 
         TornadoTaskSchedule.performStreamOutThreads(rewrittenTaskSchedule, streamOutObjects);
         rewrittenTaskSchedule.execute();
-        runHostThreads();
         updateOutputArray();
         return rewrittenTaskSchedule;
     }
@@ -451,6 +491,11 @@ class ReduceTaskSchedule {
      * Copy out the result back to the original buffer.
      */
     void updateOutputArray() {
+
+        if (getHostThreadReduction() != null) {
+            runHostThreads();
+        }
+
         for (Entry<Object, Object> pair : originalReduceVariables.entrySet()) {
             Object reduceVariable = pair.getKey();
             Object newArray = pair.getValue();
@@ -479,7 +524,7 @@ class ReduceTaskSchedule {
      *            Index of the device within the Tornado's device list.
      * @param inputSize
      *            Input size
-     * @return int
+     * @return Output array size
      */
     private static int obtainSizeArrayResult(int device, int inputSize) {
         TornadoDeviceType deviceType = getTornadoRuntime().getDriver(0).getDevice(device).getDeviceType();
@@ -496,6 +541,6 @@ class ReduceTaskSchedule {
     }
 
     public ArrayList<Thread> getHostThreadReduction() {
-        return this.threadSequentialCompilation;
+        return this.threadSequentialExecution;
     }
 }
