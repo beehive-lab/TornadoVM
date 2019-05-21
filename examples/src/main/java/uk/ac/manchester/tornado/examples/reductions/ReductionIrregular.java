@@ -73,7 +73,7 @@ public class ReductionIrregular {
     }
 
     public static void main(String[] args) {
-        int inputSize = 18;
+        int inputSize = 2000;
         if (args.length > 0) {
             inputSize = Integer.parseInt(args[0]);
         }

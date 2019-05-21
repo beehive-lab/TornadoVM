@@ -100,7 +100,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private TornadoExecutionContext graphContext;
 
-    private byte[] hlcode = new byte[2048];
+    private byte[] highLevelCode = new byte[2048];
     private ByteBuffer hlBuffer;
     private TornadoVMGraphCompilationResult result;
     private long batchSizeBytes = -1;
@@ -140,8 +140,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      */
     private static final boolean EXPERIMENTAL_REDUCE = Boolean.parseBoolean(System.getProperty("tornado.experimental.reduce", "True"));
     private boolean reduceExpressionRewritten = false;
-    private TaskSchedule reduceTaskSchedule = null;
-    private ReduceTaskSchedule reduceMeta;
+    private ReduceTaskSchedule reduceTaskScheduleMeta;
     private boolean reduceAnalysis = false;
     MetaReduceCodeAnalysis analysisTaskSchedule;
 
@@ -153,7 +152,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      */
     public TornadoTaskSchedule(String taskScheduleName) {
         graphContext = new TornadoExecutionContext(taskScheduleName);
-        hlBuffer = ByteBuffer.wrap(hlcode);
+        hlBuffer = ByteBuffer.wrap(highLevelCode);
         hlBuffer.order(ByteOrder.LITTLE_ENDIAN);
         hlBuffer.rewind();
         result = null;
@@ -263,7 +262,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      *            boolean that specifies if set a new device or not.
      */
     private void compile(boolean setNewDevice) {
-        final ByteBuffer buffer = ByteBuffer.wrap(hlcode);
+        final ByteBuffer buffer = ByteBuffer.wrap(highLevelCode);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.limit(hlBuffer.position());
 
@@ -536,16 +535,14 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return graphContext.meta();
     }
 
-    private void runReduceTaskSchedule(TaskSchedule ts) {
-        this.reduceMeta.setNeutralElement();
-        this.reduceTaskSchedule.execute();
-        this.reduceMeta.updateOutputArray();
+    private void runReduceTaskSchedule() {
+        this.reduceTaskScheduleMeta.executeExpression();
     }
 
     private void rewriteTaskForReduceSkeleton(MetaReduceCodeAnalysis analysisTaskSchedule) {
-        this.reduceMeta = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects);
-        this.reduceTaskSchedule = reduceMeta.scheduleWithReduction(analysisTaskSchedule);
-        this.reduceExpressionRewritten = true;
+        reduceTaskScheduleMeta = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects);
+        reduceTaskScheduleMeta.scheduleWithReduction(analysisTaskSchedule);
+        reduceExpressionRewritten = true;
     }
 
     private AbstractTaskGraph reduceAnalysis() {
@@ -566,7 +563,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (!reduceExpressionRewritten) {
             graph = reduceAnalysis();
         } else {
-            runReduceTaskSchedule(reduceTaskSchedule);
+            runReduceTaskSchedule();
             graph = this;
         }
         return graph;
@@ -1186,10 +1183,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     /**
-     * Class that keeps the history of executions based on their data sizes. It has
-     * a sorted map (TreeMap) that keeps the relationship between the input size and
-     * the actual Tornado device in which the task was executed based on the
-     * profiler for the dynamic reconfiguration.
+     * Class that keeps the history of executions based on their data sizes. It
+     * has a sorted map (TreeMap) that keeps the relationship between the input
+     * size and the actual Tornado device in which the task was executed based
+     * on the profiler for the dynamic reconfiguration.
      */
     private static class HistoryTable {
         /**

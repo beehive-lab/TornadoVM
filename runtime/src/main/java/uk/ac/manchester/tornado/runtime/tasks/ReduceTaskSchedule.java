@@ -23,55 +23,21 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
-import static org.graalvm.compiler.core.common.CompilationRequestIdentifier.asCompilationRequest;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import org.graalvm.compiler.api.runtime.GraalJVMCICompiler;
-import org.graalvm.compiler.code.CompilationResult;
-import org.graalvm.compiler.core.GraalCompiler;
-import org.graalvm.compiler.core.common.CompilationIdentifier;
-import org.graalvm.compiler.core.target.Backend;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
-import org.graalvm.compiler.debug.DebugDumpScope;
-import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
-import org.graalvm.compiler.lir.phases.LIRSuites;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.LogicNode;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
-import org.graalvm.compiler.options.OptionKey;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.OptimisticOptimizations;
-import org.graalvm.compiler.phases.PhaseSuite;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
-import org.graalvm.compiler.phases.tiers.Suites;
-import org.graalvm.compiler.phases.util.Providers;
-import org.graalvm.compiler.runtime.RuntimeProvider;
-import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
-import jdk.vm.ci.meta.ProfilingInfo;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.runtime.JVMCI;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.analyzer.CodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceTasks;
@@ -85,6 +51,7 @@ class ReduceTaskSchedule {
     static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce-seq";
 
     private static final int DEFAULT_GPU_WORK_GROUP = 256;
+    private static final int DEFAULT_DRIVER_INDEX = 0;
     private String idTaskSchedule;
     private ArrayList<TaskPackage> taskPackages;
     private ArrayList<Object> streamOutObjects;
@@ -166,77 +133,11 @@ class ReduceTaskSchedule {
     }
 
     /**
-     * It compiles and installs the method that represents the object {@code graph}.
-     * 
-     * @param graph
-     *            Compile-graph
-     * @return {@link InstalledCode}
-     */
-    private static InstalledCode compileAndInstallMethod(StructuredGraph graph) {
-        ResolvedJavaMethod method = graph.method();
-        GraalJVMCICompiler graalCompiler = (GraalJVMCICompiler) JVMCI.getRuntime().getCompiler();
-        RuntimeProvider capability = graalCompiler.getGraalRuntime().getCapability(RuntimeProvider.class);
-        Backend backend = capability.getHostBackend();
-        Providers providers = backend.getProviders();
-        CompilationIdentifier compilationID = backend.getCompilationIdentifier(method);
-        EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
-        opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
-        OptionValues options = new OptionValues(opts);
-        try (Scope ignored = Debug.scope("compileMethodAndInstall", new DebugDumpScope(String.valueOf(compilationID), true))) {
-            PhaseSuite<HighTierContext> graphBuilderPhase = backend.getSuites().getDefaultGraphBuilderSuite();
-            Suites suites = backend.getSuites().getDefaultSuites(options);
-            LIRSuites lirSuites = backend.getSuites().getDefaultLIRSuites(options);
-            OptimisticOptimizations optimizationsOpts = OptimisticOptimizations.ALL;
-            ProfilingInfo profilerInfo = graph.getProfilingInfo(method);
-            CompilationResult compilationResult = new CompilationResult();
-            CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
-            GraalCompiler.compileGraph(graph, method, providers, backend, graphBuilderPhase, optimizationsOpts, profilerInfo, suites, lirSuites, compilationResult, factory);
-            return backend.addInstalledCode(method, asCompilationRequest(compilationID), compilationResult);
-        } catch (Throwable e) {
-            throw Debug.handle(e);
-        }
-    }
-
-    /**
-     * It performs a loop-range substitution for the lower part of the reduction.
-     * 
-     * @param graph
-     *            Input Graal {@link StructuredGraph}
-     * @param lowValue
-     *            Low value to include in the compile-graph
-     */
-    private static void performLoopBoundNodeSubstitution(StructuredGraph graph, long lowValue) {
-        for (Node n : graph.getNodes()) {
-            if (n instanceof LoopBeginNode) {
-                LoopBeginNode beginNode = (LoopBeginNode) n;
-                FixedNode node = beginNode.next();
-                while (!(node instanceof IfNode)) {
-                    node = (FixedNode) node.successors().first();
-                }
-
-                IfNode ifNode = (IfNode) node;
-                LogicNode condition = ifNode.condition();
-                if (condition instanceof IntegerLessThanNode) {
-                    IntegerLessThanNode integer = (IntegerLessThanNode) condition;
-                    ValueNode x = integer.getX();
-                    final ConstantNode low = graph.addOrUnique(ConstantNode.forLong(lowValue));
-                    if (x instanceof PhiNode) {
-                        // Node substitution
-                        PhiNode phi = (PhiNode) x;
-                        if (phi.valueAt(0) instanceof ConstantNode) {
-                            phi.setValueAt(0, low);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * It runs a compiled method by Graal in HotSpot.
      * 
      * @param taskPackage
-     *            {@link TaskPackage} metadata that stores the method parameters.
+     *            {@link TaskPackage} metadata that stores the method
+     *            parameters.
      * @param code
      *            {@link InstalledCode} code to be executed
      */
@@ -272,7 +173,7 @@ class ReduceTaskSchedule {
      */
     private boolean isTaskElegibleSplitHostAndDevice(final int targetDeviceToRun) {
         if (elementsReductionLeftOver > 0) {
-            TornadoDeviceType deviceType = getTornadoRuntime().getDriver(0).getDevice(targetDeviceToRun).getDeviceType();
+            TornadoDeviceType deviceType = TornadoCoreRuntime.getTornadoRuntime().getDriver(0).getDevice(targetDeviceToRun).getDeviceType();
             return deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.FPGA;
         }
         return false;
@@ -313,8 +214,8 @@ class ReduceTaskSchedule {
             StructuredGraph originalGraph = CodeAnalysis.buildHighLevelGraalGraph(codeTask);
             assert originalGraph != null;
             StructuredGraph graph = (StructuredGraph) originalGraph.copy();
-            performLoopBoundNodeSubstitution(graph, sizeTargetDevice);
-            code = compileAndInstallMethod(graph);
+            ReduceCodeAnalysis.performLoopBoundNodeSubstitution(graph, sizeTargetDevice);
+            code = CodeAnalysis.compileAndInstallMethod(graph);
         }
     }
 
@@ -388,13 +289,14 @@ class ReduceTaskSchedule {
      * task-schedule expression that contains: a) the parallel reduction; b) the
      * final sequential reduction.
      * 
-     * It also creates a new thread in the case the input size for the reduction is
-     * not power of two and the target device is either the FPGA or the GPU. In this
-     * case, the new thread will compile the host part with the corresponding
-     * sub-range that does not fit into the power-of-two part.
+     * It also creates a new thread in the case the input size for the reduction
+     * is not power of two and the target device is either the FPGA or the GPU.
+     * In this case, the new thread will compile the host part with the
+     * corresponding sub-range that does not fit into the power-of-two part.
      * 
      * @param metaReduceTable
-     *            Metadata to create all new tasks for the reductions dynamically.
+     *            Metadata to create all new tasks for the reductions
+     *            dynamically.
      * @return {@link TaskSchedule} with the new reduction
      */
     TaskSchedule scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
@@ -451,7 +353,7 @@ class ReduceTaskSchedule {
                     }
 
                     // Set the new array size
-                    int sizeReductionArray = obtainSizeArrayResult(deviceToRun, inputSize);
+                    int sizeReductionArray = obtainSizeArrayResult(DEFAULT_DRIVER_INDEX, deviceToRun, inputSize);
                     Object newArray = createNewReduceArray(originalReduceVariable, sizeReductionArray);
                     Object neutralElement = getNeutralElement(originalReduceVariable);
                     fillOutputArrayWithNeutral(newArray, neutralElement);
@@ -509,15 +411,14 @@ class ReduceTaskSchedule {
                 }
             }
         }
-
         TornadoTaskSchedule.performStreamOutThreads(rewrittenTaskSchedule, streamOutObjects);
-        rewrittenTaskSchedule.execute();
-        updateOutputArray();
+        executeExpression();
         counter++;
         return rewrittenTaskSchedule;
     }
 
-    void executeRewritten() {
+    void executeExpression() {
+        setNeutralElement();
         rewrittenTaskSchedule.execute();
         updateOutputArray();
     }
@@ -575,8 +476,8 @@ class ReduceTaskSchedule {
      *            Input size
      * @return Output array size
      */
-    private static int obtainSizeArrayResult(int device, int inputSize) {
-        TornadoDeviceType deviceType = getTornadoRuntime().getDriver(0).getDevice(device).getDeviceType();
+    private static int obtainSizeArrayResult(int driverIndex, int device, int inputSize) {
+        TornadoDeviceType deviceType = TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(device).getDeviceType();
         switch (deviceType) {
             case CPU:
                 return Runtime.getRuntime().availableProcessors() + 1;
