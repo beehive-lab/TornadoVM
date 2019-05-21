@@ -539,15 +539,15 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void runReduceTaskSchedule(TaskSchedule ts) {
-        reduceMeta.setNeutralElement();
-        reduceTaskSchedule.execute();
-        reduceMeta.updateOutputArray();
+        this.reduceMeta.setNeutralElement();
+        this.reduceTaskSchedule.execute();
+        this.reduceMeta.updateOutputArray();
     }
 
     private void rewriteTaskForReduceSkeleton(MetaReduceCodeAnalysis analysisTaskSchedule) {
-        reduceMeta = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects);
-        reduceTaskSchedule = reduceMeta.scheduleWithReduction(analysisTaskSchedule);
-        reduceExpressionRewritten = true;
+        this.reduceMeta = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects);
+        this.reduceTaskSchedule = reduceMeta.scheduleWithReduction(analysisTaskSchedule);
+        this.reduceExpressionRewritten = true;
     }
 
     private AbstractTaskGraph reduceAnalysis() {
@@ -577,7 +577,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public AbstractTaskGraph schedule() {
         AbstractTaskGraph executionGraph = null;
-        if (EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
+        if (EXPERIMENTAL_REDUCE && !(getId().startsWith(ReduceTaskSchedule.TASK_SCHEDULE_PREFIX))) {
             executionGraph = analyzeSkeletonAndRun();
         }
 
