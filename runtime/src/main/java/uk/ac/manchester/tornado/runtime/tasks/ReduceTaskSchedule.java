@@ -99,6 +99,11 @@ class ReduceTaskSchedule {
     }
 
     private Object createNewReduceArray(Object reduceVariable, int size) {
+
+        if (size == 1) {
+            return reduceVariable;
+        }
+
         Object newArray;
         if (reduceVariable instanceof int[]) {
             newArray = new int[size];
@@ -237,9 +242,7 @@ class ReduceTaskSchedule {
                 e.printStackTrace();
             }
             runBinaryCodeForReduction(taskPackage, compilationThread.getCode());
-
         }
-
     }
 
     private void createThreads(Object codeTask, final TaskPackage taskPackage, final long sizeTargetDevice) {
@@ -281,7 +284,6 @@ class ReduceTaskSchedule {
                 }
             }
         }
-
     }
 
     /**
