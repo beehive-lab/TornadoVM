@@ -25,7 +25,6 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitiveClass;
@@ -126,20 +125,20 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * Options for Dynamic Reconfiguration
      */
-    public static final boolean DEBUG_POLICY = Boolean.parseBoolean(System.getProperty("tornado.dynamic.verbose", "False"));
-    public static final boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
+    private static final boolean DEBUG_POLICY = Boolean.parseBoolean(System.getProperty("tornado.dynamic.verbose", "False"));
+    private static final boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int PERFORMANCE_WARMUP = 3;
     private final static boolean TIME_IN_NANOSECONDS = Tornado.TIME_IN_NANOSECONDS;
-    public static final String TASK_SCHEDULE_PREFIX = "XXX";
+    private static final String TASK_SCHEDULE_PREFIX = "XXX";
     private static final ConcurrentHashMap<Policy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
-    public static final int HISTORY_POINTS_PREDICTION = 5;
-    public static final boolean USE_GLOBAL_TASK_CACHE = false;
+    private static final int HISTORY_POINTS_PREDICTION = 5;
+    private static final boolean USE_GLOBAL_TASK_CACHE = false;
 
     /**
      * Options for new reductions - experimental
      */
-    public static final boolean EXPERIMENTAL_REDUCE = Boolean.parseBoolean(System.getProperty("tornado.experimental.reduce", "True"));
+    private static final boolean EXPERIMENTAL_REDUCE = Boolean.parseBoolean(System.getProperty("tornado.experimental.reduce", "True"));
     private boolean reduceExpressionRewritten = false;
     private TaskSchedule reduceTaskSchedule = null;
     private ReduceTaskSchedule reduceMeta;
@@ -150,6 +149,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
      * 
      * @param taskScheduleName
+     *            Task-Schedule name
      */
     public TornadoTaskSchedule(String taskScheduleName) {
         graphContext = new TornadoExecutionContext(taskScheduleName);
@@ -216,13 +216,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         hlBuffer.put(TornadoGraphBitcodes.ARG_LIST.index());
         hlBuffer.putInt(args.length);
 
-        for (int i = 0; i < args.length; i++) {
-            final Object arg = args[i];
+        for (final Object arg : args) {
             index = graphContext.insertVariable(arg);
             if (arg.getClass().isPrimitive() || isBoxedPrimitiveClass(arg.getClass())) {
                 hlBuffer.put(TornadoGraphBitcodes.LOAD_PRIM.index());
             } else {
-                guarantee(arg != null, "null argument passed to task");
                 hlBuffer.put(TornadoGraphBitcodes.LOAD_REF.index());
             }
             hlBuffer.putInt(index);
@@ -318,7 +316,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * task</li>
      * </p>
      * 
-     * @return {@CompileInfo}
+     * @return {@link CompileInfo}
      */
     private CompileInfo extractCompileInfo() {
         if (result == null && isLastDeviceListEmpty()) {
@@ -348,7 +346,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private void precompilationForFPGA() {
+    private void preCompilationForFPGA() {
         // If current FPGA execution and JIT mode => run warmup
         if (Tornado.FPGA_EMULATION && Tornado.ACCELERATOR_IS_FPGA) {
             if (Tornado.DEBUG) {
@@ -376,7 +374,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
 
         if (compile) {
-            precompilationForFPGA();
+            preCompilationForFPGA();
         }
 
         // XXX: Unify TornadoVM interpreters
@@ -695,7 +693,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return winner;
     }
 
-    public static void performStreamInThread(TaskSchedule task, ArrayList<Object> inputObjects) {
+    static void performStreamInThread(TaskSchedule task, ArrayList<Object> inputObjects) {
         int numObjectsCopyIn = inputObjects.size();
         switch (numObjectsCopyIn) {
             case 0:
@@ -736,7 +734,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    public static void performStreamOutThreads(TaskSchedule task, ArrayList<Object> outputArrays) {
+    static void performStreamOutThreads(TaskSchedule task, ArrayList<Object> outputArrays) {
         int numObjectsCopyOut = outputArrays.size();
         switch (numObjectsCopyOut) {
             case 0:
@@ -957,11 +955,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private Object cloneObject(Object o) {
         if (o instanceof float[]) {
-            float[] clone = ((float[]) o).clone();
-            return clone;
+            return ((float[]) o).clone();
         } else if (o instanceof int[]) {
-            int[] clone = ((int[]) o).clone();
-            return clone;
+            return ((int[]) o).clone();
         } else {
             throw new RuntimeException("Data type cloning not supported");
         }
@@ -1190,10 +1186,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     /**
-     * Class that keeps the history of executions based on their data sizes. It
-     * has a sorted map (TreeMap) that keeps the relationship between the input
-     * size and the actual Tornado device in which the task was executed based
-     * on the profiler for the dynamic reconfiguration.
+     * Class that keeps the history of executions based on their data sizes. It has
+     * a sorted map (TreeMap) that keeps the relationship between the input size and
+     * the actual Tornado device in which the task was executed based on the
+     * profiler for the dynamic reconfiguration.
      */
     private static class HistoryTable {
         /**
@@ -1372,8 +1368,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     public void batch(String batchSize) {
 
         // parse value and units
-        Pattern pattern;
-        pattern = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
+        Pattern pattern = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
         Matcher matcher = pattern.matcher(batchSize);
         long value = 0;
         String units = null;

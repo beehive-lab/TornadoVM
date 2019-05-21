@@ -81,7 +81,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
 class ReduceTaskSchedule {
 
-    static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
+    private static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
     static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce-seq";
 
     private static final int DEFAULT_GPU_WORK_GROUP = 256;
@@ -147,7 +147,7 @@ class ReduceTaskSchedule {
         return newArray;
     }
 
-    private Object getNeutralElement(Object originalArray, Object newArray) {
+    private Object getNeutralElement(Object originalArray) {
         if (originalArray instanceof int[]) {
             return ((int[]) originalArray)[0];
         } else if (originalArray instanceof float[]) {
@@ -166,8 +166,7 @@ class ReduceTaskSchedule {
     }
 
     /**
-     * It compiles and installs the method that represents the object
-     * {@code graph}.
+     * It compiles and installs the method that represents the object {@code graph}.
      * 
      * @param graph
      *            Compile-graph
@@ -199,8 +198,7 @@ class ReduceTaskSchedule {
     }
 
     /**
-     * It performs a loop-range substitution for the lower part of the
-     * reduction.
+     * It performs a loop-range substitution for the lower part of the reduction.
      * 
      * @param graph
      *            Input Graal {@link StructuredGraph}
@@ -238,8 +236,7 @@ class ReduceTaskSchedule {
      * It runs a compiled method by Graal in HotSpot.
      * 
      * @param taskPackage
-     *            {@link TaskPackage} metadata that stores the method
-     *            parameters.
+     *            {@link TaskPackage} metadata that stores the method parameters.
      * @param code
      *            {@link InstalledCode} code to be executed
      */
@@ -281,7 +278,7 @@ class ReduceTaskSchedule {
         return false;
     }
 
-    public void runHostThreads() {
+    private void runHostThreads() {
         if (threadSequentialExecution != null && !threadSequentialExecution.isEmpty()) {
             for (Thread t : threadSequentialExecution) {
                 t.run();
@@ -302,7 +299,7 @@ class ReduceTaskSchedule {
         private final long sizeTargetDevice;
         private InstalledCode code;
 
-        public CompilationThread(Object codeTask, final long sizeTargetDevice) {
+        CompilationThread(Object codeTask, final long sizeTargetDevice) {
             this.codeTask = codeTask;
             this.sizeTargetDevice = sizeTargetDevice;
         }
@@ -326,7 +323,7 @@ class ReduceTaskSchedule {
         final CompilationThread compilationThread;
         private TaskPackage taskPackage;
 
-        public SequentialExecutionThread(CompilationThread c, TaskPackage taskPackage) {
+        SequentialExecutionThread(CompilationThread c, TaskPackage taskPackage) {
             this.compilationThread = c;
             this.taskPackage = taskPackage;
         }
@@ -391,14 +388,13 @@ class ReduceTaskSchedule {
      * task-schedule expression that contains: a) the parallel reduction; b) the
      * final sequential reduction.
      * 
-     * It also creates a new thread in the case the input size for the reduction
-     * is not power of two and the target device is either the FPGA or the GPU.
-     * In this case, the new thread will compile the host part with the
-     * corresponding sub-range that does not fit into the power-of-two part.
+     * It also creates a new thread in the case the input size for the reduction is
+     * not power of two and the target device is either the FPGA or the GPU. In this
+     * case, the new thread will compile the host part with the corresponding
+     * sub-range that does not fit into the power-of-two part.
      * 
      * @param metaReduceTable
-     *            Metadata to create all new tasks for the reductions
-     *            dynamically.
+     *            Metadata to create all new tasks for the reductions dynamically.
      * @return {@link TaskSchedule} with the new reduction
      */
     TaskSchedule scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
@@ -457,7 +453,7 @@ class ReduceTaskSchedule {
                     // Set the new array size
                     int sizeReductionArray = obtainSizeArrayResult(deviceToRun, inputSize);
                     Object newArray = createNewReduceArray(originalReduceVariable, sizeReductionArray);
-                    Object neutralElement = getNeutralElement(originalReduceVariable, newArray);
+                    Object neutralElement = getNeutralElement(originalReduceVariable);
                     fillOutputArrayWithNeutral(newArray, neutralElement);
 
                     neutralElementsNew.put(newArray, neutralElement);
@@ -465,7 +461,7 @@ class ReduceTaskSchedule {
 
                     taskPackage.getTaskParameters()[paramIndex + 1] = newArray;
 
-                    // Store metadata
+                    // Store metadatad
                     streamReduceUpdatedList.add(newArray);
                     sizesReductionArray.add(sizeReductionArray);
                     originalReduceVariables.put(originalReduceVariable, newArray);
@@ -593,7 +589,7 @@ class ReduceTaskSchedule {
         return 0;
     }
 
-    public ArrayList<Thread> getHostThreadReduction() {
+    private ArrayList<Thread> getHostThreadReduction() {
         return this.threadSequentialExecution;
     }
 }
