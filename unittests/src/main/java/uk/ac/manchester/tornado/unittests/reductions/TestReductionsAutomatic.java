@@ -115,7 +115,6 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         Random r = new Random();
         IntStream.range(0, dataSizes.length).forEach(idx -> dataSizes[idx] = r.nextInt(1000));
         for (Integer size : dataSizes) {
-            System.out.println("Checking " + size);
             testIrregular(size);
         }
     }
