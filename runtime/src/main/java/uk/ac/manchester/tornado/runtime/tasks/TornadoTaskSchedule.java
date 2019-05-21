@@ -577,7 +577,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public AbstractTaskGraph schedule() {
         AbstractTaskGraph executionGraph = null;
-        if (EXPERIMENTAL_REDUCE && !(getId().startsWith(ReduceTaskSchedule.TASK_SCHEDULE_PREFIX))) {
+        if (EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
             executionGraph = analyzeSkeletonAndRun();
         }
 
