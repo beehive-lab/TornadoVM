@@ -622,6 +622,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final TornadoAcceleratorDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
+
                 if (graphContext.meta().isDebug()) {
                     debug("vm: STREAM_IN [0x%x] %s on %s [event list=%d]", object.hashCode(), object, device, eventList);
                 }
@@ -685,6 +686,7 @@ public class TornadoVM extends TornadoLogger {
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
+
             } else if (op == TornadoVMBytecodes.LAUNCH.index()) {
                 final int gtid = buffer.getInt();
                 final int contextIndex = buffer.getInt();

@@ -92,6 +92,10 @@ class ReduceTaskSchedule {
     private HashMap<Object, Object> originalReduceVariables;
     private long elementsReductionLeftOver = 0;
     private ArrayList<Thread> threadSequentialExecution;
+    private HashMap<Object, Object> neutralElementsNew = new HashMap<>();
+    private HashMap<Object, Object> neutralElementsOriginal = new HashMap<>();
+
+    private TaskSchedule rewrittenTaskSchedule;
 
     ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects) {
         this.taskPackages = taskPackages;
@@ -130,20 +134,30 @@ class ReduceTaskSchedule {
         Object newArray;
         if (reduceVariable instanceof int[]) {
             newArray = new int[size];
-            Arrays.fill((int[]) newArray, ((int[]) reduceVariable)[0]);
         } else if (reduceVariable instanceof float[]) {
             newArray = new float[size];
-            Arrays.fill((float[]) newArray, ((float[]) reduceVariable)[0]);
         } else if (reduceVariable instanceof double[]) {
             newArray = new double[size];
-            Arrays.fill((double[]) newArray, ((double[]) reduceVariable)[0]);
         } else if (reduceVariable instanceof long[]) {
             newArray = new long[size];
-            Arrays.fill((long[]) newArray, ((long[]) reduceVariable)[0]);
         } else {
             throw new TornadoRuntimeException("[ERROR] reduce type not supported yet: " + reduceVariable.getClass());
         }
         return newArray;
+    }
+
+    private Object getNeutralElement(Object originalArray, Object newArray) {
+        if (originalArray instanceof int[]) {
+            return ((int[]) originalArray)[0];
+        } else if (originalArray instanceof float[]) {
+            return ((float[]) originalArray)[0];
+        } else if (originalArray instanceof double[]) {
+            return ((double[]) originalArray)[0];
+        } else if (originalArray instanceof long[]) {
+            return ((long[]) originalArray)[0];
+        } else {
+            throw new TornadoRuntimeException("[ERROR] reduce type not supported yet: " + originalArray.getClass());
+        }
     }
 
     private boolean isPowerOfTwo(final long number) {
@@ -342,6 +356,35 @@ class ReduceTaskSchedule {
         taskPackage.setNumThreadsToRun(sizeTargetDevice);
     }
 
+    private void updateStreamInOutVariables() {
+        // Update Stream IN and Stream OUT
+        for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
+
+            // Update streamIn if needed (substitute if output appears as
+            // stream-in with the new created array).
+            for (int i = 0; i < streamInObjects.size(); i++) {
+                if (originalReduceVariables.containsKey(streamInObjects.get(i))) {
+                    streamInObjects.set(i, originalReduceVariables.get(streamInObjects.get(i)));
+                }
+            }
+
+            // Add the rest of the variables
+            for (Entry<Object, Object> pair : originalReduceVariables.entrySet()) {
+                streamInObjects.add(pair.getValue());
+            }
+
+            TornadoTaskSchedule.performStreamInThread(rewrittenTaskSchedule, streamInObjects);
+
+            for (int i = 0; i < streamOutObjects.size(); i++) {
+                if (originalReduceVariables.containsKey(streamOutObjects.get(i))) {
+                    Object newArray = originalReduceVariables.get(streamOutObjects.get(i));
+                    streamOutObjects.set(i, newArray);
+                }
+            }
+        }
+
+    }
+
     /**
      * Compose and execute the new reduction. It dynamically creates a new
      * task-schedule expression that contains: a) the parallel reduction; b) the
@@ -364,7 +407,6 @@ class ReduceTaskSchedule {
         HashMap<Integer, MetaReduceTasks> tableReduce = metaReduceTable.getTable();
 
         String taskScheduleReduceName = TASK_SCHEDULE_PREFIX;
-        TaskSchedule rewrittenTaskSchedule = new TaskSchedule(taskScheduleReduceName);
         String tsName = idTaskSchedule;
 
         ArrayList<Object> streamReduceUpdatedList = new ArrayList<>();
@@ -394,7 +436,6 @@ class ReduceTaskSchedule {
                 for (Integer paramIndex : listOfReduceIndexParameters) {
 
                     Object originalReduceVariable = taskPackage.getTaskParameters()[paramIndex + 1];
-                    Object codeTask = taskPackage.getTaskParameters()[0];
                     int inputSize = metaReduceTasks.getInputSize(taskNumber);
 
                     // Analyse Input Size - if not power of 2 -> split host and
@@ -408,12 +449,19 @@ class ReduceTaskSchedule {
                     final int sizeTargetDevice = inputSize;
 
                     if (isTaskElegibleSplitHostAndDevice(targetDeviceToRun)) {
+                        Object codeTask = taskPackage.getTaskParameters()[0];
                         createThreads(codeTask, taskPackage, sizeTargetDevice);
                     }
 
                     // Set the new array size
                     int sizeReductionArray = obtainSizeArrayResult(deviceToRun, inputSize);
                     Object newArray = createNewReduceArray(originalReduceVariable, sizeReductionArray);
+                    Object neutralElement = getNeutralElement(originalReduceVariable, newArray);
+                    fillOutputArrayWithNeutral(newArray, neutralElement);
+
+                    neutralElementsNew.put(newArray, neutralElement);
+                    neutralElementsOriginal.put(newArray, neutralElement);
+
                     taskPackage.getTaskParameters()[paramIndex + 1] = newArray;
 
                     // Store metadata
@@ -424,24 +472,8 @@ class ReduceTaskSchedule {
             }
         }
 
-        // Update Stream IN and Stream OUT
-        for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
-
-            // Update streamIn if needed
-            for (int i = 0; i < streamInObjects.size(); i++) {
-                if (originalReduceVariables.containsKey(streamInObjects.get(i))) {
-                    streamInObjects.set(i, originalReduceVariables.get(streamInObjects.get(i)));
-                }
-            }
-            TornadoTaskSchedule.performStreamInThread(rewrittenTaskSchedule, streamInObjects);
-
-            for (int i = 0; i < streamOutObjects.size(); i++) {
-                if (originalReduceVariables.containsKey(streamOutObjects.get(i))) {
-                    Object newArray = originalReduceVariables.get(streamOutObjects.get(i));
-                    streamOutObjects.set(i, newArray);
-                }
-            }
-        }
+        rewrittenTaskSchedule = new TaskSchedule(taskScheduleReduceName);
+        updateStreamInOutVariables();
 
         // Compose Task Schedule
         for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
@@ -485,6 +517,25 @@ class ReduceTaskSchedule {
         rewrittenTaskSchedule.execute();
         updateOutputArray();
         return rewrittenTaskSchedule;
+    }
+
+    void executeRewritten() {
+        rewrittenTaskSchedule.execute();
+        updateOutputArray();
+    }
+
+    void setNeutralElement() {
+        for (Entry<Object, Object> pair : neutralElementsNew.entrySet()) {
+            Object newArray = pair.getKey();
+            Object neutralElement = pair.getValue();
+            fillOutputArrayWithNeutral(newArray, neutralElement);
+        }
+
+        for (Entry<Object, Object> pair : neutralElementsOriginal.entrySet()) {
+            Object newArray = pair.getKey();
+            Object neutralElement = pair.getValue();
+            fillOutputArrayWithNeutral(newArray, neutralElement);
+        }
     }
 
     /**

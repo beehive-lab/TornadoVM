@@ -35,6 +35,7 @@ public class ReductionIrregular {
     }
 
     private void run(final int inputSize) {
+
         float[] input = new float[inputSize];
         float[] result = new float[] { 0.0f };
         Random r = new Random(101);
@@ -46,22 +47,21 @@ public class ReductionIrregular {
             .streamOut(result);
         //@formatter:on
 
-        float[] sequential = new float[1];
-
         ArrayList<Long> timers = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
 
             IntStream.range(0, inputSize).parallel().forEach(idx -> {
                 input[idx] = r.nextFloat();
             });
-            ReductionIrregular.reduceFloats(input, sequential);
+            float[] sequential = new float[1];
+            reduceFloats(input, sequential);
 
             long start = System.nanoTime();
             task.execute();
             long end = System.nanoTime();
             timers.add((end - start));
 
-            if (Math.abs(sequential[0] - result[0]) > 0.01f) {
+            if (Math.abs(sequential[0] - result[0]) > 0.1f) {
                 System.out.println("Result is not correct - iteration: " + i + " expected: " + sequential[0] + " but found: " + result[0]);
             } else {
                 System.out.println("Iteration: " + i + " is correct");

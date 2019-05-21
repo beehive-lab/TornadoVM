@@ -539,6 +539,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void runReduceTaskSchedule(TaskSchedule ts) {
+        reduceMeta.setNeutralElement();
         reduceTaskSchedule.execute();
         reduceMeta.updateOutputArray();
     }
@@ -716,6 +717,18 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 break;
             case 6:
                 task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5));
+            case 7:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6));
+                break;
+            case 8:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7));
+                break;
+            case 9:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8));
+            case 10:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8), inputObjects.get(9));
                 break;
             default:
                 System.out.println("COPY-IN Not supported yet: " + numObjectsCopyIn);
