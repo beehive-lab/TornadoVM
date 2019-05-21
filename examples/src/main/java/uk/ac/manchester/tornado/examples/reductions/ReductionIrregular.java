@@ -48,7 +48,7 @@ public class ReductionIrregular {
         //@formatter:on
 
         ArrayList<Long> timers = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {
 
             IntStream.range(0, inputSize).parallel().forEach(idx -> {
                 input[idx] = r.nextFloat();
