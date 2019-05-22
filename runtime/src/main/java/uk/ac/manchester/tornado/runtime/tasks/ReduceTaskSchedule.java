@@ -140,8 +140,7 @@ class ReduceTaskSchedule {
      * It runs a compiled method by Graal in HotSpot.
      * 
      * @param taskPackage
-     *            {@link TaskPackage} metadata that stores the method
-     *            parameters.
+     *            {@link TaskPackage} metadata that stores the method parameters.
      * @param code
      *            {@link InstalledCode} code to be executed
      */
@@ -290,14 +289,13 @@ class ReduceTaskSchedule {
      * task-schedule expression that contains: a) the parallel reduction; b) the
      * final sequential reduction.
      * 
-     * It also creates a new thread in the case the input size for the reduction
-     * is not power of two and the target device is either the FPGA or the GPU.
-     * In this case, the new thread will compile the host part with the
-     * corresponding sub-range that does not fit into the power-of-two part.
+     * It also creates a new thread in the case the input size for the reduction is
+     * not power of two and the target device is either the FPGA or the GPU. In this
+     * case, the new thread will compile the host part with the corresponding
+     * sub-range that does not fit into the power-of-two part.
      * 
      * @param metaReduceTable
-     *            Metadata to create all new tasks for the reductions
-     *            dynamically.
+     *            Metadata to create all new tasks for the reductions dynamically.
      * @return {@link TaskSchedule} with the new reduction
      */
     TaskSchedule scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
@@ -425,7 +423,7 @@ class ReduceTaskSchedule {
         updateOutputArray();
     }
 
-    void setNeutralElement() {
+    private void setNeutralElement() {
         for (Entry<Object, Object> pair : neutralElementsNew.entrySet()) {
             Object newArray = pair.getKey();
             Object neutralElement = pair.getValue();
@@ -442,7 +440,7 @@ class ReduceTaskSchedule {
     /**
      * Copy out the result back to the original buffer.
      */
-    void updateOutputArray() {
+    private void updateOutputArray() {
 
         if (getHostThreadReduction() != null) {
             runHostThreads();
