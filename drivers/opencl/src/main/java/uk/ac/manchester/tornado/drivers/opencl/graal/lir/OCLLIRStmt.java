@@ -143,6 +143,8 @@ public class OCLLIRStmt {
         protected OCLAddressCast cast;
         @Use
         protected MemoryAccess address;
+        @Use
+        protected Value index;
 
         public LoadStmt(AllocatableValue lhs, OCLAddressCast cast, MemoryAccess address) {
             super(TYPE);
@@ -151,8 +153,26 @@ public class OCLLIRStmt {
             this.address = address;
         }
 
+        public LoadStmt(AllocatableValue lhs, OCLAddressCast cast, MemoryAccess address, Value index) {
+            super(TYPE);
+            this.lhs = lhs;
+            this.cast = cast;
+            this.address = address;
+            this.index = index;
+        }
+
         public void emitIntegerBasedIndexCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.emitValue(crb, lhs);
+            asm.space();
+            asm.assign();
+            asm.space();
+            address.emit(crb, asm);
+            asm.emit("[");
+            asm.emitValue(crb, index);
+            asm.emit("]");
+            asm.delimiter();
+            asm.eol();
+
         }
 
         public void emitPointerBaseIndexCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
@@ -268,6 +288,8 @@ public class OCLLIRStmt {
         protected OCLAddressCast cast;
         @Use
         protected MemoryAccess address;
+        @Use
+        protected Value index;
 
         public StoreStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
             super(TYPE);
@@ -276,13 +298,20 @@ public class OCLLIRStmt {
             this.address = address;
         }
 
+        public StoreStmt(OCLAddressCast cast, MemoryAccess address, Value rhs, Value index) {
+            super(TYPE);
+            this.rhs = rhs;
+            this.cast = cast;
+            this.address = address;
+            this.index = index;
+        }
+
         public void emitIntegerStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             // ul_12[index] = 102;
             // __local float ul_12[512];
-
             asm.emitValue(crb, address);
             asm.emit("[");
-            asm.emitValue(crb, address);
+            asm.emitValue(crb, index);
             asm.emit("]");
             asm.space();
             asm.assign();
