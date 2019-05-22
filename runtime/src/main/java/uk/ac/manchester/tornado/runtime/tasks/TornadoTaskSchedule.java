@@ -337,11 +337,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void compileTaskToOpenCL() {
-        if (this.batchSizeBytes != -1) {
-            vm.compileWithBatches();
-        } else {
-            vm.compile();
-        }
+        vm.compile();
     }
 
     private void preCompilationForFPGA() {
@@ -375,12 +371,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             preCompilationForFPGA();
         }
 
-        // XXX: Unify TornadoVM interpreters
-        if (this.batchSizeBytes != -1) {
-            event = vm.executeBatches();
-        } else {
-            event = vm.execute();
-        }
+        event = vm.execute();
     }
 
     @Override

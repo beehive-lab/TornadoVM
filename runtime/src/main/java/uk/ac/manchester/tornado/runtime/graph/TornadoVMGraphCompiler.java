@@ -211,7 +211,7 @@ public class TornadoVMGraphCompiler {
 
         } else {
             // Generate bytecodes with no batches
-            scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies, -1, -1, 0);
+            scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies);
         }
 
         // Last operation -> perform synchronisation
@@ -235,8 +235,8 @@ public class TornadoVMGraphCompiler {
         final int codeSize = result.getCodeSize();
         if (code[codeSize - 13] == TornadoVMBytecodes.STREAM_OUT.index()) {
             code[codeSize - 13] = TornadoVMBytecodes.STREAM_OUT_BLOCKING.index();
-        } else if (code[codeSize - 29] == TornadoVMBytecodes.STREAM_OUT_BATCH.index()) {
-            code[codeSize - 29] = TornadoVMBytecodes.STREAM_OUT_BLOCKING_BATCH.index();
+        } else if (code[codeSize - 29] == TornadoVMBytecodes.STREAM_OUT.index()) {
+            code[codeSize - 29] = TornadoVMBytecodes.STREAM_OUT_BLOCKING.index();
         } else {
             result.barrier(numDepLists);
         }
@@ -303,6 +303,10 @@ public class TornadoVMGraphCompiler {
         }
     }
 
+    private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMGraphCompilationResult result, TornadoGraph graph, int[] nodeIds, BitSet[] deps) {
+        scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, deps, 0, 0, 0);
+    }
+
     private static void scheduleAndEmitTornadoVMBytecodes(TornadoVMGraphCompilationResult result, TornadoGraph graph, int[] nodeIds, BitSet[] deps, long offset, long bufferBatchSize, long nThreads) {
 
         final BitSet scheduled = new BitSet(deps.length);
@@ -334,9 +338,9 @@ public class TornadoVMGraphCompiler {
 
                         try {
                             if (bufferBatchSize != -1) {
-                                result.emitAsyncNodeBatch(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
+                                result.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
                             } else {
-                                result.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i]);
+                                result.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
                             }
                         } catch (BufferOverflowException e) {
                             throw new TornadoRuntimeException("[ERROR] Buffer Overflow exception. Use -Dtornado.tvm.maxbytecodesize=<value> with value > "
