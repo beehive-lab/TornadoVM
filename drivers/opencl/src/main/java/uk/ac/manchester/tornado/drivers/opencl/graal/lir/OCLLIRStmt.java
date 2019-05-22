@@ -193,11 +193,10 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-
             if (this.cast.equals("__global")) {
                 emitPointerBaseIndexCode(crb, asm);
             } else {
-                ;
+                emitPointerBaseIndexCode(crb, asm);
             }
 
         }
