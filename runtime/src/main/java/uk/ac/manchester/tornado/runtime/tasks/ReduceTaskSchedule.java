@@ -174,7 +174,7 @@ class ReduceTaskSchedule {
      *            index of the target device within the Tornado device list.
      * @return boolean
      */
-    private boolean isTaskElegibleSplitHostAndDevice(final int targetDeviceToRun, final long elementsReductionLeftOver, final boolean isPowerOfTwo) {
+    private boolean isTaskEligibleSplitHostAndDevice(final int targetDeviceToRun, final long elementsReductionLeftOver, final boolean isPowerOfTwo) {
         if (!isPowerOfTwo && elementsReductionLeftOver > 0) {
             TornadoDeviceType deviceType = TornadoCoreRuntime.getTornadoRuntime().getDriver(0).getDevice(targetDeviceToRun).getDeviceType();
             return deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.FPGA;
@@ -346,7 +346,7 @@ class ReduceTaskSchedule {
                         inputSize -= elementsReductionLeftOver;
 
                         final int sizeTargetDevice = inputSize;
-                        if (isTaskElegibleSplitHostAndDevice(targetDeviceToRun, elementsReductionLeftOver, isInputPowerOfTwo)) {
+                        if (isTaskEligibleSplitHostAndDevice(targetDeviceToRun, elementsReductionLeftOver, isInputPowerOfTwo)) {
                             Object codeTask = taskPackage.getTaskParameters()[0];
                             createThreads(codeTask, taskPackage, sizeTargetDevice);
                         }
