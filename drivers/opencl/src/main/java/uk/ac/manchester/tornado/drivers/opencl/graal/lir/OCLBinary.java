@@ -81,6 +81,44 @@ public class OCLBinary {
         }
     }
 
+    public static class TestZeroExpression extends BinaryConsumer {
+
+        public TestZeroExpression(OCLBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
+            super(opcode, lirKind, x, y);
+        }
+
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit("(");
+            asm.emitValue(crb, x);
+            asm.emit(" ");
+            asm.emit(opcode.toString());
+            asm.emit(" ");
+            asm.emitValue(crb, y);
+            asm.emit(")");
+            asm.emit(" == 0");
+        }
+    }
+
+    public static class TestNegateZeroExpression extends BinaryConsumer {
+
+        public TestNegateZeroExpression(OCLBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
+            super(opcode, lirKind, x, y);
+        }
+
+        @Override
+        public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emit("!((");
+            asm.emitValue(crb, x);
+            asm.emit(" ");
+            asm.emit(opcode.toString());
+            asm.emit(" ");
+            asm.emitValue(crb, y);
+            asm.emit(")");
+            asm.emit(" == 0)");
+        }
+    }
+
     /**
      * OpenCL intrinsic call which consumes two inputs
      */

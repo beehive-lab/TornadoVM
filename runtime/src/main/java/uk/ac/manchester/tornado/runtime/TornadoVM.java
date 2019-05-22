@@ -52,6 +52,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
+import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 /**
@@ -621,6 +622,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final TornadoAcceleratorDevice device = contexts.get(contextIndex);
                 final Object object = objects.get(objectIndex);
+
                 if (graphContext.meta().isDebug()) {
                     debug("vm: STREAM_IN [0x%x] %s on %s [event list=%d]", object.hashCode(), object, device, eventList);
                 }
@@ -684,6 +686,7 @@ public class TornadoVM extends TornadoLogger {
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
+
             } else if (op == TornadoVMBytecodes.LAUNCH.index()) {
                 final int gtid = buffer.getInt();
                 final int contextIndex = buffer.getInt();
@@ -767,7 +770,7 @@ public class TornadoVM extends TornadoLogger {
                 if (task.meta() instanceof TaskMetaData) {
                     metadata = (TaskMetaData) task.meta();
                 } else {
-                    throw new RuntimeException("task.meta is not instanceof TaskMetada");
+                    throw new RuntimeException("task.meta is not instanceof TaskMetada: " + task.getClass());
                 }
 
                 if (useDependencies) {

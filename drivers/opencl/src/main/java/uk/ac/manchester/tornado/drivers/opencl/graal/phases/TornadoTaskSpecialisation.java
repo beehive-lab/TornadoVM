@@ -158,7 +158,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             }
 
         } catch (IllegalArgumentException | IllegalAccessException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 

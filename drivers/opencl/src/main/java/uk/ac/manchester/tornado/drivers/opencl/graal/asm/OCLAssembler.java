@@ -1089,7 +1089,7 @@ public final class OCLAssembler extends Assembler {
         indent();
 
         emitSymbol(OCLAssemblerConstants.IF_STMT);
-        emitSymbol(OCLAssemblerConstants.BRACKET_OPEN);
+        emitSymbol(OCLAssemblerConstants.OPEN_PARENTHESIS);
 
         emit(toString(condition));
         if (((OCLKind) condition.getPlatformKind()) == OCLKind.INT) {
@@ -1097,7 +1097,7 @@ public final class OCLAssembler extends Assembler {
         }
         // value(crb, condition);
 
-        emitSymbol(OCLAssemblerConstants.BRACKET_CLOSE);
+        emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
         eol();
 
     }
@@ -1127,11 +1127,11 @@ public final class OCLAssembler extends Assembler {
         emitSymbol(OCLAssemblerConstants.ELSE);
         space();
         emitSymbol(OCLAssemblerConstants.IF_STMT);
-        emitSymbol(OCLAssemblerConstants.BRACKET_OPEN);
+        emitSymbol(OCLAssemblerConstants.OPEN_PARENTHESIS);
 
         emitValue(crb, condition);
 
-        emitSymbol(OCLAssemblerConstants.BRACKET_CLOSE);
+        emitSymbol(OCLAssemblerConstants.CLOSE_PARENTHESIS);
         eol();
 
     }

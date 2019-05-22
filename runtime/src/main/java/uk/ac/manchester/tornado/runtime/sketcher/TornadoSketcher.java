@@ -83,8 +83,8 @@ public class TornadoSketcher {
             return;
         }
         cache.put(request.resolvedMethod, request);
-        try (Scope s = MethodMetricsRootScopeInfo.createRootScopeIfAbsent(request.resolvedMethod)) {
-            try (Scope s0 = Debug.scope("SketchCompiler")) {
+        try (Scope ignored = MethodMetricsRootScopeInfo.createRootScopeIfAbsent(request.resolvedMethod)) {
+            try (Scope ignored1 = Debug.scope("SketchCompiler")) {
                 request.result = buildSketch(request.meta, request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier);
             } catch (Throwable e) {
                 throw Debug.handle(e);
@@ -93,9 +93,7 @@ public class TornadoSketcher {
     }
 
     private static Sketch buildSketch(TaskMetaData meta, ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier) {
-
         info("Building sketch of %s", resolvedMethod.getName());
-
         TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("sketch-" + resolvedMethod.getName(), sketchId.getAndIncrement());
         Builder builder = new Builder(getTornadoRuntime().getOptions(), AllowAssumptions.YES);
         builder.method(resolvedMethod);
@@ -103,7 +101,7 @@ public class TornadoSketcher {
         builder.name("sketch-" + resolvedMethod.getName());
         final StructuredGraph graph = builder.build();
 
-        try (Scope s = Debug.scope("Sketcher", new DebugDumpScope("Sketcher")); DebugCloseable a = Sketcher.start()) {
+        try (Scope ignored = Debug.scope("Tornado-Sketcher", new DebugDumpScope("Tornado-Sketcher")); DebugCloseable ignored1 = Sketcher.start()) {
             final TornadoSketchTierContext highTierContext = new TornadoSketchTierContext(providers, graphBuilderSuite, optimisticOpts, resolvedMethod, meta);
             if (graph.start().next() == null) {
                 graphBuilderSuite.apply(graph, highTierContext);
@@ -115,14 +113,20 @@ public class TornadoSketcher {
             sketchTier.apply(graph, highTierContext);
             graph.maybeCompress();
 
-            // compile any non-inlined call targets
-            graph.getInvokes().forEach(invoke -> getTornadoExecutor().execute(new SketchRequest(meta, invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier)));
+            // Compile all non-inlined call-targets into a single compilation
+            // unit
+
+            // @formatter:off
+            graph.getInvokes()
+                 .forEach(invoke -> getTornadoExecutor()
+                 .execute(new SketchRequest(meta, invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier)));
+            // @formatter:on
 
             return new Sketch(CachedGraph.fromReadonlyCopy(graph), meta);
+
         } catch (Throwable e) {
             fatal("unable to build sketch for method: %s (%s)", resolvedMethod.getName(), e.getMessage());
             throw new TornadoInternalError(e);
         }
     }
-
 }

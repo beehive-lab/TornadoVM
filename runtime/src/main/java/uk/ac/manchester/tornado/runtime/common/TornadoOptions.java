@@ -29,4 +29,8 @@ public class TornadoOptions {
 
     public static boolean printBytecodes = Boolean.parseBoolean(Tornado.getProperty("tornado.print.bytecodes", "False"));
 
+    public static final boolean DEBUG_POLICY = Boolean.parseBoolean(System.getProperty("tornado.dynamic.verbose", "False"));
+
+    public static final boolean EXPERIMENTAL_REDUCE = Boolean.parseBoolean(System.getProperty("tornado.experimental.reduce", "True"));
+
 }

@@ -61,8 +61,8 @@ public class OCLAssemblerConstants {
     public static final String CURLY_BRACKET_CLOSE = "}";
     public static final String ADDRESS_OF = "&";
 
-    public static final String BRACKET_OPEN = "(";
-    public static final String BRACKET_CLOSE = ")";
+    public static final String OPEN_PARENTHESIS = "(";
+    public static final String CLOSE_PARENTHESIS = ")";
 
     public static final String SQUARE_BRACKETS_OPEN = "[";
     public static final String SQUARE_BRACKETS_CLOSE = "]";

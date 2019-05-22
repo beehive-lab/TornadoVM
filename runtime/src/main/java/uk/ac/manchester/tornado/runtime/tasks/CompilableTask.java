@@ -38,9 +38,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class CompilableTask implements SchedulableTask {
 
     protected final Object[] args;
-
     protected TaskMetaData meta;
-
     protected final Method method;
     protected boolean shouldCompile;
 

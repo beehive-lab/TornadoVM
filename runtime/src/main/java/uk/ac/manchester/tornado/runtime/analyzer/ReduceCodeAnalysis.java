@@ -31,15 +31,21 @@ import java.util.Objects;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.InvokeNode;
+import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
+import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.java.ArrayLengthNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
@@ -116,10 +122,10 @@ public class ReduceCodeAnalysis {
      * @param graph
      *            Graal-IR graph to analyze
      * @param reduceIndexes
-     *            list of reduce indexes within the method parameter list
+     *            List of reduce indexes within the method parameter list
      * @return ArrayList<ValueNode>
      */
-    public static ArrayList<ValueNode> findLoopUpperBoundNode(StructuredGraph graph, ArrayList<Integer> reduceIndexes) {
+    private static ArrayList<ValueNode> findLoopUpperBoundNode(StructuredGraph graph, ArrayList<Integer> reduceIndexes) {
         ArrayList<ValueNode> loopBound = new ArrayList<>();
         for (Integer paramIndex : reduceIndexes) {
             ParameterNode parameterNode = graph.getParameter(paramIndex);
@@ -162,11 +168,12 @@ public class ReduceCodeAnalysis {
 
         HashMap<Integer, MetaReduceTasks> tableMetaReduce = new HashMap<>();
 
-        for (TaskPackage tpackage : taskPackages) {
+        for (TaskPackage taskMetadata : taskPackages) {
 
-            Object taskCode = tpackage.getTaskParameters()[0];
+            Object taskCode = taskMetadata.getTaskParameters()[0];
             StructuredGraph graph = CodeAnalysis.buildHighLevelGraalGraph(taskCode);
 
+            assert graph != null;
             Annotation[][] annotations = graph.method().getParameterAnnotations();
             ArrayList<Integer> reduceIndices = new ArrayList<>();
             for (int paramIndex = 0; paramIndex < annotations.length; paramIndex++) {
@@ -201,5 +208,41 @@ public class ReduceCodeAnalysis {
         }
 
         return (tableMetaReduce.isEmpty() ? null : new MetaReduceCodeAnalysis(tableMetaReduce));
+    }
+
+    /**
+     * It performs a loop-range substitution for the lower part of the
+     * reduction.
+     * 
+     * @param graph
+     *            Input Graal {@link StructuredGraph}
+     * @param lowValue
+     *            Low value to include in the compile-graph
+     */
+    public static void performLoopBoundNodeSubstitution(StructuredGraph graph, long lowValue) {
+        for (Node n : graph.getNodes()) {
+            if (n instanceof LoopBeginNode) {
+                LoopBeginNode beginNode = (LoopBeginNode) n;
+                FixedNode node = beginNode.next();
+                while (!(node instanceof IfNode)) {
+                    node = (FixedNode) node.successors().first();
+                }
+
+                IfNode ifNode = (IfNode) node;
+                LogicNode condition = ifNode.condition();
+                if (condition instanceof IntegerLessThanNode) {
+                    IntegerLessThanNode integer = (IntegerLessThanNode) condition;
+                    ValueNode x = integer.getX();
+                    final ConstantNode low = graph.addOrUnique(ConstantNode.forLong(lowValue));
+                    if (x instanceof PhiNode) {
+                        // Node substitution
+                        PhiNode phi = (PhiNode) x;
+                        if (phi.valueAt(0) instanceof ConstantNode) {
+                            phi.setValueAt(0, low);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

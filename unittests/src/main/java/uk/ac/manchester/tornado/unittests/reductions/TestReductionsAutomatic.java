@@ -19,56 +19,104 @@ package uk.ac.manchester.tornado.unittests.reductions;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsAutomatic extends TornadoTestBase {
 
+    public static void test(int[] input, @Reduce int[] output) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            output[0] += input[i];
+        }
+    }
+
+    public static void testFloat(float[] input, @Reduce float[] output) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            output[0] += input[i];
+        }
+    }
+
+    public static void testConstant(int[] input, @Reduce int[] output) {
+        for (@Parallel int i = 0; i < 20; i++) {
+            int value = (input[i] + 10);
+            output[0] += value;
+        }
+    }
+
     @Test
     public void testIrregularSize01() {
 
-        int numProcessors = Runtime.getRuntime().availableProcessors();
-        final int size = 8192;
-
+        final int size = 18;
         int[] input = new int[size];
-        int partitions = size / 128;
-        int[] result = new int[partitions];
+        int[] result = new int[] { 0 };
 
-        final int neutral = 0;
-        Arrays.fill(result, neutral);
-
-        Random r = new Random();
         IntStream.range(0, size).parallel().forEach(i -> {
-            // input[i] = r.nextInt(100);
-            input[i] = 2;
+            input[i] = i;
         });
 
         //@formatter:off
-        new TaskSchedule("s0")
+        TaskSchedule task = new TaskSchedule("s0")
             .streamIn(input)
-            .task("t0", TestReductionsIntegers::reductionAnnotation, input, result)
-            .streamOut(result)
-            .execute();
+            .task("t0", TestReductionsAutomatic::test, input, result)
+            .streamOut(result);
         //@formatter:on
 
-        System.out.println(Arrays.toString(result));
+        task.execute();
 
         int[] sequential = new int[1];
-        TestReductionsIntegers.reductionAnnotation(input, sequential);
-
-        // Final result
-        for (int i = 1; i < result.length; i++) {
-            result[0] += result[i];
-        }
+        test(input, sequential);
 
         // Check result
         assertEquals(sequential[0], result[0]);
+    }
+
+    private void testIrregular(final int inputSize) {
+
+        float[] input = new float[inputSize];
+        float[] result = new float[] { 0.0f };
+
+        Random r = new Random();
+        IntStream.range(0, inputSize).parallel().forEach(i -> {
+            input[i] = r.nextFloat();
+        });
+
+        //@formatter:off
+        TaskSchedule task = new TaskSchedule("s0")
+            .streamIn(input)
+            .task("t0", TestReductionsAutomatic::testFloat, input, result)
+            .streamOut(result);
+        //@formatter:on
+
+        task.execute();
+
+        float[] sequential = new float[1];
+        testFloat(input, sequential);
+
+        // Check result
+        assertEquals(sequential[0], result[0], 0.1f);
+    }
+
+    @Test
+    public void testIrregularSize02() {
+        testIrregular(2130);
+        testIrregular(18);
+    }
+
+    @Test
+    public void testIrregularSize03() {
+        int[] dataSizes = new int[50];
+        Random r = new Random();
+        IntStream.range(0, dataSizes.length).forEach(idx -> dataSizes[idx] = r.nextInt(1000));
+        for (Integer size : dataSizes) {
+            testIrregular(size);
+        }
     }
 
 }
