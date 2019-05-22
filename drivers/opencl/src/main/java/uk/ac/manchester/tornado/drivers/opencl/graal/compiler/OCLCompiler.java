@@ -475,7 +475,7 @@ public class OCLCompiler {
 
         final TaskMetaData taskMeta = task.meta();
         final Object[] args = task.getArguments();
-        final long batchThreads = (taskMeta.getNumForceThreads() > 0) ? taskMeta.getNumForceThreads() : task.getBatchThreads();
+        final long batchThreads = (taskMeta.getNumThreads() > 0) ? taskMeta.getNumThreads() : task.getBatchThreads();
 
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedMethod.getProfilingInfo();

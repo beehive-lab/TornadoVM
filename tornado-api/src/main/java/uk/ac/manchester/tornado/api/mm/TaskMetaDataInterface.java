@@ -61,7 +61,7 @@ public interface TaskMetaDataInterface {
 
     long[] getLocalWork();
 
-    void setNumForceThreads(long threads);
+    void setNumThreads(long threads);
 
-    long getNumForceThreads();
+    long getNumThreads();
 }

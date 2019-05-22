@@ -354,12 +354,12 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     }
 
     @Override
-    public void setNumForceThreads(long threads) {
+    public void setNumThreads(long threads) {
         this.numThreads = threads;
     }
 
     @Override
-    public long getNumForceThreads() {
+    public long getNumThreads() {
         return numThreads;
     }
 

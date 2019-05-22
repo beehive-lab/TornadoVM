@@ -1305,7 +1305,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         Method method = TaskUtils.resolveMethodHandle(parameters[0]);
         ScheduleMetaData meta = meta();
-        meta.setNumForceThreads(taskPackage.getNumThreadsToRun());
+
+        // Set the number of threads to run. If 0, it will execute as many
+        // threads as input size (after Tornado analyses the right block-size).
+        // Otherwise, we force the number of threads to run. This is the case,
+        // for example, when executing reductions in which the input size is not
+        // power of two.
+        meta.setNumThreads(taskPackage.getNumThreadsToRun());
 
         switch (type) {
             case 1:

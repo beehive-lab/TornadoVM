@@ -96,8 +96,7 @@ public class CodeAnalysis {
     }
 
     /**
-     * It compiles and installs the method that represents the object
-     * {@code graph}.
+     * It compiles and installs the method that represents the object {@code graph}.
      * 
      * @param graph
      *            Compile-graph
