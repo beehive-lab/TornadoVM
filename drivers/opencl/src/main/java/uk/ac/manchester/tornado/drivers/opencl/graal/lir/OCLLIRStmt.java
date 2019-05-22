@@ -151,9 +151,12 @@ public class OCLLIRStmt {
             this.address = address;
         }
 
-        @Override
-        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            asm.indent();
+        public void emitIntegerBasedIndexCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emitValue(crb, lhs);
+        }
+
+        public void emitPointerBaseIndexCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            // asm.indent();
             asm.emitValue(crb, lhs);
             asm.space();
             asm.assign();
@@ -165,6 +168,18 @@ public class OCLLIRStmt {
             asm.emit(")");
             asm.delimiter();
             asm.eol();
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+
+            if (this.cast.equals("__global")) {
+                emitPointerBaseIndexCode(crb, asm);
+            } else {
+                ;
+            }
+
         }
 
         public AllocatableValue getResult() {
@@ -261,11 +276,25 @@ public class OCLLIRStmt {
             this.address = address;
         }
 
-        @Override
-        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+        public void emitIntegerStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            // ul_12[index] = 102;
+            // __local float ul_12[512];
+
+            asm.emitValue(crb, address);
+            asm.emit("[");
+            asm.emitValue(crb, address);
+            asm.emit("]");
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emitValue(crb, rhs);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        public void emitNormalCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
 
             // asm.emitLine("*((__global char *) ul_12) = 102;");
-            asm.indent();
             asm.emit("*(");
             cast.emit(crb, asm);
             asm.space();
@@ -277,6 +306,18 @@ public class OCLLIRStmt {
             asm.emitValue(crb, rhs);
             asm.delimiter();
             asm.eol();
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            if (this.cast.equals("__global")) {
+                emitNormalCode(crb, asm);
+                // emitIntegerStore(crb, asm);
+            } else {
+                emitNormalCode(crb, asm);
+                // emitIntegerStore(crb, asm);
+            }
         }
 
         public Value getRhs() {
