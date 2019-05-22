@@ -47,11 +47,13 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
 class ReduceTaskSchedule {
 
-    private static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
     static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce-seq";
 
+    private static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
     private static final int DEFAULT_GPU_WORK_GROUP = 256;
     private static final int DEFAULT_DRIVER_INDEX = 0;
+    private static int counterName = 0;
+
     private String idTaskSchedule;
     private ArrayList<TaskPackage> taskPackages;
     private ArrayList<Object> streamOutObjects;
@@ -60,8 +62,6 @@ class ReduceTaskSchedule {
     private ArrayList<Thread> threadSequentialExecution;
     private HashMap<Object, Object> neutralElementsNew = new HashMap<>();
     private HashMap<Object, Object> neutralElementsOriginal = new HashMap<>();
-    private static int counter = 0;
-
     private TaskSchedule rewrittenTaskSchedule;
 
     ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects) {
@@ -304,7 +304,7 @@ class ReduceTaskSchedule {
 
         HashMap<Integer, MetaReduceTasks> tableReduce = metaReduceTable.getTable();
 
-        String taskScheduleReduceName = TASK_SCHEDULE_PREFIX + counter;
+        String taskScheduleReduceName = TASK_SCHEDULE_PREFIX + counterName;
         String tsName = idTaskSchedule;
 
         ArrayList<Object> streamReduceUpdatedList = new ArrayList<>();
@@ -413,7 +413,7 @@ class ReduceTaskSchedule {
         }
         TornadoTaskSchedule.performStreamOutThreads(rewrittenTaskSchedule, streamOutObjects);
         executeExpression();
-        counter++;
+        counterName++;
         return rewrittenTaskSchedule;
     }
 
