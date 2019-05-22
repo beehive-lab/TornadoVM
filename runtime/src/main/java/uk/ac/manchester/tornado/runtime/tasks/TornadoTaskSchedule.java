@@ -82,6 +82,7 @@ import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
@@ -125,7 +126,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * Options for Dynamic Reconfiguration
      */
-    private static final boolean DEBUG_POLICY = Boolean.parseBoolean(System.getProperty("tornado.dynamic.verbose", "False"));
     private static final boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int PERFORMANCE_WARMUP = 3;
@@ -138,7 +138,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * Options for new reductions - experimental
      */
-    private static final boolean EXPERIMENTAL_REDUCE = Boolean.parseBoolean(System.getProperty("tornado.experimental.reduce", "True"));
     private boolean reduceExpressionRewritten = false;
     private ReduceTaskSchedule reduceTaskScheduleMeta;
     private boolean reduceAnalysis = false;
@@ -572,7 +571,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public AbstractTaskGraph schedule() {
         AbstractTaskGraph executionGraph = null;
-        if (EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
+        if (TornadoOptions.EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
             executionGraph = analyzeSkeletonAndRun();
         }
 
@@ -673,7 +672,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             for (int i = 0; i < threads.length; i++) {
                 isAlive = threads[i].isAlive();
                 if (!isAlive) {
-                    if (DEBUG_POLICY) {
+                    if (TornadoOptions.DEBUG_POLICY) {
                         System.out.println("Thread " + threads[i].getName() + " finished");
                     }
                     winner = i;
@@ -792,7 +791,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             }
             final long endSequentialCode = timer.time();
             Thread.currentThread().setName("Thread-sequential");
-            if (DEBUG_POLICY) {
+            if (TornadoOptions.DEBUG_POLICY) {
                 System.out.println("Seq finished: " + Thread.currentThread().getName());
             }
 
@@ -887,7 +886,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if ((policy == Policy.PERFORMANCE || policy == Policy.END_2_END) && (masterThreadID == Thread.currentThread().getId())) {
             int deviceWinnerIndex = synchronizeWithPolicy(policy, totalTimers);
             policyTimeTable.put(policy, deviceWinnerIndex);
-            if (DEBUG_POLICY) {
+            if (TornadoOptions.DEBUG_POLICY) {
                 System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
             }
         }
@@ -917,7 +916,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         for (TaskPackage taskPackage : taskPackages) {
             TornadoRuntime.setProperty(this.getTaskScheduleName() + "." + taskPackage.getId() + ".device", "0:" + deviceWinnerIndex);
         }
-        if (DEBUG_POLICY) {
+        if (TornadoOptions.DEBUG_POLICY) {
             System.out.println("Running in parallel device: " + deviceWinnerIndex);
         }
         TaskSchedule task = taskScheduleIndex.get(deviceWinnerIndex);
@@ -1120,7 +1119,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
             updateHistoryTables(policy, deviceWinnerIndex);
 
-            if (DEBUG_POLICY) {
+            if (TornadoOptions.DEBUG_POLICY) {
                 System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
             }
         }

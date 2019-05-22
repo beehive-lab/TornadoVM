@@ -242,7 +242,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 // A) for FPGA
                 return deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA);
             } else {
-                // B) for CPU multi-code or GPU
+                // B) for CPU multicore or GPU
                 return deviceContext.installCode(result);
             }
 

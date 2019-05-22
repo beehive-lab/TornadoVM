@@ -57,7 +57,6 @@ class ReduceTaskSchedule {
     private ArrayList<Object> streamOutObjects;
     private ArrayList<Object> streamInObjects;
     private HashMap<Object, Object> originalReduceVariables;
-    private long elementsReductionLeftOver = 0;
     private ArrayList<Thread> threadSequentialExecution;
     private HashMap<Object, Object> neutralElementsNew = new HashMap<>();
     private HashMap<Object, Object> neutralElementsOriginal = new HashMap<>();
@@ -176,8 +175,8 @@ class ReduceTaskSchedule {
      *            index of the target device within the Tornado device list.
      * @return boolean
      */
-    private boolean isTaskElegibleSplitHostAndDevice(final int targetDeviceToRun) {
-        if (elementsReductionLeftOver > 0) {
+    private boolean isTaskElegibleSplitHostAndDevice(final int targetDeviceToRun, final long elementsReductionLeftOver, final boolean isPowerOfTwo) {
+        if (!isPowerOfTwo && elementsReductionLeftOver > 0) {
             TornadoDeviceType deviceType = TornadoCoreRuntime.getTornadoRuntime().getDriver(0).getDevice(targetDeviceToRun).getDeviceType();
             return deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.FPGA;
         }
@@ -341,17 +340,18 @@ class ReduceTaskSchedule {
 
                     // Analyse Input Size - if not power of 2 -> split host and
                     // device executions
-                    if (!isPowerOfTwo(inputSize)) {
+                    boolean isInputPowerOfTwo = isPowerOfTwo(inputSize);
+                    if (!isInputPowerOfTwo) {
                         int exp = (int) (Math.log(inputSize) / Math.log(2));
                         double closestPowerOf2 = Math.pow(2, exp);
-                        elementsReductionLeftOver = (long) (inputSize - closestPowerOf2);
+                        long elementsReductionLeftOver = (long) (inputSize - closestPowerOf2);
                         inputSize -= elementsReductionLeftOver;
-                    }
-                    final int sizeTargetDevice = inputSize;
 
-                    if (isTaskElegibleSplitHostAndDevice(targetDeviceToRun)) {
-                        Object codeTask = taskPackage.getTaskParameters()[0];
-                        createThreads(codeTask, taskPackage, sizeTargetDevice);
+                        final int sizeTargetDevice = inputSize;
+                        if (isTaskElegibleSplitHostAndDevice(targetDeviceToRun, elementsReductionLeftOver, isInputPowerOfTwo)) {
+                            Object codeTask = taskPackage.getTaskParameters()[0];
+                            createThreads(codeTask, taskPackage, sizeTargetDevice);
+                        }
                     }
 
                     // Set the new array size
