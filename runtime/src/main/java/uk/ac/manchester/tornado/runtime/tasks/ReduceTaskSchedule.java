@@ -359,11 +359,11 @@ class ReduceTaskSchedule {
                     fillOutputArrayWithNeutral(newArray, neutralElement);
 
                     neutralElementsNew.put(newArray, neutralElement);
-                    neutralElementsOriginal.put(newArray, neutralElement);
+                    neutralElementsOriginal.put(originalReduceVariable, neutralElement);
 
                     taskPackage.getTaskParameters()[paramIndex + 1] = newArray;
 
-                    // Store metadatad
+                    // Store metadata
                     streamReduceUpdatedList.add(newArray);
                     sizesReductionArray.add(sizeReductionArray);
                     originalReduceVariables.put(originalReduceVariable, newArray);
