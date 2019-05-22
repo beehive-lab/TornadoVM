@@ -41,9 +41,11 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
 
     public static final NodeClass<OCLAddressNode> TYPE = NodeClass.create(OCLAddressNode.class);
 
-    @OptionalInput private ValueNode base;
+    @OptionalInput
+    private ValueNode base;
 
-    @OptionalInput private ValueNode index;
+    @OptionalInput
+    private ValueNode index;
 
     private OCLMemoryBase memoryRegister;
 
@@ -65,13 +67,26 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
 
         Value baseValue = base == null ? Value.ILLEGAL : gen.operand(base);
         Value indexValue = index == null ? Value.ILLEGAL : gen.operand(index);
-
+        Variable addressValue = null;
         if (index == null) {
             gen.setResult(this, new MemoryAccess(memoryRegister, baseValue, false));
         }
 
-        Variable addressValue = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
-        gen.setResult(this, new MemoryAccess(memoryRegister, addressValue, false));
+        // ystem.out.println(this.memoryRegister.name.equals("_local_region"));
+
+        if ("_local_region".equals(this.memoryRegister.name)) {
+            // addressValue = tool.getArithmetic().emitBitCount(baseValue);
+            System.out.println(baseValue.toString());
+            System.out.println(index.toString());
+            addressValue = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
+            gen.setResult(this, new MemoryAccess(memoryRegister, baseValue, false));
+        } else {
+            addressValue = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
+            gen.setResult(this, new MemoryAccess(memoryRegister, addressValue, false));
+        }
+
+        // gen.setResult(this, new MemoryAccess(memoryRegister, addressValue, false));
+
     }
 
     @Override
