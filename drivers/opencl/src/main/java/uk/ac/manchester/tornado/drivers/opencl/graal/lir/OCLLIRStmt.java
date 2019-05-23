@@ -308,7 +308,8 @@ public class OCLLIRStmt {
         public void emitIntegerStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             // ul_12[index] = 102;
             // __local float ul_12[512];
-            asm.emitValue(crb, address);
+            // asm.emitValue(crb, address);
+            address.emit(crb, asm);
             asm.emit("[");
             asm.emitValue(crb, index);
             asm.emit("]");
@@ -339,12 +340,12 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            if (this.cast.equals("__global")) {
+            if (this.cast.getMemorySpace().name().equals("__global")) {
                 emitNormalCode(crb, asm);
-                // emitIntegerStore(crb, asm);
+            } else if (this.cast.getMemorySpace().name().equals("__local")) {
+                emitIntegerStore(crb, asm);
             } else {
                 emitNormalCode(crb, asm);
-                // emitIntegerStore(crb, asm);
             }
         }
 
