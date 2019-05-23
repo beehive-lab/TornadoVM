@@ -212,6 +212,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
 
         // Depending on the Scheduler, call the proper snippet factory
+        // TODO: Pass meta information from the device scheduler here
         if (cpuScheduler) {
             CPUreduceSnippets.lower(storeIndexed, threadID, oclIdNode, startIndexNode, tool);
         } else {
