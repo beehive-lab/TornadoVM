@@ -296,7 +296,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     public void emitLoad(AllocatableValue result, OCLAddressCast cast, MemoryAccess address) {
         trace("emitLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
-        getGen().append(new LoadStmt(result, cast, address));
+        if (cast.getMemorySpace().name().equals("__global")) {
+            getGen().append(new LoadStmt(result, cast, address));
+        } else {
+            getGen().append(new LoadStmt(result, cast, address, address.getIndex()));
+        }
     }
 
     public void emitVectorLoad(AllocatableValue result, OCLBinaryIntrinsic op, Value index, OCLAddressCast cast, MemoryAccess address) {
@@ -379,7 +383,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
             } else {
                 if (memAccess != null) {
                     OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
-                    getGen().append(new StoreStmt(cast, memAccess, input));
+                    if (memAccess.getIndex() == null) {
+                        getGen().append(new StoreStmt(cast, memAccess, input));
+                    } else {
+                        getGen().append(new StoreStmt(cast, memAccess, input, memAccess.getIndex()));
+                    }
                 } else {
                     getGen().append(new StoreAtomicAddStmt(accumulator, input));
                 }
