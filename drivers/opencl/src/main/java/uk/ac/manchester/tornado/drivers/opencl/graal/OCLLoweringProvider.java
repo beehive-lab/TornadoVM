@@ -263,7 +263,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
 
         if (isLocalIdNode(loadIndexed)) {
-            System.out.println(" * * *  * * * * * * * * * * * * * *  --- - - - - - -");
             address = createArrayLocalAddress(graph, loadIndexed.array(), loadIndexed.index());
         } else {
             address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
@@ -353,7 +352,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         assert address != null;
         WriteNode memoryWrite = graph.add(new WriteNode(address, fieldLocationIdentity(field), storeField.value(), fieldStoreBarrierType(storeField.field())));
         memoryWrite.setStateAfter(storeField.stateAfter());
-        System.out.println("-----lowering for store" + storeField.toString());
         graph.replaceFixedWithFixed(storeField, memoryWrite);
     }
 
@@ -439,7 +437,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                     final int size = offset + (elementKind.getByteCount() * length);
 
                     // final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
-                    final ConstantNode newLengthNode = ConstantNode.forInt(length, graph); // TODO: WE NEED TO EXTRACT information here
+                    final ConstantNode newLengthNode = ConstantNode.forInt(length, graph); // TODO: We need to chech if the array is defined within reduction snippet
                     newArray.getOptions().toString();
                     // System.out.println(graph.);
                     // final FixedArrayNode fixedArrayNode = graph.addWithoutUnique(new
@@ -502,13 +500,11 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     public boolean isLocalIdNode(StoreIndexedNode storeIndexed) {
-        boolean check = false;
 
         return storeIndexed.inputs().first().getClass().getTypeName().contains("FixedArray");
     }
 
     public boolean isLocalIdNode(LoadIndexedNode loadIndexedNode) {
-        boolean check = false;
 
         return loadIndexedNode.inputs().first().getClass().getTypeName().contains("FixedArray");
     }
