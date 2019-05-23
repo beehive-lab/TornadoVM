@@ -309,7 +309,6 @@ public class OCLLIRStmt {
         public void emitIntegerStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             // ul_12[index] = 102;
             // __local float ul_12[512];
-            // asm.emitValue(crb, address);
             address.emit(crb, asm);
             asm.emit("[");
             asm.emitValue(crb, index);
