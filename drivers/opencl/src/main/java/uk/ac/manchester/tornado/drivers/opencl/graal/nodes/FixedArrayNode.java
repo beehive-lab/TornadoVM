@@ -55,6 +55,7 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
     protected OCLMemoryBase memoryRegister;
     protected ResolvedJavaType elemenType;
     protected OCLBinaryTemplate arrayTemplate;
+    protected boolean memLocal;
 
     public FixedArrayNode(OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
@@ -72,6 +73,7 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
         this.elemenType = elementType;
         this.elementKind = OCLKind.fromResolvedJavaType(elementType);
         this.arrayTemplate = OCLBinaryTemplate.NEW_LOCAL_FLOAT_ARRAY;
+        this.memLocal = local;
     }
 
     public FixedArrayNode(ResolvedJavaType elementType, ConstantNode length) {
@@ -92,6 +94,10 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
 
     public ConstantNode getLength() {
         return length;
+    }
+
+    public boolean isMemLocal() {
+        return memLocal;
     }
 
     @Override
