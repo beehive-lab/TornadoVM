@@ -176,7 +176,6 @@ public class OCLLIRStmt {
         }
 
         public void emitPointerBaseIndexCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            // asm.indent();
             asm.emitValue(crb, lhs);
             asm.space();
             asm.assign();
@@ -193,8 +192,10 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            if (this.cast.equals("__global")) {
+            if (this.cast.getMemorySpace().name().equals("__global")) {
                 emitPointerBaseIndexCode(crb, asm);
+            } else if (this.cast.getMemorySpace().name().equals("__local")) {
+                emitIntegerBasedIndexCode(crb, asm);
             } else {
                 emitPointerBaseIndexCode(crb, asm);
             }
