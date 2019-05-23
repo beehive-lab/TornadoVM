@@ -431,20 +431,19 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                 final ConstantNode lengthNode = (ConstantNode) firstInput;
                 if (lengthNode.getValue() instanceof PrimitiveConstant) {
                     final int length = ((PrimitiveConstant) lengthNode.getValue()).asInt();
-
                     ResolvedJavaType elementType = newArray.elementType();
                     JavaKind elementKind = elementType.getJavaKind();
                     final int offset = arrayBaseOffset(elementKind);
                     final int size = offset + (elementKind.getByteCount() * length);
-
-                    // final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
-                    final ConstantNode newLengthNode = ConstantNode.forInt(length, graph); // TODO: We need to chech if the array is defined within reduction snippet
                     newArray.getOptions().toString();
-                    // System.out.println(graph.);
-                    // final FixedArrayNode fixedArrayNode = graph.addWithoutUnique(new
-                    // FixedArrayNode(newArray.elementType(), newLengthNode));
-                    System.out.println("Is new array local: " + newArray.elementType().isLocal());
-                    FixedArrayNode fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.lp, newArray.elementType(), newLengthNode, true));
+                    FixedArrayNode fixedArrayNode;
+                    if (true) {
+                        final ConstantNode newLengthNode = ConstantNode.forInt(length, graph); // TODO: We need to chech if the array is defined within reduction snippet
+                        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.lp, newArray.elementType(), newLengthNode, true));
+                    } else {
+                        final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
+                        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.hp, newArray.elementType(), newLengthNode));
+                    }
                     newArray.replaceAtUsages(fixedArrayNode);
                     newArray.clearInputs();
                     GraphUtil.unlinkFixedNode(newArray);
