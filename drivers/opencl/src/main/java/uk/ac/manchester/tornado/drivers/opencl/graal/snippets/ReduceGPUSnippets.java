@@ -203,19 +203,16 @@ public class ReduceGPUSnippets implements Snippets {
 
         temp[localIdx] = inputArray[localIdx + (localGroupSize * groupID)];
 
-        int myID = localIdx + (localGroupSize * groupID);
-
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
-                temp[myID] += temp[myID + stride];
+                temp[localIdx] += temp[localIdx + stride];
             }
         }
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID] = temp[localIdx];
-            // outputArray[groupID] = inputArray[myID];
+            outputArray[groupID] = temp[0];
         }
     }
 
