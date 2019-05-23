@@ -57,6 +57,13 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
 
     }
 
+    public OCLAddressNode(ValueNode base, ValueNode index) {
+        super(TYPE);
+        this.base = base;
+        this.index = index;
+
+    }
+
     public OCLAddressNode(ValueNode base, OCLMemoryBase memoryRegister) {
         this(base, null, memoryRegister);
     }
@@ -72,21 +79,12 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
             gen.setResult(this, new MemoryAccess(memoryRegister, baseValue, false));
         }
 
-        // ystem.out.println(this.memoryRegister.name.equals("_local_region"));
-
         if ("_local_region".equals(this.memoryRegister.name)) {
-            // addressValue = tool.getArithmetic().emitBitCount(baseValue);
-            System.out.println(baseValue.toString());
-            System.out.println(index.toString());
-            addressValue = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
-            gen.setResult(this, new MemoryAccess(memoryRegister, baseValue, false));
+            gen.setResult(this, new MemoryAccess(memoryRegister, baseValue, indexValue, false));
         } else {
             addressValue = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
             gen.setResult(this, new MemoryAccess(memoryRegister, addressValue, false));
         }
-
-        // gen.setResult(this, new MemoryAccess(memoryRegister, addressValue, false));
-
     }
 
     @Override
