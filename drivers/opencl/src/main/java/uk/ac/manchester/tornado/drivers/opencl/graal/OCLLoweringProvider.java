@@ -66,6 +66,7 @@ import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
@@ -254,13 +255,19 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     protected void lowerLoadIndexedNode(LoadIndexedNode loadIndexed, LoweringTool tool) {
         StructuredGraph graph = loadIndexed.graph();
         JavaKind elementKind = loadIndexed.elementKind();
+        AddressNode address;
 
         Stamp loadStamp = loadIndexed.stamp();
         if (!(loadIndexed.stamp() instanceof OCLStamp)) {
             loadStamp = loadStamp(loadIndexed.stamp(), elementKind);
         }
 
-        AddressNode address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
+        if (isLocalIdNode(loadIndexed)) {
+            System.out.println(" * * *  * * * * * * * * * * * * * *  --- - - - - - -");
+            address = createArrayLocalAddress(graph, loadIndexed.array(), loadIndexed.index());
+        } else {
+            address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
+        }
         ReadNode memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE));
         loadIndexed.replaceAtUsages(memoryRead);
         graph.replaceFixed(loadIndexed, memoryRead);
@@ -312,6 +319,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             // variable of type char or short. In future integrations with JVMCI
             // and Graal, this issue is completely solved.
             memoryWrite = graph.add(new OCLWriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), elementKind));
+        } else if (isLocalIdNode(storeIndexed)) {
+            address = createArrayLocalAddress(graph, array, storeIndexed.index());
+            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind())));
         } else {
             memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind())));
         }
@@ -343,6 +353,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         assert address != null;
         WriteNode memoryWrite = graph.add(new WriteNode(address, fieldLocationIdentity(field), storeField.value(), fieldStoreBarrierType(storeField.field())));
         memoryWrite.setStateAfter(storeField.stateAfter());
+        System.out.println("-----lowering for store" + storeField.toString());
         graph.replaceFixedWithFixed(storeField, memoryWrite);
     }
 
@@ -414,6 +425,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private void lowerNewArrayNode(NewArrayNode newArray, LoweringTool tool) {
         final StructuredGraph graph = newArray.graph();
         final ValueNode firstInput = newArray.length();
+        System.out.println("New array node during lowering");
         if (firstInput instanceof ConstantNode) {
             if (newArray.dimensionCount() == 1) {
 
@@ -426,9 +438,14 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                     final int offset = arrayBaseOffset(elementKind);
                     final int size = offset + (elementKind.getByteCount() * length);
 
-                    final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
-
-                    final FixedArrayNode fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(newArray.elementType(), newLengthNode));
+                    // final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
+                    final ConstantNode newLengthNode = ConstantNode.forInt(length, graph); // TODO: WE NEED TO EXTRACT information here
+                    newArray.getOptions().toString();
+                    // System.out.println(graph.);
+                    // final FixedArrayNode fixedArrayNode = graph.addWithoutUnique(new
+                    // FixedArrayNode(newArray.elementType(), newLengthNode));
+                    System.out.println("Is new array local: " + newArray.elementType().isLocal());
+                    FixedArrayNode fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.lp, newArray.elementType(), newLengthNode, true));
                     newArray.replaceAtUsages(fixedArrayNode);
                     newArray.clearInputs();
                     GraphUtil.unlinkFixedNode(newArray);
@@ -476,5 +493,23 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         HotSpotResolvedJavaField field = (HotSpotResolvedJavaField) f;
         JavaConstant base = constantReflection.asJavaClass(field.getDeclaringClass());
         return ConstantNode.forConstant(base, metaAccess, graph);
+    }
+
+    public AddressNode createArrayLocalAddress(StructuredGraph graph, ValueNode array, ValueNode index) {
+
+        return (AddressNode) graph.unique(new OffsetAddressNode(array, index));
+
+    }
+
+    public boolean isLocalIdNode(StoreIndexedNode storeIndexed) {
+        boolean check = false;
+
+        return storeIndexed.inputs().first().getClass().getTypeName().contains("FixedArray");
+    }
+
+    public boolean isLocalIdNode(LoadIndexedNode loadIndexedNode) {
+        boolean check = false;
+
+        return loadIndexedNode.inputs().first().getClass().getTypeName().contains("FixedArray");
     }
 }
