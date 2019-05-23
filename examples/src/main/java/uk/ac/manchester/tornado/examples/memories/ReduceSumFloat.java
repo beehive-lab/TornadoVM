@@ -76,7 +76,7 @@ public class ReduceSumFloat {
         //@formatter:off
             task.prebuiltTask("t0", "reductionAddFloats", kernelLocation,
                     new Object[] { input, result}, new Access[] { Access.READ, Access.READ_WRITE},
-                    TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(1),
+                    TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0),
                     new int[] {size})
                     .streamOut(result);
         //formatter:on
