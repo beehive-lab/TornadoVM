@@ -120,8 +120,5 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(new TornadoOpenCLIntrinsicsReplacements());
         appendPhase(new ExceptionSuppression());
 
-        // if(Tornado.LocalMemAlloc) {}
-        // appendPhase(new TornadoLocalMemAllocation());
-
     }
 }
