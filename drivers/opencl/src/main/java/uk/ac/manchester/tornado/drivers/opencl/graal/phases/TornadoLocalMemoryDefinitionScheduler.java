@@ -24,14 +24,41 @@
  * */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
+import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
 
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMidTierContext;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
-public class TornadoLocalMemoryDefinitionScheduler extends BasePhase<TornadoMidTierContext> {
+public class TornadoLocalMemoryDefinitionScheduler extends BasePhase<TornadoHighTierContext> {
     @Override
-    protected void run(StructuredGraph graph, TornadoMidTierContext context) {
+    protected void run(StructuredGraph graph, TornadoHighTierContext context) {
+
+        graph.getNodes().filter(FixedArrayNode.class).forEach(node -> {
+            boolean firstLoop = true;
+
+            if (node.isMemLocal()) {
+                graph.getNodes().filter(LoopBeginNode.class).forEach(loopBeginNode -> {
+                    // loopBeginNode.
+                    if (firstLoop) {
+                        System.out.println(" BlockNodes " + loopBeginNode.getBlockNodes());
+                        System.out.println(" toString " + loopBeginNode.toString());
+                        System.out.println(" Predecessor " + loopBeginNode.predecessor());
+                        System.out.println(" Predecessors " + loopBeginNode.cfgPredecessors());
+                        System.out.println(" ++++++++++++++++++++++++++++++++++++ ");
+                        // firstLoop = false;
+                    }
+
+                });
+            }
+            System.out.println(" Lenght " + node.getLength());
+            System.out.println(" Type " + node.getElementType());
+            System.out.println(" Is local " + node.isMemLocal());
+            System.out.println(" Successors" + node.successors());
+            System.out.println(" Predecessors " + node.predecessor());
+            System.out.println(" ************************************* ");
+        });
 
     }
 }
