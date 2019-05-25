@@ -49,10 +49,17 @@ public class OCLPlatform extends TornadoLogger {
         this.devices = new ArrayList<>();
         this.contexts = new HashSet<>();
 
-        final int deviceCount = clGetDeviceCount(id, OCLDeviceType.CL_DEVICE_TYPE_ALL.getValue());
+        final int deviceCount;
+        if(this.getVendor().equals("Xilinx"))
+            deviceCount = clGetDeviceCount(id, OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR.getValue());
+        else
+            deviceCount = clGetDeviceCount(id, OCLDeviceType.CL_DEVICE_TYPE_ALL.getValue());
 
         final long[] ids = new long[deviceCount];
-        clGetDeviceIDs(id, OCLDeviceType.CL_DEVICE_TYPE_ALL.getValue(), ids);
+        if(this.getVendor().equals("Xilinx"))
+            clGetDeviceIDs(id, OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR.getValue(), ids);
+        else
+            clGetDeviceIDs(id, OCLDeviceType.CL_DEVICE_TYPE_ALL.getValue(), ids);
         for (int i = 0; i < ids.length; i++) {
             devices.add(new OCLDevice(i, ids[i]));
         }

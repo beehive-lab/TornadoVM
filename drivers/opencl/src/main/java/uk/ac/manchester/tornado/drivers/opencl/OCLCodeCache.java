@@ -288,6 +288,41 @@ public class OCLCodeCache {
         return bufferCommand.toString().split(" ");
     }
 
+    public String[] composeXilinxHLSCommand(String inputFile, String outputFile) {
+        StringJoiner bufferCommand = new StringJoiner(" ");
+
+        bufferCommand.add("xocc");
+        if(Tornado.FPGA_EMULATION)
+            bufferCommand.add("-t " +"sw_emu");
+        else
+            bufferCommand.add("-t " +"hw_emu");
+        bufferCommand.add("--platform " +"xilinx_kcu1500_dynamic_5_0 " + "-c " +"-k " +"lookupBufferAddress");
+        bufferCommand.add("-g " + "-I./fpga-source-comp/");
+        bufferCommand.add("--xp " + "misc:solution_name=lookupBufferAddress");
+        bufferCommand.add("--report_dir " + "fpga-source-comp/reports");
+        bufferCommand.add("--log_dir " + "fpga-source-comp/logs");
+        bufferCommand.add("-o " +"fpga-source-comp/lookupBufferAddress.xo " + inputFile);
+
+        return bufferCommand.toString().split(" ");
+    }
+
+    public String[] composeXilinxLinkCommand(String inputFile, String outputFile) {
+        StringJoiner bufferCommand = new StringJoiner(" ");
+
+        bufferCommand.add("xocc");
+        if(Tornado.FPGA_EMULATION)
+            bufferCommand.add("-t " +"sw_emu");
+        else
+            bufferCommand.add("-t " +"sw_emu");
+        bufferCommand.add("--platform " +"xilinx_kcu1500_dynamic_5_0 " + "-l " +"-g");
+        bufferCommand.add("--xp " + "misc:solution_name=link");
+        bufferCommand.add("--report_dir " + "fpga-source-comp/reports");
+        bufferCommand.add("--log_dir " + "fpga-source-comp/logs");
+        bufferCommand.add("--remote_ip_cache " + "fpga-source-comp/ip_cache");
+        bufferCommand.add("-o " + "fpga-source-comp/lookupBufferAddress.xclbin " + "fpga-source-comp/lookupBufferAddress.xo");
+        return bufferCommand.toString().split(" ");
+    }
+
     private void callOSforCompilation(String[] compilationCommand, String[] commandRename) {
         try {
             RuntimeUtilities.sysCall(compilationCommand, true);
@@ -304,6 +339,7 @@ public class OCLCodeCache {
         if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
             String[] commandRename;
             String[] compilationCommand;
+            String[] linkCommand=null;
             File fpgaBitStreamFile;
 
             final String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
@@ -314,7 +350,12 @@ public class OCLCodeCache {
                 System.out.println(sourceCode);
             }
 
-            compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
+            if(deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
+                System.out.println("Xilinx composing the HLS command");
+                compilationCommand = composeXilinxHLSCommand(inputFile, outputFile);
+                linkCommand = composeXilinxLinkCommand(inputFile,outputFile);
+            } else
+                compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
             commandRename = new String[] { BASH, FPGA_CLEANUP_SCRIPT };
 
             fpgaBitStreamFile = new File(FPGA_BIN_LOCATION);
@@ -324,6 +365,7 @@ public class OCLCodeCache {
                 return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
             } else {
                 callOSforCompilation(compilationCommand, commandRename);
+                callOSforCompilation(linkCommand, null);
             }
             return installEntryPointForBinaryForFPGAs(resolveBitstreamDirectory(), LOOKUP_BUFFER_KERNEL_NAME);
         } else {
