@@ -40,7 +40,6 @@ import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 
-import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoLocalMemoryDefinitionScheduler;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionCheckingElimination;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoMemoryPhiElimination;
@@ -97,11 +96,6 @@ public class OCLMidTier extends TornadoMidTier {
         // if (VerifyHeapAtReturn.getValue()) {
         // appendPhase(new VerifyHeapAtReturnPhase());
         // }
-
-        // appendPhase(new );
-        if (true) {
-            appendPhase(new TornadoLocalMemoryDefinitionScheduler());
-        }
 
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.MID_TIER));
 
