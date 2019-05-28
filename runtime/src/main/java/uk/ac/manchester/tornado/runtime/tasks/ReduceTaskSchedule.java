@@ -47,11 +47,13 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
 class ReduceTaskSchedule {
 
-    private static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
     static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce-seq";
 
+    private static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
     private static final int DEFAULT_GPU_WORK_GROUP = 256;
     private static final int DEFAULT_DRIVER_INDEX = 0;
+    private static int counterName = 0;
+
     private String idTaskSchedule;
     private ArrayList<TaskPackage> taskPackages;
     private ArrayList<Object> streamOutObjects;
@@ -60,8 +62,6 @@ class ReduceTaskSchedule {
     private ArrayList<Thread> threadSequentialExecution;
     private HashMap<Object, Object> neutralElementsNew = new HashMap<>();
     private HashMap<Object, Object> neutralElementsOriginal = new HashMap<>();
-    private static int counter = 0;
-
     private TaskSchedule rewrittenTaskSchedule;
 
     ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects) {
@@ -140,7 +140,8 @@ class ReduceTaskSchedule {
      * It runs a compiled method by Graal in HotSpot.
      * 
      * @param taskPackage
-     *            {@link TaskPackage} metadata that stores the method parameters.
+     *            {@link TaskPackage} metadata that stores the method
+     *            parameters.
      * @param code
      *            {@link InstalledCode} code to be executed
      */
@@ -289,13 +290,14 @@ class ReduceTaskSchedule {
      * task-schedule expression that contains: a) the parallel reduction; b) the
      * final sequential reduction.
      * 
-     * It also creates a new thread in the case the input size for the reduction is
-     * not power of two and the target device is either the FPGA or the GPU. In this
-     * case, the new thread will compile the host part with the corresponding
-     * sub-range that does not fit into the power-of-two part.
+     * It also creates a new thread in the case the input size for the reduction
+     * is not power of two and the target device is either the FPGA or the GPU.
+     * In this case, the new thread will compile the host part with the
+     * corresponding sub-range that does not fit into the power-of-two part.
      * 
      * @param metaReduceTable
-     *            Metadata to create all new tasks for the reductions dynamically.
+     *            Metadata to create all new tasks for the reductions
+     *            dynamically.
      * @return {@link TaskSchedule} with the new reduction
      */
     TaskSchedule scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
@@ -304,7 +306,7 @@ class ReduceTaskSchedule {
 
         HashMap<Integer, MetaReduceTasks> tableReduce = metaReduceTable.getTable();
 
-        String taskScheduleReduceName = TASK_SCHEDULE_PREFIX + counter;
+        String taskScheduleReduceName = TASK_SCHEDULE_PREFIX + counterName;
         String tsName = idTaskSchedule;
 
         ArrayList<Object> streamReduceUpdatedList = new ArrayList<>();
@@ -359,11 +361,11 @@ class ReduceTaskSchedule {
                     fillOutputArrayWithNeutral(newArray, neutralElement);
 
                     neutralElementsNew.put(newArray, neutralElement);
-                    neutralElementsOriginal.put(newArray, neutralElement);
+                    neutralElementsOriginal.put(originalReduceVariable, neutralElement);
 
                     taskPackage.getTaskParameters()[paramIndex + 1] = newArray;
 
-                    // Store metadatad
+                    // Store metadata
                     streamReduceUpdatedList.add(newArray);
                     sizesReductionArray.add(sizeReductionArray);
                     originalReduceVariables.put(originalReduceVariable, newArray);
@@ -413,7 +415,7 @@ class ReduceTaskSchedule {
         }
         TornadoTaskSchedule.performStreamOutThreads(rewrittenTaskSchedule, streamOutObjects);
         executeExpression();
-        counter++;
+        counterName++;
         return rewrittenTaskSchedule;
     }
 
