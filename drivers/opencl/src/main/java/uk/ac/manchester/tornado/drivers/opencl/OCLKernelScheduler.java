@@ -42,6 +42,10 @@ public abstract class OCLKernelScheduler {
 
     public abstract void calculateLocalWork(final TaskMetaData meta);
 
+    public int submit(final OCLKernel kernel, final TaskMetaData meta, long batchThreads) {
+        return submit(kernel, meta, null, batchThreads);
+    }
+
     public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
 
         if (!meta.isGlobalWorkDefined()) {

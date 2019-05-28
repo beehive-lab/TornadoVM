@@ -29,75 +29,99 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 class ReduceFactory {
 
     private static void rAdd(int[] array, final int size) {
+        int acc = array[0];
         for (int i = 1; i < size; i++) {
-            array[0] += array[i];
+            acc += array[i];
         }
+        array[0] = acc;
     }
 
     private static void rAdd(float[] array, final int size) {
+        float acc = array[0];
         for (int i = 1; i < size; i++) {
-            array[0] += array[i];
+            acc += array[i];
         }
+        array[0] = acc;
     }
 
     private static void rAdd(double[] array, final int size) {
+        double acc = array[0];
         for (int i = 1; i < size; i++) {
-            array[0] += array[i];
+            acc += array[i];
         }
+        array[0] = acc;
     }
 
     private static void rMul(int[] array, final int size) {
+        int acc = array[0];
         for (int i = 1; i < size; i++) {
-            array[0] *= array[i];
+            acc *= array[i];
         }
+        array[0] = acc;
     }
 
     private static void rMul(float[] array, final int size) {
+        float acc = array[0];
         for (int i = 1; i < size; i++) {
-            array[0] *= array[i];
+            acc *= array[i];
         }
+        array[0] = acc;
     }
 
     private static void rMul(double[] array, final int size) {
+        double acc = array[0];
         for (int i = 1; i < size; i++) {
-            array[0] *= array[i];
+            acc *= array[i];
         }
+        array[0] = acc;
     }
 
     private static void rMax(int[] array, final int size) {
+        int acc = array[0];
         for (int i = 1; i < size; i++) {
-            array[0] = Math.max(array[0], array[i]);
+            acc = Math.max(acc, array[i]);
         }
+        array[0] = acc;
     }
 
     private static void rMax(float[] array, final int size) {
+        float acc = array[0];
         for (int i = 1; i < size; i++) {
-            array[0] = Math.max(array[0], array[i]);
+            acc = Math.max(acc, array[i]);
         }
+        array[0] = acc;
     }
 
     private static void rMax(double[] array, final int size) {
+        double acc = array[0];
         for (int i = 1; i < size; i++) {
-            array[0] = Math.max(array[0], array[i]);
+            acc = Math.max(acc, array[i]);
         }
+        array[0] = acc;
     }
 
     private static void rMin(int[] array, final int size) {
+        int acc = array[0];
         for (int i = 1; i < size; i++) {
-            array[0] = Math.min(array[0], array[i]);
+            acc = Math.min(acc, array[i]);
         }
+        array[0] = acc;
     }
 
     private static void rMin(float[] array, final int size) {
+        float acc = array[0];
         for (int i = 1; i < size; i++) {
-            array[0] = Math.min(array[0], array[i]);
+            acc = Math.min(acc, array[i]);
         }
+        array[0] = acc;
     }
 
     private static void rMin(double[] array, final int size) {
+        double acc = array[0];
         for (int i = 1; i < size; i++) {
-            array[0] = Math.min(array[0], array[i]);
+            acc = Math.min(acc, array[i]);
         }
+        array[0] = acc;
     }
 
     static void handleAdd(Object newArray, TaskSchedule task, int sizeReduceArray) {
