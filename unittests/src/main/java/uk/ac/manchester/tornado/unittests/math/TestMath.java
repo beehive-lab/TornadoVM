@@ -36,6 +36,36 @@ public class TestMath extends TornadoTestBase {
         }
     }
 
+    public static void testLog(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = Math.log(a[i]);
+        }
+    }
+
+    public static void testSqrt(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = Math.sqrt(a[i]);
+        }
+    }
+
+    public static void testExp(double[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = Math.exp(a[i]);
+        }
+    }
+
+    public static void testExpFloat(float[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = (float) Math.exp(a[i]);
+        }
+    }
+
+    public static void testPow(float[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = (float) Math.pow(a[i], 2);
+        }
+    }
+
     @Test
     public void testMathCos() {
         final int size = 128;
@@ -54,12 +84,6 @@ public class TestMath extends TornadoTestBase {
 
         assertArrayEquals(data, seq, 0.01);
 
-    }
-
-    public static void testLog(double[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = Math.log(a[i]);
-        }
     }
 
     @Test
@@ -82,12 +106,6 @@ public class TestMath extends TornadoTestBase {
 
     }
 
-    public static void testSqrt(double[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = Math.sqrt(a[i]);
-        }
-    }
-
     @Test
     public void testMathSqrt() {
         final int size = 128;
@@ -106,12 +124,6 @@ public class TestMath extends TornadoTestBase {
 
         assertArrayEquals(data, seq, 0.01);
 
-    }
-
-    public static void testExp(double[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = Math.exp(a[i]);
-        }
     }
 
     @Test
@@ -134,12 +146,6 @@ public class TestMath extends TornadoTestBase {
 
     }
 
-    public static void testExpFloat(float[] a) {
-        for (@Parallel int i = 0; i < a.length; i++) {
-            a[i] = (float) Math.exp(a[i]);
-        }
-    }
-
     @Test
     public void testMathExpFloat() {
         final int size = 128;
@@ -156,6 +162,25 @@ public class TestMath extends TornadoTestBase {
 
         testExpFloat(seq);
 
+        assertArrayEquals(data, seq, 0.01f);
+
+    }
+
+    @Test
+    public void testMathPow() {
+        final int size = 8192;
+        float[] data = new float[size];
+        float[] seq = new float[size];
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            data[i] = (float) Math.random();
+            seq[i] = data[i];
+        });
+
+        TaskSchedule s0 = new TaskSchedule("s0");
+        s0.task("t0", TestMath::testPow, data).streamOut(data).execute();
+
+        testPow(seq);
         assertArrayEquals(data, seq, 0.01f);
 
     }
