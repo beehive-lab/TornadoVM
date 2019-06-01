@@ -9,7 +9,7 @@
   * Python 2.7 (>= 2.7.5)
 
 ### Tested OS
-Tornado has been succefully tested on the following platforms:
+Tornado has been successfully tested on the following platforms:
 
   * CentOS >= 7.3
   * Fedora >= 21
@@ -109,7 +109,7 @@ Otherwise try in install cmake.
 
 For simplicity it might be easier to install cmake in your home
 directory.
-  * Redhat Enterprise Linux / CentOS use cmake v2.8 
+  * Red-Hat Enterprise Linux / CentOS use cmake v2.8
   * We require a newer version so that OpenCL is configured properly.
 
 ```bash
