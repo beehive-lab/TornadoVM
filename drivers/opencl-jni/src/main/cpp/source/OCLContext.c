@@ -201,6 +201,9 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
     cl_program program;
     OPENCL_CHECK_ERROR("clCreateProgramWithSource", program = clCreateProgramWithSource((cl_context) context_id, (cl_uint) numLengths, (const char **) &source, (size_t*) lengths, &error_id), -1);
 
+    if (error_id != CL_SUCCESS) {
+        printf("[ERROR clCreateProgramWithSource] - error_id: %d", error_id);
+    }
     (*env)->ReleasePrimitiveArrayCritical(env, array1, source, 0);
     (*env)->ReleasePrimitiveArrayCritical(env, array2, lengths, 0);
 
@@ -224,6 +227,12 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
     if (numLengths == 1) {
         cl_int binary_status;
         OPENCL_CHECK_ERROR("clCreateProgramWithBinary", program = clCreateProgramWithBinary((cl_context) context_id, (cl_uint) numLengths, (const cl_device_id *) &device_id, (const size_t*) lengths, (const unsigned char **) &binary, &binary_status, &error_id), -1);
+        if (binary_status != CL_SUCCESS) {
+            printf("[ERROR clCreateProgramWithBinary] - binary_status: %d\n", binary_status);
+        }
+        if (error_id != CL_SUCCESS) {
+            printf("[ERROR clCreateProgramWithBinary] - error_id: %d", error_id);
+        }
     } else {
         printf("opencl> loading multiple binaries not supported\n");
     }
