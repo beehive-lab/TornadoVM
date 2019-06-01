@@ -27,25 +27,6 @@
 #include <stdio.h>
 #include <string.h>
 
-
-#define NSECS_PER_SEC 1000000000ULL
-#include <time.h>
-static unsigned long long start, stop;
-
-void resetAndStartTimer() {
-    //        struct timespec t;
-    //        clock_gettime(CLOCK_REALTIME,&t);
-    //        start = t.tv_sec*NSECS_PER_SEC +  t.tv_nsec;
-}
-
-unsigned long long getElapsedTime() {
-    //        struct timespec t;
-    //        clock_gettime(CLOCK_REALTIME,&t);
-    //        stop = t.tv_sec*NSECS_PER_SEC +  t.tv_nsec;
-    //        return (stop-start);
-    return 0;
-}
-
 char *getOpenCLError(char *func, cl_int code) {
     char *str;
     char *msg = malloc(sizeof (char)*128);
@@ -75,10 +56,8 @@ char *getOpenCLError(char *func, cl_int code) {
         default:
             str = "Unknown OpenCL Error";
     }
-
     sprintf(msg, "%s(%d) %s", func, (int) code, str);
     return msg;
-
 }
 
 

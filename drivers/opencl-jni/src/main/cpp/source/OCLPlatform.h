@@ -24,7 +24,7 @@
  *
  */
 #include <jni.h>
-/* Header for class jacc_runtime_drivers_opencl_OCLPlatform */
+/* Header for class uk_ac_manchester_tornado_drivers_opencl_OCLPlatform */
 
 #ifndef _Included_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
 #define _Included_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
@@ -32,7 +32,7 @@
 extern "C" {
 #endif
     /*
-     * Class:     jacc_runtime_drivers_opencl_OCLPlatform
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
      * Method:    clGetPlatformInfo
      * Signature: (JI)Ljava/lang/String;
      */
@@ -40,7 +40,7 @@ extern "C" {
     (JNIEnv *, jclass, jlong, jint);
 
     /*
-     * Class:     jacc_runtime_drivers_opencl_OCLPlatform
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
      * Method:    clGetDeviceCount
      * Signature: (JJ)I
      */
@@ -48,7 +48,7 @@ extern "C" {
     (JNIEnv *, jclass, jlong, jlong);
 
     /*
-     * Class:     jacc_runtime_drivers_opencl_OCLPlatform
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
      * Method:    clGetDeviceIDs
      * Signature: (JJ[J)I
      */
@@ -56,7 +56,7 @@ extern "C" {
     (JNIEnv *, jclass, jlong, jlong, jlongArray);
 
     /*
-     * Class:     jacc_runtime_drivers_opencl_OCLPlatform
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
      * Method:    clCreateContext
      * Signature: (J[J)J
      */

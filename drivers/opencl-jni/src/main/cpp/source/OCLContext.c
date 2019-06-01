@@ -38,7 +38,7 @@
 #include <string.h>
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLContext
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
  * Method:    clReleaseContext
  * Signature: (J)V
  */
@@ -50,7 +50,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_c
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLContext
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
  * Method:    clGetContextInfo
  * Signature: (JI[B)V
  */
@@ -73,7 +73,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_c
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLContext
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
  * Method:    clCreateCommandQueue
  * Signature: (JJJ)J
  */
@@ -156,7 +156,7 @@ JNIEXPORT jobject JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContex
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLContext
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
  * Method:    createSubBuffer
  * Signature: (JJI[B)J
  */
@@ -175,7 +175,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLContext
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
  * Method:    clReleaseMemObject
  * Signature: (J)V
  */
@@ -186,7 +186,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_c
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLContext
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
  * Method:    clCreateProgramWithSource
  * Signature: (J[B[J)J
  */
@@ -208,7 +208,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext_
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLContext
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLContext
  * Method:    clCreateProgramWithBinary
  * Signature: (JJ[B[J)J
  */
