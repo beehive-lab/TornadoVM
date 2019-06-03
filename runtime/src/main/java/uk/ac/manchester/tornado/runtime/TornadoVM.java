@@ -52,7 +52,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
-import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
+import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 /**
@@ -203,8 +203,6 @@ public class TornadoVM extends TornadoLogger {
             if (op == TornadoVMBytecodes.ALLOCATE.index()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
-                final long offset = buffer.getLong(); // << XXX We may not need
-                                                      // offset
                 final long sizeBatch = buffer.getLong();
 
                 if (isWarmup) {
