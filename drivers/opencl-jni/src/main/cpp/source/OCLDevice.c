@@ -37,7 +37,7 @@
 #include "utils.h"
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLDevice
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLDevice
  * Method:    clGetDeviceInfo
  * Signature: (JI[B)V
  */
