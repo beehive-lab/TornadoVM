@@ -101,11 +101,10 @@ public class TornadoGraphAssembler {
         buffer.putInt(index);
     }
 
-    public void allocate(int object, int ctx, long offset, long size) {
+    public void allocate(int object, int ctx, long size) {
         buffer.put(TornadoVMBytecodes.ALLOCATE.index);
         buffer.putInt(object);
         buffer.putInt(ctx);
-        buffer.putLong(offset);
         buffer.putLong(size);
     }
 

@@ -34,29 +34,29 @@ public class TornadoVMGraphCompilationResult {
     public static final int MAX_TORNADOVM_BYTECODE_SIZE = Integer.parseInt(getProperty("tornado.tvm.maxbytecodesize", "4096"));
 
     private byte[] code;
-    private TornadoGraphAssembler asm;
+    private TornadoGraphAssembler bitcodeASM;
     private int globalTaskID;
 
     public TornadoVMGraphCompilationResult() {
         code = new byte[MAX_TORNADOVM_BYTECODE_SIZE];
-        asm = new TornadoGraphAssembler(code);
+        bitcodeASM = new TornadoGraphAssembler(code);
         globalTaskID = 0;
     }
 
     public void begin(int numContexts, int numStacks, int numDeps) {
-        asm.setup(numContexts, numStacks, numDeps);
+        bitcodeASM.setup(numContexts, numStacks, numDeps);
         for (int i = 0; i < numContexts; i++) {
-            asm.context(i);
+            bitcodeASM.context(i);
         }
-        asm.begin();
+        bitcodeASM.begin();
     }
 
     public void barrier(int dep) {
-        asm.barrier(dep);
+        bitcodeASM.barrier(dep);
     }
 
     public void end() {
-        asm.end();
+        bitcodeASM.end();
     }
 
     private void incTaskID() {
@@ -65,16 +65,16 @@ public class TornadoVMGraphCompilationResult {
 
     public void emitAsyncNode(AbstractNode node, int contextID, int dependencyBC, long offset, long batchSize, long nThreads) {
         if (node instanceof CopyInNode) {
-            asm.copyToContext(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
+            bitcodeASM.copyToContext(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
         } else if (node instanceof AllocateNode) {
-            asm.allocate(((AllocateNode) node).getValue().getIndex(), contextID, offset, batchSize);
+            bitcodeASM.allocate(((AllocateNode) node).getValue().getIndex(), contextID, batchSize);
         } else if (node instanceof CopyOutNode) {
-            asm.streamOutOfContext(((CopyOutNode) node).getValue().getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
+            bitcodeASM.streamOutOfContext(((CopyOutNode) node).getValue().getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
         } else if (node instanceof StreamInNode) {
-            asm.streamInToContext(((StreamInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
+            bitcodeASM.streamInToContext(((StreamInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
         } else if (node instanceof TaskNode) {
             final TaskNode taskNode = (TaskNode) node;
-            asm.launch(globalTaskID, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC, offset, nThreads);
+            bitcodeASM.launch(globalTaskID, taskNode.getContext().getDeviceIndex(), taskNode.getTaskIndex(), taskNode.getNumArgs(), dependencyBC, offset, nThreads);
             emitArgList(taskNode);
             incTaskID();
         }
@@ -85,27 +85,27 @@ public class TornadoVMGraphCompilationResult {
         for (int i = 0; i < numArgs; i++) {
             final AbstractNode argNode = taskNode.getArg(i);
             if (argNode instanceof ConstantNode) {
-                asm.constantArg(((ConstantNode) argNode).getIndex());
+                bitcodeASM.constantArg(((ConstantNode) argNode).getIndex());
             } else if (argNode instanceof CopyInNode) {
-                asm.referenceArg(((CopyInNode) argNode).getValue().getIndex());
+                bitcodeASM.referenceArg(((CopyInNode) argNode).getValue().getIndex());
             } else if (argNode instanceof StreamInNode) {
-                asm.referenceArg(((StreamInNode) argNode).getValue().getIndex());
+                bitcodeASM.referenceArg(((StreamInNode) argNode).getValue().getIndex());
             } else if (argNode instanceof CopyOutNode) {
-                asm.referenceArg(((CopyOutNode) argNode).getValue().getValue().getIndex());
+                bitcodeASM.referenceArg(((CopyOutNode) argNode).getValue().getValue().getIndex());
             } else if (argNode instanceof AllocateNode) {
-                asm.referenceArg(((AllocateNode) argNode).getValue().getIndex());
+                bitcodeASM.referenceArg(((AllocateNode) argNode).getValue().getIndex());
             } else if (argNode instanceof DependentReadNode) {
-                asm.referenceArg(((DependentReadNode) argNode).getValue().getIndex());
+                bitcodeASM.referenceArg(((DependentReadNode) argNode).getValue().getIndex());
             }
         }
     }
 
     public void emitAddDep(int dep) {
-        asm.addDependency(dep);
+        bitcodeASM.addDependency(dep);
     }
 
     public void dump() {
-        asm.dump();
+        bitcodeASM.dump();
     }
 
     public byte[] getCode() {
@@ -113,7 +113,7 @@ public class TornadoVMGraphCompilationResult {
     }
 
     public int getCodeSize() {
-        return asm.position();
+        return bitcodeASM.position();
     }
 
 }
