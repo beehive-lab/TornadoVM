@@ -7,7 +7,7 @@ clean:
 	mvn clean
 
 example:
-	tornado uk.ac.manchester.tornado.examples.HelloWorld
+	tornado --printKernel --debug uk.ac.manchester.tornado.examples.VectorAddInt 8192
 
 tests:
 	tornado-test.py --verbose
