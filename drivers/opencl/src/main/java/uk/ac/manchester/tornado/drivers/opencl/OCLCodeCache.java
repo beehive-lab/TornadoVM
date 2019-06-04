@@ -76,7 +76,10 @@ public class OCLCodeCache {
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-logs");
     private final String FPGA_SOURCE_DIR = getProperty("tornado.fpga.source.dir", DIRECTORY_BITSTREAM);
-    private final HashSet<String> FPGA_FLAGS = new HashSet<>(Arrays.asList("-v", "-fast-compile", "-high-effort", "-fp-relaxed", "-high-effort", "-report", "-incremental", "-profile"));
+    private final HashSet<String> FPGA_FLAGS = new HashSet<>(Arrays.asList("-v", "-fast-compile", "-high-effort", "-fp-relaxed", "-report", "-incremental", "-profile"));
+    private final String INTEL_ALTERA_OPENCL_COMPILER = "aoc";
+    private final String INTEL_ALTERA_EMULATOR = "-march=emulator";
+    private final String INTEL_NALLATECH_BOARD_NAME = "-board=p385a_sch_ax115";
     private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
     private final String FPGA_CLEANUP_SCRIPT = "./bin/cleanFpga.sh";
     private final String FPGA_TASKSCHEDULE = "s0.t0.";
@@ -264,12 +267,11 @@ public class OCLCodeCache {
     public String[] composeIntelHLSCommand(String inputFile, String outputFile) {
         StringJoiner bufferCommand = new StringJoiner(" ");
 
-        bufferCommand.add("aoc");
+        bufferCommand.add(INTEL_ALTERA_OPENCL_COMPILER);
         bufferCommand.add(inputFile);
 
         if (INTEL_FPGA_COMPILATION_FLAGS != null) {
-            String[] flags;
-            flags = INTEL_FPGA_COMPILATION_FLAGS.split(",");
+            String[] flags = INTEL_FPGA_COMPILATION_FLAGS.split(",");
             for (String flag : flags) {
                 if (FPGA_FLAGS.contains(flag)) {
                     bufferCommand.add(flag);
@@ -277,14 +279,13 @@ public class OCLCodeCache {
             }
         }
         if (Tornado.FPGA_EMULATION) {
-            bufferCommand.add("-march=emulator");
+            bufferCommand.add(INTEL_ALTERA_EMULATOR);
         } else {
-            bufferCommand.add("-board=p385a_sch_ax115"); // XXX: Specific to the
-                                                         // FPGA model we
-                                                         // currently have
+            bufferCommand.add(INTEL_NALLATECH_BOARD_NAME); // XXX: Specific to
+                                                           // the FPGA model we
+                                                           // currently have
         }
         bufferCommand.add("-o " + outputFile);
-
         return bufferCommand.toString().split(" ");
     }
 
