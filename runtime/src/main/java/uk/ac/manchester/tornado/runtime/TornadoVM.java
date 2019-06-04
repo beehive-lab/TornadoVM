@@ -248,7 +248,13 @@ public class TornadoVM extends TornadoLogger {
                 }
                 bytecodesList.append(verbose + "\n");
 
-                lastEvent = device.streamIn(object, sizeBatch, offset, objectState, waitList);
+                if (sizeBatch > 0) {
+                    // We need to stream-in when using batches, because the
+                    // whole data is not copied yet.
+                    lastEvent = device.streamIn(object, sizeBatch, offset, objectState, waitList);
+                } else {
+                    lastEvent = device.ensurePresent(object, objectState, waitList, sizeBatch, offset);
+                }
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
