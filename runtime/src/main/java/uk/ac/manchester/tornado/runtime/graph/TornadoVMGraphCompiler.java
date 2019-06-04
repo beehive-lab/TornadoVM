@@ -232,10 +232,10 @@ public class TornadoVMGraphCompiler {
     private static void synchronizeOperationLastByteCode(TornadoVMGraphCompilationResult result, int numDepLists) {
         final byte[] code = result.getCode();
         final int codeSize = result.getCodeSize();
-        if (code[codeSize - 13] == TornadoVMBytecodes.STREAM_OUT.index()) {
-            code[codeSize - 13] = TornadoVMBytecodes.STREAM_OUT_BLOCKING.index();
-        } else if (code[codeSize - 29] == TornadoVMBytecodes.STREAM_OUT.index()) {
-            code[codeSize - 29] = TornadoVMBytecodes.STREAM_OUT_BLOCKING.index();
+        if (code[codeSize - 13] == TornadoVMBytecodes.STREAM_OUT.value()) {
+            code[codeSize - 13] = TornadoVMBytecodes.STREAM_OUT_BLOCKING.value();
+        } else if (code[codeSize - 29] == TornadoVMBytecodes.STREAM_OUT.value()) {
+            code[codeSize - 29] = TornadoVMBytecodes.STREAM_OUT_BLOCKING.value();
         } else {
             result.barrier(numDepLists);
         }
