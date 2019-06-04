@@ -122,7 +122,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     public final static boolean SHOW_OPENCL = Boolean.parseBoolean(System.getProperty("tornado.opencl.print", "False"));
     public final static String OPENCL_PATH = System.getProperty("tornado.opencl.path", "./opencl");
-    private final static String FPGA_ATTRIBUTE = "__attribute__((reqd_work_group_size(64,1,1)))  ";
+    private final static String FPGA_ATTRIBUTE = "__attribute__((reqd_work_group_size(<1>,<2>,<3>))) ";
     private final static String INTEL = "Intel(R)";
     private boolean flag = false;
 
@@ -489,6 +489,20 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     }
 
+    private void emitDebugKernelArgs(OCLAssembler asm, ResolvedJavaMethod method) {
+        asm.emitLine("if(get_global_id(0) == 0 && get_global_id(1) ==0){");
+        asm.pushIndent();
+        asm.emitStmt("int numArgs = slots[5] >> 32");
+        asm.emitStmt("printf(\"got %%d args...\\n\",numArgs)");
+        asm.emitLine("for(int i=0;i<numArgs;i++) {");
+        asm.pushIndent();
+        asm.emitStmt("printf(\"%20s - arg[%%d]: 0x%%lx\\n\", i, slots[6 + i])", method.getName());
+        asm.popIndent();
+        asm.emitLine("}");
+        asm.popIndent();
+        asm.emitLine("}");
+    }
+
     private void emitPrologue(OCLCompilationResultBuilder crb, OCLAssembler asm, ResolvedJavaMethod method, LIR lir) {
 
         String methodName = crb.compilationResult.getName();
@@ -505,7 +519,17 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             if (Tornado.ACCELERATOR_IS_FPGA && !methodName.equals(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
                 // TODO: FIX with info at the runtime, currently is a static
                 // decision
-                asm.emitLine(FPGA_ATTRIBUTE);
+                String replace;
+                if (crb.isParallel()) {
+                    replace = FPGA_ATTRIBUTE.replace("<1>", "64");
+                    replace = FPGA_ATTRIBUTE.replace("<2>", "1");
+                    replace = FPGA_ATTRIBUTE.replace("<3>", "1");
+                } else {
+                    replace = FPGA_ATTRIBUTE.replace("<1>", "1");
+                    replace = FPGA_ATTRIBUTE.replace("<2>", "1");
+                    replace = FPGA_ATTRIBUTE.replace("<3>", "1");
+                }
+                asm.emitLine(replace);
             }
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
 
@@ -516,18 +540,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             asm.emitStmt("%s ulong *%s = (%s ulong *) &%s[%s]", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER, OCLAssemblerConstants.FRAME_REF_NAME, OCLAssemblerConstants.GLOBAL_MEM_MODIFIER,
                     OCLAssemblerConstants.HEAP_REF_NAME, OCLAssemblerConstants.FRAME_BASE_NAME);
             asm.eol();
+
             if (DEBUG_KERNEL_ARGS && (method != null && !method.getDeclaringClass().getUnqualifiedName().equalsIgnoreCase(this.getClass().getSimpleName()))) {
-                asm.emitLine("if(get_global_id(0) == 0 && get_global_id(1) ==0){");
-                asm.pushIndent();
-                asm.emitStmt("int numArgs = slots[5] >> 32");
-                asm.emitStmt("printf(\"got %%d args...\\n\",numArgs)");
-                asm.emitLine("for(int i=0;i<numArgs;i++) {");
-                asm.pushIndent();
-                asm.emitStmt("printf(\"%20s - arg[%%d]: 0x%%lx\\n\", i, slots[6 + i])", method.getName());
-                asm.popIndent();
-                asm.emitLine("}");
-                asm.popIndent();
-                asm.emitLine("}");
+                emitDebugKernelArgs(asm, method);
             }
 
             if (ENABLE_EXCEPTIONS) {
@@ -587,18 +602,18 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     @Override
     public CompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, CompilationResult compilationResult, CompilationResultBuilderFactory factory) {
-        return newCompilationResultBuilder(lirGenRes, frameMap, (OCLCompilationResult) compilationResult, factory, false);
+        return newCompilationResultBuilder(lirGenRes, frameMap, (OCLCompilationResult) compilationResult, factory, false, false);
     }
 
     public OCLCompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, OCLCompilationResult compilationResult, CompilationResultBuilderFactory factory,
-            boolean isKernel) {
+            boolean isKernel, boolean isParallel) {
 
         OCLAssembler asm = createAssembler(frameMap);
         OCLFrameContext frameContext = new OCLFrameContext();
         DataBuilder dataBuilder = new OCLDataBuilder();
         OCLCompilationResultBuilder crb = new OCLCompilationResultBuilder(codeCache, getForeignCalls(), frameMap, asm, dataBuilder, frameContext, compilationResult, options);
         crb.setKernel(isKernel);
-
+        crb.setParallel(isParallel);
         return crb;
     }
 
