@@ -519,17 +519,17 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             if (Tornado.ACCELERATOR_IS_FPGA && !methodName.equals(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
                 // TODO: FIX with info at the runtime, currently is a static
                 // decision
-                String replace;
+                String fpgaSchedulingAttribute;
                 if (crb.isParallel()) {
-                    replace = FPGA_ATTRIBUTE.replace("<1>", "64");
-                    replace = FPGA_ATTRIBUTE.replace("<2>", "1");
-                    replace = FPGA_ATTRIBUTE.replace("<3>", "1");
+                    fpgaSchedulingAttribute = FPGA_ATTRIBUTE.replace("<1>", "64");
+                    fpgaSchedulingAttribute = fpgaSchedulingAttribute.replace("<2>", "1");
+                    fpgaSchedulingAttribute = fpgaSchedulingAttribute.replace("<3>", "1");
                 } else {
-                    replace = FPGA_ATTRIBUTE.replace("<1>", "1");
-                    replace = FPGA_ATTRIBUTE.replace("<2>", "1");
-                    replace = FPGA_ATTRIBUTE.replace("<3>", "1");
+                    fpgaSchedulingAttribute = FPGA_ATTRIBUTE.replace("<1>", "1");
+                    fpgaSchedulingAttribute = fpgaSchedulingAttribute.replace("<2>", "1");
+                    fpgaSchedulingAttribute = fpgaSchedulingAttribute.replace("<3>", "1");
                 }
-                asm.emitLine(replace);
+                asm.emitLine(fpgaSchedulingAttribute);
             }
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
 
