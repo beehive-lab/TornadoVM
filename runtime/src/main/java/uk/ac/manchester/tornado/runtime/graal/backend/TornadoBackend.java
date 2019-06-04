@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 public abstract class TornadoBackend<P extends Providers> extends Backend {
 
     public static final long DEFAULT_HEAP_ALLOCATION = RuntimeUtilities.parseSize(System.getProperty("tornado.heap.allocation", "1GB"));
-    public final static boolean ENABLE_EXCEPTIONS = Boolean.parseBoolean(System.getProperty("tornado.exceptions", "False"));
+    public static final boolean ENABLE_EXCEPTIONS = Boolean.parseBoolean(System.getProperty("tornado.exceptions", "False"));
 
     protected TornadoBackend(Providers providers) {
         super(providers);

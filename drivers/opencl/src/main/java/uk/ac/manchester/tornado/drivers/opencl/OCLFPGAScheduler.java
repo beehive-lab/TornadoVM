@@ -39,10 +39,8 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
     @Override
     public void calculateGlobalWork(final TaskMetaData meta, long batchThreads) {
         final long[] globalWork = meta.getGlobalWork();
-
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (batchThreads <= 0) ? (long) (meta.getDomain().get(i).cardinality()) : batchThreads;
-
             if (value % WARP != 0) {
                 value = ((value / WARP) + 1) * WARP;
             }
@@ -53,22 +51,24 @@ public class OCLFPGAScheduler extends OCLKernelScheduler {
     @Override
     public void calculateLocalWork(final TaskMetaData meta) {
         final long[] localWork = meta.getLocalWork();
-
         switch (meta.getDims()) {
             case 3:
-                localWork[2] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[2]);
-                localWork[1] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[1]);
-                localWork[0] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[0]);
+                setLocalWork(3, localWork, meta);
                 break;
             case 2:
-                localWork[1] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[1]);
-                localWork[0] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[0]);
+                setLocalWork(2, localWork, meta);
                 break;
             case 1:
-                localWork[0] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[0]);
+                setLocalWork(1, localWork, meta);
                 break;
             default:
                 break;
+        }
+    }
+
+    private void setLocalWork(final int dimensions, long[] localWork, final TaskMetaData meta) {
+        for (int i = 0; i < dimensions; i++) {
+            localWork[i] = calculateGroupSize(LOCAL_WORK_SIZE, meta.getGlobalWork()[i]);
         }
     }
 

@@ -34,30 +34,30 @@ public class TornadoGraphAssembler {
 
     public enum TornadoVMBytecodes {
         // @formatter:off
-        ALLOCATE((byte) 10),           // ALLOCATE(obj,dest)
-        COPY_IN((byte) 11),           // COPY(obj, src, dest)
+        ALLOCATE((byte) 10),            // ALLOCATE(obj,dest)
+        COPY_IN((byte) 11),             // COPY(obj, src, dest)
         STREAM_IN((byte) 12),           // STREAM_IN(obj, src, dest)
-        STREAM_OUT((byte) 13),           // STREAM_OUT(obj, src, dest)
-        STREAM_OUT_BLOCKING((byte) 14),  // STREAM_OUT(obj, src, dest)
-        LAUNCH((byte) 15),           // LAUNCH(dep list index)
-        BARRIER((byte) 16),           // BARRIER <events>
+        STREAM_OUT((byte) 13),          // STREAM_OUT(obj, src, dest)
+        STREAM_OUT_BLOCKING((byte) 14), // STREAM_OUT(obj, src, dest)
+        LAUNCH((byte) 15),              // LAUNCH(dep list index)
+        BARRIER((byte) 16),             // BARRIER <events>
         SETUP((byte) 17),
-        BEGIN((byte) 18),           // BEGIN(num contexts, num stacks, num dep lists)
-        ADD_DEP((byte) 19),           // ADD_DEP(list index)
-        CONTEXT((byte) 20),           // CONTEXT(ctx)
-        END((byte) 21),           // END(ctx)
+        BEGIN((byte) 18),               // BEGIN(num contexts, num stacks, num dep lists)
+        ADD_DEP((byte) 19),             // ADD_DEP(list index)
+        CONTEXT((byte) 20),             // CONTEXT(ctx)
+        END((byte) 21),                 // END(ctx)
         CONSTANT_ARG((byte) 22),
         REFERENCE_ARG((byte) 23);
         // @formatter:on
 
-        private byte index;
+        private byte value;
 
-        TornadoVMBytecodes(byte index) {
-            this.index = index;
+        TornadoVMBytecodes(byte value) {
+            this.value = value;
         }
 
-        public byte index() {
-            return index;
+        public byte value() {
+            return value;
         }
     }
 
@@ -77,39 +77,39 @@ public class TornadoGraphAssembler {
     }
 
     void begin() {
-        buffer.put(TornadoVMBytecodes.BEGIN.index);
+        buffer.put(TornadoVMBytecodes.BEGIN.value);
     }
 
     public void end() {
-        buffer.put(TornadoVMBytecodes.END.index);
+        buffer.put(TornadoVMBytecodes.END.value);
     }
 
     void setup(int numContexts, int numStacks, int numDeps) {
-        buffer.put(TornadoVMBytecodes.SETUP.index);
+        buffer.put(TornadoVMBytecodes.SETUP.value);
         buffer.putInt(numContexts);
         buffer.putInt(numStacks);
         buffer.putInt(numDeps);
     }
 
     void addDependency(int index) {
-        buffer.put(TornadoVMBytecodes.ADD_DEP.index);
+        buffer.put(TornadoVMBytecodes.ADD_DEP.value);
         buffer.putInt(index);
     }
 
     public void context(int index) {
-        buffer.put(TornadoVMBytecodes.CONTEXT.index);
+        buffer.put(TornadoVMBytecodes.CONTEXT.value);
         buffer.putInt(index);
     }
 
     public void allocate(int object, int ctx, long size) {
-        buffer.put(TornadoVMBytecodes.ALLOCATE.index);
+        buffer.put(TornadoVMBytecodes.ALLOCATE.value);
         buffer.putInt(object);
         buffer.putInt(ctx);
         buffer.putLong(size);
     }
 
     void copyToContext(int obj, int ctx, int dep, long offset, long size) {
-        buffer.put(TornadoVMBytecodes.COPY_IN.index);
+        buffer.put(TornadoVMBytecodes.COPY_IN.value);
         buffer.putInt(obj);
         buffer.putInt(ctx);
         buffer.putInt(dep);
@@ -118,7 +118,7 @@ public class TornadoGraphAssembler {
     }
 
     void streamInToContext(int obj, int ctx, int dep, long offset, long size) {
-        buffer.put(TornadoVMBytecodes.STREAM_IN.index);
+        buffer.put(TornadoVMBytecodes.STREAM_IN.value);
         buffer.putInt(obj);
         buffer.putInt(ctx);
         buffer.putInt(dep);
@@ -127,7 +127,7 @@ public class TornadoGraphAssembler {
     }
 
     void streamOutOfContext(int obj, int ctx, int dep, long offset, long size) {
-        buffer.put(TornadoVMBytecodes.STREAM_OUT.index);
+        buffer.put(TornadoVMBytecodes.STREAM_OUT.value);
         buffer.putInt(obj);
         buffer.putInt(ctx);
         buffer.putInt(dep);
@@ -136,7 +136,7 @@ public class TornadoGraphAssembler {
     }
 
     void launch(int gtid, int ctx, int task, int numParameters, int dep, long offset, long size) {
-        buffer.put(TornadoVMBytecodes.LAUNCH.index);
+        buffer.put(TornadoVMBytecodes.LAUNCH.value);
         buffer.putInt(gtid);
         buffer.putInt(ctx);
         buffer.putInt(task);
@@ -147,17 +147,17 @@ public class TornadoGraphAssembler {
     }
 
     public void barrier(int dep) {
-        buffer.put(TornadoVMBytecodes.BARRIER.index);
+        buffer.put(TornadoVMBytecodes.BARRIER.value);
         buffer.putInt(dep);
     }
 
     void constantArg(int index) {
-        buffer.put(TornadoVMBytecodes.CONSTANT_ARG.index);
+        buffer.put(TornadoVMBytecodes.CONSTANT_ARG.value);
         buffer.putInt(index);
     }
 
     void referenceArg(int index) {
-        buffer.put(TornadoVMBytecodes.REFERENCE_ARG.index);
+        buffer.put(TornadoVMBytecodes.REFERENCE_ARG.value);
         buffer.putInt(index);
     }
 

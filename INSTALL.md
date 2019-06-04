@@ -38,25 +38,23 @@ This will generate a new Java binary into the `jdk1.8.0_<your_version>/product`,
  $ cd ..
  $ git clone https://github.com/beehive-lab/TornadoVM tornadovm
  $ cd tornadovm
- $ vim etc/tornadovm.env
+ $ vim etc/sources.env
 ```
 
-
-Create the `etc/tornadovm.env` file and add the following code in it **(after updating the paths to your correct ones)**:
+Create the `etc/sources.sh` file and add the following code in it **(after updating the paths to your correct ones)**:
 
 ```bash
 #!/bin/bash
 export JAVA_HOME=<path to jvmci 8 jdk with JVMCI>
 export PATH=$PWD/bin/bin:$PATH    ## This directory will be automatically generated during Tornado compilation
 export TORNADO_SDK=$PWD/bin/sdk   ## This directory will be automatically generated during Tornado compilation
-
 export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see step 4)
 ```
 
 Then execute:
 
 ```bash
-$ . etc/tornadovm.env
+$ source ./etc/sources.env
 ```
 
 
@@ -72,29 +70,26 @@ Create (or update) the file in `~/.m2/settings.xml` with the following content. 
  <interactiveMode/>
  <usePluginRegistry/>
  	<offline/>
-		 <pluginGroups/>
-	 <servers/>
+	<pluginGroups/>
+	<servers/>
  	<mirrors/>
 	 <proxies/>
 	 <profiles>
 	 <profile>
 		 <id>tornado-jvmci</id>
 		 <activation>
-		 <activeByDefault>true</activeByDefault>
+		 	<activeByDefault>true</activeByDefault>
 		 </activation>
 		 <properties>
-
-			 <!-- Your PATH TO JDK1.8-JVMCI-->
+			 <!-- Your PATH TO YOUR JDK1.8-JVMCI-->
 			 <jvmci.root>/home/user/jdk1.8.0_181/product</jvmci.root>
 			 <!-- Your JDK1.8-JVMCI version-->
 		 	 <jvmci.version>1.8.0_181</jvmci.version>
-
 		 </properties>
 	 </profile>
 	 </profiles>
 	 <activeProfiles/>
 </settings>
-
 ```
 
 
@@ -126,14 +121,14 @@ cmake version 3.10.1
 Then export `CMAKE_ROOT` variable to the cmake installation. You can add it to the `etc/tornadovm.env` file.
 
 ```bash
-export CMAKE_ROOT=/opt/cmake-3.10.2
+export CMAKE_ROOT=/opt/cmake-3.10.1
 ```
 
 ### 5. Compile TornadoVM
 
 ```bash
 $ cd ~/tornadovm
-$ . etc/tornadovm.env
+$ . etc/sources.env
 $ make 
 ```
 and done!! 
@@ -195,8 +190,7 @@ $ tornado uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sadd
 To run all unittests in Tornado:
 
 ```bash
-make tests 
-
+$ make tests
 ```
 
 To run an individual unittest:
@@ -215,6 +209,25 @@ To test just a method of a unittest class:
 
 ```bash
 $ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello#testHello
+```
+
+To see the OpenCL generated kernel for a unittest:
+
+```bash
+$ tornado-test.py --verbose -pk uk.ac.manchester.tornado.unittests.TestHello#testHello
+```
+
+To execute in debug mode:
+
+```bash
+$ tornado-test.py --verbose --debug uk.ac.manchester.tornado.unittests.TestHello#testHello
+task info: s0.t0
+	platform          : NVIDIA CUDA
+	device            : GeForce GTX 1050 CL_DEVICE_TYPE_GPU (available)
+	dims              : 1
+	global work offset: [0]
+	global work size  : [8]
+	local  work size  : [8]
 ```
 
 
