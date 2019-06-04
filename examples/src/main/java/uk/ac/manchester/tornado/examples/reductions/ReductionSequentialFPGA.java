@@ -50,7 +50,7 @@ public class ReductionSequentialFPGA {
         //@formatter:on
 
         ArrayList<Long> timers = new ArrayList<>();
-        for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {
+        for (int i = 0; i < 2; i++) {
             long start = System.nanoTime();
             task.execute();
             long end = System.nanoTime();
@@ -61,7 +61,7 @@ public class ReductionSequentialFPGA {
     }
 
     public static void main(String[] args) {
-        int inputSize = 8192;
+        int inputSize = 512;
         if (args.length > 0) {
             inputSize = Integer.parseInt(args[0]);
         }
