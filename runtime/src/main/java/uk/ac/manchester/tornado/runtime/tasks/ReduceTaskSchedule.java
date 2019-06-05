@@ -285,6 +285,15 @@ class ReduceTaskSchedule {
         }
     }
 
+    private void updateGlobalAndLocalDimensionsFPGA(final int deviceToRun, String taskScheduleReduceName, TaskPackage taskPackage, int inputSize) {
+        // Update GLOBAL and LOCAL Dims if device to run is the FPGA
+        TornadoDeviceType deviceType = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceToRun).getDeviceType();
+        if (deviceType == TornadoDeviceType.ACCELERATOR) {
+            TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".global.dims", Integer.toString(inputSize));
+            TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".local.dims", "64");
+        }
+    }
+
     /**
      * Compose and execute the new reduction. It dynamically creates a new
      * task-schedule expression that contains: a) the parallel reduction; b) the
@@ -338,12 +347,7 @@ class ReduceTaskSchedule {
                     Object originalReduceVariable = taskPackage.getTaskParameters()[paramIndex + 1];
                     int inputSize = metaReduceTasks.getInputSize(taskNumber);
 
-                    // Update GLOBAL and LOCAL Dims if device to run is the FPGA
-                    TornadoDeviceType deviceType = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceToRun).getDeviceType();
-                    if (deviceType == TornadoDeviceType.ACCELERATOR) {
-                        TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".global.dims", Integer.toString(inputSize));
-                        TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".local.dims", "64");
-                    }
+                    updateGlobalAndLocalDimensionsFPGA(targetDeviceToRun, taskScheduleReduceName, taskPackage, inputSize);
 
                     // Analyse Input Size - if not power of 2 -> split host and
                     // device executions
