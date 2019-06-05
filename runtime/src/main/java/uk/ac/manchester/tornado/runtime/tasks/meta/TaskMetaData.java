@@ -462,7 +462,7 @@ public class TaskMetaData extends AbstractMetaData {
 
     @Override
     public String toString() {
-        return String.format("task meta data: domain=%s, global dims=%s\n", domain, (getGlobalWork() == null) ? "null" : formatWorkDimentionArray(getGlobalWork()));
+        return String.format("task meta data: domain=%s, global dims=%s\n", domain, (getGlobalWork() == null) ? "null" : formatWorkDimentionArray(getGlobalWork(), "1"));
     }
 
 }
