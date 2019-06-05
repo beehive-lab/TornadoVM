@@ -44,7 +44,6 @@ public class ReductionSequentialFPGA {
 
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
-            .streamIn(input)
             .task("t0", ReductionSequentialFPGA::reductionAddFloats, input, result)
             .streamOut(result);
         //@formatter:on
