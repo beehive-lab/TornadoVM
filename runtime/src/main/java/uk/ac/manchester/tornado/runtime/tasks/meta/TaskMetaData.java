@@ -111,10 +111,10 @@ public class TaskMetaData extends AbstractMetaData {
         return meta;
     }
 
-    private static String formatWorkDimentionArray(final long[] array) {
+    private static String formatWorkDimentionArray(final long[] array, final String defaults) {
         final StringBuilder sb = new StringBuilder();
-        if (array.length == 0) {
-            sb.append("[1]");
+        if (array == null || array.length == 0) {
+            sb.append("[" + defaults + "]");
         } else {
             sb.append(Arrays.toString(array));
         }
@@ -385,10 +385,10 @@ public class TaskMetaData extends AbstractMetaData {
         System.out.printf("task info: %s\n", idTask);
         System.out.printf("\tplatform          : %s\n", getDevice().getPlatformName());
         System.out.printf("\tdevice            : %s\n", getDevice().getDescription());
-        System.out.printf("\tdims              : %d\n", domain == null ? "null" : domain.getDepth());
-        System.out.printf("\tglobal work offset: %s\n", formatWorkDimentionArray(globalOffset));
-        System.out.printf("\tglobal work size  : %s\n", formatWorkDimentionArray(globalWork));
-        System.out.printf("\tlocal  work size  : %s\n", localWork == null ? "null" : formatWorkDimentionArray(localWork));
+        System.out.printf("\tdims              : %s\n", domain == null ? "0" : Integer.toString(domain.getDepth()));
+        System.out.printf("\tglobal work offset: %s\n", formatWorkDimentionArray(globalOffset, "0"));
+        System.out.printf("\tglobal work size  : %s\n", formatWorkDimentionArray(globalWork, "1"));
+        System.out.printf("\tlocal  work size  : %s\n", localWork == null ? "null" : formatWorkDimentionArray(localWork, "1"));
     }
 
     public void setCoarseness(int index, int value) {
