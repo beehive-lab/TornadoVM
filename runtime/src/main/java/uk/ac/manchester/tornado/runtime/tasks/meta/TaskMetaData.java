@@ -77,23 +77,8 @@ public class TaskMetaData extends AbstractMetaData {
         Arrays.fill(argumentsAccess, Access.NONE);
         this.idTask = scheduleMetaData.getId() + "." + id;
 
-        localWorkDefined = getProperty(getId() + ".local.dims") != null;
-        if (localWorkDefined) {
-            final String[] values = getProperty(getId() + ".local.dims").split(",");
-            localWork = new long[values.length];
-            for (int i = 0; i < values.length; i++) {
-                localWork[i] = Long.parseLong(values[i]);
-            }
-        }
-
-        globalWorkDefined = getProperty(getId() + ".global.dims") != null;
-        if (globalWorkDefined) {
-            final String[] values = getProperty(getId() + ".global.dims").split(",");
-            globalWork = new long[values.length];
-            for (int i = 0; i < values.length; i++) {
-                globalWork[i] = Long.parseLong(values[i]);
-            }
-        }
+        inspectLocalWork();
+        inspectGlobalWork();
 
         this.schedule = !(globalWorkDefined && localWorkDefined);
         this.canAssumeExact = Boolean.parseBoolean(getDefault("coarsener.exact", getId(), "False"));
@@ -109,6 +94,30 @@ public class TaskMetaData extends AbstractMetaData {
     public static TaskMetaData create(ScheduleMetaData scheduleMeta, String id, Method method, boolean readMetaData) {
         final TaskMetaData meta = new TaskMetaData(scheduleMeta, id, Modifier.isStatic(method.getModifiers()) ? method.getParameterCount() : method.getParameterCount() + 1);
         return meta;
+    }
+
+    private boolean inspectLocalWork() {
+        localWorkDefined = getProperty(getId() + ".local.dims") != null;
+        if (localWorkDefined) {
+            final String[] values = getProperty(getId() + ".local.dims").split(",");
+            localWork = new long[values.length];
+            for (int i = 0; i < values.length; i++) {
+                localWork[i] = Long.parseLong(values[i]);
+            }
+        }
+        return localWorkDefined;
+    }
+
+    private boolean inspectGlobalWork() {
+        globalWorkDefined = getProperty(getId() + ".global.dims") != null;
+        if (globalWorkDefined) {
+            final String[] values = getProperty(getId() + ".global.dims").split(",");
+            globalWork = new long[values.length];
+            for (int i = 0; i < values.length; i++) {
+                globalWork[i] = Long.parseLong(values[i]);
+            }
+        }
+        return globalWorkDefined;
     }
 
     private static String formatWorkDimentionArray(final long[] array, final String defaults) {

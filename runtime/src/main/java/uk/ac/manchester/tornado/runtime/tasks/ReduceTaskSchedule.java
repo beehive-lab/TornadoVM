@@ -76,9 +76,9 @@ class ReduceTaskSchedule {
         boolean isDeviceDefined = MetaDataUtils.getProperty(idTaskName + ".device") != null;
         if (isDeviceDefined) {
             int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskName + ".device"));
-            int taskScheduleNumber = info[1];
-            TornadoRuntime.setProperty(taskScheduleName + "." + taskName + ".device", "0:" + taskScheduleNumber);
-            return taskScheduleNumber;
+            int deviceNumber = info[1];
+            TornadoRuntime.setProperty(taskScheduleName + "." + taskName + ".device", "0:" + deviceNumber);
+            return deviceNumber;
         }
         return 0;
     }
@@ -140,7 +140,8 @@ class ReduceTaskSchedule {
      * It runs a compiled method by Graal in HotSpot.
      * 
      * @param taskPackage
-     *            {@link TaskPackage} metadata that stores the method parameters.
+     *            {@link TaskPackage} metadata that stores the method
+     *            parameters.
      * @param code
      *            {@link InstalledCode} code to be executed
      */
@@ -177,7 +178,7 @@ class ReduceTaskSchedule {
     private boolean isTaskEligibleSplitHostAndDevice(final int targetDeviceToRun, final long elementsReductionLeftOver, final boolean isPowerOfTwo) {
         if (!isPowerOfTwo && elementsReductionLeftOver > 0) {
             TornadoDeviceType deviceType = TornadoCoreRuntime.getTornadoRuntime().getDriver(0).getDevice(targetDeviceToRun).getDeviceType();
-            return deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.FPGA;
+            return deviceType == TornadoDeviceType.GPU || deviceType == TornadoDeviceType.FPGA || deviceType == TornadoDeviceType.ACCELERATOR;
         }
         return false;
     }
@@ -289,13 +290,14 @@ class ReduceTaskSchedule {
      * task-schedule expression that contains: a) the parallel reduction; b) the
      * final sequential reduction.
      * 
-     * It also creates a new thread in the case the input size for the reduction is
-     * not power of two and the target device is either the FPGA or the GPU. In this
-     * case, the new thread will compile the host part with the corresponding
-     * sub-range that does not fit into the power-of-two part.
+     * It also creates a new thread in the case the input size for the reduction
+     * is not power of two and the target device is either the FPGA or the GPU.
+     * In this case, the new thread will compile the host part with the
+     * corresponding sub-range that does not fit into the power-of-two part.
      * 
      * @param metaReduceTable
-     *            Metadata to create all new tasks for the reductions dynamically.
+     *            Metadata to create all new tasks for the reductions
+     *            dynamically.
      * @return {@link TaskSchedule} with the new reduction
      */
     TaskSchedule scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
@@ -335,6 +337,13 @@ class ReduceTaskSchedule {
 
                     Object originalReduceVariable = taskPackage.getTaskParameters()[paramIndex + 1];
                     int inputSize = metaReduceTasks.getInputSize(taskNumber);
+
+                    // Update GLOBAL and LOCAL Dims if device to run is the FPGA
+                    TornadoDeviceType deviceType = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(deviceToRun).getDeviceType();
+                    if (deviceType == TornadoDeviceType.ACCELERATOR) {
+                        TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".global.dims", Integer.toString(inputSize));
+                        TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".local.dims", "64");
+                    }
 
                     // Analyse Input Size - if not power of 2 -> split host and
                     // device executions
