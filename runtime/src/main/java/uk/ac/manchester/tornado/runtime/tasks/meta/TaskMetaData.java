@@ -385,7 +385,7 @@ public class TaskMetaData extends AbstractMetaData {
         System.out.printf("task info: %s\n", idTask);
         System.out.printf("\tplatform          : %s\n", getDevice().getPlatformName());
         System.out.printf("\tdevice            : %s\n", getDevice().getDescription());
-        System.out.printf("\tdims              : %d\n", domain.getDepth());
+        System.out.printf("\tdims              : %d\n", domain == null ? "null" : domain.getDepth());
         System.out.printf("\tglobal work offset: %s\n", formatWorkDimentionArray(globalOffset));
         System.out.printf("\tglobal work size  : %s\n", formatWorkDimentionArray(globalWork));
         System.out.printf("\tlocal  work size  : %s\n", localWork == null ? "null" : formatWorkDimentionArray(localWork));
