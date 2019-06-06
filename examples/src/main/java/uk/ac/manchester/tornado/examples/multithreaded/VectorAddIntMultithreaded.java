@@ -46,6 +46,7 @@ public class VectorAddIntMultithreaded {
     public static void main(String[] args) throws InterruptedException {
         int size = Integer.parseInt(args[0]);
         boolean version = Boolean.parseBoolean(args[1]);
+        int iter = Integer.parseInt(args[2]);
 
         int maxThreadCount = Runtime.getRuntime().availableProcessors();
 
@@ -63,14 +64,13 @@ public class VectorAddIntMultithreaded {
 
         vectorAdd(a, b, c);
 
-        for (int idx = 0; idx < 10; idx++) {
-            // vectorAdd(a, b, result);
+        for (int idx = 0; idx < iter; idx++) {
 
             startTime = System.nanoTime();
             vectorAddThreads(a, b, c, maxThreadCount, th);
             endTime = System.nanoTime();
 
-            System.out.println("[Multi] Run " + idx + " --- Time in (ns) " + (endTime - startTime));
+            System.out.println("[Multi]  Run " + idx + " --- Time in (ns) " + (endTime - startTime));
 
             startTime = System.nanoTime();
             vectorAdd(a, b, result);
@@ -80,7 +80,7 @@ public class VectorAddIntMultithreaded {
             // Check Result
             boolean wrongResult = false;
             for (int i = 0; i < c.length; i++) {
-                if (c[i] != 30) {
+                if (c[i] != 30 || result[i] != 30) {
                     wrongResult = true;
                     break;
                 }
