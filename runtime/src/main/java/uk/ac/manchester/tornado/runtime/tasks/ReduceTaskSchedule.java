@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceTasks;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERATION;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
 class ReduceTaskSchedule {
@@ -292,6 +293,11 @@ class ReduceTaskSchedule {
             TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".global.dims", Integer.toString(inputSize));
             TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".local.dims", "64");
         }
+
+        // Update table binary for the FPGAs
+        String[] binaries = TornadoOptions.FPGA_BINARIES.split(",");
+        Arrays.toString(binaries);
+
     }
 
     /**

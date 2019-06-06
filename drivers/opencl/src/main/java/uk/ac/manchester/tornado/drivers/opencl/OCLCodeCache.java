@@ -55,6 +55,7 @@ import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLCodeCache {
@@ -87,7 +88,7 @@ public class OCLCodeCache {
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
      *
-     * e.g.
+     * e.g.,
      *
      * <p>
      * <code>
@@ -95,7 +96,7 @@ public class OCLCodeCache {
      * </code>
      * </p>
      */
-    private final String OPENCL_BINARIES = getProperty("tornado.precompiled.binary", null);
+    private final String OPENCL_BINARIES = TornadoOptions.FPGA_BINARIES;
 
     /**
      * Configuration File with all paths to the OpenCl pre-compiled binaries:
@@ -125,7 +126,7 @@ public class OCLCodeCache {
 
         if (OPENCL_BINARIES != null) {
             precompiledBinariesPerDevice = new HashMap<>();
-            processPrecompiledBinaries(null);
+            processPrecompiledBinaries();
         }
 
         if (OPENCL_FILE_BINARIES != null) {
@@ -148,6 +149,10 @@ public class OCLCodeCache {
         }
     }
 
+    private void processPrecompiledBinaries() {
+        processPrecompiledBinaries(null);
+    }
+
     private void processPrecompiledBinaries(String bitstreamList) {
         String[] binaries = null;
 
@@ -158,7 +163,7 @@ public class OCLCodeCache {
         }
 
         if ((binaries.length % 2) != 0) {
-            throw new RuntimeException("tornado.precompiled.binary=<path> , device ");
+            throw new RuntimeException("tornado.precompiled.binary=<path>,taskName.device");
         }
 
         for (int i = 0; i < binaries.length; i += 2) {
