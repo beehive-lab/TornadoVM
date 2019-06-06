@@ -19,40 +19,64 @@ package uk.ac.manchester.tornado.examples.multithreaded;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
-import uk.ac.manchester.tornado.api.annotations.Parallel;
-
 public class VectorAddIntMultithreaded {
 
     private static void vectorAdd(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
+        for (int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];
         }
     }
 
-    public static void main(String[] args) {
+    private static void vectorAddThreads(int[] array1, int[] array2, int[] result, int threads, Thread[] th) throws InterruptedException {
+        int balk = array1.length / threads;
+        for (int i = 0; i < threads; i++) {
+            final int current = i;
+            th[i] = new Thread(() -> {
+                for (int k = current * balk; k < (current + 1) * balk; k++) {
+                    result[k] = array1[k] + array2[k];
+                }
+            });
+            th[i].start();
+        }
+        for (int i = 0; i < threads; i++) {
+            th[i].join();
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
         int size = Integer.parseInt(args[0]);
+        boolean version = Boolean.parseBoolean(args[1]);
+
+        int maxThreadCount = Runtime.getRuntime().availableProcessors();
+
+        Thread[] th = new Thread[maxThreadCount];
 
         int[] a = new int[size];
         int[] b = new int[size];
         int[] c = new int[size];
         int[] result = new int[size];
+        long startTime = 0;
+        long endTime = 0;
 
         Arrays.fill(a, 10);
         Arrays.fill(b, 20);
 
-        //@formatter:off
-        TaskSchedule schedule = new TaskSchedule("s0")
-                .task("t0", VectorAddIntMultithreaded::vectorAdd, a, b, c)
-                .streamOut(c);
-        //@formatter:on
+        vectorAdd(a, b, c);
 
         for (int idx = 0; idx < 10; idx++) {
-            // Parallel
-            schedule.execute();
-            // Sequential
-            vectorAdd(a, b, result);
+            // vectorAdd(a, b, result);
 
+            startTime = System.nanoTime();
+            vectorAddThreads(a, b, c, maxThreadCount, th);
+            endTime = System.nanoTime();
+
+            System.out.println("[Multi] Run " + idx + " --- Time in (ns) " + (endTime - startTime));
+
+            startTime = System.nanoTime();
+            vectorAdd(a, b, result);
+            endTime = System.nanoTime();
+
+            System.out.println("[Serial] Run " + idx + " --- Time in (ns) " + (endTime - startTime));
             // Check Result
             boolean wrongResult = false;
             for (int i = 0; i < c.length; i++) {
