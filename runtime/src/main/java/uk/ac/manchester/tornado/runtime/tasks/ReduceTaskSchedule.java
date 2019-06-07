@@ -72,7 +72,7 @@ class ReduceTaskSchedule {
         this.streamOutObjects = streamOutObjects;
     }
 
-    private void inspectBinariesFPGA(String taskScheduleName, String tsName, String taskName) {
+    private void inspectBinariesFPGA(String taskScheduleName, String tsName, String taskName, boolean sequential) {
         String idTaskName = tsName + "." + taskName;
         StringBuffer originalBinaries = TornadoOptions.FPGA_BINARIES;
         if (originalBinaries != null) {
@@ -82,7 +82,11 @@ class ReduceTaskSchedule {
                 if (givenTaskName.equals(idTaskName)) {
                     int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskName + ".device"));
                     int deviceNumber = info[1];
-                    originalBinaries.append("," + binaries[i - 1] + "," + taskScheduleName + "." + taskName + ".device=0:" + deviceNumber);
+                    if (!sequential) {
+                        originalBinaries.append("," + binaries[i - 1] + "," + taskScheduleName + "." + taskName + ".device=0:" + deviceNumber);
+                    } else {
+                        originalBinaries.append("," + binaries[i - 1] + "," + taskScheduleName + "." + SEQUENTIAL_TASK_REDUCE_NAME + ".device=0:" + deviceNumber);
+                    }
                 }
             }
             System.out.println("Setting properties FPGA binary --> " + originalBinaries);
@@ -355,7 +359,7 @@ class ReduceTaskSchedule {
 
             deviceToRun = changeDeviceIfNeeded(taskScheduleReduceName, tsName, taskPackage.getId());
             final int targetDeviceToRun = deviceToRun;
-            inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId());
+            inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId(), false);
 
             if (tableReduce.containsKey(taskNumber)) {
 
@@ -426,7 +430,7 @@ class ReduceTaskSchedule {
                     for (REDUCE_OPERATION op : operations) {
                         final String newTaskSequentialName = taskScheduleReduceName + "." + SEQUENTIAL_TASK_REDUCE_NAME;
                         TornadoRuntime.setProperty(newTaskSequentialName + ".device", "0:" + deviceToRun);
-                        inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId());
+                        inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId(), true);
 
                         switch (op) {
                             case ADD:
