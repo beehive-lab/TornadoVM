@@ -74,20 +74,20 @@ class ReduceTaskSchedule {
 
     private void inspectBinariesFPGA(String taskScheduleName, String tsName, String taskName) {
         String idTaskName = tsName + "." + taskName;
-        String originalBinaries = TornadoOptions.FPGA_BINARIES;
+        StringBuffer originalBinaries = TornadoOptions.FPGA_BINARIES;
         if (originalBinaries != null) {
             // Update table binary for the FPGAs
-            String[] binaries = originalBinaries.split(",");
+            String[] binaries = originalBinaries.toString().split(",");
             for (int i = 1; i < binaries.length; i += 2) {
                 String givenTaskName = binaries[i].split(".device")[0];
                 if (givenTaskName.equals(idTaskName)) {
                     int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskName + ".device"));
                     int deviceNumber = info[1];
-                    originalBinaries = originalBinaries + "," + binaries[i - 1] + "," + taskScheduleName + "." + taskName + ".device0:" + deviceNumber;
+                    originalBinaries.append("," + binaries[i - 1] + "," + taskScheduleName + "." + taskName + ".device0:" + deviceNumber);
                 }
             }
             System.out.println("Setting properties FPGA binary --> " + originalBinaries);
-            TornadoRuntime.setProperty("tornado.precompiled.binary", originalBinaries);
+            TornadoRuntime.setProperty("tornado.precompiled.binary", originalBinaries.toString());
         }
     }
 
@@ -425,7 +425,7 @@ class ReduceTaskSchedule {
                     Object newArray = streamReduceUpdatedList.get(i);
                     int sizeReduceArray = sizesReductionArray.get(i);
                     for (REDUCE_OPERATION op : operations) {
-                        String newTaskSequentialName = taskScheduleReduceName + "." + SEQUENTIAL_TASK_REDUCE_NAME;
+                        final String newTaskSequentialName = taskScheduleReduceName + "." + SEQUENTIAL_TASK_REDUCE_NAME;
                         TornadoRuntime.setProperty(newTaskSequentialName + ".device", "0:" + deviceToRun);
                         inspectBinariesFPGA(newTaskSequentialName, tsName, taskPackage.getId());
 

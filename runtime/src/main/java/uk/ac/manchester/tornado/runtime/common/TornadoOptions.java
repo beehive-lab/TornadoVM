@@ -33,6 +33,6 @@ public class TornadoOptions {
 
     public static final boolean EXPERIMENTAL_REDUCE = Boolean.parseBoolean(System.getProperty("tornado.experimental.reduce", "True"));
 
-    public static String FPGA_BINARIES = System.getProperty("tornado.precompiled.binary", null);
+    public static StringBuffer FPGA_BINARIES = new StringBuffer(System.getProperty("tornado.precompiled.binary", null));
 
 }
