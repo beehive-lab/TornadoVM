@@ -83,7 +83,7 @@ class ReduceTaskSchedule {
                 if (givenTaskName.equals(idTaskName)) {
                     int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskName + ".device"));
                     int deviceNumber = info[1];
-                    originalBinaries.append("," + binaries[i - 1] + "," + taskScheduleName + "." + taskName + ".device0:" + deviceNumber);
+                    originalBinaries.append("," + binaries[i - 1] + "," + taskScheduleName + "." + taskName + ".device=0:" + deviceNumber);
                 }
             }
             System.out.println("Setting properties FPGA binary --> " + originalBinaries);
