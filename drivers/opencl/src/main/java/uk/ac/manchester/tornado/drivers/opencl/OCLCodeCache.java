@@ -209,7 +209,6 @@ public class OCLCodeCache {
     }
 
     public String getOpenCLBinary(String taskName) {
-        System.out.println("CACHE: " + precompiledBinariesPerDevice);
         if (precompiledBinariesPerDevice != null) {
             return precompiledBinariesPerDevice.get(taskName);
         } else {
@@ -433,8 +432,10 @@ public class OCLCodeCache {
         try {
             entryPoint = entryPoint.split("-")[1];
         } catch (NullPointerException | ArrayIndexOutOfBoundsException e) {
-
         }
+
+        System.out.println("ENTRY-POINT: " + entryPoint);
+
         long beforeLoad = (Tornado.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
         OCLProgram program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
         long afterLoad = (Tornado.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
