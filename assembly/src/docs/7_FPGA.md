@@ -62,7 +62,6 @@ Example:
 ```!bash
 $ tornado \
     -Ds0.t0.device=0:1 \
-    -Dtornado.opencl.codecache.loadbin=True  \
     -Dtornado.precompiled.binary=/path/to/lookupBufferAddress,s0.t0.device=0:1 \
     -Dtornado.opencl.userelative=True  \
     -Ds0.t0.global.dims=1024 \
