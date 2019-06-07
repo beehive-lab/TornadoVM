@@ -425,8 +425,9 @@ class ReduceTaskSchedule {
                     Object newArray = streamReduceUpdatedList.get(i);
                     int sizeReduceArray = sizesReductionArray.get(i);
                     for (REDUCE_OPERATION op : operations) {
-                        TornadoRuntime.setProperty(taskScheduleReduceName + "." + SEQUENTIAL_TASK_REDUCE_NAME + ".device", "0:" + deviceToRun);
-                        inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId());
+                        String newTaskSequentialName = taskScheduleReduceName + "." + SEQUENTIAL_TASK_REDUCE_NAME;
+                        TornadoRuntime.setProperty(newTaskSequentialName + ".device", "0:" + deviceToRun);
+                        inspectBinariesFPGA(newTaskSequentialName, tsName, taskPackage.getId());
 
                         switch (op) {
                             case ADD:
