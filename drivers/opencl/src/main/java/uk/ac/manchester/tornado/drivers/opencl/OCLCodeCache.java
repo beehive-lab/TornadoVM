@@ -36,6 +36,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -97,19 +98,6 @@ public class OCLCodeCache {
      */
     private final StringBuffer OPENCL_BINARIES = TornadoOptions.FPGA_BINARIES;
 
-    /**
-     * Configuration File with all paths to the OpenCl pre-compiled binaries:
-     * -Dtornado.precompiled.listFile=<path/to/file>
-     *
-     * <p>
-     * <code>
-     * -Dtornado.precompiled.listFile=./fileConfigFPGAs
-     * </code>
-     * </p>
-     *
-     */
-    private final String OPENCL_FILE_BINARIES = getProperty("tornado.precompiled.listFile", null);
-
     private final boolean PRINT_WARNINGS = false;
 
     private final ConcurrentHashMap<String, OCLInstalledCode> cache;
@@ -128,11 +116,6 @@ public class OCLCodeCache {
             processPrecompiledBinaries();
         }
 
-        if (OPENCL_FILE_BINARIES != null) {
-            precompiledBinariesPerDevice = new HashMap<>();
-            processPrecompiledBinariesFromFile();
-        }
-
         // Composing the binary entry-point for the FPGA needs a
         // a Taskschedule and Task id as prefix which is currently
         // passed as constant FPGA_TASKSCHEDULE (e.g s0.t0.)
@@ -149,19 +132,12 @@ public class OCLCodeCache {
     }
 
     private void processPrecompiledBinaries() {
-        processPrecompiledBinaries(null);
-    }
+        String[] binaries = OPENCL_BINARIES.toString().split(",");
 
-    private void processPrecompiledBinaries(String bitstreamList) {
-        String[] binaries = null;
-
-        if (bitstreamList == null) {
-            binaries = OPENCL_BINARIES.toString().split(",");
-        } else {
-            binaries = bitstreamList.split(",");
-        }
-
-        if ((binaries.length % 2) != 0) {
+        if (binaries.length == 1) {
+            // We try to parse a configuration file
+            binaries = processPrecompiledBinariesFromFile(binaries[0]);
+        } else if ((binaries.length % 2) != 0) {
             throw new RuntimeException("tornado.precompiled.binary=<path>,taskName.device");
         }
 
@@ -170,20 +146,20 @@ public class OCLCodeCache {
             String taskAndDeviceInfo = binaries[i + 1];
             precompiledBinariesPerDevice.put(taskAndDeviceInfo, binaryFile);
 
-            // For each entry, we should add also an entry for lookup-buffer
+            // For each entry, we should add also an entry for
+            // lookup-buffer-address
             String device = taskAndDeviceInfo.split("\\.")[2];
             String kernelName = "oclbackend.lookupBufferAddress." + device;
             precompiledBinariesPerDevice.put(kernelName, binaryFile);
         }
     }
 
-    private void processPrecompiledBinariesFromFile() {
+    private String[] processPrecompiledBinariesFromFile(String fileName) {
         StringBuilder listBinaries = new StringBuilder();
         BufferedReader fileContent = null;
         try {
-            fileContent = new BufferedReader(new FileReader(OPENCL_FILE_BINARIES));
+            fileContent = new BufferedReader(new FileReader(fileName));
             String line = fileContent.readLine();
-
             while (line != null) {
                 if (!line.isEmpty() && !line.startsWith("#")) {
                     listBinaries.append(line + ",");
@@ -191,6 +167,8 @@ public class OCLCodeCache {
                 line = fileContent.readLine();
             }
             listBinaries.deleteCharAt(listBinaries.length() - 1);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("File: " + fileName + " not found");
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -200,11 +178,11 @@ public class OCLCodeCache {
                 e.printStackTrace();
             }
         }
-        processPrecompiledBinaries(listBinaries.toString());
+        return listBinaries.toString().split(",");
     }
 
     public boolean isLoadBinaryOptionEnabled() {
-        return (OPENCL_BINARIES != null || OPENCL_FILE_BINARIES != null) ? true : false;
+        return (OPENCL_BINARIES != null);
     }
 
     public String getOpenCLBinary(String taskName) {

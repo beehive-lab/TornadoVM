@@ -77,19 +77,30 @@ class ReduceTaskSchedule {
         StringBuffer originalBinaries = TornadoOptions.FPGA_BINARIES;
         if (originalBinaries != null) {
             String[] binaries = originalBinaries.toString().split(",");
-            for (int i = 1; i < binaries.length; i += 2) {
-                String givenTaskName = binaries[i].split(".device")[0];
+            if (binaries.length == 1) {
+                binaries = MetaDataUtils.processPrecompiledBinariesFromFile(binaries[0]);
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < binaries.length; i++) {
+                    sb.append(binaries[i].replaceAll(" ", "") + ",");
+                }
+                sb = sb.deleteCharAt(sb.length() - 1);
+                originalBinaries = new StringBuffer(sb.toString());
+            }
+
+            for (int i = 0; i < binaries.length; i += 2) {
+                String givenTaskName = binaries[i + 1].split(".device")[0];
                 if (givenTaskName.equals(idTaskName)) {
                     int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskName + ".device"));
                     int deviceNumber = info[1];
+
                     if (!sequential) {
-                        originalBinaries.append("," + binaries[i - 1] + "," + taskScheduleName + "." + taskName + ".device=0:" + deviceNumber);
+                        originalBinaries.append("," + binaries[i] + "," + taskScheduleName + "." + taskName + ".device=0:" + deviceNumber);
                     } else {
-                        originalBinaries.append("," + binaries[i - 1] + "," + taskScheduleName + "." + SEQUENTIAL_TASK_REDUCE_NAME + ".device=0:" + deviceNumber);
+                        originalBinaries.append("," + binaries[i] + "," + taskScheduleName + "." + SEQUENTIAL_TASK_REDUCE_NAME + ".device=0:" + deviceNumber);
                     }
                 }
             }
-            TornadoRuntime.setProperty("tornado.precompiled.binary", originalBinaries.toString());
+            TornadoOptions.FPGA_BINARIES = originalBinaries;
         }
     }
 
