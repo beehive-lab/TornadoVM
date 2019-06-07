@@ -72,6 +72,25 @@ class ReduceTaskSchedule {
         this.streamOutObjects = streamOutObjects;
     }
 
+    private void inspectBinariesFPGA(String taskScheduleName, String tsName, String taskName) {
+        String idTaskName = tsName + "." + taskName;
+        String originalBinaries = TornadoOptions.FPGA_BINARIES;
+        if (originalBinaries != null) {
+            // Update table binary for the FPGAs
+            String[] binaries = originalBinaries.split(",");
+            for (int i = 1; i < binaries.length; i += 2) {
+                String givenTaskName = binaries[i].split(".device")[0];
+                if (givenTaskName.equals(idTaskName)) {
+                    int[] info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskName + ".device"));
+                    int deviceNumber = info[1];
+                    originalBinaries = originalBinaries + "," + binaries[i - 1] + "," + taskScheduleName + "." + taskName + ".device0:" + deviceNumber;
+                }
+            }
+            System.out.println("Setting properties FPGA binary --> " + originalBinaries);
+            TornadoRuntime.setProperty("tornado.precompiled.binary", originalBinaries);
+        }
+    }
+
     private int changeDeviceIfNeeded(String taskScheduleName, String tsName, String taskName) {
         String idTaskName = tsName + "." + taskName;
         boolean isDeviceDefined = MetaDataUtils.getProperty(idTaskName + ".device") != null;
@@ -293,11 +312,6 @@ class ReduceTaskSchedule {
             TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".global.dims", Integer.toString(inputSize));
             TornadoRuntime.setProperty(taskScheduleReduceName + "." + taskPackage.getId() + ".local.dims", "64");
         }
-
-        // Update table binary for the FPGAs
-        String[] binaries = TornadoOptions.FPGA_BINARIES.split(",");
-        Arrays.toString(binaries);
-
     }
 
     /**
@@ -342,6 +356,7 @@ class ReduceTaskSchedule {
 
             deviceToRun = changeDeviceIfNeeded(taskScheduleReduceName, tsName, taskPackage.getId());
             final int targetDeviceToRun = deviceToRun;
+            inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId());
 
             if (tableReduce.containsKey(taskNumber)) {
 
@@ -396,6 +411,7 @@ class ReduceTaskSchedule {
         // Compose Task Schedule
         for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
 
+            TaskPackage taskPackage = taskPackages.get(taskNumber);
             rewrittenTaskSchedule.addTask(taskPackages.get(taskNumber));
 
             // Ad extra task with the final reduction
@@ -410,6 +426,8 @@ class ReduceTaskSchedule {
                     int sizeReduceArray = sizesReductionArray.get(i);
                     for (REDUCE_OPERATION op : operations) {
                         TornadoRuntime.setProperty(taskScheduleReduceName + "." + SEQUENTIAL_TASK_REDUCE_NAME + ".device", "0:" + deviceToRun);
+                        inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId());
+
                         switch (op) {
                             case ADD:
                                 ReduceFactory.handleAdd(newArray, rewrittenTaskSchedule, sizeReduceArray);
