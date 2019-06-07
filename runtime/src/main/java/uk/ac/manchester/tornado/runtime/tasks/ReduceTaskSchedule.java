@@ -76,7 +76,6 @@ class ReduceTaskSchedule {
         String idTaskName = tsName + "." + taskName;
         StringBuffer originalBinaries = TornadoOptions.FPGA_BINARIES;
         if (originalBinaries != null) {
-            // Update table binary for the FPGAs
             String[] binaries = originalBinaries.toString().split(",");
             for (int i = 1; i < binaries.length; i += 2) {
                 String givenTaskName = binaries[i].split(".device")[0];
@@ -427,7 +426,7 @@ class ReduceTaskSchedule {
                     for (REDUCE_OPERATION op : operations) {
                         final String newTaskSequentialName = taskScheduleReduceName + "." + SEQUENTIAL_TASK_REDUCE_NAME;
                         TornadoRuntime.setProperty(newTaskSequentialName + ".device", "0:" + deviceToRun);
-                        inspectBinariesFPGA(newTaskSequentialName, tsName, taskPackage.getId());
+                        inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId());
 
                         switch (op) {
                             case ADD:
