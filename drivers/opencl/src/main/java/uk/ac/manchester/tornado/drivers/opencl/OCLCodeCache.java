@@ -68,7 +68,6 @@ public class OCLCodeCache {
     private static final String BASH = "bash";
     private final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", FALSE));
-    private final boolean OPENCL_LOAD_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.loadbin", FALSE));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", FALSE));
     private final boolean OPENCL_DUMP_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.dump", FALSE));
     private final boolean OPENCL_PRINT_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.print", FALSE));
@@ -205,7 +204,7 @@ public class OCLCodeCache {
     }
 
     public boolean isLoadBinaryOptionEnabled() {
-        return OPENCL_LOAD_BINS;
+        return (OPENCL_BINARIES != null || OPENCL_FILE_BINARIES != null) ? true : false;
     }
 
     public String getOpenCLBinary(String taskName) {
