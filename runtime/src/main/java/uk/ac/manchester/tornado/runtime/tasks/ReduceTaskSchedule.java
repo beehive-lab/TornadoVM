@@ -89,7 +89,6 @@ class ReduceTaskSchedule {
                     }
                 }
             }
-            System.out.println("Setting properties FPGA binary --> " + originalBinaries);
             TornadoRuntime.setProperty("tornado.precompiled.binary", originalBinaries.toString());
         }
     }
