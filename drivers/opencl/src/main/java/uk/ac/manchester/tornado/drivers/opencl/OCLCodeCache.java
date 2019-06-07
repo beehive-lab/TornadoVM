@@ -96,7 +96,7 @@ public class OCLCodeCache {
      * </code>
      * </p>
      */
-    private final String OPENCL_BINARIES = TornadoOptions.FPGA_BINARIES;
+    private final StringBuffer OPENCL_BINARIES = TornadoOptions.FPGA_BINARIES;
 
     /**
      * Configuration File with all paths to the OpenCl pre-compiled binaries:
@@ -157,7 +157,7 @@ public class OCLCodeCache {
         String[] binaries = null;
 
         if (bitstreamList == null) {
-            binaries = OPENCL_BINARIES.split(",");
+            binaries = OPENCL_BINARIES.toString().split(",");
         } else {
             binaries = bitstreamList.split(",");
         }
