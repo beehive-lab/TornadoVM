@@ -201,6 +201,18 @@ public class OCLContext extends TornadoLogger {
         OCLProgram program = null;
 
         try {
+            // search if program has been already loaded
+            int programsLength = programs.size();
+            for (int i=0; i<programsLength; i++) {
+                OCLProgram fetchedProgram = programs.get(i);
+                int numDevices = fetchedProgram.getNumDevices();
+                long[] devices = fetchedProgram.getDevices();
+                for (int j=0; j<numDevices; j++) {
+                    if (devices[j] == deviceId) {
+                        return programs.get(i);
+                    }
+                }
+            }
             program = new OCLProgram(clCreateProgramWithBinary(id, deviceId, binary, lengths), deviceContext);
             programs.add(program);
         } catch (OCLException e) {
