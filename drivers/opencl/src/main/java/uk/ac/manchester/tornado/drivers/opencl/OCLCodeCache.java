@@ -186,7 +186,6 @@ public class OCLCodeCache {
             String line = fileContent.readLine();
 
             while (line != null) {
-
                 if (!line.isEmpty() && !line.startsWith("#")) {
                     listBinaries.append(line + ",");
                 }
@@ -210,10 +209,10 @@ public class OCLCodeCache {
     }
 
     public String getOpenCLBinary(String taskName) {
+        System.out.println("CACHE: " + precompiledBinariesPerDevice);
         if (precompiledBinariesPerDevice != null) {
             return precompiledBinariesPerDevice.get(taskName);
         } else {
-
             return null;
         }
     }
