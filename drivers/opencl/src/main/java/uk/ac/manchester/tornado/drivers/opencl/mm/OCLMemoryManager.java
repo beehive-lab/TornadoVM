@@ -50,7 +50,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     private long heapPosition;
     private boolean initialised;
 
-    public static final int STACK_ALIGNMENT_SIZE = 32;
+    public static final int STACK_ALIGNMENT_SIZE = 128;
 
     public OCLMemoryManager(final OCLDeviceContext device) {
         deviceContext = device;

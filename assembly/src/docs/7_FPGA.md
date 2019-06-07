@@ -6,7 +6,7 @@ Tornado supports execution and prototyping with OpenCL compatible Intel/Altera F
 
 ### Pre-requisites
 
-We have currently tested with a Nalatech a385 FPGA with Intel Arria 10 GT1150.
+We have currently tested with a Nallatech-A385 FPGA (Intel Arria 10 GT1150).
 
 * Quartus Version: 17.1.0 Build 240
 * Tornado Version: 0.2
@@ -62,7 +62,6 @@ Example:
 ```!bash
 $ tornado \
     -Ds0.t0.device=0:1 \
-    -Dtornado.opencl.codecache.loadbin=True  \
     -Dtornado.precompiled.binary=/path/to/lookupBufferAddress,s0.t0.device=0:1 \
     -Dtornado.opencl.userelative=True  \
     -Ds0.t0.global.dims=1024 \

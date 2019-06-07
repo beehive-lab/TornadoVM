@@ -123,7 +123,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public final static boolean SHOW_OPENCL = Boolean.parseBoolean(System.getProperty("tornado.opencl.print", "False"));
     public final static String OPENCL_PATH = System.getProperty("tornado.opencl.path", "./opencl");
     private final static String FPGA_ATTRIBUTE = "__attribute__((reqd_work_group_size(<1>,<2>,<3>))) ";
-    private final static String INTEL = "Intel(R)";
     private boolean flag = false;
 
     @Override

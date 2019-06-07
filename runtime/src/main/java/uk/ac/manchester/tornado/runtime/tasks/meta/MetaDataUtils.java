@@ -27,6 +27,11 @@ package uk.ac.manchester.tornado.runtime.tasks.meta;
 
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 
@@ -41,6 +46,33 @@ public final class MetaDataUtils {
     public static int[] resolveDriverDeviceIndexes(String device) {
         final String[] ids = device.split(":");
         return new int[] { Integer.parseInt(ids[0]), Integer.parseInt(ids[1]) };
+    }
+
+    public static String[] processPrecompiledBinariesFromFile(String fileName) {
+        StringBuilder listBinaries = new StringBuilder();
+        BufferedReader fileContent = null;
+        try {
+            fileContent = new BufferedReader(new FileReader(fileName));
+            String line = fileContent.readLine();
+            while (line != null) {
+                if (!line.isEmpty() && !line.startsWith("#")) {
+                    listBinaries.append(line + ",");
+                }
+                line = fileContent.readLine();
+            }
+            listBinaries.deleteCharAt(listBinaries.length() - 1);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("File: " + fileName + " not found");
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                fileContent.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return listBinaries.toString().split(",");
     }
 
     public static String getProperty(String key) {
