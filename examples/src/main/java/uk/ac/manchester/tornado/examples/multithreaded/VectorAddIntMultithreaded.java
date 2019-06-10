@@ -36,6 +36,8 @@ public class VectorAddIntMultithreaded {
                     result[k] = array1[k] + array2[k];
                 }
             });
+        }
+        for (int i = 0; i < threads; i++) {
             th[i].start();
         }
         for (int i = 0; i < threads; i++) {
@@ -65,12 +67,15 @@ public class VectorAddIntMultithreaded {
         vectorAdd(a, b, c);
 
         for (int idx = 0; idx < iter; idx++) {
+            System.gc();
 
             startTime = System.nanoTime();
             vectorAddThreads(a, b, c, maxThreadCount, th);
             endTime = System.nanoTime();
 
             System.out.println("[Multi]  Run " + idx + " --- Time in (ns) " + (endTime - startTime));
+
+            System.gc();
 
             startTime = System.nanoTime();
             vectorAdd(a, b, result);
