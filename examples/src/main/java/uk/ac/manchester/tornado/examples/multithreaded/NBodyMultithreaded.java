@@ -20,7 +20,6 @@ package uk.ac.manchester.tornado.examples.multithreaded;
 
 import java.util.Arrays;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class NBodyMultithreaded {
@@ -55,13 +54,61 @@ public class NBodyMultithreaded {
         }
     }
 
-    public static void main(String[] args) {
+    private static void nBodyThreads(int numBodies, float[] refPos, float[] refVel, float delT, float espSqr, Thread[] threads, int maxThreads) throws InterruptedException {
+        int balk = refPos.length / maxThreads;
+
+        for (int ii = 0; ii < maxThreads; ii++) {
+            final int current = ii;
+            threads[ii] = new Thread(() -> {
+                for (int kk = current * balk; kk < (current + 1) * balk; kk++) {
+                    int body = 4 * current;
+                    float[] acc = new float[] { 0.0f, 0.0f, 0.0f };
+                    for (int j = 0; j < numBodies; j++) {
+                        float[] r = new float[3];
+                        int index = 4 * j;
+
+                        float distSqr = 0.0f;
+                        for (int k = 0; k < 3; k++) {
+                            r[k] = refPos[index + k] - refPos[body + k];
+                            distSqr += r[k] * r[k];
+                        }
+
+                        float invDist = (float) (1.0f / Math.sqrt(distSqr + espSqr));
+
+                        float invDistCube = invDist * invDist * invDist;
+                        float s = refPos[index + 3] * invDistCube;
+
+                        for (int k = 0; k < 3; k++) {
+                            acc[k] += s * r[k];
+                        }
+                    }
+                    for (int k = 0; k < 3; k++) {
+                        refPos[body + k] += refVel[body + k] * delT + 0.5f * acc[k] * delT * delT;
+                        refVel[body + k] += acc[k] * delT;
+                    }
+
+                }
+            });
+        }
+        for (int i = 0; i < maxThreads; i++) {
+            threads[i].start();
+        }
+        for (int i = 0; i < maxThreads; i++) {
+            threads[i].join();
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
         float delT,espSqr;
         float[] posSeq,velSeq;
 
         StringBuffer resultsIterations = new StringBuffer();
 
-        int numBodies = 32768;
+        int maxThreadCount = Runtime.getRuntime().availableProcessors();
+
+        Thread[] th = new Thread[maxThreadCount];
+
+        int numBodies = 2048;
         int iterations = 10;
 
         if (args.length == 2) {
@@ -110,19 +157,20 @@ public class NBodyMultithreaded {
 
         System.out.println(resultsIterations.toString());
 
-        // @formatter:off
-        final TaskSchedule t0 = new TaskSchedule("s0")
-                .task("t0", NBodyMultithreaded::nBody, numBodies, posSeq, velSeq, delT, espSqr);
-        // @formatter:on
-
-        t0.warmup();
+//        // @formatter:off
+//        final TaskSchedule t0 = new TaskSchedule("s0")
+//                .task("t0", NBodyMultithreaded::nBody, numBodies, posSeq, velSeq, delT, espSqr);
+//        // @formatter:on
+        //
+        // t0.warmup();
 
         resultsIterations = new StringBuffer();
 
         for (int i = 0; i < iterations; i++) {
             System.gc();
             start = System.nanoTime();
-            t0.execute();
+            // t0.execute();
+            nBodyThreads(numBodies, posSeq, velSeq, delT, espSqr, th, maxThreadCount);
             end = System.nanoTime();
             resultsIterations.append("\tTornado execution time of iteration " + i + " is: " + (end - start) + " ns");
             resultsIterations.append("\n");
