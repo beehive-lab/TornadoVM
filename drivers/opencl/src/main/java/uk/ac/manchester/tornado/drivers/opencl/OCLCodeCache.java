@@ -365,7 +365,8 @@ public class OCLCodeCache {
                 return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
             } else {
                 callOSforCompilation(compilationCommand, commandRename);
-                callOSforCompilation(linkCommand, null);
+                if(deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx"))
+                    callOSforCompilation(linkCommand, null);
             }
             return installEntryPointForBinaryForFPGAs(resolveBitstreamDirectory(), LOOKUP_BUFFER_KERNEL_NAME);
         } else {
