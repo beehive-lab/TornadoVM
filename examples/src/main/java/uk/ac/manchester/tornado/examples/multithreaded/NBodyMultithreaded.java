@@ -20,48 +20,28 @@ package uk.ac.manchester.tornado.examples.multithreaded;
 
 import java.util.Arrays;
 
+import uk.ac.manchester.tornado.api.Policy;
+import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 public class NBodyMultithreaded {
+    private static boolean VALIDATION = true;
 
-    private static void nBody(int numBodies, float[] refPos, float[] refVel, float delT, float espSqr) {
-        for (@Parallel int i = 0; i < numBodies; i++) {
-            int body = 4 * i;
-            float[] acc = new float[] { 0.0f, 0.0f, 0.0f };
-            for (int j = 0; j < numBodies; j++) {
-                float[] r = new float[3];
-                int index = 4 * j;
-
-                float distSqr = 0.0f;
-                for (int k = 0; k < 3; k++) {
-                    r[k] = refPos[index + k] - refPos[body + k];
-                    distSqr += r[k] * r[k];
-                }
-
-                float invDist = (float) (1.0f / Math.sqrt(distSqr + espSqr));
-
-                float invDistCube = invDist * invDist * invDist;
-                float s = refPos[index + 3] * invDistCube;
-
-                for (int k = 0; k < 3; k++) {
-                    acc[k] += s * r[k];
-                }
-            }
-            for (int k = 0; k < 3; k++) {
-                refPos[body + k] += refVel[body + k] * delT + 0.5f * acc[k] * delT * delT;
-                refVel[body + k] += acc[k] * delT;
-            }
-        }
+    private static void usage(String[] args) {
+        System.err.printf("Usage: <numBodies> <performance|end|sequential> <iterations>\n");
+        System.exit(1);
     }
 
     private static void nBodyThreads(int numBodies, float[] refPos, float[] refVel, float delT, float espSqr, Thread[] threads, int maxThreads) throws InterruptedException {
-        int balk = refPos.length / maxThreads;
 
-        for (int ii = 0; ii < maxThreads; ii++) {
-            final int current = ii;
-            threads[ii] = new Thread(() -> {
-                for (int kk = current * balk; kk < (current + 1) * balk; kk++) {
-                    int body = 4 * current;
+        int balk = numBodies / maxThreads;
+        for (int idx = 0; idx < maxThreads; idx++) {
+            final int current = idx;
+            threads[idx] = new Thread(() -> {
+                for (int kc = current * balk; kc < (current + 1) * balk; kc++) {
+                    // result[k] = array1[k] + array2[k];
+                    int body = 4 * kc;
                     float[] acc = new float[] { 0.0f, 0.0f, 0.0f };
                     for (int j = 0; j < numBodies; j++) {
                         float[] r = new float[3];
@@ -86,10 +66,10 @@ public class NBodyMultithreaded {
                         refPos[body + k] += refVel[body + k] * delT + 0.5f * acc[k] * delT * delT;
                         refVel[body + k] += acc[k] * delT;
                     }
-
                 }
             });
         }
+
         for (int i = 0; i < maxThreads; i++) {
             threads[i].start();
         }
@@ -98,89 +78,149 @@ public class NBodyMultithreaded {
         }
     }
 
+    private static void nBody(int numBodies, float[] refPos, float[] refVel, float delT, float espSqr, int[] inputSize) {
+        for (@Parallel int i = 0; i < numBodies; i++) {
+            int body = 4 * i;
+            float[] acc = new float[] { 0.0f, 0.0f, 0.0f };
+            for (int j = 0; j < inputSize[0]; j++) {
+                float[] r = new float[3];
+                int index = 4 * j;
+
+                float distSqr = 0.0f;
+                for (int k = 0; k < 3; k++) {
+                    r[k] = refPos[index + k] - refPos[body + k];
+                    distSqr += r[k] * r[k];
+                }
+
+                float invDist = (float) (1.0f / (float) TornadoMath.floatSqrt(distSqr + espSqr));
+
+                float invDistCube = invDist * invDist * invDist;
+                float s = refPos[index + 3] * invDistCube;
+
+                for (int k = 0; k < 3; k++) {
+                    acc[k] += s * r[k];
+                }
+            }
+            for (int k = 0; k < 3; k++) {
+                refPos[body + k] += refVel[body + k] * delT + 0.5f * acc[k] * delT * delT;
+                refVel[body + k] += acc[k] * delT;
+            }
+        }
+    }
+
+    public static boolean validate(int numBodies, float[] positionsResult, float[] velocityResult, float delT, float espSqr, int[] inputSize, float[] initialPosition, float[] initialVelocity) {
+        boolean isValid = true;
+        float[] posSeqSeq;
+        float[] velSeqSeq;
+        posSeqSeq = new float[numBodies * 4];
+        velSeqSeq = new float[numBodies * 4];
+
+        System.arraycopy(initialPosition, 0, posSeqSeq, 0, initialPosition.length);
+        System.arraycopy(initialVelocity, 0, velSeqSeq, 0, initialVelocity.length);
+
+        nBody(numBodies, posSeqSeq, velSeqSeq, delT, espSqr, inputSize);
+
+        for (int i = 0; i < numBodies * 4; i++) {
+            if (Math.abs(posSeqSeq[i] - positionsResult[i]) > 0.1) {
+                isValid = false;
+                break;
+            }
+            if (Math.abs(velSeqSeq[i] - velocityResult[i]) > 0.1) {
+                isValid = false;
+                break;
+            }
+        }
+        return isValid;
+    }
+
     public static void main(String[] args) throws InterruptedException {
-        float delT,espSqr;
-        float[] posSeq,velSeq;
 
-        StringBuffer resultsIterations = new StringBuffer();
-
-        int maxThreadCount = Runtime.getRuntime().availableProcessors();
-
-        Thread[] th = new Thread[maxThreadCount];
-
-        int numBodies = 2048;
-        int iterations = 10;
-
-        if (args.length == 2) {
-            numBodies = Integer.parseInt(args[0]);
-            iterations = Integer.parseInt(args[1]);
-        } else if (args.length == 1) {
-            numBodies = Integer.parseInt(args[0]);
+        if (args.length < 3) {
+            usage(args);
         }
 
-        System.out.println("Running Nbody with " + numBodies + " bodies" + " and " + iterations + " iterations");
+        float delT;
+        float espSqr;
+        float[] positions,velocity;
+        int[] inputSize;
+        int numBodies;
+
+        numBodies = Integer.parseInt(args[0]);
+        String executionType = args[1];
+        final int iterations = Integer.parseInt(args[2]);
+        long end;
+        long start;
+
+        inputSize = new int[1];
+        inputSize[0] = numBodies;
+
+        int maxThreadCount = Runtime.getRuntime().availableProcessors();
+        Thread[] th = new Thread[maxThreadCount];
 
         delT = 0.005f;
         espSqr = 500.0f;
 
-        float[] auxPositionRandom = new float[numBodies * 4];
-        float[] auxVelocityZero = new float[numBodies * 3];
+        float[] initialPosition = new float[numBodies * 4];
+        float[] initialVelocity = new float[numBodies * 3];
 
-        for (int i = 0; i < auxPositionRandom.length; i++) {
-            auxPositionRandom[i] = (float) Math.random();
+        for (int i = 0; i < initialPosition.length; i++) {
+            initialPosition[i] = (float) Math.random();
         }
 
-        Arrays.fill(auxVelocityZero, 0.0f);
+        Arrays.fill(initialVelocity, 0.0f);
 
-        posSeq = new float[numBodies * 4];
-        velSeq = new float[numBodies * 4];
+        positions = new float[numBodies * 4];
+        velocity = new float[numBodies * 4];
 
-        for (int i = 0; i < auxPositionRandom.length; i++) {
-            posSeq[i] = auxPositionRandom[i];
-        }
-        for (int i = 0; i < auxVelocityZero.length; i++) {
-            velSeq[i] = auxVelocityZero[i];
-        }
+        System.arraycopy(initialPosition, 0, positions, 0, initialPosition.length);
+        System.arraycopy(initialVelocity, 0, velocity, 0, initialVelocity.length);
 
-        long start = 0;
-        long end = 0;
-        for (int i = 0; i < iterations; i++) {
-            System.gc();
-            start = System.nanoTime();
-            nBody(numBodies, posSeq, velSeq, delT, espSqr);
-            end = System.nanoTime();
-            resultsIterations.append("\tSequential execution time of iteration " + i + " is: " + (end - start) + " ns");
-            resultsIterations.append("\n");
-        }
+        long startInit = System.nanoTime();
+        final TaskSchedule s0 = new TaskSchedule("s0").task("t0", NBodyMultithreaded::nBody, numBodies, positions, velocity, delT, espSqr, inputSize).streamOut(positions, velocity);
+        long stopInit = System.nanoTime();
+        System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
-        long timeSequential = (end - start);
-
-        System.out.println(resultsIterations.toString());
-
-//        // @formatter:off
-//        final TaskSchedule t0 = new TaskSchedule("s0")
-//                .task("t0", NBodyMultithreaded::nBody, numBodies, posSeq, velSeq, delT, espSqr);
-//        // @formatter:on
-        //
-        // t0.warmup();
-
-        resultsIterations = new StringBuffer();
+        System.out.println("Heap size  " + Runtime.getRuntime().maxMemory() + " " + "\n");
 
         for (int i = 0; i < iterations; i++) {
             System.gc();
-            start = System.nanoTime();
-            // t0.execute();
-            nBodyThreads(numBodies, posSeq, velSeq, delT, espSqr, th, maxThreadCount);
-            end = System.nanoTime();
-            resultsIterations.append("\tTornado execution time of iteration " + i + " is: " + (end - start) + " ns");
-            resultsIterations.append("\n");
-
+            switch (executionType) {
+                case "performance":
+                    start = System.nanoTime();
+                    s0.executeWithProfilerSequential(Policy.PERFORMANCE);
+                    end = System.nanoTime();
+                    break;
+                case "end":
+                    start = System.nanoTime();
+                    s0.executeWithProfilerSequential(Policy.END_2_END);
+                    end = System.nanoTime();
+                    break;
+                case "sequential":
+                    System.gc();
+                    start = System.nanoTime();
+                    nBody(numBodies, positions, velocity, delT, espSqr, inputSize);
+                    end = System.nanoTime();
+                    break;
+                case "multi":
+                    start = System.nanoTime();
+                    nBodyThreads(numBodies, positions, velocity, delT, espSqr, th, maxThreadCount);
+                    end = System.nanoTime();
+                    break;
+                default:
+                    start = System.nanoTime();
+                    s0.execute();
+                    end = System.nanoTime();
+            }
+            System.out.println("Total time:  " + (end - start) + " ns" + "\n");
         }
-        long timeParallel = (end - start);
 
-        System.out.println(resultsIterations.toString());
-
-        System.out.println("Speedup in peak performance: " + (timeSequential / timeParallel) + "x");
+        if (VALIDATION) {
+            boolean isValid = validate(numBodies, positions, velocity, delT, espSqr, inputSize, initialPosition, initialVelocity);
+            if (isValid) {
+                System.out.println("Result is correct");
+            } else {
+                System.out.println("Result is wrong");
+            }
+        }
     }
-
 }
