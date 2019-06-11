@@ -58,6 +58,45 @@ public class BlackScholesMultithreaded {
         }
     }
 
+    private static void blackScholesKernel(float[] input, float[] callResult, float[] putResult, int threads, Thread[] th) throws InterruptedException {
+        int balk = callResult.length / threads;
+        for (int i = 0; i < threads; i++) {
+            final int current = i;
+            th[i] = new Thread(() -> {
+                for (int idx = current * balk; idx < (current + 1) * balk; idx++) {
+                    float rand = input[idx];
+                    final float S_LOWER_LIMIT = 10.0f;
+                    final float S_UPPER_LIMIT = 100.0f;
+                    final float K_LOWER_LIMIT = 10.0f;
+                    final float K_UPPER_LIMIT = 100.0f;
+                    final float T_LOWER_LIMIT = 1.0f;
+                    final float T_UPPER_LIMIT = 10.0f;
+                    final float R_LOWER_LIMIT = 0.01f;
+                    final float R_UPPER_LIMIT = 0.05f;
+                    final float SIGMA_LOWER_LIMIT = 0.01f;
+                    final float SIGMA_UPPER_LIMIT = 0.10f;
+                    final float S = S_LOWER_LIMIT * rand + S_UPPER_LIMIT * (1.0f - rand);
+                    final float K = K_LOWER_LIMIT * rand + K_UPPER_LIMIT * (1.0f - rand);
+                    final float T = T_LOWER_LIMIT * rand + T_UPPER_LIMIT * (1.0f - rand);
+                    final float r = R_LOWER_LIMIT * rand + R_UPPER_LIMIT * (1.0f - rand);
+                    final float v = SIGMA_LOWER_LIMIT * rand + SIGMA_UPPER_LIMIT * (1.0f - rand);
+
+                    float d1 = (float) ((Math.log(S / K) + ((r + (v * v / 2)) * T)) / v * Math.sqrt(T));
+                    float d2 = (float) (d1 - (v * Math.sqrt(T)));
+                    callResult[idx] = (float) (S * cnd(d1) - K * Math.exp(T * (-1) * r) * cnd(d2));
+                    putResult[idx] = (float) (K * Math.exp(T * -r) * cnd(-d2) - S * cnd(-d1));
+                }
+            });
+        }
+
+        for (int i = 0; i < threads; i++) {
+            th[i].start();
+        }
+        for (int i = 0; i < threads; i++) {
+            th[i].join();
+        }
+    }
+
     private static float cnd(float X) {
         final float c1 = 0.319381530f;
         final float c2 = -0.356563782f;
@@ -91,7 +130,7 @@ public class BlackScholesMultithreaded {
         return true;
     }
 
-    public static void blackScholes(int size) {
+    public static void blackScholes(int size, int iterations, String executionType) throws InterruptedException {
 
         Random random = new Random();
         float[] input = new float[size];
@@ -100,23 +139,62 @@ public class BlackScholesMultithreaded {
         float[] seqCall = new float[size];
         float[] seqPut = new float[size];
         TaskSchedule graph = new TaskSchedule("s0");
+        long start = 0;
+        long end = 0;
 
         for (int i = 0; i < size; i++) {
             input[i] = random.nextFloat();
         }
 
-        System.gc();
+        int maxThreadCount = Runtime.getRuntime().availableProcessors();
+
+        Thread[] th = new Thread[maxThreadCount];
+
         graph.task("t0", BlackScholesMultithreaded::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
-        graph.executeWithProfilerSequential(Policy.PERFORMANCE);
+        System.gc();
+
+        for (int i = 0; i < iterations; i++) {
+            switch (executionType) {
+                case "performance":
+                    start = System.nanoTime();
+                    graph.executeWithProfilerSequential(Policy.PERFORMANCE);
+                    end = System.nanoTime();
+                    break;
+                case "end":
+                    start = System.nanoTime();
+                    graph.executeWithProfilerSequential(Policy.END_2_END);
+                    end = System.nanoTime();
+                    break;
+                case "sequential":
+                    start = System.nanoTime();
+                    blackScholesKernel(input, seqCall, seqPut);
+                    end = System.nanoTime();
+                    break;
+                case "multi":
+                    start = System.nanoTime();
+                    blackScholesKernel(input, callPrice, putPrice, maxThreadCount, th);
+                    end = System.nanoTime();
+                    break;
+                default:
+                    start = System.nanoTime();
+                    graph.execute();
+                    end = System.nanoTime();
+            }
+            System.out.println("Total time:  " + (end - start) + " ns" + " \n");
+        }
         blackScholesKernel(input, seqCall, seqPut);
         boolean results = checkResult(seqCall, seqPut, callPrice, putPrice);
         System.out.println("Validation " + results + " \n");
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         System.out.println("BlackScholes Tornado");
         int size = Integer.parseInt(args[0]);
+        int iterations = Integer.parseInt(args[1]);
+        String executionType = args[2];
         System.out.println("Input size: " + size + " \n");
-        blackScholes(size);
+        System.out.println("Number of iterations: " + iterations + " \n");
+        blackScholes(size, iterations, executionType);
+
     }
 }
