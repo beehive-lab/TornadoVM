@@ -42,6 +42,33 @@ public class DFTMultithreaded {
         }
     }
 
+    public static void computeDftThreads(float[] inreal, float[] inimag, float[] outreal, float[] outimag, int[] inputSize, int threads, Thread[] th) throws InterruptedException {
+        int n = inreal.length;
+        int balk = inreal.length / threads;
+        for (int i = 0; i < threads; i++) {
+            final int current = i;
+            th[i] = new Thread(() -> {
+                for (int k = current * balk; k < (current + 1) * balk; k++) {
+                    float sumreal = 0;
+                    float sumimag = 0;
+                    for (int t = 0; t < inputSize[0]; t++) { // For each input element
+                        float angle = (float) ((2 * Math.PI * t * k) / (float) n);
+                        sumreal += (inreal[t] * (Math.cos(angle)) + inimag[t] * (Math.sin(angle)));
+                        sumimag += -(inreal[t] * (Math.sin(angle)) + inimag[t] * (Math.cos(angle)));
+                    }
+                    outreal[current] = sumreal;
+                    outimag[current] = sumimag;
+                }
+            });
+        }
+        for (int i = 0; i < threads; i++) {
+            th[i].start();
+        }
+        for (int i = 0; i < threads; i++) {
+            th[i].join();
+        }
+    }
+
     public static boolean validate(int size, float[] inReal, float[] inImag, float[] outReal, float[] outImag, int[] inputSize) {
         boolean val = true;
         float[] outRealTor = new float[size];
@@ -65,7 +92,7 @@ public class DFTMultithreaded {
         return val;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
 
         if (args.length < 3) {
             System.out.println("Usage: <size> <mode:performance|end|sequential> <iterations>");
@@ -105,6 +132,10 @@ public class DFTMultithreaded {
 
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
+        int maxSystemThreads = Runtime.getRuntime().availableProcessors();
+
+        Thread[] threads = new Thread[maxSystemThreads];
+
         for (int i = 0; i < iterations; i++) {
             switch (executionType) {
                 case "performance":
@@ -120,6 +151,12 @@ public class DFTMultithreaded {
                 case "sequential":
                     start = System.nanoTime();
                     computeDft(inReal, inImag, outReal, outImag, inputSize);
+                    end = System.nanoTime();
+                    break;
+                case "multi":
+                    System.out.println("IN multi");
+                    start = System.nanoTime();
+                    computeDftThreads(inReal, inImag, outReal, outImag, inputSize, maxSystemThreads, threads);
                     end = System.nanoTime();
                     break;
                 default:
