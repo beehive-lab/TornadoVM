@@ -23,7 +23,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
-public class DFTMultithreaded {
+public class DFTBenchmarking {
 
     public static boolean CHECK_RESULT = true;
 
@@ -42,7 +42,7 @@ public class DFTMultithreaded {
         }
     }
 
-    public static void computeDftThreads(float[] inreal, float[] inimag, float[] outreal, float[] outimag, int[] inputSize, int threads, Thread[] th) throws InterruptedException {
+    public static void computeDftThreads(float[] inreal, float[] inimag, float[] outreal, float[] outimag, int threads, Thread[] th) throws InterruptedException {
         int n = inreal.length;
         int balk = inreal.length / threads;
         for (int i = 0; i < threads; i++) {
@@ -51,13 +51,13 @@ public class DFTMultithreaded {
                 for (int k = current * balk; k < (current + 1) * balk; k++) {
                     float sumreal = 0;
                     float sumimag = 0;
-                    for (int t = 0; t < inputSize[0]; t++) { // For each input element
+                    for (int t = 0; t < inreal.length; t++) { // For each input element
                         float angle = (float) ((2 * Math.PI * t * k) / (float) n);
-                        sumreal += (inreal[t] * (Math.cos(angle)) + inimag[t] * (Math.sin(angle)));
-                        sumimag += -(inreal[t] * (Math.sin(angle)) + inimag[t] * (Math.cos(angle)));
+                        sumreal += (float) (inreal[t] * (Math.cos(angle)) + inimag[t] * (Math.sin(angle)));
+                        sumimag += -(float) (inreal[t] * (Math.sin(angle)) + inimag[t] * (Math.cos(angle)));
                     }
-                    outreal[current] = sumreal;
-                    outimag[current] = sumimag;
+                    outreal[k] = sumreal;
+                    outimag[k] = sumimag;
                 }
             });
         }
@@ -88,7 +88,6 @@ public class DFTMultithreaded {
                 break;
             }
         }
-        System.out.printf("Number validation: " + val + "\n");
         return val;
     }
 
@@ -125,18 +124,23 @@ public class DFTMultithreaded {
             inImag[i] = 1 / (float) (i + 2);
         }
 
-        long startInit = System.nanoTime();
         graph = new TaskSchedule("s0");
-        graph.task("t0", DFTMultithreaded::computeDft, inReal, inImag, outReal, outImag, inputSize).streamOut(outReal, outImag);
-        long stopInit = System.nanoTime();
+        if (executionType.equals("multi") || executionType.equals("sequential")) {
+            ;
+        } else {
+            long startInit = System.nanoTime();
+            graph.task("t0", DFTBenchmarking::computeDft, inReal, inImag, outReal, outImag, inputSize).streamOut(outReal, outImag);
+            long stopInit = System.nanoTime();
 
-        System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
+            System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
+        }
 
         int maxSystemThreads = Runtime.getRuntime().availableProcessors();
-
         Thread[] threads = new Thread[maxSystemThreads];
 
+        System.out.println("Version running: " + executionType + " ! ");
         for (int i = 0; i < iterations; i++) {
+            System.gc();
             switch (executionType) {
                 case "performance":
                     start = System.nanoTime();
@@ -154,9 +158,8 @@ public class DFTMultithreaded {
                     end = System.nanoTime();
                     break;
                 case "multi":
-                    System.out.println("IN multi");
                     start = System.nanoTime();
-                    computeDftThreads(inReal, inImag, outReal, outImag, inputSize, maxSystemThreads, threads);
+                    computeDftThreads(inReal, inImag, outReal, outImag, maxSystemThreads, threads);
                     end = System.nanoTime();
                     break;
                 default:
