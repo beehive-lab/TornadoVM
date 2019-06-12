@@ -25,11 +25,11 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
-public class NBodyMultithreaded {
+public class NBodyBenchmarking {
     private static boolean VALIDATION = true;
 
     private static void usage(String[] args) {
-        System.err.printf("Usage: <numBodies> <performance|end|sequential> <iterations>\n");
+        System.err.printf("Usage: <numBodies> <performance|end|sequential|multi} <iterations>\n");
         System.exit(1);
     }
 
@@ -175,24 +175,29 @@ public class NBodyMultithreaded {
         System.arraycopy(initialPosition, 0, positions, 0, initialPosition.length);
         System.arraycopy(initialVelocity, 0, velocity, 0, initialVelocity.length);
 
-        long startInit = System.nanoTime();
-        final TaskSchedule s0 = new TaskSchedule("s0").task("t0", NBodyMultithreaded::nBody, numBodies, positions, velocity, delT, espSqr, inputSize).streamOut(positions, velocity);
-        long stopInit = System.nanoTime();
-        System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
+        System.out.println("Version running: " + executionType + " ! ");
 
-        System.out.println("Heap size  " + Runtime.getRuntime().maxMemory() + " " + "\n");
+        final TaskSchedule graph = new TaskSchedule("s0");
+        if (executionType.equals("multi") || executionType.equals("sequential")) {
+            ;
+        } else {
+            long startInit = System.nanoTime();
+            graph.task("t0", NBodyBenchmarking::nBody, numBodies, positions, velocity, delT, espSqr, inputSize).streamOut(positions, velocity);
+            long stopInit = System.nanoTime();
+            System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
+        }
 
         for (int i = 0; i < iterations; i++) {
             System.gc();
             switch (executionType) {
                 case "performance":
                     start = System.nanoTime();
-                    s0.executeWithProfilerSequential(Policy.PERFORMANCE);
+                    graph.executeWithProfilerSequential(Policy.PERFORMANCE);
                     end = System.nanoTime();
                     break;
                 case "end":
                     start = System.nanoTime();
-                    s0.executeWithProfilerSequential(Policy.END_2_END);
+                    graph.executeWithProfilerSequential(Policy.END_2_END);
                     end = System.nanoTime();
                     break;
                 case "sequential":
@@ -208,7 +213,7 @@ public class NBodyMultithreaded {
                     break;
                 default:
                     start = System.nanoTime();
-                    s0.execute();
+                    graph.execute();
                     end = System.nanoTime();
             }
             System.out.println("Total time:  " + (end - start) + " ns" + "\n");
