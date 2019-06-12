@@ -131,7 +131,6 @@ public class DFTBenchmarking {
             long startInit = System.nanoTime();
             graph.task("t0", DFTBenchmarking::computeDft, inReal, inImag, outReal, outImag, inputSize).streamOut(outReal, outImag);
             long stopInit = System.nanoTime();
-
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }
 
