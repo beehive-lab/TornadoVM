@@ -1,19 +1,19 @@
 /*
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 
 package uk.ac.manchester.tornado.examples.multithreaded;
@@ -28,9 +28,8 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 /**
  * BlackScholes implementation adapted from AMD-OpenCL examples and Marawacc
  * compiler framework.
- *
  */
-public class BlackScholesMultithreaded {
+public class BlackScholesBenchmarking {
 
     private static void blackScholesKernel(float[] input, float[] callResult, float[] putResult) {
         for (@Parallel int idx = 0; idx < callResult.length; idx++) {
@@ -58,7 +57,7 @@ public class BlackScholesMultithreaded {
         }
     }
 
-    private static void blackScholesKernel(float[] input, float[] callResult, float[] putResult, int threads, Thread[] th) throws InterruptedException {
+    private static void blackScholesKernelThreaded(float[] input, float[] callResult, float[] putResult, int threads, Thread[] th) throws InterruptedException {
         int balk = callResult.length / threads;
         for (int i = 0; i < threads; i++) {
             final int current = i;
@@ -139,21 +138,26 @@ public class BlackScholesMultithreaded {
         float[] seqCall = new float[size];
         float[] seqPut = new float[size];
         TaskSchedule graph = new TaskSchedule("s0");
-        long start = 0;
-        long end = 0;
+        long start,end;
 
         for (int i = 0; i < size; i++) {
             input[i] = random.nextFloat();
         }
-
         int maxThreadCount = Runtime.getRuntime().availableProcessors();
 
         Thread[] th = new Thread[maxThreadCount];
 
-        graph.task("t0", BlackScholesMultithreaded::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
-        System.gc();
+        if (executionType.equals("multi") || executionType.equals("sequential")) {
+            ;
+        } else {
+            long startInit = System.nanoTime();
+            graph.task("t0", BlackScholesBenchmarking::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
+            long stopInit = System.nanoTime();
+            System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
+        }
 
         for (int i = 0; i < iterations; i++) {
+            System.gc();
             switch (executionType) {
                 case "performance":
                     start = System.nanoTime();
@@ -172,7 +176,7 @@ public class BlackScholesMultithreaded {
                     break;
                 case "multi":
                     start = System.nanoTime();
-                    blackScholesKernel(input, callPrice, putPrice, maxThreadCount, th);
+                    blackScholesKernelThreaded(input, callPrice, putPrice, maxThreadCount, th);
                     end = System.nanoTime();
                     break;
                 default:
@@ -180,7 +184,7 @@ public class BlackScholesMultithreaded {
                     graph.execute();
                     end = System.nanoTime();
             }
-            System.out.println("Total time:  " + (end - start) + " ns" + " \n");
+            System.out.println("Total time:  " + (end - start) + " ns");
         }
         blackScholesKernel(input, seqCall, seqPut);
         boolean results = checkResult(seqCall, seqPut, callPrice, putPrice);
@@ -188,13 +192,17 @@ public class BlackScholesMultithreaded {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        System.out.println("BlackScholes Tornado");
-        int size = Integer.parseInt(args[0]);
-        int iterations = Integer.parseInt(args[1]);
-        String executionType = args[2];
-        System.out.println("Input size: " + size + " \n");
-        System.out.println("Number of iterations: " + iterations + " \n");
-        blackScholes(size, iterations, executionType);
 
+        if (args.length < 3) {
+            System.out.println("Usage: <size> <mode:performance|end|sequential> <iterations>");
+            System.exit(-1);
+        }
+
+        int size = Integer.parseInt(args[0]);
+        int iterations = Integer.parseInt(args[2]);
+        String executionType = args[1];
+
+        System.out.println("Version running: " + executionType + " ! ");
+        blackScholes(size, iterations, executionType);
     }
 }
