@@ -120,8 +120,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
-    public final static boolean SHOW_OPENCL = Boolean.parseBoolean(System.getProperty("tornado.opencl.print", "False"));
-    public final static String OPENCL_PATH = System.getProperty("tornado.opencl.path", "./opencl");
     private final static String FPGA_ATTRIBUTE = "__attribute__((reqd_work_group_size(<1>,<2>,<3>))) ";
     private boolean flag = false;
 
@@ -207,23 +205,23 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         Method method = null;
         try {
             method = this.getClass().getDeclaredMethod("lookupBufferAddress");
-        } catch (NoSuchMethodException | SecurityException e) {
-            Tornado.fatal("unable to find lookupBufferAddress method???");
+        } catch (NoSuchMethodException e) {
+            Tornado.fatal("[FATAL ERROR] Unable to find the <lookupBufferAddress> method within OCLBackend");
         }
         return method;
     }
 
     public long readHeapBaseAddress(TaskMetaData meta) {
-        final OCLByteBuffer bb = deviceContext.getMemoryManager().getSubBuffer(0, 16);
+        final OCLByteBuffer parameters = deviceContext.getMemoryManager().getSubBuffer(0, 16);
 
-        bb.putLong(0);
-        bb.putLong(0);
+        parameters.putLong(0);
+        parameters.putLong(0);
 
-        int task = lookupCode.executeTask(bb, meta);
-        lookupCode.readValue(bb, meta, task);
-        lookupCode.resolveEvent(bb, meta, task);
+        int task = lookupCode.executeTask(parameters, meta);
+        lookupCode.readValue(parameters, meta, task);
+        lookupCode.resolveEvent(parameters, meta, task);
 
-        final long address = bb.getLong(0);
+        final long address = parameters.getLong(0);
         Tornado.info("Heap address @ 0x%x on %s ", address, deviceContext.getDevice().getDeviceName());
         return address;
     }
