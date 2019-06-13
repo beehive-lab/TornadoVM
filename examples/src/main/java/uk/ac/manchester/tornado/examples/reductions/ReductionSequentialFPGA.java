@@ -54,6 +54,7 @@ public class ReductionSequentialFPGA {
             task.execute();
             long end = System.nanoTime();
             timers.add((end - start));
+            System.out.println("Total Time: " + (end - start));
         }
 
         System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
