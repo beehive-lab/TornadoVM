@@ -62,7 +62,7 @@ public class VectorAddIntBenchmarking {
     public static void main(String[] args) throws InterruptedException {
 
         if (args.length < 3) {
-            System.out.println("Usage: <size> <mode:performance|end|sequential> <iterations>");
+            System.out.println("Usage: <size> <mode:performance|end|sequential|multi> <iterations>");
             System.exit(-1);
         }
 
