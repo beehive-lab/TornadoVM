@@ -48,13 +48,13 @@ public class TestReductionsFloats extends TornadoTestBase {
     @Test
     public void testSumFloats() {
         float[] input = new float[SIZE];
-        float[] result = new float[1];
+        float[] result = new float[128];
         final int neutral = 0;
         Arrays.fill(result, neutral);
 
         Random r = new Random();
-        IntStream.range(0, SIZE).sequential().forEach(i -> {
-            input[i] = r.nextFloat();
+        IntStream.range(0, input.length).sequential().forEach(i -> {
+            input[i] = 2.0f;
         });
 
         //@formatter:off
@@ -65,6 +65,13 @@ public class TestReductionsFloats extends TornadoTestBase {
 		//@formatter:on
 
         task.execute();
+
+        System.out.println(Arrays.toString(result));
+        float acc = 0.0f;
+        for (int i = 0; i < result.length; i++) {
+            acc += result[i];
+        }
+        result[0] = acc;
 
         float[] sequential = new float[1];
         reductionAddFloats(input, sequential);

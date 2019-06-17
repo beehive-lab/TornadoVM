@@ -313,10 +313,6 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitStrategySwitch(SwitchStrategy ss, Variable value, LabelRef[] keyTargets, LabelRef defaultTarget) {
-        // @Override
-        // public void emitStrategySwitch(JavaConstant[] keyConstants, double[]
-        // keyProbabilities,
-        // LabelRef[] keyTargets, LabelRef defaultTarget, Variable value) {
         trace("emitStrategySwitch: key=%s", value);
         append(new OCLControlFlow.SwitchOp(value, ss.getKeyConstants(), keyTargets, defaultTarget));
     }

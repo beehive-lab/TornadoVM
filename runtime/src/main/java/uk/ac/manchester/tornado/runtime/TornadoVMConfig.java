@@ -30,6 +30,7 @@ import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 import jdk.vm.ci.meta.JavaKind;
 import sun.misc.Unsafe;
 
+@SuppressWarnings("restriction")
 public class TornadoVMConfig extends HotSpotVMConfigAccess {
 
     TornadoVMConfig(HotSpotVMConfigStore store) {
