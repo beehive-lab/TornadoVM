@@ -38,8 +38,6 @@ Enable profilling for OpenCL events such as kernel times and data tranfers.
 Enables use of relative addresses which a prior for using DMA tranfers for Alters/Intel FPGAs.  
 * ``` tornado.opencl.timer.kernel=true ```:  
 Print kernel times for OpenCL compute kernels.
-* ```tornado.opencl.codecache.loadbin=true```:  
-Allows to use precomplied binaries for pre-built taskschedules or FPGA bitstreams.
 * ```tornado.precompiled.binary=PATH```:
  Provides the location of the bistream or pre-geneared OpenCL (.cl) kernel. 
 * ```tornado.opencl.blocking=true```:  

@@ -22,12 +22,14 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;;
+import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.annotations.Reduce;;
 
-public class ReductionSequentialFPGA {
+public class ReductionParallelFPGA {
 
-    public static void reductionAddFloats(float[] input, float[] result) {
-        for (int i = 0; i < input.length; i++) {
+    public static void reductionAddFloats(float[] input, @Reduce float[] result) {
+        for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += input[i];
         }
     }
@@ -44,12 +46,13 @@ public class ReductionSequentialFPGA {
 
         //@formatter:off
         TaskSchedule task = new TaskSchedule("s0")
-            .task("t0", ReductionSequentialFPGA::reductionAddFloats, input, result)
+            .streamIn(input)
+            .task("t0", ReductionParallelFPGA::reductionAddFloats, input, result)
             .streamOut(result);
         //@formatter:on
 
         ArrayList<Long> timers = new ArrayList<>();
-        for (int i = 0; i < 11; i++) {
+        for (int i = 0; i < 2; i++) {
             long start = System.nanoTime();
             task.execute();
             long end = System.nanoTime();
@@ -65,6 +68,6 @@ public class ReductionSequentialFPGA {
             inputSize = Integer.parseInt(args[0]);
         }
         System.out.println("Size = " + inputSize);
-        new ReductionSequentialFPGA().run(inputSize);
+        new ReductionParallelFPGA().run(inputSize);
     }
 }

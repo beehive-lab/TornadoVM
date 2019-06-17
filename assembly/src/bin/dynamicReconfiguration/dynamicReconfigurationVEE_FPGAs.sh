@@ -32,7 +32,6 @@ function runCommand() {
 		-Dtornado.opencl.userelative=True \
 		-Dtornado.dynamic.verbose=True \
 		$fpgaDevice \
-		-Dtornado.opencl.codecache.loadbin=True \
 		-Dtornado.precompiled.binary=$pathToBinary \
 		-DXXX1.t0.global.dims=$globalDims \
 		-DXXX1.t0.local.dims=$localDims \
