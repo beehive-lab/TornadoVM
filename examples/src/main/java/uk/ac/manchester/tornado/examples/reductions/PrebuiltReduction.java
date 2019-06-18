@@ -48,7 +48,7 @@ public class PrebuiltReduction {
             .execute();
         // @formatter:on
 
-        Arrays.toString(b);
+        System.out.println(Arrays.toString(b));
     }
 
     public static void main(String[] args) {
