@@ -47,7 +47,8 @@ public class TestReductionsFloats extends TornadoTestBase {
 
     @Test
     public void testSumFloats() {
-        float[] input = new float[SIZE];
+        int size = Integer.parseInt(System.getProperties().getProperty("size"));
+        float[] input = new float[size];
         float[] result = new float[1];
         final int neutral = 0;
         Arrays.fill(result, neutral);
