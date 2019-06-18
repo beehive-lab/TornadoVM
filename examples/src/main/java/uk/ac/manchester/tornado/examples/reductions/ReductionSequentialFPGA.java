@@ -27,6 +27,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;;
 public class ReductionSequentialFPGA {
 
     public static void reductionAddFloats(float[] input, float[] result) {
+        result[0] = 0.0f;
         for (int i = 0; i < input.length; i++) {
             result[0] += input[i];
         }
@@ -36,6 +37,7 @@ public class ReductionSequentialFPGA {
 
         float[] input = new float[size];
         float[] result = new float[1];
+        float[] seq = new float[1];
 
         Random r = new Random();
         IntStream.range(0, size).sequential().forEach(i -> {
@@ -54,6 +56,14 @@ public class ReductionSequentialFPGA {
             task.execute();
             long end = System.nanoTime();
             timers.add((end - start));
+            System.out.println("Total Time: " + (end - start));
+
+            if (i == 0) {
+                reductionAddFloats(input, seq);
+                if (Math.abs(seq[0] - result[0]) > 0.01) {
+                    System.out.println("Result is wrong");
+                }
+            }
         }
 
         System.out.println("Median TotalTime: " + Stats.computeMedian(timers));

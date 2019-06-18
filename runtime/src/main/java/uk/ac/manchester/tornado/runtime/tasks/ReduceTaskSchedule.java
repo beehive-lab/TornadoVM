@@ -536,7 +536,7 @@ class ReduceTaskSchedule {
                 return Runtime.getRuntime().availableProcessors() + 1;
             case GPU:
             case ACCELERATOR:
-                return inputSize > DEFAULT_GPU_WORK_GROUP ? inputSize / DEFAULT_GPU_WORK_GROUP : 1;
+                return inputSize > DEFAULT_GPU_WORK_GROUP ? (inputSize / DEFAULT_GPU_WORK_GROUP) + 1 : 2;
             default:
                 break;
         }

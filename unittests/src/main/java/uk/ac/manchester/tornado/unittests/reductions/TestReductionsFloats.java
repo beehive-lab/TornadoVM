@@ -53,7 +53,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         Arrays.fill(result, neutral);
 
         Random r = new Random();
-        IntStream.range(0, SIZE).sequential().forEach(i -> {
+        IntStream.range(0, input.length).sequential().forEach(i -> {
             input[i] = r.nextFloat();
         });
 
