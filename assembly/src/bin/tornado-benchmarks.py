@@ -79,7 +79,7 @@ executions = {
 	"montecarlo": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [__MAX_ITERATIONS__]],
 	"nbody": [[512, 1024, 2040, 4096, 16384, 327684], [__MAX_ITERATIONS__]],
 	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__MAX_ITERATIONS__]],
-	"sgemm": [[128, 256, 512, 1024], [__MAX_ITERATIONS__]],
+	"sgemm": [[128, 256, 512, 1024, 2048], [__MAX_ITERATIONS__]],
 	"scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304, 16777216], [__MAX_ITERATIONS__]],
 	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__MAX_ITERATIONS__]],
 	"vectormult": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [__MAX_ITERATIONS__]],
@@ -119,9 +119,9 @@ def printBenchmakrks():
 
 def runForAllSizes(args):
 	options = composeAllOption(args)
-	for s in __PROBLEM_SIZES__:
-		for b in __BENCHMARKS__:
-			command = __TORNADO_COMMAND__ + options + __RUNNER__ + b + __JENKINS_ITERATIONS__ + str(s)
+	for size in __PROBLEM_SIZES__:
+		for bench in __BENCHMARKS__:
+			command = __TORNADO_COMMAND__ + options + __RUNNER__ + bench + " " + str(__JENKINS_ITERATIONS__) + " " + str(size)
 			os.system(command)
 
 def runAllDevices(args):
