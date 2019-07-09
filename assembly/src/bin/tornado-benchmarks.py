@@ -136,7 +136,6 @@ def runAllDevices(args):
 
 def runBenchmarks(args):
 	options = composeAllOption(args)
-
 	for b in __BENCHMARKS__:
 		command = __TORNADO_COMMAND__ + options + __RUNNER__ + b
 		os.system(command)
@@ -148,6 +147,7 @@ def runBenchmarksFullCoverage(args):
 			command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + key + " " + str(executions[key][1][0]) + " " + str(size)
 			if key is 'sgemm':
 				command = command + " " + str(size)
+			print "RUNNING: " + command
 			os.system(command)
 
 def runJenkinsConfiguration(args):
@@ -181,8 +181,8 @@ def main():
 		runForAllSizes(args)
 	elif args.benchmarks:
 		printBenchmakrks()
-        elif args.jenkins:
-                runJenkinsConfiguration(args)
+	elif args.jenkins:
+		runJenkinsConfiguration(args)
 	elif args.metrics:
 		runBenchmarksFullCoverage(args)
 	else:
