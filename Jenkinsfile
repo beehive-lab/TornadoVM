@@ -38,7 +38,7 @@ pipeline {
         }       
 		stage('tornado-benchmarks') {
             steps {
-                sh 'python assembly/src/bin/tornado-benchmarks.py  -J -SS  '
+                sh 'python assembly/src/bin/tornado-benchmarks.py  --jenkins --skipSeq  '
             }
         } 
         stage('build-n-run-kfusion') {

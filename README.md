@@ -14,9 +14,7 @@ The [INSTALL](INSTALL.md) page contains instructions on how to install TornadoVM
 
 We also maintain a live TornadoVM whitepaper document which you can download [here](https://www.dropbox.com/s/rbb2qv0q2wicgvy/main.pdf).
 
-#### Docker with NVIDIA GPUs:
-
-We also have a docker container to execute TornadoVM on NVIDIA GPUs. 
+#### TornadoVM Docker for NVIDIA GPUs:
 
 ```bash
 $ docker pull beehivelab/tornado-gpu:latest
@@ -26,7 +24,20 @@ $ ./run.sh javac.py example/MatrixMultiplication.java
 $ ./run.sh tornado example/MatrixMultiplication 
 ```
 
-See our [docker-tornado](https://github.com/beehive-lab/docker-tornado) for more details.
+
+#### TornadoVM Docker for Intel Integrated GPUs:
+
+
+```bash
+$ docker pull beehivelab/tornado-intel-gpu:latest
+$ git clone https://github.com/beehive-lab/docker-tornado
+$ cd docker-tornado
+$ ./run_intel.sh javac.py example/MatrixMultiplication.java
+$ ./run_intel.sh tornado example/MatrixMultiplication 
+```
+
+See our [docker-tornado](https://github.com/beehive-lab/docker-tornado) repository for more details.
+
 
 ## Selected Publications
 
@@ -117,12 +128,10 @@ Each TornadoVM module is licensed as follows:
 | Tornado-Runtime  | [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) + CLASSPATH Exception  |
 | Tornado-Assembly  | [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) + CLASSPATH Exception |
 | Tornado-Drivers |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) + CLASSPATH Exception |
-| Torando-API  | [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) + CLASSPATH Exception |
+| Tornado-API  | [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) + CLASSPATH Exception |
 | Tornado-Drivers-OpenCL-Headers |  [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/KhronosGroup/OpenCL-Headers/blob/master/LICENSE) |
 | Tornado-scripts |  [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) |
 | Tornado-Unittests |  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) |
 | Tornado-Benchmarks | [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)  |
 | Tornado-Examples |  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) |
 | Tornado-Matrices  |  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) |
-
-

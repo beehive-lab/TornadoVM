@@ -194,18 +194,17 @@ public class TornadoVMGraphCompiler {
         if (batchSize != -1) {
             // compute in batches
             long offset = 0;
+            long nthreads = batchSize / sizeBatch.getNumBytesType();
             for (int i = 0; i < sizeBatch.getTotalChunks(); i++) {
                 offset = (batchSize * i);
-                long nthreads = batchSize / sizeBatch.getNumBytesType();
                 scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies, offset, batchSize, nthreads);
             }
+            // Last chunk
             if (sizeBatch.getRemainingChunkSize() != 0) {
                 offset += (batchSize);
-                long nthreads = sizeBatch.getRemainingChunkSize() / sizeBatch.getNumBytesType();
-
+                nthreads = sizeBatch.getRemainingChunkSize() / sizeBatch.getNumBytesType();
                 long realBatchSize = sizeBatch.getTotalChunks() == 0 ? 0 : sizeBatch.getRemainingChunkSize();
                 long realOffsetSize = sizeBatch.getTotalChunks() == 0 ? 0 : offset;
-
                 scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies, realOffsetSize, realBatchSize, nthreads);
             }
 
