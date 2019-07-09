@@ -29,7 +29,9 @@ import argparse
 import os
 import textwrap
 
-## Options
+## ========================================================================================
+## Script Options
+## ========================================================================================
 __TORNADO_FLAGS__ = "-Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
 __JVM_FLAGS__ = "-Xms24G -Xmx24G -server"
 __RUNNER__ = " uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
@@ -37,13 +39,13 @@ __DEVICES__ = [
 	"-Ddevices=0:0",
 	"-Ddevices=0:1",
 ]
-__TORNADO__ = "tornado "
+__TORNADO_COMMAND__ = "tornado "
 __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
 __SKIP_PARALLEL = " -Dtornado.enable=False "
-__VALIDATE__ = " -Dtornado.benchmarks.validate=True "
-__VERBOSE__ = " -Dtornado.verbose=True "
-__ITERATIONS__ =3
-
+__VALIDATE__    = " -Dtornado.benchmarks.validate=True "
+__VERBOSE__     = " -Dtornado.verbose=True "
+__JENKINS_ITERATIONS__ = 3
+## ========================================================================================
 
 ## Include here benchmarks to run
 __BENCHMARKS__ = [
@@ -72,28 +74,29 @@ __PROBLEM_SIZES__ = [
 ]
 
 ## Dicts with sizes
+__MAX_ITERATIONS__ = 131
 dict = {
-	"montecarlo": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [131]],
-	"nbody": [[512, 1024, 2040, 4096, 16384, 327684], [131]],
-	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [131]],
-	"sgemm": [[128, 256, 512, 1024], [131]],
-	"scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304, 16777216], [131]],
-	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [131]],
-	"vectormult": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [131]],
-	"bitset": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536], [131]],
-	"dft": [[256, 512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [131]],
+	"montecarlo": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [__MAX_ITERATIONS__]],
+	"nbody": [[512, 1024, 2040, 4096, 16384, 327684], [__MAX_ITERATIONS__]],
+	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__MAX_ITERATIONS__]],
+	"sgemm": [[128, 256, 512, 1024], [__MAX_ITERATIONS__]],
+	"scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304, 16777216], [__MAX_ITERATIONS__]],
+	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__MAX_ITERATIONS__]],
+	"vectormult": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [__MAX_ITERATIONS__]],
+	"bitset": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536], [__MAX_ITERATIONS__]],
+	"dft": [[256, 512, 1024, 2048, 4096, 8192], [__MAX_ITERATIONS__]],
 }
 
 jenkins_sizes = {
-	"montecarlo": [[512, 1024, 2048, 4096, 8192, 16384, 32798], [__ITERATIONS__]],
-	"nbody": [[512, 1024, 2040, 4096], [__ITERATIONS__]],
-	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__ITERATIONS__]],
-	"sgemm": [[128, 256, 512, 1024], [__ITERATIONS__]],
-	"scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__ITERATIONS__]],
-	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [__ITERATIONS__]],
-	"vectormult": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [__ITERATIONS__]],
-	"bitset": [[512, 1024, 2048, 4096, 8192, 16384, 32798], [__ITERATIONS__]],
-	"dft": [[256, 512, 1024, 2048, 4096, 8192, 16384, 32798], [__ITERATIONS__]],
+	"montecarlo": [[512, 1024, 2048, 4096, 8192, 16384, 32798], [__JENKINS_ITERATIONS__]],
+	"nbody": [[512, 1024, 2040, 4096], [__JENKINS_ITERATIONS__]],
+	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__JENKINS_ITERATIONS__]],
+	"sgemm": [[128, 256, 512, 1024], [__JENKINS_ITERATIONS__]],
+	"scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__JENKINS_ITERATIONS__]],
+	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [__JENKINS_ITERATIONS__]],
+	"vectormult": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [__JENKINS_ITERATIONS__]],
+	"bitset": [[512, 1024, 2048, 4096, 8192, 16384, 32798], [__JENKINS_ITERATIONS__]],
+	"dft": [[256, 512, 1024, 2048, 4096], [__JENKINS_ITERATIONS__]],
 }
 
 def composeAllOption(args):
@@ -122,7 +125,7 @@ def runForAllSizes(args):
 	options = composeAllOption(args)
 	for s in __PROBLEM_SIZES__:
 		for b in __BENCHMARKS__:
-			command = __TORNADO__ + options + __RUNNER__ + b + __ITERATIONS__ + s
+			command = __TORNADO_COMMAND__ + options + __RUNNER__ + b + __JENKINS_ITERATIONS__ + s
 			os.system(command)
 
 
@@ -132,7 +135,7 @@ def runAllDevices(args):
 	for d in __DEVICES__:
 		print "Currently executing on device: device=0:", index
 		for b in __BENCHMARKS__:
-			command = __TORNADO__ + options + d + __RUNNER__ + b
+			command = __TORNADO_COMMAND__ + options + d + __RUNNER__ + b
 			os.system(command)
 		index += 1
 
@@ -141,7 +144,7 @@ def runBenchmarks(args):
 	options = composeAllOption(args)
 
 	for b in __BENCHMARKS__:
-		command = __TORNADO__ + options + __RUNNER__ + b
+		command = __TORNADO_COMMAND__ + options + __RUNNER__ + b
 		os.system(command)
 
 
@@ -150,10 +153,10 @@ def runBenchmarksFullCoverage(args):
 	for key in dict.keys():
 		for size in dict[key][0]:
 			if key is 'sgemm':
-				command = __TORNADO__ + options + " " + __RUNNER__ + key + " " + str(
+				command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + key + " " + str(
 					dict[key][1][0]) + " " + str(size) + " " + str(size)
 			else:
-				command = __TORNADO__ + options + " " + __RUNNER__ + key + " " + str(
+				command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + key + " " + str(
 					dict[key][1][0]) + " " + str(size)
 			os.system(command)
 
@@ -162,13 +165,12 @@ def runJenkinsConfiguration(args):
 	for key in jenkins_sizes.keys():
 		for size in jenkins_sizes[key][0]:
 			if key is 'sgemm':
-				command = __TORNADO__ + options + " " + __RUNNER__ + key + " " + str(
+				command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + key + " " + str(
 					jenkins_sizes[key][1][0]) + " " + str(size) + " " + str(size)
 			else:
-				command = __TORNADO__ + options + " " + __RUNNER__ + key + " " + str(
+				command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + key + " " + str(
 					jenkins_sizes[key][1][0]) + " " + str(size)
 			os.system(command)
-
 
 def parseArguments():
 	parser = argparse.ArgumentParser(description='Tool to execute benchmarks in Tornado')
@@ -190,10 +192,8 @@ def parseArguments():
 	args = parser.parse_args()
 	return args
 
-
 def main():
 	args = parseArguments()
-
 	if args.device:
 		runAllDevices(args)
 	elif args.size:
@@ -206,7 +206,6 @@ def main():
 		runBenchmarksFullCoverage(args)
 	else:
 		runBenchmarks(args)
-
 
 if __name__ == '__main__':
 	main()
