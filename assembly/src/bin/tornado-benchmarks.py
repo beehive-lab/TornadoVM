@@ -44,7 +44,6 @@ __SKIP_SERIAL__ = " -Dtornado.benchmarks.skipserial=True "
 __SKIP_PARALLEL = " -Dtornado.enable=False "
 __VALIDATE__    = " -Dtornado.benchmarks.validate=True "
 __VERBOSE__     = " -Dtornado.verbose=True "
-__REDUCE_ITERATIONS__ = 5
 ## ========================================================================================
 
 ## Include here benchmarks to run
@@ -73,8 +72,12 @@ __PROBLEM_SIZES__ = [
 	"4194304",
 ]
 
+def getSize():
+	return ITERATIONS
+
 ## Hashmap with sizes
 __MAX_ITERATIONS__ = 131
+ITERATIONS = __MAX_ITERATIONS__
 allSizes = {
 	"montecarlo": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [__MAX_ITERATIONS__]],
 	"nbody": [[512, 1024, 2048, 4096, 16384, 327684], [__MAX_ITERATIONS__]],
@@ -88,15 +91,16 @@ allSizes = {
 }
 
 mediumSizes = {
-	"montecarlo": [[512, 1024, 2048, 4096, 8192], [__REDUCE_ITERATIONS__]],
-	"nbody": [[512, 1024, 2048, 4096], [__REDUCE_ITERATIONS__]],
-	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 131072, 262144, 524288, 1048576, 2097152], [__REDUCE_ITERATIONS__]],
-	"sgemm": [[128, 256, 512, 1024, 2048], [__REDUCE_ITERATIONS__]],
-	"scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 2097152], [__REDUCE_ITERATIONS__]],
-	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536], [__REDUCE_ITERATIONS__]],
-	"vectormult": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 131072, 262144, 524288, 1048576], [__REDUCE_ITERATIONS__]],
-	"bitset": [[512, 1024, 2048, 4096, 8192, 16384, 32798], [__REDUCE_ITERATIONS__]],
-	"dft": [[256, 512, 1024, 2048, 4096], [__REDUCE_ITERATIONS__]],
+	## Benchmark: [ [SIZES], [functionCALL] ] 
+	"montecarlo": [[512, 1024, 2048, 4096, 8192], ["getSize()"]],
+	"nbody": [[512, 1024, 2048, 4096], ["getSize()"]],
+	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 131072, 262144, 524288, 1048576, 2097152], ["getSize()"]],
+	"sgemm": [[128, 256, 512, 1024, 2048], ["getSize()"]],
+	"scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 2097152], ["getSize()"]],
+	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536], ["getSize()"]],
+	"vectormult": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 131072, 262144, 524288, 1048576], ["getSize()"]],
+	"bitset": [[512, 1024, 2048, 4096, 8192, 16384, 32798], ["getSize()"]],
+	"dft": [[256, 512, 1024, 2048, 4096], ["getSize()"]],
 }
 
 def composeAllOptions(args):
@@ -121,7 +125,7 @@ def runForAllSizes(args):
 	options = composeAllOptions(args)
 	for size in __PROBLEM_SIZES__:
 		for bench in __BENCHMARKS__:
-			command = __TORNADO_COMMAND__ + options + __RUNNER__ + bench + " " + str(__REDUCE_ITERATIONS__) + " " + str(size)
+			command = __TORNADO_COMMAND__ + options + __RUNNER__ + bench + " " + str(ITERATIONS) + " " + str(size)
 			os.system(command)
 
 def runAllDevices(args):
@@ -153,7 +157,8 @@ def runMediumConfiguration(args):
         options = composeAllOptions(args)
 	for key in mediumSizes.keys():
 		for size in mediumSizes[key][0]:
-			command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + key + " " + str(mediumSizes[key][1][0]) + " " + str(size)
+			numIterations = eval(mediumSizes[key][1][0])
+			command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + key + " " + str(numIterations) + " " + str(size)
 			if key is 'sgemm':
 				command = command + " " + str(size)
 			os.system(command)
@@ -168,12 +173,17 @@ def parseArguments():
 	parser.add_argument('--validate', action="store_true", dest="validate", default=False, help="Enable result validation")
 	parser.add_argument('--skipPar', action="store_true", dest="skip_parallel", default=False, help="Skip parallel version")
 	parser.add_argument('--default', action="store_true", dest="default", default=False, help="Run default benchmark configuration")
+	parser.add_argument('--iterations', action="store", type=int, dest="iterations", default=0, help="Set the number of iterations")
 	parser.add_argument('--verbose', "-V", action="store_true", dest="verbose", default=False, help="Enable verbose")
 	args = parser.parse_args()
 	return args
 
 def main():
 	args = parseArguments()
+	global ITERATIONS
+	if (args.iterations > 0):
+		ITERATIONS = args.iterations
+	
 	if args.device:
 		runAllDevices(args)
 	elif args.size:
