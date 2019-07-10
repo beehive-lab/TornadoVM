@@ -88,18 +88,18 @@ executions = {
 }
 
 jenkins_executions = {
-	"montecarlo": [[512, 1024, 2048, 4096, 8192, 16384, 32798], [__JENKINS_ITERATIONS__]],
+	"montecarlo": [[512, 1024, 2048, 4096, 8192], [__JENKINS_ITERATIONS__]],
 	"nbody": [[512, 1024, 2040, 4096], [__JENKINS_ITERATIONS__]],
-	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__JENKINS_ITERATIONS__]],
-	"sgemm": [[128, 256, 512, 1024], [__JENKINS_ITERATIONS__]],
-	"scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__JENKINS_ITERATIONS__]],
-	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [__JENKINS_ITERATIONS__]],
-	"vectormult": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [__JENKINS_ITERATIONS__]],
+	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 2097152], [__JENKINS_ITERATIONS__]],
+	"sgemm": [[128, 256, 512, 1024, 2048], [__JENKINS_ITERATIONS__]],
+	"scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 2097152], [__JENKINS_ITERATIONS__]],
+	"blackscholes": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536], [__JENKINS_ITERATIONS__]],
+	"vectormult": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 131072, 1048576], [__JENKINS_ITERATIONS__]],
 	"bitset": [[512, 1024, 2048, 4096, 8192, 16384, 32798], [__JENKINS_ITERATIONS__]],
 	"dft": [[256, 512, 1024, 2048, 4096], [__JENKINS_ITERATIONS__]],
 }
 
-def composeAllOption(args):
+def composeAllOptions(args):
 	options = __JVM_FLAGS__
 	if args.skip_serial:
 		options = options + __SKIP_SERIAL__
@@ -118,14 +118,14 @@ def printBenchmakrks():
 		print wrapper.fill(b)
 
 def runForAllSizes(args):
-	options = composeAllOption(args)
+	options = composeAllOptions(args)
 	for size in __PROBLEM_SIZES__:
 		for bench in __BENCHMARKS__:
 			command = __TORNADO_COMMAND__ + options + __RUNNER__ + bench + " " + str(__JENKINS_ITERATIONS__) + " " + str(size)
 			os.system(command)
 
 def runAllDevices(args):
-	options = composeAllOption(args)
+	options = composeAllOptions(args)
 	index = 0
 	for d in __DEVICES__:
 		print "Currently executing on device: device=0:", index
@@ -135,13 +135,13 @@ def runAllDevices(args):
 		index += 1
 
 def runBenchmarks(args):
-	options = composeAllOption(args)
+	options = composeAllOptions(args)
 	for b in __BENCHMARKS__:
 		command = __TORNADO_COMMAND__ + options + __RUNNER__ + b
 		os.system(command)
 
 def runBenchmarksFullCoverage(args):
-	options = composeAllOption(args)
+	options = composeAllOptions(args)
 	for key in executions.keys():
 		for size in executions[key][0]:
 			command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + key + " " + str(executions[key][1][0]) + " " + str(size)
@@ -150,10 +150,10 @@ def runBenchmarksFullCoverage(args):
 			os.system(command)
 
 def runJenkinsConfiguration(args):
-        options = composeAllOption(args)
+        options = composeAllOptions(args)
 	for key in jenkins_executions.keys():
 		for size in jenkins_executions[key][0]:
-			command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + key + " " + str(jenkins_executions[key][1][0]) + " " + str(size) + " " + str(size)
+			command = __TORNADO_COMMAND__ + options + " " + __RUNNER__ + key + " " + str(jenkins_executions[key][1][0]) + " " + str(size)
 			if key is 'sgemm':
 				command = command + " " + str(size)
 			os.system(command)
