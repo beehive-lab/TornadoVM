@@ -68,46 +68,271 @@ public interface TornadoAPI {
      * It adds a task by using a {@link TaskPackage}.
      * 
      * @param taskPackage
+     *            {@link uk.ac.manchester.tornado.api.common.TaskPackage}
      * @return {@link @TornadoAPI}
      */
     TornadoAPI addTask(TaskPackage taskPackage);
 
     /**
+     * Add task with one parameter.
      * 
      * @param id
+     *            Task-id
      * @param code
+     *            Reference to an existing Java method with one argument
      * @param arg
-     * @return {@}
+     *            Argument to the method
+     * @return {@link TornadoAPI}
      */
     <T1> TornadoAPI task(String id, Task1<T1> code, T1 arg);
 
     /**
+     * Add task with two parameters.
      * 
      * @param id
+     *            Task-id
      * @param code
+     *            Reference to an existing Java method with two arguments
      * @param arg1
+     *            Argument 1 to the method
      * @param arg2
-     * @return
+     *            Argument 2 to the method
+     * @return {@link TornadoAPI}
      */
     <T1, T2> TornadoAPI task(String id, Task2<T1, T2> code, T1 arg1, T2 arg2);
 
+    /**
+     * Add task with three parameters.
+     * 
+     * @param id
+     *            Task-id
+     * @param code
+     *            Reference to an existing Java method with three arguments
+     * @param arg1
+     *            Argument 1 to the method
+     * @param arg2
+     *            Argument 2 to the method
+     * @param arg3
+     *            Argument 3 to the method
+     * @return {@link TornadoAPI}
+     */
     <T1, T2, T3> TornadoAPI task(String id, Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3);
 
+    /**
+     * Add task with four parameters.
+     * 
+     * @param id
+     *            Task-id
+     * @param code
+     *            Reference to an existing Java method with four arguments
+     * @param arg1
+     *            Argument 1 to the method
+     * @param arg2
+     *            Argument 2 to the method
+     * @param arg3
+     *            Argument 3 to the method
+     * @param arg4
+     *            Argument 4 to the method
+     * @return {@link TornadoAPI}
+     */
     <T1, T2, T3, T4> TornadoAPI task(String id, Task4<T1, T2, T3, T4> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4);
 
+    /**
+     * Add task with five parameters.
+     *
+     * @param id
+     *            Task-id
+     * @param code
+     *            Reference to an existing Java method with five arguments
+     * @param arg1
+     *            Argument 1 to the method
+     * @param arg2
+     *            Argument 2 to the method
+     * @param arg3
+     *            Argument 3 to the method
+     * @param arg4
+     *            Argument 4 to the method
+     * @param arg5
+     *            Argument 5 to the method
+     * @return {@link TornadoAPI}
+     */
     <T1, T2, T3, T4, T5> TornadoAPI task(String id, Task5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5);
 
+    /**
+     * Add task with six parameters.
+     *
+     * @param id
+     *            Task-id
+     * @param code
+     *            Reference to an existing Java method with six arguments
+     * @param arg1
+     *            Argument 1 to the method
+     * @param arg2
+     *            Argument 2 to the method
+     * @param arg3
+     *            Argument 3 to the method
+     * @param arg4
+     *            Argument 4 to the method
+     * @param arg5
+     *            Argument 5 to the method
+     * @param arg6
+     *            Argument 6 to the method
+     * @return {@link TornadoAPI}
+     */
     <T1, T2, T3, T4, T5, T6> TornadoAPI task(String id, Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6);
 
+    /**
+     * Add task with seven parameters.
+     *
+     * @param id
+     *            Task-id
+     * @param code
+     *            Reference to an existing Java method with seven arguments
+     * @param arg1
+     *            Argument 1 to the method
+     * @param arg2
+     *            Argument 2 to the method
+     * @param arg3
+     *            Argument 3 to the method
+     * @param arg4
+     *            Argument 4 to the method
+     * @param arg5
+     *            Argument 5 to the method
+     * @param arg6
+     *            Argument 6 to the method
+     * @param arg7
+     *            Argument 7 to the method
+     * @return {@link TornadoAPI}
+     */
     <T1, T2, T3, T4, T5, T6, T7> TornadoAPI task(String id, Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7);
 
+    /**
+     * Add task with eight parameters.
+     *
+     * @param id
+     *            Task-id
+     * @param code
+     *            Reference to an existing Java method with eight arguments
+     * @param arg1
+     *            Argument 1 to the method
+     * @param arg2
+     *            Argument 2 to the method
+     * @param arg3
+     *            Argument 3 to the method
+     * @param arg4
+     *            Argument 4 to the method
+     * @param arg5
+     *            Argument 5 to the method
+     * @param arg6
+     *            Argument 6 to the method
+     * @param arg7
+     *            Argument 7 to the method
+     * @param arg8
+     *            Argument 8 to the method
+     * @return {@link TornadoAPI}
+     */
     <T1, T2, T3, T4, T5, T6, T7, T8> TornadoAPI task(String id, Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8);
 
+    /**
+     * Add task with nine parameters.
+     *
+     * @param id
+     *            Task-id
+     * @param code
+     *            Reference to an existing Java method with nine arguments
+     * @param arg1
+     *            Argument 1 to the method
+     * @param arg2
+     *            Argument 2 to the method
+     * @param arg3
+     *            Argument 3 to the method
+     * @param arg4
+     *            Argument 4 to the method
+     * @param arg5
+     *            Argument 5 to the method
+     * @param arg6
+     *            Argument 6 to the method
+     * @param arg7
+     *            Argument 7 to the method
+     * @param arg8
+     *            Argument 8 to the method
+     * @param arg9
+     *            Argument 9 to the method
+     * @return {@link TornadoAPI}
+     */
     <T1, T2, T3, T4, T5, T6, T7, T8, T9> TornadoAPI task(String id, Task9<T1, T2, T3, T4, T5, T6, T7, T8, T9> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9);
 
+    /**
+     * Add task with 10 parameters.
+     *
+     * @param id
+     *            Task-id
+     * @param code
+     *            Reference to an existing Java method with 10 arguments
+     * @param arg1
+     *            Argument 1 to the method
+     * @param arg2
+     *            Argument 2 to the method
+     * @param arg3
+     *            Argument 3 to the method
+     * @param arg4
+     *            Argument 4 to the method
+     * @param arg5
+     *            Argument 5 to the method
+     * @param arg6
+     *            Argument 6 to the method
+     * @param arg7
+     *            Argument 7 to the method
+     * @param arg8
+     *            Argument 8 to the method
+     * @param arg9
+     *            Argument 9 to the method
+     * @param arg10
+     *            Argument 10 to the method
+     * @return {@link TornadoAPI}
+     */
     <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> TornadoAPI task(String id, Task10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8,
             T9 arg9, T10 arg10);
 
+    /**
+     * Add task with 15 parameters.
+     * 
+     * @param id
+     *            Task-id
+     * @param code
+     *            Reference to an existing Java method with 15 arguments
+     * @param arg1
+     *            Argument 1 to the method
+     * @param arg2
+     *            Argument 2 to the method
+     * @param arg3
+     *            Argument 3 to the method
+     * @param arg4
+     *            Argument 4 to the method
+     * @param arg5
+     *            Argument 5 to the method
+     * @param arg6
+     *            Argument 6 to the method
+     * @param arg7
+     *            Argument 7 to the method
+     * @param arg8
+     *            Argument 8 to the method
+     * @param arg9
+     *            Argument 9 to the method
+     * @param arg10
+     *            Argument 10 to the method
+     * @param arg11
+     *            Argument 11 to the method
+     * @param arg12
+     *            Argument 12 to the method
+     * @param arg13
+     *            Argument 13 to the method
+     * @param arg14
+     *            Argument 14 to the method
+     * @param arg15
+     *            Argument 15 to the method
+     * @return {@link TornadoAPI}
+     */
     <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> TornadoAPI task(String id, Task15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> code, T1 arg1, T2 arg2,
             T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15);
 
@@ -115,12 +340,20 @@ public interface TornadoAPI {
      * Add a pre-built OpenCL task into a task-schedule
      * 
      * @param id
+     *            Task-Id
      * @param entryPoint
+     *            Name of the method to be executed on the target device
      * @param filename
+     *            Input file with the source kernel
      * @param args
+     *            Arguments to the kernel
      * @param accesses
+     *            Accesses ({@link uk.ac.manchester.tornado.api.common.Access} for
+     *            each input parameter to the method
      * @param device
+     *            Device to be executed
      * @param dimensions
+     *            Select number of dimensions of th kernel (1D, 2D or 3D)
      * @return {@link TornadoAPI}
      */
     TornadoAPI prebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
@@ -135,7 +368,8 @@ public interface TornadoAPI {
     /**
      * 
      * @param task
-     * @return
+     *            {@link SchedulableTask}
+     * @return {@link TornadoAPI}
      */
     TornadoAPI task(SchedulableTask task);
 
@@ -159,27 +393,59 @@ public interface TornadoAPI {
      */
     TornadoAPI streamOut(Object... objects);
 
+    /**
+     * Internal call to run the task-schedule
+     * 
+     * @return {@link TornadoAPI}
+     */
     TornadoAPI schedule();
 
     /**
      * It enables batch processing on the target device.
      * 
      * @param batchSize
-     *            size of the batch represented as a string. For example
-     *            "512MB", "1GB". If the batchSize is <= 0 the whole array is
-     *            computed without splitting in smaller batches.
+     *            size of the batch represented as a string. For example "512MB",
+     *            "1GB". If the batchSize is <= 0 the whole array is computed
+     *            without splitting in smaller batches.
      * @return link to the {@TornadoAPI} to allow function composition.
      */
     TornadoAPI batch(String batchSize);
 
+    /**
+     * Execute the task-schedule
+     */
     void execute();
 
+    /**
+     * Run with dynamic reconfiguration with an input policy
+     * 
+     * @param policy
+     *            Input policy, See {@link Policy}
+     */
     void executeWithProfiler(Policy policy);
 
+    /**
+     * Run with dynamic reconfiguration with an input policy. All combinations run
+     * in sequential.
+     *
+     * @param policy
+     *            Input policy, See {@link Policy}
+     */
     void executeWithProfilerSequential(Policy policy);
 
+    /**
+     * Run with dynamic reconfiguration with an input policy. All combinations run
+     * in sequential. It uses an internal table based on history to predict the
+     * device to run.
+     *
+     * @param policy
+     *            Input policy, See {@link Policy}
+     */
     void executeWithProfilerSequentialGlobal(Policy policy);
 
+    /**
+     * It performs JIT compilation without running the task-schedule
+     */
     void warmup();
 
     long getReturnValue(String id);
