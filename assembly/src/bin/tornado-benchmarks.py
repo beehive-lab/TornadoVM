@@ -77,7 +77,7 @@ __PROBLEM_SIZES__ = [
 __MAX_ITERATIONS__ = 131
 allSizes = {
 	"montecarlo": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576], [__MAX_ITERATIONS__]],
-	"nbody": [[512, 1024, 2040, 4096, 16384, 327684], [__MAX_ITERATIONS__]],
+	"nbody": [[512, 1024, 2048, 4096, 16384, 327684], [__MAX_ITERATIONS__]],
 	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304], [__MAX_ITERATIONS__]],
 	"sgemm": [[128, 256, 512, 1024, 2048], [__MAX_ITERATIONS__]],
 	"scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 4194304, 16777216], [__MAX_ITERATIONS__]],
@@ -89,7 +89,7 @@ allSizes = {
 
 mediumSizes = {
 	"montecarlo": [[512, 1024, 2048, 4096, 8192], [__REDUCE_ITERATIONS__]],
-	"nbody": [[512, 1024, 2040, 4096], [__REDUCE_ITERATIONS__]],
+	"nbody": [[512, 1024, 2048, 4096], [__REDUCE_ITERATIONS__]],
 	"saxpy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 2097152], [__REDUCE_ITERATIONS__]],
 	"sgemm": [[128, 256, 512, 1024, 2048], [__REDUCE_ITERATIONS__]],
 	"scopy": [[512, 1024, 2048, 4096, 8192, 16384, 32798, 65536, 1048576, 2097152], [__REDUCE_ITERATIONS__]],
@@ -159,7 +159,7 @@ def runMediumConfiguration(args):
 			os.system(command)
 
 def parseArguments():
-	parser = argparse.ArgumentParser(description='Tool to execute benchmarks in TornadoVM\n With no options, it runs the medium sizes')
+	parser = argparse.ArgumentParser(description="""Tool to execute benchmarks in TornadoVM. With no options, it runs the medium sizes""")
 	parser.add_argument('--devices', action="store_true", dest="device", default=False, help="Run to all devices")
 	parser.add_argument('--sizes', action="store_true", dest="size", default=False, help="Run for all problem sizes")
 	parser.add_argument('--benchmarks', action="store_true", dest="benchmarks", default=False, help="Print list of benchmarks")
