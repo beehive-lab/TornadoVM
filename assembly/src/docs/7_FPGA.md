@@ -43,7 +43,7 @@ The generated FPGA bitstream as well as the the generated OpenCL code can be fou
 
 Example:
 
-```!bash 
+```bash 
 $ tornado \
     -Ds0.t0.device=0:1 \
     -Dtornado.assembler.removeloops=true \
@@ -59,7 +59,7 @@ Ahead of time execution mode allows the user to generate a pre-generated bitstre
 
 Example:  
 
-```!bash
+```bash
 $ tornado \
     -Ds0.t0.device=0:1 \
     -Dtornado.precompiled.binary=/path/to/lookupBufferAddress,s0.t0.device=0:1 \
@@ -77,19 +77,19 @@ The following two steps are required:
 
 1) Before executing the tornado program, the following env variable needs to be exported:  
 
-```!bash
+```bash
 $ export CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1
 ```
 
 2) All the runtime flags are the same used during the full JIT mode plus the following:  
 
-```!bash
+```bash
 -Dtornado.fpga.emulation=true
 ```
 
 Example:  
 
-```!bash
+```bash
 $ env CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1 tornado  \ 
         -Ds0.t0.device=0:1  \
         -Dtornado.assembler.removeloops=true  \

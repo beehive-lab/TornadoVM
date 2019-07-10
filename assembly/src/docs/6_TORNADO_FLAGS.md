@@ -12,7 +12,6 @@ All flags needs Java prefix of ```-D```. An example of tornado using a flag is t
 
 ```$ tornado -Dtornado.fullDebug=true uk.ac.manchester.examples.compute.Montecarlo 1024```  
 
-  
 
 ## List of TornadoVM Flags:
 
