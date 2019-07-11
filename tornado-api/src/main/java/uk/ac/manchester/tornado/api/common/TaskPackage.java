@@ -41,6 +41,7 @@
  */
 package uk.ac.manchester.tornado.api.common;
 
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task15;
@@ -59,6 +60,12 @@ public class TaskPackage {
     private int taskType;
     private Object[] taskParameters;
     private long numThreadsToRun;
+
+    public TaskPackage(String id, Task code) {
+        this.id = id;
+        this.taskType = 0;
+        this.taskParameters = new Object[] { code };
+    }
 
     public <T1> TaskPackage(String id, Task1<T1> code, T1 arg) {
         this.id = id;
@@ -154,6 +161,10 @@ public class TaskPackage {
      */
     public Object[] getTaskParameters() {
         return taskParameters;
+    }
+
+    public static TaskPackage createPackage(String id, Task code) {
+        return new TaskPackage(id, code);
     }
 
     public static <T1> TaskPackage createPackage(String id, Task1<T1> code, T1 arg) {

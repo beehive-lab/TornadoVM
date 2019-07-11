@@ -44,6 +44,11 @@ package uk.ac.manchester.tornado.api.common;
 public final class TornadoFunctions {
 
     @FunctionalInterface
+    public interface Task {
+        void apply();
+    }
+
+    @FunctionalInterface
     public interface Task1<T1> {
         void apply(T1 arg1);
     }

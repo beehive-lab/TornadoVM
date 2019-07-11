@@ -42,9 +42,10 @@
 package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task15;
@@ -72,6 +73,8 @@ public interface TornadoAPI {
      * @return {@link @TornadoAPI}
      */
     TornadoAPI addTask(TaskPackage taskPackage);
+
+    TornadoAPI task(String id, Task code);
 
     /**
      * Add task with one parameter.
@@ -348,8 +351,8 @@ public interface TornadoAPI {
      * @param args
      *            Arguments to the kernel
      * @param accesses
-     *            Accesses ({@link uk.ac.manchester.tornado.api.common.Access} for
-     *            each input parameter to the method
+     *            Accesses ({@link uk.ac.manchester.tornado.api.common.Access}
+     *            for each input parameter to the method
      * @param device
      *            Device to be executed
      * @param dimensions
@@ -404,9 +407,9 @@ public interface TornadoAPI {
      * It enables batch processing on the target device.
      * 
      * @param batchSize
-     *            size of the batch represented as a string. For example "512MB",
-     *            "1GB". If the batchSize is <= 0 the whole array is computed
-     *            without splitting in smaller batches.
+     *            size of the batch represented as a string. For example
+     *            "512MB", "1GB". If the batchSize is <= 0 the whole array is
+     *            computed without splitting in smaller batches.
      * @return link to the {@TornadoAPI} to allow function composition.
      */
     TornadoAPI batch(String batchSize);
@@ -425,8 +428,8 @@ public interface TornadoAPI {
     void executeWithProfiler(Policy policy);
 
     /**
-     * Run with dynamic reconfiguration with an input policy. All combinations run
-     * in sequential.
+     * Run with dynamic reconfiguration with an input policy. All combinations
+     * run in sequential.
      *
      * @param policy
      *            Input policy, See {@link Policy}
@@ -434,9 +437,9 @@ public interface TornadoAPI {
     void executeWithProfilerSequential(Policy policy);
 
     /**
-     * Run with dynamic reconfiguration with an input policy. All combinations run
-     * in sequential. It uses an internal table based on history to predict the
-     * device to run.
+     * Run with dynamic reconfiguration with an input policy. All combinations
+     * run in sequential. It uses an internal table based on history to predict
+     * the device to run.
      *
      * @param policy
      *            Input policy, See {@link Policy}
