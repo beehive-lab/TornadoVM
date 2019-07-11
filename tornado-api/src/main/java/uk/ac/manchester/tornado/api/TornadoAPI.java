@@ -74,6 +74,15 @@ public interface TornadoAPI {
      */
     TornadoAPI addTask(TaskPackage taskPackage);
 
+    /**
+     * Add task with no parameter.
+     * 
+     * @param id
+     *            Task-id
+     * @param code
+     *            Reference to an existing Java method with one argument
+     * @return {@link TornadoAPI}
+     */
     TornadoAPI task(String id, Task code);
 
     /**
