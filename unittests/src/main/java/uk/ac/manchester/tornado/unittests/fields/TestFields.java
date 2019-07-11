@@ -62,6 +62,22 @@ public class TestFields {
         }
     }
 
+    private static class Bar {
+        int[] output;
+        int initValue;
+
+        public Bar(int elements, int initValue) {
+            output = new int[elements];
+            this.initValue = initValue;
+        }
+
+        public void computeInit() {
+            for (@Parallel int i = 0; i < output.length; i++) {
+                output[i] = initValue;
+            }
+        }
+    }
+
     @Test
     public void testFields01() {
         final int N = 1024;
@@ -92,6 +108,22 @@ public class TestFields {
 
         for (int i = 0; i < N; i++) {
             assertEquals(foo.a[i] + foo.b[i], foo.output[i]);
+        }
+    }
+
+    @Test
+    public void testFields03() {
+        final int N = 1024;
+        Bar bar = new Bar(N, 15);
+
+        TaskSchedule s0 = new TaskSchedule("Bar");
+        assertNotNull(s0);
+
+        s0.task("init", bar::computeInit).execute();
+        s0.syncObject(bar.output);
+
+        for (int i = 0; i < N; i++) {
+            assertEquals(15, bar.output[i]);
         }
     }
 
