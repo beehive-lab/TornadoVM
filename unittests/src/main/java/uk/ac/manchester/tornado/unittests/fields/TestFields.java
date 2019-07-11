@@ -49,13 +49,13 @@ public class TestFields {
             });
         }
 
-        public void compute() {
+        public void computeInit() {
             for (@Parallel int i = 0; i < output.length; i++) {
-                output[i] = a[i] + b[i];
+                output[i] = 100;
             }
         }
 
-        public void compute2() {
+        public void computeAdd() {
             for (@Parallel int i = 0; i < output.length; i++) {
                 output[i] = a[i] + b[i];
             }
@@ -70,7 +70,7 @@ public class TestFields {
         TaskSchedule s0 = new TaskSchedule("s0");
         assertNotNull(s0);
 
-        s0.task("t0", foo::compute).execute();
+        s0.task("t0", foo::computeInit).execute();
         s0.syncObject(foo.output);
 
         for (int i = 0; i < N; i++) {
@@ -82,11 +82,12 @@ public class TestFields {
     public void testFields02() {
         final int N = 1024;
         Foo foo = new Foo(N);
+        foo.initRamdom();
 
         TaskSchedule s0 = new TaskSchedule("s0");
         assertNotNull(s0);
 
-        s0.task("t0", foo::compute2).execute();
+        s0.task("t0", foo::computeAdd).execute();
         s0.syncObject(foo.output);
 
         for (int i = 0; i < N; i++) {
