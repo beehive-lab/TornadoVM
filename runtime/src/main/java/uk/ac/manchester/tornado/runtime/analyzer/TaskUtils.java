@@ -40,6 +40,7 @@ import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task15;
@@ -146,8 +147,12 @@ public class TaskUtils {
         return null;
     }
 
-    public static <T1> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task1<T1> code, T1 arg) {
-        return createTask(meta, id, method, code, true, arg);
+    public static <T1> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task code) {
+        return createTask(meta, id, method, code, true);
+    }
+
+    public static <T1> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task1<T1> code, T1 arg1) {
+        return createTask(meta, id, method, code, true, arg1);
     }
 
     public static <T1, T2> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task2<T1, T2> code, T1 arg1, T2 arg2) {

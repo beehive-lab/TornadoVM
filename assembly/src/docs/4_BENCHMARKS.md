@@ -19,24 +19,43 @@ For each of the benchmarks, a Java version exists in order to obtain timing meas
 
 ### How to run 
 
-Go to the directory `<tornadovm path>/tornado/assembly/src/bin`. Then, the run options can be found with the following command:
+Go to the directory `<tornadovm path>/bin/sdk/bin`. Then, the run options can be found with the following command:
 
 ```!bash
-$ python tornado-benchmarks.py -h
+$ tornado-benchmarks.py -h
 ```
 The output about the options should look like this:
 
-```
-Tool to execute benchmarks in TornadoVM
+```bash
+usage: tornado-benchmarks.py [-h] [--devices] [--sizes] [--benchmarks]
+                             [--full] [--skipSeq] [--validate] [--skipPar]
+                             [--default] [--verbose]
+
+Tool to execute benchmarks in TornadoVM With no options, it runs the medium
+sizes
 
 optional arguments:
-  -h, --help         show this help message and exit
-  --devices, -D      Run to all devices
-  --sizes, -S        Run for all problem sizes
-  --benchmarks, -BL  Print list of benchmarks
-  --metrics, -M      Run for all sizes in all devices
-  --skipSeq, -SS     Skip java version
-  --validate, -VL    Enable result validation
-  --skipPar, -SP     Skip Tornado version
-  --verbose, -V      Enable verbose
+  -h, --help     show this help message and exit
+  --devices      Run to all devices
+  --sizes        Run for all problem sizes
+  --benchmarks   Print list of benchmarks
+  --full         Run for all sizes in all devices. Including big data sizes
+  --skipSeq      Skip java version
+  --validate     Enable result validation
+  --skipPar      Skip parallel version
+  --default      Run default benchmark configuration
+  --verbose, -V  Enable verbose
+
 ```
+
+
+### Example
+
+Example of running all benchmark for all devices available in your system with small and medium sizes with 50 iterations. 
+
+
+```bash
+$ tornado-benchmarks.py --iterations 50
+```
+
+

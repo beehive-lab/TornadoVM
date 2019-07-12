@@ -61,6 +61,7 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task15;
@@ -75,8 +76,8 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
-import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
+import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
@@ -1305,6 +1306,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         meta.setNumThreads(taskPackage.getNumThreadsToRun());
 
         switch (type) {
+            case 0:
+                addInner(TaskUtils.createTask(method, meta, id, (Task) parameters[0]));
+                break;
             case 1:
                 addInner(TaskUtils.createTask(method, meta, id, (Task1) parameters[0], parameters[1]));
                 break;

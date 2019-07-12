@@ -4,12 +4,13 @@
 
   * Maven Version 3
   * CMake 3.6 (or newer)
-  * OpenCL (preferably v1.2 or newer)
+  * OpenCL: GPUs and CPUs >= 1.2, FPGAs >= 1.0 
   * GCC or clang/LLVM (GCC >= 5.5)
   * Python 2.7 (>= 2.7.5)
 
 ### Tested OS
-Tornado has been successfully tested on the following platforms:
+
+TornadoVM has been succefully tested on the following platforms:
 
   * CentOS >= 7.3
   * Fedora >= 21
@@ -38,25 +39,23 @@ This will generate a new Java binary into the `jdk1.8.0_<your_version>/product`,
  $ cd ..
  $ git clone https://github.com/beehive-lab/TornadoVM tornadovm
  $ cd tornadovm
- $ vim etc/tornadovm.env
+ $ vim etc/sources.env
 ```
 
-
-Create the `etc/tornadovm.env` file and add the following code in it **(after updating the paths to your correct ones)**:
+Create the `etc/sources.sh` file and add the following code in it **(after updating the paths to your correct ones)**:
 
 ```bash
 #!/bin/bash
 export JAVA_HOME=<path to jvmci 8 jdk with JVMCI>
 export PATH=$PWD/bin/bin:$PATH    ## This directory will be automatically generated during Tornado compilation
 export TORNADO_SDK=$PWD/bin/sdk   ## This directory will be automatically generated during Tornado compilation
-
 export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see step 4)
 ```
 
 Then execute:
 
 ```bash
-$ . etc/tornadovm.env
+$ source ./etc/sources.env
 ```
 
 
@@ -72,29 +71,26 @@ Create (or update) the file in `~/.m2/settings.xml` with the following content. 
  <interactiveMode/>
  <usePluginRegistry/>
  	<offline/>
-		 <pluginGroups/>
-	 <servers/>
+	<pluginGroups/>
+	<servers/>
  	<mirrors/>
-	 <proxies/>
-	 <profiles>
-	 <profile>
-		 <id>tornado-jvmci</id>
-		 <activation>
-		 <activeByDefault>true</activeByDefault>
-		 </activation>
-		 <properties>
-
-			 <!-- Your PATH TO JDK1.8-JVMCI-->
-			 <jvmci.root>/home/user/jdk1.8.0_181/product</jvmci.root>
-			 <!-- Your JDK1.8-JVMCI version-->
-		 	 <jvmci.version>1.8.0_181</jvmci.version>
-
-		 </properties>
-	 </profile>
+	<proxies/>
+	<profiles>
+	  <profile>
+		<id>tornado-jvmci</id>
+		<activation>
+		 	<activeByDefault>true</activeByDefault>
+		</activation>
+		<properties>
+			<!-- Your PATH TO YOUR JDK1.8-JVMCI-->
+			<jvmci.root>/home/user/jdk1.8.0_181/product</jvmci.root>
+			<!-- Your JDK1.8-JVMCI version-->
+		 	<jvmci.version>1.8.0_181</jvmci.version>
+		</properties>
+	   </profile>
 	 </profiles>
 	 <activeProfiles/>
 </settings>
-
 ```
 
 
@@ -104,12 +100,11 @@ Create (or update) the file in `~/.m2/settings.xml` with the following content. 
 $ cmake -version
 ```
 
-If the version of cmake is > 3.6 then skip the rest of this step and go to Step 5.
+**If the version of cmake is > 3.6 then skip the rest of this step and go to Step 5.**
 Otherwise try in install cmake.
 
-For simplicity it might be easier to install cmake in your home
-directory.
-  * Red-Hat Enterprise Linux / CentOS use cmake v2.8
+For simplicity it might be easier to install cmake in your home directory.
+  * Redhat Enterprise Linux / CentOS use cmake v2.8 
   * We require a newer version so that OpenCL is configured properly.
 
 ```bash
@@ -126,20 +121,20 @@ cmake version 3.10.1
 Then export `CMAKE_ROOT` variable to the cmake installation. You can add it to the `etc/tornadovm.env` file.
 
 ```bash
-export CMAKE_ROOT=/opt/cmake-3.10.2
+export CMAKE_ROOT=/opt/cmake-3.10.1
 ```
 
 ### 5. Compile TornadoVM
 
 ```bash
 $ cd ~/tornadovm
-$ . etc/tornadovm.env
+$ . etc/sources.env
 $ make 
 ```
 and done!! 
 
 
-## Running Examples #
+## Running Examples 
 
 ```bash
 $ tornado uk.ac.manchester.tornado.examples.HelloWorld
@@ -167,15 +162,17 @@ Tornado device=0:2
   Intel(R) OpenCL -- Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz
 ```
 
+**The output might vary depending on your OpenCL installation. To run TornadoVM, you should see at least one device.**
+
 To run on a specific device use the following option:
 
 ```bash
  -D<s>.<t>.device=<driverNumber>:<deviceNumber>
 ```
 
-Where `s` is the schedule task name and `t` is the task name.
+Where `s` is the *schedule name* and `t` is the task name.
 
-For example running on device [1] will look like this:
+For example running on device [1] (Intel HD Graphics in our example) will look like this:
 
 ```bash
 $ tornado -Ds0.t0.device=0:1 uk.ac.manchester.tornado.examples.HelloWorld
@@ -195,8 +192,7 @@ $ tornado uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sadd
 To run all unittests in Tornado:
 
 ```bash
-make tests 
-
+$ make tests
 ```
 
 To run an individual unittest:
@@ -215,6 +211,25 @@ To test just a method of a unittest class:
 
 ```bash
 $ tornado-test.py --verbose uk.ac.manchester.tornado.unittests.TestHello#testHello
+```
+
+To see the OpenCL generated kernel for a unittest:
+
+```bash
+$ tornado-test.py --verbose -pk uk.ac.manchester.tornado.unittests.TestHello#testHello
+```
+
+To execute in debug mode:
+
+```bash
+$ tornado-test.py --verbose --debug uk.ac.manchester.tornado.unittests.TestHello#testHello
+task info: s0.t0
+	platform          : NVIDIA CUDA
+	device            : GeForce GTX 1050 CL_DEVICE_TYPE_GPU (available)
+	dims              : 1
+	global work offset: [0]
+	global work size  : [8]
+	local  work size  : [8]
 ```
 
 
