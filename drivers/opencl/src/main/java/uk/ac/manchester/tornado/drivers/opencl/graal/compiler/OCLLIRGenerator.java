@@ -70,6 +70,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.ExprStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLTernary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class OCLLIRGenerator extends LIRGenerator {
 
@@ -281,7 +282,9 @@ public class OCLLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitNullCheck(Value value, LIRFrameState lirfs) {
-        unimplemented();
+        if (!TornadoOptions.IGNORE_NULL_CHECKS) {
+            unimplemented();
+        }
     }
 
     @Override
