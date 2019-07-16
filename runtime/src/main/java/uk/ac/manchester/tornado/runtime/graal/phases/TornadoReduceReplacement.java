@@ -229,6 +229,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         Iterator<Node> iterator = usages.iterator();
 
         while (iterator.hasNext()) {
+
             Node node = iterator.next();
 
             if (node instanceof StoreIndexedNode) {
@@ -300,7 +301,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                     // indexing from getParameters. This is an issue when having
                     // inheritance with interfaces from Apache Flink. See issue
                     // #185 on Github
-                    if (getNumberOfParameterNodes(graph) > parameterAnnotations.length) {
+                    if (!graph.method().isStatic() || getNumberOfParameterNodes(graph) > parameterAnnotations.length) {
                         index++;
                     }
 
