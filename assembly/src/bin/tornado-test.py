@@ -36,7 +36,7 @@ import time
 __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.TestHello",
 	"uk.ac.manchester.tornado.unittests.arrays.TestArrays",
-	"uk.ac.manchester.tornado.unittests.functional.TestFunctional",
+	"uk.ac.manchester.tornado.unittests.functional.TestLambdas",
 	"uk.ac.manchester.tornado.unittests.vectortypes.TestFloats",
 	"uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles",
 	"uk.ac.manchester.tornado.unittests.vectortypes.TestInts",
