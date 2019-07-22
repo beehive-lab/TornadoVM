@@ -1,31 +1,36 @@
 # TornadoVM 
 
-🌪️ TornadoVM is a practical heterogeneous programming framework for automatically accelerating Java programs on heterogeneous (OpenCL-compatible)  hardware. 
+🌪️ TornadoVM is a plug-in to OpenJDK that allows programmers to automatically run Java programs on 
+heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, GPUs (NVIDIA and AMD), integrated GPUs, and Intel FPGAS. 
 
 ### Releases
+  * TornadoVM 0.3  - 22/07/2019 : See [CHANGELOG](CHANGELOG.md)
   * TornadoVM 0.2  - 25/02/2019 : See [CHANGELOG](CHANGELOG.md)
   * Tornado 0.1.0  - 07/09/2018 : See [CHANGELOG](CHANGELOG.md)
 
 ## How to start? 
 
-#### From scratch:
+#### A) From scratch:
 
-The [INSTALL](INSTALL.md) page contains instructions on how to install TornadoVM while the [Examples](assembly/src/docs/2_EXAMPLES.md) page includes examples regarding running Java programs on GPUs. 
+The [INSTALL](INSTALL.md) page contains instructions on how to install TornadoVM while the [EXAMPLES](assembly/src/docs/2_EXAMPLES.md) page includes examples regarding running Java programs on GPUs. 
 
 We also maintain a live TornadoVM whitepaper document which you can download [here](https://www.dropbox.com/s/rbb2qv0q2wicgvy/main.pdf).
 
-#### TornadoVM Docker for NVIDIA GPUs:
+#### B) Using Docker
+
+##### TornadoVM Docker for NVIDIA GPUs:
+
+It requires the [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) runtime. 
 
 ```bash
 $ docker pull beehivelab/tornado-gpu:latest
 $ git clone https://github.com/beehive-lab/docker-tornado
 $ cd docker-tornado
-$ ./run.sh javac.py example/MatrixMultiplication.java
-$ ./run.sh tornado example/MatrixMultiplication 
+$ ./run_nvidia.sh javac.py example/MatrixMultiplication.java
+$ ./run_nvidia.sh tornado example/MatrixMultiplication 
 ```
 
-
-#### TornadoVM Docker for Intel Integrated GPUs:
+##### TornadoVM Docker for Intel Integrated GPUs:
 
 
 ```bash
@@ -37,6 +42,13 @@ $ ./run_intel.sh tornado example/MatrixMultiplication
 ```
 
 See our [docker-tornado](https://github.com/beehive-lab/docker-tornado) repository for more details.
+
+
+## What can I do with TornadoVM? 
+
+We have a use-case, [kfusion-tornadovm](https://github.com/beehive-lab/kfusion-tornadovm), for accelerating a computer-vision application implemented in Java using the Tornado-API to run on GPUs. 
+
+We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/master/examples/src/main/java/uk/ac/manchester/tornado/examples) that includes NBody, DFT, KMeans computation and matrix computations. 
 
 
 ## Selected Publications
@@ -52,7 +64,7 @@ See our [docker-tornado](https://github.com/beehive-lab/docker-tornado) reposito
 
 ### Citation
 
-If you are using **TornadoVM 0.2** (which includes the Dynamic Reconfiguration, the Initial FPGA support and CPU/GPU reductions), please use the following citation:
+If you are using **TornadoVM >= 0.2** (which includes the Dynamic Reconfiguration, the Initial FPGA support and CPU/GPU reductions), please use the following citation:
 
 ```bibtex
 @inproceedings{Fumero:DARHH:VEE:2019,
