@@ -68,7 +68,6 @@ public class InstanceReduction extends TornadoTestBase {
                 .execute();
         // @formatter:on
 
-        System.out.println("output: " + result[0]);
         assertEquals(expected[0], result[0], 0.1f);
     }
 
