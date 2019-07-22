@@ -5,13 +5,13 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 22/07/2019
 
   * New Matrix 2D and Matrix 3D classes with type specializations. 
-  * New API-call `Taskschedule#batch` for batch processing. It allows programmers to run with more data than the maximum capacity of the accelerator by creating batches of executions. 
+  * New API-call `TaskSchedule#batch` for batch processing. It allows programmers to run with more data than the maximum capacity of the accelerator by creating batches of executions. 
   * FPGA full automatic compilation pipeline. 
   * FPGA options simplified:
       * `-Dtornado.precompiled.binary=<binary>` for loading the bitstream.
       * `-Dtornado.opencl.userelative=True` for using relative addresses.
       * `-Dtornado.opencl.codecache.loadbin=True` *removed*. 
-  * Reductions support enhanced and fully automated process on GPUs and CPUs.  
+  * Reductions support enhanced and fully automated on GPUs and CPUs.  
   * Initial support for reductions on FPGAs. 
   * Initial API for profiling tasks integrated.
 

@@ -64,7 +64,7 @@ We also have a set of [examples](https://github.com/beehive-lab/TornadoVM/tree/m
 
 ### Citation
 
-If you are using **TornadoVM >= 0.2** (which includes the Dynamic Reconfiguration, the Initial FPGA support and CPU/GPU reductions), please use the following citation:
+If you are using **TornadoVM >= 0.2** (which includes the Dynamic Reconfiguration, the initial FPGA support and CPU/GPU reductions), please use the following citation:
 
 ```bibtex
 @inproceedings{Fumero:DARHH:VEE:2019,
