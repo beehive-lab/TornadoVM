@@ -32,8 +32,8 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
 public interface TornadoAcceleratorDriver extends TornadoDriver {
 
-    public Providers getProviders();
+    Providers getProviders();
 
-    public TornadoSuitesProvider getSuitesProvider();
+    TornadoSuitesProvider getSuitesProvider();
 
 }

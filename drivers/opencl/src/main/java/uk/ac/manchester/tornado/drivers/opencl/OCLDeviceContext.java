@@ -29,6 +29,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_SYNC_FLUSH;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
@@ -190,6 +191,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
 
     /*
      * ASync reads from device
+     * 
      */
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
         return queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);
@@ -274,7 +276,6 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
 
     public int readBuffer(long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {
         return queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, waitEvents);
-
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, double[] array, long hostOffset, int[] waitEvents) {

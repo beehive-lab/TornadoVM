@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
  * In the pre-compiled mode:
  * <p>
  * <code>
- * tornado --debug -Ds0.t0.device=0:1 -Dtornado.opencl.codecache.loadbin=True
+ * tornado --debug -Ds0.t0.device=0:1 \
  * -Dtornado.precompiled.binary=path/to/lookupBufferAddress,s0.t0.device=0:1
  * -Dtornado.opencl.userelative=True uk.ac.manchester.tornado.examples.fpga.InitFPGA
  * </code>

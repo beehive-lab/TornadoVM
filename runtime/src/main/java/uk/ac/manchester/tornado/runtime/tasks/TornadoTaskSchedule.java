@@ -25,7 +25,6 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitiveClass;
@@ -41,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,6 +61,7 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task15;
@@ -75,10 +76,14 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
+import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
+import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
+import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
@@ -97,7 +102,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private TornadoExecutionContext graphContext;
 
-    private byte[] hlcode = new byte[2048];
+    private byte[] highLevelCode = new byte[2048];
     private ByteBuffer hlBuffer;
     private TornadoVMGraphCompilationResult result;
     private long batchSizeBytes = -1;
@@ -122,27 +127,32 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * Options for Dynamic Reconfiguration
      */
-    public static final boolean DEBUG_POLICY = Boolean.parseBoolean(System.getProperty("tornado.dynamic.verbose", "False"));
-    public static final boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
+    private static final boolean EXEPERIMENTAL_MULTI_HOST_HEAP = false;
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int PERFORMANCE_WARMUP = 3;
     private final static boolean TIME_IN_NANOSECONDS = Tornado.TIME_IN_NANOSECONDS;
-    public static final String TASK_SCHEDULE_PREFIX = "XXX";
-
+    private static final String TASK_SCHEDULE_PREFIX = "XXX";
     private static final ConcurrentHashMap<Policy, ConcurrentHashMap<String, HistoryTable>> executionHistoryPolicy = new ConcurrentHashMap<>();
+    private static final int HISTORY_POINTS_PREDICTION = 5;
+    private static final boolean USE_GLOBAL_TASK_CACHE = false;
 
-    public static final int HISTORY_POINTS_PREDICTION = 5;
-
-    public static final boolean USE_GLOBAL_TASK_CACHE = false;
+    /**
+     * Options for new reductions - experimental
+     */
+    private boolean reduceExpressionRewritten = false;
+    private ReduceTaskSchedule reduceTaskScheduleMeta;
+    private boolean reduceAnalysis = false;
+    MetaReduceCodeAnalysis analysisTaskSchedule;
 
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
      * 
      * @param taskScheduleName
+     *            Task-Schedule name
      */
     public TornadoTaskSchedule(String taskScheduleName) {
         graphContext = new TornadoExecutionContext(taskScheduleName);
-        hlBuffer = ByteBuffer.wrap(hlcode);
+        hlBuffer = ByteBuffer.wrap(highLevelCode);
         hlBuffer.order(ByteOrder.LITTLE_ENDIAN);
         hlBuffer.rewind();
         result = null;
@@ -192,7 +202,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             CompilableTask compilableTask = (CompilableTask) task;
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             new SketchRequest(compilableTask.meta(), resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
-
         }
 
         hlBuffer.put(TornadoGraphBitcodes.CONTEXT.index());
@@ -206,13 +215,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         hlBuffer.put(TornadoGraphBitcodes.ARG_LIST.index());
         hlBuffer.putInt(args.length);
 
-        for (int i = 0; i < args.length; i++) {
-            final Object arg = args[i];
+        for (final Object arg : args) {
             index = graphContext.insertVariable(arg);
             if (arg.getClass().isPrimitive() || isBoxedPrimitiveClass(arg.getClass())) {
                 hlBuffer.put(TornadoGraphBitcodes.LOAD_PRIM.index());
             } else {
-                guarantee(arg != null, "null argument passed to task");
                 hlBuffer.put(TornadoGraphBitcodes.LOAD_REF.index());
             }
             hlBuffer.putInt(index);
@@ -255,7 +262,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      *            boolean that specifies if set a new device or not.
      */
     private void compile(boolean setNewDevice) {
-        final ByteBuffer buffer = ByteBuffer.wrap(hlcode);
+        final ByteBuffer buffer = ByteBuffer.wrap(highLevelCode);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.limit(hlBuffer.position());
 
@@ -308,7 +315,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * task</li>
      * </p>
      * 
-     * @return {@CompileInfo}
+     * @return {@link CompileInfo}
      */
     private CompileInfo extractCompileInfo() {
         if (result == null && isLastDeviceListEmpty()) {
@@ -331,14 +338,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void compileTaskToOpenCL() {
-        if (this.batchSizeBytes != -1) {
-            vm.compileWithBatches();
-        } else {
-            vm.compile();
-        }
+        vm.compile();
     }
 
-    private void precompilationForFPGA() {
+    private void preCompilationForFPGA() {
         // If current FPGA execution and JIT mode => run warmup
         if (Tornado.FPGA_EMULATION && Tornado.ACCELERATOR_IS_FPGA) {
             if (Tornado.DEBUG) {
@@ -366,14 +369,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
 
         if (compile) {
-            precompilationForFPGA();
+            preCompilationForFPGA();
         }
 
-        if (this.batchSizeBytes != -1) {
-            event = vm.executeBatches();
-        } else {
-            event = vm.execute();
-        }
+        event = vm.execute();
     }
 
     @Override
@@ -527,8 +526,50 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return graphContext.meta();
     }
 
+    private void runReduceTaskSchedule() {
+        this.reduceTaskScheduleMeta.executeExpression();
+    }
+
+    private void rewriteTaskForReduceSkeleton(MetaReduceCodeAnalysis analysisTaskSchedule) {
+        reduceTaskScheduleMeta = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects);
+        reduceTaskScheduleMeta.scheduleWithReduction(analysisTaskSchedule);
+        reduceExpressionRewritten = true;
+    }
+
+    private AbstractTaskGraph reduceAnalysis() {
+        AbstractTaskGraph graph = null;
+        if (analysisTaskSchedule == null && !reduceAnalysis) {
+            analysisTaskSchedule = ReduceCodeAnalysis.analysisTaskSchedule(taskPackages);
+            reduceAnalysis = true;
+            if (analysisTaskSchedule != null && analysisTaskSchedule.isValid()) {
+                rewriteTaskForReduceSkeleton(analysisTaskSchedule);
+                graph = this;
+            }
+        }
+        return graph;
+    }
+
+    private AbstractTaskGraph analyzeSkeletonAndRun() {
+        AbstractTaskGraph graph = null;
+        if (!reduceExpressionRewritten) {
+            graph = reduceAnalysis();
+        } else {
+            runReduceTaskSchedule();
+            graph = this;
+        }
+        return graph;
+    }
+
     @Override
     public AbstractTaskGraph schedule() {
+        AbstractTaskGraph executionGraph = null;
+        if (TornadoOptions.EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
+            executionGraph = analyzeSkeletonAndRun();
+        }
+
+        if (executionGraph != null) {
+            return executionGraph;
+        }
         scheduleInner();
         return this;
     }
@@ -623,7 +664,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             for (int i = 0; i < threads.length; i++) {
                 isAlive = threads[i].isAlive();
                 if (!isAlive) {
-                    if (DEBUG_POLICY) {
+                    if (TornadoOptions.DEBUG_POLICY) {
                         System.out.println("Thread " + threads[i].getName() + " finished");
                     }
                     winner = i;
@@ -640,7 +681,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return winner;
     }
 
-    private void performStreamInThread(TaskSchedule task, ArrayList<Object> inputObjects) {
+    static void performStreamInThread(TaskSchedule task, ArrayList<Object> inputObjects) {
         int numObjectsCopyIn = inputObjects.size();
         switch (numObjectsCopyIn) {
             case 0:
@@ -662,6 +703,18 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 break;
             case 6:
                 task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5));
+            case 7:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6));
+                break;
+            case 8:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7));
+                break;
+            case 9:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8));
+            case 10:
+                task.streamIn(inputObjects.get(0), inputObjects.get(1), inputObjects.get(2), inputObjects.get(3), inputObjects.get(4), inputObjects.get(5), inputObjects.get(6), inputObjects.get(7),
+                        inputObjects.get(8), inputObjects.get(9));
                 break;
             default:
                 System.out.println("COPY-IN Not supported yet: " + numObjectsCopyIn);
@@ -669,7 +722,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private void performStreamOutThreads(TaskSchedule task, ArrayList<Object> outputArrays) {
+    static void performStreamOutThreads(TaskSchedule task, ArrayList<Object> outputArrays) {
         int numObjectsCopyOut = outputArrays.size();
         switch (numObjectsCopyOut) {
             case 0:
@@ -691,6 +744,20 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 break;
             case 6:
                 task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5));
+                break;
+            case 7:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6));
+                break;
+            case 8:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7));
+                break;
+            case 9:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8));
+                break;
+            case 10:
+                task.streamOut(outputArrays.get(0), outputArrays.get(1), outputArrays.get(2), outputArrays.get(3), outputArrays.get(4), outputArrays.get(5), outputArrays.get(6), outputArrays.get(7),
+                        outputArrays.get(8), outputArrays.get(9));
                 break;
             default:
                 System.out.println("COPY-OUT Not supported yet: " + numObjectsCopyOut);
@@ -716,7 +783,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             }
             final long endSequentialCode = timer.time();
             Thread.currentThread().setName("Thread-sequential");
-            if (DEBUG_POLICY) {
+            if (TornadoOptions.DEBUG_POLICY) {
                 System.out.println("Seq finished: " + Thread.currentThread().getName());
             }
 
@@ -811,7 +878,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if ((policy == Policy.PERFORMANCE || policy == Policy.END_2_END) && (masterThreadID == Thread.currentThread().getId())) {
             int deviceWinnerIndex = synchronizeWithPolicy(policy, totalTimers);
             policyTimeTable.put(policy, deviceWinnerIndex);
-            if (DEBUG_POLICY) {
+            if (TornadoOptions.DEBUG_POLICY) {
                 System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
             }
         }
@@ -841,7 +908,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         for (TaskPackage taskPackage : taskPackages) {
             TornadoRuntime.setProperty(this.getTaskScheduleName() + "." + taskPackage.getId() + ".device", "0:" + deviceWinnerIndex);
         }
-        if (DEBUG_POLICY) {
+        if (TornadoOptions.DEBUG_POLICY) {
             System.out.println("Running in parallel device: " + deviceWinnerIndex);
         }
         TaskSchedule task = taskScheduleIndex.get(deviceWinnerIndex);
@@ -876,11 +943,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     private Object cloneObject(Object o) {
         if (o instanceof float[]) {
-            float[] clone = ((float[]) o).clone();
-            return clone;
+            return ((float[]) o).clone();
         } else if (o instanceof int[]) {
-            int[] clone = ((int[]) o).clone();
-            return clone;
+            return ((int[]) o).clone();
         } else {
             throw new RuntimeException("Data type cloning not supported");
         }
@@ -950,7 +1015,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 String name = taskScheduleName + "." + taskID;
                 for (String s : ignoreTaskNames) {
                     if (s.equals(name)) {
-                        totalTimers[taskNumber] = Integer.MAX_VALUE;
+                        totalTimers[taskNumber] = Long.MAX_VALUE;
                         ignoreTask = true;
                         break;
                     }
@@ -1032,11 +1097,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MillesecTimer();
         int numDevices = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX).getDeviceCount();
         final int totalTornadoDevices = numDevices + 1;
-        final int indexSequential = numDevices;
         long[] totalTimers = new long[totalTornadoDevices];
 
         // Run Sequential
-        runSequentialTaskSchedule(policy, timer, totalTimers, indexSequential);
+        runSequentialTaskSchedule(policy, timer, totalTimers, numDevices);
 
         // Run Task Schedules on the accelerator
         runAllTaskSchedulesInAcceleratorsSequentually(numDevices, timer, policy, totalTimers);
@@ -1047,7 +1111,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
             updateHistoryTables(policy, deviceWinnerIndex);
 
-            if (DEBUG_POLICY) {
+            if (TornadoOptions.DEBUG_POLICY) {
                 System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
             }
         }
@@ -1058,7 +1122,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * output objects per device.
      * 
      * @param policy
+     *            input policy
      * @param numDevices
+     *            number of devices
      */
     private void restoreVarsIntoJavaHeap(Policy policy, int numDevices) {
         if (policyTimeTable.get(policy) < numDevices) {
@@ -1096,7 +1162,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         return size;
     }
 
-    public void runInParallel(int deviceWinnerIndex, int numDevices) {
+    private void runInParallel(int deviceWinnerIndex, int numDevices) {
         // Run with the winner device
         if (deviceWinnerIndex >= numDevices) {
             // Last index corresponds to the sequential in HostVM
@@ -1154,7 +1220,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         } else {
             Object codeTask0 = taskPackages.get(0).getTaskParameters()[0];
-            String fullMethodName = TaskUtils.resolveMethodHandle(codeTask0).toGenericString();
+            String fullMethodName = Objects.requireNonNull(TaskUtils.resolveMethodHandle(codeTask0)).toGenericString();
             // if policy registered but method not explored yet
             ConcurrentHashMap<String, HistoryTable> methodHistory = executionHistoryPolicy.get(policy);
             if (!methodHistory.containsKey(fullMethodName)) {
@@ -1232,7 +1298,17 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         Method method = TaskUtils.resolveMethodHandle(parameters[0]);
         ScheduleMetaData meta = meta();
 
+        // Set the number of threads to run. If 0, it will execute as many
+        // threads as input size (after Tornado analyses the right block-size).
+        // Otherwise, we force the number of threads to run. This is the case,
+        // for example, when executing reductions in which the input size is not
+        // power of two.
+        meta.setNumThreads(taskPackage.getNumThreadsToRun());
+
         switch (type) {
+            case 0:
+                addInner(TaskUtils.createTask(method, meta, id, (Task) parameters[0]));
+                break;
             case 1:
                 addInner(TaskUtils.createTask(method, meta, id, (Task1) parameters[0], parameters[1]));
                 break;
@@ -1299,7 +1375,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
 
         // compute bytes
-        switch (units) {
+        switch (Objects.requireNonNull(units)) {
             case "MB":
                 this.batchSizeBytes = value * 1_000_000;
                 break;
@@ -1310,5 +1386,4 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
                 throw new TornadoRuntimeException("Units not supported: " + units);
         }
     }
-
 }

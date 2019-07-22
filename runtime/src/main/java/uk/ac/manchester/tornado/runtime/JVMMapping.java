@@ -91,7 +91,7 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public TornadoSchedulingStrategy getPreferedSchedule() {
+    public TornadoSchedulingStrategy getPreferredSchedule() {
         return TornadoSchedulingStrategy.PER_BLOCK;
     }
 

@@ -50,7 +50,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     private long heapPosition;
     private boolean initialised;
 
-    public static final int STACK_ALIGNMENT_SIZE = 32;
+    public static final int STACK_ALIGNMENT_SIZE = 128;
 
     public OCLMemoryManager(final OCLDeviceContext device) {
         deviceContext = device;
@@ -110,7 +110,6 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
             throw new TornadoOutOfMemoryException("Out of memory on the target device -> " + deviceContext.getDevice().getDeviceName() + ". [Heap Limit is: "
                     + RuntimeUtilities.humanReadableByteCount(heapLimit, true) + " and the application requires: " + RuntimeUtilities.humanReadableByteCount(headerStart + bytes, true) + "]");
         }
-
         return headerStart;
     }
 

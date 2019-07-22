@@ -43,7 +43,6 @@ public class VectorAddTest {
         }
 
         System.out.printf("vector<float3>: %s\n", a.toString());
-
         System.out.printf("vector<float3>: %s\n", b.toString());
 
         //@formatter:off
@@ -54,7 +53,5 @@ public class VectorAddTest {
         //@formatter:on
 
         System.out.printf("result: %s\n", results.toString());
-
     }
-
 }

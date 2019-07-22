@@ -1,7 +1,13 @@
 #!/bin/bash
 
 mvn clean
-mvn -Dcmake.root.dir=$CMAKE_ROOT package
+
+if [[ $1 == "OFFLINE" ]] 
+then
+	mvn -o -Dcmake.root.dir=$CMAKE_ROOT package
+else
+	mvn -Dcmake.root.dir=$CMAKE_ROOT package
+fi
 
 if [ $? -eq 0 ] 
 then

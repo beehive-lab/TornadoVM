@@ -32,11 +32,11 @@ import subprocess
 import sys
 import time
 
-## Include here the new test clasess in Tornado
+## List of classes to be tested. Include new unittest classes here
 __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.TestHello",
 	"uk.ac.manchester.tornado.unittests.arrays.TestArrays",
-	"uk.ac.manchester.tornado.unittests.functional.TestFunctional",
+	"uk.ac.manchester.tornado.unittests.functional.TestLambdas",
 	"uk.ac.manchester.tornado.unittests.vectortypes.TestFloats",
 	"uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles",
 	"uk.ac.manchester.tornado.unittests.vectortypes.TestInts",
@@ -46,64 +46,58 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice",
 	"uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice",
 	"uk.ac.manchester.tornado.unittests.images.TestImages",
+	"uk.ac.manchester.tornado.unittests.images.TestResizeImage",
 	"uk.ac.manchester.tornado.unittests.branching.TestConditionals",
 	"uk.ac.manchester.tornado.unittests.loops.TestLoops",
 	"uk.ac.manchester.tornado.unittests.matrices.TestMatrices",
-	"uk.ac.manchester.tornado.unittests.images.TestResizeImage",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles",
-	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
+	"uk.ac.manchester.tornado.unittests.reductions.InstanceReduction",
 	"uk.ac.manchester.tornado.unittests.instances.TestInstances",
 	"uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes",
 	"uk.ac.manchester.tornado.unittests.api.TestAPI",
+	"uk.ac.manchester.tornado.unittests.math.TestMath",
 	"uk.ac.manchester.tornado.unittests.batches.TestBatches",
 	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypes",
 	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypesDouble",
 	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypesLong",
+	"uk.ac.manchester.tornado.unittests.lambdas.TestLambdas",
+	"uk.ac.manchester.tornado.unittests.logic.TestLogic",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic",
+	"uk.ac.manchester.tornado.unittests.fields.TestFields",
+	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
 ]
 
+## List of tests that can be ignored. Format: class#testMethod
+__TORNADO_TESTS_WHITE_LIST__ = [
+	"uk.ac.manchester.tornado.unittests.logic.TestLogic#testLogic03"
+	"uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer#testArrayMigration",
+]
+
+# ################################################################################################################
 ## Options
 __MAIN_TORNADO_TEST_RUNNER__ = " uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
-__MAIN_TORNADO_JUNIT__ = "org.junit.runner.JUnitCore "
-__IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintCFG=true "
-__PRINT_OPENCL_KERNEL__ = "-Dtornado.opencl.source.print=True "
-__DEBUG_TORNADO__ = "-Dtornado.debug=True "
-__IGNORE_INTEL_PLATFORM__ = "-Dtornado.ignore.platform=Intel "  # Due to a bug when running with optirun
-__PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
+__MAIN_TORNADO_JUNIT__ 		 = "org.junit.runner.JUnitCore "
+__IGV_OPTIONS__ 			 = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintCFG=true "
+__PRINT_OPENCL_KERNEL__ 	 = "-Dtornado.opencl.source.print=True "
+__DEBUG_TORNADO__ 			 = "-Dtornado.debug=True "
+__IGNORE_INTEL_PLATFORM__    = "-Dtornado.ignore.platform=Intel "  # Due to a bug when running with Linux-optirun
+__PRINT_EXECUTION_TIMER__    = "-Dtornado.debug.executionTime=True "
+# ################################################################################################################
 
-## 
-__VERSION__ = "0.4_26032019"
-
-__TORNADO_TESTS_WHITE_LIST__ = [
-	"uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTest#testPrebuild01",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testReductionAnnotationCPUSimple",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testReductionAnnotation", 
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testMultiplicationReduction",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testSequentialReduction",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testReduction01",    
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testMapReduce",               
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testThreadSchuler",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testSumInts2",     
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers#testSumInts3",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testSumFloats",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats#testMultFloats",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles#testSumDoubles",
-	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles#testMultdoubles",
-	"uk.ac.manchester.tornado.unittests.loops.TestLoops#testInnertForEach",
-	"uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer#testArrayMigration",
-	]
-
+__VERSION__ = "0.6_16052019"
 
 __TEST_NOT_PASSED__= False
 
-RED   = "\033[1;31m"  
-BLUE  = "\033[1;34m"
-CYAN  = "\033[1;36m"
-GREEN = "\033[0;32m"
-RESET = "\033[0;0m"
-BOLD    = "\033[;1m"
-REVERSE = "\033[;7m"
+class Colors:
+	RED   = "\033[1;31m"  
+	BLUE  = "\033[1;34m"
+	CYAN  = "\033[1;36m"
+	GREEN = "\033[0;32m"
+	RESET = "\033[0;0m"
+	BOLD    = "\033[;1m"
+	REVERSE = "\033[;7m"
 
 def composeAllOptions(args):
 	""" This method concatenates all JVM options that will be passed to 
@@ -189,7 +183,7 @@ def processStats(out, stats):
 				name = name[:-16]
 
 			if (className + "#" + name in __TORNADO_TESTS_WHITE_LIST__):
-				print RED + "Test: " + className + "#" + name + " in whiteList." + RESET
+				print Colors.RED + "Test: " + className + "#" + name + " in whiteList." + Colors.RESET
 			else:
 				## set a flag
 				__TEST_NOT_PASSED__ = True
@@ -240,23 +234,23 @@ def runTests(args):
 				stats = runCommandWithStats(command, stats)
 		
 		end = time.time()
-		print CYAN
+		print Colors.CYAN
 
 		if (args.fast == False):
-			print GREEN
+			print Colors.GREEN
 			print "=================================================="
-			print BLUE + "              Unit tests report " + GREEN
+			print Colors.BLUE + "              Unit tests report " + Colors.GREEN
 			print "=================================================="
-			print CYAN
+			print Colors.CYAN
 			print stats
 			coverage = stats["[PASS]"] / float((stats["[PASS]"] + stats["[FAILED]"])) * 100.0
 			print "Coverage: " + str(round(coverage, 2))  + "%" 
-			print GREEN
+			print Colors.GREEN
 			print "=================================================="
-			print CYAN
+			print Colors.CYAN
 
 		print "Total Time(s): " + str(end-start)
-		print RESET
+		print Colors. RESET
 		
 
 def runWithJUnit(args):
@@ -290,6 +284,7 @@ def parseArguments():
 	parser.add_argument('--jvm', "-J", dest="jvmFlags", required=False, default=None, help="Pass options to the JVM e.g. -J=\"-Ds0.t0.device=0:1\"")	
 	args = parser.parse_args()
 	return args
+
 
 def writeStatusInFile():
 	f = open(".unittestingStatus", "w")

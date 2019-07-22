@@ -32,7 +32,7 @@ public class EmptyEvent implements Event {
 
     private final String name;
 
-    public EmptyEvent(String name) {
+    private EmptyEvent(String name) {
         this.name = name;
     }
 

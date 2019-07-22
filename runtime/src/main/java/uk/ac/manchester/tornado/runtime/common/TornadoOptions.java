@@ -29,4 +29,13 @@ public class TornadoOptions {
 
     public static boolean printBytecodes = Boolean.parseBoolean(Tornado.getProperty("tornado.print.bytecodes", "False"));
 
+    public static final boolean DEBUG_POLICY = Boolean.parseBoolean(System.getProperty("tornado.dynamic.verbose", "False"));
+
+    public static final boolean EXPERIMENTAL_REDUCE = Boolean.parseBoolean(System.getProperty("tornado.experimental.reduce", "True"));
+
+    public static StringBuffer FPGA_BINARIES = System.getProperty("tornado.precompiled.binary", null) != null ? new StringBuffer(System.getProperty("tornado.precompiled.binary", null)) : null;
+
+    // Temporal option
+    public static final boolean IGNORE_NULL_CHECKS = Boolean.parseBoolean(System.getProperty("tornado.ignore.nullchecks", "False"));
+
 }

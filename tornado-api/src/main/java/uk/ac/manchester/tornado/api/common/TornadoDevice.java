@@ -142,8 +142,6 @@ public interface TornadoDevice {
      */
     int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
 
-    boolean isDistibutedMemory();
-
     /**
      * It resolves an pending event.
      * 
@@ -196,5 +194,7 @@ public interface TornadoDevice {
     long getMaxAllocMemory();
 
     long getMaxGlobalMemory();
+
+    boolean isDistibutedMemory();
 
 }

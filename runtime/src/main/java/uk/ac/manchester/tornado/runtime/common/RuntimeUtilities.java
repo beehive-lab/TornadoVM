@@ -167,7 +167,7 @@ public class RuntimeUtilities {
     /**
      * Returns true if object is a boxed type
      *
-     * @param obj
+     * @param clazz
      *
      * @return
      */
@@ -198,7 +198,7 @@ public class RuntimeUtilities {
     /**
      * Returns true if object is a boxed type
      *
-     * @param obj
+     * @param clazz
      *
      * @return
      */

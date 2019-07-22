@@ -37,7 +37,7 @@
 #include "utils.h"
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLPlatform
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
  * Method:    clGetPlatformInfo
  * Signature: (JI)Ljava/lang/String;
  */
@@ -54,7 +54,7 @@ JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatfo
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLPlatform
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
  * Method:    clGetDeviceCount
  * Signature: (JJ)I
  */
@@ -68,7 +68,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLPlatform
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
  * Method:    clGetDeviceIDs
  * Signature: (JJ[J)I
  */
@@ -97,7 +97,7 @@ void context_notify(const char *errinfo, const void *private_info, size_t cb, vo
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLPlatform
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
  * Method:    clCreateContext
  * Signature: (J[J)J
  */

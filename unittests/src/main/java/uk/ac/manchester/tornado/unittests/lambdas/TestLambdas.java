@@ -15,46 +15,46 @@
  * limitations under the License.
  * 
  */
-
-package uk.ac.manchester.tornado.unittests.functional;
+package uk.ac.manchester.tornado.unittests.lambdas;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Random;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-public class TestFunctional {
+public class TestLambdas extends TornadoTestBase {
 
     @Test
-    public void testVectorFunctionLambda() {
-        final int numElements = 4096;
-        double[] a = new double[numElements];
-        double[] b = new double[numElements];
-        double[] c = new double[numElements];
+    public void testLambda01() {
 
-        IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = (float) Math.random();
-            b[i] = (float) Math.random();
-        });
+        final int numElements = 256;
+        int[] a = new int[numElements];
+        int[] b = new int[numElements];
+
+        Random r = new Random();
+
+        IntStream.range(0, a.length).forEach(i -> a[i] = r.nextInt(100));
 
         //@formatter:off
         new TaskSchedule("s0")
-            .task("t0", (x, y, z) -> {	 
-                // Computation in a lambda expression
-                for (@Parallel int i = 0; i < z.length; i++) {
-                    z[i] = x[i] + y[i];
-                }    	 
-            }, a, b, c)
-            .streamOut(c)
+            .task("t0", (x, y) -> 
+            {
+              for (@Parallel int i = 0; i < x.length; i++) {
+                  x[i] = y[i] * y[i];
+              }
+            }, a, b)
+            .streamOut(a)
             .execute();
         //@formatter:on
 
-        for (int i = 0; i < c.length; i++) {
-            assertEquals(a[i] + b[i], c[i], 0.001);
+        for (int i = 0; i < b.length; i++) {
+            assertEquals(b[i] * b[i], a[i]);
         }
     }
 

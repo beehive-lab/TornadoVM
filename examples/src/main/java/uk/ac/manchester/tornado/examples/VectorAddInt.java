@@ -42,16 +42,18 @@ public class VectorAddInt {
         Arrays.fill(b, 20);
 
         //@formatter:off
-        TaskSchedule graph = new TaskSchedule("s0")
+        TaskSchedule schedule = new TaskSchedule("s0")
                 .task("t0", VectorAddInt::vectorAdd, a, b, c)
                 .streamOut(c);
         //@formatter:on
 
         for (int idx = 0; idx < 10; idx++) {
-
-            graph.execute();
-
+            // Parallel
+            schedule.execute();
+            // Sequential
             vectorAdd(a, b, result);
+
+            // Check Result
             boolean wrongResult = false;
             for (int i = 0; i < c.length; i++) {
                 if (c[i] != 30) {

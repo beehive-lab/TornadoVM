@@ -160,7 +160,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public TornadoSchedulingStrategy getPreferedSchedule() {
+    public TornadoSchedulingStrategy getPreferredSchedule() {
         if (null != device.getDeviceType()) {
 
             if (Tornado.FORCE_ALL_TO_GPU) {
@@ -233,9 +233,19 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             OCLProviders providers = (OCLProviders) getBackend().getProviders();
             final OCLCompilationResult result = OCLCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
             if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
+                // Return the code from the cache
                 return deviceContext.getCode(task.getId(), resolvedMethod.getName());
             }
-            return Tornado.ACCELERATOR_IS_FPGA ? deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA) : deviceContext.installCode(result);
+
+            // Compile the code
+            if (Tornado.ACCELERATOR_IS_FPGA) {
+                // A) for FPGA
+                return deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA);
+            } else {
+                // B) for CPU multicore or GPU
+                return deviceContext.installCode(result);
+            }
+
         } catch (Exception e) {
             driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
             driver.fatal("exception occured when compiling %s", ((CompilableTask) task).getMethod().getName());

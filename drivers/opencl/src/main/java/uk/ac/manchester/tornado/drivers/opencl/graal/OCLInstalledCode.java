@@ -88,6 +88,10 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return valid;
     }
 
+    public OCLKernel getKernel() {
+        return kernel;
+    }
+
     /**
      * It executes a kernel with 1 thread (the equivalent of calling
      * clEnqueueTask.
@@ -157,6 +161,10 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     @Override
     public byte[] getCode() {
         return code;
+    }
+
+    public String getGeneratedSourceCode() {
+        return new String(code);
     }
 
     /**
@@ -274,28 +282,39 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
     }
 
-    private void executeInParallel(final OCLCallStack stack, final TaskMetaData meta, long batchThreads) {
+    private void debugInfo(final TaskMetaData meta) {
+        if (meta.isDebug()) {
+            meta.printThreadDims();
+        }
+    }
+
+    private int submitSequential(final TaskMetaData meta) {
+        final int task;
+        debugInfo(meta);
+        if ((meta.getGlobalWork() == null) || (meta.getGlobalWork().length == 0)) {
+            task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
+        } else {
+            task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, meta.getGlobalWork(), meta.getLocalWork(), null);
+        }
+        return task;
+    }
+
+    private int submitParallel(final OCLCallStack stack, final TaskMetaData meta, long batchThreads) {
+        final int task;
+        if (meta.enableThreadCoarsener()) {
+            task = DEFAULT_SCHEDULER.submit(kernel, meta, batchThreads);
+        } else {
+            task = scheduler.submit(kernel, meta, batchThreads);
+        }
+        return task;
+    }
+
+    private void launchKernel(final OCLCallStack stack, final TaskMetaData meta, long batchThreads) {
         final int task;
         if (meta.isParallel()) {
-            if (meta.enableThreadCoarsener()) {
-                task = DEFAULT_SCHEDULER.submit(kernel, meta, null, batchThreads);
-            } else {
-                task = scheduler.submit(kernel, meta, null, batchThreads);
-            }
+            task = submitParallel(stack, meta, batchThreads);
         } else {
-            if (meta.isDebug()) {
-                System.out.println("Running on: ");
-                System.out.println("\tPlatform: " + meta.getDevice().getPlatformName());
-                if (meta.getDevice() instanceof OCLTornadoDevice) {
-                    System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getDevice()).getDevice().getDeviceName());
-                }
-            }
-
-            if (meta.getGlobalWork() == null) {
-                task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
-            } else {
-                task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, meta.getGlobalWork(), meta.getLocalWork(), null);
-            }
+            task = submitSequential(meta);
         }
 
         if (meta.shouldDumpProfiles()) {
@@ -311,7 +330,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
     private void checkKernelNotNull() {
         if (kernel == null) {
-            throw new TornadoRuntimeException("[ERROR] Generated Kernel is NULL. \n\nPlease report the issue to https://github.com/beehive-lab/TornadoVM");
+            throw new TornadoRuntimeException("[ERROR] Generated Kernel is NULL. \nPlease report this issue to https://github.com/beehive-lab/TornadoVM");
         }
     }
 
@@ -337,7 +356,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         if (meta == null) {
             executeSingleThread();
         } else {
-            executeInParallel(stack, meta, batchThreads);
+            launchKernel(stack, meta, batchThreads);
         }
     }
 

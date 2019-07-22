@@ -23,7 +23,7 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.runtime.tasks;
+package uk.ac.manchester.tornado.runtime.analyzer;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
@@ -40,6 +40,7 @@ import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task15;
@@ -54,6 +55,8 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.domain.IntDomain;
+import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
+import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 public class TaskUtils {
@@ -71,6 +74,15 @@ public class TaskUtils {
         return createTask(null, id, entryPoint, object, false, args);
     }
 
+    /**
+     * When obtaining the method to be compiled it returns a lambda expression
+     * that contains the invocation to the actual code. The actual code is an
+     * INVOKE that is inside the apply method of the lambda. This method
+     * searches for the nested method with the actual code to be compiled.
+     * 
+     * @param task
+     *            Input Tornado task that corresponds to the user code.
+     */
     public static Method resolveMethodHandle(Object task) {
         final Class<?> type = task.getClass();
 
@@ -107,7 +119,6 @@ public class TaskUtils {
                     m.setAccessible(true);
                     return m;
                 } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-
                     e.printStackTrace();
                 }
                 break;
@@ -136,8 +147,12 @@ public class TaskUtils {
         return null;
     }
 
-    public static <T1> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task1<T1> code, T1 arg) {
-        return createTask(meta, id, method, code, true, arg);
+    public static <T1> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task code) {
+        return createTask(meta, id, method, code, true);
+    }
+
+    public static <T1> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task1<T1> code, T1 arg1) {
+        return createTask(meta, id, method, code, true, arg1);
     }
 
     public static <T1, T2> CompilableTask createTask(Method method, ScheduleMetaData meta, String id, Task2<T1, T2> code, T1 arg1, T2 arg2) {
@@ -187,7 +202,7 @@ public class TaskUtils {
         return createTask(meta, id, method, code, true, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
     }
 
-    public static Object[] extractCapturedVariables(Object code) {
+    private static Object[] extractCapturedVariables(Object code) {
         final Class<?> type = code.getClass();
         int count = 0;
         for (Field field : type.getDeclaredFields()) {
@@ -221,17 +236,12 @@ public class TaskUtils {
         return new PrebuiltTask(meta, id, entryPoint, filename, args, accesses, device, domain);
     }
 
-    public static CompilableTask createTask(ScheduleMetaData meta, String id, Runnable runnable) {
-        final Method method = resolveRunnableMethod(runnable);
-        return createTask(meta, id, method, runnable, false);
-    }
-
     private static CompilableTask createTask(ScheduleMetaData meta, String id, Method method, Object code, boolean extractCVs, Object... args) {
         final int numArgs;
         final Object[] cvs;
 
         if (extractCVs) {
-            cvs = TaskUtils.extractCapturedVariables(code);
+            cvs = extractCapturedVariables(code);
             numArgs = cvs.length + args.length;
         } else {
             cvs = null;
@@ -254,15 +264,4 @@ public class TaskUtils {
         return new CompilableTask(meta, id, method, parameters);
     }
 
-    private static Method resolveRunnableMethod(Runnable runnable) {
-        final Class<?> type = runnable.getClass();
-        try {
-            final Method method = type.getDeclaredMethod("run");
-            method.setAccessible(true);
-            return method;
-        } catch (NoSuchMethodException | SecurityException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
 }

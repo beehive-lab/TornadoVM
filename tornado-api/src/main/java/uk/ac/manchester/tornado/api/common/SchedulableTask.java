@@ -59,8 +59,8 @@ public interface SchedulableTask {
 
     String getId();
 
-    void setBachtThreads(long batchThreads);
+    void setBatchThreads(long batchThreads);
 
-    long getBachtThreads();
+    long getBatchThreads();
 
 }

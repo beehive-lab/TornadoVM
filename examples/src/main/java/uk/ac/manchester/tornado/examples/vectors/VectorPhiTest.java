@@ -25,7 +25,6 @@ import uk.ac.manchester.tornado.api.collections.types.VectorFloat3;
 public class VectorPhiTest {
 
     private static void test(VectorFloat3 a, VectorFloat3 results) {
-
         Float3 sum = new Float3();
         for (int i = 0; i < a.getLength(); i++) {
             sum = Float3.add(sum, a.get(i));

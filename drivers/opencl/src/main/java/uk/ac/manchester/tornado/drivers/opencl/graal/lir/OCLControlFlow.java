@@ -24,8 +24,8 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.CONST;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BRACKET_CLOSE;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BRACKET_OPEN;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CLOSE_PARENTHESIS;
+import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.OPEN_PARENTHESIS;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.BREAK;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.CASE;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants.COLON;
@@ -115,8 +115,7 @@ public class OCLControlFlow {
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
             asm.emitSymbol(FOR_LOOP);
-            asm.emitSymbol(BRACKET_OPEN);
-
+            asm.emitSymbol(OPEN_PARENTHESIS);
             asm.indentOff();
             asm.eolOff();
             asm.setDelimiter(EXPR_DELIMITER);
@@ -137,7 +136,7 @@ public class OCLControlFlow {
                 asm.emitString(" ", asm.position() - 2);
             }
 
-            asm.emitSymbol(BRACKET_CLOSE);
+            asm.emitSymbol(CLOSE_PARENTHESIS);
 
             asm.setDelimiter(STMT_DELIMITER);
             asm.indentOn();
@@ -252,9 +251,9 @@ public class OCLControlFlow {
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
             asm.emitSymbol(SWITCH);
-            asm.emitSymbol(BRACKET_OPEN);
+            asm.emitSymbol(OPEN_PARENTHESIS);
             asm.emitValue(crb, value);
-            asm.emitSymbol(BRACKET_CLOSE);
+            asm.emitSymbol(CLOSE_PARENTHESIS);
             asm.emit(" ");
             asm.beginScope();
         }

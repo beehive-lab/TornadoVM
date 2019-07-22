@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,8 +24,7 @@ import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;;
+import uk.ac.manchester.tornado.api.annotations.Reduce;;
 
 public class ReductionMaxFloats {
 
@@ -38,27 +37,7 @@ public class ReductionMaxFloats {
 
     public void run(int size) {
         float[] input = new float[size];
-
-        int numGroups = 1;
-        if (size > 256) {
-            numGroups = size / 256;
-        }
-        float[] result = null;
-
-        TornadoDeviceType deviceType = ConfigurationReduce.getDefaultDeviceType();
-        switch (deviceType) {
-            case CPU:
-                result = new float[Runtime.getRuntime().availableProcessors()];
-                break;
-            case GPU:
-            case FPGA:
-                result = new float[numGroups];
-                break;
-            case DEFAULT:
-                break;
-            default:
-                break;
-        }
+        float[] result = new float[1];
 
         Random r = new Random();
         IntStream.range(0, size).sequential().forEach(i -> {
@@ -78,10 +57,6 @@ public class ReductionMaxFloats {
             long start = System.nanoTime();
             task.execute();
             long end = System.nanoTime();
-
-            for (int j = 1; j < result.length; j++) {
-                result[0] = Math.max(result[0], result[j]);
-            }
 
             timers.add((end - start));
         }

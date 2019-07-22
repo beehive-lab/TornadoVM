@@ -69,7 +69,7 @@ public class HuffmanTornadoDecoder {
      * 
      * <p>
      * <code>
-     * $ tornado  --debug -Dtornado.opencl.codecache.loadbin=True -Dtornado.precompiled.binary=kernel/lookupBufferAddress,x0.t1.device=0:1 uk.ac.manchester.tornado.examples.compression.HuffmanTornadoDecoder 
+     * $ tornado  --debug -Dtornado.precompiled.binary=kernel/lookupBufferAddress,x0.t1.device=0:1 uk.ac.manchester.tornado.examples.compression.HuffmanTornadoDecoder 
      * </code>
      * </p>
      * 

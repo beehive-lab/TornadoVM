@@ -34,7 +34,7 @@ public abstract class TornadoTestBase {
         }
     }
 
-    public TornadoDeviceType getDefaultDeviceType() {
+    public static TornadoDeviceType getDefaultDeviceType() {
         final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(0);
         return driver.getTypeDefaultDevice();
     }

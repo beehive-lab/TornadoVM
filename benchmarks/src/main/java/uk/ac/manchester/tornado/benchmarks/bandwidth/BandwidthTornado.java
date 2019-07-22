@@ -29,7 +29,9 @@ public class BandwidthTornado extends BenchmarkDriver {
 
     private final int numElements;
 
-    private long[] a,b,c;
+    private long[] a;
+    private long[] b;
+    private long[] c;
 
     private TaskSchedule graph;
 
@@ -74,14 +76,10 @@ public class BandwidthTornado extends BenchmarkDriver {
 
     @Override
     public boolean validate() {
-
         final long[] result = new long[numElements];
-
         code();
         graph.clearProfiles();
-
         ladd(a, b, result);
-
         int errors = 0;
         for (int i = 0; i < numElements; i++) {
             if (result[i] != c[i]) {

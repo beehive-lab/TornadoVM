@@ -26,5 +26,8 @@
 package uk.ac.manchester.tornado.runtime.common;
 
 public enum TornadoSchedulingStrategy {
-	PER_BLOCK, PER_ITERATION;
+    // @formatter:off
+    PER_BLOCK, 
+	PER_ITERATION
+	// @formatter:on
 }

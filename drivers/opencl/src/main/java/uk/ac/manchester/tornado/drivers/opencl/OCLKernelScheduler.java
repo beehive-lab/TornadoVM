@@ -20,7 +20,6 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl;
@@ -34,10 +33,6 @@ public abstract class OCLKernelScheduler {
 
     protected double min;
     protected double max;
-    protected double sum;
-    protected double mean;
-    protected double std;
-    protected double samples;
 
     public OCLKernelScheduler(final OCLDeviceContext context) {
         deviceContext = context;
@@ -46,6 +41,10 @@ public abstract class OCLKernelScheduler {
     public abstract void calculateGlobalWork(final TaskMetaData meta, long batchThreads);
 
     public abstract void calculateLocalWork(final TaskMetaData meta);
+
+    public int submit(final OCLKernel kernel, final TaskMetaData meta, long batchThreads) {
+        return submit(kernel, meta, null, batchThreads);
+    }
 
     public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
 
@@ -61,19 +60,19 @@ public abstract class OCLKernelScheduler {
             meta.printThreadDims();
         }
 
-        final int task;
-        if (meta.shouldUseOpenclScheduling()) {
-            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
+        final int taskEvent;
+        if (meta.shouldUseDefaultOpenCLScheduling()) {
+            taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
         } else {
-            task = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
+            taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
         }
 
         if (deviceContext.printOCLKernelTime()) {
-            Event resolveEvent = deviceContext.resolveEvent(task);
+            Event resolveEvent = deviceContext.resolveEvent(taskEvent);
             System.out.println("[OCL Kernel Execution Time] " + resolveEvent.getExecutionTime() + " (ns)");
         }
 
-        return task;
+        return taskEvent;
     }
 
 }

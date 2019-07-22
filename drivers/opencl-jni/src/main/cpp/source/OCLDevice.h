@@ -24,7 +24,7 @@
  *
  */
 #include <jni.h>
-/* Header for class jacc_runtime_drivers_opencl_OCLDevice */
+/* Header for class uk_ac_manchester_tornado_drivers_opencl_OCLDevice */
 
 #ifndef _Included_uk_ac_manchester_tornado_drivers_opencl_OCLDevice
 #define _Included_uk_ac_manchester_tornado_drivers_opencl_OCLDevice
@@ -32,7 +32,7 @@
 extern "C" {
 #endif
     /*
-     * Class:     jacc_runtime_drivers_opencl_OCLDevice
+     * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLDevice
      * Method:    clGetDeviceInfo
      * Signature: (JI[B)V
      */
