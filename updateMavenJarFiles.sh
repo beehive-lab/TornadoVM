@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 # Author: Juan Fumero
-# Data  : 25/02/2019
+# Date  : 25/02/2019
 
 if [ -z $TORNADO_SDK ]
 then
@@ -9,7 +9,7 @@ then
 	exit 0
 fi
 
-VERSION=0.2
+VERSION=0.3
 GROUPID="tornado"
 API_PATH=$TORNADO_SDK/share/java/tornado
 
