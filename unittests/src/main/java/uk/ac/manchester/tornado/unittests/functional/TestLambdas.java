@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.unittests.functional;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Random;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
@@ -27,7 +28,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
-public class TestFunctional {
+public class TestLambdas {
 
     @Test
     public void testVectorFunctionLambda() {
@@ -37,8 +38,8 @@ public class TestFunctional {
         double[] c = new double[numElements];
 
         IntStream.range(0, numElements).sequential().forEach(i -> {
-            a[i] = (float) Math.random();
-            b[i] = (float) Math.random();
+            a[i] = Math.random();
+            b[i] = Math.random();
         });
 
         //@formatter:off
@@ -55,6 +56,37 @@ public class TestFunctional {
 
         for (int i = 0; i < c.length; i++) {
             assertEquals(a[i] + b[i], c[i], 0.001);
+        }
+    }
+
+    @Test
+    public void testVectorFunctionLambda02() {
+        final int numElements = 4096;
+        double[] a = new double[numElements];
+        int[] b = new int[numElements];
+        double[] c = new double[numElements];
+
+        Random r = new Random();
+
+        IntStream.range(0, numElements).sequential().forEach(i -> {
+            a[i] = r.nextDouble();
+            b[i] = r.nextInt(1000);
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+            .task("t0", (x, y, z) -> {   
+                // Computation in a lambda expression
+                for (@Parallel int i = 0; i < z.length; i++) {
+                    z[i] = x[i] * y[i];
+                }        
+            }, a, b, c)
+            .streamOut(c)
+            .execute();
+        //@formatter:on
+
+        for (int i = 0; i < c.length; i++) {
+            assertEquals(a[i] * b[i], c[i], 0.001);
         }
     }
 

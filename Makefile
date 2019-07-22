@@ -3,6 +3,9 @@ all: build
 build: 
 	./bin/compile.sh
 
+offline:
+	./bin/compile.sh OFFLINE
+
 clean: 
 	mvn clean
 

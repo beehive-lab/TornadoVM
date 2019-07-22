@@ -8,7 +8,7 @@
   * GCC or clang/LLVM (GCC >= 5.5)
   * Python 2.7 (>= 2.7.5)
 
-### Tested OS
+### Tested Operating Systems
 
 TornadoVM has been succefully tested on the following platforms:
 
