@@ -73,6 +73,10 @@ public class ReduceCodeAnalysis {
         ArrayList<ValueNode> reduceOperation = new ArrayList<>();
         for (Integer paramIndex : reduceIndices) {
 
+            if (!graph.method().isStatic()) {
+                paramIndex++;
+            }
+
             ParameterNode parameterNode = graph.getParameter(paramIndex);
             NodeIterable<Node> usages = parameterNode.usages();
             // Get Input-Range for the reduction loop
@@ -128,6 +132,11 @@ public class ReduceCodeAnalysis {
     private static ArrayList<ValueNode> findLoopUpperBoundNode(StructuredGraph graph, ArrayList<Integer> reduceIndexes) {
         ArrayList<ValueNode> loopBound = new ArrayList<>();
         for (Integer paramIndex : reduceIndexes) {
+
+            if (!graph.method().isStatic()) {
+                paramIndex++;
+            }
+
             ParameterNode parameterNode = graph.getParameter(paramIndex);
             NodeIterable<Node> usages = parameterNode.usages();
 
@@ -166,7 +175,7 @@ public class ReduceCodeAnalysis {
         int taskIndex = 0;
         int inputSize = 0;
 
-        HashMap<Integer, MetaReduceTasks> tableMetaReduce = new HashMap<>();
+        HashMap<Integer, MetaReduceTasks> tableMetaDataReduce = new HashMap<>();
 
         for (TaskPackage taskMetadata : taskPackages) {
 
@@ -176,6 +185,7 @@ public class ReduceCodeAnalysis {
             assert graph != null;
             Annotation[][] annotations = graph.method().getParameterAnnotations();
             ArrayList<Integer> reduceIndices = new ArrayList<>();
+
             for (int paramIndex = 0; paramIndex < annotations.length; paramIndex++) {
                 for (Annotation annotation : annotations[paramIndex]) {
                     if (annotation instanceof Reduce) {
@@ -193,21 +203,22 @@ public class ReduceCodeAnalysis {
             ArrayList<ValueNode> loopBound = findLoopUpperBoundNode(graph, reduceIndices);
             for (int i = 0; i < graph.method().getParameters().length; i++) {
                 for (ValueNode valueNode : loopBound) {
-                    if (valueNode.equals(graph.getParameter(i))) {
+
+                    int position = !graph.method().isStatic() ? i + 1 : i;
+
+                    if (valueNode.equals(graph.getParameter(position))) {
                         Object object = taskPackages.get(taskIndex).getTaskParameters()[i + 1];
                         inputSize = Array.getLength(object);
                     }
                 }
             }
 
-            if (!reduceIndices.isEmpty()) {
-                MetaReduceTasks reduceTasks = new MetaReduceTasks(taskIndex, graph, reduceIndices, inputSize);
-                tableMetaReduce.put(taskIndex, reduceTasks);
-            }
+            MetaReduceTasks reduceTasks = new MetaReduceTasks(taskIndex, graph, reduceIndices, inputSize);
+            tableMetaDataReduce.put(taskIndex, reduceTasks);
             taskIndex++;
         }
 
-        return (tableMetaReduce.isEmpty() ? null : new MetaReduceCodeAnalysis(tableMetaReduce));
+        return (tableMetaDataReduce.isEmpty() ? null : new MetaReduceCodeAnalysis(tableMetaDataReduce));
     }
 
     /**

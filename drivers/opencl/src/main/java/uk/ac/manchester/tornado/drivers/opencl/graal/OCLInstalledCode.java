@@ -291,7 +291,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     private int submitSequential(final TaskMetaData meta) {
         final int task;
         debugInfo(meta);
-        if (meta.getGlobalWork() == null) {
+        if ((meta.getGlobalWork() == null) || (meta.getGlobalWork().length == 0)) {
             task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
         } else {
             task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, meta.getGlobalWork(), meta.getLocalWork(), null);
@@ -302,9 +302,9 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     private int submitParallel(final OCLCallStack stack, final TaskMetaData meta, long batchThreads) {
         final int task;
         if (meta.enableThreadCoarsener()) {
-            task = DEFAULT_SCHEDULER.submit(kernel, meta, null, batchThreads);
+            task = DEFAULT_SCHEDULER.submit(kernel, meta, batchThreads);
         } else {
-            task = scheduler.submit(kernel, meta, null, batchThreads);
+            task = scheduler.submit(kernel, meta, batchThreads);
         }
         return task;
     }

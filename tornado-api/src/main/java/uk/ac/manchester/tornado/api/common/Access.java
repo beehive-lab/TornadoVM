@@ -42,5 +42,12 @@
 package uk.ac.manchester.tornado.api.common;
 
 public enum Access {
-    READ, WRITE, READ_WRITE, UNKNOWN, NONE;
+    // @formatter:off
+    READ,        // Read only
+    WRITE,       // Write only
+    READ_WRITE,  // Read-write
+    UNKNOWN,     // Undefined
+    NONE;        // Undefined
+    // @formatter:on
+
 }

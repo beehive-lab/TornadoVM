@@ -37,7 +37,7 @@
 #include "utils.h"
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLKernel
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLKernel
  * Method:    clReleaseKernel
  * Signature: (J)V
  */
@@ -48,7 +48,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLKernel_cl
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLKernel
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLKernel
  * Method:    clSetKernelArg
  * Signature: (JIJ[B)V
  */

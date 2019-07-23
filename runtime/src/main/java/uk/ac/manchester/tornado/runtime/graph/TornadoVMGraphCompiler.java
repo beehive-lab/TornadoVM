@@ -194,18 +194,17 @@ public class TornadoVMGraphCompiler {
         if (batchSize != -1) {
             // compute in batches
             long offset = 0;
+            long nthreads = batchSize / sizeBatch.getNumBytesType();
             for (int i = 0; i < sizeBatch.getTotalChunks(); i++) {
                 offset = (batchSize * i);
-                long nthreads = batchSize / sizeBatch.getNumBytesType();
                 scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies, offset, batchSize, nthreads);
             }
+            // Last chunk
             if (sizeBatch.getRemainingChunkSize() != 0) {
                 offset += (batchSize);
-                long nthreads = sizeBatch.getRemainingChunkSize() / sizeBatch.getNumBytesType();
-
+                nthreads = sizeBatch.getRemainingChunkSize() / sizeBatch.getNumBytesType();
                 long realBatchSize = sizeBatch.getTotalChunks() == 0 ? 0 : sizeBatch.getRemainingChunkSize();
                 long realOffsetSize = sizeBatch.getTotalChunks() == 0 ? 0 : offset;
-
                 scheduleAndEmitTornadoVMBytecodes(result, graph, nodeIds, dependencies, realOffsetSize, realBatchSize, nthreads);
             }
 
@@ -233,10 +232,10 @@ public class TornadoVMGraphCompiler {
     private static void synchronizeOperationLastByteCode(TornadoVMGraphCompilationResult result, int numDepLists) {
         final byte[] code = result.getCode();
         final int codeSize = result.getCodeSize();
-        if (code[codeSize - 13] == TornadoVMBytecodes.STREAM_OUT.index()) {
-            code[codeSize - 13] = TornadoVMBytecodes.STREAM_OUT_BLOCKING.index();
-        } else if (code[codeSize - 29] == TornadoVMBytecodes.STREAM_OUT.index()) {
-            code[codeSize - 29] = TornadoVMBytecodes.STREAM_OUT_BLOCKING.index();
+        if (code[codeSize - 13] == TornadoVMBytecodes.STREAM_OUT.value()) {
+            code[codeSize - 13] = TornadoVMBytecodes.STREAM_OUT_BLOCKING.value();
+        } else if (code[codeSize - 29] == TornadoVMBytecodes.STREAM_OUT.value()) {
+            code[codeSize - 29] = TornadoVMBytecodes.STREAM_OUT_BLOCKING.value();
         } else {
             result.barrier(numDepLists);
         }
@@ -337,11 +336,7 @@ public class TornadoVMGraphCompiler {
                         final ContextOpNode asyncNode = (ContextOpNode) graph.getNode(nodeIds[i]);
 
                         try {
-                            if (bufferBatchSize != -1) {
-                                result.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
-                            } else {
-                                result.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
-                            }
+                            result.emitAsyncNode(asyncNode, asyncNode.getContext().getDeviceIndex(), (deps[i].isEmpty()) ? -1 : depLists[i], offset, bufferBatchSize, nThreads);
                         } catch (BufferOverflowException e) {
                             throw new TornadoRuntimeException("[ERROR] Buffer Overflow exception. Use -Dtornado.tvm.maxbytecodesize=<value> with value > "
                                     + TornadoVMGraphCompilationResult.MAX_TORNADOVM_BYTECODE_SIZE + " to increase the buffer code size");

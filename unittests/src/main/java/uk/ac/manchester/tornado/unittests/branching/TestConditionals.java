@@ -172,7 +172,6 @@ public class TestConditionals extends TornadoTestBase {
         }
     }
     
-
     public static void switchStatement4(int[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
             int value = a[i];

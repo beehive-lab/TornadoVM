@@ -71,11 +71,16 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     protected boolean isKernel;
     protected boolean isOutter;
     protected int loops = 0;
+    protected boolean isParallel;
 
     public OCLCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
             OCLCompilationResult compilationResult, OptionValues options) {
         super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, compilationResult);
         nonInlinedMethods = new HashSet<>();
+    }
+
+    public boolean isParallel() {
+        return isParallel;
     }
 
     public OCLCompilationResult getResult() {
@@ -105,8 +110,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     /**
-     * Emits code for {@code lir} in its {@linkplain LIR#codeEmittingOrder() code
-     * emitting order}.
+     * Emits code for {@code lir} in its {@linkplain LIR#codeEmittingOrder()
+     * code emitting order}.
      */
     @Override
     public void emit(LIR lir) {
@@ -268,7 +273,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             } else if (op instanceof OCLControlFlow.LoopBreakOp) {
                 breakInst = op;
                 continue;
-            } else if ((Tornado.REMOVE_OUTER_LOOPS && loops == 0) && (op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp)) {
+            } else if ((Tornado.REMOVE_OUTER_LOOPS && loops == 0)
+                    && (op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp)) {
                 if (op instanceof OCLControlFlow.LoopPostOp)
                     loops++;
                 continue;
@@ -285,9 +291,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
 
         /*
-         * Because of the way Graal handles Phi nodes, we generate the break instruction
-         * before any phi nodes are updated, therefore we need to ensure that the break
-         * is emitted as the end of the block.
+         * Because of the way Graal handles Phi nodes, we generate the break
+         * instruction before any phi nodes are updated, therefore we need to
+         * ensure that the break is emitted as the end of the block.
          */
         if (breakInst != null) {
             try {
@@ -387,6 +393,10 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
 
         return false;
+    }
+
+    public void setParallel(boolean parallel) {
+        this.isParallel = parallel;
     }
 
 }

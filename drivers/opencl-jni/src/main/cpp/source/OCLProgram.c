@@ -37,7 +37,7 @@
 #include "utils.h"
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLProgram
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
  * Method:    clReleaseProgram
  * Signature: (J)V
  */
@@ -53,7 +53,7 @@ void notify_compilation_error(cl_program program_id, void *user_data) {
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLProgram
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
  * Method:    clBuildProgram
  * Signature: (J[J[C)V
  */
@@ -74,7 +74,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_c
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLProgram
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
  * Method:    clGetProgramInfo
  * Signature: (JI[B)V
  */
@@ -102,7 +102,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_c
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLProgram
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
  * Method:    clGetProgramBuildInfo
  * Signature: (JJI[B)V
  */
@@ -122,7 +122,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLProgram_c
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLProgram
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLProgram
  * Method:    clCreateKernel
  * Signature: (JLjava/lang/String;)J
  */
