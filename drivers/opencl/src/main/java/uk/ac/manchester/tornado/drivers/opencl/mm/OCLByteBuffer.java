@@ -282,6 +282,14 @@ public class OCLByteBuffer {
         return deviceContext.getMemoryManager().toBuffer();
     }
 
+    public long toConstantAddress() {
+        return deviceContext.getMemoryManager().toConstantAddress();
+    }
+
+    public long toPrivateAddress() {
+        return deviceContext.getMemoryManager().toPrivateAddress();
+    }
+
     public long toRelativeAddress() {
         return deviceContext.getMemoryManager().toRelativeDeviceAddress(offset);
     }
