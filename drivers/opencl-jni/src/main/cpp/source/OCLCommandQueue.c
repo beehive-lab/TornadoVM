@@ -102,7 +102,6 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQu
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clFlush
 (JNIEnv *env, jclass clazz, jlong queue_id) {
     OPENCL_PROLOGUE;
-
     OPENCL_SOFT_ERROR("clFlush", clFlush((cl_command_queue) queue_id),);
 }
 
@@ -126,7 +125,6 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQu
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue_clEnqueueNDRangeKernel
 (JNIEnv *env, jclass clazz, jlong queue_id, jlong kernel_id, jint work_dim, jlongArray array1, jlongArray array2, jlongArray array3, jlongArray array4) {
     OPENCL_PROLOGUE;
-
     JNI_ACQUIRE_ARRAY_OR_NULL(jlong, global_work_offset, array1);
     JNI_ACQUIRE_ARRAY_OR_NULL(jlong, global_work_size, array2);
     JNI_ACQUIRE_ARRAY_OR_NULL(jlong, local_work_size, array3);
@@ -135,9 +133,6 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
 
     cl_event kernelEvent = NULL;
     cl_int status = clEnqueueNDRangeKernel((cl_command_queue) queue_id, (cl_kernel) kernel_id, (cl_uint) work_dim, (size_t*) global_work_offset, (size_t*) global_work_size, (size_t*) local_work_size, (cl_uint) numEvents, (numEvents == 0)? NULL: (cl_event*) events, &kernelEvent);
-    if (status != CL_SUCCESS) {
-        printf("[ERROR clEnqueueNDRangeKernel]: %d\n", status);
-    }
     OPENCL_SOFT_ERROR("clEnqueueNDRangeKernel", status, 0);
 
 	if (PRINT_KERNEL_EVENTS) {
@@ -149,7 +144,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
 
     JNI_RELEASE_ARRAY(array1, global_work_offset);
     JNI_RELEASE_ARRAY(array2, global_work_size);
-
+    JNI_RELEASE_ARRAY(array3, local_work_size);
     return (jlong) kernelEvent;
 }
 
@@ -222,7 +217,6 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQu
     OPENCL_PROLOGUE;
 
     OPENCL_DECODE_WAITLIST(array, events, len);
-
     if (len > 0 && events != NULL)
         OPENCL_SOFT_ERROR("clEnqueueWaitForEvents",
             clEnqueueWaitForEvents((cl_command_queue) queue_id, len, (cl_event *) events),);
