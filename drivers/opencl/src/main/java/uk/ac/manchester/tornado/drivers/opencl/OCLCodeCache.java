@@ -270,20 +270,38 @@ public class OCLCodeCache {
         return bufferCommand.toString().split(" ");
     }
 
-    public String[] composeXilinxHLSCommand(String inputFile, String outputFile) {
+    public String[] composeXilinxHLSCommandForLookupBuffer(String inputFile, String outputFile) {
         StringJoiner bufferCommand = new StringJoiner(" ");
 
         bufferCommand.add("xocc");
         if(Tornado.FPGA_EMULATION)
             bufferCommand.add("-t " +"sw_emu");
         else
-            bufferCommand.add("-t " +"hw_emu");
+            bufferCommand.add("-t " +"hw");
         bufferCommand.add("--platform " +"xilinx_kcu1500_dynamic_5_0 " + "-c " +"-k " +"lookupBufferAddress");
         bufferCommand.add("-g " + "-I./fpga-source-comp/");
         bufferCommand.add("--xp " + "misc:solution_name=lookupBufferAddress");
         bufferCommand.add("--report_dir " + "fpga-source-comp/reports");
         bufferCommand.add("--log_dir " + "fpga-source-comp/logs");
         bufferCommand.add("-o " +"fpga-source-comp/lookupBufferAddress.xo " + inputFile);
+
+        return bufferCommand.toString().split(" ");
+    }
+
+    public String[] composeXilinxHLSCommandForKernel(String inputFile, String outputFile) {
+        StringJoiner bufferCommand = new StringJoiner(" ");
+
+        bufferCommand.add("xocc");
+        if(Tornado.FPGA_EMULATION)
+            bufferCommand.add("-t " +"sw_emu");
+        else
+            bufferCommand.add("-t " +"hw");
+        bufferCommand.add("--platform " +"xilinx_kcu1500_dynamic_5_0 " + "-c " +"-k " +"compute");
+        bufferCommand.add("-g " + "-I./fpga-source-comp/");
+        bufferCommand.add("--xp " + "misc:solution_name=compute");
+        bufferCommand.add("--report_dir " + "fpga-source-comp/reports");
+        bufferCommand.add("--log_dir " + "fpga-source-comp/logs");
+        bufferCommand.add("-o " +"fpga-source-comp/compute.xo " + inputFile);
 
         return bufferCommand.toString().split(" ");
     }
@@ -332,7 +350,7 @@ public class OCLCodeCache {
             }
 
             if(deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
-                compilationCommand = composeXilinxHLSCommand(inputFile, outputFile);
+                compilationCommand = composeXilinxHLSCommandForKernel(inputFile, outputFile);
                 linkCommand = composeXilinxLinkCommand(inputFile,outputFile);
             } else
                 compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
@@ -363,7 +381,7 @@ public class OCLCodeCache {
                 }
 
                 if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
-                    compilationCommand = composeXilinxHLSCommand(inputFile, outputFile);
+                    compilationCommand = composeXilinxHLSCommandForLookupBuffer(inputFile, outputFile);
                     callOSforCompilation(compilationCommand, null);
                 }
             } else
