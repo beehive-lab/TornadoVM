@@ -84,6 +84,7 @@ public class OCLCodeCache {
     private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
     private final String FPGA_CLEANUP_SCRIPT = "./bin/cleanFpga.sh";
     private final String FPGA_TASKSCHEDULE = "s0.t0.";
+    private boolean COMPILED_BUFFER_KERNEL = false;
 
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
@@ -314,17 +315,16 @@ public class OCLCodeCache {
     }
 
     public OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) {
+        String[] compilationCommand;
+        final String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
+        final String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
 
         appendSourceToFile(id, entryPoint, source);
 
         if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
             String[] commandRename;
-            String[] compilationCommand;
             String[] linkCommand=null;
             File fpgaBitStreamFile;
-
-            final String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
-            final String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
 
             if (OPENCL_PRINT_SOURCE) {
                 String sourceCode = new String(source);
@@ -332,7 +332,6 @@ public class OCLCodeCache {
             }
 
             if(deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
-                System.out.println("Xilinx composing the HLS command");
                 compilationCommand = composeXilinxHLSCommand(inputFile, outputFile);
                 linkCommand = composeXilinxLinkCommand(inputFile,outputFile);
             } else
@@ -351,10 +350,27 @@ public class OCLCodeCache {
             }
             return installEntryPointForBinaryForFPGAs(resolveBitstreamDirectory(), LOOKUP_BUFFER_KERNEL_NAME);
         } else {
-            // Should not reach here
-            return null;
-        }
+            if(!COMPILED_BUFFER_KERNEL) {
+                COMPILED_BUFFER_KERNEL = true;
 
+                if (Tornado.ACCELERATOR_IS_FPGA) {
+                    appendSourceToFile(id, entryPoint, source);
+                }
+
+                if (OPENCL_PRINT_SOURCE) {
+                    String sourceCode = new String(source);
+                    System.out.println(sourceCode);
+                }
+
+                if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
+                    compilationCommand = composeXilinxHLSCommand(inputFile, outputFile);
+                    callOSforCompilation(compilationCommand, null);
+                }
+            } else
+                // Should not reach here
+                return null;
+        }
+        return null;
     }
 
     public OCLInstalledCode installSource(TaskMetaData meta, String id, String entryPoint, byte[] source) {
