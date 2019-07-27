@@ -325,8 +325,10 @@ public class OCLCodeCache {
 
     private void callOSforCompilation(String[] compilationCommand, String[] commandRename) {
         try {
-            RuntimeUtilities.sysCall(compilationCommand, true);
-            RuntimeUtilities.sysCall(commandRename, true);
+            if(compilationCommand!=null)
+                RuntimeUtilities.sysCall(compilationCommand, true);
+            if(commandRename!=null)
+                RuntimeUtilities.sysCall(commandRename, true);
         } catch (IOException e) {
             throw new TornadoRuntimeException(e);
         }
