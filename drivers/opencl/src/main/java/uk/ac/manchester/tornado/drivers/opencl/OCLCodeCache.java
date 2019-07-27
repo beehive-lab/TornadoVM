@@ -354,7 +354,7 @@ public class OCLCodeCache {
                 linkCommand = composeXilinxLinkCommand(inputFile,outputFile);
             } else
                 compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
-            commandRename = new String[] { BASH, FPGA_CLEANUP_SCRIPT };
+            commandRename = new String[] { BASH, FPGA_CLEANUP_SCRIPT, deviceContext.getPlatformContext().getPlatform().getVendor() };
 
             fpgaBitStreamFile = new File(FPGA_BIN_LOCATION);
 
