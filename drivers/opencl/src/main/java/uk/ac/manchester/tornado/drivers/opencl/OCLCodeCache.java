@@ -313,13 +313,13 @@ public class OCLCodeCache {
         if(Tornado.FPGA_EMULATION)
             bufferCommand.add("-t " +"sw_emu");
         else
-            bufferCommand.add("-t " +"sw_emu");
+            bufferCommand.add("-t " +"hw");
         bufferCommand.add("--platform " +"xilinx_kcu1500_dynamic_5_0 " + "-l " +"-g");
         bufferCommand.add("--xp " + "misc:solution_name=link");
         bufferCommand.add("--report_dir " + "fpga-source-comp/reports");
         bufferCommand.add("--log_dir " + "fpga-source-comp/logs");
         bufferCommand.add("--remote_ip_cache " + "fpga-source-comp/ip_cache");
-        bufferCommand.add("-o " + "fpga-source-comp/lookupBufferAddress.xclbin " + "fpga-source-comp/lookupBufferAddress.xo");
+        bufferCommand.add("-o " + "fpga-source-comp/lookupBufferAddress.xclbin " + "fpga-source-comp/lookupBufferAddress.xo " + "fpga-source-comp/compute.xo");
         return bufferCommand.toString().split(" ");
     }
 
