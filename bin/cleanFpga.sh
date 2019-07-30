@@ -10,7 +10,7 @@ mv fpga-source-comp/lookupBufferAddress fpga-source-comp/intelFPGAFiles
 
 ## Create sym link to the original kerenl 
 cd fpga-source-comp/ 
-if [ $vendor = "Intel" ]; then
+if [ "$vendor" = "Intel(R) Corporation" ]; then
 	ln -s lookupBufferAddress.aocx lookupBufferAddress && cd -
 elif [ "$vendor" = "Xilinx" ]; then
 	ln -s lookupBufferAddress.xclbin lookupBufferAddress && cd -
