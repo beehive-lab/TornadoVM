@@ -387,7 +387,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         /*
          * Allows the OpenCL driver to select the size of local work groups
          */
-        openclUseScheduling = parseBoolean(getDefault("opencl.schedule", id, "True"));
+        openclUseScheduling = parseBoolean(getDefault("opencl.schedule", id, "True"));  // TODO Check why this flag breaks the Xilinx Full JIT mode
         vmWaitEvent = parseBoolean(getDefault("vm.waitevent", id, "False"));
         enableExceptions = parseBoolean(getDefault("exceptions.enable", id, "False"));
         enableProfiling = parseBoolean(getDefault("profiling.enable", id, "False"));
