@@ -270,7 +270,7 @@ public class OCLCodeCache {
         return bufferCommand.toString().split(" ");
     }
 
-    public String[] composeXilinxHLSCommandForLookupBuffer(String inputFile, String outputFile) {
+    public String[] composeXilinxHLSCompileCommand(String inputFile, String kernelName) {
         StringJoiner bufferCommand = new StringJoiner(" ");
 
         bufferCommand.add("xocc");
@@ -278,35 +278,17 @@ public class OCLCodeCache {
             bufferCommand.add("-t " +"sw_emu");
         else
             bufferCommand.add("-t " +"hw");
-        bufferCommand.add("--platform " +"xilinx_kcu1500_dynamic_5_0 " + "-c " +"-k " +"lookupBufferAddress");
-        bufferCommand.add("-g " + "-I./fpga-source-comp/");
+        bufferCommand.add("--platform " +"xilinx_kcu1500_dynamic_5_0 " + "-c " +"-k " +kernelName);
+        bufferCommand.add("-g " + "-I./" + DIRECTORY_BITSTREAM);
         bufferCommand.add("--xp " + "misc:solution_name=lookupBufferAddress");
-        bufferCommand.add("--report_dir " + "fpga-source-comp/reports");
-        bufferCommand.add("--log_dir " + "fpga-source-comp/logs");
-        bufferCommand.add("-o " +"fpga-source-comp/lookupBufferAddress.xo " + inputFile);
+        bufferCommand.add("--report_dir " + DIRECTORY_BITSTREAM + "reports");
+        bufferCommand.add("--log_dir " + DIRECTORY_BITSTREAM + "logs");
+        bufferCommand.add("-o " + DIRECTORY_BITSTREAM + kernelName + ".xo " + inputFile);
 
         return bufferCommand.toString().split(" ");
     }
 
-    public String[] composeXilinxHLSCommandForKernel(String inputFile, String outputFile) {
-        StringJoiner bufferCommand = new StringJoiner(" ");
-
-        bufferCommand.add("xocc");
-        if(Tornado.FPGA_EMULATION)
-            bufferCommand.add("-t " +"sw_emu");
-        else
-            bufferCommand.add("-t " +"hw");
-        bufferCommand.add("--platform " +"xilinx_kcu1500_dynamic_5_0 " + "-c " +"-k " +"compute");
-        bufferCommand.add("-g " + "-I./fpga-source-comp/");
-        bufferCommand.add("--xp " + "misc:solution_name=compute");
-        bufferCommand.add("--report_dir " + "fpga-source-comp/reports");
-        bufferCommand.add("--log_dir " + "fpga-source-comp/logs");
-        bufferCommand.add("-o " +"fpga-source-comp/compute.xo " + inputFile);
-
-        return bufferCommand.toString().split(" ");
-    }
-
-    public String[] composeXilinxLinkCommand(String inputFile, String outputFile) {
+    public String[] composeXilinxHLSLinkCommand(String kernelName) {
         StringJoiner bufferCommand = new StringJoiner(" ");
 
         bufferCommand.add("xocc");
@@ -316,10 +298,11 @@ public class OCLCodeCache {
             bufferCommand.add("-t " +"hw");
         bufferCommand.add("--platform " +"xilinx_kcu1500_dynamic_5_0 " + "-l " +"-g");
         bufferCommand.add("--xp " + "misc:solution_name=link");
-        bufferCommand.add("--report_dir " + "fpga-source-comp/reports");
-        bufferCommand.add("--log_dir " + "fpga-source-comp/logs");
-        bufferCommand.add("--remote_ip_cache " + "fpga-source-comp/ip_cache");
-        bufferCommand.add("-o " + "fpga-source-comp/lookupBufferAddress.xclbin " + "fpga-source-comp/lookupBufferAddress.xo " + "fpga-source-comp/compute.xo");
+        bufferCommand.add("--report_dir " + DIRECTORY_BITSTREAM + "reports");
+        bufferCommand.add("--log_dir " + DIRECTORY_BITSTREAM + "logs");
+        bufferCommand.add("--remote_ip_cache " + DIRECTORY_BITSTREAM + "ip_cache");
+        bufferCommand.add("-o " + DIRECTORY_BITSTREAM + LOOKUP_BUFFER_KERNEL_NAME + ".xclbin " + DIRECTORY_BITSTREAM + LOOKUP_BUFFER_KERNEL_NAME + ".xo " + DIRECTORY_BITSTREAM + kernelName + ".xo");
+
         return bufferCommand.toString().split(" ");
     }
 
@@ -338,13 +321,13 @@ public class OCLCodeCache {
         String[] compilationCommand;
         final String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
         final String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
+        File fpgaBitStreamFile = new File(FPGA_BIN_LOCATION);
 
         appendSourceToFile(id, entryPoint, source);
 
         if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
             String[] commandRename;
             String[] linkCommand=null;
-            File fpgaBitStreamFile;
 
             if (OPENCL_PRINT_SOURCE) {
                 String sourceCode = new String(source);
@@ -352,13 +335,11 @@ public class OCLCodeCache {
             }
 
             if(deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
-                compilationCommand = composeXilinxHLSCommandForKernel(inputFile, outputFile);
-                linkCommand = composeXilinxLinkCommand(inputFile,outputFile);
+                compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
+                linkCommand = composeXilinxHLSLinkCommand(entryPoint);
             } else
                 compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
             commandRename = new String[] { BASH, FPGA_CLEANUP_SCRIPT, deviceContext.getPlatformContext().getPlatform().getVendor() };
-
-            fpgaBitStreamFile = new File(FPGA_BIN_LOCATION);
 
             Path path = Paths.get(FPGA_BIN_LOCATION);
             if (RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {
@@ -382,9 +363,11 @@ public class OCLCodeCache {
                     System.out.println(sourceCode);
                 }
 
-                if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
-                    compilationCommand = composeXilinxHLSCommandForLookupBuffer(inputFile, outputFile);
-                    callOSforCompilation(compilationCommand, null);
+                if (!RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {
+                    if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
+                        compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
+                        callOSforCompilation(compilationCommand, null);
+                    }
                 }
             } else
                 // Should not reach here
