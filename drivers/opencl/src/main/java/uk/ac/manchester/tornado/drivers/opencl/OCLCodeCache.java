@@ -300,7 +300,7 @@ public class OCLCodeCache {
         bufferCommand.add("--xp " + "misc:solution_name=link");
         bufferCommand.add("--report_dir " + DIRECTORY_BITSTREAM + "reports");
         bufferCommand.add("--log_dir " + DIRECTORY_BITSTREAM + "logs");
-        bufferCommand.add("-O3 " + "--j12");
+        bufferCommand.add("-O3 " + "-j12");
         bufferCommand.add("--remote_ip_cache " + DIRECTORY_BITSTREAM + "ip_cache");
         bufferCommand.add("-o " + DIRECTORY_BITSTREAM + LOOKUP_BUFFER_KERNEL_NAME + ".xclbin " + DIRECTORY_BITSTREAM + LOOKUP_BUFFER_KERNEL_NAME + ".xo " + DIRECTORY_BITSTREAM + kernelName + ".xo");
 
