@@ -28,6 +28,7 @@ public class NBody {
     private static void nBody(int numBodies, float[] refPos, float[] refVel, float delT, float espSqr) {
         for (@Parallel int i = 0; i < numBodies; i++) {
             int body = 4 * i;
+
             float[] acc = new float[] { 0.0f, 0.0f, 0.0f };
             for (int j = 0; j < numBodies; j++) {
                 float[] r = new float[3];
