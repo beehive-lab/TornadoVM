@@ -47,6 +47,7 @@ public class VectorAddInt {
                 .streamOut(c);
         //@formatter:on
 
+        boolean wrongResult;
         for (int idx = 0; idx < 10; idx++) {
             // Parallel
             schedule.execute();
@@ -54,7 +55,7 @@ public class VectorAddInt {
             vectorAdd(a, b, result);
 
             // Check Result
-            boolean wrongResult = false;
+            wrongResult = false;
             for (int i = 0; i < c.length; i++) {
                 if (c[i] != 30) {
                     wrongResult = true;

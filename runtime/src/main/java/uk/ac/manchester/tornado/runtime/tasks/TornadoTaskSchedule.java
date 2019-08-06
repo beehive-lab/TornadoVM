@@ -292,15 +292,19 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private static class CompileInfo {
+
         private boolean compile;
         private boolean updateDevice;
 
         private CompileInfo(boolean compile, boolean updateDevice) {
-            super();
             this.compile = compile;
             this.updateDevice = updateDevice;
         }
     }
+
+    private final CompileInfo COMPILE = new CompileInfo(true, false);
+    private final CompileInfo COMPILE_AND_UPDATE = new CompileInfo(true, true);
+    private final CompileInfo NOT_COMPILE_UPDATE = new CompileInfo(false, false);
 
     @Override
     public boolean isLastDeviceListEmpty() {
@@ -310,7 +314,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * It queries if the task has to be recompiled. It returns two values:
      * <p>
-     * <li>compile: This indicates if it has to be compiled</li>
+     * <li>compile: This indicates if it has to be re-compiled</li>
      * <li>updateDevice:This indicates if there is a new device for the same
      * task</li>
      * </p>
@@ -319,11 +323,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      */
     private CompileInfo extractCompileInfo() {
         if (result == null && isLastDeviceListEmpty()) {
-            return new CompileInfo(true, false);
+            return COMPILE;
         } else if (result != null && !isLastDeviceListEmpty() && !(compareDevices(graphContext.getLastDevices(), meta().getDevice()))) {
-            return new CompileInfo(true, true);
+            return COMPILE_AND_UPDATE;
         }
-        return new CompileInfo(false, false);
+        return NOT_COMPILE_UPDATE;
     }
 
     private boolean compileToTornadoVMBytecodes() {
@@ -570,6 +574,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         if (executionGraph != null) {
             return executionGraph;
         }
+        analysisTaskSchedule = null;
         scheduleInner();
         return this;
     }
@@ -1361,12 +1366,13 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         addInner(TaskUtils.scalaTask(id, function, args));
     }
 
+    private final Pattern PATTERN_BATCH = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
+
     @Override
     public void batch(String batchSize) {
 
         // parse value and units
-        Pattern pattern = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
-        Matcher matcher = pattern.matcher(batchSize);
+        Matcher matcher = PATTERN_BATCH.matcher(batchSize);
         long value = 0;
         String units = null;
         if (matcher.find()) {
