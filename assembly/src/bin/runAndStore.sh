@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 
 #
 # This file is part of Tornado: A heterogeneous programming framework: 

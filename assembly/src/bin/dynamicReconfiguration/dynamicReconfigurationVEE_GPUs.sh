@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # #########################################################################
 # Runner script for dynamic reconfiguration. It assumes there is no FPGA
