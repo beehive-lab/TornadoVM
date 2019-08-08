@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # #########################################################################
 # Runner script for dynamic reconfiguration. It assumes there is no FPGA
@@ -120,6 +120,24 @@ function dft() {
 	done
 }
 
+function runEndToEnd() {
+	saxpy "end"
+	montecarlo "end"
+	renderTrack "end"
+	blackscholes "end"
+	nbody "end"
+	dft "end"
+}
+
+function runPerformance() {
+	saxpy "performance"
+	montecarlo "performance"
+	renderTrack "performance"
+	blackscholes "performance"
+	nbody "performance"
+	dft "performance"
+}
+
 function runALL() {
 	saxpy "end"
 	saxpy "performance"
@@ -140,4 +158,5 @@ function runALL() {
 	dft "performance"
 }
 
-runALL
+#runALL
+runPerformance
