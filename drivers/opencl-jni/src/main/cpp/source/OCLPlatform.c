@@ -37,7 +37,7 @@
 #include "macros.h"
 #include "utils.h"
 
-#define MAX_CHAR_ARRAY 512
+#define MAX_CHAR_ARRAY 1024
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
@@ -82,15 +82,16 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform_
 
     jlong *devices;
     jsize len;
+    jboolean isCopy;
 
-    devices = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
+    devices = (*env)->GetLongArrayElements(env, array, &isCopy);
     len = (*env)->GetArrayLength(env, array);
 
     cl_uint num_devices = 0;
     error_id = clGetDeviceIDs((cl_platform_id) platform_id, (cl_device_type) device_type, len, (cl_device_id*) devices, &num_devices);
     OPENCL_SOFT_ERROR("clGetDeviceIDs", error_id, 0);
 
-    (*env)->ReleasePrimitiveArrayCritical(env, array, devices, 0);
+    (*env)->ReleaseLongArrayElements(env, array, devices, 0);
     return (jint) num_devices;
 
 }
@@ -112,15 +113,16 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
     jlong *devices;
     jsize len;
     cl_context context;
+    jboolean isCopy;
 
     cl_context_properties properties[] = {CL_CONTEXT_PLATFORM, platform_id, 0};
 
-    devices = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
+    devices = (*env)->GetLongArrayElements(env, array, &isCopy);
     len = (*env)->GetArrayLength(env, array);
 
     context = clCreateContext(properties, len, (cl_device_id*) devices, &context_notify, NULL, &error_id);
     OPENCL_CHECK_ERROR("clCreateContext", error_id, 0);
 
-    (*env)->ReleasePrimitiveArrayCritical(env, array, devices, 0);
+    (*env)->ReleaseLongArrayElements(env, array, devices, 0);
     return (jlong) context;
 }

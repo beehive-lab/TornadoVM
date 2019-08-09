@@ -46,10 +46,11 @@
         (JNIEnv *env, jclass clazz, jlong context_id, jlong flags, j ## type ## Array array){  \
             OPENCL_PROLOGUE; \
             jsize len = (*env)->GetArrayLength(env, array); \
-            jbyte *buffer = (*env)->GetPrimitiveArrayCritical(env, array, NULL); \
+            jboolean isCopy; \
+            jbyte *buffer = (*env)->GetByteArrayElements(env, array, &isCopy); \
             cl_mem mem; \
             OPENCL_CHECK_ERROR("clCreateBuffer (byte)", mem = clCreateBuffer((cl_context) context_id, (cl_mem_flags) flags, (size_t) len, (void *) buffer, &error_id),-1); \
-            (*env)->ReleasePrimitiveArrayCritical(env, array, buffer, JNI_ABORT); \
+            (*env)->ReleaseByteArrayElements(env, array, buffer, JNI_ABORT); \
             return (jlong) mem; \
         }
 
