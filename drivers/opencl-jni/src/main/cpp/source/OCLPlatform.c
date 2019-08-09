@@ -26,10 +26,11 @@
 #include <jni.h>
 
 #define CL_TARGET_OPENCL_VERSION 120
+
 #ifdef __APPLE__
-#include <OpenCL/cl.h>
+    #include <OpenCL/cl.h>
 #else
-#include <CL/cl.h>
+    #include <CL/cl.h>
 #endif
 
 #include <stdio.h>
