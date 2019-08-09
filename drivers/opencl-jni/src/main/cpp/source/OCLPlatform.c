@@ -48,7 +48,7 @@ JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatfo
     char value[1024];
 
     OPENCL_SOFT_ERROR("clGetPlatformInfo",
-            clGetPlatformInfo((cl_platform_id) platform_id, (cl_platform_info) platform_info, sizeof (char)*512, value, NULL), 0);
+            clGetPlatformInfo((cl_platform_id) platform_id, (cl_platform_info) platform_info, sizeof (char)*1024, value, NULL), 0);
 
     return (*env)->NewStringUTF(env, value);
 }
