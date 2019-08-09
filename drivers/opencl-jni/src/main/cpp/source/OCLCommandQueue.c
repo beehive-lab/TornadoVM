@@ -149,7 +149,7 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
 
     JNI_RELEASE_ARRAY(array1, global_work_offset);
     JNI_RELEASE_ARRAY(array2, global_work_size);
-    JNI_RELEASE_ARRAY(array3, local_work_size);
+    //JNI_RELEASE_ARRAY(array3, local_work_size);
 
     return (jlong) kernelEvent;
 }
