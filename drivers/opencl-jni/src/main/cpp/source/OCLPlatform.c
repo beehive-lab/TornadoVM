@@ -37,6 +37,8 @@
 #include "macros.h"
 #include "utils.h"
 
+#define MAX_CHAR_ARRAY 512
+
 /*
  * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLPlatform
  * Method:    clGetPlatformInfo
@@ -46,10 +48,10 @@ JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLPlatfo
 (JNIEnv *env, jclass clazz, jlong platform_id, jint platform_info) {
     OPENCL_PROLOGUE;
 
-    char value[1024];
+    char value[MAX_CHAR_ARRAY];
 
     OPENCL_SOFT_ERROR("clGetPlatformInfo",
-            clGetPlatformInfo((cl_platform_id) platform_id, (cl_platform_info) platform_info, sizeof (char)*1024, value, NULL), 0);
+            clGetPlatformInfo((cl_platform_id) platform_id, (cl_platform_info) platform_info, sizeof (char) * MAX_CHAR_ARRAY, value, NULL), 0);
 
     return (*env)->NewStringUTF(env, value);
 }
