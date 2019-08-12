@@ -190,6 +190,8 @@ public class TornadoVM extends TornadoLogger {
         return execute(false);
     }
 
+    private final String MESSAGE_ERROR = "object is not valid: %s %s";
+
     private Event execute(boolean isWarmup) {
 
         final long t0 = System.nanoTime();
@@ -197,7 +199,11 @@ public class TornadoVM extends TornadoLogger {
         for (int[] waitList : events) {
             Arrays.fill(waitList, -1);
         }
-        StringBuilder bytecodesList = new StringBuilder();
+
+        StringBuilder bytecodesList = null;
+        if (TornadoOptions.printBytecodes) {
+            bytecodesList = new StringBuilder();
+        }
 
         while (buffer.hasRemaining()) {
             final byte op = buffer.get();
@@ -411,7 +417,7 @@ public class TornadoVM extends TornadoLogger {
                         final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
                         final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
 
-                        TornadoInternalError.guarantee(objectState.isValid(), "object is not valid: %s %s", objects.get(argIndex), objectState);
+                        TornadoInternalError.guarantee(objectState.isValid(), MESSAGE_ERROR, objects.get(argIndex), objectState);
 
                         stack.push(objects.get(argIndex), objectState);
                         if (accesses[i] == Access.WRITE || accesses[i] == Access.READ_WRITE) {

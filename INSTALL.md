@@ -258,4 +258,3 @@ Then :
  2. Set the Eclipse Java Formatter config file to the XML file stored in /scripts/templates/eclise-settings/Tornado.xml
  3. Set the Java formatter profile in Tornado
 
-
