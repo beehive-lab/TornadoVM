@@ -50,7 +50,7 @@
             jbyte *buffer = (*env)->GetByteArrayElements(env, array, &isCopy); \
             cl_mem mem; \
             OPENCL_CHECK_ERROR("clCreateBuffer (byte)", mem = clCreateBuffer((cl_context) context_id, (cl_mem_flags) flags, (size_t) len, (void *) buffer, &error_id),-1); \
-            (*env)->ReleaseByteArrayElements(env, array, buffer, JNI_ABORT); \
+            (*env)->ReleaseByteArrayElements(env, array, buffer, 0); \
             return (jlong) mem; \
         }
 
