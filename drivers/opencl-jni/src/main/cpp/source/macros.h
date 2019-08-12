@@ -57,9 +57,6 @@
     if(VERBOSE) {\
         printf("uk.ac.manchester.tornado.drivers.opencl> Returned: %s = %d\n",name,error_id); \
     } \
-    if(error_id != CL_SUCCESS){ \
-        return rc; \
-    }
 
 #define OPENCL_CHECK_ERROR(name,func,rc) if(VERBOSE) {\
         printf("uk.ac.manchester.tornado.drivers.opencl> Calling: %s\n",name); \
