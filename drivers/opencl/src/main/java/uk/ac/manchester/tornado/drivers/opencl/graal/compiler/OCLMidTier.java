@@ -96,6 +96,7 @@ public class OCLMidTier extends TornadoMidTier {
         // if (VerifyHeapAtReturn.getValue()) {
         // appendPhase(new VerifyHeapAtReturnPhase());
         // }
+
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.MID_TIER));
 
         appendPhase(new FrameStateAssignmentPhase());

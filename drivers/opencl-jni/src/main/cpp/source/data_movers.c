@@ -46,10 +46,11 @@
         (JNIEnv *env, jclass clazz, jlong context_id, jlong flags, j ## type ## Array array){  \
             OPENCL_PROLOGUE; \
             jsize len = (*env)->GetArrayLength(env, array); \
-            jbyte *buffer = (*env)->GetPrimitiveArrayCritical(env, array, NULL); \
+            jboolean isCopy; \
+            jbyte *buffer = (*env)->GetByteArrayElements(env, array, &isCopy); \
             cl_mem mem; \
             OPENCL_CHECK_ERROR("clCreateBuffer (byte)", mem = clCreateBuffer((cl_context) context_id, (cl_mem_flags) flags, (size_t) len, (void *) buffer, &error_id),-1); \
-            (*env)->ReleasePrimitiveArrayCritical(env, array, buffer, JNI_ABORT); \
+            (*env)->ReleaseByteArrayElements(env, array, buffer, 0); \
             return (jlong) mem; \
         }
 
@@ -68,7 +69,7 @@ CREATE_ARRAY(Java_uk_ac_manchester_tornado_drivers_opencl_OCLContext, D, double)
             cl_bool blocking_write = blocking ? CL_TRUE : CL_FALSE; \
             jsize num_bytes = (cb != -1) ? cb : (*env)->GetArrayLength(env, array1) * sizeof ( j ## TYPE ); \
             OPENCL_DECODE_WAITLIST(array2, events, num_events) \
-            JNI_ACQUIRE_ARRAY(jbyte, buffer, array1);\
+            JNI_ACQUIRE_ARRAY(jbyte, buffer, array1); \
 	        if(PRINT_DATA_SIZES) { \
 	    	    printf("uk.ac.manchester.tornado.drivers.opencl> write array 0x%lx (%d bytes) from %p \n",offset, num_bytes, buffer);\
             } \

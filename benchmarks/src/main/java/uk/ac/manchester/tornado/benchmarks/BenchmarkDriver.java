@@ -22,6 +22,7 @@ import static java.util.Arrays.sort;
 import static uk.ac.manchester.tornado.api.utils.TornadoUtilities.humanReadableByteCount;
 
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
+import uk.ac.manchester.tornado.benchmarks.bitset.BitsetTornado;
 
 public abstract class BenchmarkDriver {
 
@@ -69,6 +70,13 @@ public abstract class BenchmarkDriver {
         return TornadoRuntime.getProperty(key);
     }
 
+    private boolean skipGC() {
+        if (this instanceof BitsetTornado) {
+            return true;
+        }
+        return false;
+    }
+
     public void benchmark() {
 
         setUp();
@@ -84,7 +92,9 @@ public abstract class BenchmarkDriver {
             System.gc();
 
             for (long i = 0; i < iterations; i++) {
-                System.gc();
+                if (!skipGC()) {
+                    System.gc();
+                }
                 final long start = System.nanoTime();
                 code();
                 final long end = System.nanoTime();
