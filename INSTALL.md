@@ -38,7 +38,7 @@ TornadoVM is built by using a JDK 1.8 version with JVMCI-8 support. The director
 These steps will generate a new Java binary into the `jdk1.8.0_<your_version>/product`, e.g., `jdk1.8.0_131/product`. This directory is used as the JAVA_HOME (Step 2) and the JVMCI root path (Step 3).
 
 ### 1.2 Steps for Apple Mac OS X
-Due to conflicts between the latest llvm-clang compiler in the Mac OS X and the current version of the JDK 1.8 used by TornadoVM, the Java binary cannot be built successfully. As a temporary fix, it is provided a [binary](https://www.dropbox.com/s/2aguj98jg5b5yh4/jdk1.8.0_131-osx-10.11.6.tgxz?dl=0) compiled in an earlier Mac OS X version.
+Due to conflicts between the latest llvm-clang compiler in the Mac OS X and the current version of the JDK 1.8 used by TornadoVM, the Java binary cannot be built successfully. As a work-around, you can use [this binary](https://www.dropbox.com/s/2aguj98jg5b5yh4/jdk1.8.0_131-osx-10.11.6.tgxz?dl=0) which has been compiled in an earlier Mac OS version.
 
 ```bash
  $ wget https://www.dropbox.com/s/2aguj98jg5b5yh4/jdk1.8.0_131-osx-10.11.6.tgxz
@@ -98,9 +98,9 @@ Create (or update) the file in `~/.m2/settings.xml` with the following content. 
 		</activation>
 		<properties>
 			<!-- Your PATH TO YOUR JDK1.8-JVMCI-->
-			<jvmci.root>/home/user/jdk1.8.0_131/product</jvmci.root>
+			<jvmci.root>/home/user/jdk1.8.0_<your_version>/product</jvmci.root>
 			<!-- Your JDK1.8-JVMCI version-->
-		 	<jvmci.version>1.8.0_131</jvmci.version>
+		 	<jvmci.version>1.8.0_<your_version></jvmci.version>
 		</properties>
 	   </profile>
 	 </profiles>
