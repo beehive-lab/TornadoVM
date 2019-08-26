@@ -70,7 +70,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
  */
 public class TaskSchedule implements TornadoAPI {
 
-    private String taskScheduleName;
+    private final String taskScheduleName;
     private AbstractTaskGraph taskScheduleImpl;
 
     public TaskSchedule(String name) {
