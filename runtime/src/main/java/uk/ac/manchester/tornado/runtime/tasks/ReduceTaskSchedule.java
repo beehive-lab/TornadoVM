@@ -425,6 +425,18 @@ class ReduceTaskSchedule {
         for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
 
             TaskPackage taskPackage = taskPackages.get(taskNumber);
+
+            // Update the reference for the new tasks if there is a data
+            // dependency with the new variables created by the TornadoVM
+            int taskType = taskPackages.get(taskNumber).getTaskType();
+            for (int i = 0; i < taskType; i++) {
+                Object key = taskPackages.get(taskNumber).getTaskParameters()[i + 1];
+                if (originalReduceVariables.containsKey(key)) {
+                    Object value = originalReduceVariables.get(key);
+                    taskPackages.get(taskNumber).getTaskParameters()[i + 1] = value;
+                }
+            }
+
             rewrittenTaskSchedule.addTask(taskPackages.get(taskNumber));
 
             // Ad extra task with the final reduction
