@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2019, APT Group, School of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
-public class DFTBenchmarking {
+public class DFTMT {
 
     public static boolean CHECK_RESULT = true;
 
@@ -129,7 +129,7 @@ public class DFTBenchmarking {
             ;
         } else {
             long startInit = System.nanoTime();
-            graph.task("t0", DFTBenchmarking::computeDft, inReal, inImag, outReal, outImag, inputSize).streamOut(outReal, outImag);
+            graph.task("t0", DFTMT::computeDft, inReal, inImag, outReal, outImag, inputSize).streamOut(outReal, outImag);
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }
