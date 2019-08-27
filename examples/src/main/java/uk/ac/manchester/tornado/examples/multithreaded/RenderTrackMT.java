@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018, APT Group, School of Computer Science,
+ * Copyright (c) 2019, APT Group, School of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,7 +27,7 @@ import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 
-public class RenderTrackBenchmarking {
+public class RenderTrackMT {
 
     public static String executionType;
     public static int iterations;
@@ -143,7 +143,7 @@ public class RenderTrackBenchmarking {
         }
 
         long startInit = System.nanoTime();
-        TaskSchedule s0 = new TaskSchedule("s0").task("t0", RenderTrackBenchmarking::renderTrack, output, input).streamOut(output);
+        TaskSchedule s0 = new TaskSchedule("s0").task("t0", RenderTrackMT::renderTrack, output, input).streamOut(output);
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
