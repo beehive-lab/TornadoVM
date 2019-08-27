@@ -156,6 +156,45 @@ public class TestReductionsFloats extends TornadoTestBase {
         }
     }
 
+    public static void computeSum(final float[] values, @Reduce float[] result) {
+        result[0] = 0;
+        for (@Parallel int i = 0; i < values.length; i++) {
+            result[0] += values[i];
+        }
+    }
+
+    public static void computeAvg(final int length, float[] result) {
+        result[0] = result[0] / length;
+    }
+
+    @Test
+    public void testComputeAverage() {
+        float[] input = new float[SIZE];
+        float[] result = new float[1];
+
+        Random r = new Random();
+        IntStream.range(0, SIZE).sequential().forEach(i -> {
+            input[i] = r.nextFloat();
+        });
+
+        //@formatter:off
+        TaskSchedule task = new TaskSchedule("s0")
+            .streamIn(input)
+            .task("tSum", TestReductionsFloats::computeSum, input, result)
+            .task("tAverage", TestReductionsFloats::computeAvg, input.length, result)
+            .streamOut(result);
+        //@formatter:on
+
+        task.execute();
+
+        float[] sequential = new float[1];
+        computeSum(input, sequential);
+        computeAvg(input.length, sequential);
+
+        // Check result
+        assertEquals(sequential[0], result[0], 0.01f);
+    }
+
     @Test
     public void testMultFloats() {
         float[] input = new float[SIZE];
