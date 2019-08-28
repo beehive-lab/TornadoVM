@@ -21,6 +21,9 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 /**
  * It applies a Blur filter to an input image. Algorithm taken from CUDA course
  * CS344 in Udacity.
+ * 
+ * Example borrowed from the Marawacc parallel programming framework with the
+ * permission from the author.
  *
  */
 public class BlurFilter {
