@@ -37,7 +37,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
     private static final int SIZE2 = 32;
 
-    public static void reductionAddDoubles(double[] input, @Reduce double[] result) {
+    private static void reductionAddDoubles(double[] input, @Reduce double[] result) {
         result[0] = 0.0f;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += input[i];
@@ -68,7 +68,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.01f);
     }
 
-    public static void reductionAddDoubles2(double[] input, @Reduce double[] result) {
+    private static void reductionAddDoubles2(double[] input, @Reduce double[] result) {
         double error = 2f;
         for (@Parallel int i = 0; i < input.length; i++) {
             double v = (error * input[i]);
@@ -76,7 +76,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         }
     }
 
-    public static void reductionAddDoubles3(double[] input, @Reduce double[] result) {
+    private static void reductionAddDoubles3(double[] input, @Reduce double[] result) {
         double error = 2f;
         for (@Parallel int i = 0; i < input.length; i++) {
             double v = (error * input[i]);
@@ -84,7 +84,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         }
     }
 
-    public static void reductionAddDoubles4(double[] inputA, double[] inputB, @Reduce double[] result) {
+    private static void reductionAddDoubles4(double[] inputA, double[] inputB, @Reduce double[] result) {
         double error = 2f;
         for (@Parallel int i = 0; i < inputA.length; i++) {
             result[0] += (error * (inputA[i] + inputB[i]));
@@ -141,7 +141,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
     }
 
     @Test
-    public void testSumdoubles4() {
+    public void testSumDoubles4() {
         double[] inputA = new double[SIZE];
         double[] inputB = new double[SIZE];
         double[] result = new double[1];
@@ -166,7 +166,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
-    public static void multiplyDoubles(double[] input, @Reduce double[] result) {
+    private static void multiplyDoubles(double[] input, @Reduce double[] result) {
         result[0] = 1.0f;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] *= input[i];
@@ -174,7 +174,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
     }
 
     @Test
-    public void testMultdoubles() {
+    public void testMultDoubles() {
         double[] input = new double[SIZE];
         double[] result = new double[1];
 
@@ -201,7 +201,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
-    public static void maxReductionAnnotation(double[] input, @Reduce double[] result) {
+    private static void maxReductionAnnotation(double[] input, @Reduce double[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] = Math.max(result[0], input[i]);
         }
@@ -234,7 +234,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.01);
     }
 
-    public static void minReductionAnnotation(double[] input, @Reduce double[] result) {
+    private static void minReductionAnnotation(double[] input, @Reduce double[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] = Math.min(result[0], input[i]);
         }
