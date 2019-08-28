@@ -29,6 +29,9 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsDoubles extends TornadoTestBase {
@@ -265,6 +268,78 @@ public class TestReductionsDoubles extends TornadoTestBase {
         minReductionAnnotation(input, sequential);
 
         assertEquals(sequential[0], result[0], 0.01);
+    }
+
+    private static void tornadoRemoveOutliers(final double values[], double[] result, final int length) {
+        final double sqrt = Math.sqrt(12.2321 / length);
+        final double min = result[0] - (2 * sqrt);
+        final double max = result[0] + (2 * sqrt);
+
+        // Reduce with filter
+        for (@Parallel int i = 0; i < length; i++) {
+            if (values[i] > max || values[i] < min) {
+                result[0]++;
+            }
+        }
+    }
+
+    @Test
+    public void testRemoveOutliers() {
+        double[] input = new double[SIZE];
+
+        Random r = new Random();
+        IntStream.range(0, SIZE).forEach(idx -> {
+            input[idx] = 2.0;
+        });
+
+        double[] result = new double[1];
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(input)
+                .task("t0", TestReductionsDoubles::tornadoRemoveOutliers, input, result, SIZE)
+                .streamOut(result)
+                .execute();
+        //@formatter:on
+
+        double[] sequential = new double[1];
+        tornadoRemoveOutliers(input, sequential, SIZE);
+
+        assertEquals(sequential[0], result[0], 0.01);
+    }
+
+    @Test
+    public void testPrebuildOutliers() {
+
+        double[] input = new double[SIZE];
+
+        Random r = new Random();
+        IntStream.range(0, SIZE).forEach(idx -> {
+            input[idx] = 2.0;
+        });
+
+        double[] result = new double[100];
+
+        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
+
+        // @formatter:off
+        new TaskSchedule("s0")
+            .prebuiltTask("t0", 
+                        "tornadoRemoveOutliers", 
+                        "/home/juan/manchester/tornado/tornado/FOO.cl",
+                        new Object[] { input, result, SIZE },
+                        new Access[] { Access.READ, Access.READ_WRITE, Access.READ}, 
+                        defaultDevice,
+                        new int[] { SIZE })
+            .streamOut(result)
+            .execute();
+        // @formatter:on
+
+        double[] sequential = new double[1];
+        tornadoRemoveOutliers(input, sequential, SIZE);
+
+        assertEquals(sequential[0], result[0], 0.01);
+
     }
 
 }
