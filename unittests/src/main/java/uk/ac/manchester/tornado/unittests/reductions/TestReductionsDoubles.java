@@ -270,7 +270,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.01);
     }
 
-    private static void tornadoRemoveOutliers(final double values[], double[] result, final int length) {
+    private static void tornadoRemoveOutliers(final double values[], @Reduce double[] result, final int length) {
         final double sqrt = Math.sqrt(12.2321 / length);
         final double min = result[0] - (2 * sqrt);
         final double max = result[0] + (2 * sqrt);

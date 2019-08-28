@@ -48,7 +48,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     OCLAssembler asm;
     Set<Block> merges;
     Set<Block> switches;
-    Set<Block> ifNodes;
     Set<Node> switchClosed;
     private int loopCount;
     private int loopEnds;
@@ -58,13 +57,11 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         this.asm = resBuilder.getAssembler();
         merges = new HashSet<>();
         switches = new HashSet<>();
-        ifNodes = new HashSet<>();
         switchClosed = new HashSet<>();
     }
 
     private void emitBeginBlockForElseStatement(Block dom, Block block) {
         final IfNode ifNode = (IfNode) dom.getEndNode();
-        ifNodes.add(block);
         if (ifNode.falseSuccessor() == block.getBeginNode()) {
             asm.indent();
             asm.elseStmt();
@@ -144,7 +141,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         if (pdom.isLoopHeader() && b.getDominator() != null && isIfBlock(b.getDominator())) {
             if (b.getDominator().getDominator() != null) {
                 if (isIfBlock(b.getDominator().getDominator())) {
-                    asm.emitLine("// CLOSING 5");
                     asm.endScope();
                 }
             }
@@ -159,7 +155,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         int numCases = getNumberOfCasesForSwitch(switchNode);
 
         if ((numCases - 1) == blockNumber) {
-            asm.emitLine("// CLOSING 4");
             asm.endScope();
             switchClosed.add(switchNode);
         }
@@ -173,11 +168,9 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             loopEnds++;
             if (Tornado.REMOVE_OUTER_LOOPS) {
                 if (loopCount - loopEnds > 0) {
-                    asm.emitLine(" // CLOSING 1");
                     asm.endScope();
                 }
             } else {
-                asm.emitLine(" // CLOSING 2");
                 asm.endScope();
             }
         }
@@ -189,7 +182,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
                 // block with more than 2 predecessors.
                 // In that case, we do not generate end scope.
                 if (!(pdom.getBeginNode() instanceof MergeNode && merges.contains(b) && b.getPredecessorCount() > 2)) {
-                    asm.emitLine(" // CLOSING 3");
                     asm.endScope();
                 }
 
@@ -274,7 +266,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             closeSwitchBlock(block, dom);
         } else if (isNestedIfNode(block)) {
             if (!isStartNode(block)) {
-                asm.emitLine(" // CLOSING 7");
                 asm.endScope();
             }
         }
