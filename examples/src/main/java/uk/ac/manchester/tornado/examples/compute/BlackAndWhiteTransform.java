@@ -34,6 +34,9 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 /**
+ * Program taken from the Marawacc parallel programming framework with the
+ * permission from the author.
+ * 
  * It takes an input coloured input image and transforms it into a grey-scale
  * image.
  *
