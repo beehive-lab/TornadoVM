@@ -39,6 +39,13 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
  * 
  * It takes an input coloured input image and transforms it into a grey-scale
  * image.
+ * 
+ * How to run?
+ * 
+ * <code>
+ * $ tornado uk.ac.manchester.tornado.examples.compute.BlackAndWhiteTransform 
+ * </code>
+ * 
  *
  */
 public class BlackAndWhiteTransform {
@@ -58,7 +65,7 @@ public class BlackAndWhiteTransform {
             try {
                 image = ImageIO.read(new File(IMAGE_FILE));
             } catch (IOException e) {
-                System.err.println("Input file not found: " + IMAGE_FILE);
+                throw new RuntimeException("Input file not found: " + IMAGE_FILE);
             }
         }
 

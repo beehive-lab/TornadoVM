@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2019, APT Group, School of Computer Science,
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ */
 package uk.ac.manchester.tornado.examples.compute;
 
 import java.awt.Color;
@@ -24,6 +41,14 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  * 
  * Example borrowed from the Marawacc parallel programming framework with the
  * permission from the author.
+ * 
+ * 
+ * How to run?
+ * 
+ * <code>
+ * $ tornado uk.ac.manchester.tornado.examples.compute.BlurFilter 
+ * </code>
+ * 
  *
  */
 public class BlurFilter {
@@ -36,16 +61,17 @@ public class BlurFilter {
         public static final boolean PARALLEL_COMPUTATION = Boolean.parseBoolean(System.getProperty("run:parallel", "False"));
         public static final int FILTER_WIDTH = 31;
 
+        private static final String IMAGE_FILE = "/tmp/image.jpg";
+
         public BlurFilterImage() {
             loadImage();
         }
 
         public void loadImage() {
             try {
-                image = ImageIO.read(new File("/tmp/image.jpg"));
+                image = ImageIO.read(new File(IMAGE_FILE));
             } catch (IOException e) {
-                System.out.println("File not found");
-                System.exit(0);
+                throw new RuntimeException("Input file not found: " + IMAGE_FILE);
             }
         }
 
