@@ -157,7 +157,7 @@ public class BlurFilter {
             }
 
             long start = System.nanoTime();
-            TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(2);
+            TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(0);
 
             // @formatter:off
             TaskSchedule parallelFilter = new TaskSchedule("blur")
