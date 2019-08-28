@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2019, APT Group, School of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
  * adapted from Marawacc test-suite.
  *
  */
-public class MontecarloBenchmarking {
+public class MontecarloMT {
 
     public static void computeMontecarlo(float[] output, final int iterations) {
         for (@Parallel int j = 0; j < iterations; j++) {
@@ -100,7 +100,7 @@ public class MontecarloBenchmarking {
         long startInit = System.nanoTime();
         // @formatter:off
         TaskSchedule s0 = new TaskSchedule("s0")
-                .task("t0", MontecarloBenchmarking::computeMontecarlo, output, size)
+                .task("t0", MontecarloMT::computeMontecarlo, output, size)
                 .streamOut(output);
         // @formatter:on
         long stopInit = System.nanoTime();

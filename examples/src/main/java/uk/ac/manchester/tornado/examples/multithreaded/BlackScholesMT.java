@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2019, APT Group, School of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,7 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
  * BlackScholes implementation adapted from AMD-OpenCL examples and Marawacc
  * compiler framework.
  */
-public class BlackScholesBenchmarking {
+public class BlackScholesMT {
 
     private static void blackScholesKernel(float[] input, float[] callResult, float[] putResult) {
         for (@Parallel int idx = 0; idx < callResult.length; idx++) {
@@ -151,7 +151,7 @@ public class BlackScholesBenchmarking {
             ;
         } else {
             long startInit = System.nanoTime();
-            graph.task("t0", BlackScholesBenchmarking::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
+            graph.task("t0", BlackScholesMT::blackScholesKernel, input, callPrice, putPrice).streamOut(callPrice, putPrice);
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }

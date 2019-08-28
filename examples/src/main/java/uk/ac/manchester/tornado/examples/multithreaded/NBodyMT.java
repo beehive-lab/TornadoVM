@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2019, APT Group, School of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,7 +25,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
-public class NBodyBenchmarking {
+public class NBodyMT {
     private static boolean VALIDATION = true;
 
     private static void usage(String[] args) {
@@ -182,7 +182,7 @@ public class NBodyBenchmarking {
             ;
         } else {
             long startInit = System.nanoTime();
-            graph.task("t0", NBodyBenchmarking::nBody, numBodies, positions, velocity, delT, espSqr, inputSize).streamOut(positions, velocity);
+            graph.task("t0", NBodyMT::nBody, numBodies, positions, velocity, delT, espSqr, inputSize).streamOut(positions, velocity);
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }
