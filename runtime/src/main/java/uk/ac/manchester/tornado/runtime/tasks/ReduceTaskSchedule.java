@@ -54,6 +54,7 @@ class ReduceTaskSchedule {
     private static final int DEFAULT_GPU_WORK_GROUP = 256;
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static int counterName = 0;
+    private static int counterSeqName = 0;
 
     private String idTaskSchedule;
     private ArrayList<TaskPackage> taskPackages;
@@ -450,22 +451,23 @@ class ReduceTaskSchedule {
                     Object newArray = streamReduceUpdatedList.get(i);
                     int sizeReduceArray = sizesReductionArray.get(i);
                     for (REDUCE_OPERATION op : operations) {
-                        final String newTaskSequentialName = taskScheduleReduceName + "." + SEQUENTIAL_TASK_REDUCE_NAME;
+                        final String newTaskSequentialName = taskScheduleReduceName + "." + SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName;
+                        counterSeqName++;
                         TornadoRuntime.setProperty(newTaskSequentialName + ".device", "0:" + deviceToRun);
                         inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId(), true);
 
                         switch (op) {
                             case ADD:
-                                ReduceFactory.handleAdd(newArray, rewrittenTaskSchedule, sizeReduceArray);
+                                ReduceFactory.handleAdd(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
                                 break;
                             case MUL:
-                                ReduceFactory.handleMul(newArray, rewrittenTaskSchedule, sizeReduceArray);
+                                ReduceFactory.handleMul(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
                                 break;
                             case MAX:
-                                ReduceFactory.handleMax(newArray, rewrittenTaskSchedule, sizeReduceArray);
+                                ReduceFactory.handleMax(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
                                 break;
                             case MIN:
-                                ReduceFactory.handleMin(newArray, rewrittenTaskSchedule, sizeReduceArray);
+                                ReduceFactory.handleMin(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
                                 break;
                             default:
                                 throw new TornadoRuntimeException("[ERROR] Reduce operation not supported yet.");

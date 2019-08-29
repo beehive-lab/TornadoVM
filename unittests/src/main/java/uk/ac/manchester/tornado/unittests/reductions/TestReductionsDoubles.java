@@ -29,9 +29,6 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsDoubles extends TornadoTestBase {
@@ -287,7 +284,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
     public void testRemoveOutliers() {
         double[] input = new double[SIZE];
 
-        Random r = new Random();
         IntStream.range(0, SIZE).forEach(idx -> {
             input[idx] = 2.0;
         });
@@ -306,6 +302,50 @@ public class TestReductionsDoubles extends TornadoTestBase {
         tornadoRemoveOutliers(input, sequential);
 
         assertEquals(sequential[0], result[0], 0.01);
+    }
+
+    private static void prepareTornadoSumForMeanComputation(final double values[], @Reduce double[] result) {
+        for (@Parallel int i = 0; i < values.length; i++) {
+            result[0] += values[i];
+        }
+    }
+
+    private static void computeWithReduceValue(final double values[], @Reduce double[] result) {
+        for (@Parallel int i = 0; i < values.length; i++) {
+            values[0] = result[0] + i;
+        }
+    }
+
+    @Test
+    public void testMultipleReductions() {
+        double[] data = new double[SIZE];
+
+        double[] sequentialReduce = new double[1];
+        double[] sequentialResult = new double[SIZE];
+
+        IntStream.range(0, SIZE).forEach(idx -> {
+            data[idx] = 2.0;
+            sequentialResult[idx] = data[idx];
+        });
+
+        double[] reduceResult = new double[1];
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(data)
+                .task("t0", TestReductionsDoubles::prepareTornadoSumForMeanComputation, data, reduceResult)
+                .task("t1", TestReductionsDoubles::computeWithReduceValue, data, reduceResult)
+                .streamOut(reduceResult, data)
+                .execute();
+        //@formatter:on
+
+        prepareTornadoSumForMeanComputation(sequentialResult, sequentialReduce);
+        computeWithReduceValue(sequentialResult, sequentialReduce);
+
+        for (int i = 0; i < data.length; i++) {
+            assertEquals(sequentialResult[i], data[i], 0.01);
+        }
+
     }
 
 }
