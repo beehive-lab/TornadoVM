@@ -270,13 +270,13 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.01);
     }
 
-    private static void tornadoRemoveOutliers(final double values[], @Reduce double[] result, final int length) {
-        final double sqrt = Math.sqrt(12.2321 / length);
+    private static void tornadoRemoveOutliers(final double[] values, @Reduce double[] result) {
+        final double sqrt = Math.sqrt(12.2321 / values.length);
         final double min = result[0] - (2 * sqrt);
         final double max = result[0] + (2 * sqrt);
 
         // Reduce with filter
-        for (@Parallel int i = 0; i < length; i++) {
+        for (@Parallel int i = 0; i < values.length; i++) {
             if (values[i] > max || values[i] < min) {
                 result[0]++;
             }
@@ -297,13 +297,13 @@ public class TestReductionsDoubles extends TornadoTestBase {
         //@formatter:off
         new TaskSchedule("s0")
                 .streamIn(input)
-                .task("t0", TestReductionsDoubles::tornadoRemoveOutliers, input, result, SIZE)
+                .task("t0", TestReductionsDoubles::tornadoRemoveOutliers, input, result)
                 .streamOut(result)
                 .execute();
         //@formatter:on
 
         double[] sequential = new double[1];
-        tornadoRemoveOutliers(input, sequential, SIZE);
+        tornadoRemoveOutliers(input, sequential);
 
         assertEquals(sequential[0], result[0], 0.01);
     }

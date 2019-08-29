@@ -822,7 +822,7 @@ public final class OCLAssembler extends Assembler {
 
     @Override
     public AbstractAddress getPlaceholder(int i) {
-        unimplemented();
+        unimplemented("Place holder not implemented yet.");
         return null;
     }
 
@@ -834,7 +834,7 @@ public final class OCLAssembler extends Assembler {
 
     @Override
     public AbstractAddress makeAddress(Register arg0, int arg1) {
-        unimplemented();
+        unimplemented("Make address not implemented yet.");
         return null;
     }
 

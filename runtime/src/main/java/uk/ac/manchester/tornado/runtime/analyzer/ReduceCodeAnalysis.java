@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
  * Copyright (c) 2019, APT Group, School of Computer Science,
@@ -31,17 +31,7 @@ import java.util.Objects;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.InvokeNode;
-import org.graalvm.compiler.nodes.LogicNode;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.StartNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.*;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
@@ -56,15 +46,14 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 /**
  * Code analysis class for reductions in TornadoVM
- *
  */
 public class ReduceCodeAnalysis {
 
     // @formatter:off
     public enum REDUCE_OPERATION {
-        ADD, 
-        MUL, 
-        MIN, 
+        ADD,
+        MUL,
+        MIN,
         MAX
     }
     // @formatter:on
@@ -120,9 +109,9 @@ public class ReduceCodeAnalysis {
     }
 
     /**
-     * A method can apply multiple reduction variables. We return a list of all
-     * its loop bounds.
-     * 
+     * A method can apply multiple reduction variables. We return a list of all its
+     * loop bounds.
+     *
      * @param graph
      *            Graal-IR graph to analyze
      * @param reduceIndexes
@@ -148,7 +137,15 @@ public class ReduceCodeAnalysis {
                     ArrayLengthNode arrayLength = null;
 
                     while (!(aux instanceof LoopBeginNode)) {
-                        aux = aux.predecessor();
+                        // Move reference one level up
+                        if (aux instanceof MergeNode) {
+                            MergeNode mergeNode = (MergeNode) aux;
+                            EndNode endNode = mergeNode.forwardEndAt(0);
+                            aux = endNode;
+                        } else {
+                            aux = aux.predecessor();
+                        }
+
                         if (aux instanceof StartNode) {
                             break;
                         } else if (aux instanceof LoopBeginNode) {
@@ -168,7 +165,7 @@ public class ReduceCodeAnalysis {
 
     /**
      * It obtains a list of reduce parameters for each task.
-     * 
+     *
      * @return {@link MetaReduceTasks}
      */
     public static MetaReduceCodeAnalysis analysisTaskSchedule(ArrayList<TaskPackage> taskPackages) {
@@ -222,9 +219,8 @@ public class ReduceCodeAnalysis {
     }
 
     /**
-     * It performs a loop-range substitution for the lower part of the
-     * reduction.
-     * 
+     * It performs a loop-range substitution for the lower part of the reduction.
+     *
      * @param graph
      *            Input Graal {@link StructuredGraph}
      * @param lowValue
