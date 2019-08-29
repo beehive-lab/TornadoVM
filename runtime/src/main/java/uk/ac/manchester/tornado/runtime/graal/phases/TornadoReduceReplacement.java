@@ -28,13 +28,7 @@ import java.util.Iterator;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.StartNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.*;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
@@ -66,16 +60,15 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
      * reductions. It assumes that the value to store is a binary arithmetic and
      * then load index. As soon as we discover more cases, new nodes should be
      * inspected here.
-     * 
-     * Cover all the cases here as soon as we discover more reductions
-     * use-cases.
-     * 
+     * <p>
+     * Cover all the cases here as soon as we discover more reductions use-cases.
+     *
      * @param arrayToStore
      * @param indexToStore
      * @param currentNode
      * @return boolean
      */
-    public boolean recursiveCheck(ValueNode arrayToStore, ValueNode indexToStore, ValueNode currentNode) {
+    private boolean recursiveCheck(ValueNode arrayToStore, ValueNode indexToStore, ValueNode currentNode) {
         boolean isReduction = false;
         if (currentNode instanceof BinaryNode) {
             BinaryNode value = (BinaryNode) currentNode;
@@ -107,7 +100,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         private ValueNode inputArray;
         private ValueNode startNode;
 
-        public ReductionNodes(ValueNode value, ValueNode accumulator, ValueNode inputArray, ValueNode startNode) {
+        ReductionNodes(ValueNode value, ValueNode accumulator, ValueNode inputArray, ValueNode startNode) {
             super();
             this.value = value;
             this.accumulator = accumulator;
@@ -195,7 +188,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
     /**
      * Final Node Replacement
-     * 
      */
     private void performNodeReplacement(StructuredGraph graph, StoreIndexedNode store, Node pred, ReductionNodes reductionNode) {
 
@@ -241,11 +233,11 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 }
 
                 ValueNode inputArray = obtainInputArray(store.value(), store.array(), store.index());
-                ValueNode startNode = obtainStartNode(store);
+                ValueNode startNode = obtainStartLoopNode(store);
 
                 ReductionNodes reductionNode = createReductionNode(graph, store, inputArray, startNode);
-                Node pred = node.predecessor();
-                performNodeReplacement(graph, store, pred, reductionNode);
+                Node predecessor = node.predecessor();
+                performNodeReplacement(graph, store, predecessor, reductionNode);
 
             } else if (node instanceof StoreFieldNode) {
                 throw new RuntimeException("\n\n[NOT SUPPORTED] Node StoreFieldNode is not suported yet.");
@@ -253,22 +245,22 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         }
     }
 
-    private ValueNode obtainStartNode(StoreIndexedNode store) {
+    private ValueNode obtainStartLoopNode(StoreIndexedNode store) {
         boolean startFound = false;
         ValueNode startNode = null;
         IfNode ifNode = null;
-        Node n = store.predecessor();
+        Node node = store.predecessor();
         while (!startFound) {
-            if (n instanceof IfNode) {
-                ifNode = (IfNode) n;
-                while (!(n.predecessor() instanceof LoopBeginNode)) {
-                    n = n.predecessor();
-                    if (n instanceof StartNode) {
+            if (node instanceof IfNode) {
+                ifNode = (IfNode) node;
+                while (!(node.predecessor() instanceof LoopBeginNode)) {
+                    node = node.predecessor();
+                    if (node instanceof StartNode) {
                         // node not found
                         return null;
                     }
                 }
-                // in this point n = loopBeginNode
+                // in this point node = loopBeginNode
                 CompareNode condition = (CompareNode) ifNode.condition();
                 if (condition.getX() instanceof PhiNode) {
                     PhiNode phi = (PhiNode) condition.getX();
@@ -276,7 +268,30 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                     break;
                 }
             }
-            n = n.predecessor();
+
+            if (node instanceof MergeNode) {
+                // When having a merge node, we follow the path any merges. We choose the first
+                // one, but any path will be joined.
+                MergeNode merge = (MergeNode) node;
+                EndNode endNode = merge.forwardEndAt(0);
+                node = endNode.predecessor();
+            } else if (node instanceof LoopBeginNode) {
+                // It could happen that the start index is controlled by a PhiNode instead of an
+                // if-condition. In this case, we get the PhiNode
+                LoopBeginNode loopBeginNode = (LoopBeginNode) node;
+                NodeIterable<Node> usages = loopBeginNode.usages();
+                for (Node u : usages) {
+                    if (u instanceof PhiNode) {
+                        PhiNode phiNode = (PhiNode) u;
+                        ValueNode valueNode = phiNode.valueAt(0);
+                        System.out.println("VAlue NODE: " + valueNode);
+                        startFound = true;
+                        startNode = valueNode;
+                    }
+                }
+            } else {
+                node = node.predecessor();
+            }
         }
         return startNode;
     }
