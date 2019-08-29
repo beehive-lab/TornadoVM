@@ -137,11 +137,10 @@ public class ReduceCodeAnalysis {
                     ArrayLengthNode arrayLength = null;
 
                     while (!(aux instanceof LoopBeginNode)) {
-                        // Move reference one level up
+                        // Move reference to predecessor (bottom-up traversal)
                         if (aux instanceof MergeNode) {
                             MergeNode mergeNode = (MergeNode) aux;
-                            EndNode endNode = mergeNode.forwardEndAt(0);
-                            aux = endNode;
+                            aux = mergeNode.forwardEndAt(0);
                         } else {
                             aux = aux.predecessor();
                         }
