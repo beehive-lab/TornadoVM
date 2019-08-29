@@ -38,7 +38,6 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
-import org.graalvm.compiler.hotspot.replacements.NewObjectSnippets;
 import org.graalvm.compiler.nodes.AbstractDeoptimizeNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
@@ -94,7 +93,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.CastNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
@@ -112,8 +110,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private final ConstantReflectionProvider constantReflection;
     private final TornadoVMConfig vmConfig;
 
-    private ReduceGPUSnippets.Templates GPUreduceSnippets;
-    private ReduceCPUSnippets.Templates CPUreduceSnippets;
+    private ReduceGPUSnippets.Templates GPUReduceSnippets;
+    private ReduceCPUSnippets.Templates CPUReduceSnippets;
 
     public OCLLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, ConstantReflectionProvider constantReflection, TornadoVMConfig vmConfig, OCLTargetDescription target) {
         super(metaAccess, foreignCalls, target);
@@ -128,8 +126,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private void initializeSnippets(OptionValues options, SnippetCounter.Group.Factory factory, Providers providers, SnippetReflectionProvider snippetReflection) {
-        this.GPUreduceSnippets = new ReduceGPUSnippets.Templates(options, providers, snippetReflection, target);
-        this.CPUreduceSnippets = new ReduceCPUSnippets.Templates(options, providers, snippetReflection, target);
+        this.GPUReduceSnippets = new ReduceGPUSnippets.Templates(options, providers, snippetReflection, target);
+        this.CPUReduceSnippets = new ReduceCPUSnippets.Templates(options, providers, snippetReflection, target);
     }
 
     @Override
@@ -206,9 +204,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
         // Depending on the Scheduler, call the proper snippet factory
         if (cpuScheduler) {
-            CPUreduceSnippets.lower(storeIndexed, threadID, oclIdNode, startIndexNode, tool);
+            CPUReduceSnippets.lower(storeIndexed, threadID, oclIdNode, startIndexNode, tool);
         } else {
-            GPUreduceSnippets.lower(storeIndexed, threadID, oclGlobalSize, tool);
+            GPUReduceSnippets.lower(storeIndexed, threadID, oclGlobalSize, tool);
         }
     }
 
@@ -376,7 +374,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     private void lowerFloatConvertNode(FloatConvertNode floatConvert, LoweringTool tool) {
         final StructuredGraph graph = floatConvert.graph();
-        // TODO should probably create a specific floatconvert node?
+        // TODO should probably create a specific float-convert node?
 
         final CastNode asFloat = graph.addWithoutUnique(new CastNode(floatConvert.stamp(), floatConvert.getFloatConvert(), floatConvert.getValue()));
         floatConvert.replaceAtUsages(asFloat);
