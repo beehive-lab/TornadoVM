@@ -840,7 +840,7 @@ public final class OCLAssembler extends Assembler {
 
     @Override
     protected void patchJumpTarget(int arg0, int arg1) {
-        unimplemented();
+        unimplemented("Patch jump target not implemented yet.");
     }
 
     /**

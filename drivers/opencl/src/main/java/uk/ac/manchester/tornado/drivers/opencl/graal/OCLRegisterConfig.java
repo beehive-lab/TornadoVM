@@ -48,13 +48,13 @@ public class OCLRegisterConfig implements RegisterConfig {
 
     @Override
     public CallingConvention getCallingConvention(Type type, JavaType jt, JavaType[] jts, ValueKindFactory<?> vkf) {
-        unimplemented();
+        unimplemented("Get calling convention not implemented yet.");
         return null;
     }
 
     @Override
     public Register getReturnRegister(JavaKind kind) {
-        unimplemented();
+        unimplemented("return register method not implemented yet.");
         return null;
     }
 
@@ -75,7 +75,7 @@ public class OCLRegisterConfig implements RegisterConfig {
 
     @Override
     public RegisterArray filterAllocatableRegisters(PlatformKind kind, RegisterArray registers) {
-        unimplemented();
+        unimplemented("Filter allocation registers not implemented yet.");
         return null;
     }
 
@@ -86,13 +86,13 @@ public class OCLRegisterConfig implements RegisterConfig {
 
     @Override
     public RegisterAttributes[] getAttributesMap() {
-        unimplemented();
+        unimplemented("Get attributes map not implemented yet");
         return null;
     }
 
     @Override
     public boolean areAllAllocatableRegistersCallerSaved() {
-        unimplemented();
+        unimplemented("get all allocatable registers caller saved, not implemented yet");
         return false;
     }
 

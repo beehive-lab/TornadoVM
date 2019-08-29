@@ -212,7 +212,7 @@ public class FloatSE3 {
     }
 
     public void multiply(FloatSE3 m) {
-        TornadoInternalError.unimplemented();
+        TornadoInternalError.unimplemented("Multiply FloatSE3 not supported yet.");
     }
 
     private float sq(float value) {
