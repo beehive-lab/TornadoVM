@@ -143,7 +143,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerVectorStoreNode((VectorStoreNode) node, tool);
         } else if (node instanceof AbstractDeoptimizeNode || node instanceof UnwindNode || node instanceof RemNode) {
             /*
-             * No lowering, we generate LIR directly for these nodes.
+             * No lowering, we currently generate LIR directly for these nodes.
              */
         } else if (node instanceof FloatConvertNode) {
             lowerFloatConvertNode((FloatConvertNode) node, tool);
@@ -156,9 +156,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else if (node instanceof StoreIndexedNode) {
             lowerStoreIndexedNode((StoreIndexedNode) node, tool);
         } else if (node instanceof StoreAtomicIndexedNode) {
-            /*
-             * Reduction
-             */
             lowerStoreAtomicsReduction(node, tool);
         } else if (node instanceof LoadFieldNode) {
             lowerLoadFieldNode((LoadFieldNode) node, tool);
@@ -197,9 +194,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
             // CPU SCHEDULER
             if (n instanceof MulNode) {
-                Iterator<Node> usages2 = n.usages().iterator();
-                while (usages2.hasNext()) {
-                    Node n2 = usages2.next();
+                for (Node n2 : n.usages()) {
                     if (n2 instanceof PhiNode) {
                         threadID = (ValueNode) n2;
                         cpuScheduler = true;
