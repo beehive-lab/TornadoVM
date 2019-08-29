@@ -112,9 +112,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private final ConstantReflectionProvider constantReflection;
     private final TornadoVMConfig vmConfig;
 
-    protected NewObjectSnippets.Templates newObjectSnippets;
-    protected ReduceGPUSnippets.Templates GPUreduceSnippets;
-    protected ReduceCPUSnippets.Templates CPUreduceSnippets;
+    private ReduceGPUSnippets.Templates GPUreduceSnippets;
+    private ReduceCPUSnippets.Templates CPUreduceSnippets;
 
     public OCLLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, ConstantReflectionProvider constantReflection, TornadoVMConfig vmConfig, OCLTargetDescription target) {
         super(metaAccess, foreignCalls, target);
@@ -152,7 +151,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerNewArrayNode((NewArrayNode) node, tool);
         } else if (node instanceof AtomicAddNode) {
             lowerAtomicAddNode((AtomicAddNode) node, tool);
-        } else if (node instanceof LoadIndexedNode || node instanceof LoadIndexedVectorNode) {
+        } else if (node instanceof LoadIndexedNode) {
             lowerLoadIndexedNode((LoadIndexedNode) node, tool);
         } else if (node instanceof StoreIndexedNode) {
             lowerStoreIndexedNode((StoreIndexedNode) node, tool);
@@ -266,7 +265,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         graph.replaceFixed(loadIndexed, memoryRead);
     }
 
-    protected void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
+    private void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
 
         StructuredGraph graph = storeIndexed.graph();
         JavaKind elementKind = storeIndexed.elementKind();
@@ -292,10 +291,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private boolean isSimpleCharOrShort(JavaKind elementKind, ValueNode value) {
-        if ((elementKind == JavaKind.Char && value.getStackKind() != JavaKind.Object) || (elementKind == JavaKind.Short && value.getStackKind() != JavaKind.Object)) {
-            return true;
-        }
-        return false;
+        return (elementKind == JavaKind.Char && value.getStackKind() != JavaKind.Object) || (elementKind == JavaKind.Short && value.getStackKind() != JavaKind.Object);
     }
 
     @Override
@@ -364,21 +360,19 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
             LoweredCallTargetNode loweredCallTarget = null;
 
-            if (loweredCallTarget == null) {
-                StampPair returnStampPair = callTarget.returnStamp();
-                Stamp returnStamp = returnStampPair.getTrustedStamp();
-                if (returnStamp instanceof ObjectStamp) {
-                    ObjectStamp os = (ObjectStamp) returnStamp;
-                    ResolvedJavaType type = os.javaType(tool.getMetaAccess());
-                    OCLKind oclKind = OCLKind.fromResolvedJavaType(type);
-                    if (oclKind != OCLKind.ILLEGAL) {
-                        returnStampPair = StampPair.createSingle(OCLStampFactory.getStampFor(oclKind));
-                    }
+            StampPair returnStampPair = callTarget.returnStamp();
+            Stamp returnStamp = returnStampPair.getTrustedStamp();
+            if (returnStamp instanceof ObjectStamp) {
+                ObjectStamp os = (ObjectStamp) returnStamp;
+                ResolvedJavaType type = os.javaType(tool.getMetaAccess());
+                OCLKind oclKind = OCLKind.fromResolvedJavaType(type);
+                if (oclKind != OCLKind.ILLEGAL) {
+                    returnStampPair = StampPair.createSingle(OCLStampFactory.getStampFor(oclKind));
                 }
-
-                loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters.toArray(new ValueNode[parameters.size()]), returnStampPair, signature, callTarget.targetMethod(),
-                        HotSpotCallingConventionType.JavaCall, callTarget.invokeKind()));
             }
+
+            loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters.toArray(new ValueNode[parameters.size()]), returnStampPair, signature, callTarget.targetMethod(),
+                    HotSpotCallingConventionType.JavaCall, callTarget.invokeKind()));
 
             callTarget.replaceAndDelete(loweredCallTarget);
         }

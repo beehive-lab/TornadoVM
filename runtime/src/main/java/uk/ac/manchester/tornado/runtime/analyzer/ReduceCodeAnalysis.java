@@ -130,7 +130,7 @@ public class ReduceCodeAnalysis {
             NodeIterable<Node> usages = parameterNode.usages();
 
             // Get Input-Range for the reduction loop
-            for (Node node : usages)
+            for (Node node : usages) {
                 if (node instanceof StoreIndexedNode) {
                     Node aux = node;
                     LoopBeginNode loopBegin = null;
@@ -158,6 +158,7 @@ public class ReduceCodeAnalysis {
                         loopBound.add(Objects.requireNonNull(arrayLength).array());
                     }
                 }
+            }
         }
         return loopBound;
     }
