@@ -211,10 +211,10 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
-        if (!USE_ATOMICS) {
-            lowerReduceSnippets((StoreAtomicIndexedNode) node, tool);
-        } else {
+        if (USE_ATOMICS) {
             lowerAtomicStoreIndexedNode((StoreAtomicIndexedNode) node, tool);
+        } else {
+            lowerReduceSnippets((StoreAtomicIndexedNode) node, tool);
         }
     }
 

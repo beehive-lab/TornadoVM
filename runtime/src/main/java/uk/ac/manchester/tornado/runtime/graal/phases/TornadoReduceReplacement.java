@@ -61,7 +61,8 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
      * then load index. As soon as we discover more cases, new nodes should be
      * inspected here.
      * <p>
-     * Cover all the cases here as soon as we discover more reductions use-cases.
+     * Cover all the cases here as soon as we discover more reductions
+     * use-cases.
      *
      * @param arrayToStore
      * @param indexToStore
@@ -270,23 +271,23 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             }
 
             if (node instanceof MergeNode) {
-                // When having a merge node, we follow the path any merges. We choose the first
+                // When having a merge node, we follow the path any merges. We
+                // choose the first
                 // one, but any path will be joined.
                 MergeNode merge = (MergeNode) node;
                 EndNode endNode = merge.forwardEndAt(0);
                 node = endNode.predecessor();
             } else if (node instanceof LoopBeginNode) {
-                // It could happen that the start index is controlled by a PhiNode instead of an
+                // It could happen that the start index is controlled by a
+                // PhiNode instead of an
                 // if-condition. In this case, we get the PhiNode
                 LoopBeginNode loopBeginNode = (LoopBeginNode) node;
                 NodeIterable<Node> usages = loopBeginNode.usages();
                 for (Node u : usages) {
                     if (u instanceof PhiNode) {
                         PhiNode phiNode = (PhiNode) u;
-                        ValueNode valueNode = phiNode.valueAt(0);
-                        System.out.println("VAlue NODE: " + valueNode);
+                        startNode = phiNode.valueAt(0);
                         startFound = true;
-                        startNode = valueNode;
                     }
                 }
             } else {
