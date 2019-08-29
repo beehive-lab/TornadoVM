@@ -66,12 +66,11 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     protected LIR lir;
-    protected int currentBlockIndex;
-    protected final Set<ResolvedJavaMethod> nonInlinedMethods;
-    protected boolean isKernel;
-    protected boolean isOutter;
-    protected int loops = 0;
-    protected boolean isParallel;
+    private int currentBlockIndex;
+    private final Set<ResolvedJavaMethod> nonInlinedMethods;
+    private boolean isKernel;
+    private int loops = 0;
+    private boolean isParallel;
 
     public OCLCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
             OCLCompilationResult compilationResult, OptionValues options) {
@@ -100,18 +99,16 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     public void addNonInlinedMethod(ResolvedJavaMethod method) {
-        if (!nonInlinedMethods.contains(method)) {
-            nonInlinedMethods.add(method);
-        }
+        nonInlinedMethods.add(method);
     }
 
-    public Set<ResolvedJavaMethod> getNonInlinedMethods() {
+    Set<ResolvedJavaMethod> getNonInlinedMethods() {
         return nonInlinedMethods;
     }
 
     /**
-     * Emits code for {@code lir} in its {@linkplain LIR#codeEmittingOrder()
-     * code emitting order}.
+     * Emits code for {@code lir} in its {@linkplain LIR#codeEmittingOrder() code
+     * emitting order}.
      */
     @Override
     public void emit(LIR lir) {
@@ -176,7 +173,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
         private final Set<Value> dependencies;
 
-        public DepFinder(final Set<Value> dependencies) {
+        DepFinder(final Set<Value> dependencies) {
             this.dependencies = dependencies;
         }
 
@@ -195,7 +192,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     }
 
-    public static void formatLoopHeader(List<LIRInstruction> instructions) {
+    private static void formatLoopHeader(List<LIRInstruction> instructions) {
         int index = instructions.size() - 1;
 
         LIRInstruction condition = instructions.get(index);
@@ -237,13 +234,13 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         instructions.addAll(index - 1, moved);
     }
 
-    public void emitLoopHeader(Block block) {
+    void emitLoopHeader(Block block) {
         final List<LIRInstruction> headerInstructions = lir.getLIRforBlock(block);
         formatLoopHeader(headerInstructions);
         emitBlock(block);
     }
 
-    public void emitBlock(Block block) {
+    void emitBlock(Block block) {
         if (block == null) {
             return;
         }
@@ -291,9 +288,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         }
 
         /*
-         * Because of the way Graal handles Phi nodes, we generate the break
-         * instruction before any phi nodes are updated, therefore we need to
-         * ensure that the break is emitted as the end of the block.
+         * Because of the way Graal handles Phi nodes, we generate the break instruction
+         * before any phi nodes are updated, therefore we need to ensure that the break
+         * is emitted as the end of the block.
          */
         if (breakInst != null) {
             try {
@@ -398,5 +395,4 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
     public void setParallel(boolean parallel) {
         this.isParallel = parallel;
     }
-
 }

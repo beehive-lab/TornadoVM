@@ -308,38 +308,4 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.01);
     }
 
-    @Test
-    public void testPrebuildOutliers() {
-
-        double[] input = new double[SIZE];
-
-        Random r = new Random();
-        IntStream.range(0, SIZE).forEach(idx -> {
-            input[idx] = 2.0;
-        });
-
-        double[] result = new double[100];
-
-        TornadoDevice defaultDevice = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
-
-        // @formatter:off
-        new TaskSchedule("s0")
-            .prebuiltTask("t0", 
-                        "tornadoRemoveOutliers", 
-                        "/home/juan/manchester/tornado/tornado/FOO.cl",
-                        new Object[] { input, result, SIZE },
-                        new Access[] { Access.READ, Access.READ_WRITE, Access.READ}, 
-                        defaultDevice,
-                        new int[] { SIZE })
-            .streamOut(result)
-            .execute();
-        // @formatter:on
-
-        double[] sequential = new double[1];
-        tornadoRemoveOutliers(input, sequential, SIZE);
-
-        assertEquals(sequential[0], result[0], 0.01);
-
-    }
-
 }
