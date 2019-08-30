@@ -347,26 +347,25 @@ public class TestReductionsDoubles extends TornadoTestBase {
     }
 
     private static void computeStandardDeviation(final double values[], double[] sum, @Reduce double[] std) {
-        int length = values.length;
-        std[0] = std[0] / length;
-
-        double s = sum[0];
-        for (@Parallel int i = 0; i < length; i++) {
-            double pow = Math.pow(values[i] - s, 2);
-            std[0] += pow;
+        double s = sum[0] / values.length;
+        for (@Parallel int i = 0; i < values.length; i++) {
+            std[0] += Math.pow(values[i] - s, 2);
         }
     }
 
     @Test
     public void testMultipleReductions2() {
-        double[] data = new double[SIZE];
-        double[] sequentialReduce = new double[1];
+
+        double[] data = new double[32];
+        double[] dummy = new double[32];
+
+        double[] sequentialSum = new double[1];
         double[] sequentialStd = new double[1];
-        double[] sequentialResult = new double[data.length];
+        double[] sequentialData = new double[data.length];
 
         IntStream.range(0, data.length).forEach(idx -> {
             data[idx] = Math.random();
-            sequentialResult[idx] = data[idx];
+            sequentialData[idx] = data[idx];
         });
 
         double[] resultSum = new double[1];
@@ -377,15 +376,14 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .streamIn(data)
                 .task("t0", TestReductionsDoubles::prepareTornadoSumForMeanComputation, data, resultSum)
                 .task("t1", TestReductionsDoubles::computeStandardDeviation, data, resultSum, resultStd)
-                .streamOut(resultStd)
+                .streamOut(resultSum, resultStd)
                 .execute();
         //@formatter:on
 
-        prepareTornadoSumForMeanComputation(sequentialResult, sequentialReduce);
-        computeStandardDeviation(sequentialResult, sequentialReduce, sequentialStd);
+        prepareTornadoSumForMeanComputation(sequentialData, sequentialSum);
+        computeStandardDeviation(sequentialData, sequentialSum, sequentialStd);
 
-        for (int i = 0; i < data.length; i++) {
-            assertEquals(sequentialStd[i], resultStd[i], 0.01);
-        }
+        assertEquals(sequentialStd[0], resultStd[0], 0.01);
+
     }
 }

@@ -113,13 +113,13 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         return false;
     }
 
-    private static class ReductionNodes {
+    private static class ReductionMetadataNode {
         private ValueNode value;
         private ValueNode accumulator;
         private ValueNode inputArray;
         private ValueNode startNode;
 
-        ReductionNodes(ValueNode value, ValueNode accumulator, ValueNode inputArray, ValueNode startNode) {
+        ReductionMetadataNode(ValueNode value, ValueNode accumulator, ValueNode inputArray, ValueNode startNode) {
             super();
             this.value = value;
             this.accumulator = accumulator;
@@ -161,7 +161,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         return array;
     }
 
-    private ReductionNodes createReductionNode(StructuredGraph graph, StoreIndexedNode store, ValueNode inputArray, ValueNode startNode) {
+    private ReductionMetadataNode createReductionNode(StructuredGraph graph, StoreIndexedNode store, ValueNode inputArray, ValueNode startNode) {
         ValueNode value = null;
         ValueNode accumulator = null;
 
@@ -170,7 +170,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         if (storeValue instanceof AddNode) {
             AddNode addNode = (AddNode) store.value();
             final OCLReduceAddNode atomicAdd = graph.addOrUnique(new OCLReduceAddNode(addNode.getX(), addNode.getY()));
-            accumulator = addNode.getX();
+            accumulator = addNode.getY();
             value = atomicAdd;
             addNode.safeDelete();
         } else if (storeValue instanceof MulNode) {
@@ -190,7 +190,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             // We need the name because it is loaded from inner core
             // (tornado-driver).
             if (storeValue.getClass().getName().endsWith("OCLFPBinaryIntrinsicNode")) {
-                accumulator = ((BinaryNode) storeValue).getX();
+                accumulator = ((BinaryNode) storeValue).getY();
             } else if (storeValue.getClass().getName().endsWith("OCLIntBinaryIntrinsicNode")) {
                 accumulator = ((BinaryNode) storeValue).getX();
             } else {
@@ -200,22 +200,22 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             }
             value = storeValue;
         } else {
-            throw new RuntimeException("\n\n[NODE REDUCTION NOT SUPPORTED] Node : " + store.value() + " not suported yet.");
+            throw new RuntimeException("\n\n[NODE REDUCTION NOT SUPPORTED] Node : " + store.value() + " not supported yet.");
         }
 
-        return new ReductionNodes(value, accumulator, inputArray, startNode);
+        return new ReductionMetadataNode(value, accumulator, inputArray, startNode);
     }
 
     /**
      * Final Node Replacement
      */
-    private void performNodeReplacement(StructuredGraph graph, StoreIndexedNode store, Node pred, ReductionNodes reductionNode) {
+    private void performNodeReplacement(StructuredGraph graph, StoreIndexedNode store, Node pred, ReductionMetadataNode reductionNode) {
 
         ValueNode value = reductionNode.value;
         ValueNode accumulator = reductionNode.accumulator;
         ValueNode inputArray = reductionNode.inputArray;
         ValueNode startNode = reductionNode.startNode;
-        final StoreAtomicIndexedNode atomicStore = graph.addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), value, accumulator, inputArray, startNode));
+        final StoreAtomicIndexedNode atomicStoreNode = graph.addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), value, accumulator, inputArray, startNode));
 
         ValueNode arithmeticNode = null;
         if (value instanceof OCLReduceAddNode) {
@@ -224,13 +224,17 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 arithmeticNode = reduce.getX();
             } else if (reduce.getY() instanceof BinaryArithmeticNode) {
                 arithmeticNode = reduce.getY();
+            } else if (reduce.getX().getClass().getName().endsWith("OCLFPBinaryIntrinsicNode")) {
+                arithmeticNode = reduce.getX();
+            } else if (reduce.getY().getClass().getName().endsWith("OCLFPBinaryIntrinsicNode")) {
+                arithmeticNode = reduce.getY();
             }
         }
-        atomicStore.setOptionalOperation(arithmeticNode);
+        atomicStoreNode.setOptionalOperation(arithmeticNode);
 
-        atomicStore.setNext(store.next());
-        pred.replaceFirstSuccessor(store, atomicStore);
-        store.replaceAndDelete(atomicStore);
+        atomicStoreNode.setNext(store.next());
+        pred.replaceFirstSuccessor(store, atomicStoreNode);
+        store.replaceAndDelete(atomicStoreNode);
 
     }
 
@@ -260,7 +264,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
                 ValueNode inputArray = obtainInputArray(store.value(), store.array(), store.index());
                 ValueNode startNode = obtainStartLoopNode(store);
 
-                ReductionNodes reductionNode = createReductionNode(graph, store, inputArray, startNode);
+                ReductionMetadataNode reductionNode = createReductionNode(graph, store, inputArray, startNode);
                 Node predecessor = node.predecessor();
                 performNodeReplacement(graph, store, predecessor, reductionNode);
 

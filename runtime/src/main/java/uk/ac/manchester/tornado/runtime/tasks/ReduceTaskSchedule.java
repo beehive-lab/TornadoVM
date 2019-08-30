@@ -350,7 +350,7 @@ class ReduceTaskSchedule {
         String taskScheduleReduceName = TASK_SCHEDULE_PREFIX + counterName;
         String tsName = idTaskSchedule;
 
-        ArrayList<Object> streamReduceUpdatedList = new ArrayList<>();
+        HashMap<Integer, ArrayList<Object>> streamReduceTable = new HashMap<>();
         ArrayList<Integer> sizesReductionArray = new ArrayList<>();
         if (originalReduceVariables == null) {
             originalReduceVariables = new HashMap<>();
@@ -365,6 +365,8 @@ class ReduceTaskSchedule {
             ArrayList<Integer> listOfReduceIndexParameters;
             MetaReduceTasks metaReduceTasks;
             TaskPackage taskPackage = taskPackages.get(taskNumber);
+
+            ArrayList<Object> streamReduceList = new ArrayList<>();
 
             deviceToRun = changeDeviceIfNeeded(taskScheduleReduceName, tsName, taskPackage.getId());
             final int targetDeviceToRun = deviceToRun;
@@ -417,10 +419,11 @@ class ReduceTaskSchedule {
                     taskPackage.getTaskParameters()[paramIndex + 1] = newArray;
 
                     // Store metadata
-                    streamReduceUpdatedList.add(newArray);
+                    streamReduceList.add(newArray);
                     sizesReductionArray.add(sizeReductionArray);
                     originalReduceVariables.put(originalReduceVariable, newArray);
                 }
+                streamReduceTable.put(taskNumber, streamReduceList);
             }
         }
 
@@ -445,15 +448,18 @@ class ReduceTaskSchedule {
 
             rewrittenTaskSchedule.addTask(taskPackages.get(taskNumber));
 
-            // Ad extra task with the final reduction
+            // Add extra task with the final reduction
             if (tableReduce.containsKey(taskNumber)) {
+
                 MetaReduceTasks metaReduceTasks = tableReduce.get(taskNumber);
                 ArrayList<Integer> listOfReduceParameters = metaReduceTasks.getListOfReduceParameters(taskNumber);
                 StructuredGraph graph = metaReduceTasks.getGraph();
                 ArrayList<REDUCE_OPERATION> operations = ReduceCodeAnalysis.getReduceOperation(graph, listOfReduceParameters);
 
-                for (int i = 0; i < streamReduceUpdatedList.size(); i++) {
-                    Object newArray = streamReduceUpdatedList.get(i);
+                ArrayList<Object> streamUpdateList = streamReduceTable.get(taskNumber);
+
+                for (int i = 0; i < streamUpdateList.size(); i++) {
+                    Object newArray = streamUpdateList.get(i);
                     int sizeReduceArray = sizesReductionArray.get(i);
                     for (REDUCE_OPERATION op : operations) {
                         final String newTaskSequentialName = taskScheduleReduceName + "." + SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName;
@@ -517,20 +523,20 @@ class ReduceTaskSchedule {
         }
 
         for (Entry<Object, Object> pair : originalReduceVariables.entrySet()) {
-            Object reduceVariable = pair.getKey();
+            Object originalReduceVariable = pair.getKey();
             Object newArray = pair.getValue();
             switch (newArray.getClass().getTypeName()) {
                 case "int[]":
-                    ((int[]) reduceVariable)[0] = ((int[]) newArray)[0];
+                    ((int[]) originalReduceVariable)[0] = ((int[]) newArray)[0];
                     break;
                 case "float[]":
-                    ((float[]) reduceVariable)[0] = ((float[]) newArray)[0];
+                    ((float[]) originalReduceVariable)[0] = ((float[]) newArray)[0];
                     break;
                 case "double[]":
-                    ((double[]) reduceVariable)[0] = ((double[]) newArray)[0];
+                    ((double[]) originalReduceVariable)[0] = ((double[]) newArray)[0];
                     break;
                 case "long[]":
-                    ((long[]) reduceVariable)[0] = ((long[]) newArray)[0];
+                    ((long[]) originalReduceVariable)[0] = ((long[]) newArray)[0];
                     break;
                 default:
                     throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());
