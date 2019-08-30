@@ -48,7 +48,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
 class ReduceTaskSchedule {
 
-    static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce-seq";
+    private static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce-seq";
 
     private static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
     private static final int DEFAULT_GPU_WORK_GROUP = 256;
@@ -82,7 +82,7 @@ class ReduceTaskSchedule {
                 binaries = MetaDataUtils.processPrecompiledBinariesFromFile(binaries[0]);
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < binaries.length; i++) {
-                    sb.append(binaries[i].replaceAll(" ", "") + ",");
+                    sb.append(binaries[i].replaceAll(" ", "")).append(",");
                 }
                 sb = sb.deleteCharAt(sb.length() - 1);
                 originalBinaries = new StringBuffer(sb.toString());
@@ -174,8 +174,7 @@ class ReduceTaskSchedule {
      * It runs a compiled method by Graal in HotSpot.
      * 
      * @param taskPackage
-     *            {@link TaskPackage} metadata that stores the method
-     *            parameters.
+     *            {@link TaskPackage} metadata that stores the method parameters.
      * @param code
      *            {@link InstalledCode} code to be executed
      */
@@ -204,7 +203,7 @@ class ReduceTaskSchedule {
     /**
      * Returns true if the input size is not power of 2 and the target device is
      * either the GPU or the FPGA.
-     * 
+     *
      * @param targetDeviceToRun
      *            index of the target device within the Tornado device list.
      * @return boolean
@@ -332,15 +331,14 @@ class ReduceTaskSchedule {
      * Compose and execute the new reduction. It dynamically creates a new
      * task-schedule expression that contains: a) the parallel reduction; b) the
      * final sequential reduction.
-     * 
-     * It also creates a new thread in the case the input size for the reduction
-     * is not power of two and the target device is either the FPGA or the GPU.
-     * In this case, the new thread will compile the host part with the
-     * corresponding sub-range that does not fit into the power-of-two part.
-     * 
+     *
+     * It also creates a new thread in the case the input size for the reduction is
+     * not power of two and the target device is either the FPGA or the GPU. In this
+     * case, the new thread will compile the host part with the corresponding
+     * sub-range that does not fit into the power-of-two part.
+     *
      * @param metaReduceTable
-     *            Metadata to create all new tasks for the reductions
-     *            dynamically.
+     *            Metadata to create all new tasks for the reductions dynamically.
      * @return {@link TaskSchedule} with the new reduction
      */
     TaskSchedule scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
@@ -380,6 +378,13 @@ class ReduceTaskSchedule {
                 for (Integer paramIndex : listOfReduceIndexParameters) {
 
                     Object originalReduceVariable = taskPackage.getTaskParameters()[paramIndex + 1];
+
+                    // If the array has been already created, we don't have to create another one,
+                    // just obtain the already created reference from the cache-table.
+                    if (originalReduceVariables.containsKey(originalReduceVariable)) {
+                        continue;
+                    }
+
                     int inputSize = metaReduceTasks.getInputSize(taskNumber);
 
                     updateGlobalAndLocalDimensionsFPGA(targetDeviceToRun, taskScheduleReduceName, taskPackage, inputSize);

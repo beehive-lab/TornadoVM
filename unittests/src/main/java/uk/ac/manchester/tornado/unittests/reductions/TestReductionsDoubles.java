@@ -310,21 +310,20 @@ public class TestReductionsDoubles extends TornadoTestBase {
         }
     }
 
-    private static void computeWithReduceValue(final double values[], @Reduce double[] result) {
+    private static void computeMapWithReduceValue(final double values[], @Reduce double[] result) {
         for (@Parallel int i = 0; i < values.length; i++) {
-            values[0] = result[0] + i;
+            values[i] = result[0] + i;
         }
     }
 
     @Test
     public void testMultipleReductions() {
         double[] data = new double[SIZE];
-
         double[] sequentialReduce = new double[1];
-        double[] sequentialResult = new double[SIZE];
+        double[] sequentialResult = new double[data.length];
 
-        IntStream.range(0, SIZE).forEach(idx -> {
-            data[idx] = 2.0;
+        IntStream.range(0, data.length).forEach(idx -> {
+            data[idx] = Math.random();
             sequentialResult[idx] = data[idx];
         });
 
@@ -334,18 +333,16 @@ public class TestReductionsDoubles extends TornadoTestBase {
         new TaskSchedule("s0")
                 .streamIn(data)
                 .task("t0", TestReductionsDoubles::prepareTornadoSumForMeanComputation, data, reduceResult)
-                .task("t1", TestReductionsDoubles::computeWithReduceValue, data, reduceResult)
+                .task("t1", TestReductionsDoubles::computeMapWithReduceValue, data, reduceResult)
                 .streamOut(reduceResult, data)
                 .execute();
         //@formatter:on
 
         prepareTornadoSumForMeanComputation(sequentialResult, sequentialReduce);
-        computeWithReduceValue(sequentialResult, sequentialReduce);
+        computeMapWithReduceValue(sequentialResult, sequentialReduce);
 
         for (int i = 0; i < data.length; i++) {
             assertEquals(sequentialResult[i], data[i], 0.01);
         }
-
     }
-
 }
