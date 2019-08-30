@@ -58,6 +58,25 @@ public class ReduceCodeAnalysis {
     }
     // @formatter:on
 
+    private static boolean checkIfVarIsInLoop(StoreIndexedNode store) {
+        Node node = store.predecessor();
+        boolean hasPred = true;
+        while (hasPred) {
+            if (node instanceof LoopBeginNode) {
+                return true;
+            } else if (node instanceof StartNode) {
+                hasPred = false;
+            } else if (node instanceof MergeNode) {
+                MergeNode merge = (MergeNode) node;
+                EndNode endNode = merge.forwardEndAt(0);
+                node = endNode.predecessor();
+            } else {
+                node = node.predecessor();
+            }
+        }
+        return false;
+    }
+
     public static ArrayList<REDUCE_OPERATION> getReduceOperation(StructuredGraph graph, ArrayList<Integer> reduceIndices) {
         ArrayList<ValueNode> reduceOperation = new ArrayList<>();
         for (Integer paramIndex : reduceIndices) {
@@ -70,8 +89,12 @@ public class ReduceCodeAnalysis {
             NodeIterable<Node> usages = parameterNode.usages();
             // Get Input-Range for the reduction loop
             for (Node node : usages) {
+
                 if (node instanceof StoreIndexedNode) {
                     StoreIndexedNode store = (StoreIndexedNode) node;
+                    if (!checkIfVarIsInLoop(store)) {
+                        continue;
+                    }
                     if (store.value() instanceof BinaryNode || store.value() instanceof BinaryArithmeticNode) {
                         ValueNode value = store.value();
                         reduceOperation.add(value);
@@ -106,6 +129,24 @@ public class ReduceCodeAnalysis {
             }
         }
         return operations;
+    }
+
+    private static ArrayLengthNode inspectArrayLengthNode(Node aux) {
+        ArrayLengthNode arrayLengthNode = null;
+        aux = aux.successors().first();
+        if (aux instanceof IfNode) {
+            IfNode ifNode = (IfNode) aux;
+            LogicNode condition = ifNode.condition();
+            if (condition instanceof IntegerLessThanNode) {
+                IntegerLessThanNode iln = (IntegerLessThanNode) condition;
+                if (iln.getX() instanceof ArrayLengthNode) {
+                    arrayLengthNode = (ArrayLengthNode) iln.getX();
+                } else if (iln.getY() instanceof ArrayLengthNode) {
+                    arrayLengthNode = (ArrayLengthNode) iln.getY();
+                }
+            }
+        }
+        return arrayLengthNode;
     }
 
     /**
@@ -154,6 +195,13 @@ public class ReduceCodeAnalysis {
                         }
                     }
 
+                    if (arrayLength == null) {
+                        // XXX: Patch to support PE when using ArrayLength at the beginning of the
+                        // method.
+                        // TODO: Find a better way to PE loop bounds
+                        arrayLength = inspectArrayLengthNode(aux);
+                    }
+
                     if (loopBegin != null) {
                         loopBound.add(Objects.requireNonNull(arrayLength).array());
                     }
@@ -200,9 +248,7 @@ public class ReduceCodeAnalysis {
             ArrayList<ValueNode> loopBound = findLoopUpperBoundNode(graph, reduceIndices);
             for (int i = 0; i < graph.method().getParameters().length; i++) {
                 for (ValueNode valueNode : loopBound) {
-
                     int position = !graph.method().isStatic() ? i + 1 : i;
-
                     if (valueNode.equals(graph.getParameter(position))) {
                         Object object = taskPackages.get(taskIndex).getTaskParameters()[i + 1];
                         inputSize = Array.getLength(object);

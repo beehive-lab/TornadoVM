@@ -61,8 +61,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
      * then load index. As soon as we discover more cases, new nodes should be
      * inspected here.
      * <p>
-     * Cover all the cases here as soon as we discover more reductions
-     * use-cases.
+     * Cover all the cases here as soon as we discover more reductions use-cases.
      *
      * @param arrayToStore
      * @param indexToStore
@@ -95,6 +94,25 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         return recursiveCheck(arrayToStore, indexToStore, valueToStore);
     }
 
+    private boolean checkIfVarIsInLoop(StoreIndexedNode store) {
+        Node node = store.predecessor();
+        boolean hasPred = true;
+        while (hasPred) {
+            if (node instanceof LoopBeginNode) {
+                return true;
+            } else if (node instanceof StartNode) {
+                hasPred = false;
+            } else if (node instanceof MergeNode) {
+                MergeNode merge = (MergeNode) node;
+                EndNode endNode = merge.forwardEndAt(0);
+                node = endNode.predecessor();
+            } else {
+                node = node.predecessor();
+            }
+        }
+        return false;
+    }
+
     private static class ReductionNodes {
         private ValueNode value;
         private ValueNode accumulator;
@@ -108,6 +126,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             this.inputArray = inputArray;
             this.startNode = startNode;
         }
+
     }
 
     private ValueNode obtainInputArray(ValueNode currentNode, ValueNode outputArray, ValueNode indexToStore) {
@@ -230,6 +249,11 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
 
                 boolean isReductionValue = checkIfReduction(store);
                 if (!isReductionValue) {
+                    continue;
+                }
+
+                boolean isInALoop = checkIfVarIsInLoop(store);
+                if (!isInALoop) {
                     continue;
                 }
 
