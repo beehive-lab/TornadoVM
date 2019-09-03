@@ -32,6 +32,7 @@ import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
+import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 
 public class TornadoHelper {
 

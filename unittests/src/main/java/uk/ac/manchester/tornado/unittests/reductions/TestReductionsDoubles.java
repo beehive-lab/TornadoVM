@@ -24,11 +24,13 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsDoubles extends TornadoTestBase {
@@ -280,7 +282,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
         }
     }
 
-    @Test
+    @TornadoNotSupported
+    @Ignore
     public void testRemoveOutliers() {
         double[] input = new double[SIZE];
 
@@ -304,13 +307,13 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.01);
     }
 
-    private static void prepareTornadoSumForMeanComputation(final double values[], @Reduce double[] result) {
+    private static void prepareTornadoSumForMeanComputation(final double[] values, @Reduce double[] result) {
         for (@Parallel int i = 0; i < values.length; i++) {
             result[0] += values[i];
         }
     }
 
-    private static void computeMapWithReduceValue(final double values[], @Reduce double[] result) {
+    private static void computeMapWithReduceValue(final double[] values, @Reduce double[] result) {
         for (@Parallel int i = 0; i < values.length; i++) {
             values[i] = result[0] + i;
         }
@@ -346,18 +349,20 @@ public class TestReductionsDoubles extends TornadoTestBase {
         }
     }
 
-    private static void computeStandardDeviation(final double values[], double[] sum, @Reduce double[] std) {
+    private static void computeStandardDeviation(final double[] values, final double[] sum, @Reduce final double[] std) {
         double s = sum[0] / values.length;
         for (@Parallel int i = 0; i < values.length; i++) {
             std[0] += Math.pow(values[i] - s, 2);
         }
     }
 
-    @Test
+    @TornadoNotSupported
+    @Ignore
     public void testMultipleReductions2() {
 
         double[] data = new double[32];
-        double[] dummy = new double[32];
+        double[] resultSum = new double[1];
+        double[] resultStd = new double[1];
 
         double[] sequentialSum = new double[1];
         double[] sequentialStd = new double[1];
@@ -367,9 +372,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
             data[idx] = Math.random();
             sequentialData[idx] = data[idx];
         });
-
-        double[] resultSum = new double[1];
-        double[] resultStd = new double[1];
 
         //@formatter:off
         new TaskSchedule("s0")
