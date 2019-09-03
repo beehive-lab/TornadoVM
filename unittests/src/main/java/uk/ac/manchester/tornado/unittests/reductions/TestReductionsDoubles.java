@@ -283,7 +283,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
     }
 
     @TornadoNotSupported
-    @Ignore
     public void testRemoveOutliers() {
         double[] input = new double[SIZE];
 
@@ -357,7 +356,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
     }
 
     @TornadoNotSupported
-    @Ignore
     public void testMultipleReductions2() {
 
         double[] data = new double[32];

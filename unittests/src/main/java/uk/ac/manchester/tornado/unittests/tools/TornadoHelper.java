@@ -27,6 +27,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
@@ -36,29 +37,26 @@ import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 
 public class TornadoHelper {
 
-    public static void printResult(Result result) {
+    private static void printResult(Result result) {
         System.out.printf("Test ran: %s, Failed: %s%n", result.getRunCount(), result.getFailureCount());
     }
 
-    public static void printResult(int success, int failed) {
+    private static void printResult(int success, int failed) {
         System.out.printf("Test ran: %s, Failed: %s%n", (success + failed), failed);
     }
 
-    public static void printResult(int success, int failed, StringBuffer buffer) {
+    private static void printResult(int success, int failed, StringBuffer buffer) {
         buffer.append(String.format("Test ran: %s, Failed: %s%n", (success + failed), failed));
     }
 
-    public static boolean getProperty(String property) {
+    static boolean getProperty(String property) {
         if (System.getProperty(property) != null) {
-            if (System.getProperty(property).toLowerCase().equals("true")) {
-                return true;
-            }
-            return false;
+            return System.getProperty(property).toLowerCase().equals("true");
         }
         return false;
     }
 
-    public static Method getMethodForName(Class<?> klass, String nameMethod) {
+    private static Method getMethodForName(Class<?> klass, String nameMethod) {
         Method method = null;
         for (Method m : klass.getMethods()) {
             if (m.getName().equals(nameMethod)) {
@@ -68,13 +66,24 @@ public class TornadoHelper {
         return method;
     }
 
+    private static class UnittestsCollection {
+        ArrayList<Method> methodsToTest;
+        HashSet<Method> unsupportedMethods;
+
+        UnittestsCollection(ArrayList<Method> methodsToTest, HashSet<Method> unsupportedMethods) {
+            this.methodsToTest = methodsToTest;
+            this.unsupportedMethods = unsupportedMethods;
+        }
+    }
+
     /**
      * It returns the list of methods with the {@link @Test} annotation.
      * 
      */
-    public static ArrayList<Method> getTestMethods(Class<?> klass) {
+    static UnittestsCollection getTestMethods(Class<?> klass) {
         Method[] methods = klass.getMethods();
         ArrayList<Method> methodsToTest = new ArrayList<>();
+        HashSet<Method> unsupportedMethods = new HashSet<>();
         for (Method m : methods) {
             Annotation[] annotations = m.getAnnotations();
             boolean testEnabled = false;
@@ -84,13 +93,16 @@ public class TornadoHelper {
                     ignoreTest = true;
                 } else if (a instanceof org.junit.Test) {
                     testEnabled = true;
+                } else if (a instanceof TornadoNotSupported) {
+                    testEnabled = true;
+                    unsupportedMethods.add(m);
                 }
             }
             if (testEnabled & !ignoreTest) {
                 methodsToTest.add(m);
             }
         }
-        return methodsToTest;
+        return new UnittestsCollection(methodsToTest, unsupportedMethods);
     }
 
     public static void printInfoTest(String buffer, int success, int fails) {
@@ -99,12 +111,14 @@ public class TornadoHelper {
         printResult(success, fails);
     }
 
-    public static void runTestVerbose(String klassName, String methodName) throws ClassNotFoundException {
+    static void runTestVerbose(String klassName, String methodName) throws ClassNotFoundException {
 
         Class<?> klass = Class.forName(klassName);
         ArrayList<Method> methodsToTest = new ArrayList<>();
+        UnittestsCollection suite = null;
         if (methodName == null) {
-            methodsToTest = getTestMethods(klass);
+            suite = getTestMethods(klass);
+            methodsToTest = suite.methodsToTest;
         } else {
             Method method = TornadoHelper.getMethodForName(klass, methodName);
             methodsToTest.add(method);
@@ -115,6 +129,7 @@ public class TornadoHelper {
 
         int successCounter = 0;
         int failedCounter = 0;
+        int notsupportedCounter = 0;
 
         bufferConsole.append("Test: " + klass + "\n");
         bufferFile.append("Test: " + klass + "\n");
@@ -124,6 +139,13 @@ public class TornadoHelper {
             bufferConsole.append(message);
             bufferFile.append(message);
 
+            if (suite.unsupportedMethods.contains(m)) {
+                message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [NOT SUPPORTED] " + ColorsTerminal.RESET + "\n");
+                bufferConsole.append(message);
+                bufferFile.append(message);
+                notsupportedCounter++;
+                continue;
+            }
             Request request = Request.method(klass, m.getName());
             Result result = new JUnitCore().run(request);
 
@@ -159,13 +181,13 @@ public class TornadoHelper {
         }
     }
 
-    public static void runTestClassAndMethod(String klassName, String methodName) throws ClassNotFoundException {
+    static void runTestClassAndMethod(String klassName, String methodName) throws ClassNotFoundException {
         Request request = Request.method(Class.forName(klassName), methodName);
         Result result = new JUnitCore().run(request);
         printResult(result);
     }
 
-    public static void runTestClass(String klassName) throws ClassNotFoundException {
+    static void runTestClass(String klassName) throws ClassNotFoundException {
         Request request = Request.aClass(Class.forName(klassName));
         Result result = new JUnitCore().run(request);
         printResult(result);
