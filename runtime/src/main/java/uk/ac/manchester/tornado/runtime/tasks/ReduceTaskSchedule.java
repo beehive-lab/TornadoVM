@@ -97,7 +97,7 @@ class ReduceTaskSchedule {
                     if (!sequential) {
                         originalBinaries.append("," + binaries[i] + "," + taskScheduleName + "." + taskName + ".device=0:" + deviceNumber);
                     } else {
-                        originalBinaries.append("," + binaries[i] + "," + taskScheduleName + "." + SEQUENTIAL_TASK_REDUCE_NAME + ".device=0:" + deviceNumber);
+                        originalBinaries.append("," + binaries[i] + "," + taskScheduleName + "." + SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName + ".device=0:" + deviceNumber);
                     }
                 }
             }
@@ -401,7 +401,7 @@ class ReduceTaskSchedule {
                         inputSize -= elementsReductionLeftOver;
 
                         final int sizeTargetDevice = inputSize;
-                        if (isTaskEligibleSplitHostAndDevice(targetDeviceToRun, elementsReductionLeftOver, isInputPowerOfTwo)) {
+                        if (isTaskEligibleSplitHostAndDevice(targetDeviceToRun, elementsReductionLeftOver, false)) {
                             Object codeTask = taskPackage.getTaskParameters()[0];
                             createThreads(codeTask, taskPackage, sizeTargetDevice);
                         }
@@ -461,13 +461,13 @@ class ReduceTaskSchedule {
                 for (int i = 0; i < streamUpdateList.size(); i++) {
                     Object newArray = streamUpdateList.get(i);
                     int sizeReduceArray = sizesReductionArray.get(i);
-                    for (REDUCE_OPERATION op : operations) {
-                        final String newTaskSequentialName = taskScheduleReduceName + "." + SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName;
-                        counterSeqName++;
-                        TornadoRuntime.setProperty(newTaskSequentialName + ".device", "0:" + deviceToRun);
+                    for (REDUCE_OPERATION operation : operations) {
+                        final String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName;
+                        String fullName = rewrittenTaskSchedule.getTaskScheduleName() + "." + newTaskSequentialName;
+                        TornadoRuntime.setProperty(fullName + ".device", "0:" + deviceToRun);
                         inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId(), true);
 
-                        switch (op) {
+                        switch (operation) {
                             case ADD:
                                 ReduceFactory.handleAdd(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
                                 break;
@@ -483,6 +483,7 @@ class ReduceTaskSchedule {
                             default:
                                 throw new TornadoRuntimeException("[ERROR] Reduce operation not supported yet.");
                         }
+                        counterSeqName++;
                     }
                 }
             }
