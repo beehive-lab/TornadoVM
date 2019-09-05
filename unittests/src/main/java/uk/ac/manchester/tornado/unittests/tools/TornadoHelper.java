@@ -66,11 +66,11 @@ public class TornadoHelper {
         return method;
     }
 
-    private static class UnittestsCollection {
+    static class TestSuiteCollection {
         ArrayList<Method> methodsToTest;
         HashSet<Method> unsupportedMethods;
 
-        UnittestsCollection(ArrayList<Method> methodsToTest, HashSet<Method> unsupportedMethods) {
+        TestSuiteCollection(ArrayList<Method> methodsToTest, HashSet<Method> unsupportedMethods) {
             this.methodsToTest = methodsToTest;
             this.unsupportedMethods = unsupportedMethods;
         }
@@ -80,7 +80,7 @@ public class TornadoHelper {
      * It returns the list of methods with the {@link @Test} annotation.
      * 
      */
-    static UnittestsCollection getTestMethods(Class<?> klass) {
+    private static TestSuiteCollection getTestMethods(Class<?> klass) {
         Method[] methods = klass.getMethods();
         ArrayList<Method> methodsToTest = new ArrayList<>();
         HashSet<Method> unsupportedMethods = new HashSet<>();
@@ -102,7 +102,7 @@ public class TornadoHelper {
                 methodsToTest.add(m);
             }
         }
-        return new UnittestsCollection(methodsToTest, unsupportedMethods);
+        return new TestSuiteCollection(methodsToTest, unsupportedMethods);
     }
 
     public static void printInfoTest(String buffer, int success, int fails) {
@@ -115,7 +115,7 @@ public class TornadoHelper {
 
         Class<?> klass = Class.forName(klassName);
         ArrayList<Method> methodsToTest = new ArrayList<>();
-        UnittestsCollection suite = null;
+        TestSuiteCollection suite = null;
         if (methodName == null) {
             suite = getTestMethods(klass);
             methodsToTest = suite.methodsToTest;
@@ -129,7 +129,6 @@ public class TornadoHelper {
 
         int successCounter = 0;
         int failedCounter = 0;
-        int notsupportedCounter = 0;
 
         bufferConsole.append("Test: " + klass + "\n");
         bufferFile.append("Test: " + klass + "\n");
@@ -139,11 +138,10 @@ public class TornadoHelper {
             bufferConsole.append(message);
             bufferFile.append(message);
 
-            if (suite.unsupportedMethods.contains(m)) {
+            if (suite != null && suite.unsupportedMethods.contains(m)) {
                 message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [NOT SUPPORTED] " + ColorsTerminal.RESET + "\n");
                 bufferConsole.append(message);
                 bufferFile.append(message);
-                notsupportedCounter++;
                 continue;
             }
             Request request = Request.method(klass, m.getName());
