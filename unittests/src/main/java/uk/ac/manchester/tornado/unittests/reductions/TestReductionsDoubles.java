@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
@@ -359,6 +358,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
     public void testMultipleReductions2() {
 
         double[] data = new double[32];
+        double[] data2 = new double[32];
+
         double[] resultSum = new double[1];
         double[] resultStd = new double[1];
 
@@ -368,6 +369,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
         IntStream.range(0, data.length).forEach(idx -> {
             data[idx] = Math.random();
+            data[idx] = data2[idx];
             sequentialData[idx] = data[idx];
         });
 
@@ -375,7 +377,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         new TaskSchedule("s0")
                 .streamIn(data)
                 .task("t0", TestReductionsDoubles::prepareTornadoSumForMeanComputation, data, resultSum)
-                .task("t1", TestReductionsDoubles::computeStandardDeviation, data, resultSum, resultStd)
+                .task("t1", TestReductionsDoubles::computeStandardDeviation, data2, resultSum, resultStd)
                 .streamOut(resultSum, resultStd)
                 .execute();
         //@formatter:on
