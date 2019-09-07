@@ -18,7 +18,7 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: Michalis Papadimitriou
  *
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.HashMap;
 
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.Phase;
 
@@ -36,22 +35,27 @@ public class TornadoFeatureExtraction extends Phase {
     @Override
     protected void run(StructuredGraph graph) {
 
-        HashMap<String, Integer> features = new HashMap<>();
+        HashMap<String, Integer> features = new HashMap<String, Integer>();
 
         for (Node node : graph.getNodes()) {
-
             Integer j = features.get(node.asNode().getNodeClass().shortName());
             features.put(node.asNode().getNodeClass().shortName(), (j == null) ? 1 : j + 1);
-
-            if (node instanceof LoopBeginNode) {
-
-            }
-            // System.out.println(node.getNodeClass().shortName().toLowerCase());
-            System.out.println(node.asNode().getNodeClass().shortName());
-            // System.out.println(node.getClass().getName());
-
         }
         System.out.println(Collections.singletonList(features));
+
+        System.out.println("Global Writes: " + features.get("Write"));
+        System.out.println("Global Reads: " + features.get("FloatingRead"));
+        System.out.println("Number of Loops: " + features.get("LoopBegin"));
+        System.out.println("Number of Parallel Loops: " + features.get("GlobalThreadId"));
+        System.out.println("Number of Branches: " + " X X X ");
+        System.out.println("Number of Math Operations: " +  "X X X " );
+        System.out.println("Number of Math Functions: " +  "X X X " );
+
+        // System.out.println("Number of Branches: " + (features.get("FloatingRead") -
+        // features.get("LoopBegin")));
+        // features.get("LoopBegin").intValue()));
+        // System.out.println("Number of Branches: " + branches);
+        /// System.out.println("G" + );
     }
 
     public void outJson(HashMap map) {
