@@ -47,7 +47,7 @@ public class TornadoFeatureExtraction extends Phase {
         System.out.println("Global Reads: " + features.get("FloatingRead"));
         System.out.println("Number of Loops: " + features.get("LoopBegin"));
         System.out.println("Number of Parallel Loops: " + features.get("GlobalThreadId"));
-        System.out.println("Number of Branches: " + " X X X ");
+        System.out.println("Number of Branches: " + ((features.get("LoopBegins")!=null && features.get("If")!=null ) ? (features.get("If") - features.get("LoopBegin")): 0));
         System.out.println("Number of Math Operations: " +  "X X X " );
         System.out.println("Number of Math Functions: " +  "X X X " );
 
