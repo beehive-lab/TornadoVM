@@ -50,6 +50,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
 
     private final CanonicalizerPhase canonicalizer;
+    private static final int UNROLL_FACTOR_NUMBER = 4;
 
     public TornadoPragmaUnroll(CanonicalizerPhase canonicalizer) {
         this.canonicalizer = canonicalizer;
@@ -94,7 +95,7 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
         // Prevent Pragma Unroll for non-fpga devices
-        if (graph.hasLoops() && context.getDeviceMapping().getDeviceType().equals("ACCELERATOR")) {
+        if (graph.hasLoops() && context.getDeviceMapping().getDeviceType().toString().toUpperCase().equals("ACCELERATOR")) {
             boolean peeled;
             do {
                 peeled = false;
@@ -107,7 +108,7 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
                         for (EndNode end : snapshot) {
                             idx++;
                             if (idx == 2) {
-                                PragmaUnrollNode unroll = graph.addOrUnique(new PragmaUnrollNode(2));
+                                PragmaUnrollNode unroll = graph.addOrUnique(new PragmaUnrollNode(UNROLL_FACTOR_NUMBER));
                                 graph.addBeforeFixed(end, unroll);
                             }
 
