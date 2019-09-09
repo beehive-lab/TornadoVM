@@ -41,24 +41,20 @@ public class TornadoFeatureExtraction extends Phase {
             Integer j = features.get(node.asNode().getNodeClass().shortName());
             features.put(node.asNode().getNodeClass().shortName(), (j == null) ? 1 : j + 1);
         }
-        System.out.println(Collections.singletonList(features));
+        //System.out.println(Collections.singletonList(features));
 
-        System.out.println("Global Writes: " + features.get("Write"));
-        System.out.println("Global Reads: " + features.get("FloatingRead"));
+        System.out.println("Global Memory Writes: " + features.get("Write"));
+        System.out.println("Global Memory Reads: " + features.get("FloatingRead"));
+        System.out.println("Local Memory Reads: " + " X X X ");
+        System.out.println("Local Memory Writes: " + " X X X");
+        System.out.println("Vector Operations: " + (features.get("VectorLoadElement") != null));
         System.out.println("Number of Loops: " + features.get("LoopBegin"));
         System.out.println("Number of Parallel Loops: " + features.get("GlobalThreadId"));
-        System.out.println("Number of Branches: " + ((features.get("LoopBegins")!=null && features.get("If")!=null ) ? (features.get("If") - features.get("LoopBegin")): 0));
-        System.out.println("Number of Math Operations: " +  "X X X " );
-        System.out.println("Number of Math Functions: " +  "X X X " );
-
-        // System.out.println("Number of Branches: " + (features.get("FloatingRead") -
-        // features.get("LoopBegin")));
-        // features.get("LoopBegin").intValue()));
-        // System.out.println("Number of Branches: " + branches);
-        /// System.out.println("G" + );
+        System.out.println("Number of Branches: " + ((features.get("LoopBegins") != null && features.get("If") != null) ? (features.get("If") - features.get("LoopBegin")) : 0));
+        System.out.println("Number of Switch Statements: " + features.get("IntegerSwitch"));
+        // System.out.println("Number of Math Operations: " + mathOperations);
+        System.out.println("Number of Math Operations: " + "X X X ");
+        System.out.println("Number of Math Functions: " + "X X X ");
     }
 
-    public void outJson(HashMap map) {
-
-    }
 }
