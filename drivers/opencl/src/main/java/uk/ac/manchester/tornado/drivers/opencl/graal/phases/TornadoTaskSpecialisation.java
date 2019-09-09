@@ -252,8 +252,11 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             if (context.hasArgs()) {
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                    if (Tornado.ACCELERATOR_IS_FPGA && context.getDeviceMapping().getDeviceType().equals("ACCELERATOR")) {
+                    System.out.println("context.getDeviceMapping().getDeviceType(): " + context.getDeviceMapping().getDeviceType());
+                    if (Tornado.ACCELERATOR_IS_FPGA && context.getDeviceMapping().getDeviceType().toString().equals("ACCELERATOR")) {
+                        System.out.println("NOT @@@@@@@@@@@@@@@ Propagate parameters!!!!!!!");
                     } else {
+                        System.out.println("Propagate parameters!!!!!!!");
                         propagateParameters(graph, param, context.getArgs());
                     }
                 }
