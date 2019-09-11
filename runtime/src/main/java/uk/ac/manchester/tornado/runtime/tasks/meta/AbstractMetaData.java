@@ -50,8 +50,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private boolean deviceManuallySet;
     private long numThreads;
 
-    public static final int DEFAULT_DRIVER_INDEX = 0;
-    public static final int DEFAULT_DEVICE_INDEX = 0;
+    private static final int DEFAULT_DRIVER_INDEX = 0;
+    private static final int DEFAULT_DEVICE_INDEX = 0;
 
     private static String getProperty(String key) {
         return System.getProperty(key);
@@ -77,7 +77,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return index;
     }
 
-    public boolean isDeviceManuallySet() {
+    boolean isDeviceManuallySet() {
         return deviceManuallySet;
     }
 
@@ -88,8 +88,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      */
     public void setDevice(TornadoDevice device) {
         this.driverIndex = DEFAULT_DRIVER_INDEX;
-        int index = getDeviceIndex(DEFAULT_DRIVER_INDEX, device);
-        this.deviceIndex = index;
+        this.deviceIndex = getDeviceIndex(DEFAULT_DRIVER_INDEX, device);
         if (device instanceof TornadoAcceleratorDevice) {
             this.device = (TornadoAcceleratorDevice) device;
         }
@@ -104,8 +103,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      */
     public void setDriverDevice(int driverIndex, TornadoAcceleratorDevice device) {
         this.driverIndex = deviceIndex;
-        int index = getDeviceIndex(driverIndex, device);
-        this.deviceIndex = index;
+        this.deviceIndex = getDeviceIndex(driverIndex, device);
         this.device = device;
     }
 
@@ -363,7 +361,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         return numThreads;
     }
 
-    public AbstractMetaData(String id) {
+    AbstractMetaData(String id) {
         this.id = id;
         shouldRecompile = true;
 

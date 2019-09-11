@@ -38,7 +38,6 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
-import org.graalvm.compiler.hotspot.replacements.NewObjectSnippets;
 import org.graalvm.compiler.nodes.AbstractDeoptimizeNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
@@ -94,7 +93,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.CastNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.LoadIndexedVectorNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
@@ -112,9 +110,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private final ConstantReflectionProvider constantReflection;
     private final TornadoVMConfig vmConfig;
 
-    protected NewObjectSnippets.Templates newObjectSnippets;
-    protected ReduceGPUSnippets.Templates GPUreduceSnippets;
-    protected ReduceCPUSnippets.Templates CPUreduceSnippets;
+    private ReduceGPUSnippets.Templates GPUReduceSnippets;
+    private ReduceCPUSnippets.Templates CPUReduceSnippets;
 
     public OCLLoweringProvider(MetaAccessProvider metaAccess, ForeignCallsProvider foreignCalls, ConstantReflectionProvider constantReflection, TornadoVMConfig vmConfig, OCLTargetDescription target) {
         super(metaAccess, foreignCalls, target);
@@ -129,8 +126,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private void initializeSnippets(OptionValues options, SnippetCounter.Group.Factory factory, Providers providers, SnippetReflectionProvider snippetReflection) {
-        this.GPUreduceSnippets = new ReduceGPUSnippets.Templates(options, providers, snippetReflection, target);
-        this.CPUreduceSnippets = new ReduceCPUSnippets.Templates(options, providers, snippetReflection, target);
+        this.GPUReduceSnippets = new ReduceGPUSnippets.Templates(options, providers, snippetReflection, target);
+        this.CPUReduceSnippets = new ReduceCPUSnippets.Templates(options, providers, snippetReflection, target);
     }
 
     @Override
@@ -144,7 +141,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerVectorStoreNode((VectorStoreNode) node, tool);
         } else if (node instanceof AbstractDeoptimizeNode || node instanceof UnwindNode || node instanceof RemNode) {
             /*
-             * No lowering, we generate LIR directly for these nodes.
+             * No lowering, we currently generate LIR directly for these nodes.
              */
         } else if (node instanceof FloatConvertNode) {
             lowerFloatConvertNode((FloatConvertNode) node, tool);
@@ -152,14 +149,11 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             lowerNewArrayNode((NewArrayNode) node, tool);
         } else if (node instanceof AtomicAddNode) {
             lowerAtomicAddNode((AtomicAddNode) node, tool);
-        } else if (node instanceof LoadIndexedNode || node instanceof LoadIndexedVectorNode) {
+        } else if (node instanceof LoadIndexedNode) {
             lowerLoadIndexedNode((LoadIndexedNode) node, tool);
         } else if (node instanceof StoreIndexedNode) {
             lowerStoreIndexedNode((StoreIndexedNode) node, tool);
         } else if (node instanceof StoreAtomicIndexedNode) {
-            /*
-             * Reduction
-             */
             lowerStoreAtomicsReduction(node, tool);
         } else if (node instanceof LoadFieldNode) {
             lowerLoadFieldNode((LoadFieldNode) node, tool);
@@ -198,9 +192,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
             // CPU SCHEDULER
             if (n instanceof MulNode) {
-                Iterator<Node> usages2 = n.usages().iterator();
-                while (usages2.hasNext()) {
-                    Node n2 = usages2.next();
+                for (Node n2 : n.usages()) {
                     if (n2 instanceof PhiNode) {
                         threadID = (ValueNode) n2;
                         cpuScheduler = true;
@@ -212,17 +204,17 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
         // Depending on the Scheduler, call the proper snippet factory
         if (cpuScheduler) {
-            CPUreduceSnippets.lower(storeIndexed, threadID, oclIdNode, startIndexNode, tool);
+            CPUReduceSnippets.lower(storeIndexed, threadID, oclIdNode, startIndexNode, tool);
         } else {
-            GPUreduceSnippets.lower(storeIndexed, threadID, oclGlobalSize, tool);
+            GPUReduceSnippets.lower(storeIndexed, threadID, oclGlobalSize, tool);
         }
     }
 
     private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
-        if (!USE_ATOMICS) {
-            lowerReduceSnippets((StoreAtomicIndexedNode) node, tool);
-        } else {
+        if (USE_ATOMICS) {
             lowerAtomicStoreIndexedNode((StoreAtomicIndexedNode) node, tool);
+        } else {
+            lowerReduceSnippets((StoreAtomicIndexedNode) node, tool);
         }
     }
 
@@ -266,7 +258,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         graph.replaceFixed(loadIndexed, memoryRead);
     }
 
-    protected void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
+    private void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
 
         StructuredGraph graph = storeIndexed.graph();
         JavaKind elementKind = storeIndexed.elementKind();
@@ -292,10 +284,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private boolean isSimpleCharOrShort(JavaKind elementKind, ValueNode value) {
-        if ((elementKind == JavaKind.Char && value.getStackKind() != JavaKind.Object) || (elementKind == JavaKind.Short && value.getStackKind() != JavaKind.Object)) {
-            return true;
-        }
-        return false;
+        return (elementKind == JavaKind.Char && value.getStackKind() != JavaKind.Object) || (elementKind == JavaKind.Short && value.getStackKind() != JavaKind.Object);
     }
 
     @Override
@@ -364,21 +353,19 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
             LoweredCallTargetNode loweredCallTarget = null;
 
-            if (loweredCallTarget == null) {
-                StampPair returnStampPair = callTarget.returnStamp();
-                Stamp returnStamp = returnStampPair.getTrustedStamp();
-                if (returnStamp instanceof ObjectStamp) {
-                    ObjectStamp os = (ObjectStamp) returnStamp;
-                    ResolvedJavaType type = os.javaType(tool.getMetaAccess());
-                    OCLKind oclKind = OCLKind.fromResolvedJavaType(type);
-                    if (oclKind != OCLKind.ILLEGAL) {
-                        returnStampPair = StampPair.createSingle(OCLStampFactory.getStampFor(oclKind));
-                    }
+            StampPair returnStampPair = callTarget.returnStamp();
+            Stamp returnStamp = returnStampPair.getTrustedStamp();
+            if (returnStamp instanceof ObjectStamp) {
+                ObjectStamp os = (ObjectStamp) returnStamp;
+                ResolvedJavaType type = os.javaType(tool.getMetaAccess());
+                OCLKind oclKind = OCLKind.fromResolvedJavaType(type);
+                if (oclKind != OCLKind.ILLEGAL) {
+                    returnStampPair = StampPair.createSingle(OCLStampFactory.getStampFor(oclKind));
                 }
-
-                loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters.toArray(new ValueNode[parameters.size()]), returnStampPair, signature, callTarget.targetMethod(),
-                        HotSpotCallingConventionType.JavaCall, callTarget.invokeKind()));
             }
+
+            loweredCallTarget = graph.add(new TornadoDirectCallTargetNode(parameters.toArray(new ValueNode[parameters.size()]), returnStampPair, signature, callTarget.targetMethod(),
+                    HotSpotCallingConventionType.JavaCall, callTarget.invokeKind()));
 
             callTarget.replaceAndDelete(loweredCallTarget);
         }
@@ -387,7 +374,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     private void lowerFloatConvertNode(FloatConvertNode floatConvert, LoweringTool tool) {
         final StructuredGraph graph = floatConvert.graph();
-        // TODO should probably create a specific floatconvert node?
+        // TODO should probably create a specific float-convert node?
 
         final CastNode asFloat = graph.addWithoutUnique(new CastNode(floatConvert.stamp(), floatConvert.getFloatConvert(), floatConvert.getValue()));
         floatConvert.replaceAtUsages(asFloat);
@@ -467,7 +454,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     protected ValueNode createReadHub(StructuredGraph graph, ValueNode object, LoweringTool tool) {
-        unimplemented();
+        unimplemented("Create READ hub not supported yet");
         return null;
     }
 

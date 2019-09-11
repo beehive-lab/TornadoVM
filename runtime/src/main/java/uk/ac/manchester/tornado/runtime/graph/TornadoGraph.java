@@ -40,7 +40,7 @@ public class TornadoGraph {
     private BitSet valid;
     private int nextNode;
 
-    public TornadoGraph() {
+    TornadoGraph() {
         nodes = new AbstractNode[INITIAL_SIZE];
         valid = new BitSet(INITIAL_SIZE);
         nextNode = 0;
@@ -62,13 +62,12 @@ public class TornadoGraph {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends AbstractNode> T addUnique(T node) {
+    <T extends AbstractNode> T addUnique(T node) {
         for (int i = valid.nextSetBit(0); i != -1 && i < nodes.length; i = valid.nextSetBit(i + 1)) {
             if (nodes[i].compareTo(node) == 0) {
                 return (T) nodes[i];
             }
         }
-
         add(node);
         return node;
     }
@@ -79,7 +78,7 @@ public class TornadoGraph {
     }
 
     private void resize() {
-        TornadoInternalError.unimplemented();
+        TornadoInternalError.unimplemented("Tornado Graph resize not implemented yet.");
     }
 
     public <T extends AbstractNode> BitSet filter(Class<T> type) {
@@ -102,14 +101,14 @@ public class TornadoGraph {
         return nodes;
     }
 
-    public void papply(BitSet predicates, Consumer<AbstractNode> consumer) {
+    private void pApply(BitSet predicates, Consumer<AbstractNode> consumer) {
         for (int i = predicates.nextSetBit(0); i != -1 && i < predicates.length(); i = predicates.nextSetBit(i + 1)) {
             consumer.accept(nodes[i]);
         }
     }
 
     public void apply(Consumer<AbstractNode> consumer) {
-        papply(valid, consumer);
+        pApply(valid, consumer);
     }
 
     public void print() {
