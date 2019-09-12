@@ -86,6 +86,21 @@ public class BlackAndWhiteTransform {
             }
         }
 
+	private static void compute1D(int[] image, final int w, final int s) {
+            for (@Parallel int i = 0; i < w * s; i++) {
+                int rgb = image[i];
+                int alpha = (rgb >> 24) & 0xff;
+                int red = (rgb >> 16) & 0xFF;
+                int green = (rgb >> 8) & 0xFF;
+                int blue = (rgb & 0xFF);
+
+                int grayLevel = (red + green + blue) / 3;
+                int gray = (alpha << 24) | (grayLevel << 16) | (grayLevel << 8) | grayLevel;
+
+                image[i] = gray;
+            }
+        }
+
         private void writeImage(String fileName) {
             try {
                 ImageIO.write(image, "jpg", new File("/tmp/" + fileName));
@@ -110,7 +125,7 @@ public class BlackAndWhiteTransform {
 
             if (tornadoTask == null) {
                 tornadoTask = new TaskSchedule("s0");
-                tornadoTask.streamIn(imageRGB).task("t0", LoadImage::compute, imageRGB, w, s).streamOut(imageRGB);
+                tornadoTask.streamIn(imageRGB).task("t0", LoadImage::compute1D, imageRGB, w, s).streamOut(imageRGB);
 
             }
             long taskStart = System.nanoTime();
