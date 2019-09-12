@@ -57,10 +57,13 @@ public class ReduceGPUSnippets implements Snippets {
      * 1D full snippet for OpenCL reductions.
      * 
      * @param inputArray
+     *            input int array
      * @param outputArray
-     * @param localMemory
+     *            output array with partial reductions
      * @param gidx
-     * @param numGroups
+     *            OpenCL GlobalID node
+     * @param globalSize
+     *            OpenCL Global Size
      */
     @Snippet
     public static void reduceIntAdd(int[] inputArray, int[] outputArray, int gidx, int globalSize) {
@@ -594,8 +597,10 @@ public class ReduceGPUSnippets implements Snippets {
 
     public static class Templates extends AbstractTemplates implements TornadoSnippetTypeInference {
 
-        @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippet = snippet(ReduceGPUSnippets.class, "reduceIntAdd");
-        @SuppressWarnings("unused") private final SnippetInfo fullReduceIntSnippetGlobal = snippet(ReduceGPUSnippets.class, "fullReduceIntAddGlobalMemory");
+        @SuppressWarnings("unused")
+        private final SnippetInfo reduceIntSnippet = snippet(ReduceGPUSnippets.class, "reduceIntAdd");
+        @SuppressWarnings("unused")
+        private final SnippetInfo fullReduceIntSnippetGlobal = snippet(ReduceGPUSnippets.class, "fullReduceIntAddGlobalMemory");
 
         // Add
         private final SnippetInfo partialReduceIntSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceIntAddGlobal");
@@ -623,7 +628,8 @@ public class ReduceGPUSnippets implements Snippets {
         private final SnippetInfo partialReduceMinFloatSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceFloatMinGlobal");
         private final SnippetInfo partialReduceMinDoubleSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceDoubleMinGlobal");
 
-        @SuppressWarnings("unused") private final SnippetInfo reduceIntSnippetLocalMemory = snippet(ReduceGPUSnippets.class, "reduceIntAddLocalMemory");
+        @SuppressWarnings("unused")
+        private final SnippetInfo reduceIntSnippetLocalMemory = snippet(ReduceGPUSnippets.class, "reduceIntAddLocalMemory");
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);

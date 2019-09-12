@@ -48,12 +48,13 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
 class ReduceTaskSchedule {
 
-    static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce-seq";
+    private static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce-seq";
 
     private static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
     private static final int DEFAULT_GPU_WORK_GROUP = 256;
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static int counterName = 0;
+    private static int counterSeqName = 0;
 
     private String idTaskSchedule;
     private ArrayList<TaskPackage> taskPackages;
@@ -81,7 +82,7 @@ class ReduceTaskSchedule {
                 binaries = MetaDataUtils.processPrecompiledBinariesFromFile(binaries[0]);
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < binaries.length; i++) {
-                    sb.append(binaries[i].replaceAll(" ", "") + ",");
+                    sb.append(binaries[i].replaceAll(" ", "")).append(",");
                 }
                 sb = sb.deleteCharAt(sb.length() - 1);
                 originalBinaries = new StringBuffer(sb.toString());
@@ -96,7 +97,7 @@ class ReduceTaskSchedule {
                     if (!sequential) {
                         originalBinaries.append("," + binaries[i] + "," + taskScheduleName + "." + taskName + ".device=0:" + deviceNumber);
                     } else {
-                        originalBinaries.append("," + binaries[i] + "," + taskScheduleName + "." + SEQUENTIAL_TASK_REDUCE_NAME + ".device=0:" + deviceNumber);
+                        originalBinaries.append("," + binaries[i] + "," + taskScheduleName + "." + SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName + ".device=0:" + deviceNumber);
                     }
                 }
             }
@@ -173,8 +174,7 @@ class ReduceTaskSchedule {
      * It runs a compiled method by Graal in HotSpot.
      * 
      * @param taskPackage
-     *            {@link TaskPackage} metadata that stores the method
-     *            parameters.
+     *            {@link TaskPackage} metadata that stores the method parameters.
      * @param code
      *            {@link InstalledCode} code to be executed
      */
@@ -203,7 +203,7 @@ class ReduceTaskSchedule {
     /**
      * Returns true if the input size is not power of 2 and the target device is
      * either the GPU or the FPGA.
-     * 
+     *
      * @param targetDeviceToRun
      *            index of the target device within the Tornado device list.
      * @return boolean
@@ -331,15 +331,14 @@ class ReduceTaskSchedule {
      * Compose and execute the new reduction. It dynamically creates a new
      * task-schedule expression that contains: a) the parallel reduction; b) the
      * final sequential reduction.
-     * 
-     * It also creates a new thread in the case the input size for the reduction
-     * is not power of two and the target device is either the FPGA or the GPU.
-     * In this case, the new thread will compile the host part with the
-     * corresponding sub-range that does not fit into the power-of-two part.
-     * 
+     *
+     * It also creates a new thread in the case the input size for the reduction is
+     * not power of two and the target device is either the FPGA or the GPU. In this
+     * case, the new thread will compile the host part with the corresponding
+     * sub-range that does not fit into the power-of-two part.
+     *
      * @param metaReduceTable
-     *            Metadata to create all new tasks for the reductions
-     *            dynamically.
+     *            Metadata to create all new tasks for the reductions dynamically.
      * @return {@link TaskSchedule} with the new reduction
      */
     TaskSchedule scheduleWithReduction(MetaReduceCodeAnalysis metaReduceTable) {
@@ -351,7 +350,7 @@ class ReduceTaskSchedule {
         String taskScheduleReduceName = TASK_SCHEDULE_PREFIX + counterName;
         String tsName = idTaskSchedule;
 
-        ArrayList<Object> streamReduceUpdatedList = new ArrayList<>();
+        HashMap<Integer, ArrayList<Object>> streamReduceTable = new HashMap<>();
         ArrayList<Integer> sizesReductionArray = new ArrayList<>();
         if (originalReduceVariables == null) {
             originalReduceVariables = new HashMap<>();
@@ -367,6 +366,8 @@ class ReduceTaskSchedule {
             MetaReduceTasks metaReduceTasks;
             TaskPackage taskPackage = taskPackages.get(taskNumber);
 
+            ArrayList<Object> streamReduceList = new ArrayList<>();
+
             deviceToRun = changeDeviceIfNeeded(taskScheduleReduceName, tsName, taskPackage.getId());
             final int targetDeviceToRun = deviceToRun;
             inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId(), false);
@@ -379,6 +380,13 @@ class ReduceTaskSchedule {
                 for (Integer paramIndex : listOfReduceIndexParameters) {
 
                     Object originalReduceVariable = taskPackage.getTaskParameters()[paramIndex + 1];
+
+                    // If the array has been already created, we don't have to create another one,
+                    // just obtain the already created reference from the cache-table.
+                    if (originalReduceVariables.containsKey(originalReduceVariable)) {
+                        continue;
+                    }
+
                     int inputSize = metaReduceTasks.getInputSize(taskNumber);
 
                     updateGlobalAndLocalDimensionsFPGA(targetDeviceToRun, taskScheduleReduceName, taskPackage, inputSize);
@@ -393,7 +401,7 @@ class ReduceTaskSchedule {
                         inputSize -= elementsReductionLeftOver;
 
                         final int sizeTargetDevice = inputSize;
-                        if (isTaskEligibleSplitHostAndDevice(targetDeviceToRun, elementsReductionLeftOver, isInputPowerOfTwo)) {
+                        if (isTaskEligibleSplitHostAndDevice(targetDeviceToRun, elementsReductionLeftOver, false)) {
                             Object codeTask = taskPackage.getTaskParameters()[0];
                             createThreads(codeTask, taskPackage, sizeTargetDevice);
                         }
@@ -411,10 +419,11 @@ class ReduceTaskSchedule {
                     taskPackage.getTaskParameters()[paramIndex + 1] = newArray;
 
                     // Store metadata
-                    streamReduceUpdatedList.add(newArray);
+                    streamReduceList.add(newArray);
                     sizesReductionArray.add(sizeReductionArray);
                     originalReduceVariables.put(originalReduceVariable, newArray);
                 }
+                streamReduceTable.put(taskNumber, streamReduceList);
             }
         }
 
@@ -439,37 +448,42 @@ class ReduceTaskSchedule {
 
             rewrittenTaskSchedule.addTask(taskPackages.get(taskNumber));
 
-            // Ad extra task with the final reduction
+            // Add extra task with the final reduction
             if (tableReduce.containsKey(taskNumber)) {
+
                 MetaReduceTasks metaReduceTasks = tableReduce.get(taskNumber);
                 ArrayList<Integer> listOfReduceParameters = metaReduceTasks.getListOfReduceParameters(taskNumber);
                 StructuredGraph graph = metaReduceTasks.getGraph();
                 ArrayList<REDUCE_OPERATION> operations = ReduceCodeAnalysis.getReduceOperation(graph, listOfReduceParameters);
 
-                for (int i = 0; i < streamReduceUpdatedList.size(); i++) {
-                    Object newArray = streamReduceUpdatedList.get(i);
+                ArrayList<Object> streamUpdateList = streamReduceTable.get(taskNumber);
+
+                for (int i = 0; i < streamUpdateList.size(); i++) {
+                    Object newArray = streamUpdateList.get(i);
                     int sizeReduceArray = sizesReductionArray.get(i);
-                    for (REDUCE_OPERATION op : operations) {
-                        final String newTaskSequentialName = taskScheduleReduceName + "." + SEQUENTIAL_TASK_REDUCE_NAME;
-                        TornadoRuntime.setProperty(newTaskSequentialName + ".device", "0:" + deviceToRun);
+                    for (REDUCE_OPERATION operation : operations) {
+                        final String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName;
+                        String fullName = rewrittenTaskSchedule.getTaskScheduleName() + "." + newTaskSequentialName;
+                        TornadoRuntime.setProperty(fullName + ".device", "0:" + deviceToRun);
                         inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId(), true);
 
-                        switch (op) {
+                        switch (operation) {
                             case ADD:
-                                ReduceFactory.handleAdd(newArray, rewrittenTaskSchedule, sizeReduceArray);
+                                ReduceFactory.handleAdd(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
                                 break;
                             case MUL:
-                                ReduceFactory.handleMul(newArray, rewrittenTaskSchedule, sizeReduceArray);
+                                ReduceFactory.handleMul(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
                                 break;
                             case MAX:
-                                ReduceFactory.handleMax(newArray, rewrittenTaskSchedule, sizeReduceArray);
+                                ReduceFactory.handleMax(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
                                 break;
                             case MIN:
-                                ReduceFactory.handleMin(newArray, rewrittenTaskSchedule, sizeReduceArray);
+                                ReduceFactory.handleMin(newArray, rewrittenTaskSchedule, sizeReduceArray, newTaskSequentialName);
                                 break;
                             default:
                                 throw new TornadoRuntimeException("[ERROR] Reduce operation not supported yet.");
                         }
+                        counterSeqName++;
                     }
                 }
             }
@@ -510,20 +524,20 @@ class ReduceTaskSchedule {
         }
 
         for (Entry<Object, Object> pair : originalReduceVariables.entrySet()) {
-            Object reduceVariable = pair.getKey();
+            Object originalReduceVariable = pair.getKey();
             Object newArray = pair.getValue();
             switch (newArray.getClass().getTypeName()) {
                 case "int[]":
-                    ((int[]) reduceVariable)[0] = ((int[]) newArray)[0];
+                    ((int[]) originalReduceVariable)[0] = ((int[]) newArray)[0];
                     break;
                 case "float[]":
-                    ((float[]) reduceVariable)[0] = ((float[]) newArray)[0];
+                    ((float[]) originalReduceVariable)[0] = ((float[]) newArray)[0];
                     break;
                 case "double[]":
-                    ((double[]) reduceVariable)[0] = ((double[]) newArray)[0];
+                    ((double[]) originalReduceVariable)[0] = ((double[]) newArray)[0];
                     break;
                 case "long[]":
-                    ((long[]) reduceVariable)[0] = ((long[]) newArray)[0];
+                    ((long[]) originalReduceVariable)[0] = ((long[]) newArray)[0];
                     break;
                 default:
                     throw new TornadoRuntimeException("[ERROR] Reduce data type not supported yet: " + newArray.getClass().getTypeName());

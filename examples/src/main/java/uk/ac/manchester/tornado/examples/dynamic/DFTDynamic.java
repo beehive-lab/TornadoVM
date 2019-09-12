@@ -25,9 +25,9 @@ import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
 
 public class DFTDynamic {
 
-    public static boolean CHECK_RESULT = true;
+    private static boolean CHECK_RESULT = true;
 
-    public static void computeDft(float[] inreal, float[] inimag, float[] outreal, float[] outimag, int[] inputSize) {
+    private static void computeDft(float[] inreal, float[] inimag, float[] outreal, float[] outimag, int[] inputSize) {
         int n = inreal.length;
         for (@Parallel int k = 0; k < n; k++) { // For each output element
             float sumreal = 0;
@@ -42,7 +42,7 @@ public class DFTDynamic {
         }
     }
 
-    public static boolean validate(int size, float[] inReal, float[] inImag, float[] outReal, float[] outImag, int[] inputSize) {
+    private static boolean validate(int size, float[] inReal, float[] inImag, float[] outReal, float[] outImag, int[] inputSize) {
         boolean val = true;
         float[] outRealTor = new float[size];
         float[] outImagTor = new float[size];

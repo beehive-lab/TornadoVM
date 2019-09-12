@@ -68,8 +68,10 @@ public class OCLIntrinsicNode {
 
         public static final NodeClass<FixedBinaryGeometricOp> TYPE = NodeClass.create(FixedBinaryGeometricOp.class);
         private final GeometricOp operation;
-        @Input private ValueNode x;
-        @Input private ValueNode y;
+        @Input
+        private ValueNode x;
+        @Input
+        private ValueNode y;
 
         public FixedBinaryGeometricOp(OCLKind kind, GeometricOp op, ValueNode x, ValueNode y) {
             super(TYPE, OCLStampFactory.getStampFor(kind.getElementKind()));
@@ -136,7 +138,7 @@ public class OCLIntrinsicNode {
                 case NORMALISE:
 
                 default:
-                    unimplemented();
+                    unimplemented("Default case intrinsics not implemented yet.");
                     break;
 
             }

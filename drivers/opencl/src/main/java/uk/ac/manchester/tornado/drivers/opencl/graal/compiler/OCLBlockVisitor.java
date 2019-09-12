@@ -71,11 +71,11 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         asm.eolOn();
     }
 
-    private void emitBeginBlockForSwitchStatements(Block dom, Block b) {
+    private void emitBeginBlockForSwitchStatements(Block dom, Block beginBlockNode) {
         final IntegerSwitchNode switchNode = (IntegerSwitchNode) dom.getEndNode();
         asm.indent();
-        Node beginNode = b.getBeginNode();
-        switches.add(b);
+        Node beginNode = beginBlockNode.getBeginNode();
+        switches.add(beginBlockNode);
 
         NodeIterable<Node> successors = switchNode.successors();
 
@@ -115,7 +115,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             // Temporary fix to remove the end scope of the most outer loop
             // without changing the loop schemantics in IR level.
             if (Tornado.REMOVE_OUTER_LOOPS) {
-                if (loopCount == 1) { // TODO: Add a more generic fix for removing outter loops
+                if (loopCount == 1) { // TODO: Add a more generic fix for
+                                      // removing outter loops
                 } else {
                     asm.beginScope();
                 }
@@ -163,7 +164,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
     public void exit(Block b, Block value) {
         if (b.isLoopEnd()) {
             // Temporary fix to remove the end scope of the most outer loop
-            // without changing the loop schemantics in IR level.
+            // without changing the loop schematics in IR level.
             loopEnds++;
             if (Tornado.REMOVE_OUTER_LOOPS) {
                 if (loopCount - loopEnds > 0) {
