@@ -103,12 +103,12 @@ public class OCLHighTier extends TornadoHighTier {
 
         if (Tornado.ACCELERATOR_IS_FPGA) {
             appendPhase(new TornadoPragmaUnroll(canonicalizer));
+            appendPhase(new TornadoThreadScheduler(canonicalizer));
         } else {
             LoopPolicies loopPolicies = new DefaultLoopPolicies();
             appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
         }
 
-        appendPhase(new TornadoThreadScheduler(canonicalizer));
         appendPhase(canonicalizer);
         appendPhase(new RemoveValueProxyPhase());
         appendPhase(canonicalizer);
