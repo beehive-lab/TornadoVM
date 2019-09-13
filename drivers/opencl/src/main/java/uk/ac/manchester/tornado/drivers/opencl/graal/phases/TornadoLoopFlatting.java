@@ -20,32 +20,34 @@
  *
  * Authors: Michalis Papadimitriou
  *
- *
- * */
+ */
+package uk.ac.manchester.tornado.runtime.graal.phases;
 
-package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
+import java.util.Collections;
+import java.util.List;
 
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.Opcode;
+import org.graalvm.compiler.loop.LoopEx;
+import org.graalvm.compiler.loop.LoopsData;
+import org.graalvm.compiler.nodes.LoopBeginNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.phases.BasePhase;
 
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
-
-@Opcode("ThreadScheduling")
-public class OCLThreadConfiguration extends OCLLIROp {
-    private int x;
-    private int y;
-    private int z;
-
-    public OCLThreadConfiguration(int oneD, int twoD, int threeD) {
-        super(LIRKind.Illegal);
-        this.x = oneD;
-        this.y = twoD;
-        this.z = threeD;
-    }
+public class TornadoLoopFlatting extends BasePhase<TornadoHighTierContext> {
 
     @Override
-    public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-        asm.emitLine("__attribute__((reqd_work_group_size(" + x + "," + y + "," + z + "))) \n");
+    protected void run(StructuredGraph graph, TornadoHighTierContext context) {
+        if (graph.hasLoops()) {
+            final LoopsData data = new LoopsData(graph);
+
+            final List<LoopEx> loops = data.outerFirst();
+            Collections.reverse(loops);
+            for (LoopEx loop : loops) {
+                loop.loopBegin().removeExits();
+                final LoopBeginNode loopBegin = loop.loopBegin();
+                canonicalizeLoopAndRemove(graph, loopBegin);
+                break;
+            }
+
+        }
     }
 }

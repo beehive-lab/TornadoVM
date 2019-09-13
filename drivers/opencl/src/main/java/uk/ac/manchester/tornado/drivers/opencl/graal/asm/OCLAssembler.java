@@ -1083,9 +1083,6 @@ public final class OCLAssembler extends Assembler {
 
     public void emitAttribute(OCLCompilationResultBuilder crb, ControlFlowGraph cfg) {
         if (crb.isParallel()) {
-            // System.out.println(cfg.getStartBlock().getEndNode().predecessor().inputs().first()
-            // instanceof LocalWorkGroupDimensionsNode);
-            // System.out.println(Arrays.toString(cfg.getStartBlock().getEndNode().predecessor().inputs().first().getNodeClass().));
             emitSymbol(OCLAssemblerConstants.FPGA_ATTRIBUTE);
         } else {
             emitSymbol(OCLAssemblerConstants.FPGA_ATTRIBUTE_SEQ);
