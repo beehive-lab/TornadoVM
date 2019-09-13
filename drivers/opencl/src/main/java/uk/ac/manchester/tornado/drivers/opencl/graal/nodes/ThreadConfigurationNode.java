@@ -31,8 +31,6 @@ import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLThreadConfiguration;
 
 @NodeInfo
 public class ThreadConfigurationNode extends FixedWithNextNode implements LIRLowerable {
@@ -50,7 +48,5 @@ public class ThreadConfigurationNode extends FixedWithNextNode implements LIRLow
 
     @Override
     public void generate(NodeLIRBuilderTool nodeLIRBuilderTool) {
-        nodeLIRBuilderTool.getLIRGeneratorTool().append(new OCLLIRStmt.ExprStmt(new OCLThreadConfiguration(localWork.oneD, localWork.twoD, localWork.threeD)));
-
     }
 }
