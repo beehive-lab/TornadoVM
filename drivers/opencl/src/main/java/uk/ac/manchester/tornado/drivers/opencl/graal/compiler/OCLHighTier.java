@@ -50,7 +50,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoOpenCLIntrins
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPragmaUnroll;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoTaskSpecialisation;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoThreadScheduler;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionSuppression;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
@@ -100,13 +100,11 @@ public class OCLHighTier extends TornadoHighTier {
         appendPhase(new TornadoParallelScheduler());
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST));
 
-        if (Tornado.ACCELERATOR_IS_FPGA) {
-            appendPhase(new TornadoPragmaUnroll(canonicalizer));
-        } else {
-            LoopPolicies loopPolicies = new DefaultLoopPolicies();
-            appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
-        }
+        appendPhase(new TornadoPragmaUnroll(canonicalizer));
+        LoopPolicies loopPolicies = new DefaultLoopPolicies();
+        appendPhase(new LoopFullUnrollPhase(canonicalizer, loopPolicies));
 
+        appendPhase(new TornadoThreadScheduler(canonicalizer));
         appendPhase(canonicalizer);
         appendPhase(new RemoveValueProxyPhase());
         appendPhase(canonicalizer);
