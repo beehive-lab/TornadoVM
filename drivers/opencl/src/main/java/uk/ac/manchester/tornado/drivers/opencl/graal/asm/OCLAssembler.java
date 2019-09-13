@@ -45,6 +45,7 @@ import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
@@ -1078,6 +1079,18 @@ public final class OCLAssembler extends Assembler {
         } else {
             emit(toString(value));
         }
+    }
+
+    public void emitAttribute(OCLCompilationResultBuilder crb, ControlFlowGraph cfg) {
+        if (crb.isParallel()) {
+            // System.out.println(cfg.getStartBlock().getEndNode().predecessor().inputs().first()
+            // instanceof LocalWorkGroupDimensionsNode);
+            // System.out.println(Arrays.toString(cfg.getStartBlock().getEndNode().predecessor().inputs().first().getNodeClass().));
+            emitSymbol(OCLAssemblerConstants.FPGA_ATTRIBUTE);
+        } else {
+            emitSymbol(OCLAssemblerConstants.FPGA_ATTRIBUTE_SEQ);
+        }
+        emitLine("");
     }
 
     public void assign() {
