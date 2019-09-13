@@ -122,7 +122,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
-    private final static String FPGA_ATTRIBUTE = "__attribute__((reqd_work_group_size(<1>,<2>,<3>))) ";
     private boolean flag = false;
 
     @Override
