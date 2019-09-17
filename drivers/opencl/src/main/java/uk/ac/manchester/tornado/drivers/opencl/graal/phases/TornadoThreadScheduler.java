@@ -49,7 +49,6 @@ public class TornadoThreadScheduler extends BasePhase<TornadoHighTierContext> {
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-        //if (graph.hasLoops()) {
             if (graph.hasLoops() && context.getDeviceMapping().getDeviceType().toString().toUpperCase().equals("ACCELERATOR")) {
             List<EndNode> snapshot = graph.getNodes().filter(EndNode.class).snapshot();
             int idx = 0;
