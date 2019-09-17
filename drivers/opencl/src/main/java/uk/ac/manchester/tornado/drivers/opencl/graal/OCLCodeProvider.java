@@ -50,7 +50,7 @@ public class OCLCodeProvider implements CodeCacheProvider {
 
     @Override
     public long getMaxCallTargetOffset(long l) {
-        unimplemented();
+        unimplemented("Max call target offset not implemented yet.");
         return -1;
     }
 
@@ -83,7 +83,7 @@ public class OCLCodeProvider implements CodeCacheProvider {
 
     @Override
     public boolean shouldDebugNonSafepoints() {
-        unimplemented();
+        unimplemented("Debug non safe points not implemented yet.");
         return false;
     }
 

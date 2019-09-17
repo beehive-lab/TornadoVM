@@ -69,13 +69,13 @@ public class OCLLIRKindTool implements LIRKindTool {
 
     @Override
     public LIRKind getNarrowOopKind() {
-        unimplemented();
+        unimplemented("GetNarrowOop not supported yet");
         return null;
     }
 
     @Override
     public LIRKind getNarrowPointerKind() {
-        unimplemented();
+        unimplemented("GetNarrowPointerKind not supported yet");
         return null;
     }
 

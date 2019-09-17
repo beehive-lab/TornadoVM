@@ -197,7 +197,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     @Override
     public EconomicSet<Register> translateToCallerRegisters(EconomicSet<Register> calleeRegisters) {
-        unimplemented();
+        unimplemented("Translate to caller registers method not implemented yet.");
         return null;
     }
 
@@ -227,8 +227,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     /**
-     * It allocates the smallest of the requested heap size or the max global
-     * memory size.
+     * It allocates the smallest of the requested heap size or the max global memory
+     * size.
      */
     public void allocateHeapMemoryOnDevice() {
         long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
@@ -506,12 +506,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         if (crb.isKernel()) {
             /*
-             * BUG There is a bug on some OpenCL devices which requires us to
-             * insert an extra OpenCL buffer into the kernel arguments. This has
-             * the effect of shifting the devices address mappings, which allows
-             * us to avoid the heap starting at address 0x0. (I assume that this
-             * is a interesting case that leads to a few issues.) Iris Pro is
-             * the only culprit at the moment.
+             * BUG There is a bug on some OpenCL devices which requires us to insert an
+             * extra OpenCL buffer into the kernel arguments. This has the effect of
+             * shifting the devices address mappings, which allows us to avoid the heap
+             * starting at address 0x0. (I assume that this is a interesting case that leads
+             * to a few issues.) Iris Pro is the only culprit at the moment.
              */
             if (Tornado.ACCELERATOR_IS_FPGA && !methodName.equals(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
                 // TODO: FIX with info at the runtime, currently is a static
@@ -652,7 +651,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     @Override
     public SuitesProvider getSuites() {
-        unimplemented();
+        unimplemented("Get suites method in OCLBackend not implemented yet.");
         return null;
     }
 
@@ -662,7 +661,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     @Override
     protected CompiledCode createCompiledCode(ResolvedJavaMethod rjm, CompilationRequest cr, CompilationResult cr1) {
-        unimplemented();
+        unimplemented("Create compiled code method in OCLBackend not implemented yet.");
         return null;
     }
 }

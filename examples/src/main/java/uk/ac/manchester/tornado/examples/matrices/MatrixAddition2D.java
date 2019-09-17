@@ -33,9 +33,9 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
  */
 public class MatrixAddition2D {
 
-    public static final int WARMING_UP_ITERATIONS = 25;
+    private static final int WARMING_UP_ITERATIONS = 25;
 
-    public static void matrixAddition(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
+    private static void matrixAddition(Matrix2DFloat A, Matrix2DFloat B, Matrix2DFloat C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
                 C.set(i, j, A.get(i, j) + B.get(j, j));
@@ -43,7 +43,7 @@ public class MatrixAddition2D {
         }
     }
 
-    public static void matrixAddition(Matrix2DFloat4 A, Matrix2DFloat4 B, Matrix2DFloat4 C, final int size) {
+    private static void matrixAddition(Matrix2DFloat4 A, Matrix2DFloat4 B, Matrix2DFloat4 C, final int size) {
         for (@Parallel int i = 0; i < size; i++) {
             for (@Parallel int j = 0; j < size; j++) {
                 C.set(i, j, Float4.add(A.get(i, j), B.get(j, j)));
@@ -51,7 +51,7 @@ public class MatrixAddition2D {
         }
     }
 
-    public static void reset() {
+    private static void reset() {
         for (int i = 0; i < TornadoRuntime.getTornadoRuntime().getNumDrivers(); i++) {
             final TornadoDriver driver = TornadoRuntime.getTornadoRuntime().getDriver(i);
             driver.getDefaultDevice().reset();
@@ -64,8 +64,7 @@ public class MatrixAddition2D {
         if (args.length >= 1) {
             try {
                 size = Integer.parseInt(args[0]);
-            } catch (NumberFormatException nfe) {
-                size = 512;
+            } catch (NumberFormatException ignored) {
             }
         }
 

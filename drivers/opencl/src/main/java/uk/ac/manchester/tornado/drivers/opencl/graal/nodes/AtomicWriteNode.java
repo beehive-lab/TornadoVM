@@ -52,7 +52,7 @@ public class AtomicWriteNode extends AbstractWriteNode implements LIRLowerable {
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         final LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-        unimplemented();
+        unimplemented("Atomic WRITE not implemented yet.");
     }
 
     @Override
