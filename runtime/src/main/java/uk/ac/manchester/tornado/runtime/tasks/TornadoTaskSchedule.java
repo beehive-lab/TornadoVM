@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
@@ -36,13 +36,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -91,12 +85,12 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompilationResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
+import uk.ac.manchester.tornado.runtime.profiler.ProfilerType;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 /**
  * Implementation of the Tornado API for running on heterogeneous devices.
- * 
  */
 public class TornadoTaskSchedule implements AbstractTaskGraph {
 
@@ -144,9 +138,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private boolean reduceAnalysis = false;
     MetaReduceCodeAnalysis analysisTaskSchedule;
 
+    private HashMap<ProfilerType, Long> profilerMetrics;
+
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
-     * 
+     *
      * @param taskScheduleName
      *            Task-Schedule name
      */
@@ -158,6 +154,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         result = null;
         event = null;
         this.taskScheduleName = taskScheduleName;
+        this.profilerMetrics = new HashMap<>();
     }
 
     @Override
@@ -257,7 +254,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     /**
      * Compile a task-schedule into TornadoVM byte-code
-     * 
+     *
      * @param setNewDevice:
      *            boolean that specifies if set a new device or not.
      */
@@ -318,7 +315,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * <li>updateDevice:This indicates if there is a new device for the same
      * task</li>
      * </p>
-     * 
+     *
      * @return {@link CompileInfo}
      */
     private CompileInfo extractCompileInfo() {
@@ -363,6 +360,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
+    private void dumpProfilerMetrics() {
+        for (ProfilerType p : profilerMetrics.keySet()) {
+            System.out.println("[PROFILER] " + p.getDescription() + ": " + profilerMetrics.get(p));
+        }
+    }
+
     @Override
     public void scheduleInner() {
         long t0 = System.nanoTime();
@@ -376,7 +379,14 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             preCompilationForFPGA();
         }
 
+        long start = System.nanoTime();
         event = vm.execute();
+        long end = System.nanoTime();
+        profilerMetrics.put(ProfilerType.TOTAL_TIME, (end - start));
+
+        if (TornadoOptions.ENABLE_PROFILER) {
+            dumpProfilerMetrics();
+        }
     }
 
     @Override
@@ -1125,7 +1135,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * Experimental method to sync all objects when making a clone copy for all
      * output objects per device.
-     * 
+     *
      * @param policy
      *            input policy
      * @param numDevices
@@ -1149,7 +1159,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     /**
      * It obtains the maximum input size for an input task.
-     * 
+     *
      * @return max size of all input arrays.
      */
     private int getMaxInputSize() {
@@ -1179,10 +1189,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     /**
-     * Class that keeps the history of executions based on their data sizes. It
-     * has a sorted map (TreeMap) that keeps the relationship between the input
-     * size and the actual Tornado device in which the task was executed based
-     * on the profiler for the dynamic reconfiguration.
+     * Class that keeps the history of executions based on their data sizes. It has
+     * a sorted map (TreeMap) that keeps the relationship between the input size and
+     * the actual Tornado device in which the task was executed based on the
+     * profiler for the dynamic reconfiguration.
      */
     private static class HistoryTable {
         /**
@@ -1391,5 +1401,65 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             default:
                 throw new TornadoRuntimeException("Units not supported: " + units);
         }
+    }
+
+    @Override
+    public long getTotalTime() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public long getCompileTime() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public long getTornadoCompilerTime() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public long getDriverInstallTime() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public long getDataTransfersTime() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public long getWriteTime() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public long getReadTime() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public long getDeviceWriteTime() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public long getDeviceKernelTime() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public long getDeviceReadTime() {
+        // TODO Auto-generated method stub
+        return 0;
     }
 }

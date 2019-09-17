@@ -39,84 +39,28 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api;
+package uk.ac.manchester.tornado.api.profiler;
 
-import java.util.function.Consumer;
+public interface ProfileInterface {
 
-import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
-import uk.ac.manchester.tornado.api.common.SchedulableTask;
-import uk.ac.manchester.tornado.api.common.TaskPackage;
-import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
-import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
+    long getTotalTime();
 
-public interface AbstractTaskGraph extends ProfileInterface {
+    long getCompileTime();
 
-    SchedulableTask getTask(String taskNameID);
+    long getTornadoCompilerTime();
 
-    TornadoDevice getDevice();
+    long getDriverInstallTime();
 
-    void setDevice(TornadoDevice device);
+    long getDataTransfersTime();
 
-    TornadoDevice getDeviceForTask(String id);
+    long getWriteTime();
 
-    long getReturnValue(String id);
+    long getReadTime();
 
-    void addInner(SchedulableTask task);
+    long getDeviceWriteTime();
 
-    boolean isLastDeviceListEmpty();
+    long getDeviceKernelTime();
 
-    void scheduleInner();
+    long getDeviceReadTime();
 
-    void batch(String batchSize);
-
-    void apply(Consumer<SchedulableTask> consumer);
-
-    void mapAllToInner(TornadoDevice device);
-
-    void dumpTimes();
-
-    void dumpProfiles();
-
-    void dumpEvents();
-
-    void clearProfiles();
-
-    void waitOn();
-
-    void streamInInner(Object... objects);
-
-    void streamOutInner(Object... objects);
-
-    void dump();
-
-    void warmup();
-
-    void invalidateObjects();
-
-    void syncObject(Object object);
-
-    void syncObjects();
-
-    void syncObjects(Object... objects);
-
-    String getId();
-
-    TaskMetaDataInterface meta();
-
-    AbstractTaskGraph schedule();
-
-    AbstractTaskGraph scheduleWithProfile(Policy policy);
-
-    AbstractTaskGraph scheduleWithProfileSequential(Policy policy);
-
-    AbstractTaskGraph scheduleWithProfileSequentialGlobal(Policy policy);
-
-    void addTask(TaskPackage taskPackage);
-
-    void addPrebuiltTask(String id, String entryPoint, String filename, Object[] args, Access[] accesses, TornadoDevice device, int[] dimensions);
-
-    void addScalaTask(String id, Object function, Object[] args);
-
-    String getTaskScheduleName();
 }
