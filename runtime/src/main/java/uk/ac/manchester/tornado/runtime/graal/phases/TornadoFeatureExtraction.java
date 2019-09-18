@@ -23,16 +23,23 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
-import java.util.Collections;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.Phase;
 
-public class TornadoFeatureExtraction extends Phase {
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-    @Override
+public class TornadoFeatureExtraction extends Phase {
+    private static List<String> mathOps = new ArrayList<>(Arrays.asList("+", "-", "/", "*", "<<"));
+
     protected void run(StructuredGraph graph) {
 
         HashMap<String, Integer> features = new HashMap<String, Integer>();
@@ -41,20 +48,46 @@ public class TornadoFeatureExtraction extends Phase {
             Integer j = features.get(node.asNode().getNodeClass().shortName());
             features.put(node.asNode().getNodeClass().shortName(), (j == null) ? 1 : j + 1);
         }
-        //System.out.println(Collections.singletonList(features));
+        emitJsonToFile(prettyFormatFeatures(features), graph);
 
-        System.out.println("Global Memory Writes: " + features.get("Write"));
-        System.out.println("Global Memory Reads: " + features.get("FloatingRead"));
-        System.out.println("Local Memory Reads: " + " X X X ");
-        System.out.println("Local Memory Writes: " + " X X X");
-        System.out.println("Vector Operations: " + (features.get("VectorLoadElement") != null));
-        System.out.println("Number of Loops: " + features.get("LoopBegin"));
-        System.out.println("Number of Parallel Loops: " + features.get("GlobalThreadId"));
-        System.out.println("Number of Branches: " + ((features.get("LoopBegins") != null && features.get("If") != null) ? (features.get("If") - features.get("LoopBegin")) : 0));
-        System.out.println("Number of Switch Statements: " + features.get("IntegerSwitch"));
-        // System.out.println("Number of Math Operations: " + mathOperations);
-        System.out.println("Number of Math Operations: " + "X X X ");
-        System.out.println("Number of Math Functions: " + "X X X ");
     }
 
+    private static HashMap<String, Integer> prettyFormatFeatures(HashMap<String, Integer> feat) {
+        HashMap<String, Integer> newFeat = new HashMap<>();
+
+        newFeat.put("Global Memory Writes", feat.get("Write"));
+        newFeat.put("Global Memory Reads", feat.get("FloatingRead"));
+        newFeat.put("Total number of Loops", feat.get("LoopBegin"));
+        newFeat.put("Parallel Loops", feat.get("GlobalThreadId"));
+        newFeat.put("If Statements", ((feat.get("LoopBegins") != null && feat.get("If") != null) ? (feat.get("If") - feat.get("LoopBegin")) : 0));
+        newFeat.put("Switch Statements", feat.get("IntegerSwitch"));
+        newFeat.put("Vector Loads", (feat.get("VectorLoadElement") != null ? (feat.get("VectorLoadElement")) : 0));
+        newFeat.put("Math Operations", mathOperations(feat));
+        newFeat.put("Math Functions", (feat.get("OCLFPUnaryIntrinsic") != null ? feat.get("OCLFPUnaryIntrinsic") : 0));
+
+        return newFeat;
+    }
+
+    private static Integer mathOperations(HashMap<String, Integer> feat) {
+        Integer temp_ops = 0;
+
+        for (String key : feat.keySet()) {
+            if (mathOps.contains(key)) {
+                temp_ops += feat.get(key);
+            }
+        }
+        return temp_ops;
+    }
+
+    private static void emitJsonToFile(HashMap<String, Integer> entry, StructuredGraph grf) {
+        Gson gsons = new GsonBuilder().setPrettyPrinting().create();
+        String json = gsons.toJson(entry);
+        try (FileWriter file = new FileWriter("/home/michalis/Tornado/tornado/tornado-features.txt")) { // TO DO: FIX
+            file.write(grf.name);
+            file.write(json);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
 }
