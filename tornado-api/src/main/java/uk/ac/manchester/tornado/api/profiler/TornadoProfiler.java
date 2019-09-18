@@ -21,16 +21,18 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.runtime.profiler;
+package uk.ac.manchester.tornado.api.profiler;
 
-public abstract class AbstractProfiler {
+public interface TornadoProfiler {
 
-    public abstract long start(ProfilerType type);
+    long start(ProfilerType type);
 
-    public abstract long stop(ProfilerType type);
+    long stop(ProfilerType type);
 
-    public abstract long getTimer(ProfilerType type);
+    long getTimer(ProfilerType type);
 
-    public abstract void dump();
+    void combine(ProfilerType[] from, ProfilerType to);
+
+    void dump();
 
 }

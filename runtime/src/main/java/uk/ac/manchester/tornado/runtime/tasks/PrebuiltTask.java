@@ -29,6 +29,8 @@ import java.util.Objects;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
@@ -149,5 +151,15 @@ public class PrebuiltTask implements SchedulableTask {
     @Override
     public long getBatchThreads() {
         return batchThreads;
+    }
+
+    @Override
+    public void attachProfiler(TornadoProfiler tornadoProfiler) {
+        throw new TornadoRuntimeException("Unsupported Operation in PrebuiltTask");
+    }
+
+    @Override
+    public TornadoProfiler getProfiler() {
+        throw new TornadoRuntimeException("Unsupported Operation in PrebuiltTask");
     }
 }

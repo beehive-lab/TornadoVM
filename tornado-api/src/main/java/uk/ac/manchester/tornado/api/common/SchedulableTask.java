@@ -42,6 +42,7 @@
 package uk.ac.manchester.tornado.api.common;
 
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 
 public interface SchedulableTask {
 
@@ -62,5 +63,9 @@ public interface SchedulableTask {
     void setBatchThreads(long batchThreads);
 
     long getBatchThreads();
+
+    void attachProfiler(TornadoProfiler tornadoProfiler);
+
+    TornadoProfiler getProfiler();
 
 }

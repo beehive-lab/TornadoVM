@@ -37,12 +37,15 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 
+import jdk.vm.ci.meta.JavaTypeProfile.ProfiledType;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.exceptions.TornadoException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -90,10 +93,12 @@ public class TornadoVM extends TornadoLogger {
 
     private double totalTime;
     private long invocations;
+    private TornadoProfiler timeProfiler;
 
-    public TornadoVM(TornadoExecutionContext graphContext, byte[] code, int limit) {
+    public TornadoVM(TornadoExecutionContext graphContext, byte[] code, int limit, TornadoProfiler timeProfiler) {
 
         this.graphContext = graphContext;
+        this.timeProfiler = timeProfiler;
 
         useDependencies = graphContext.meta().enableOooExecution() | VM_USE_DEPS;
         totalTime = 0;
@@ -191,13 +196,17 @@ public class TornadoVM extends TornadoLogger {
 
     private final String MESSAGE_ERROR = "object is not valid: %s %s";
 
+    private void initWaitEventList() {
+        for (int[] waitList : events) {
+            Arrays.fill(waitList, -1);
+        }
+    }
+
     private Event execute(boolean isWarmup) {
 
         final long t0 = System.nanoTime();
         int lastEvent = -1;
-        for (int[] waitList : events) {
-            Arrays.fill(waitList, -1);
-        }
+        initWaitEventList();
 
         StringBuilder bytecodesList = null;
         if (TornadoOptions.printBytecodes) {
@@ -374,6 +383,7 @@ public class TornadoVM extends TornadoLogger {
                     final long compileStart = System.nanoTime();
                     task.mapTo(device);
                     try {
+                        task.attachProfiler(timeProfiler);
                         installedCodes[taskIndex] = device.installCode(task);
                     } catch (Error | Exception e) {
                         fatal("unable to compile task %s", task.getName());

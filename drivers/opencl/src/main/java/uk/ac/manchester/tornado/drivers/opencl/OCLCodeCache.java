@@ -279,9 +279,7 @@ public class OCLCodeCache {
     }
 
     public OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) {
-
         appendSourceToFile(id, entryPoint, source);
-
         if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
             String[] commandRename;
             String[] compilationCommand;

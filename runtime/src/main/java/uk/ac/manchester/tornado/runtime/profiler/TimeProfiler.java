@@ -25,7 +25,10 @@ package uk.ac.manchester.tornado.runtime.profiler;
 
 import java.util.HashMap;
 
-public class TimeProfiler extends AbstractProfiler {
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+
+public class TimeProfiler implements TornadoProfiler {
 
     private HashMap<ProfilerType, Long> profilerTime;
 
@@ -55,9 +58,19 @@ public class TimeProfiler extends AbstractProfiler {
     }
 
     @Override
+    public void combine(ProfilerType[] from, ProfilerType to) {
+        long sum = 0;
+        for (ProfilerType pt : from) {
+            sum += profilerTime.get(pt);
+        }
+        profilerTime.put(to, sum);
+    }
+
+    @Override
     public void dump() {
         for (ProfilerType p : profilerTime.keySet()) {
             System.out.println("[PROFILER] " + p.getDescription() + ": " + profilerTime.get(p));
         }
     }
+
 }

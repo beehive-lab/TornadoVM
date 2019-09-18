@@ -68,6 +68,8 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
@@ -85,9 +87,7 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompilationResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
-import uk.ac.manchester.tornado.runtime.profiler.AbstractProfiler;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
-import uk.ac.manchester.tornado.runtime.profiler.ProfilerType;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
@@ -141,7 +141,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private boolean reduceAnalysis = false;
     MetaReduceCodeAnalysis analysisTaskSchedule;
 
-    private AbstractProfiler timeProfiler;
+    private TornadoProfiler timeProfiler;
 
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
@@ -279,11 +279,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             updateDeviceContext(graph);
         }
 
+        // TornadoVM byte-code generation
         result = TornadoVMGraphCompiler.compile(graph, graphContext, batchSizeBytes);
 
-        // final long t2 = System.nanoTime();
-        vm = new TornadoVM(graphContext, result.getCode(), result.getCodeSize());
-        // final long t3 = System.nanoTime();
+        vm = new TornadoVM(graphContext, result.getCode(), result.getCodeSize(), timeProfiler);
 
         if (meta().shouldDumpSchedule()) {
             graphContext.print();
@@ -1190,10 +1189,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     /**
-     * Class that keeps the history of executions based on their data sizes. It has
-     * a sorted map (TreeMap) that keeps the relationship between the input size and
-     * the actual Tornado device in which the task was executed based on the
-     * profiler for the dynamic reconfiguration.
+     * Class that keeps the history of executions based on their data sizes. It
+     * has a sorted map (TreeMap) that keeps the relationship between the input
+     * size and the actual Tornado device in which the task was executed based
+     * on the profiler for the dynamic reconfiguration.
      */
     private static class HistoryTable {
         /**

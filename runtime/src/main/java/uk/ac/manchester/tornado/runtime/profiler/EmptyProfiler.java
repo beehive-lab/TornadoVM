@@ -23,7 +23,10 @@
  */
 package uk.ac.manchester.tornado.runtime.profiler;
 
-public class EmptyProfiler extends AbstractProfiler {
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+
+public class EmptyProfiler implements TornadoProfiler {
 
     @Override
     public long start(ProfilerType type) {
@@ -43,6 +46,11 @@ public class EmptyProfiler extends AbstractProfiler {
 
     @Override
     public void dump() {
+
+    }
+
+    @Override
+    public void combine(ProfilerType[] from, ProfilerType to) {
 
     }
 }

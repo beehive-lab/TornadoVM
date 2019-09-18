@@ -45,11 +45,14 @@ import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
@@ -231,20 +234,28 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
         try {
             OCLProviders providers = (OCLProviders) getBackend().getProviders();
+            TornadoProfiler profiler = task.getProfiler();
+            profiler.start(ProfilerType.GRAAL_COMPILE_TIME);
             final OCLCompilationResult result = OCLCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
+            profiler.stop(ProfilerType.GRAAL_COMPILE_TIME);
             if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
                 // Return the code from the cache
                 return deviceContext.getCode(task.getId(), resolvedMethod.getName());
             }
 
+            profiler.start(ProfilerType.DRIVER_COMPILE_TIME);
             // Compile the code
+            OCLInstalledCode intalledCode = null;
             if (Tornado.ACCELERATOR_IS_FPGA) {
                 // A) for FPGA
-                return deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA);
+                intalledCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode());
             } else {
-                // B) for CPU multicore or GPU
-                return deviceContext.installCode(result);
+                // B) for CPU multi-core or GPU
+                intalledCode = deviceContext.installCode(result);
             }
+            profiler.stop(ProfilerType.DRIVER_COMPILE_TIME);
+            profiler.combine(new ProfilerType[] { ProfilerType.GRAAL_COMPILE_TIME, ProfilerType.DRIVER_COMPILE_TIME }, ProfilerType.TOTAL_COMPILE_TIME);
+            return intalledCode;
 
         } catch (Exception e) {
             driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());

@@ -21,7 +21,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-package uk.ac.manchester.tornado.runtime.profiler;
+package uk.ac.manchester.tornado.api.profiler;
 
 public enum ProfilerType {
 
@@ -29,7 +29,9 @@ public enum ProfilerType {
      * Profile-type that helps to classify all timers
      */
     // @formatter:off
-    COMPILE_TIME("Compilation Time"),
+    GRAAL_COMPILE_TIME("Graal Compilation Time"),
+    DRIVER_COMPILE_TIME("Driver Compilation Time"),
+    TOTAL_COMPILE_TIME("Total Compiler Time"),
     COPY_IN_TIME("CopyIn Time"),
     COPY_OUT_TIME("CopyOut Time"),
     KERNEL_TIME("Kernel Time"),
