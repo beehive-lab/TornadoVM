@@ -65,7 +65,7 @@ public class VectorAddInt {
             if (wrongResult) {
                 System.out.println("Result is wrong");
             } else {
-                System.out.println("Result is correct");
+                System.out.println("Result is correct. Total time: " + schedule.getTotalTime() + " (ns)");
             }
         }
     }

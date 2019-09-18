@@ -85,7 +85,10 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompilationResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
+import uk.ac.manchester.tornado.runtime.profiler.AbstractProfiler;
+import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.profiler.ProfilerType;
+import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
@@ -138,7 +141,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private boolean reduceAnalysis = false;
     MetaReduceCodeAnalysis analysisTaskSchedule;
 
-    private HashMap<ProfilerType, Long> profilerMetrics;
+    private AbstractProfiler timeProfiler;
 
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
@@ -154,7 +157,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         result = null;
         event = null;
         this.taskScheduleName = taskScheduleName;
-        this.profilerMetrics = new HashMap<>();
+
+        if (TornadoOptions.ENABLE_PROFILER) {
+            this.timeProfiler = new TimeProfiler();
+        } else {
+            this.timeProfiler = new EmptyProfiler();
+        }
     }
 
     @Override
@@ -360,12 +368,6 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private void dumpProfilerMetrics() {
-        for (ProfilerType p : profilerMetrics.keySet()) {
-            System.out.println("[PROFILER] " + p.getDescription() + ": " + profilerMetrics.get(p));
-        }
-    }
-
     @Override
     public void scheduleInner() {
         long t0 = System.nanoTime();
@@ -379,13 +381,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             preCompilationForFPGA();
         }
 
-        long start = System.nanoTime();
+        timeProfiler.start(ProfilerType.TOTAL_TIME);
         event = vm.execute();
-        long end = System.nanoTime();
-        profilerMetrics.put(ProfilerType.TOTAL_TIME, (end - start));
+        timeProfiler.stop(ProfilerType.TOTAL_TIME);
 
         if (TornadoOptions.ENABLE_PROFILER) {
-            dumpProfilerMetrics();
+            timeProfiler.dump();
         }
     }
 
@@ -1405,8 +1406,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public long getTotalTime() {
-        // TODO Auto-generated method stub
-        return 0;
+        return timeProfiler.getTimer(ProfilerType.TOTAL_TIME);
     }
 
     @Override
