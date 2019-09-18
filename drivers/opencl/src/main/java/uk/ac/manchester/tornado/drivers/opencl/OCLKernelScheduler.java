@@ -25,6 +25,8 @@
 package uk.ac.manchester.tornado.drivers.opencl;
 
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public abstract class OCLKernelScheduler {
@@ -34,7 +36,7 @@ public abstract class OCLKernelScheduler {
     protected double min;
     protected double max;
 
-    public OCLKernelScheduler(final OCLDeviceContext context) {
+    OCLKernelScheduler(final OCLDeviceContext context) {
         deviceContext = context;
     }
 
@@ -67,9 +69,10 @@ public abstract class OCLKernelScheduler {
             taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
         }
 
-        if (deviceContext.printOCLKernelTime()) {
-            Event resolveEvent = deviceContext.resolveEvent(taskEvent);
-            System.out.println("[OCL Kernel Execution Time] " + resolveEvent.getExecutionTime() + " (ns)");
+        if (TornadoOptions.ENABLE_PROFILER) {
+            Event tornadoKernelEvent = deviceContext.resolveEvent(taskEvent);
+            tornadoKernelEvent.waitForEvents();
+            meta.getProfiler().set(ProfilerType.KERNEL_TIME, tornadoKernelEvent.getExecutionTime());
         }
 
         return taskEvent;

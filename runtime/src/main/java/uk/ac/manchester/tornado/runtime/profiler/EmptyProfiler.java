@@ -45,6 +45,11 @@ public class EmptyProfiler implements TornadoProfiler {
     }
 
     @Override
+    public void set(ProfilerType type, long time) {
+
+    }
+
+    @Override
     public void dump() {
 
     }

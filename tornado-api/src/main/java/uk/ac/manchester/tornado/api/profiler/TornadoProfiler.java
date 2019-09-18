@@ -31,6 +31,8 @@ public interface TornadoProfiler {
 
     long getTimer(ProfilerType type);
 
+    void set(ProfilerType type, long time);
+
     void combine(ProfilerType[] from, ProfilerType to);
 
     void dump();

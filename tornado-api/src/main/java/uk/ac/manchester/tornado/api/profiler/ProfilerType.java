@@ -29,13 +29,13 @@ public enum ProfilerType {
      * Profile-type that helps to classify all timers
      */
     // @formatter:off
-    GRAAL_COMPILE_TIME("Graal Compilation Time"),
-    DRIVER_COMPILE_TIME("Driver Compilation Time"),
-    TOTAL_COMPILE_TIME("Total Compiler Time"),
-    COPY_IN_TIME("CopyIn Time"),
-    COPY_OUT_TIME("CopyOut Time"),
-    KERNEL_TIME("Kernel Time"),
-    TOTAL_TIME("Total Time");
+    GRAAL_COMPILE_TIME("Graal Compilation Time"),   
+    DRIVER_COMPILE_TIME("Driver Compilation Time"),    
+    TOTAL_COMPILE_TIME("Total Compiler Time"),    
+    COPY_IN_TIME("CopyIn Time"), 
+    COPY_OUT_TIME("CopyOut Time"), 
+    KERNEL_TIME("Kernel Time"), 
+    TOTAL_TIME("Total Time");  
     // @formatter:on
 
     String description;

@@ -29,10 +29,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue.EVENT_DESC
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus.CL_COMPLETE;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus.createOCLCommandExecutionStatus;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLEventInfo.CL_EVENT_COMMAND_EXECUTION_STATUS;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_END;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_QUEUED;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_START;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_SUBMIT;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.*;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
 
 import java.nio.ByteBuffer;
@@ -51,7 +48,7 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     private final OCLCommandQueue queue;
     private int localId;
-    private long id;
+    private long oclEventID;
     private static final ByteBuffer buffer = ByteBuffer.allocate(8);
     private final String name;
     private int status;
@@ -60,22 +57,17 @@ public class OCLEvent extends TornadoLogger implements Event {
         buffer.order(OpenCL.BYTE_ORDER);
     }
 
-    public OCLEvent(final OCLCommandQueue queue, final int event, final long eventId) {
+    OCLEvent(final OCLCommandQueue queue, final int event, final long oclEventID) {
         this.queue = queue;
         this.localId = event;
-        this.id = eventId;
+        this.oclEventID = oclEventID;
         this.name = String.format("%s: 0x%x", EVENT_DESCRIPTIONS[queue.descriptors[localId]], queue.tags[localId]);
         this.status = -1;
     }
 
-    @Override
-    public void retain() {
-        queue.retainEvent(localId);
-    }
-
-    protected void setEventId(int localId, long eventId) {
+    void setEventId(int localId, long eventId) {
         this.localId = localId;
-        this.id = eventId;
+        this.oclEventID = eventId;
     }
 
     native static void clGetEventInfo(long eventId, int param, byte[] buffer) throws OCLException;
@@ -87,43 +79,42 @@ public class OCLEvent extends TornadoLogger implements Event {
     native static void clReleaseEvent(long eventId) throws OCLException;
 
     private long readEventTime(OCLProfilingInfo eventType) {
-
-        if (!ENABLE_PROFILING || getCLStatus() != CL_COMPLETE) {
+        if (!ENABLE_PROFILING) {
             return -1;
         }
-
         long time = 0;
         buffer.clear();
-
         try {
-            clWaitForEvents(new long[] { id });
-            queue.finish();
-            clGetEventProfilingInfo(id, eventType.getValue(), buffer.array());
+            clGetEventProfilingInfo(oclEventID, eventType.getValue(), buffer.array());
             time = buffer.getLong();
         } catch (OCLException e) {
             error(e.getMessage());
         }
-
         return time;
     }
 
-    public long getCLQueuedTime() {
-        return readEventTime(CL_PROFILING_COMMAND_QUEUED);
+    @Override
+    public void waitForEvents() {
+        try {
+            clWaitForEvents(new long[] { oclEventID });
+        } catch (OCLException e) {
+            e.printStackTrace();
+        }
     }
 
-    public long getCLSubmitTime() {
+    long getCLSubmitTime() {
         return readEventTime(CL_PROFILING_COMMAND_SUBMIT);
     }
 
-    public long getCLStartTime() {
+    long getCLStartTime() {
         return readEventTime(CL_PROFILING_COMMAND_START);
     }
 
-    public long getCLEndTime() {
+    long getCLEndTime() {
         return readEventTime(CL_PROFILING_COMMAND_END);
     }
 
-    protected OCLCommandExecutionStatus getCLStatus() {
+    private OCLCommandExecutionStatus getCLStatus() {
         if (status == 0) {
             return CL_COMPLETE;
         }
@@ -131,7 +122,7 @@ public class OCLEvent extends TornadoLogger implements Event {
         buffer.clear();
 
         try {
-            clGetEventInfo(id, CL_EVENT_COMMAND_EXECUTION_STATUS.getValue(), buffer.array());
+            clGetEventInfo(oclEventID, CL_EVENT_COMMAND_EXECUTION_STATUS.getValue(), buffer.array());
             status = buffer.getInt();
         } catch (OCLException e) {
             error(e.getMessage());
@@ -161,7 +152,7 @@ public class OCLEvent extends TornadoLogger implements Event {
     private void waitOnPassive() {
         try {
             internalBuffer[0] = 1;
-            internalBuffer[1] = id;
+            internalBuffer[1] = oclEventID;
             clWaitForEvents(internalBuffer);
         } catch (OCLException e) {
             error(e.getMessage());
@@ -170,11 +161,11 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     @Override
     public String toString() {
-        return String.format("event: name=%s, status=%s", name, getStatus());
+        return String.format("[OCLEVENT] event: name=%s, status=%s", name, getStatus());
     }
 
-    public long getId() {
-        return id;
+    public long getOclEventID() {
+        return oclEventID;
     }
 
     @Override
@@ -198,63 +189,8 @@ public class OCLEvent extends TornadoLogger implements Event {
     }
 
     @Override
-    public double getExecutionTimeInMilliSeconds() {
-        return RuntimeUtilities.elapsedTimeInMilliSeconds(getCLStartTime(), getCLEndTime());
-    }
-
-    @Override
-    public long getTotalTime() {
-        return getExecutionTime();
-    }
-
-    @Override
     public double getTotalTimeInSeconds() {
         return getExecutionTimeInSeconds();
-    }
-
-    @Override
-    public double getTotalTimeInMilliSeconds() {
-        return getExecutionTimeInMilliSeconds();
-    }
-
-    @Override
-    public long getTotalQueuedTime() {
-        return (getCLStartTime() - getCLQueuedTime());
-    }
-
-    @Override
-    public double getTotalQueuedTimeInMilliSeconds() {
-        return RuntimeUtilities.elapsedTimeInMilliSeconds(getCLQueuedTime(), getCLStartTime());
-    }
-
-    @Override 
-    public long getElapsedQueuedTime() {
-        return (getCLSubmitTime() - getCLQueuedTime());
-    }
-
-    @Override
-    public double getElapsedQueuedTimeInMilliSeconds() {
-        return RuntimeUtilities.elapsedTimeInMilliSeconds(getCLQueuedTime(), getCLSubmitTime());
-    }
-
-    @Override
-    public long getElapsedSubmitTime() {
-        return (getCLStartTime() - getCLSubmitTime());
-    }
-
-    @Override
-    public double getElapsedSubmitTimeInMilliSeconds() {
-        return RuntimeUtilities.elapsedTimeInMilliSeconds(getCLSubmitTime(), getCLStartTime());
-    }
-
-    @Override
-    public long getQueuedTime() {
-        return getCLQueuedTime();
-    }
-
-    @Override
-    public double getQueuedTimeInMilliSeconds() {
-        return RuntimeUtilities.elapsedTimeInMilliSeconds(getCLQueuedTime());
     }
 
     @Override
@@ -263,18 +199,8 @@ public class OCLEvent extends TornadoLogger implements Event {
     }
 
     @Override
-    public double getSubmitTimeInMilliSeconds() {
-        return RuntimeUtilities.elapsedTimeInMilliSeconds(getCLSubmitTime());
-    }
-
-    @Override
     public long getStartTime() {
         return getCLStartTime();
-    }
-
-    @Override
-    public double getStartTimeInMilliSeconds() {
-        return RuntimeUtilities.elapsedTimeInMilliSeconds(getCLStartTime());
     }
 
     @Override
@@ -282,15 +208,10 @@ public class OCLEvent extends TornadoLogger implements Event {
         return getCLEndTime();
     }
 
-    @Override
-    public double getEndTimeInMilliSeconds() {
-        return RuntimeUtilities.elapsedTimeInMilliSeconds(getCLEndTime());
-    }
-
     void release() {
         queue.releaseEvent(localId);
         try {
-            clReleaseEvent(id);
+            clReleaseEvent(oclEventID);
         } catch (OCLException e) {
             error(e.getMessage());
         }

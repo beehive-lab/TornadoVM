@@ -254,7 +254,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 intalledCode = deviceContext.installCode(result);
             }
             profiler.stop(ProfilerType.DRIVER_COMPILE_TIME);
-            profiler.combine(new ProfilerType[] { ProfilerType.GRAAL_COMPILE_TIME, ProfilerType.DRIVER_COMPILE_TIME }, ProfilerType.TOTAL_COMPILE_TIME);
+            ProfilerType[] types = new ProfilerType[] { ProfilerType.GRAAL_COMPILE_TIME, ProfilerType.DRIVER_COMPILE_TIME };
+            profiler.combine(types, ProfilerType.TOTAL_COMPILE_TIME);
             return intalledCode;
 
         } catch (Exception e) {

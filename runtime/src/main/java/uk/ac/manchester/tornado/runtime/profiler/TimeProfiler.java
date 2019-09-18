@@ -58,6 +58,11 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
+    public void set(ProfilerType type, long time) {
+        profilerTime.put(type, time);
+    }
+
+    @Override
     public void combine(ProfilerType[] from, ProfilerType to) {
         long sum = 0;
         for (ProfilerType pt : from) {

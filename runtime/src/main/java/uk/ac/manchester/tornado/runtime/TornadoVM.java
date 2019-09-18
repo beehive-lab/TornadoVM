@@ -446,6 +446,9 @@ public class TornadoVM extends TornadoLogger {
                     throw new RuntimeException("task.meta is not instanceof TaskMetada");
                 }
 
+                // We attach the profiler
+                metadata.attachProfiler(timeProfiler);
+
                 if (useDependencies) {
                     lastEvent = installedCode.launchWithDeps(stack, metadata, batchThreads, waitList);
                 } else {

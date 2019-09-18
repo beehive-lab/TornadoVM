@@ -84,7 +84,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         return str.split(";");
     }
 
-    public boolean printOCLKernelTime() {
+    boolean printOCLKernelTime() {
         return PRINT_OCL_KERNEL_TIME;
     }
 
@@ -333,7 +333,8 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         long base = events.get(0).getCLSubmitTime();
         System.out.println("event: device,type,info,submitted,start,end,status");
         events.stream().forEach((e) -> {
-            System.out.printf("event: %s,%s,0x%x,%d,%d,%d,%s\n", deviceName, e.getName(), e.getId(), e.getCLSubmitTime() - base, e.getCLStartTime() - base, e.getCLEndTime() - base, e.getStatus());
+            System.out.printf("event: %s,%s,0x%x,%d,%d,%d,%s\n", deviceName, e.getName(), e.getOclEventID(), e.getCLSubmitTime() - base, e.getCLStartTime() - base, e.getCLEndTime() - base,
+                    e.getStatus());
         });
 
     }
