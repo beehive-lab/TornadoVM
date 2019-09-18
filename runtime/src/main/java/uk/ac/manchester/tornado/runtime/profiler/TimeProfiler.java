@@ -58,7 +58,7 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void set(ProfilerType type, long time) {
+    public void setTimer(ProfilerType type, long time) {
         profilerTime.put(type, time);
     }
 

@@ -30,6 +30,7 @@ import java.util.Objects;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
@@ -39,12 +40,14 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class PrebuiltTask implements SchedulableTask {
 
-    protected final String entryPoint;
-    protected final String filename;
+    private final String entryPoint;
+    private final String filename;
     protected final Object[] args;
-    protected final Access[] argumentsAccess;
+    private final Access[] argumentsAccess;
     protected final TaskMetaData meta;
     protected long batchThreads;
+
+    private TornadoProfiler profiler;
 
     public PrebuiltTask(ScheduleMetaData scheduleMeta, String id, String entryPoint, String filename, Object[] args, Access[] access, TornadoDevice device, DomainTree domain) {
         this.entryPoint = entryPoint;
@@ -155,11 +158,11 @@ public class PrebuiltTask implements SchedulableTask {
 
     @Override
     public void attachProfiler(TornadoProfiler tornadoProfiler) {
-        throw new TornadoRuntimeException("Unsupported Operation in PrebuiltTask");
+        this.profiler = tornadoProfiler;
     }
 
     @Override
     public TornadoProfiler getProfiler() {
-        throw new TornadoRuntimeException("Unsupported Operation in PrebuiltTask");
+        return this.profiler;
     }
 }
