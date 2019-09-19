@@ -31,6 +31,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalWorkGroupDimensionsNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
@@ -38,7 +39,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 public class TornadoThreadScheduler extends BasePhase<TornadoHighTierContext> {
     private final CanonicalizerPhase canonicalizer;
 
-    private int oneD = 64;
+    private int oneD = 64; // This value was chosen for Intel FPGAs due to experimental results
     private int twoD = 1;
     private int threeD = 1;
 
@@ -49,7 +50,7 @@ public class TornadoThreadScheduler extends BasePhase<TornadoHighTierContext> {
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-            if (graph.hasLoops() && context.getDeviceMapping().getDeviceType().toString().toUpperCase().equals("ACCELERATOR")) {
+        if (graph.hasLoops() && context.getDeviceMapping().getDeviceType().toString().toUpperCase().equals(TornadoDeviceType.ACCELERATOR)) {
             List<EndNode> snapshot = graph.getNodes().filter(EndNode.class).snapshot();
             int idx = 0;
             for (EndNode end : snapshot) {

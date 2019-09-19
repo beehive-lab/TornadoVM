@@ -46,6 +46,5 @@ public class OCLThreadConfiguration extends OCLLIROp {
 
     @Override
     public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-        asm.emitLine("__attribute__((reqd_work_group_size(" + x + "," + y + "," + z + "))) \n");
     }
 }

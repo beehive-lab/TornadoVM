@@ -44,6 +44,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PragmaUnrollNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
@@ -95,7 +96,7 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
         // Prevent Pragma Unroll for non-fpga devices
-        if (graph.hasLoops() && context.getDeviceMapping().getDeviceType().toString().toUpperCase().equals("ACCELERATOR")) {
+        if (graph.hasLoops() && context.getDeviceMapping().getDeviceType().toString().toUpperCase().equals(TornadoDeviceType.ACCELERATOR)) {
             boolean peeled;
             do {
                 peeled = false;
