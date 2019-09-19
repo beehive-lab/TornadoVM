@@ -55,7 +55,7 @@ public class FeatureExtractionUtilities {
         newFeat.put("Global Memory Writes", (feat.get("Write") != null ? (feat.get("Write")) : 0));
         newFeat.put("Global Memory Reads", (feat.get("FloatingRead") != null ? (feat.get("FloatingRead")) : 0));
         newFeat.put("Total number of Loops", (feat.get("LoopBegin") != null ? (feat.get("LoopBegin")) : 0));
-        newFeat.put("Parallel Loops", feat.get((feat.get("GlobalThreadId") != null ? (feat.get("GlobalThreadId")) : 0)));
+        newFeat.put("Parallel Loops", (feat.get("GlobalThreadId") != null ? (feat.get("GlobalThreadId")) : 0));
         newFeat.put("If Statements", ((feat.get("LoopBegin") != null && feat.get("If") != null) ? (feat.get("If") - feat.get("LoopBegin")) : 0));
         newFeat.put("Switch Statements", feat.get((feat.get("IntegerSwitch") != null ? (feat.get("IntegerSwitch")) : 0)));
         newFeat.put("Vector Loads", (feat.get("VectorLoadElement") != null ? (feat.get("VectorLoadElement")) : 0));
