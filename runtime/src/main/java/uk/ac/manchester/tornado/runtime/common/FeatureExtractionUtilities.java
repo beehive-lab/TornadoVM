@@ -41,6 +41,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 public class FeatureExtractionUtilities {
+
+    public static final String FEATURE_FILE = "tornado-features.txt";
+
     private static List<String> mathOps = new ArrayList<>(Arrays.asList("+", "-", "/", "*", "<<"));
 
     private FeatureExtractionUtilities() {
@@ -76,10 +79,11 @@ public class FeatureExtractionUtilities {
     public static void emitJsonToFile(HashMap<String, Integer> entry, StructuredGraph grf) {
         Gson gsons = new GsonBuilder().setPrettyPrinting().create();
         String json = gsons.toJson(entry);
-        File fil = new File("tornado-features-new.txt");
+        File fil = new File(FEATURE_FILE);
         try (FileWriter file = new FileWriter(fil, RuntimeUtilities.ifFileExists(fil))) { // TO DO: FIX
             file.write(grf.name);
             file.write(json);
+            file.write("\n");
         } catch (IOException e) {
             e.printStackTrace();
         }
