@@ -41,9 +41,12 @@
  */
 package uk.ac.manchester.tornado.api.common;
 
+import java.util.List;
+
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.mm.OCLTupleRawEvent;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 
@@ -83,7 +86,7 @@ public interface TornadoDevice {
      *            object)
      * @return an event ID
      */
-    int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long hostOffset);
+    List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long hostOffset);
 
     /**
      * It always copies in the input data (object) from the host to the target
@@ -104,7 +107,7 @@ public interface TornadoDevice {
      *            list of previous events
      * @return and event ID
      */
-    int streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
+    List<Integer> streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
 
     /**
      * It copies a device buffer from the target device to the host. Copies are

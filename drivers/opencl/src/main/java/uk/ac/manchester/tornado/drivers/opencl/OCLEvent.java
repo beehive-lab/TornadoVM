@@ -133,7 +133,6 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     @Override
     public void waitOn() {
-
         switch (getCLStatus()) {
             case CL_COMPLETE:
                 break;

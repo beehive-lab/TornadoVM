@@ -31,10 +31,11 @@ public interface TornadoProfiler {
 
     long getTimer(ProfilerType type);
 
-    void setTimer(ProfilerType type, long time);
+    void setTimer(ProfilerType type,long time);
 
-    void combine(ProfilerType[] from, ProfilerType to);
+    void combine(ProfilerType[] from,ProfilerType to);
 
     void dump();
 
+    void clean();
 }

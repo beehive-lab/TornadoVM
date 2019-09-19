@@ -55,6 +55,11 @@ public class EmptyProfiler implements TornadoProfiler {
     }
 
     @Override
+    public void clean() {
+
+    }
+
+    @Override
     public void combine(ProfilerType[] from, ProfilerType to) {
 
     }

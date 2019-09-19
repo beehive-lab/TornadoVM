@@ -54,6 +54,9 @@ public class TimeProfiler implements TornadoProfiler {
 
     @Override
     public long getTimer(ProfilerType type) {
+        if (!profilerTime.containsKey(type)) {
+            return 0;
+        }
         return profilerTime.get(type);
     }
 
@@ -76,6 +79,11 @@ public class TimeProfiler implements TornadoProfiler {
         for (ProfilerType p : profilerTime.keySet()) {
             System.out.println("[PROFILER] " + p.getDescription() + ": " + profilerTime.get(p));
         }
+    }
+
+    @Override
+    public void clean() {
+        profilerTime.clear();
     }
 
 }

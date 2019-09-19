@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
@@ -62,13 +62,12 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
  * TornadoVM: it includes a bytecode interpreter (Tornado bytecodes), a memory
  * manager for all devices (FPGAs, GPUs and multi-core that follows the OpenCL
  * programming model), and a JIT compiler from Java bytecode to OpenCL.
- *
+ * <p>
  * The JIT compiler extends the Graal JIT Compiler for OpenCL compilation.
- * 
+ * <p>
  * There is an instance of the {@link TornadoVM} per
  * {@link TornadoTaskSchedule}. Each TornadoVM contains the logic to orchestrate
  * the execution on the parallel device (e.g., a GPU).
- *
  */
 public class TornadoVM extends TornadoLogger {
 
@@ -258,15 +257,26 @@ public class TornadoVM extends TornadoLogger {
                     bytecodesList.append(verbose + "\n");
                 }
 
+                List<Integer> allEvents;
                 if (sizeBatch > 0) {
                     // We need to stream-in when using batches, because the
                     // whole data is not copied yet.
-                    lastEvent = device.streamIn(object, sizeBatch, offset, objectState, waitList);
+                    allEvents = device.streamIn(object, sizeBatch, offset, objectState, waitList);
                 } else {
-                    lastEvent = device.ensurePresent(object, objectState, waitList, sizeBatch, offset);
+                    allEvents = device.ensurePresent(object, objectState, waitList, sizeBatch, offset);
                 }
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
+                }
+
+                if (TornadoOptions.ENABLE_PROFILER) {
+                    for (Integer e : allEvents) {
+                        Event event = device.resolveEvent(e);
+                        event.waitForEvents();
+                        long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
+                        value += event.getExecutionTime();
+                        timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, value);
+                    }
                 }
 
             } else if (op == TornadoVMBytecodes.STREAM_IN.value()) {
@@ -292,10 +302,20 @@ public class TornadoVM extends TornadoLogger {
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
-                lastEvent = device.streamIn(object, sizeBatch, offset, objectState, waitList);
+                List<Integer> allEvents = device.streamIn(object, sizeBatch, offset, objectState, waitList);
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
+                if (TornadoOptions.ENABLE_PROFILER) {
+                    for (Integer e : allEvents) {
+                        Event event = device.resolveEvent(e);
+                        event.waitForEvents();
+                        long value = timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
+                        value += event.getExecutionTime();
+                        timeProfiler.setTimer(ProfilerType.COPY_IN_TIME, value);
+                    }
+                }
+
             } else if (op == TornadoVMBytecodes.STREAM_OUT.value()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
@@ -324,6 +344,14 @@ public class TornadoVM extends TornadoLogger {
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
+                if (TornadoOptions.ENABLE_PROFILER) {
+                    Event event = device.resolveEvent(lastEvent);
+                    event.waitForEvents();
+                    long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
+                    value += event.getExecutionTime();
+                    timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
+                }
+
             } else if (op == TornadoVMBytecodes.STREAM_OUT_BLOCKING.value()) {
                 final int objectIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
@@ -348,7 +376,16 @@ public class TornadoVM extends TornadoLogger {
 
                 final DeviceObjectState objectState = resolveObjectState(objectIndex, contextIndex);
 
-                device.streamOutBlocking(object, offset, objectState, waitList);
+                final int tornadoEventID = device.streamOutBlocking(object, offset, objectState, waitList);
+
+                if (TornadoOptions.ENABLE_PROFILER) {
+                    Event event = device.resolveEvent(tornadoEventID);
+                    event.waitForEvents();
+                    long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
+                    value += event.getExecutionTime();
+                    timeProfiler.setTimer(ProfilerType.COPY_OUT_TIME, value);
+                }
+
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }

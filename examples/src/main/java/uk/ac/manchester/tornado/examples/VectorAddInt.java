@@ -43,6 +43,7 @@ public class VectorAddInt {
 
         //@formatter:off
         TaskSchedule schedule = new TaskSchedule("s0")
+                .streamIn(a, b)
                 .task("t0", VectorAddInt::vectorAdd, a, b, c)
                 .streamOut(c);
         //@formatter:on

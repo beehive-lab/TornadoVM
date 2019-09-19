@@ -370,6 +370,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public void scheduleInner() {
         long t0 = System.nanoTime();
+        timeProfiler.clean();
         boolean compile = compileToTornadoVMBytecodes();
         long t1 = System.nanoTime();
         if (PRINT_COMPILE_TIMES) {

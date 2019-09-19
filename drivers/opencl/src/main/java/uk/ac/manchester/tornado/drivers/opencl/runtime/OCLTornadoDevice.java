@@ -31,6 +31,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -468,23 +469,24 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int ensurePresent(Object object, TornadoDeviceObjectState state, int[] events, long batchSize, long offset) {
+    public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState state, int[] events, long batchSize, long offset) {
         if (!state.isValid()) {
             ensureAllocated(object, batchSize, state);
         }
 
         if (BENCHMARKING_MODE || !state.hasContents()) {
             state.setContents(true);
-            int event = state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
+            List<Integer> event = state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
             if (events != null) {
                 return event;
             }
+
         }
-        return -1;
+        return null;
     }
 
     @Override
-    public int streamIn(Object object, long batchSize, long offset, TornadoDeviceObjectState state, int[] events) {
+    public List<Integer> streamIn(Object object, long batchSize, long offset, TornadoDeviceObjectState state, int[] events) {
         if (batchSize > 0 || !state.isValid()) {
             ensureAllocated(object, batchSize, state);
         }
