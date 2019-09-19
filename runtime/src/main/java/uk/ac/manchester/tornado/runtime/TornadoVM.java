@@ -269,7 +269,7 @@ public class TornadoVM extends TornadoLogger {
                     eventsIndicies[eventList] = 0;
                 }
 
-                if (TornadoOptions.ENABLE_PROFILER) {
+                if (TornadoOptions.ENABLE_PROFILER && allEvents != null) {
                     for (Integer e : allEvents) {
                         Event event = device.resolveEvent(e);
                         event.waitForEvents();
@@ -306,7 +306,7 @@ public class TornadoVM extends TornadoLogger {
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
-                if (TornadoOptions.ENABLE_PROFILER) {
+                if (TornadoOptions.ENABLE_PROFILER && allEvents != null) {
                     for (Integer e : allEvents) {
                         Event event = device.resolveEvent(e);
                         event.waitForEvents();
@@ -344,7 +344,7 @@ public class TornadoVM extends TornadoLogger {
                 if (eventList != -1) {
                     eventsIndicies[eventList] = 0;
                 }
-                if (TornadoOptions.ENABLE_PROFILER) {
+                if (TornadoOptions.ENABLE_PROFILER && lastEvent != -1) {
                     Event event = device.resolveEvent(lastEvent);
                     event.waitForEvents();
                     long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
@@ -378,7 +378,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final int tornadoEventID = device.streamOutBlocking(object, offset, objectState, waitList);
 
-                if (TornadoOptions.ENABLE_PROFILER) {
+                if (TornadoOptions.ENABLE_PROFILER && tornadoEventID != -1) {
                     Event event = device.resolveEvent(tornadoEventID);
                     event.waitForEvents();
                     long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);

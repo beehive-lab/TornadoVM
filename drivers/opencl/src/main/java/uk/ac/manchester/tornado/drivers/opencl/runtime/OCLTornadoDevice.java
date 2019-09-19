@@ -215,6 +215,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private TornadoInstalledCode compileTask(SchedulableTask task) {
+
         final OCLDeviceContext deviceContext = getDeviceContext();
 
         final CompilableTask executable = (CompilableTask) task;
@@ -476,11 +477,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
         if (BENCHMARKING_MODE || !state.hasContents()) {
             state.setContents(true);
-            List<Integer> event = state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
-            if (events != null) {
-                return event;
-            }
-
+            List<Integer> writeEvents = state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
+            return writeEvents;
         }
         return null;
     }

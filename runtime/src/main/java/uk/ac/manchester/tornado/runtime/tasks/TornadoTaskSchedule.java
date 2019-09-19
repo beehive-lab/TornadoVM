@@ -384,10 +384,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         timeProfiler.start(ProfilerType.TOTAL_TIME);
         event = vm.execute();
         timeProfiler.stop(ProfilerType.TOTAL_TIME);
-
-        if (TornadoOptions.ENABLE_PROFILER) {
-            timeProfiler.dump();
-        }
+        timeProfiler.dump();
     }
 
     @Override
@@ -475,8 +472,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public void warmup() {
+        timeProfiler.clean();
+
         compileToTornadoVMBytecodes();
         vm.warmup();
+
+        timeProfiler.dump();
     }
 
     @Override
