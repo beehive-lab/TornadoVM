@@ -40,6 +40,6 @@ public class TornadoFeatureExtraction extends Phase {
             Integer j = features.get(node.asNode().getNodeClass().shortName());
             features.put(node.asNode().getNodeClass().shortName(), (j == null) ? 1 : j + 1);
         }
-        FeatureExtractionUtilities.emitJsonToFile(FeatureExtractionUtilities.prettyFormatFeatures(features), graph);
+        FeatureExtractionUtilities.emitJsonToFile(FeatureExtractionUtilities.prettyFormatFeatures(features), graph.name);
     }
 }
