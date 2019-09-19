@@ -16,7 +16,7 @@
  * 
  */
 
-package uk.ac.manchester.tornado.examples.multithreaded;
+package uk.ac.manchester.tornado.examples.dynamic;
 
 import java.util.Arrays;
 

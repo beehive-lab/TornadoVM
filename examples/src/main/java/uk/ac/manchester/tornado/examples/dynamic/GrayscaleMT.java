@@ -16,7 +16,7 @@
  *
  */
 
-package uk.ac.manchester.tornado.examples.multithreaded;
+package uk.ac.manchester.tornado.examples.dynamic;
 
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
  * How to run?
  *
  * <code>
- * $ tornado uk.ac.manchester.tornado.examples.compute.BlackAndWhiteTransform 
+ * $ tornado uk.ac.manchester.tornado.examples.dynamic.GrayscaleMT INPUT_IMAGES.jpg
  * </code>
  *
  *

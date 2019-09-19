@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 public class TornadoThreadScheduler extends BasePhase<TornadoHighTierContext> {
     private final CanonicalizerPhase canonicalizer;
 
-    private int oneD = 64; // This value was chosen for Intel FPGAs due to experimental results
+    private int oneD = 64; // XXX: This value was chosen for Intel FPGAs due to experimental results
     private int twoD = 1;
     private int threeD = 1;
 
@@ -50,7 +50,7 @@ public class TornadoThreadScheduler extends BasePhase<TornadoHighTierContext> {
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-        if (graph.hasLoops() && context.getDeviceMapping().getDeviceType().toString().toUpperCase().equals(TornadoDeviceType.ACCELERATOR)) {
+        if (graph.hasLoops() && (context.getDeviceMapping().getDeviceType() == TornadoDeviceType.ACCELERATOR)) {
             List<EndNode> snapshot = graph.getNodes().filter(EndNode.class).snapshot();
             int idx = 0;
             for (EndNode end : snapshot) {

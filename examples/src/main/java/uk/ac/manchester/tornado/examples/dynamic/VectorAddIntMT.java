@@ -15,7 +15,7 @@
  * limitations under the License.
  * 
  */
-package uk.ac.manchester.tornado.examples.multithreaded;
+package uk.ac.manchester.tornado.examples.dynamic;
 
 import java.util.Arrays;
 
@@ -26,7 +26,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 public class VectorAddIntMT {
 
     private static void vectorAdd(int[] a, int[] b, int[] c) {
-        for (@Parallel  int i = 0; i < c.length; i++) {
+        for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];
         }
     }

@@ -96,7 +96,7 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
         // Prevent Pragma Unroll for non-fpga devices
-        if (graph.hasLoops() && context.getDeviceMapping().getDeviceType().toString().toUpperCase().equals(TornadoDeviceType.ACCELERATOR)) {
+        if (graph.hasLoops() && (context.getDeviceMapping().getDeviceType() == TornadoDeviceType.ACCELERATOR)) {
             boolean peeled;
             do {
                 peeled = false;
