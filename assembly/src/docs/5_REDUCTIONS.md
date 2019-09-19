@@ -1,6 +1,6 @@
 # Reductions support
 
-TornadoVM now supports basic reductions for `int`, `float` and `double` data types for the operators `+` and `*`, `max` and `min`. This wiki shows how to program with reductions in Tornado. More examples can be found in the `examples/src/main/java/uk/ac/manchester/tornado/unittests/reductions` directory of the Tornado SDK.
+TornadoVM now supports basic reductions for `int`, `float` and `double` data types for the operators `+` and `*`, `max` and `min`. This wiki shows how to program with reductions in Tornado. More examples can be found in the `examples/src/main/java/uk/ac/manchester/tornado/unittests/reductions` directory on Github.
 
 ## Example
 
@@ -12,15 +12,12 @@ public static void reductionAddFloats(float[] input, @Reduce float[] result) {
  }
 ```
 
-The code is very similar to a Java sequential reduction but with `@Reduce` and `@Parallel` annotations.
-The `@Reduce` annotation is associated with a variable, in this case, with the `result` float array.
-Then, we annotate the loop with `@Parallel`.
-The OpenCL JIT compiler generates OpenCL parallel version for this code that can run on GPU and CPU.
+The code is very similar to a Java sequential reduction but with `@Reduce` and `@Parallel` annotations. The `@Reduce` annotation is associated with a variable, in this case, with the `result` float array. Then, we annotate the loop with `@Parallel`. The OpenCL JIT compiler generates OpenCL parallel version for this code that can run on GPU and CPU.
 
 
 ### Create the TaskSchedule
 
-Tornado generates different OpenCL code depending on the target device. Internally, If the target is a GPU, Tornado performs full reductions within work-groups. If the target is a CPU, Tornado performs full reductions within the same thread-id. Tornado automatically resizes the output variables according to the number of work-groups and threads selected. 
+Tornado generates different OpenCL code depending on the target device. Internally, if the target is a GPU, Tornado performs full and parallel reductions using the threads within the same OpenCL work-group. If the target is a CPU, Tornado performs full reductions within the same thread-id. Besides, TornadoVM automatically resizes the output variables according to the number of work-groups and threads selected. 
 
 
 ```java

@@ -45,7 +45,6 @@ import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 
 public class TaskMetaData extends AbstractMetaData {
 
-    private String idTask;
     private Coarseness coarseness;
     private byte[] constantData;
     private int constantSize;
@@ -64,8 +63,8 @@ public class TaskMetaData extends AbstractMetaData {
     private boolean globalWorkDefined;
     private boolean canAssumeExact;
 
-    public TaskMetaData(ScheduleMetaData scheduleMetaData, String id, int numParameters) {
-        super(scheduleMetaData.getId() + "." + id);
+    public TaskMetaData(ScheduleMetaData scheduleMetaData, String taskID, int numParameters) {
+        super(scheduleMetaData.getId() + "." + taskID);
         this.scheduleMetaData = scheduleMetaData;
         this.globalSize = 0;
         this.constantSize = 0;
@@ -75,25 +74,9 @@ public class TaskMetaData extends AbstractMetaData {
         profiles = new HashMap<>();
         argumentsAccess = new Access[numParameters];
         Arrays.fill(argumentsAccess, Access.NONE);
-        this.idTask = scheduleMetaData.getId() + "." + id;
 
-        localWorkDefined = getProperty(getId() + ".local.dims") != null;
-        if (localWorkDefined) {
-            final String[] values = getProperty(getId() + ".local.dims").split(",");
-            localWork = new long[values.length];
-            for (int i = 0; i < values.length; i++) {
-                localWork[i] = Long.parseLong(values[i]);
-            }
-        }
-
-        globalWorkDefined = getProperty(getId() + ".global.dims") != null;
-        if (globalWorkDefined) {
-            final String[] values = getProperty(getId() + ".global.dims").split(",");
-            globalWork = new long[values.length];
-            for (int i = 0; i < values.length; i++) {
-                globalWork[i] = Long.parseLong(values[i]);
-            }
-        }
+        inspectLocalWork();
+        inspectGlobalWork();
 
         this.schedule = !(globalWorkDefined && localWorkDefined);
         this.canAssumeExact = Boolean.parseBoolean(getDefault("coarsener.exact", getId(), "False"));
@@ -111,10 +94,34 @@ public class TaskMetaData extends AbstractMetaData {
         return meta;
     }
 
-    private static String formatWorkDimentionArray(final long[] array) {
+    private boolean inspectLocalWork() {
+        localWorkDefined = getProperty(getId() + ".local.dims") != null;
+        if (localWorkDefined) {
+            final String[] values = getProperty(getId() + ".local.dims").split(",");
+            localWork = new long[values.length];
+            for (int i = 0; i < values.length; i++) {
+                localWork[i] = Long.parseLong(values[i]);
+            }
+        }
+        return localWorkDefined;
+    }
+
+    private boolean inspectGlobalWork() {
+        globalWorkDefined = getProperty(getId() + ".global.dims") != null;
+        if (globalWorkDefined) {
+            final String[] values = getProperty(getId() + ".global.dims").split(",");
+            globalWork = new long[values.length];
+            for (int i = 0; i < values.length; i++) {
+                globalWork[i] = Long.parseLong(values[i]);
+            }
+        }
+        return globalWorkDefined;
+    }
+
+    private static String formatWorkDimentionArray(final long[] array, final String defaults) {
         final StringBuilder sb = new StringBuilder();
-        if (array.length == 0) {
-            sb.append("[1]");
+        if (array == null || array.length == 0) {
+            sb.append("[" + defaults + "]");
         } else {
             sb.append(Arrays.toString(array));
         }
@@ -382,13 +389,13 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public void printThreadDims() {
-        System.out.printf("task info: %s\n", idTask);
+        System.out.printf("task info: %s\n", super.getId());
         System.out.printf("\tplatform          : %s\n", getDevice().getPlatformName());
         System.out.printf("\tdevice            : %s\n", getDevice().getDescription());
-        System.out.printf("\tdims              : %d\n", domain.getDepth());
-        System.out.printf("\tglobal work offset: %s\n", formatWorkDimentionArray(globalOffset));
-        System.out.printf("\tglobal work size  : %s\n", formatWorkDimentionArray(globalWork));
-        System.out.printf("\tlocal  work size  : %s\n", localWork == null ? "null" : formatWorkDimentionArray(localWork));
+        System.out.printf("\tdims              : %s\n", domain == null ? "0" : Integer.toString(domain.getDepth()));
+        System.out.printf("\tglobal work offset: %s\n", formatWorkDimentionArray(globalOffset, "0"));
+        System.out.printf("\tglobal work size  : %s\n", formatWorkDimentionArray(globalWork, "1"));
+        System.out.printf("\tlocal  work size  : %s\n", localWork == null ? "null" : formatWorkDimentionArray(localWork, "1"));
     }
 
     public void setCoarseness(int index, int value) {
@@ -462,7 +469,7 @@ public class TaskMetaData extends AbstractMetaData {
 
     @Override
     public String toString() {
-        return String.format("task meta data: domain=%s, global dims=%s\n", domain, (getGlobalWork() == null) ? "null" : formatWorkDimentionArray(getGlobalWork()));
+        return String.format("task meta data: domain=%s, global dims=%s\n", domain, (getGlobalWork() == null) ? "null" : formatWorkDimentionArray(getGlobalWork(), "1"));
     }
 
 }

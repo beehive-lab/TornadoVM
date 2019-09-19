@@ -42,9 +42,10 @@
 package uk.ac.manchester.tornado.api;
 
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task15;
@@ -69,7 +70,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
  */
 public class TaskSchedule implements TornadoAPI {
 
-    private String taskScheduleName;
+    private final String taskScheduleName;
     private AbstractTaskGraph taskScheduleImpl;
 
     public TaskSchedule(String name) {
@@ -79,6 +80,13 @@ public class TaskSchedule implements TornadoAPI {
 
     @Override
     public TaskSchedule addTask(TaskPackage taskPackage) {
+        taskScheduleImpl.addTask(taskPackage);
+        return this;
+    }
+
+    @Override
+    public TaskSchedule task(String id, Task code) {
+        TaskPackage taskPackage = TaskPackage.createPackage(id, code);
         taskScheduleImpl.addTask(taskPackage);
         return this;
     }

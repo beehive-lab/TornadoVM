@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 #
 # This file is part of Tornado: A heterogeneous programming framework: 
@@ -36,7 +36,7 @@ import time
 __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.TestHello",
 	"uk.ac.manchester.tornado.unittests.arrays.TestArrays",
-	"uk.ac.manchester.tornado.unittests.functional.TestFunctional",
+	"uk.ac.manchester.tornado.unittests.functional.TestLambdas",
 	"uk.ac.manchester.tornado.unittests.vectortypes.TestFloats",
 	"uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles",
 	"uk.ac.manchester.tornado.unittests.vectortypes.TestInts",
@@ -46,17 +46,18 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice",
 	"uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice",
 	"uk.ac.manchester.tornado.unittests.images.TestImages",
+	"uk.ac.manchester.tornado.unittests.images.TestResizeImage",
 	"uk.ac.manchester.tornado.unittests.branching.TestConditionals",
 	"uk.ac.manchester.tornado.unittests.loops.TestLoops",
 	"uk.ac.manchester.tornado.unittests.matrices.TestMatrices",
-	"uk.ac.manchester.tornado.unittests.images.TestResizeImage",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles",
-	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
+	"uk.ac.manchester.tornado.unittests.reductions.InstanceReduction",
 	"uk.ac.manchester.tornado.unittests.instances.TestInstances",
 	"uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes",
 	"uk.ac.manchester.tornado.unittests.api.TestAPI",
+	"uk.ac.manchester.tornado.unittests.math.TestMath",
 	"uk.ac.manchester.tornado.unittests.batches.TestBatches",
 	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypes",
 	"uk.ac.manchester.tornado.unittests.batches.TestBatchesTypesDouble",
@@ -64,6 +65,8 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.lambdas.TestLambdas",
 	"uk.ac.manchester.tornado.unittests.logic.TestLogic",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic",
+	"uk.ac.manchester.tornado.unittests.fields.TestFields",
+	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
 ]
 
 ## List of tests that can be ignored. Format: class#testMethod

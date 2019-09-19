@@ -97,7 +97,7 @@ public class Hybrid {
      * 
      * <p>
      * <code>
-     * $ tornado  --debug -Dtornado.opencl.codecache.loadbin=True -Dtornado.precompiled.binary=kernel/lookupBufferAddress,v0.t1.device=0:1,kernel/lookupBufferAddress,x1.t0.device=0:1,kernel/lookupBufferAddress,x1.t1.device=0:1,kernel/lookupBufferAddress,v1.t1.device=0:1 uk.ac.manchester.tornado.examples.Hybrid 
+     * $ tornado  --debug -Dtornado.precompiled.binary=kernel/lookupBufferAddress,v0.t1.device=0:1,kernel/lookupBufferAddress,x1.t0.device=0:1,kernel/lookupBufferAddress,x1.t1.device=0:1,kernel/lookupBufferAddress,v1.t1.device=0:1 uk.ac.manchester.tornado.examples.Hybrid 
      * </code>
      * </p>
      * 

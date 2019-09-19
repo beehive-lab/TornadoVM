@@ -73,14 +73,15 @@ public class TornadoUtilities {
     }
 
     /**
-     * Very nice means to convert byte sizes into human readable format<br>
-     * Based on code from
-     * http://stackoverflow.com/questions/3758606/how-to-convert
+     * Conversion from byte sizes into human readable format<br>
+     * Based on code from http://stackoverflow.com/questions/3758606/how-to-convert
      * -byte-size-into-human-readable-format-in-java
      * <p>
      *
      * @param bytes
+     *            number of bytes
      * @param si
+     *            units (true if 1000, false if 1024).
      *
      * @return humanReadableByteCount
      */
@@ -139,8 +140,9 @@ public class TornadoUtilities {
      * Returns true if object is a boxed type
      *
      * @param obj
+     *            Object
      *
-     * @return
+     * @return boolean
      */
     public static final boolean isBoxedPrimitive(final Object obj) {
         boolean isBox = false;
@@ -169,9 +171,10 @@ public class TornadoUtilities {
     /**
      * Returns true if object is a boxed type
      *
-     * @param obj
+     * @param clazz
+     *            Class
      *
-     * @return
+     * @return boolean
      */
     public static final boolean isBoxedPrimitiveClass(final Class<?> clazz) {
         boolean isBox = false;
@@ -200,9 +203,10 @@ public class TornadoUtilities {
     /**
      * Returns true if object is a boxed type
      *
-     * @param obj
+     * @param clazz
+     *            Class
      *
-     * @return
+     * @return {@link Class<?>}
      */
     public static final Class<?> toUnboxedPrimitiveClass(final Class<?> clazz) {
         Class<?> result = null;

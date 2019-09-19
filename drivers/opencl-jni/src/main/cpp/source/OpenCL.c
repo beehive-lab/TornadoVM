@@ -37,7 +37,7 @@
 #include "utils.h"
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OpenCL
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL
  * Method:    clGetPlatformCount
  * Signature: ()I
  */
@@ -51,7 +51,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_clGet
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OpenCL
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL
  * Method:    clGetPlatformIDs
  * Signature: ([J)I
  */
@@ -72,16 +72,3 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_clGet
     (*env)->ReleasePrimitiveArrayCritical(env, array, platforms, 0);
     return (jint) num_platforms;
 }
-
-///*
-// * Class:     uk_ac_manchester_tornado_drivers_opencl_OpenCL
-// * Method:    registerCallback
-// * Signature: ()Z
-// */
-//JNIEXPORT jboolean JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OpenCL_registerCallback
-//  (JNIEnv *env, jclass clazz){
-//	jboolean result = true;
-//
-//
-//	return result;
-//}
