@@ -35,14 +35,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.graalvm.compiler.nodes.StructuredGraph;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 public class FeatureExtractionUtilities {
 
-    public static final String FEATURE_FILE = "tornado-features.txt";
+    public static final String FEATURE_FILE = "tornado-features.json";
 
     private static List<String> mathOps = new ArrayList<>(Arrays.asList("+", "-", "/", "*", "<<"));
 
@@ -76,12 +74,13 @@ public class FeatureExtractionUtilities {
         return temp_ops;
     }
 
-    public static void emitJsonToFile(HashMap<String, Integer> entry, StructuredGraph grf) {
+    public static void emitJsonToFile(HashMap<String, Integer> entry, String name) {
+        HashMap<String, HashMap<String, Integer>> task = new HashMap<>();
+        task.put(name, entry);
         Gson gsons = new GsonBuilder().setPrettyPrinting().create();
-        String json = gsons.toJson(entry);
+        String json = gsons.toJson(task);
         File fil = new File(FEATURE_FILE);
         try (FileWriter file = new FileWriter(fil, RuntimeUtilities.ifFileExists(fil))) { // TO DO: FIX
-            file.write(grf.name);
             file.write(json);
             file.write("\n");
         } catch (IOException e) {
