@@ -1190,10 +1190,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     /**
-     * Class that keeps the history of executions based on their data sizes. It has
-     * a sorted map (TreeMap) that keeps the relationship between the input size and
-     * the actual Tornado device in which the task was executed based on the
-     * profiler for the dynamic reconfiguration.
+     * Class that keeps the history of executions based on their data sizes. It
+     * has a sorted map (TreeMap) that keeps the relationship between the input
+     * size and the actual Tornado device in which the task was executed based
+     * on the profiler for the dynamic reconfiguration.
      */
     private static class HistoryTable {
         /**
@@ -1426,36 +1426,31 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public long getDataTransfersTime() {
-        // TODO Auto-generated method stub
-        return 0;
+        return timeProfiler.getTimer(ProfilerType.COPY_IN_TIME) + timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
     }
 
     @Override
     public long getWriteTime() {
-        return timeProfiler.getTimer(ProfilerType.KERNEL_TIME);
+        return timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
     }
 
     @Override
     public long getReadTime() {
-        // TODO Auto-generated method stub
-        return 0;
+        return timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
     }
 
     @Override
     public long getDeviceWriteTime() {
-        // TODO Auto-generated method stub
-        return 0;
+        return timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
     }
 
     @Override
     public long getDeviceKernelTime() {
-        // TODO Auto-generated method stub
-        return 0;
+        return timeProfiler.getTimer(ProfilerType.KERNEL_TIME);
     }
 
     @Override
     public long getDeviceReadTime() {
-        // TODO Auto-generated method stub
-        return 0;
+        return timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
     }
 }
