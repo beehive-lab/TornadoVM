@@ -23,8 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import uk.ac.manchester.tornado.runtime.common.*;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.REMOVE_OUTER_LOOPS;
 import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
 
 import java.util.ArrayList;
@@ -62,6 +61,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopCond
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopInitOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopPostOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
@@ -88,6 +88,12 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     public void setKernel(boolean value) {
         isKernel = value;
+    }
+
+    public void setLoopRemoval() {
+        if (isParallel() && Tornado.ACCELERATOR_IS_FPGA) {
+            REMOVE_OUTER_LOOPS = true;
+        }
     }
 
     public boolean isKernel() {

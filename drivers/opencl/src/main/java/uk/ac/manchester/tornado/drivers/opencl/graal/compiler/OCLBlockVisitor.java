@@ -58,6 +58,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         merges = new HashSet<>();
         switches = new HashSet<>();
         switchClosed = new HashSet<>();
+        resBuilder.setLoopRemoval();
     }
 
     private void emitBeginBlockForElseStatement(Block dom, Block block) {
