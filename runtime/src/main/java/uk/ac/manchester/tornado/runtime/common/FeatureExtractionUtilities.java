@@ -40,6 +40,8 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import uk.ac.manchester.tornado.runtime.common.enums.Features;
+
 public class FeatureExtractionUtilities {
     private static List<String> mathOps = new ArrayList<>(Arrays.asList("+", "-", "/", "*", "<<"));
 
@@ -53,7 +55,7 @@ public class FeatureExtractionUtilities {
         newFeat.put("Global Memory Reads", feat.get("FloatingRead"));
         newFeat.put("Total number of Loops", feat.get("LoopBegin"));
         newFeat.put("Parallel Loops", feat.get("GlobalThreadId"));
-        newFeat.put("If Statements", ((feat.get("LoopBegins") != null && feat.get("If") != null) ? (feat.get("If") - feat.get("LoopBegin")) : 0));
+        newFeat.put("If Statements", ((feat.get("LoopBegin") != null && feat.get("If") != null) ? (feat.get("If") - feat.get("LoopBegin")) : 0));
         newFeat.put("Switch Statements", feat.get("IntegerSwitch"));
         newFeat.put("Vector Loads", (feat.get("VectorLoadElement") != null ? (feat.get("VectorLoadElement")) : 0));
         newFeat.put("Math Operations", mathOperations(feat));
@@ -76,7 +78,7 @@ public class FeatureExtractionUtilities {
     public static void emitJsonToFile(HashMap<String, Integer> entry, StructuredGraph grf) {
         Gson gsons = new GsonBuilder().setPrettyPrinting().create();
         String json = gsons.toJson(entry);
-        File fil = new File("/home/michalis/Tornado/tornado/tornado-features-new.txt");
+        File fil = new File("tornado-features-new.txt");
         try (FileWriter file = new FileWriter(fil, RuntimeUtilities.ifFileExists(fil))) { // TO DO: FIX
             file.write(grf.name);
             file.write(json);
