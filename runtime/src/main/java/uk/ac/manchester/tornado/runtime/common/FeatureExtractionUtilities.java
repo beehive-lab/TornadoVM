@@ -40,8 +40,6 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import uk.ac.manchester.tornado.runtime.common.enums.Features;
-
 public class FeatureExtractionUtilities {
     private static List<String> mathOps = new ArrayList<>(Arrays.asList("+", "-", "/", "*", "<<"));
 
@@ -51,12 +49,12 @@ public class FeatureExtractionUtilities {
     public static HashMap<String, Integer> prettyFormatFeatures(HashMap<String, Integer> feat) {
         HashMap<String, Integer> newFeat = new HashMap<>();
 
-        newFeat.put("Global Memory Writes", feat.get("Write"));
-        newFeat.put("Global Memory Reads", feat.get("FloatingRead"));
-        newFeat.put("Total number of Loops", feat.get("LoopBegin"));
-        newFeat.put("Parallel Loops", feat.get("GlobalThreadId"));
+        newFeat.put("Global Memory Writes", (feat.get("Write") != null ? (feat.get("Write")) : 0));
+        newFeat.put("Global Memory Reads", (feat.get("FloatingRead") != null ? (feat.get("FloatingRead")) : 0));
+        newFeat.put("Total number of Loops", (feat.get("LoopBegin") != null ? (feat.get("LoopBegin")) : 0));
+        newFeat.put("Parallel Loops", feat.get((feat.get("GlobalThreadId") != null ? (feat.get("GlobalThreadId")) : 0)));
         newFeat.put("If Statements", ((feat.get("LoopBegin") != null && feat.get("If") != null) ? (feat.get("If") - feat.get("LoopBegin")) : 0));
-        newFeat.put("Switch Statements", feat.get("IntegerSwitch"));
+        newFeat.put("Switch Statements", feat.get((feat.get("IntegerSwitch") != null ? (feat.get("IntegerSwitch")) : 0)));
         newFeat.put("Vector Loads", (feat.get("VectorLoadElement") != null ? (feat.get("VectorLoadElement")) : 0));
         newFeat.put("Math Operations", mathOperations(feat));
         newFeat.put("Math Functions", (feat.get("OCLFPUnaryIntrinsic") != null ? feat.get("OCLFPUnaryIntrinsic") : 0));
