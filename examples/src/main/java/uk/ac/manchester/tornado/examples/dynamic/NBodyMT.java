@@ -82,7 +82,7 @@ public class NBodyMT {
         for (@Parallel int i = 0; i < numBodies; i++) {
             int body = 4 * i;
             float[] acc = new float[] { 0.0f, 0.0f, 0.0f };
-            for (int j = 0; j < inputSize[0]; j++) {
+            for (int j = 0; j < numBodies; j++) {
                 float[] r = new float[3];
                 int index = 4 * j;
 
