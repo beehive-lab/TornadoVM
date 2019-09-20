@@ -16,7 +16,7 @@
  * 
  */
 
-package uk.ac.manchester.tornado.examples.multithreaded;
+package uk.ac.manchester.tornado.examples.dynamic;
 
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
@@ -32,7 +32,7 @@ public class DFTMT {
         for (@Parallel int k = 0; k < n; k++) { // For each output element
             float sumreal = 0;
             float sumimag = 0;
-            for (int t = 0; t < inputSize[0]; t++) { // For each input element
+            for (int t = 0; t < n; t++) { // For each input element
                 float angle = ((2 * TornadoMath.floatPI() * t * k) / (float) n);
                 sumreal += (inreal[t] * (TornadoMath.floatCos(angle)) + inimag[t] * (TornadoMath.floatSin(angle)));
                 sumimag += -(inreal[t] * (TornadoMath.floatSin(angle)) + inimag[t] * (TornadoMath.floatCos(angle)));

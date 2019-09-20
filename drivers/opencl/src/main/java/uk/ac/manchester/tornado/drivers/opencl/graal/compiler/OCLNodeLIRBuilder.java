@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ILLEGAL;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import java.util.Collection;
@@ -572,6 +573,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         } else if (node instanceof ShortCircuitOrNode) {
             emitShortCircuitOrNode((ShortCircuitOrNode) node);
         } else if (node instanceof PragmaUnrollNode) {
+        } else if (node instanceof ThreadConfigurationNode) {
         } else {
             super.emitNode(node);
         }
