@@ -32,6 +32,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 
 public enum OCLKind implements PlatformKind {
 
@@ -109,12 +110,31 @@ public enum OCLKind implements PlatformKind {
     public static OCLKind fromResolvedJavaType(ResolvedJavaType type) {
         if (!type.isArray()) {
             for (OCLKind k : OCLKind.values()) {
-                if (k.javaClass != null && k.javaClass.getSimpleName().equals(type.getUnqualifiedName())) {
+                if (k.javaClass != null && k.javaClass.getSimpleName().equals(type.toJavaName().toLowerCase())) {
                     return k;
                 }
             }
         }
         return ILLEGAL;
+    }
+
+    public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(ResolvedJavaType type) {
+        if (type.toJavaName().toLowerCase() == "int") {
+            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY;
+        } else if (type.toJavaName().toLowerCase() == "double") {
+            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_DOUBLE_ARRAY;
+        } else if (type.toJavaName().toLowerCase() == "float") {
+            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_FLOAT_ARRAY;
+        } else if (type.toJavaName().toLowerCase() == "short") {
+            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_SHORT_ARRAY;
+        } else if (type.toJavaName().toLowerCase() == "long") {
+            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_LONG_ARRAY;
+        } else if (type.toJavaName().toLowerCase() == "char") {
+            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_CHAR_ARRAY;
+        } else if (type.toJavaName().toLowerCase() == "byte") {
+            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_BYTE_ARRAY;
+        }
+        return null;
     }
 
     public static OCLKind fromClass(Class<?> type) {
@@ -135,7 +155,8 @@ public enum OCLKind implements PlatformKind {
     private final OCLKind elementKind;
     private final Class<?> javaClass;
 
-    @SuppressWarnings({ "unchecked", "rawtypes" }) private final EnumKey key = new EnumKey(this);
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private final EnumKey key = new EnumKey(this);
 
     OCLKind(int size, Class<?> javaClass) {
         this(size, javaClass, null);

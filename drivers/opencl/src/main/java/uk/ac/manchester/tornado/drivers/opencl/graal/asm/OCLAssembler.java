@@ -464,7 +464,7 @@ public final class OCLAssembler extends Assembler {
         public static final OCLBinaryTemplate NEW_LOCAL_LONG_ARRAY = new OCLBinaryTemplate("local memory array float", "__local long %s[%s]");
         public static final OCLBinaryTemplate NEW_LOCAL_SHORT_ARRAY = new OCLBinaryTemplate("local memory array float", "__local short %s[%s]");
         public static final OCLBinaryTemplate NEW_LOCAL_CHAR_ARRAY = new OCLBinaryTemplate("local memory array float", "__local char %s[%s]");
-        public static final OCLBinaryTemplate NEW_LOCAL_BYTE = new OCLBinaryTemplate("local memory array float", "__local byte %s[%s]");
+        public static final OCLBinaryTemplate NEW_LOCAL_BYTE_ARRAY = new OCLBinaryTemplate("local memory array float", "__local byte %s[%s]");
         // @formatter:on
         private final String template;
 

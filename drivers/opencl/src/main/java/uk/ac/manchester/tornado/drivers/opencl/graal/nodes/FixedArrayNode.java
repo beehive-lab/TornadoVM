@@ -72,7 +72,7 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
         this.length = length;
         this.elemenType = elementType;
         this.elementKind = OCLKind.fromResolvedJavaType(elementType);
-        this.arrayTemplate = OCLBinaryTemplate.NEW_LOCAL_FLOAT_ARRAY;
+        this.arrayTemplate = OCLKind.resolveTemplateType(elementType);
         this.memLocal = local;
     }
 
@@ -115,6 +115,8 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
         final OCLLIRStmt.ExprStmt expr = new OCLLIRStmt.ExprStmt(declaration);
         gen.getLIRGeneratorTool().append(expr);
         gen.setResult(this, variable);
+
+        System.out.println("Generating array node -*-*-*-*");
     }
 
     public void setLocalType(OCLBinaryTemplate template) {
