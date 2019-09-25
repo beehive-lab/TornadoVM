@@ -298,6 +298,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return maxWorkItemDimensions;
     }
 
+    @Override
     public long[] getDeviceMaxWorkItemSizes() {
         if (maxWorkItemSizes != null) {
             return maxWorkItemSizes;
