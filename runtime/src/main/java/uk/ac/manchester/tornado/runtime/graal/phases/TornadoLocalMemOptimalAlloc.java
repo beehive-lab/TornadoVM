@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -47,26 +48,31 @@ public class TornadoLocalMemOptimalAlloc extends BasePhase<TornadoHighTierContex
         }
 
         if (context.getMeta().getDomain().getDepth() != 0) {
-            // System.out.println("CARDINALITY Run: " +
-            // context.getMeta().getDomain().get(0).cardinality());
-            // System.out.println("Max WorkItems Run: " +
-            // context.getDeviceMapping().getDevice().getDeviceMaxWorkItemSizes()[0]);
-            // System.out.println("OCLGPUblock2DX Run: " +
-            // context.getMeta().getOpenCLGpuBlock2DX());
-            // System.out.println("OCLGPUblock2DX Run: " +
-            // context.getDeviceMapping().getDevice().getDeviceLocalMemorySize());
             System.out.println("---Optimal Size - -  - " + calculateLocalMemAllocSize(context));
             int opt = calculateLocalMemAllocSize(context);
             NodeIterable<ConstantNode> cNodes = graph.getNodes().filter(ConstantNode.class);
 
+            NodeIterable<Node> sumNodes = graph.getNodes();
+
+            for (Node n : sumNodes) {
+                if (n instanceof MarkFixed) {
+                    System.out.println("Mark access" + n.inputs().first().toString());
+                    ConstantNode newLengthNode = ConstantNode.forInt(opt, graph);
+                    n.inputs().first().replaceAndDelete(newLengthNode);
+                }
+            }
+
             for (ConstantNode cn : cNodes) {
                 int length = ((JavaConstant) cn.getValue()).asInt();
-
-                if (length == 512) {
-                    ConstantNode newLengthNode = ConstantNode.forInt(opt, graph);
-                    cn.replaceAtUsages(newLengthNode);
-                    System.out.println(cn.getValue().toValueString());
-                }
+                // System.out.println(cn.predecessor().toString());
+                // cn.//
+                System.out.println(cn.successors().first());
+                // System.out.println(cn.);
+                // if (length == 0) {
+                // ConstantNode newLengthNode = ConstantNode.forInt(opt, graph);
+                // cn.replaceAtUsages(newLengthNode);
+                // System.out.println(cn.getValue().toValueString());
+                // }
             }
         }
 
