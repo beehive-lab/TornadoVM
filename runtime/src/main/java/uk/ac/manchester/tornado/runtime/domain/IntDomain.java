@@ -72,10 +72,6 @@ public class IntDomain implements Domain {
         this.step = step;
     }
 
-    public int getLength() {
-        return length;
-    }
-
     public void setLength(int length) {
         this.length = length;
     }
