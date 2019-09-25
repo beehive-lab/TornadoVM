@@ -42,9 +42,10 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryT
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkFixed;
 
 @NodeInfo
-public class FixedArrayNode extends FloatingNode implements LIRLowerable {
+public class FixedArrayNode extends FloatingNode implements LIRLowerable, MarkFixed {
 
     public static final NodeClass<FixedArrayNode> TYPE = NodeClass.create(FixedArrayNode.class);
 
@@ -115,8 +116,6 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
         final OCLLIRStmt.ExprStmt expr = new OCLLIRStmt.ExprStmt(declaration);
         gen.getLIRGeneratorTool().append(expr);
         gen.setResult(this, variable);
-
-        System.out.println("Generating array node -*-*-*-*");
     }
 
     public void setLocalType(OCLBinaryTemplate template) {
