@@ -53,7 +53,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
  */
 public class ReduceGPUSnippets implements Snippets {
 
-    private static int LOCAL_WORK_GROUP_SIZE = 256;
+    private static int LOCAL_WORK_GROUP_SIZE = 223;
 
     /**
      * Partial reduction in global memory for GPU.
@@ -65,11 +65,11 @@ public class ReduceGPUSnippets implements Snippets {
     @Snippet
     public static void partialReduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx) {
 
+        int[] localArray = new int[LOCAL_WORK_GROUP_SIZE];
+
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
-
-        int[] localArray = new int[LOCAL_WORK_GROUP_SIZE];
 
         localArray[localIdx] = inputArray[localIdx + (localGroupSize * groupID)];
 
@@ -93,19 +93,27 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
+        // int[] localArray = new int[LOCAL_WORK_GROUP_SIZE];
+
+        // localArray[localIdx] = inputArray[localIdx + (localGroupSize * groupID)];
+
         int myID = localIdx + (localGroupSize * groupID);
 
         inputArray[myID] = value;
+
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
+                // localArray[localIdx] += ((localArray[localIdx + stride]));
                 inputArray[myID] += inputArray[myID + stride];
+
             }
         }
-
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
+            // outputArray[groupID + 1] = localArray[0];
             outputArray[groupID + 1] = inputArray[myID];
+
         }
     }
 
@@ -625,6 +633,7 @@ public class ReduceGPUSnippets implements Snippets {
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", globalId);
             if (extra != null) {
+                // extra.as
                 args.add("value", extra);
             }
 
