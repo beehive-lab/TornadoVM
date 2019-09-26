@@ -18,29 +18,35 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: Michalis Papadimitriou
  *
- */
-package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
+ *
+ * */
+package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.LoopBeginNode;
+import org.graalvm.compiler.nodes.spi.LIRLowerable;
+import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import org.graalvm.compiler.code.DataSection.Data;
-import org.graalvm.compiler.lir.asm.DataBuilder;
+@NodeInfo
+public class ThreadConfigurationNode extends FixedWithNextNode implements LIRLowerable {
 
-import jdk.vm.ci.meta.Constant;
+    @Successor
+    LoopBeginNode loopBegin;
+    @Input
+    LocalWorkGroupDimensionsNode localWork;
+    public static final NodeClass<ThreadConfigurationNode> TYPE = NodeClass.create(ThreadConfigurationNode.class);
 
-public class OCLDataBuilder extends DataBuilder {
-
-    @Override
-    public Data createDataItem(Constant constant) {
-        unimplemented("Create Data item in OpenCLDataBuilder not supported yet.");
-        return null;
+    public ThreadConfigurationNode(LocalWorkGroupDimensionsNode localWork) {
+        super(TYPE, StampFactory.forVoid());
+        this.localWork = localWork;
     }
 
     @Override
-    public boolean needDetailedPatchingInformation() {
-        return false;
+    public void generate(NodeLIRBuilderTool nodeLIRBuilderTool) {
     }
-
 }

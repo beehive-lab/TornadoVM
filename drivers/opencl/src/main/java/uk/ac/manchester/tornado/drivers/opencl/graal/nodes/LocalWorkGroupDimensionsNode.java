@@ -18,46 +18,52 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: Michalis Papadimitriou
  *
+ *
+ * *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
-import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
+import jdk.vm.ci.meta.JavaKind;
 
-@NodeInfo(shortName = "Atomic Write")
-public class AtomicWriteNode extends AbstractWriteNode implements LIRLowerable {
+@NodeInfo
+public class LocalWorkGroupDimensionsNode extends FloatingNode implements LIRLowerable {
 
-    public static final NodeClass<AtomicWriteNode> TYPE = NodeClass.create(AtomicWriteNode.class);
+    public int oneD;
+    public int twoD;
+    public int threeD;
 
-    OCLBinaryIntrinsic op;
+    public static final NodeClass<LocalWorkGroupDimensionsNode> TYPE = NodeClass.create(LocalWorkGroupDimensionsNode.class);
 
-    public AtomicWriteNode(OCLBinaryIntrinsic op, AddressNode address, LocationIdentity location, ValueNode value) {
-        super(TYPE, address, location, value, BarrierType.NONE);
-        this.op = op;
+    public LocalWorkGroupDimensionsNode(int valueOne, int valueTwo, int valueThree) {
+        super(TYPE, StampFactory.forKind(JavaKind.Int));
+        assert stamp != null;
+        oneD = valueOne;
+        twoD = valueTwo;
+        threeD = valueThree;
     }
 
     @Override
-    public void generate(NodeLIRBuilderTool gen) {
-        final LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-        unimplemented("Atomic WRITE not implemented yet.");
+    public void generate(NodeLIRBuilderTool nodeLIRBuilderTool) {
     }
 
-    @Override
-    public boolean canNullCheck() {
-        return false;
+    public int getOneD() {
+        return oneD;
     }
 
+    public int getTwoD() {
+        return twoD;
+    }
+
+    public int getThreeD() {
+        return threeD;
+    }
 }

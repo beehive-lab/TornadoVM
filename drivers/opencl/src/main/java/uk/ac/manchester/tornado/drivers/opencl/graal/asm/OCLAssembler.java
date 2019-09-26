@@ -45,6 +45,7 @@ import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
@@ -829,7 +830,7 @@ public final class OCLAssembler extends Assembler {
 
     @Override
     public AbstractAddress getPlaceholder(int i) {
-        unimplemented();
+        unimplemented("Place holder not implemented yet.");
         return null;
     }
 
@@ -841,13 +842,13 @@ public final class OCLAssembler extends Assembler {
 
     @Override
     public AbstractAddress makeAddress(Register arg0, int arg1) {
-        unimplemented();
+        unimplemented("Make address not implemented yet.");
         return null;
     }
 
     @Override
     protected void patchJumpTarget(int arg0, int arg1) {
-        unimplemented();
+        unimplemented("Patch jump target not implemented yet.");
     }
 
     /**
@@ -1085,6 +1086,15 @@ public final class OCLAssembler extends Assembler {
         } else {
             emit(toString(value));
         }
+    }
+
+    public void emitAttribute(OCLCompilationResultBuilder crb, ControlFlowGraph cfg) {
+        if (crb.isParallel()) {
+            emitSymbol(OCLAssemblerConstants.FPGA_ATTRIBUTE);
+        } else {
+            emitSymbol(OCLAssemblerConstants.FPGA_ATTRIBUTE_SEQ);
+        }
+        emitLine("");
     }
 
     public void assign() {

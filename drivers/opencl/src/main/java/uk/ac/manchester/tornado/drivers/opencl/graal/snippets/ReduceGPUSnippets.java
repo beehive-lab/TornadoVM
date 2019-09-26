@@ -54,6 +54,18 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 public class ReduceGPUSnippets implements Snippets {
 
     private static int LOCAL_WORK_GROUP_SIZE = 223;
+    /**
+     * 1D full snippet for OpenCL reductions.
+     * 
+     * @param inputArray
+     *            input int array
+     * @param outputArray
+     *            output array with partial reductions
+     * @param gidx
+     *            OpenCL GlobalID node
+     * @param globalSize
+     *            OpenCL Global Size
+     */
 
     /**
      * Partial reduction in global memory for GPU.
@@ -496,6 +508,7 @@ public class ReduceGPUSnippets implements Snippets {
 
     public static class Templates extends AbstractTemplates implements TornadoSnippetTypeInference {
 
+
         // Add
         private final SnippetInfo partialReduceIntSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceIntAddGlobal");
         private final SnippetInfo partialReduceIntSnippetGlobal2 = snippet(ReduceGPUSnippets.class, "partialReduceIntAddGlobal2");
@@ -521,6 +534,7 @@ public class ReduceGPUSnippets implements Snippets {
         private final SnippetInfo partialReduceIntMinSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceIntMinGlobal");
         private final SnippetInfo partialReduceMinFloatSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceFloatMinGlobal");
         private final SnippetInfo partialReduceMinDoubleSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceDoubleMinGlobal");
+
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);

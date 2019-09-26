@@ -58,6 +58,7 @@ import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
@@ -109,6 +110,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
@@ -201,7 +203,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     @Override
     public EconomicSet<Register> translateToCallerRegisters(EconomicSet<Register> calleeRegisters) {
-        unimplemented();
+        unimplemented("Translate to caller registers method not implemented yet.");
         return null;
     }
 
@@ -517,21 +519,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
              * starting at address 0x0. (I assume that this is a interesting case that leads
              * to a few issues.) Iris Pro is the only culprit at the moment.
              */
-            if (Tornado.ACCELERATOR_IS_FPGA && !methodName.equals(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
-                // TODO: FIX with info at the runtime, currently is a static
-                // decision
-                String fpgaSchedulingAttribute;
-                if (crb.isParallel()) {
-                    fpgaSchedulingAttribute = FPGA_ATTRIBUTE.replace("<1>", "64");
-                    fpgaSchedulingAttribute = fpgaSchedulingAttribute.replace("<2>", "1");
-                    fpgaSchedulingAttribute = fpgaSchedulingAttribute.replace("<3>", "1");
-                } else {
-                    fpgaSchedulingAttribute = FPGA_ATTRIBUTE.replace("<1>", "1");
-                    fpgaSchedulingAttribute = fpgaSchedulingAttribute.replace("<2>", "1");
-                    fpgaSchedulingAttribute = fpgaSchedulingAttribute.replace("<3>", "1");
-                }
-                asm.emitLine(fpgaSchedulingAttribute);
+            final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
+            if (cfg.getStartBlock().getEndNode().predecessor().asNode() instanceof ThreadConfigurationNode) {
+                asm.emitAttribute(crb, cfg); // value
             }
+
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
 
             asm.emitLine("%s void %s(%s%s)", OCLAssemblerConstants.KERNEL_MODIFIER, methodName, bumpBuffer, architecture.getABI());
@@ -656,7 +648,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     @Override
     public SuitesProvider getSuites() {
-        unimplemented();
+        unimplemented("Get suites method in OCLBackend not implemented yet.");
         return null;
     }
 
@@ -666,7 +658,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     @Override
     protected CompiledCode createCompiledCode(ResolvedJavaMethod rjm, CompilationRequest cr, CompilationResult cr1) {
-        unimplemented();
+        unimplemented("Create compiled code method in OCLBackend not implemented yet.");
         return null;
     }
 }

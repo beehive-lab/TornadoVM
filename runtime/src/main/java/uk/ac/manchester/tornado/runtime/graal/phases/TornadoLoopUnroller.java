@@ -51,7 +51,7 @@ public class TornadoLoopUnroller extends BasePhase<PhaseContext> {
         this.canonicalizer = canonicalizer;
     }
 
-    public static boolean shouldFullUnroll(OptionValues options, LoopEx loop) {
+    private static boolean shouldFullUnroll(OptionValues options, LoopEx loop) {
         if (!loop.isCounted() || !loop.counted().isConstantMaxTripCount()) {
             return false;
         }
@@ -74,11 +74,7 @@ public class TornadoLoopUnroller extends BasePhase<PhaseContext> {
                 }
             }
 
-            if (loops - ifs != 0) {
-                return false;
-            }
-
-            return true;
+            return (loops - ifs == 0);
         } else {
             return false;
         }

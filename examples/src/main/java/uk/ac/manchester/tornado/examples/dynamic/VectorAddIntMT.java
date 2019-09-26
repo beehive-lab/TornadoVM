@@ -15,17 +15,18 @@
  * limitations under the License.
  * 
  */
-package uk.ac.manchester.tornado.examples.multithreaded;
+package uk.ac.manchester.tornado.examples.dynamic;
 
 import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 
 public class VectorAddIntMT {
 
     private static void vectorAdd(int[] a, int[] b, int[] c) {
-        for (int i = 0; i < c.length; i++) {
+        for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];
         }
     }
@@ -49,10 +50,10 @@ public class VectorAddIntMT {
     }
 
     public static boolean validate(int size, int[] seq, int[] par) {
-        boolean validation = false;
-        for (int i = 0; i < seq.length; i++) {
+        boolean validation = true;
+        for (int i = 0; i < size; i++) {
             if (seq[i] != 30 || par[i] != 30) {
-                validation = true;
+                validation = false;
                 break;
             }
         }

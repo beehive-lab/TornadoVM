@@ -74,8 +74,8 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class OCLLIRGenerator extends LIRGenerator {
 
-    protected OCLBuiltinTool oclBuiltinTool;
-    protected OCLGenTool oclGenTool;
+    private OCLBuiltinTool oclBuiltinTool;
+    private OCLGenTool oclGenTool;
 
     public OCLLIRGenerator(CodeGenProviders providers, LIRGenerationResult res) {
         super(new OCLLIRKindTool((OCLTargetDescription) providers.getCodeCache().getTarget()), new OCLArithmeticTool(), new OCLMoveFactory(), providers, res);
@@ -140,12 +140,6 @@ public class OCLLIRGenerator extends LIRGenerator {
         ValueKind<?> actualLIRKind = lirKind;
         OCLKind oclKind = OCLKind.ILLEGAL;
         if (pk instanceof OCLKind) {
-            // if (pk instanceof Kind) {
-            // OCLTargetDescription target = (OCLTargetDescription)
-            // getCodeCache().getTarget();
-            // oclKind = target.getOCLKind((Kind) pk);
-            // actualLIRKind = LIRKind.value(oclKind);
-            // } else if (pk instanceof OCLKind) {
             oclKind = (OCLKind) pk;
         } else {
             shouldNotReachHere();

@@ -18,29 +18,33 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: Michalis Papadimitriou
  *
- */
-package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
+ *
+ * */
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
-import org.graalvm.compiler.code.DataSection.Data;
-import org.graalvm.compiler.lir.asm.DataBuilder;
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.Opcode;
 
-import jdk.vm.ci.meta.Constant;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
+import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 
-public class OCLDataBuilder extends DataBuilder {
+@Opcode("ThreadScheduling")
+public class OCLThreadConfiguration extends OCLLIROp {
+    private int x;
+    private int y;
+    private int z;
 
-    @Override
-    public Data createDataItem(Constant constant) {
-        unimplemented("Create Data item in OpenCLDataBuilder not supported yet.");
-        return null;
+    public OCLThreadConfiguration(int oneD, int twoD, int threeD) {
+        super(LIRKind.Illegal);
+        this.x = oneD;
+        this.y = twoD;
+        this.z = threeD;
     }
 
     @Override
-    public boolean needDetailedPatchingInformation() {
-        return false;
+    public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
     }
-
 }
