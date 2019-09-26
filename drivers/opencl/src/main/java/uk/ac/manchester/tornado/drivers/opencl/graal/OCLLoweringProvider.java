@@ -194,7 +194,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
             // GPU SCHEDULER
             if (n instanceof PhiNode) {
-                System.out.println("Lowering a snippet");
                 isAGPUSnippet = true;
                 threadID = (ValueNode) n;
                 break;
