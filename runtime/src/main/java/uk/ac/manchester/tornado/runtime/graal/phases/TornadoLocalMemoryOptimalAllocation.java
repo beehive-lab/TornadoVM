@@ -36,7 +36,7 @@ import org.graalvm.compiler.phases.BasePhase;
  * Then, it replaced the lenght with the optimal size.
  *
  */
-public class TornadoLocalMemOptimalAlloc extends BasePhase<TornadoHighTierContext> {
+public class TornadoLocalMemoryOptimalAllocation extends BasePhase<TornadoHighTierContext> {
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
