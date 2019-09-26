@@ -312,7 +312,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             OCLProviders providers = (OCLProviders) getProviders();
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
 
-            deviceContext.getPlatformContext().getPlatform().getName();
             if (Tornado.ACCELERATOR_IS_FPGA) {
                 lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA);
             } else {
