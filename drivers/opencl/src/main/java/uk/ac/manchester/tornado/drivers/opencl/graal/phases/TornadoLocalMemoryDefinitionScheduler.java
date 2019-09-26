@@ -45,9 +45,14 @@ public class TornadoLocalMemoryDefinitionScheduler extends BasePhase<TornadoHigh
                         System.out.println(" BlockNodes " + loopBeginNode.getBlockNodes());
                         System.out.println(" toString " + loopBeginNode.toString());
                         System.out.println(" Predecessor " + loopBeginNode.predecessor());
-                        System.out.println(" Predecessors " + loopBeginNode.cfgPredecessors());
+                        // System.out.println(" Predecessors " +
+                        // loopBeginNode.graph().getNodes().snapshot().toArray());
                         System.out.println(" ++++++++++++++++++++++++++++++++++++ ");
                         // firstLoop = false;
+                        // FixedArrayNode fxArray = (FixedArrayNode) node.copyWithInputs(true);
+
+                        // graph.s
+
                     }
 
                 });
@@ -58,6 +63,8 @@ public class TornadoLocalMemoryDefinitionScheduler extends BasePhase<TornadoHigh
             System.out.println(" Successors" + node.successors());
             System.out.println(" Predecessors " + node.predecessor());
             System.out.println(" ************************************* ");
+            System.out.println(" local size " + context.getMeta().getLocalSize());
+            System.out.println(" local size dims " + context.getMeta().isLocalWorkDefined());
         });
 
     }
