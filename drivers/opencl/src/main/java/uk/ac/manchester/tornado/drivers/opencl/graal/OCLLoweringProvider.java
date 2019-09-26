@@ -439,7 +439,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                     JavaKind elementKind = elementType.getJavaKind();
                     final int offset = arrayBaseOffset(elementKind);
                     final int size = offset + (elementKind.getByteCount() * length);
-                    newArray.getOptions().toString();
                     FixedArrayNode fixedArrayNode;
                     if (isAGPUSnippet) {
                         ConstantNode newLengthNode = ConstantNode.forInt(length, graph); // TODO: We need to chech if the array is defined within reduction snippet

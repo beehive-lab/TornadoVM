@@ -33,6 +33,7 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
@@ -340,9 +341,7 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            if (this.cast.getMemorySpace().name().equals("__global")) {
-                emitNormalCode(crb, asm);
-            } else if (this.cast.getMemorySpace().name().equals("__local")) {
+            if (this.cast.getMemorySpace().name().equals(OCLAssemblerConstants.LOCAL_MEM_MODIFIER)) {
                 emitIntegerStore(crb, asm);
             } else {
                 emitNormalCode(crb, asm);
