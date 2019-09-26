@@ -112,6 +112,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private static final boolean USE_ATOMICS = false;
     private final ConstantReflectionProvider constantReflection;
     private final TornadoVMConfig vmConfig;
+    private static boolean isAGPUSnippet = false;
 
     protected NewObjectSnippets.Templates newObjectSnippets;
     protected ReduceGPUSnippets.Templates GPUreduceSnippets;
@@ -193,6 +194,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
             // GPU SCHEDULER
             if (n instanceof PhiNode) {
+                System.out.println("Lowering a snippet");
+                isAGPUSnippet = true;
                 threadID = (ValueNode) n;
                 break;
             }
@@ -214,8 +217,10 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         // Depending on the Scheduler, call the proper snippet factory
         // TODO: Pass meta information from the device scheduler here
         if (cpuScheduler) {
+            // Pass here local work-group //XXX:
             CPUreduceSnippets.lower(storeIndexed, threadID, oclIdNode, startIndexNode, tool);
         } else {
+            // Pass here local work group //XXX:
             GPUreduceSnippets.lower(storeIndexed, threadID, oclGlobalSize, tool);
         }
     }
@@ -437,8 +442,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                     final int size = offset + (elementKind.getByteCount() * length);
                     newArray.getOptions().toString();
                     FixedArrayNode fixedArrayNode;
-                    if (true) {
-                        final ConstantNode newLengthNode = ConstantNode.forInt(length, graph); // TODO: We need to chech if the array is defined within reduction snippet
+                    if (isAGPUSnippet) {
+                        ConstantNode newLengthNode = ConstantNode.forInt(length, graph); // TODO: We need to chech if the array is defined within reduction snippet
                         fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.lp, newArray.elementType(), newLengthNode, true));
                     } else {
                         final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
