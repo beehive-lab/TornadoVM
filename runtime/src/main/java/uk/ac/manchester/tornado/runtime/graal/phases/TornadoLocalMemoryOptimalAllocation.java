@@ -47,11 +47,7 @@ public class TornadoLocalMemoryOptimalAllocation extends BasePhase<TornadoHighTi
 
         if ((context.getMeta().getDomain() != null)) {
             if ((context.getMeta().getDomain().getDepth() != 0)) {
-                System.out.println("---Optimal Size - - - " + calculateLocalMemAllocSize(context));
-
                 int opt = calculateLocalMemAllocSize(context);
-                // NodeIterable<ConstantNode> cNodes =
-                // graph.getNodes().filter(ConstantNode.class);
 
                 NodeIterable<Node> sumNodes = graph.getNodes();
 
@@ -60,23 +56,9 @@ public class TornadoLocalMemoryOptimalAllocation extends BasePhase<TornadoHighTi
                         if (((MarkFixed) n).isMemLocal()) {
                             ConstantNode newLengthNode = ConstantNode.forInt(opt, graph);
                             n.inputs().first().replaceAndDelete(newLengthNode);
-                            System.out.println("Mark access" + n.inputs().first().toString());
-                            System.out.println("Is mem local" + ((MarkFixed) n).isMemLocal());
                         }
                     }
                 }
-                // for (ConstantNode cn : cNodes) {
-                // int length = ((JavaConstant) cn.getValue()).asInt();
-                // // System.out.println(cn.predecessor().toString());
-                // // cn.//
-                // System.out.println(cn.successors().first());
-                // // System.out.println(cn.);
-                // // if (length == 0) {
-                // // ConstantNode newLengthNode = ConstantNode.forInt(opt, graph);
-                // // cn.replaceAtUsages(newLengthNode);
-                // // System.out.println(cn.getValue().toValueString());
-                // // }
-                // }
             }
         }
 

@@ -106,6 +106,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceSubNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkFixed;
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
@@ -212,7 +213,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                 }
             }
         }
-
         // Depending on the Scheduler, call the proper snippet factory
         if (cpuScheduler) {
             CPUreduceSnippets.lower(storeIndexed, threadID, oclIdNode, startIndexNode, tool);
@@ -499,12 +499,20 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     public boolean isLocalIdNode(StoreIndexedNode storeIndexed) {
-
-        return storeIndexed.inputs().first().getClass().getTypeName().contains("FixedArray");
+        Node nd = storeIndexed.inputs().first().asNode();
+        if (nd instanceof MarkFixed) {
+            return ((MarkFixed) nd).isMemLocal();
+        } else {
+            return false;
+        }
     }
 
     public boolean isLocalIdNode(LoadIndexedNode loadIndexedNode) {
-
-        return loadIndexedNode.inputs().first().getClass().getTypeName().contains("FixedArray");
+        Node nd = loadIndexedNode.inputs().first().asNode();
+        if (nd instanceof MarkFixed) {
+            return ((MarkFixed) nd).isMemLocal();
+        } else {
+            return false;
+        }
     }
 }
