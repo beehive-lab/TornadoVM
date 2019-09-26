@@ -214,12 +214,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
 
         // Depending on the Scheduler, call the proper snippet factory
-        // TODO: Pass meta information from the device scheduler here
         if (cpuScheduler) {
-            // Pass here local work-group //XXX:
             CPUreduceSnippets.lower(storeIndexed, threadID, oclIdNode, startIndexNode, tool);
         } else {
-            // Pass here local work group //XXX:
             GPUreduceSnippets.lower(storeIndexed, threadID, oclGlobalSize, tool);
         }
     }
@@ -428,7 +425,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private void lowerNewArrayNode(NewArrayNode newArray, LoweringTool tool) {
         final StructuredGraph graph = newArray.graph();
         final ValueNode firstInput = newArray.length();
-        System.out.println("New array node during lowering");
         if (firstInput instanceof ConstantNode) {
             if (newArray.dimensionCount() == 1) {
 
