@@ -97,6 +97,7 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable, MarkFi
         return length;
     }
 
+    @Override
     public boolean isMemLocal() {
         return memLocal;
     }
