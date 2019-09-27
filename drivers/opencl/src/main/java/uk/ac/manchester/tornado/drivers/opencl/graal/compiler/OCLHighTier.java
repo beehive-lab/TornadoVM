@@ -120,9 +120,7 @@ public class OCLHighTier extends TornadoHighTier {
 
         // After the first Lowering, Tornado replaces reductions with snippets
         // that contains method calls to barriers.
-        if (true) {
-            // appendPhase(new TornadoLocalMemoryDefinitionScheduler());
-        }
+
         appendPhase(new TornadoOpenCLIntrinsicsReplacements());
 
         appendPhase(new TornadoLocalMemoryOptimalAllocation());
