@@ -94,6 +94,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.CastNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
@@ -104,7 +105,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceSubNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkFixed;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
@@ -422,15 +423,20 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                     JavaKind elementKind = elementType.getJavaKind();
                     final int offset = arrayBaseOffset(elementKind);
                     final int size = offset + (elementKind.getByteCount() * length);
-                    FixedArrayNode fixedArrayNode;
                     if (isAGPUSnippet) {
+                        LocalArrayNode localArrayNode;
                         ConstantNode newLengthNode = ConstantNode.forInt(length, graph); // TODO: We need to chech if the array is defined within reduction snippet
-                        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.lp, newArray.elementType(), newLengthNode, true));
+                        // fixedArrayNode = graph.addWithoutUnique(new
+                        // FixedArrayNode(OCLArchitecture.lp, newArray.elementType(), newLengthNode,
+                        // true));
+                        localArrayNode = graph.addWithoutUnique(new LocalArrayNode(OCLArchitecture.lp, newArray.elementType(), newLengthNode));
+                        newArray.replaceAtUsages(localArrayNode);
                     } else {
+                        FixedArrayNode fixedArrayNode;
                         final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
                         fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.hp, newArray.elementType(), newLengthNode));
+                        newArray.replaceAtUsages(fixedArrayNode);
                     }
-                    newArray.replaceAtUsages(fixedArrayNode);
                     newArray.clearInputs();
                     GraphUtil.unlinkFixedNode(newArray);
                 } else {
@@ -487,8 +493,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     public boolean isLocalIdNode(StoreIndexedNode storeIndexed) {
         Node nd = storeIndexed.inputs().first().asNode();
-        if (nd instanceof MarkFixed) {
-            return ((MarkFixed) nd).isMemLocal();
+        if (nd instanceof MarkLocalArray) {
+            return true;
         } else {
             return false;
         }
@@ -496,8 +502,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     public boolean isLocalIdNode(LoadIndexedNode loadIndexedNode) {
         Node nd = loadIndexedNode.inputs().first().asNode();
-        if (nd instanceof MarkFixed) {
-            return ((MarkFixed) nd).isMemLocal();
+        if (nd instanceof MarkLocalArray) {
+            return true;
         } else {
             return false;
         }

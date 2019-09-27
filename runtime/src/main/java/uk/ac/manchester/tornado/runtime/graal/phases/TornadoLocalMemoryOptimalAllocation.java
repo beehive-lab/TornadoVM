@@ -32,7 +32,7 @@ import org.graalvm.compiler.phases.BasePhase;
 /**
  * 
  * It filters the nodes for the lenght of the FixedArray node for the local
- * memory and calucaltes the optimal local memory size based on driver info.
+ * memory and calculates the optimal local memory size based on driver info.
  * Then, it replaced the lenght with the optimal size.
  *
  */
@@ -52,11 +52,9 @@ public class TornadoLocalMemoryOptimalAllocation extends BasePhase<TornadoHighTi
                 NodeIterable<Node> sumNodes = graph.getNodes();
 
                 for (Node n : sumNodes) {
-                    if (n instanceof MarkFixed && isPowerOfTwo(opt)) {
-                        if (((MarkFixed) n).isMemLocal()) {
-                            ConstantNode newLengthNode = ConstantNode.forInt(opt, graph);
-                            n.inputs().first().replaceAndDelete(newLengthNode);
-                        }
+                    if (n instanceof MarkLocalArray && isPowerOfTwo(opt)) {
+                        ConstantNode newLengthNode = ConstantNode.forInt(opt, graph);
+                        n.inputs().first().replaceAndDelete(newLengthNode);
                     }
                 }
             }
