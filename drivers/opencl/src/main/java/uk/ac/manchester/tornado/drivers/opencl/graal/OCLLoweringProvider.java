@@ -425,10 +425,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                     final int size = offset + (elementKind.getByteCount() * length);
                     if (isAGPUSnippet) {
                         LocalArrayNode localArrayNode;
-                        ConstantNode newLengthNode = ConstantNode.forInt(length, graph); // TODO: We need to chech if the array is defined within reduction snippet
-                        // fixedArrayNode = graph.addWithoutUnique(new
-                        // FixedArrayNode(OCLArchitecture.lp, newArray.elementType(), newLengthNode,
-                        // true));
+                        ConstantNode newLengthNode = ConstantNode.forInt(length, graph);
                         localArrayNode = graph.addWithoutUnique(new LocalArrayNode(OCLArchitecture.lp, newArray.elementType(), newLengthNode));
                         newArray.replaceAtUsages(localArrayNode);
                     } else {
