@@ -193,14 +193,11 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            if (this.cast.getMemorySpace().name().equals("__global")) {
-                emitPointerBaseIndexCode(crb, asm);
-            } else if (this.cast.getMemorySpace().name().equals("__local")) {
+            if (this.cast.getMemorySpace().name().equals(OCLAssemblerConstants.LOCAL_MEM_MODIFIER)) {
                 emitIntegerBasedIndexCode(crb, asm);
             } else {
                 emitPointerBaseIndexCode(crb, asm);
             }
-
         }
 
         public AllocatableValue getResult() {
@@ -874,7 +871,7 @@ public class OCLLIRStmt {
         }
     }
 
-    @Opcode("localAlloc")
+    @Opcode("LOCALALLOC")
     public static class LocalAllocExpr extends AbstractInstruction {
 
         public static final LIRInstructionClass<LocalAllocExpr> TYPE = LIRInstructionClass.create(LocalAllocExpr.class);
