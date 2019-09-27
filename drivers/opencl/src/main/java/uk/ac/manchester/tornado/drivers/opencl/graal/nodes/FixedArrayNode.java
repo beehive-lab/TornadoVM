@@ -36,16 +36,14 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkFixed;
 
 @NodeInfo
-public class FixedArrayNode extends FixedNode implements LIRLowerable, MarkFixed {
+public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
     public static final NodeClass<FixedArrayNode> TYPE = NodeClass.create(FixedArrayNode.class);
 
@@ -56,7 +54,6 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable, MarkFixed
     protected OCLMemoryBase memoryRegister;
     protected ResolvedJavaType elemenType;
     protected OCLBinaryTemplate arrayTemplate;
-    protected boolean memLocal;
 
     public FixedArrayNode(OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length) {
         super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
@@ -65,20 +62,6 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable, MarkFixed
         this.elemenType = elementType;
         this.elementKind = OCLKind.fromResolvedJavaType(elementType);
         this.arrayTemplate = OCLBinaryTemplate.NEW_ARRAY;
-    }
-
-    public FixedArrayNode(OCLMemoryBase memoryRegister, ResolvedJavaType elementType, ConstantNode length, boolean local) {
-        super(TYPE, StampFactory.objectNonNull(TypeReference.createTrustedWithoutAssumptions(elementType.getArrayClass())));
-        this.memoryRegister = memoryRegister;
-        this.length = length;
-        this.elemenType = elementType;
-        this.elementKind = OCLKind.fromResolvedJavaType(elementType);
-        this.arrayTemplate = OCLKind.resolveTemplateType(elementType);
-        this.memLocal = local;
-    }
-
-    public FixedArrayNode(ResolvedJavaType elementType, ConstantNode length) {
-        this(OCLArchitecture.hp, elementType, length);
     }
 
     public OCLMemoryBase getMemoryRegister() {
@@ -98,11 +81,6 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable, MarkFixed
     }
 
     @Override
-    public boolean isMemLocal() {
-        return memLocal;
-    }
-
-    @Override
     public void generate(NodeLIRBuilderTool gen) {
         /*
          * using as_T reinterprets the data as type T - consider: float x = (float) 1;
@@ -117,10 +95,6 @@ public class FixedArrayNode extends FixedNode implements LIRLowerable, MarkFixed
         final OCLLIRStmt.ExprStmt expr = new OCLLIRStmt.ExprStmt(declaration);
         gen.getLIRGeneratorTool().append(expr);
         gen.setResult(this, variable);
-    }
-
-    public void setLocalType(OCLBinaryTemplate template) {
-        this.arrayTemplate = template;
     }
 
 }
