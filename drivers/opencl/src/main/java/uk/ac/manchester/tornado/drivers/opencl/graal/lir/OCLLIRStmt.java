@@ -870,28 +870,4 @@ public class OCLLIRStmt {
 
         }
     }
-
-    @Opcode("LOCALALLOC")
-    public static class LocalAllocExpr extends AbstractInstruction {
-
-        public static final LIRInstructionClass<LocalAllocExpr> TYPE = LIRInstructionClass.create(LocalAllocExpr.class);
-
-        @Use
-        protected Value size;
-
-        public LocalAllocExpr(OCLLIROp size) {
-            super(TYPE);
-            this.size = size;
-        }
-
-        @Override
-        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            if (size instanceof OCLLIROp) {
-                ((OCLLIROp) size).emit(crb, asm);
-            } else {
-                asm.emitValue(crb, size);
-            }
-
-        }
-    }
 }
