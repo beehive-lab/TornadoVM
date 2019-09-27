@@ -33,6 +33,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 
@@ -79,12 +80,16 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
             gen.setResult(this, new MemoryAccess(memoryRegister, baseValue, false));
         }
 
-        if ("_local_region".equals(this.memoryRegister.name)) {
+        if (isLocalMemoryAccess()) {
             gen.setResult(this, new MemoryAccess(memoryRegister, baseValue, indexValue, false));
         } else {
             addressValue = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
             gen.setResult(this, new MemoryAccess(memoryRegister, addressValue, false));
         }
+    }
+
+    private boolean isLocalMemoryAccess() {
+        return this.memoryRegister.name.equals(OCLAssemblerConstants.LOCAL_REGION_NAME);
     }
 
     @Override
