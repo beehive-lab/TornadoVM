@@ -66,6 +66,7 @@ public class TornadoDeviceOutput {
                 if (verbosity.equals("verbose")) {
                     bufferDevices.append("\t\t" + "Global Memory Size: " + formatSize(driver.getDevice(deviceIndex).getMaxGlobalMemory()) + "\n");
                     bufferDevices.append("\t\t" + "Local Memory Size: " + formatSize(driver.getDevice(deviceIndex).getDeviceLocalMemorySize()) + "\n");
+                    bufferDevices.append("\t\t" + "Workgroup Dimensions: " + driver.getDevice(deviceIndex).getDeviceMaxWorkgroupDimensions().length+"\n");
                     bufferDevices.append("\t\t" + "Max WorkGroup Configuration: " + Arrays.toString(driver.getDevice(deviceIndex).getDeviceMaxWorkgroupDimensions()) + "\n");
                 } else {
                     bufferDevices.append("\n");
