@@ -197,11 +197,7 @@ public interface TornadoDevice {
 
     long getDeviceLocalMemorySize();
 
-    Object toVerboseString();
-
     long[] getDeviceMaxWorkgroupDimensions();
-
-    // int getLoc
 
     boolean isDistibutedMemory();
 

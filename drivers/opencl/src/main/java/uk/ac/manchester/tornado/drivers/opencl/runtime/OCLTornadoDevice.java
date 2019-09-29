@@ -625,15 +625,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public Object toVerboseString() {
-        return device.toVerboseString();
-    }
-
-    @Override
     public long[] getDeviceMaxWorkgroupDimensions() {
         return device.getDeviceMaxWorkItemSizes();
     }
-    // @
-    // Override
-    // public int get
 }

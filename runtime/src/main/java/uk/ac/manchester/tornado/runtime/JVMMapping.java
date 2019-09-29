@@ -218,11 +218,6 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public Object toVerboseString() {
-        return null;
-    }
-
-    @Override
     public long[] getDeviceMaxWorkgroupDimensions() {
         return new long[0];
     }

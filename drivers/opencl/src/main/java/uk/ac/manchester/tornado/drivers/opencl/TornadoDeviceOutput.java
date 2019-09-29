@@ -45,7 +45,11 @@ public class TornadoDeviceOutput {
 
     public static void main(String[] args) {
 
-        String verbosity = args[0];
+        String verbosity = "";
+
+        if (args.length != 0) {
+            verbosity = args[0];
+        }
 
         StringBuffer bufferDriversAndPlatforms = new StringBuffer().append("\n");
         StringBuffer bufferDevices = new StringBuffer();
