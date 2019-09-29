@@ -50,14 +50,14 @@ import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 public interface TornadoDevice {
 
     /**
-     * It allocates an object in the pre-defined heap of the target device. It
-     * also ensure that there is enough space for the input object.
+     * It allocates an object in the pre-defined heap of the target device. It also
+     * ensure that there is enough space for the input object.
      * 
      * @param object
      *            to be allocated
      * @param batchSize
-     *            size of the object to be allocated. If this value is <= 0,
-     *            then it allocates the sizeof(object).
+     *            size of the object to be allocated. If this value is <= 0, then it
+     *            allocates the sizeof(object).
      * @param state
      *            state of the object in the target device
      *            {@link TornadoDeviceObjectState}
@@ -76,8 +76,8 @@ public interface TornadoDevice {
      * @param events
      *            list of pending events (dependencies)
      * @param batchSize
-     *            size of the object to be allocated. If this value is <= 0,
-     *            then it allocates the sizeof(object).
+     *            size of the object to be allocated. If this value is <= 0, then it
+     *            allocates the sizeof(object).
      * @param hostOffset
      *            offset in bytes for the copy within the host input array (or
      *            object)
@@ -92,8 +92,8 @@ public interface TornadoDevice {
      * @param object
      *            to be copied
      * @param batchSize
-     *            size of the object to be allocated. If this value is <= 0,
-     *            then it allocates the sizeof(object).
+     *            size of the object to be allocated. If this value is <= 0, then it
+     *            allocates the sizeof(object).
      * @param hostOffset
      *            offset in bytes for the copy within the host input array (or
      *            object)
@@ -194,6 +194,14 @@ public interface TornadoDevice {
     long getMaxAllocMemory();
 
     long getMaxGlobalMemory();
+
+    long getDeviceLocalMemorySize();
+
+    Object toVerboseString();
+
+    long[] getDeviceMaxWorkgroupDimensions();
+
+    // int getLoc
 
     boolean isDistibutedMemory();
 

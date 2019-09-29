@@ -212,4 +212,19 @@ public class JVMMapping implements TornadoAcceleratorDevice {
         return Runtime.getRuntime().maxMemory();
     }
 
+    @Override
+    public long getDeviceLocalMemorySize() {
+        return 0;
+    }
+
+    @Override
+    public Object toVerboseString() {
+        return null;
+    }
+
+    @Override
+    public long[] getDeviceMaxWorkgroupDimensions() {
+        return new long[0];
+    }
+
 }

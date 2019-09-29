@@ -26,6 +26,8 @@
 
 package uk.ac.manchester.tornado.drivers.opencl;
 
+import java.util.Arrays;
+
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 
@@ -43,6 +45,8 @@ public class TornadoDeviceOutput {
 
     public static void main(String[] args) {
 
+        String verbosity = args[0];
+
         StringBuffer bufferDriversAndPlatforms = new StringBuffer().append("\n");
         StringBuffer bufferDevices = new StringBuffer();
         final int numDrivers = TornadoCoreRuntime.getTornadoRuntime().getNumDrivers();
@@ -54,12 +58,26 @@ public class TornadoDeviceOutput {
             bufferDriversAndPlatforms.append("Total number of devices  : " + numDevices + "\n");
             for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
                 bufferDevices.append("Tornado device=" + driverIndex + ":" + deviceIndex + "\n");
-                bufferDevices.append("\t" + driver.getDevice(deviceIndex)).append("\n\n");
+                bufferDevices.append("\t" + driver.getDevice(deviceIndex)).append("\n");
+                if (verbosity.equals("verbose")) {
+                    bufferDevices.append("\t\t" + "Global Memory Size: " + formatSize(driver.getDevice(deviceIndex).getMaxGlobalMemory()) + "\n");
+                    bufferDevices.append("\t\t" + "Local Memory Size: " + formatSize(driver.getDevice(deviceIndex).getDeviceLocalMemorySize()) + "\n");
+                    bufferDevices.append("\t\t" + "Max WorkGroup Configuration: " + Arrays.toString(driver.getDevice(deviceIndex).getDeviceMaxWorkgroupDimensions()) + "\n");
+                } else {
+                    bufferDevices.append("\n");
+                }
             }
         }
 
         System.out.println(bufferDriversAndPlatforms.toString());
         bufferDevices.setLength(bufferDevices.length() - 1);
         System.out.println(bufferDevices.toString());
+    }
+
+    public static String formatSize(long v) {
+        if (v < 1024)
+            return v + " B";
+        int z = (63 - Long.numberOfLeadingZeros(v)) / 10;
+        return String.format("%.1f %sB", (double) v / (1L << (z * 10)), " KMGTPE".charAt(z));
     }
 }

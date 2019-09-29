@@ -421,6 +421,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return sb.toString();
     }
 
+    @Override
     public Object toVerboseString() {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("id=0x%x, name=%s, type=%s, available=%s\n", id, getDeviceName(), getDeviceType().toString(), isDeviceAvailable()));
