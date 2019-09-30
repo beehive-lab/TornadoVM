@@ -230,22 +230,22 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final TaskMetaData taskMeta = executable.meta();
         final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
-        for (int i = 0; i < sketchAccess.length; i++) {
-            taskAccess[i] = sketchAccess[i];
-        }
+        System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
 
         try {
             OCLProviders providers = (OCLProviders) getBackend().getProviders();
             TornadoProfiler profiler = task.getProfiler();
-            profiler.start(ProfilerType.GRAAL_COMPILE_TIME);
+            profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             final OCLCompilationResult result = OCLCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
-            profiler.stop(ProfilerType.GRAAL_COMPILE_TIME);
+            profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
+            profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
+
             if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
                 // Return the code from the cache
                 return deviceContext.getCode(task.getId(), resolvedMethod.getName());
             }
 
-            profiler.start(ProfilerType.DRIVER_COMPILE_TIME);
+            profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             // Compile the code
             OCLInstalledCode intalledCode = null;
             if (Tornado.ACCELERATOR_IS_FPGA) {
@@ -255,9 +255,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 // B) for CPU multi-core or GPU
                 intalledCode = deviceContext.installCode(result);
             }
-            profiler.stop(ProfilerType.DRIVER_COMPILE_TIME);
-            ProfilerType[] fromTimers = new ProfilerType[] { ProfilerType.GRAAL_COMPILE_TIME, ProfilerType.DRIVER_COMPILE_TIME };
-            profiler.combine(fromTimers, ProfilerType.TOTAL_COMPILE_TIME);
+            profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
+            profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
             return intalledCode;
 
         } catch (Exception e) {

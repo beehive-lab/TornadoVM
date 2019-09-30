@@ -381,9 +381,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             preCompilationForFPGA();
         }
 
-        timeProfiler.start(ProfilerType.TOTAL_TIME);
+        timeProfiler.start(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
         event = vm.execute();
-        timeProfiler.stop(ProfilerType.TOTAL_TIME);
+        timeProfiler.stop(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
         timeProfiler.dump();
     }
 
@@ -1191,10 +1191,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     /**
-     * Class that keeps the history of executions based on their data sizes. It
-     * has a sorted map (TreeMap) that keeps the relationship between the input
-     * size and the actual Tornado device in which the task was executed based
-     * on the profiler for the dynamic reconfiguration.
+     * Class that keeps the history of executions based on their data sizes. It has
+     * a sorted map (TreeMap) that keeps the relationship between the input size and
+     * the actual Tornado device in which the task was executed based on the
+     * profiler for the dynamic reconfiguration.
      */
     private static class HistoryTable {
         /**
@@ -1407,22 +1407,22 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public long getTotalTime() {
-        return timeProfiler.getTimer(ProfilerType.TOTAL_TIME);
+        return timeProfiler.getTimer(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
     }
 
     @Override
     public long getCompileTime() {
-        return timeProfiler.getTimer(ProfilerType.TOTAL_COMPILE_TIME);
+        return timeProfiler.getTimer(ProfilerType.TOTAL_GRAAL_COMPILE_TIME) + timeProfiler.getTimer(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
     }
 
     @Override
     public long getTornadoCompilerTime() {
-        return timeProfiler.getTimer(ProfilerType.GRAAL_COMPILE_TIME);
+        return timeProfiler.getTimer(ProfilerType.TOTAL_GRAAL_COMPILE_TIME);
     }
 
     @Override
     public long getDriverInstallTime() {
-        return timeProfiler.getTimer(ProfilerType.DRIVER_COMPILE_TIME);
+        return timeProfiler.getTimer(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
     }
 
     @Override
@@ -1447,7 +1447,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public long getDeviceKernelTime() {
-        return timeProfiler.getTimer(ProfilerType.KERNEL_TIME);
+        return timeProfiler.getTimer(ProfilerType.TOTAL_KERNEL_TIME);
     }
 
     @Override

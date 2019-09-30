@@ -29,13 +29,15 @@ package uk.ac.manchester.tornado.api.profiler;
 public enum ProfilerType {
 
     // @formatter:off
-    COPY_IN_TIME("CopyIn Time"),
-    COPY_OUT_TIME("CopyOut Time"),
-    DRIVER_COMPILE_TIME("Driver Compilation Time"),
-    GRAAL_COMPILE_TIME("Graal Compilation Time"),
-    KERNEL_TIME("Kernel Time"),
-    TOTAL_COMPILE_TIME("Total Compiler Time"),
-    TOTAL_TIME("TS Total Time");
+    COPY_IN_TIME("CopyIn-Time"),
+    COPY_OUT_TIME("CopyOut-Time"),
+    TASK_COMPILE_DRIVER_TIME("Task-Compile-Driver-"),
+    TASK_COMPILE_GRAAL_TIME("Task-Compile-Graal-"),
+    TASK_KERNEL_TIME("Task-Kernel-"),
+    TOTAL_DRIVER_COMPILE_TIME("Total-Driver-Compilation-Time"),
+    TOTAL_GRAAL_COMPILE_TIME("Total-Graal-Compilation-Time"),
+    TOTAL_KERNEL_TIME("Kernel-Time"),
+    TOTAL_TASK_SCHEDULE_TIME("TS-Total-Time");
     // @formatter:on
 
     String description;
@@ -47,4 +49,5 @@ public enum ProfilerType {
     public String getDescription() {
         return this.description;
     }
+
 }

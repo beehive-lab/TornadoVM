@@ -391,7 +391,7 @@ public class TornadoVM extends TornadoLogger {
                 }
 
             } else if (op == TornadoVMBytecodes.LAUNCH.value()) {
-                final int gtid = buffer.getInt();
+                final int stackIndex = buffer.getInt();
                 final int contextIndex = buffer.getInt();
                 final int taskIndex = buffer.getInt();
                 final int numArgs = buffer.getInt();
@@ -403,7 +403,7 @@ public class TornadoVM extends TornadoLogger {
                 final TornadoAcceleratorDevice device = contexts.get(contextIndex);
                 boolean redeployOnDevice = graphContext.redeployOnDevice();
 
-                final CallStack stack = resolveStack(gtid, numArgs, stacks, device, redeployOnDevice);
+                final CallStack stack = resolveStack(stackIndex, numArgs, stacks, device, redeployOnDevice);
 
                 final int[] waitList = (useDependencies && eventList != -1) ? events[eventList] : null;
                 final SchedulableTask task = tasks.get(taskIndex);
@@ -427,12 +427,6 @@ public class TornadoVM extends TornadoLogger {
                         debug(e.getMessage());
                     }
                     final long compileEnd = System.nanoTime();
-                    if (graphContext.meta().shouldPrintCompileTimes()) {
-                        if (PRINT_COMPILE_TIMES) {
-                            System.out.printf("compile: " + task.getName() + "  " + +(compileEnd - compileStart) + "ns" + "\n");
-                        }
-                    }
-
                     if (graphContext.meta().isDebug()) {
                         debug("vm: compiled in %.9f s", (compileEnd - compileStart) * 1e-9);
                     }

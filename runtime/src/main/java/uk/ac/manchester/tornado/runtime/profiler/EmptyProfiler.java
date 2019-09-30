@@ -34,13 +34,28 @@ public class EmptyProfiler implements TornadoProfiler {
     }
 
     @Override
+    public long start(ProfilerType type, String taskName) {
+        return 0;
+    }
+
+    @Override
     public long stop(ProfilerType type) {
+        return 0;
+    }
+
+    @Override
+    public long stop(ProfilerType type, String taskName) {
         return 0;
     }
 
     @Override
     public long getTimer(ProfilerType type) {
         System.out.println("Enable the profiler with: -Dtornado.profiler=True");
+        return 0;
+    }
+
+    @Override
+    public long getTaskTimer(ProfilerType type, String taskName) {
         return 0;
     }
 
@@ -60,7 +75,12 @@ public class EmptyProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void combine(ProfilerType[] from, ProfilerType to) {
+    public void setTaskTimer(ProfilerType totalKernelTime, String taskId, long timer) {
+    }
+
+    @Override
+    public void sum(ProfilerType type, long sum) {
 
     }
+
 }

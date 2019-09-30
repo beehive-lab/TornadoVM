@@ -27,15 +27,23 @@ public interface TornadoProfiler {
 
     long start(ProfilerType type);
 
+    long start(ProfilerType type, String taskName);
+
     long stop(ProfilerType type);
+
+    long stop(ProfilerType type, String taskName);
 
     long getTimer(ProfilerType type);
 
-    void setTimer(ProfilerType type,long time);
+    long getTaskTimer(ProfilerType type, String taskName);
 
-    void combine(ProfilerType[] from,ProfilerType to);
+    void setTimer(ProfilerType type, long time);
 
     void dump();
 
     void clean();
+
+    void setTaskTimer(ProfilerType totalKernelTime, String taskId, long timer);
+
+    void sum(ProfilerType type, long timer);
 }

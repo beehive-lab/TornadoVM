@@ -48,6 +48,18 @@ public abstract class OCLKernelScheduler {
         return submit(kernel, meta, null, batchThreads);
     }
 
+    private void updateProfiler(final int taskEvent, final TaskMetaData meta) {
+        if (TornadoOptions.ENABLE_PROFILER) {
+            Event tornadoKernelEvent = deviceContext.resolveEvent(taskEvent);
+            tornadoKernelEvent.waitForEvents();
+            long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
+            // Register globalTime
+            meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getExecutionTime());
+            // Register the time for the task
+            meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getExecutionTime());
+        }
+    }
+
     public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
 
         if (!meta.isGlobalWorkDefined()) {
@@ -69,12 +81,7 @@ public abstract class OCLKernelScheduler {
             taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
         }
 
-        if (TornadoOptions.ENABLE_PROFILER) {
-            Event tornadoKernelEvent = deviceContext.resolveEvent(taskEvent);
-            tornadoKernelEvent.waitForEvents();
-            meta.getProfiler().setTimer(ProfilerType.KERNEL_TIME, tornadoKernelEvent.getExecutionTime());
-        }
-
+        updateProfiler(taskEvent, meta);
         return taskEvent;
     }
 

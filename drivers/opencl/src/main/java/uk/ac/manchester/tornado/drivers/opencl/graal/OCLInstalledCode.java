@@ -93,8 +93,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     }
 
     /**
-     * It executes a kernel with 1 thread (the equivalent of calling
-     * clEnqueueTask.
+     * It executes a kernel with 1 thread (the equivalent of calling clEnqueueTask.
      * 
      * @param stack
      *            {@link OCLByteBuffer} stack
@@ -227,8 +226,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
 
         /*
-         * Only set the kernel arguments if they are either: - not set or - have
-         * changed
+         * Only set the kernel arguments if they are either: - not set or - have changed
          */
         final int[] waitEvents;
         if (!stack.isOnDevice()) {
@@ -334,7 +332,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
     }
 
-    public void submitWithoutEvents(final OCLCallStack stack, final TaskMetaData meta, long batchThreads) {
+    private void submitWithoutEvents(final OCLCallStack stack, final TaskMetaData meta, long batchThreads) {
 
         checkKernelNotNull();
 
@@ -344,8 +342,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         }
 
         /*
-         * Only set the kernel arguments if they are either: - not set or - have
-         * changed
+         * Only set the kernel arguments if they are either: - not set or - have changed
          */
         if (!stack.isOnDevice()) {
             setKernelArgs(stack, meta);

@@ -31,15 +31,24 @@ import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 public class TimeProfiler implements TornadoProfiler {
 
     private HashMap<ProfilerType, Long> profilerTime;
+    private HashMap<String, Long> taskTimers;
 
     public TimeProfiler() {
         profilerTime = new HashMap<>();
+        taskTimers = new HashMap<>();
     }
 
     @Override
     public long start(ProfilerType type) {
         long start = System.nanoTime();
         profilerTime.put(type, start);
+        return start;
+    }
+
+    @Override
+    public long start(ProfilerType type, String taskName) {
+        long start = System.nanoTime();
+        taskTimers.put(type + "-" + taskName, start);
         return start;
     }
 
@@ -53,6 +62,15 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
+    public long stop(ProfilerType type, String taskName) {
+        long end = System.nanoTime();
+        long start = taskTimers.get(type + "-" + taskName);
+        long total = end - start;
+        taskTimers.put(type + "-" + taskName, total);
+        return end;
+    }
+
+    @Override
     public long getTimer(ProfilerType type) {
         if (!profilerTime.containsKey(type)) {
             return 0;
@@ -61,17 +79,16 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public void setTimer(ProfilerType type, long time) {
-        profilerTime.put(type, time);
+    public long getTaskTimer(ProfilerType type, String taskName) {
+        if (!taskTimers.containsKey(type + "-" + taskName)) {
+            return 0;
+        }
+        return taskTimers.get(type + "-" + taskName);
     }
 
     @Override
-    public void combine(ProfilerType[] from, ProfilerType to) {
-        long sum = 0;
-        for (ProfilerType pt : from) {
-            sum += profilerTime.get(pt);
-        }
-        profilerTime.put(to, sum);
+    public void setTimer(ProfilerType type, long time) {
+        profilerTime.put(type, time);
     }
 
     @Override
@@ -79,11 +96,28 @@ public class TimeProfiler implements TornadoProfiler {
         for (ProfilerType p : profilerTime.keySet()) {
             System.out.println("[PROFILER] " + p.getDescription() + ": " + profilerTime.get(p));
         }
+
+        for (String p : taskTimers.keySet()) {
+            System.out.println("[PROFILER-TASK] " + p + ": " + taskTimers.get(p));
+
+        }
     }
 
     @Override
     public void clean() {
         profilerTime.clear();
+        taskTimers.clear();
+    }
+
+    @Override
+    public void setTaskTimer(ProfilerType type, String taskID, long timer) {
+        taskTimers.put(type + "-" + taskID, timer);
+    }
+
+    @Override
+    public void sum(ProfilerType acc, long value) {
+        long sum = getTimer(acc) + value;
+        profilerTime.put(acc, sum);
     }
 
 }
