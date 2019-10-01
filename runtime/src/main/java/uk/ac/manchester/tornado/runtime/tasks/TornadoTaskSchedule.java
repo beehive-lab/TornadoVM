@@ -369,19 +369,16 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public void scheduleInner() {
-        long t0 = System.nanoTime();
         timeProfiler.clean();
-        boolean compile = compileToTornadoVMBytecodes();
-        long t1 = System.nanoTime();
-        if (PRINT_COMPILE_TIMES) {
-            System.out.printf("compile: compileTasks: " + (t1 - t0) + "ns" + "\n");
-        }
+        timeProfiler.start(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
 
+        timeProfiler.start(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
+        boolean compile = compileToTornadoVMBytecodes();
+        timeProfiler.stop(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
         if (compile) {
             preCompilationForFPGA();
         }
 
-        timeProfiler.start(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
         event = vm.execute();
         timeProfiler.stop(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
         timeProfiler.dump();

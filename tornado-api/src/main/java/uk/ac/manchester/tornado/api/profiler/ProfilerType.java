@@ -34,6 +34,7 @@ public enum ProfilerType {
     TASK_COMPILE_DRIVER_TIME("Task-Compile-Driver-"),
     TASK_COMPILE_GRAAL_TIME("Task-Compile-Graal-"),
     TASK_KERNEL_TIME("Task-Kernel-"),
+    TOTAL_BYTE_CODE_GENERATION("Total-Bytecode-Gen"),
     TOTAL_DRIVER_COMPILE_TIME("Total-Driver-Compilation-Time"),
     TOTAL_GRAAL_COMPILE_TIME("Total-Graal-Compilation-Time"),
     TOTAL_KERNEL_TIME("Kernel-Time"),

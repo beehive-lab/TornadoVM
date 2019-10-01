@@ -55,8 +55,6 @@ public class VectorAddInt {
             // Sequential
             vectorAdd(a, b, result);
 
-            schedule.getTotalTime();
-
             // Check Result
             wrongResult = false;
             for (int i = 0; i < c.length; i++) {
