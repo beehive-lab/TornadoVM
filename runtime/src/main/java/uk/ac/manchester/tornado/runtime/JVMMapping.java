@@ -222,4 +222,14 @@ public class JVMMapping implements TornadoAcceleratorDevice {
         return new long[0];
     }
 
+    @Override
+    public String getDeviceOpenCLCVersion() {
+        return "";
+    }
+
+    @Override
+    public Object getDeviceInfo() {
+        return null;
+    }
+
 }

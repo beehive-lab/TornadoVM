@@ -66,8 +66,9 @@ public class TornadoDeviceOutput {
                 if (verbosity.equals("verbose")) {
                     bufferDevices.append("\t\t" + "Global Memory Size: " + formatSize(driver.getDevice(deviceIndex).getMaxGlobalMemory()) + "\n");
                     bufferDevices.append("\t\t" + "Local Memory Size: " + formatSize(driver.getDevice(deviceIndex).getDeviceLocalMemorySize()) + "\n");
-                    bufferDevices.append("\t\t" + "Workgroup Dimensions: " + driver.getDevice(deviceIndex).getDeviceMaxWorkgroupDimensions().length+"\n");
+                    bufferDevices.append("\t\t" + "Workgroup Dimensions: " + driver.getDevice(deviceIndex).getDeviceMaxWorkgroupDimensions().length + "\n");
                     bufferDevices.append("\t\t" + "Max WorkGroup Configuration: " + Arrays.toString(driver.getDevice(deviceIndex).getDeviceMaxWorkgroupDimensions()) + "\n");
+                    bufferDevices.append("\t\t" + "Device OpenCL C version: " + driver.getDevice(deviceIndex).getDeviceOpenCLCVersion() + "\n");
                 } else {
                     bufferDevices.append("\n");
                 }
@@ -80,8 +81,9 @@ public class TornadoDeviceOutput {
     }
 
     public static String formatSize(long v) {
-        if (v < 1024)
+        if (v < 1024) {
             return v + " B";
+        }
         int z = (63 - Long.numberOfLeadingZeros(v)) / 10;
         return String.format("%.1f %sB", (double) v / (1L << (z * 10)), " KMGTPE".charAt(z));
     }

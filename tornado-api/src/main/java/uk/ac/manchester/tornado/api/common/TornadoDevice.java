@@ -52,7 +52,7 @@ public interface TornadoDevice {
     /**
      * It allocates an object in the pre-defined heap of the target device. It also
      * ensure that there is enough space for the input object.
-     * 
+     *
      * @param object
      *            to be allocated
      * @param batchSize
@@ -67,7 +67,7 @@ public interface TornadoDevice {
 
     /**
      * It allocates and copy in the content of the object to the target device.
-     * 
+     *
      * @param object
      *            to be allocated
      * @param objectState
@@ -88,7 +88,7 @@ public interface TornadoDevice {
     /**
      * It always copies in the input data (object) from the host to the target
      * device.
-     * 
+     *
      * @param object
      *            to be copied
      * @param batchSize
@@ -109,7 +109,7 @@ public interface TornadoDevice {
     /**
      * It copies a device buffer from the target device to the host. Copies are
      * non-blocking
-     * 
+     *
      * @param object
      *            to be copied.
      * @param hostOffset
@@ -127,7 +127,7 @@ public interface TornadoDevice {
     /**
      * It copies a device buffer from the target device to the host. Copies are
      * blocking between the device and the host.
-     * 
+     *
      * @param object
      *            to be copied.
      * @param hostOffset
@@ -144,7 +144,7 @@ public interface TornadoDevice {
 
     /**
      * It resolves an pending event.
-     * 
+     *
      * @param event
      *            ID
      * @return an object of type {@link Event}
@@ -201,4 +201,7 @@ public interface TornadoDevice {
 
     boolean isDistibutedMemory();
 
+    String getDeviceOpenCLCVersion();
+
+    Object getDeviceInfo();
 }
