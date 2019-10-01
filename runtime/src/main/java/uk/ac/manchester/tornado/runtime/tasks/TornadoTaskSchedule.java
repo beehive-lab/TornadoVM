@@ -1179,10 +1179,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     /**
-     * Class that keeps the history of executions based on their data sizes. It
-     * has a sorted map (TreeMap) that keeps the relationship between the input
-     * size and the actual Tornado device in which the task was executed based
-     * on the profiler for the dynamic reconfiguration.
+     * Class that keeps the history of executions based on their data sizes. It has
+     * a sorted map (TreeMap) that keeps the relationship between the input size and
+     * the actual Tornado device in which the task was executed based on the
+     * profiler for the dynamic reconfiguration.
      */
     private static class HistoryTable {
         /**
