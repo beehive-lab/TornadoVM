@@ -63,4 +63,6 @@ public interface ProfileInterface {
 
     long getDeviceReadTime();
 
+    String getProfileLog();
+
 }

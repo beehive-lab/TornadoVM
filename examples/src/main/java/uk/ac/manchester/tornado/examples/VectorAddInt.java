@@ -69,5 +69,7 @@ public class VectorAddInt {
                 System.out.println("Result is correct. Total time: " + schedule.getTotalTime() + " (ns)");
             }
         }
+
+        System.out.println(schedule.getProfileLog());
     }
 }

@@ -358,4 +358,9 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     public long getDeviceReadTime() {
         return taskScheduleImpl.getDeviceReadTime();
     }
+
+    @Override
+    public String getProfileLog() {
+        return taskScheduleImpl.getProfileLog();
+    }
 }

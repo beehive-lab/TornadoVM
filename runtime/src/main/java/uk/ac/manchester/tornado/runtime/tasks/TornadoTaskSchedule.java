@@ -126,6 +126,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private static int baseGlobalIndex = 0;
     private static AtomicInteger offsetGlobalIndex = new AtomicInteger(0);
 
+    private StringBuffer bufferLogProfiler = new StringBuffer();
+
     /**
      * Options for Dynamic Reconfiguration
      */
@@ -376,18 +378,19 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public void scheduleInner() {
-        timeProfiler.clean();
-        timeProfiler.start(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
-
         boolean compile = compileToTornadoVMBytecodes();
         if (compile) {
             preCompilationForFPGA();
         }
 
         event = vm.execute();
-        timeProfiler.stop(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
 
-        timeProfiler.dumpJson(new StringBuffer(), this.getId());
+        timeProfiler.stop(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
+        if (!TornadoOptions.PROFILER_LOGS_ACCUMULATE) {
+            timeProfiler.dumpJson(new StringBuffer(), this.getId());
+        } else {
+            bufferLogProfiler.append(timeProfiler.createJson(new StringBuffer(), this.getId()));
+        }
     }
 
     @Override
@@ -581,6 +584,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public AbstractTaskGraph schedule() {
+        timeProfiler.clean();
+        timeProfiler.start(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
+
         AbstractTaskGraph executionGraph = null;
         if (TornadoOptions.EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
             executionGraph = analyzeSkeletonAndRun();
@@ -1456,5 +1462,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     @Override
     public long getDeviceReadTime() {
         return timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
+    }
+
+    @Override
+    public String getProfileLog() {
+        return bufferLogProfiler.toString();
     }
 }

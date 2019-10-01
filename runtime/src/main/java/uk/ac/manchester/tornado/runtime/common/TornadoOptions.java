@@ -41,4 +41,6 @@ public class TornadoOptions {
     public static boolean isProfilerEnabled() {
         return Boolean.parseBoolean(System.getProperty("tornado.profiler", "False"));
     }
+
+    public static final boolean PROFILER_LOGS_ACCUMULATE = Boolean.parseBoolean(System.getProperty("tornado.log.profiler", "False"));
 }
