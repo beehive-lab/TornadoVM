@@ -163,7 +163,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         event = null;
         this.taskScheduleName = taskScheduleName;
 
-        if (TornadoOptions.ENABLE_PROFILER) {
+        if (TornadoOptions.isProfilerEnabled()) {
             this.timeProfiler = new TimeProfiler();
         } else {
             this.timeProfiler = new EmptyProfiler();

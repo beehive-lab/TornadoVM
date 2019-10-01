@@ -38,6 +38,7 @@ public class TornadoOptions {
     // Temporal option for null checks
     public static final boolean IGNORE_NULL_CHECKS = Boolean.parseBoolean(System.getProperty("tornado.ignore.nullchecks", "False"));
 
-    public static final boolean ENABLE_PROFILER = Boolean.parseBoolean(System.getProperty("tornado.profiler", "False"));
-
+    public static boolean isProfilerEnabled() {
+        return Boolean.parseBoolean(System.getProperty("tornado.profiler", "False"));
+    }
 }

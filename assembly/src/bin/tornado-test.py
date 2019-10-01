@@ -66,6 +66,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.logic.TestLogic",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic",
 	"uk.ac.manchester.tornado.unittests.fields.TestFields",
+	"uk.ac.manchester.tornado.unittests.profiler.TestProfiler",
 	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
 ]
 
