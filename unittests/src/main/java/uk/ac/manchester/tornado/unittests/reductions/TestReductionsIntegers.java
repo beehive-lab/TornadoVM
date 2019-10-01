@@ -37,6 +37,7 @@ public class TestReductionsIntegers extends TornadoTestBase {
     private static final int SMALL_SIZE = 512;
     private static final int BIG_SIZE = 1024;
 
+    private static final int LARGE_SIZE = 262144;
     private static final int SIZE = 4096;
 
     @Test
@@ -64,6 +65,33 @@ public class TestReductionsIntegers extends TornadoTestBase {
         assertEquals(sequential[0], result[0]);
     }
 
+    @Test
+    public void testReductionIntsLarge() {
+
+        int[] input = new int[LARGE_SIZE];
+        int[] result = new int[256];
+        final int neutral = 0;
+        Arrays.fill(result, neutral);
+
+        IntStream.range(0, input.length).parallel().forEach(i -> {
+            input[i] = 2;
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(input)
+                .task("t0", TestReductionsIntegers::reductionAnnotationLarge, input, result)
+                .streamOut(result)
+                .execute();
+        //@formatter:on
+
+        int[] sequential = new int[1];
+        reductionAnnotation(input, sequential);
+
+        // Check result
+        assertEquals(sequential[0], result[0]);
+    }
+
     /**
      * First approach: use annotations in the user code to identify the reduction
      * variables. This is a similar approach to OpenMP and OpenACC.
@@ -80,6 +108,12 @@ public class TestReductionsIntegers extends TornadoTestBase {
 
     private static void reductionAnnotation2(int[] input, @Reduce int[] result) {
         result[0] = 0;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] += input[i];
+        }
+    }
+
+    private static void reductionAnnotationLarge(int[] input, @Reduce int[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += input[i];
         }

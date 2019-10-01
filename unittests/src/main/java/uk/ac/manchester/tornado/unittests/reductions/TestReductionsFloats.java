@@ -34,9 +34,10 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsFloats extends TornadoTestBase {
 
+    private static final int LARGE_SIZE = 65536;
+    private static final int PI_SIZE = 32768;
     private static final int SIZE = 8192;
     private static final int SIZE2 = 32;
-    private static final int PI_SIZE = 32768;
 
     private static void reductionAddFloats(float[] input, @Reduce float[] result) {
         result[0] = 0.0f;
@@ -71,6 +72,40 @@ public class TestReductionsFloats extends TornadoTestBase {
 
         // Check result
         assertEquals(sequential[0], result[0], 0.1f);
+    }
+
+    private static void reductionAddFloatsLarge(float[] input, @Reduce float[] result) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] += input[i];
+        }
+    }
+
+    @Test
+    public void testSumFloatsLarge() {
+        float[] input = new float[LARGE_SIZE];
+        float[] result = new float[1024];
+        final int neutral = 0;
+        Arrays.fill(result, neutral);
+
+        Random r = new Random();
+        IntStream.range(0, input.length).sequential().forEach(i -> {
+            input[i] = r.nextFloat();
+        });
+
+        //@formatter:off
+        TaskSchedule task = new TaskSchedule("s0")
+                .streamIn(input)
+                .task("t0", TestReductionsFloats::reductionAddFloatsLarge, input, result)
+                .streamOut(result);
+        //@formatter:on
+
+        task.execute();
+
+        float[] sequential = new float[1];
+        reductionAddFloats(input, sequential);
+
+        // Check result
+        assertEquals(sequential[0], result[0], 1.f);
     }
 
     private static void reductionAddFloats2(float[] input, @Reduce float[] result) {
