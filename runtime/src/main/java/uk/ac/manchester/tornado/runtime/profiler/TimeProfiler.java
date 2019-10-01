@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 public class TimeProfiler implements TornadoProfiler {
 
     private HashMap<ProfilerType, Long> profilerTime;
-    private HashMap<String, Long> taskTimers;
+    private HashMap<String, HashMap<ProfilerType, Long>> taskTimers;
 
     private StringBuffer indent;
 
@@ -51,7 +51,12 @@ public class TimeProfiler implements TornadoProfiler {
     @Override
     public long start(ProfilerType type, String taskName) {
         long start = System.nanoTime();
-        taskTimers.put(type + "-" + taskName, start);
+        if (!taskTimers.containsKey(taskName)) {
+            taskTimers.put(taskName, new HashMap<>());
+        }
+        HashMap<ProfilerType, Long> profilerType = taskTimers.get(taskName);
+        profilerType.put(type, start);
+        taskTimers.put(taskName, profilerType);
         return start;
     }
 
@@ -67,9 +72,11 @@ public class TimeProfiler implements TornadoProfiler {
     @Override
     public long stop(ProfilerType type, String taskName) {
         long end = System.nanoTime();
-        long start = taskTimers.get(type + "-" + taskName);
+        HashMap<ProfilerType, Long> profiledType = taskTimers.get(taskName);
+        long start = profiledType.get(type);
         long total = end - start;
-        taskTimers.put(type + "-" + taskName, total);
+        profiledType.put(type, total);
+        taskTimers.put(taskName, profiledType);
         return end;
     }
 
@@ -83,10 +90,13 @@ public class TimeProfiler implements TornadoProfiler {
 
     @Override
     public long getTaskTimer(ProfilerType type, String taskName) {
-        if (!taskTimers.containsKey(type + "-" + taskName)) {
+        if (!taskTimers.containsKey(taskName)) {
             return 0;
         }
-        return taskTimers.get(type + "-" + taskName);
+        if (!taskTimers.get(taskName).containsKey(type)) {
+            return 0;
+        }
+        return taskTimers.get(taskName).get(type);
     }
 
     @Override
@@ -114,6 +124,14 @@ public class TimeProfiler implements TornadoProfiler {
         indent.delete(indent.length() - 4, indent.length());
     }
 
+    private void closeScope(StringBuffer json) {
+        json.append(indent.toString() + "}");
+    }
+
+    private void newLine(StringBuffer json) {
+        json.append("\n");
+    }
+
     @Override
     public String createJson(StringBuffer json, String sectionName) {
         json.append("{\n");
@@ -123,15 +141,30 @@ public class TimeProfiler implements TornadoProfiler {
         for (ProfilerType p : profilerTime.keySet()) {
             json.append(indent.toString() + "\"" + p + "\"" + ": " + "\"" + profilerTime.get(p) + "\",\n");
         }
+
+        final int size = taskTimers.keySet().size();
+        int counter = 0;
         for (String p : taskTimers.keySet()) {
-            json.append(indent.toString() + "\"" + p + "\"" + ": " + "\"" + taskTimers.get(p) + "\",\n");
+            json.append(indent.toString() + "\"" + p + "\"" + ": {\n");
+            increaseIndent();
+            counter++;
+            for (ProfilerType p2 : taskTimers.get(p).keySet()) {
+                json.append(indent.toString() + "\"" + p2 + "\"" + ": " + "\"" + taskTimers.get(p).get(p2) + "\",\n");
+            }
+            json.delete(json.length() - 2, json.length() - 1); // remove last comma
+            decreaseIndent();
+            closeScope(json);
+            if (counter != size) {
+                json.append(", ");
+            }
+            newLine(json);
         }
-        json.delete(json.length() - 2, json.length());
-        json.append("\n");
         decreaseIndent();
-        json.append(indent.toString() + "}\n");
+        closeScope(json);
+        newLine(json);
         decreaseIndent();
-        json.append(indent.toString() + "}\n");
+        closeScope(json);
+        newLine(json);
         return json.toString();
     }
 
@@ -150,7 +183,10 @@ public class TimeProfiler implements TornadoProfiler {
 
     @Override
     public void setTaskTimer(ProfilerType type, String taskID, long timer) {
-        taskTimers.put(type + "-" + taskID, timer);
+        if (!taskTimers.containsKey(taskID)) {
+            taskTimers.put(taskID, new HashMap<>());
+        }
+        taskTimers.get(taskID).put(type, timer);
     }
 
     @Override
