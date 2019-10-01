@@ -25,13 +25,13 @@ package uk.ac.manchester.tornado.api.profiler;
 
 public interface TornadoProfiler {
 
-    long start(ProfilerType type);
+    void start(ProfilerType type);
 
-    long start(ProfilerType type, String taskName);
+    void start(ProfilerType type, String taskName);
 
-    long stop(ProfilerType type);
+    void stop(ProfilerType type);
 
-    long stop(ProfilerType type, String taskName);
+    void stop(ProfilerType type, String taskName);
 
     long getTimer(ProfilerType type);
 

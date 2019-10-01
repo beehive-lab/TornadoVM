@@ -42,14 +42,13 @@ public class TimeProfiler implements TornadoProfiler {
     }
 
     @Override
-    public long start(ProfilerType type) {
+    public void start(ProfilerType type) {
         long start = System.nanoTime();
         profilerTime.put(type, start);
-        return start;
     }
 
     @Override
-    public long start(ProfilerType type, String taskName) {
+    public void start(ProfilerType type, String taskName) {
         long start = System.nanoTime();
         if (!taskTimers.containsKey(taskName)) {
             taskTimers.put(taskName, new HashMap<>());
@@ -57,27 +56,24 @@ public class TimeProfiler implements TornadoProfiler {
         HashMap<ProfilerType, Long> profilerType = taskTimers.get(taskName);
         profilerType.put(type, start);
         taskTimers.put(taskName, profilerType);
-        return start;
     }
 
     @Override
-    public long stop(ProfilerType type) {
+    public void stop(ProfilerType type) {
         long end = System.nanoTime();
         long start = profilerTime.get(type);
         long total = end - start;
         profilerTime.put(type, total);
-        return end;
     }
 
     @Override
-    public long stop(ProfilerType type, String taskName) {
+    public void stop(ProfilerType type, String taskName) {
         long end = System.nanoTime();
         HashMap<ProfilerType, Long> profiledType = taskTimers.get(taskName);
         long start = profiledType.get(type);
         long total = end - start;
         profiledType.put(type, total);
         taskTimers.put(taskName, profiledType);
-        return end;
     }
 
     @Override
