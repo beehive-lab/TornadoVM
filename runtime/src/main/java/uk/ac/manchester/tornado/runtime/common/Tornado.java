@@ -87,7 +87,7 @@ public final class Tornado implements TornadoCI {
     public final static boolean ACCELERATOR_IS_GPU = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.asgpu", "True"));
     public final static boolean FPGA_EMULATION = Boolean.parseBoolean(getProperty("tornado.fpga.emulation", "false"));
     public final static boolean ACCELERATOR_IS_FPGA = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.fpga", "False"));
-    public final static boolean FEATURE_EXTRACTION = Boolean.parseBoolean(getProperty("tornado.feature.extraction", "true"));
+    public final static boolean FEATURE_EXTRACTION = Boolean.parseBoolean(getProperty("tornado.feature.extraction", "False"));
 
     public static final TornadoLogger log = new TornadoLogger(Tornado.class);
 
