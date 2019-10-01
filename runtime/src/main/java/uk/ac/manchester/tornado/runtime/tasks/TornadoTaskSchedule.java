@@ -474,7 +474,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         compileToTornadoVMBytecodes();
         vm.warmup();
 
-        timeProfiler.dump();
+        timeProfiler.dumpJson(new StringBuffer(), this.getId());
     }
 
     @Override
