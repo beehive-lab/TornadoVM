@@ -41,6 +41,10 @@ public interface TornadoProfiler {
 
     void dump();
 
+    String createJson(StringBuffer json, String sectionName);
+
+    void dumpJson(StringBuffer stringBuffer, String id);
+
     void clean();
 
     void setTaskTimer(ProfilerType totalKernelTime, String taskId, long timer);

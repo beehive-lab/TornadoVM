@@ -70,6 +70,16 @@ public class EmptyProfiler implements TornadoProfiler {
     }
 
     @Override
+    public String createJson(StringBuffer json, String sectionName) {
+        return null;
+    }
+
+    @Override
+    public void dumpJson(StringBuffer stringBuffer, String id) {
+
+    }
+
+    @Override
     public void clean() {
 
     }

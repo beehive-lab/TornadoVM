@@ -28,7 +28,6 @@ package uk.ac.manchester.tornado.runtime.tasks;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitiveClass;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.PRINT_COMPILE_TIMES;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
@@ -381,7 +380,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
         event = vm.execute();
         timeProfiler.stop(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
-        timeProfiler.dump();
+
+        timeProfiler.dumpJson(new StringBuffer(), this.getId());
     }
 
     @Override

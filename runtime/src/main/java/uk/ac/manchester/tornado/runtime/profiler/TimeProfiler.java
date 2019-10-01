@@ -33,9 +33,12 @@ public class TimeProfiler implements TornadoProfiler {
     private HashMap<ProfilerType, Long> profilerTime;
     private HashMap<String, Long> taskTimers;
 
+    private StringBuffer indent;
+
     public TimeProfiler() {
         profilerTime = new HashMap<>();
         taskTimers = new HashMap<>();
+        indent = new StringBuffer("");
     }
 
     @Override
@@ -103,10 +106,46 @@ public class TimeProfiler implements TornadoProfiler {
         }
     }
 
+    private void increaseIndent() {
+        indent.append("    ");
+    }
+
+    private void decreaseIndent() {
+        indent.delete(indent.length() - 4, indent.length());
+    }
+
+    @Override
+    public String createJson(StringBuffer json, String sectionName) {
+        json.append("{\n");
+        increaseIndent();
+        json.append(indent.toString() + "\"" + sectionName + "\": " + "{\n");
+        increaseIndent();
+        for (ProfilerType p : profilerTime.keySet()) {
+            json.append(indent.toString() + "\"" + p + "\"" + ": " + "\"" + profilerTime.get(p) + "\",\n");
+        }
+        for (String p : taskTimers.keySet()) {
+            json.append(indent.toString() + "\"" + p + "\"" + ": " + "\"" + taskTimers.get(p) + "\",\n");
+        }
+        json.delete(json.length() - 2, json.length());
+        json.append("\n");
+        decreaseIndent();
+        json.append(indent.toString() + "}\n");
+        decreaseIndent();
+        json.append(indent.toString() + "}\n");
+        return json.toString();
+    }
+
+    @Override
+    public void dumpJson(StringBuffer json, String id) {
+        String jsonContent = this.createJson(json, id);
+        System.out.println(jsonContent);
+    }
+
     @Override
     public void clean() {
         profilerTime.clear();
         taskTimers.clear();
+        indent = new StringBuffer("");
     }
 
     @Override
