@@ -54,6 +54,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 public class ReduceGPUSnippets implements Snippets {
 
     private static int LOCAL_WORK_GROUP_SIZE = 223;
+
     /**
      * 1D full snippet for OpenCL reductions.
      * 
@@ -76,14 +77,13 @@ public class ReduceGPUSnippets implements Snippets {
      */
     @Snippet
     public static void partialReduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx) {
-
         int[] localArray = new int[LOCAL_WORK_GROUP_SIZE];
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        localArray[localIdx] = inputArray[localIdx + (localGroupSize * groupID)];
+        localArray[localIdx] = inputArray[OpenCLIntrinsics.get_global_id(0)];
 
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
@@ -105,10 +105,6 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        // int[] localArray = new int[LOCAL_WORK_GROUP_SIZE];
-
-        // localArray[localIdx] = inputArray[localIdx + (localGroupSize * groupID)];
-
         int myID = localIdx + (localGroupSize * groupID);
 
         inputArray[myID] = value;
@@ -116,16 +112,13 @@ public class ReduceGPUSnippets implements Snippets {
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
-                // localArray[localIdx] += ((localArray[localIdx + stride]));
                 inputArray[myID] += inputArray[myID + stride];
 
             }
         }
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            // outputArray[groupID + 1] = localArray[0];
             outputArray[groupID + 1] = inputArray[myID];
-
         }
     }
 
@@ -508,7 +501,6 @@ public class ReduceGPUSnippets implements Snippets {
 
     public static class Templates extends AbstractTemplates implements TornadoSnippetTypeInference {
 
-
         // Add
         private final SnippetInfo partialReduceIntSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceIntAddGlobal");
         private final SnippetInfo partialReduceIntSnippetGlobal2 = snippet(ReduceGPUSnippets.class, "partialReduceIntAddGlobal2");
@@ -534,7 +526,6 @@ public class ReduceGPUSnippets implements Snippets {
         private final SnippetInfo partialReduceIntMinSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceIntMinGlobal");
         private final SnippetInfo partialReduceMinFloatSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceFloatMinGlobal");
         private final SnippetInfo partialReduceMinDoubleSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceDoubleMinGlobal");
-
 
         public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, providers, snippetReflection, target);
