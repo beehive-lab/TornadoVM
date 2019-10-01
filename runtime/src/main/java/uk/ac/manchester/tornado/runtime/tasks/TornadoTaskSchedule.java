@@ -336,8 +336,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private boolean compileToTornadoVMBytecodes() {
         CompileInfo compileInfo = extractCompileInfo();
         if (compileInfo.compile) {
+            timeProfiler.start(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
             graphContext.assignToDevices();
             compile(compileInfo.updateDevice);
+            timeProfiler.stop(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
         }
         graphContext.addLastDevice(meta().getDevice());
         graphContext.newStack(compileInfo.updateDevice);
@@ -371,9 +373,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         timeProfiler.clean();
         timeProfiler.start(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
 
-        timeProfiler.start(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
         boolean compile = compileToTornadoVMBytecodes();
-        timeProfiler.stop(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
         if (compile) {
             preCompilationForFPGA();
         }
