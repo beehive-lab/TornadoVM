@@ -203,6 +203,30 @@ public class TestConditionals extends TornadoTestBase {
             assertEquals(10, a[i]);   
         }
     }
-    
-    
+
+    public static void ternaryCondition(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = (a[i] == 20) ? 10 : 5;
+        }
+    }
+
+    @Test
+    public void testTernaryCondition() {
+
+        final int  size = 10;
+        int[] a = new int[size];
+
+        Arrays.fill(a, 20);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestConditionals::ternaryCondition, a)
+                .streamOut(a)
+                .execute();
+        //formatter:on
+
+        for (int i = 0; i < a.length; i++) {
+            assertEquals(10, a[i]);
+        }
+    }
 }
