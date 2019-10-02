@@ -59,3 +59,32 @@ When the task-schedule is executed multiple times, timers related to compilation
 The option `-Dtornado.log.profiler=True` prints a full report only when the method `ts.getProfileLog` is called.
 
 
+### Code feature extraction for the OpenCL generated code
+
+To enable TornadoVM's code feature extraction, use the following flag: `-Dtornado.feature.extraction=True`. This will generate a Json file in the local directory called `tornado-features.json`.
+
+
+Example:
+
+
+```bash
+$ tornado -Dtornado.feature.extraction=True uk.ac.manchester.tornado.examples.VectorAddInt 4096
+$ cat tornado-features.json 
+{
+    "sketch-vectorAdd": { 
+        "Global Memory Reads":  "2",
+        "Global Memory Writes":  "1",
+        "Local Memory Reads":  "0",
+        "Local Memory Writes":  "0",
+        "Total number of Loops":  "1",
+        "Parallel Loops":  "1",
+        "If Statements":  "0",
+        "Switch Statements":  "0",
+        "Switch Cases":  "0",
+        "Vector Loads":  "0",
+        "Arithmetic Operations":  "4",
+        "Math Operations":  "0"
+    }
+}
+
+```
