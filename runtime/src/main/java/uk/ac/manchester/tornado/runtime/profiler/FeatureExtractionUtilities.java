@@ -25,7 +25,7 @@
  *
  */
 
-package uk.ac.manchester.tornado.runtime.common;
+package uk.ac.manchester.tornado.runtime.profiler;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
 
 public class FeatureExtractionUtilities {
@@ -68,7 +69,6 @@ public class FeatureExtractionUtilities {
 
     private static Integer mathOperations(HashMap<String, Integer> feat) {
         Integer sumMathOperations;
-
         if ((feat.get("OCLFPUnaryIntrinsic") != null) && feat.get("OCLIntBinaryIntrinsic") != null) {
             sumMathOperations = feat.get("OCLFPUnaryIntrinsic") + feat.get("OCLFPUnaryIntrinsic");
         } else if (feat.get("OCLFPUnaryIntrinsic") != null) {

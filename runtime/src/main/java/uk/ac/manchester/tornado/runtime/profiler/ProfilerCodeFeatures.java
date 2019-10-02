@@ -24,20 +24,19 @@
  *
  *
  */
-package uk.ac.manchester.tornado.runtime.common.enums;
+package uk.ac.manchester.tornado.runtime.profiler;
 
-public enum Features {
+public enum ProfilerCodeFeatures {
     // @formatter:off
-    WRITE,
-    FLOATINGREAD,
-    LOOPBEGIN,
-    GLOBALTHREADID,
+    FLOATING_READ,
+    GLOBAL_THREAD_ID,
     IF,
-    VECTORLOADELEMENT,
-    INTEGERSWITCH,
-    OCLFPUBINARYINTRINSIC,
-    SWITCHCASES,
-    OCLINTBINARYINTRINSIC,
+    INTEGER_SWITCH,
+    LOOP_BEGIN,
+    OCL_FPU_BINARY_INTRINSIC,
+    OCL_INT_BINARY_INTRINSIC, 
+    SWITCH_CASES,
+    VECTOR_LOAD_ELEMENT,
+    WRITE,
     // @formatter:on
-
 }

@@ -30,7 +30,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.phases.Phase;
 
-import uk.ac.manchester.tornado.runtime.common.FeatureExtractionUtilities;
+import uk.ac.manchester.tornado.runtime.profiler.FeatureExtractionUtilities;
 
 public class TornadoFeatureExtraction extends Phase {
 

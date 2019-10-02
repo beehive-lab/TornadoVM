@@ -42,7 +42,7 @@ public final class Tornado implements TornadoCI {
         tryLoadSettings();
     }
 
-    public static void setProperty(String key, String value) {
+    private static void setProperty(String key, String value) {
         settings.setProperty(key, value);
     }
 
@@ -54,7 +54,7 @@ public final class Tornado implements TornadoCI {
         return settings.getProperty(key, defaultValue);
     }
 
-    public static final String TORNADO_SDK_VARIABLE = "TORNADO_SDK";
+    private static final String TORNADO_SDK_VARIABLE = "TORNADO_SDK";
 
     public static final boolean VALIDATE_ARRAY_HEADERS = Boolean.parseBoolean(settings.getProperty("tornado.opencl.array.validate", "False"));
     public static final boolean TORNADO_LOOPS_REVERSE = Boolean.parseBoolean(settings.getProperty("tornado.loops.reverse", "True"));
@@ -87,7 +87,6 @@ public final class Tornado implements TornadoCI {
     public final static boolean ACCELERATOR_IS_GPU = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.asgpu", "True"));
     public final static boolean FPGA_EMULATION = Boolean.parseBoolean(getProperty("tornado.fpga.emulation", "false"));
     public final static boolean ACCELERATOR_IS_FPGA = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.fpga", "False"));
-    public final static boolean FEATURE_EXTRACTION = Boolean.parseBoolean(getProperty("tornado.feature.extraction", "False"));
 
     public static final TornadoLogger log = new TornadoLogger(Tornado.class);
 
