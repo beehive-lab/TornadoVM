@@ -28,14 +28,16 @@ package uk.ac.manchester.tornado.runtime.common.enums;
 
 public enum Features {
     // @formatter:off
-    Write,
-    FloatingRead,
-    LoopBegin,
-    GlobalThreadId,
-    If,
-    VectorLoadElement,
-    OCLFPUnaryIntrinsic,
-    IntegerSwitch;    
+    WRITE,
+    FLOATINGREAD,
+    LOOPBEGIN,
+    GLOBALTHREADID,
+    IF,
+    VECTORLOADELEMENT,
+    INTEGERSWITCH,
+    OCLFPUBINARYINTRINSIC,
+    SWITCHCASES,
+    OCLINTBINARYINTRINSIC,
     // @formatter:on
 
 }
