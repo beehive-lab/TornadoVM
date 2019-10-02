@@ -249,7 +249,7 @@ public class OCLCommandQueue extends TornadoLogger {
 
         /*
          * OpenCL can generate an out of resources error which produces an invalid event
-         * (-1) we need to avoid releasing any invalid events and trigger a fatal
+         * (-1). We need to avoid releasing any invalid events and trigger a fatal
          * exception when we miss an event
          */
         if (eventId == -1) {

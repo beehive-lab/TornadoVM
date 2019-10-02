@@ -33,10 +33,10 @@ All timers are printed in nanoseconds.
 
 * COPY_IN_TIME: OpenCL timers for copy in (host to device)
 * COPY_OUT_TIME: OpenCL timers for copy out (device to host)
-* TOTAL_KERNEL_TIME: It is the sum of all OpenCL kernel timers. For example, if a task-schedule contains 2 tasks, this timers reports the sum of execution of the two kernels.
-* TOTAL_BYTE_CODE_GENERATION: time spent is the Tornado bytecode generation
-* TOTAL_TASK_SCHEDULE_TIME: Total execution time. It contains all the timers
-* TOTAL_GRAAL_COMPILE_TIME: Total compilation with Graal
+* TOTAL_KERNEL_TIME: It is the sum of all OpenCL kernel timers. For example, if a task-schedule contains 2 tasks, this timer reports the sum of execution of the two kernels.
+* TOTAL_BYTE_CODE_GENERATION: time spent in the Tornado bytecode generation
+* TOTAL_TASK_SCHEDULE_TIME: Total execution time. It contains all timers
+* TOTAL_GRAAL_COMPILE_TIME: Total compilation with Graal (from Java to OpenCL C)
 * TOTAL_DRIVER_COMPILE_TIME: Total compilation with the driver (once the OpenCL C code is generated, the time that the driver takes to generate the final binary, such as the PTX for NVIDIA).
 
 
@@ -50,7 +50,7 @@ Then, for each task within a task-schedule, there are usually three timers:
 
 ### Note
 
-When the task-schedule is executed multiple times, timers related to compilation will not appear in the Json time-report. This is because the generated binary is cached and there is no compilation from the second iteration. 
+When the task-schedule is executed multiple times, timers related to compilation will not appear in the Json time-report. This is because the generated binary is cached and there is no compilation after the second iteration. 
 
 
 
