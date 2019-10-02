@@ -27,7 +27,9 @@ import java.util.HashMap;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.phases.Phase;
+
 import uk.ac.manchester.tornado.runtime.common.FeatureExtractionUtilities;
 
 public class TornadoFeatureExtraction extends Phase {
@@ -39,6 +41,10 @@ public class TornadoFeatureExtraction extends Phase {
         for (Node node : graph.getNodes()) {
             Integer j = features.get(node.asNode().getNodeClass().shortName());
             features.put(node.asNode().getNodeClass().shortName(), (j == null) ? 1 : j + 1);
+
+            if (node instanceof IntegerSwitchNode) {
+                features.put("SwitchCases", ((IntegerSwitchNode) node).getSuccessorCount());
+            }
         }
         FeatureExtractionUtilities.emitJsonToFile(FeatureExtractionUtilities.prettyFormatFeatures(features), graph.name);
     }
