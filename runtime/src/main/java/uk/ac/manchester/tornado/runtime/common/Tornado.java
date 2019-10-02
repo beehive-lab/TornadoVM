@@ -42,7 +42,7 @@ public final class Tornado implements TornadoCI {
         tryLoadSettings();
     }
 
-    public static void setProperty(String key, String value) {
+    private static void setProperty(String key, String value) {
         settings.setProperty(key, value);
     }
 
@@ -54,7 +54,7 @@ public final class Tornado implements TornadoCI {
         return settings.getProperty(key, defaultValue);
     }
 
-    public static final String TORNADO_SDK_VARIABLE = "TORNADO_SDK";
+    private static final String TORNADO_SDK_VARIABLE = "TORNADO_SDK";
 
     public static final boolean VALIDATE_ARRAY_HEADERS = Boolean.parseBoolean(settings.getProperty("tornado.opencl.array.validate", "False"));
     public static final boolean TORNADO_LOOPS_REVERSE = Boolean.parseBoolean(settings.getProperty("tornado.loops.reverse", "True"));

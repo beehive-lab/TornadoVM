@@ -39,12 +39,15 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.mm.OCLTupleRawEvent;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
@@ -70,7 +73,6 @@ public class OCLObjectWrapper implements ObjectBuffer {
     private final OCLDeviceContext deviceContext;
     private boolean valid;
     private boolean isFinal;
-    private final int[] internalEvents;
     private long batchSize;
 
     private static final int BYTES_OBJECT_REFERENCE = 8;
@@ -101,7 +103,6 @@ public class OCLObjectWrapper implements ObjectBuffer {
         sortFieldsByOffset();
 
         wrappedFields = new FieldBuffer[fields.length];
-        internalEvents = new int[fields.length];
 
         int index = 0;
 
@@ -428,6 +429,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
             returnEvent = fieldBuffer.enqueueRead(reference, (useDeps) ? events : null, useDeps);
         } else {
             int index = 0;
+            int[] internalEvents = new int[fields.length];
             Arrays.fill(internalEvents, -1);
 
             for (FieldBuffer fb : wrappedFields) {
@@ -462,51 +464,31 @@ public class OCLObjectWrapper implements ObjectBuffer {
     }
 
     @Override
-    public int enqueueWrite(Object ref, long batchSize, long hostOffset, int[] events, boolean useDeps) {
-        final int returnEvent;
+    public List<Integer> enqueueWrite(Object ref, long batchSize, long hostOffset, int[] events, boolean useDeps) {
+        ArrayList<Integer> eventList = new ArrayList<>();
+
         if (vectorObject) {
             final FieldBuffer fieldBuffer = wrappedFields[vectorStorageIndex];
             if (!valid) {
                 valid = true;
-                returnEvent = fieldBuffer.enqueueWrite(ref, (useDeps) ? events : null, useDeps);
+                eventList.addAll(fieldBuffer.enqueueWrite(ref, (useDeps) ? events : null, useDeps));
             } else {
-                returnEvent = -1;
+                eventList = null;
             }
-
         } else {
-            Arrays.fill(internalEvents, -1);
-            int index = 0;
-
             // TODO this needs to run asynchronously
             if (!valid || (valid && !isFinal)) {
                 serialise(ref);
-
-                internalEvents[index] = deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), hostOffset, (useDeps) ? events : null);
-                index++;
-
+                eventList.add(deviceContext.enqueueWriteBuffer(toBuffer(), bufferOffset, bytesToAllocate, buffer.array(), hostOffset, (useDeps) ? events : null));
                 valid = true;
             }
-
-            for (final FieldBuffer fb : wrappedFields) {
-                if (fb != null && fb.needsWrite()) {
-                    internalEvents[index] = fb.enqueueWrite(ref, (useDeps) ? events : null, useDeps);
-                    index++;
+            for (final FieldBuffer field : wrappedFields) {
+                if (field != null && field.needsWrite()) {
+                    eventList.addAll(field.enqueueWrite(ref, (useDeps) ? events : null, useDeps));
                 }
             }
-
-            switch (index) {
-                case 0:
-                    returnEvent = -1;
-                    break;
-                case 1:
-                    returnEvent = internalEvents[0];
-                    break;
-                default:
-                    returnEvent = deviceContext.enqueueMarker(internalEvents);
-
-            }
         }
-        return useDeps ? returnEvent : -1;
+        return useDeps ? eventList : null;
     }
 
     @Override

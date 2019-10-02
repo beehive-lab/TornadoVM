@@ -34,6 +34,7 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -49,6 +50,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private int deviceIndex;
     private boolean deviceManuallySet;
     private long numThreads;
+
+    private TornadoProfiler profiler;
 
     private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int DEFAULT_DEVICE_INDEX = 0;
@@ -422,4 +425,11 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         vmUseDeps = Boolean.parseBoolean(getDefault("vm.deps", id, "False"));
     }
 
+    public void attachProfiler(TornadoProfiler profiler) {
+        this.profiler = profiler;
+    }
+
+    public TornadoProfiler getProfiler() {
+        return this.profiler;
+    }
 }

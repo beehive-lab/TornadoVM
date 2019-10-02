@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
@@ -28,7 +28,6 @@ package uk.ac.manchester.tornado.runtime.tasks;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitiveClass;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.PRINT_COMPILE_TIMES;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
@@ -74,6 +73,8 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
@@ -91,12 +92,13 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompilationResult;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
+import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
+import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 /**
  * Implementation of the Tornado API for running on heterogeneous devices.
- * 
  */
 public class TornadoTaskSchedule implements AbstractTaskGraph {
 
@@ -124,6 +126,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private static int baseGlobalIndex = 0;
     private static AtomicInteger offsetGlobalIndex = new AtomicInteger(0);
 
+    private StringBuffer bufferLogProfiler = new StringBuffer();
+
     /**
      * Options for Dynamic Reconfiguration
      */
@@ -144,9 +148,11 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private boolean reduceAnalysis = false;
     MetaReduceCodeAnalysis analysisTaskSchedule;
 
+    private TornadoProfiler timeProfiler;
+
     /**
      * Task Schedule implementation that uses GPU/FPGA and multi-core backends.
-     * 
+     *
      * @param taskScheduleName
      *            Task-Schedule name
      */
@@ -158,6 +164,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         result = null;
         event = null;
         this.taskScheduleName = taskScheduleName;
+
+        if (TornadoOptions.isProfilerEnabled()) {
+            this.timeProfiler = new TimeProfiler();
+        } else {
+            this.timeProfiler = new EmptyProfiler();
+        }
     }
 
     @Override
@@ -257,7 +269,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     /**
      * Compile a task-schedule into TornadoVM byte-code
-     * 
+     *
      * @param setNewDevice:
      *            boolean that specifies if set a new device or not.
      */
@@ -274,11 +286,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             updateDeviceContext(graph);
         }
 
+        // TornadoVM byte-code generation
         result = TornadoVMGraphCompiler.compile(graph, graphContext, batchSizeBytes);
 
-        // final long t2 = System.nanoTime();
-        vm = new TornadoVM(graphContext, result.getCode(), result.getCodeSize());
-        // final long t3 = System.nanoTime();
+        vm = new TornadoVM(graphContext, result.getCode(), result.getCodeSize(), timeProfiler);
 
         if (meta().shouldDumpSchedule()) {
             graphContext.print();
@@ -318,7 +329,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      * <li>updateDevice:This indicates if there is a new device for the same
      * task</li>
      * </p>
-     * 
+     *
      * @return {@link CompileInfo}
      */
     private CompileInfo extractCompileInfo() {
@@ -333,8 +344,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private boolean compileToTornadoVMBytecodes() {
         CompileInfo compileInfo = extractCompileInfo();
         if (compileInfo.compile) {
+            timeProfiler.start(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
             graphContext.assignToDevices();
             compile(compileInfo.updateDevice);
+            timeProfiler.stop(ProfilerType.TOTAL_BYTE_CODE_GENERATION);
         }
         graphContext.addLastDevice(meta().getDevice());
         graphContext.newStack(compileInfo.updateDevice);
@@ -365,18 +378,19 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public void scheduleInner() {
-        long t0 = System.nanoTime();
         boolean compile = compileToTornadoVMBytecodes();
-        long t1 = System.nanoTime();
-        if (PRINT_COMPILE_TIMES) {
-            System.out.printf("compile: compileTasks: " + (t1 - t0) + "ns" + "\n");
-        }
-
         if (compile) {
             preCompilationForFPGA();
         }
 
         event = vm.execute();
+
+        timeProfiler.stop(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
+        if (!TornadoOptions.PROFILER_LOGS_ACCUMULATE) {
+            timeProfiler.dumpJson(new StringBuffer(), this.getId());
+        } else {
+            bufferLogProfiler.append(timeProfiler.createJson(new StringBuffer(), this.getId()));
+        }
     }
 
     @Override
@@ -464,8 +478,12 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public void warmup() {
+        timeProfiler.clean();
+
         compileToTornadoVMBytecodes();
         vm.warmup();
+
+        timeProfiler.dumpJson(new StringBuffer(), this.getId());
     }
 
     @Override
@@ -566,6 +584,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public AbstractTaskGraph schedule() {
+        timeProfiler.clean();
+        timeProfiler.start(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
+
         AbstractTaskGraph executionGraph = null;
         if (TornadoOptions.EXPERIMENTAL_REDUCE && !(getId().startsWith(TASK_SCHEDULE_PREFIX))) {
             executionGraph = analyzeSkeletonAndRun();
@@ -1125,7 +1146,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     /**
      * Experimental method to sync all objects when making a clone copy for all
      * output objects per device.
-     * 
+     *
      * @param policy
      *            input policy
      * @param numDevices
@@ -1149,7 +1170,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     /**
      * It obtains the maximum input size for an input task.
-     * 
+     *
      * @return max size of all input arrays.
      */
     private int getMaxInputSize() {
@@ -1179,10 +1200,10 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     /**
-     * Class that keeps the history of executions based on their data sizes. It
-     * has a sorted map (TreeMap) that keeps the relationship between the input
-     * size and the actual Tornado device in which the task was executed based
-     * on the profiler for the dynamic reconfiguration.
+     * Class that keeps the history of executions based on their data sizes. It has
+     * a sorted map (TreeMap) that keeps the relationship between the input size and
+     * the actual Tornado device in which the task was executed based on the
+     * profiler for the dynamic reconfiguration.
      */
     private static class HistoryTable {
         /**
@@ -1391,5 +1412,60 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             default:
                 throw new TornadoRuntimeException("Units not supported: " + units);
         }
+    }
+
+    @Override
+    public long getTotalTime() {
+        return timeProfiler.getTimer(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
+    }
+
+    @Override
+    public long getCompileTime() {
+        return timeProfiler.getTimer(ProfilerType.TOTAL_GRAAL_COMPILE_TIME) + timeProfiler.getTimer(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
+    }
+
+    @Override
+    public long getTornadoCompilerTime() {
+        return timeProfiler.getTimer(ProfilerType.TOTAL_GRAAL_COMPILE_TIME);
+    }
+
+    @Override
+    public long getDriverInstallTime() {
+        return timeProfiler.getTimer(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
+    }
+
+    @Override
+    public long getDataTransfersTime() {
+        return timeProfiler.getTimer(ProfilerType.COPY_IN_TIME) + timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
+    }
+
+    @Override
+    public long getWriteTime() {
+        return timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
+    }
+
+    @Override
+    public long getReadTime() {
+        return timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
+    }
+
+    @Override
+    public long getDeviceWriteTime() {
+        return timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
+    }
+
+    @Override
+    public long getDeviceKernelTime() {
+        return timeProfiler.getTimer(ProfilerType.TOTAL_KERNEL_TIME);
+    }
+
+    @Override
+    public long getDeviceReadTime() {
+        return timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME);
+    }
+
+    @Override
+    public String getProfileLog() {
+        return bufferLogProfiler.toString();
     }
 }

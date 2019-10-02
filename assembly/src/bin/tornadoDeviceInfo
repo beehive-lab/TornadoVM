@@ -1,3 +1,12 @@
 #!/usr/bin/env bash
 
-tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput
+option=$1
+
+case "$1" in 
+		verbose)
+			tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput verbose
+			;;
+
+		*)
+			tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput
+esac	

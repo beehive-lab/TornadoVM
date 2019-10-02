@@ -39,18 +39,30 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api;
+package uk.ac.manchester.tornado.api.profiler;
 
-public interface TornadoTargetDevice {
+public interface ProfileInterface {
 
-    String getDeviceName();
+    long getTotalTime();
 
-    long getDeviceGlobalMemorySize();
+    long getCompileTime();
 
-    long getDeviceLocalMemorySize();
+    long getTornadoCompilerTime();
 
-    int getDeviceMaxComputeUnits();
+    long getDriverInstallTime();
 
-    Object getDeviceInfo();
+    long getDataTransfersTime();
+
+    long getWriteTime();
+
+    long getReadTime();
+
+    long getDeviceWriteTime();
+
+    long getDeviceKernelTime();
+
+    long getDeviceReadTime();
+
+    String getProfileLog();
 
 }
