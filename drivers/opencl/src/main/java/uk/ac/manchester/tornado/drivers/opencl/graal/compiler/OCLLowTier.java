@@ -39,7 +39,9 @@ import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.common.UseTrappingNullChecksPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoFeatureExtraction;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopCanonicalization;
 
 public class OCLLowTier extends TornadoLowTier {
@@ -63,8 +65,7 @@ public class OCLLowTier extends TornadoLowTier {
         if (ConditionalElimination.getValue(options)) {
             appendPhase(new IterativeConditionalEliminationPhase(canonicalizer, false));
             /*
-             * Canonicalizer may create some new ShortCircuitOrNodes so clean
-             * them up.
+             * Canonicalizer may create some new ShortCircuitOrNodes so clean them up.
              */
             // appendPhase(new ExpandLogicPhase());
         }
@@ -77,6 +78,10 @@ public class OCLLowTier extends TornadoLowTier {
 
         appendPhase(new TornadoLoopCanonicalization());
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.FINAL_SCHEDULE));
+
+        if (Tornado.FEATURE_EXTRACTION) {
+            appendPhase(new TornadoFeatureExtraction());
+        }
 
     }
 }

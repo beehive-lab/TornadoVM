@@ -87,6 +87,7 @@ public final class Tornado implements TornadoCI {
     public final static boolean ACCELERATOR_IS_GPU = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.asgpu", "True"));
     public final static boolean FPGA_EMULATION = Boolean.parseBoolean(getProperty("tornado.fpga.emulation", "false"));
     public final static boolean ACCELERATOR_IS_FPGA = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.fpga", "False"));
+    public final static boolean FEATURE_EXTRACTION = Boolean.parseBoolean(getProperty("tornado.feature.extraction", "False"));
 
     public static final TornadoLogger log = new TornadoLogger(Tornado.class);
 
@@ -106,8 +107,8 @@ public final class Tornado implements TornadoCI {
         }
 
         /*
-         * merge local and system properties, note that command line arguments
-         * override saved properties
+         * merge local and system properties, note that command line arguments override
+         * saved properties
          */
         Set<String> localKeys = loadProperties.stringPropertyNames();
         Set<String> systemKeys = settings.stringPropertyNames();
