@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,28 +20,35 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
-package uk.ac.manchester.tornado.drivers.opencl.enums;
+package uk.ac.manchester.tornado.api.profiler;
 
-public enum OCLProfilingInfo {
+/**
+ * Profile-type that helps to classify all timers
+ */
+public enum ProfilerType {
 
     // @formatter:off
-	CL_PROFILING_COMMAND_QUEUED(0x1280),
-	CL_PROFILING_COMMAND_SUBMIT(0x1281),
-	CL_PROFILING_COMMAND_START(0x1282),
-	CL_PROFILING_COMMAND_END(0x1283),
-    CL_PROFILING_COMMAND_COMPLETE(0x1284);
+    COPY_IN_TIME("CopyIn-Time"),
+    COPY_OUT_TIME("CopyOut-Time"),
+    TASK_COMPILE_DRIVER_TIME("Task-Compile-Driver-"),
+    TASK_COMPILE_GRAAL_TIME("Task-Compile-Graal-"),
+    TASK_KERNEL_TIME("Task-Kernel-"),
+    TOTAL_BYTE_CODE_GENERATION("Total-Bytecode-Gen"),
+    TOTAL_DRIVER_COMPILE_TIME("Total-Driver-Compilation-Time"),
+    TOTAL_GRAAL_COMPILE_TIME("Total-Graal-Compilation-Time"),
+    TOTAL_KERNEL_TIME("Kernel-Time"),
+    TOTAL_TASK_SCHEDULE_TIME("TS-Total-Time");
     // @formatter:on
 
-    private final long value;
+    String description;
 
-    OCLProfilingInfo(final long v) {
-        value = v;
+    ProfilerType(String description) {
+        this.description = description;
     }
 
-    public long getValue() {
-        return value;
+    public String getDescription() {
+        return this.description;
     }
+
 }

@@ -49,7 +49,7 @@ public enum OCLCommandExecutionStatus {
     }
 
     public static OCLCommandExecutionStatus createOCLCommandExecutionStatus(final int v) {
-        OCLCommandExecutionStatus result = OCLCommandExecutionStatus.CL_UNKNOWN;
+        OCLCommandExecutionStatus result;
         switch (v) {
             case 0:
                 result = OCLCommandExecutionStatus.CL_COMPLETE;

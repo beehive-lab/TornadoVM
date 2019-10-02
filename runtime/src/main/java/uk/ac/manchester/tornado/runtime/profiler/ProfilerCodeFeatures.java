@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
@@ -20,28 +20,23 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
+ * Authors: Michalis Papadimitriou
+ *
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.enums;
+package uk.ac.manchester.tornado.runtime.profiler;
 
-public enum OCLProfilingInfo {
-
+public enum ProfilerCodeFeatures {
     // @formatter:off
-	CL_PROFILING_COMMAND_QUEUED(0x1280),
-	CL_PROFILING_COMMAND_SUBMIT(0x1281),
-	CL_PROFILING_COMMAND_START(0x1282),
-	CL_PROFILING_COMMAND_END(0x1283),
-    CL_PROFILING_COMMAND_COMPLETE(0x1284);
+    FLOATING_READ,
+    GLOBAL_THREAD_ID,
+    IF,
+    INTEGER_SWITCH,
+    LOOP_BEGIN,
+    OCL_FPU_BINARY_INTRINSIC,
+    OCL_INT_BINARY_INTRINSIC, 
+    SWITCH_CASES,
+    VECTOR_LOAD_ELEMENT,
+    WRITE,
     // @formatter:on
-
-    private final long value;
-
-    OCLProfilingInfo(final long v) {
-        value = v;
-    }
-
-    public long getValue() {
-        return value;
-    }
 }

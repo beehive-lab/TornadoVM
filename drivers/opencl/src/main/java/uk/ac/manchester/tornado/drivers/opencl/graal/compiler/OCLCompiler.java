@@ -191,7 +191,6 @@ public class OCLCompiler {
          * @return the result of the compilation
          */
         public T execute() {
-
             return OCLCompiler.compile(this);
         }
     }
@@ -226,12 +225,9 @@ public class OCLCompiler {
      * @return the result of the compilation
      */
     public static <T extends OCLCompilationResult> T compile(Request<T> r) {
-
         DebugEnvironment.ensureInitialized(getTornadoRuntime().getOptions());
-
         try (Scope s = MethodMetricsRootScopeInfo.createRootScopeIfAbsent(r.installedCodeOwner)) {
             assert !r.graph.isFrozen();
-
             try (Scope s0 = Debug.scope("GraalCompiler", r.graph, r.providers.getCodeCache()); DebugCloseable a = CompilerTimer.start()) {
                 emitFrontEnd(r.providers, r.backend, r.installedCodeOwner, r.args, r.meta, r.graph, r.graphBuilderSuite, r.optimisticOpts, r.profilingInfo, r.suites, r.isKernel, r.buildGraph,
                         r.batchThreads);

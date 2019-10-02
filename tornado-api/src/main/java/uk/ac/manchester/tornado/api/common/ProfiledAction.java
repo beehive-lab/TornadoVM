@@ -49,46 +49,16 @@ public interface ProfiledAction {
 
     long getSubmitTime();
 
-    double getSubmitTimeInMilliSeconds();
-
     long getStartTime();
 
-    double getStartTimeInMilliSeconds();
-
     long getEndTime();
-
-    double getEndTimeInMilliSeconds();
 
     long getExecutionTime();
 
     double getExecutionTimeInSeconds();
 
-    double getExecutionTimeInMilliSeconds();
-
-    long getTotalQueuedTime();
-
-    double getTotalQueuedTimeInMilliSeconds();
-
-    long getElapsedQueuedTime();
-
-    double getElapsedQueuedTimeInMilliSeconds();
-
-    long getElapsedSubmitTime();
-
-    double getElapsedSubmitTimeInMilliSeconds();
-
-    long getQueuedTime();
-
-    double getQueuedTimeInMilliSeconds();
-
     TornadoExecutionStatus getStatus();
 
-    long getTotalTime();
-
     double getTotalTimeInSeconds();
-
-    double getTotalTimeInMilliSeconds();
-
-    void retain();
 
 }

@@ -43,3 +43,5 @@ bin/sdk
 *.pyc
 **/*.iml
 .idea/*
+*.factorypath
+.unittestingStatus
