@@ -48,8 +48,9 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
+import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 
-public interface AbstractTaskGraph {
+public interface AbstractTaskGraph extends ProfileInterface {
 
     SchedulableTask getTask(String taskNameID);
 

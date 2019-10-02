@@ -31,6 +31,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -45,11 +46,14 @@ import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDriver;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
 import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
@@ -211,6 +215,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private TornadoInstalledCode compileTask(SchedulableTask task) {
+
         final OCLDeviceContext deviceContext = getDeviceContext();
 
         final CompilableTask executable = (CompilableTask) task;
@@ -225,26 +230,34 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final TaskMetaData taskMeta = executable.meta();
         final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
-        for (int i = 0; i < sketchAccess.length; i++) {
-            taskAccess[i] = sketchAccess[i];
-        }
+        System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
 
         try {
             OCLProviders providers = (OCLProviders) getBackend().getProviders();
+            TornadoProfiler profiler = task.getProfiler();
+            profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             final OCLCompilationResult result = OCLCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
+            profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
+            profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
+
             if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
                 // Return the code from the cache
                 return deviceContext.getCode(task.getId(), resolvedMethod.getName());
             }
 
+            profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             // Compile the code
+            OCLInstalledCode intalledCode = null;
             if (Tornado.ACCELERATOR_IS_FPGA) {
                 // A) for FPGA
-                return deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA);
+                intalledCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode());
             } else {
-                // B) for CPU multicore or GPU
-                return deviceContext.installCode(result);
+                // B) for CPU multi-core or GPU
+                intalledCode = deviceContext.installCode(result);
             }
+            profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
+            profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
+            return intalledCode;
 
         } catch (Exception e) {
             driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
@@ -456,23 +469,21 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int ensurePresent(Object object, TornadoDeviceObjectState state, int[] events, long batchSize, long offset) {
+    public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState state, int[] events, long batchSize, long offset) {
         if (!state.isValid()) {
             ensureAllocated(object, batchSize, state);
         }
 
         if (BENCHMARKING_MODE || !state.hasContents()) {
             state.setContents(true);
-            int event = state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
-            if (events != null) {
-                return event;
-            }
+            List<Integer> writeEvents = state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
+            return writeEvents;
         }
-        return -1;
+        return null;
     }
 
     @Override
-    public int streamIn(Object object, long batchSize, long offset, TornadoDeviceObjectState state, int[] events) {
+    public List<Integer> streamIn(Object object, long batchSize, long offset, TornadoDeviceObjectState state, int[] events) {
         if (batchSize > 0 || !state.isValid()) {
             ensureAllocated(object, batchSize, state);
         }

@@ -18,6 +18,7 @@
 
 package uk.ac.manchester.tornado.examples.memory;
 
+import java.util.List;
 import java.util.Random;
 
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
@@ -49,9 +50,11 @@ public class DataMovementTest2 {
         TornadoGlobalObjectState state = TornadoRuntime.getTornadoRuntime().resolveObject(image);
         TornadoDeviceObjectState deviceState = state.getDeviceState(device);
 
-        int writeEvent = device.ensurePresent(image, deviceState, null, 0, 0);
-        if (writeEvent != -1) {
-            device.resolveEvent(writeEvent).waitOn();
+        List<Integer> writeEvent = device.ensurePresent(image, deviceState, null, 0, 0);
+        if (writeEvent != null) {
+            for (Integer e : writeEvent) {
+                device.resolveEvent(e).waitOn();
+            }
         }
 
         image.fill(-1);

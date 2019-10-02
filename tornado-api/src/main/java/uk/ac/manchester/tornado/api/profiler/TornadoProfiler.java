@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,28 +20,34 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: James Clarkson
- *
  */
-package uk.ac.manchester.tornado.drivers.opencl.enums;
+package uk.ac.manchester.tornado.api.profiler;
 
-public enum OCLProfilingInfo {
+public interface TornadoProfiler {
 
-    // @formatter:off
-	CL_PROFILING_COMMAND_QUEUED(0x1280),
-	CL_PROFILING_COMMAND_SUBMIT(0x1281),
-	CL_PROFILING_COMMAND_START(0x1282),
-	CL_PROFILING_COMMAND_END(0x1283),
-    CL_PROFILING_COMMAND_COMPLETE(0x1284);
-    // @formatter:on
+    void start(ProfilerType type);
 
-    private final long value;
+    void start(ProfilerType type, String taskName);
 
-    OCLProfilingInfo(final long v) {
-        value = v;
-    }
+    void stop(ProfilerType type);
 
-    public long getValue() {
-        return value;
-    }
+    void stop(ProfilerType type, String taskName);
+
+    long getTimer(ProfilerType type);
+
+    long getTaskTimer(ProfilerType type, String taskName);
+
+    void setTimer(ProfilerType type, long time);
+
+    void dump();
+
+    String createJson(StringBuffer json, String sectionName);
+
+    void dumpJson(StringBuffer stringBuffer, String id);
+
+    void clean();
+
+    void setTaskTimer(ProfilerType totalKernelTime, String taskId, long timer);
+
+    void sum(ProfilerType type, long timer);
 }

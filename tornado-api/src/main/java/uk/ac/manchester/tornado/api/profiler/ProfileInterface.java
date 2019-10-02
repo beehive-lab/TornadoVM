@@ -39,33 +39,30 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api.common;
+package uk.ac.manchester.tornado.api.profiler;
 
-import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
-import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
+public interface ProfileInterface {
 
-public interface SchedulableTask {
+    long getTotalTime();
 
-    Object[] getArguments();
+    long getCompileTime();
 
-    Access[] getArgumentsAccess();
+    long getTornadoCompilerTime();
 
-    TaskMetaDataInterface meta();
+    long getDriverInstallTime();
 
-    SchedulableTask mapTo(TornadoDevice mapping);
+    long getDataTransfersTime();
 
-    TornadoDevice getDevice();
+    long getWriteTime();
 
-    String getName();
+    long getReadTime();
 
-    String getId();
+    long getDeviceWriteTime();
 
-    void setBatchThreads(long batchThreads);
+    long getDeviceKernelTime();
 
-    long getBatchThreads();
+    long getDeviceReadTime();
 
-    void attachProfiler(TornadoProfiler tornadoProfiler);
-
-    TornadoProfiler getProfiler();
+    String getProfileLog();
 
 }

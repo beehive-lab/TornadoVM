@@ -57,6 +57,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.profiler.ProfileInterface;
 import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
 
 /**
@@ -68,7 +69,7 @@ import uk.ac.manchester.tornado.api.runtime.TornadoAPIProvider;
  * </p>
  *
  */
-public class TaskSchedule implements TornadoAPI {
+public class TaskSchedule implements TornadoAPI, ProfileInterface {
 
     private final String taskScheduleName;
     private AbstractTaskGraph taskScheduleImpl;
@@ -306,5 +307,60 @@ public class TaskSchedule implements TornadoAPI {
     @Override
     public void waitOn() {
         taskScheduleImpl.waitOn();
+    }
+
+    @Override
+    public long getTotalTime() {
+        return taskScheduleImpl.getTotalTime();
+    }
+
+    @Override
+    public long getCompileTime() {
+        return taskScheduleImpl.getCompileTime();
+    }
+
+    @Override
+    public long getTornadoCompilerTime() {
+        return taskScheduleImpl.getTornadoCompilerTime();
+    }
+
+    @Override
+    public long getDriverInstallTime() {
+        return taskScheduleImpl.getDriverInstallTime();
+    }
+
+    @Override
+    public long getDataTransfersTime() {
+        return taskScheduleImpl.getDataTransfersTime();
+    }
+
+    @Override
+    public long getWriteTime() {
+        return taskScheduleImpl.getWriteTime();
+    }
+
+    @Override
+    public long getReadTime() {
+        return taskScheduleImpl.getReadTime();
+    }
+
+    @Override
+    public long getDeviceWriteTime() {
+        return taskScheduleImpl.getDeviceWriteTime();
+    }
+
+    @Override
+    public long getDeviceKernelTime() {
+        return taskScheduleImpl.getDeviceKernelTime();
+    }
+
+    @Override
+    public long getDeviceReadTime() {
+        return taskScheduleImpl.getDeviceReadTime();
+    }
+
+    @Override
+    public String getProfileLog() {
+        return taskScheduleImpl.getProfileLog();
     }
 }

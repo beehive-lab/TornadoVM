@@ -35,7 +35,12 @@ public class TornadoOptions {
 
     public static StringBuffer FPGA_BINARIES = System.getProperty("tornado.precompiled.binary", null) != null ? new StringBuffer(System.getProperty("tornado.precompiled.binary", null)) : null;
 
-    // Temporal option
+    // Temporal option for null checks
     public static final boolean IGNORE_NULL_CHECKS = Boolean.parseBoolean(System.getProperty("tornado.ignore.nullchecks", "False"));
 
+    public static boolean isProfilerEnabled() {
+        return Boolean.parseBoolean(System.getProperty("tornado.profiler", "False"));
+    }
+
+    public static final boolean PROFILER_LOGS_ACCUMULATE = Boolean.parseBoolean(System.getProperty("tornado.log.profiler", "False"));
 }

@@ -312,7 +312,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
 
             if (Tornado.ACCELERATOR_IS_FPGA) {
-                lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA);
+                lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode());
             } else {
                 lookupCode = deviceContext.installCode(result);
             }
@@ -380,7 +380,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
         OCLProviders providers = (OCLProviders) getProviders();
         OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
-        lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), Tornado.ACCELERATOR_IS_FPGA);
+        lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode());
         return meta;
     }
 
@@ -509,8 +509,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
              * BUG There is a bug on some OpenCL devices which requires us to insert an
              * extra OpenCL buffer into the kernel arguments. This has the effect of
              * shifting the devices address mappings, which allows us to avoid the heap
-             * starting at address 0x0. (I assume that this is a interesting case that leads
-             * to a few issues.) Iris Pro is the only culprit at the moment.
+             * starting at address 0x0. (I assume that this is an interesting case that
+             * leads to a few issues.) Iris Pro is the only culprit at the moment.
              */
             if (Tornado.ACCELERATOR_IS_FPGA && !methodName.equals(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
                 // TODO: FIX with info at the runtime, currently is a static

@@ -41,3 +41,5 @@ Print kernel times for OpenCL compute kernels.
  Provides the location of the bistream or pre-geneared OpenCL (.cl) kernel. 
 * ```tornado.opencl.blocking=true```:  
 Allows to force API blocking calls. 
+
+* `-Dtornado.profiler=True`: it enables profiler information such as `COPY_IN`, `COPY_OUT`, compilation time, total time, etc. This flag is disabled by default.

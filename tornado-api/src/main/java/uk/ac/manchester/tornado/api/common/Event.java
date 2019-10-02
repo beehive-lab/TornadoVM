@@ -43,4 +43,5 @@ package uk.ac.manchester.tornado.api.common;
 
 public interface Event extends ProfiledAction, SynchronisationPoint {
 
+    void waitForEvents();
 }
