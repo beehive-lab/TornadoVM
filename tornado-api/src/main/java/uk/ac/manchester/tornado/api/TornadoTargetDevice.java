@@ -51,4 +51,6 @@ public interface TornadoTargetDevice {
 
     int getDeviceMaxComputeUnits();
 
+    Object getDeviceInfo();
+
 }

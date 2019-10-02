@@ -619,4 +619,24 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return device.getDeviceGlobalMemorySize();
     }
 
+    @Override
+    public long getDeviceLocalMemorySize() {
+        return device.getDeviceLocalMemorySize();
+    }
+
+    @Override
+    public long[] getDeviceMaxWorkgroupDimensions() {
+        return device.getDeviceMaxWorkItemSizes();
+    }
+
+    @Override
+    public String getDeviceOpenCLCVersion() {
+        return device.getDeviceOpenCLCVersion();
+    }
+
+    @Override
+    public Object getDeviceInfo(){
+        return device.getDeviceInfo();
+    }
+
 }
