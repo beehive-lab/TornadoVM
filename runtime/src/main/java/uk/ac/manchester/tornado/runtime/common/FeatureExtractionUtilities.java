@@ -35,12 +35,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
 
 public class FeatureExtractionUtilities {
 
-    public static final String FEATURE_FILE = "tornado-features.json";
+    private static final String FEATURE_FILE = "tornado-features.json";
 
     private static List<String> mathOps = new ArrayList<>(Arrays.asList("+", "-", "/", "*", "<<"));
 
@@ -66,28 +65,26 @@ public class FeatureExtractionUtilities {
     }
 
     private static Integer mathOperations(HashMap<String, Integer> feat) {
-        Integer temp_ops = 0;
-
+        Integer sumOperations = 0;
         for (String key : feat.keySet()) {
             if (mathOps.contains(key)) {
-                temp_ops += feat.get(key);
+                sumOperations += feat.get(key);
             }
         }
-        return temp_ops;
+        return sumOperations;
     }
 
     public static void emitJsonToFile(HashMap<String, Integer> entry, String name) {
         HashMap<String, HashMap<String, Integer>> task = new HashMap<>();
         task.put(name, entry);
-        Gson gsons = new GsonBuilder().setPrettyPrinting().create();
-        String json = gsons.toJson(task);
-        File fil = new File(FEATURE_FILE);
-        try (FileWriter file = new FileWriter(fil, RuntimeUtilities.ifFileExists(fil))) { // TO DO: FIX
+        JsonHandler jsonHandler = new JsonHandler();
+        String json = jsonHandler.createJSon(entry, name);
+        File fileLog = new File(FEATURE_FILE);
+        try (FileWriter file = new FileWriter(fileLog, RuntimeUtilities.ifFileExists(fileLog))) { // TO DO: FIX
             file.write(json);
             file.write("\n");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
 }
