@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornado
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
@@ -29,6 +29,7 @@ import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
 
+import java.util.Arrays;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -50,7 +51,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private int deviceIndex;
     private boolean deviceManuallySet;
     private long numThreads;
-
+    private final List<String> compileCLOptions = Arrays.asList("-cl-single-precision-constant", "-cl-denorms-are-zero", "-cl-opt-disable", "-cl-strict-aliasing", "-cl-mad-enable",
+            "-cl-no-signed-zeros", "-cl-unsafe-math-optimizations", "-cl-finite-math-only", "-cl-fast-relaxed-math", "-w");
     private TornadoProfiler profiler;
 
     private static final int DEFAULT_DRIVER_INDEX = 0;
@@ -86,7 +88,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     /**
      * Set a device in the default driver in Tornado.
-     * 
+     *
      * @param device
      */
     public void setDevice(TornadoDevice device) {
@@ -100,7 +102,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     /**
      * Set a device from a specific Tornado driver.
-     * 
+     *
      * @param driverIndex
      * @param device
      */
@@ -163,7 +165,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     }
 
     public String getCompilerFlags() {
-        return openclCompilerFlags;
+        return composeBuiltOptions(compilerFlagsOpenCL);
     }
 
     public int getOpenCLGpuBlockX() {
@@ -250,7 +252,6 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     // private final boolean forceAllToGpu;
     private boolean isOpenclCompilerFlagsDefined;
-    private String openclCompilerFlags;
     private final boolean isOpenclGpuBlockXDefined;
     private final int openclGpuBlockX;
     private final boolean isOpenclGpuBlock2DXDefined;
@@ -259,6 +260,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private final int openclGpuBlock2DY;
     private final boolean openclUseRelativeAddresses;
     private final boolean openclEnableBifs;
+    private String compilerFlagsOpenCL;
 
     /*
      * Allows the OpenCL driver to select the size of local work groups
@@ -297,8 +299,21 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     @Override
     public void setCompilerFlags(String value) {
-        openclCompilerFlags = value;
+        compilerFlagsOpenCL = value;
         isOpenclCompilerFlagsDefined = true;
+    }
+
+    public String composeBuiltOptions(String rawFlags) {
+        String[] temp;
+        rawFlags = rawFlags.replace(",", " ");
+        temp = rawFlags.split(" ");
+
+        for (String str : temp) {
+            if (!compileCLOptions.contains(str)) {
+                rawFlags = " ";
+            }
+        }
+        return rawFlags;
     }
 
     public boolean isOpenclGpuBlockXDefined() {
@@ -406,8 +421,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         dumpProfiles = parseBoolean(getDefault("profiles.print", id, "False"));
         dumpTaskSchedule = parseBoolean(getDefault("schedule.dump", id, "False"));
 
-        openclCompilerFlags = getDefault("opencl.cflags", id, "-w");
-        isOpenclCompilerFlagsDefined = getProperty(id + ".opencl.cflags") != null;
+        compilerFlagsOpenCL = (getProperty("tornado.opencl.compiler.options") == null) ? "-w" : getProperty("tornado.opencl.compiler.options");
+        isOpenclCompilerFlagsDefined = getProperty("tornado.opencl.compiler.options") != null;
 
         openclGpuBlockX = parseInt(getDefault("opencl.gpu.block.x", id, "256"));
         isOpenclGpuBlockXDefined = getProperty(id + ".opencl.gpu.block.x") != null;
@@ -432,4 +447,5 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     public TornadoProfiler getProfiler() {
         return this.profiler;
     }
+
 }
