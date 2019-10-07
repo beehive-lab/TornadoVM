@@ -52,8 +52,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private int deviceIndex;
     private boolean deviceManuallySet;
     private long numThreads;
-    private final HashSet<String> compileCLOptions = new HashSet<>(Arrays.asList("-cl-single-precision-constant", "-cl-denorms-are-zero", "-cl-opt-disable", "-cl-strict-aliasing", "-cl-mad-enable",
-            "-cl-no-signed-zeros", "-cl-unsafe-math-optimizations", "-cl-finite-math-only", "-cl-fast-relaxed-math", "-w"));
+    private final HashSet<String> openclCLBuiltOptions = new HashSet<>(Arrays.asList("-cl-single-precision-constant", "-cl-denorms-are-zero", "-cl-opt-disable", "-cl-strict-aliasing",
+            "-cl-mad-enable", "-cl-no-signed-zeros", "-cl-unsafe-math-optimizations", "-cl-finite-math-only", "-cl-fast-relaxed-math", "-w"));
     private TornadoProfiler profiler;
 
     private static final int DEFAULT_DRIVER_INDEX = 0;
@@ -308,7 +308,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         rawFlags = rawFlags.replace(",", " ");
 
         for (String str : rawFlags.split(" ")) {
-            if (!compileCLOptions.contains(str)) {
+            if (!openclCLBuiltOptions.contains(str)) {
                 rawFlags = " ";
             }
         }
