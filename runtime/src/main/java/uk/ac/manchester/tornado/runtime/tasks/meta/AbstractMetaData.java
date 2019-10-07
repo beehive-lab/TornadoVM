@@ -30,6 +30,7 @@ import static java.lang.Integer.parseInt;
 import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -51,8 +52,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private int deviceIndex;
     private boolean deviceManuallySet;
     private long numThreads;
-    private final List<String> compileCLOptions = Arrays.asList("-cl-single-precision-constant", "-cl-denorms-are-zero", "-cl-opt-disable", "-cl-strict-aliasing", "-cl-mad-enable",
-            "-cl-no-signed-zeros", "-cl-unsafe-math-optimizations", "-cl-finite-math-only", "-cl-fast-relaxed-math", "-w");
+    private final HashSet<String> compileCLOptions = new HashSet<>(Arrays.asList("-cl-single-precision-constant", "-cl-denorms-are-zero", "-cl-opt-disable", "-cl-strict-aliasing", "-cl-mad-enable",
+            "-cl-no-signed-zeros", "-cl-unsafe-math-optimizations", "-cl-finite-math-only", "-cl-fast-relaxed-math", "-w"));
     private TornadoProfiler profiler;
 
     private static final int DEFAULT_DRIVER_INDEX = 0;
@@ -165,7 +166,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     }
 
     public String getCompilerFlags() {
-        return composeBuiltOptions(compilerFlagsOpenCL);
+        return composeBuiltOptions(openclCompilerOptions);
     }
 
     public int getOpenCLGpuBlockX() {
@@ -260,7 +261,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
     private final int openclGpuBlock2DY;
     private final boolean openclUseRelativeAddresses;
     private final boolean openclEnableBifs;
-    private String compilerFlagsOpenCL;
+    private String openclCompilerOptions;
 
     /*
      * Allows the OpenCL driver to select the size of local work groups
@@ -299,16 +300,14 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
 
     @Override
     public void setCompilerFlags(String value) {
-        compilerFlagsOpenCL = value;
+        openclCompilerOptions = value;
         isOpenclCompilerFlagsDefined = true;
     }
 
     public String composeBuiltOptions(String rawFlags) {
-        String[] temp;
         rawFlags = rawFlags.replace(",", " ");
-        temp = rawFlags.split(" ");
 
-        for (String str : temp) {
+        for (String str : rawFlags.split(" ")) {
             if (!compileCLOptions.contains(str)) {
                 rawFlags = " ";
             }
@@ -421,7 +420,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
         dumpProfiles = parseBoolean(getDefault("profiles.print", id, "False"));
         dumpTaskSchedule = parseBoolean(getDefault("schedule.dump", id, "False"));
 
-        compilerFlagsOpenCL = (getProperty("tornado.opencl.compiler.options") == null) ? "-w" : getProperty("tornado.opencl.compiler.options");
+        openclCompilerOptions = (getProperty("tornado.opencl.compiler.options") == null) ? "-w" : getProperty("tornado.opencl.compiler.options");
         isOpenclCompilerFlagsDefined = getProperty("tornado.opencl.compiler.options") != null;
 
         openclGpuBlockX = parseInt(getDefault("opencl.gpu.block.x", id, "256"));
