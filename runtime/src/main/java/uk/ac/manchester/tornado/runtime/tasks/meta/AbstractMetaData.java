@@ -1,6 +1,6 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework:
- * https://github.com/beehive-lab/tornado
+ * This file is part of Tornado: A heterogeneous programming framework: 
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
