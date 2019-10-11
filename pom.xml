@@ -383,6 +383,7 @@
         <module>unittests</module>
         <module>assembly</module>
         <module>tornado-api</module>
+        <module>tornado-annotation</module>
     </modules>
     <reporting>
         <plugins>

@@ -24,6 +24,11 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>tornado-annotation</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tornado-matrices</artifactId>
       <version>${project.version}</version>
     </dependency>

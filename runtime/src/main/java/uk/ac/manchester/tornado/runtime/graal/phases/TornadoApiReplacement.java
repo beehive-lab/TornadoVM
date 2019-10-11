@@ -23,14 +23,6 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.TORNADO_LOOPS_REVERSE;
-
-import java.lang.annotation.Annotation;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import jdk.vm.ci.meta.LocalAnnotation;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
@@ -41,13 +33,24 @@ import org.graalvm.compiler.nodes.*;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.phases.BasePhase;
-
 import uk.ac.manchester.tornado.api.type.annotations.Atomic;
+import uk.ac.manchester.tornado.runtime.ASMClassVisitorProvider;
+import uk.ac.manchester.tornado.runtime.common.ParallelAnnotationProvider;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.nodes.AtomicAccessNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static uk.ac.manchester.tornado.runtime.common.Tornado.TORNADO_LOOPS_REVERSE;
 
 public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
@@ -90,26 +93,46 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
     }
 
+
+    /* A singleton is used because we don't need to support all the logic of loading the desired class
+       bytecode and instantiating the helper classes for the ASM library. Therefore, we use the singleton to call
+       ASMClassVisitor::getParallelAnnotations which will handle everything in the right module.
+       We can't have ASMClassVisitor::getParallelAnnotations be a static method because we dynamically load
+       the class and the interface does not allow it.
+     */
+    private static ASMClassVisitorProvider asmClassVisitorProvider;
+    static {
+        try {
+            String tornadoAnnotationImplementation = System.getProperty("tornado.load.annotation.implementation");
+            Class<?> klass = Class.forName(tornadoAnnotationImplementation);
+            Constructor<?> constructor = klass.getConstructor();
+            asmClassVisitorProvider = (ASMClassVisitorProvider) constructor.newInstance();
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException e) {
+            e.printStackTrace();
+            throw new RuntimeException("[ERROR] Tornado Annotation Implementation class not found");
+        }
+    }
+
     private void replaceLocalAnnotations(StructuredGraph graph, TornadoSketchTierContext context) {
 
         // build node -> annotation mapping
-        Map<ResolvedJavaMethod, LocalAnnotation[]> methodToAnnotations = new HashMap<>();
+        Map<ResolvedJavaMethod, ParallelAnnotationProvider[]> methodToAnnotations = new HashMap<>();
 
-        methodToAnnotations.put(context.getMethod(), context.getMethod().getLocalAnnotations());
+        methodToAnnotations.put(context.getMethod(), asmClassVisitorProvider.getParallelAnnotations(context.getMethod()));
 
         for (ResolvedJavaMethod inlinee : graph.getMethods()) {
-
-            if (inlinee.getLocalAnnotations().length > 0) {
-                methodToAnnotations.put(inlinee, inlinee.getLocalAnnotations());
+            ParallelAnnotationProvider[] inlineParallelAnnotations = asmClassVisitorProvider.getParallelAnnotations(inlinee);
+            if (inlineParallelAnnotations.length > 0) {
+                methodToAnnotations.put(inlinee, inlineParallelAnnotations);
             }
         }
 
-        Map<Node, LocalAnnotation> parallelNodes = new HashMap<>();
+        Map<Node, ParallelAnnotationProvider> parallelNodes = new HashMap<>();
 
         graph.getNodes().filter(FrameState.class).forEach((fs) -> {
             // Tornado.trace("framestate: method=%s,",fs.method().getName());
             if (methodToAnnotations.containsKey(fs.getMethod())) {
-                for (LocalAnnotation an : methodToAnnotations.get(fs.getMethod())) {
+                for (ParallelAnnotationProvider an : methodToAnnotations.get(fs.getMethod())) {
                     if (fs.bci >= an.getStart() && fs.bci < an.getStart() + an.getLength()) {
                         Node localNode = fs.localAt(an.getIndex());
 
