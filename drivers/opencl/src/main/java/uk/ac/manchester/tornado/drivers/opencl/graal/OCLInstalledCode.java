@@ -34,6 +34,7 @@ import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLGPUScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
@@ -46,6 +47,7 @@ import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLInstalledCode extends InstalledCode implements TornadoInstalledCode {
@@ -290,9 +292,20 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         final int task;
         debugInfo(meta);
         if ((meta.getGlobalWork() == null) || (meta.getGlobalWork().length == 0)) {
+            // Sequential kernel execution
             task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
         } else {
+            // Ahead Of Time kernel execution
             task = deviceContext.enqueueNDRangeKernel(kernel, 1, null, meta.getGlobalWork(), meta.getLocalWork(), null);
+        }
+        if (TornadoOptions.isProfilerEnabled()) {
+            Event tornadoKernelEvent = deviceContext.resolveEvent(task);
+            tornadoKernelEvent.waitForEvents();
+            long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
+            // Register globalTime
+            meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getExecutionTime());
+            // Register the time for the task
+            meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getExecutionTime());
         }
         return task;
     }

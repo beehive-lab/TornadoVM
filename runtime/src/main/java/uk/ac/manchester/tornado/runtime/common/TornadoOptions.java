@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -40,6 +40,10 @@ public class TornadoOptions {
 
     public static boolean isProfilerEnabled() {
         return Boolean.parseBoolean(System.getProperty("tornado.profiler", "False"));
+    }
+
+    public static boolean isSaveProfilerEnabled() {
+        return Boolean.parseBoolean(System.getProperty("tornado.profiler.save", "False"));
     }
 
     public static final boolean PROFILER_LOGS_ACCUMULATE = Boolean.parseBoolean(System.getProperty("tornado.log.profiler", "False"));
