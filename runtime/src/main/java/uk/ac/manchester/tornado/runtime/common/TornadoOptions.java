@@ -42,6 +42,10 @@ public class TornadoOptions {
         return Boolean.parseBoolean(System.getProperty("tornado.profiler", "False"));
     }
 
+    public static boolean isSaveProfilerEnabled() {
+        return Boolean.parseBoolean(System.getProperty("tornado.profiler.save", "False"));
+    }
+
     public static final boolean PROFILER_LOGS_ACCUMULATE = Boolean.parseBoolean(System.getProperty("tornado.log.profiler", "False"));
 
     public final static boolean FEATURE_EXTRACTION = Boolean.parseBoolean(System.getProperty("tornado.feature.extraction", "False"));

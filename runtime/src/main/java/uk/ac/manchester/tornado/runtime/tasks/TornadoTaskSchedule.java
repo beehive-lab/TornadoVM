@@ -31,6 +31,9 @@ import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPr
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.warn;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -376,6 +379,24 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
+    private void updateProfiler() {
+        if (!TornadoOptions.PROFILER_LOGS_ACCUMULATE) {
+            timeProfiler.dumpJson(new StringBuffer(), this.getId());
+        } else {
+            bufferLogProfiler.append(timeProfiler.createJson(new StringBuffer(), this.getId()));
+        }
+
+        if (TornadoOptions.isSaveProfilerEnabled()) {
+            String jsonFile = timeProfiler.createJson(new StringBuffer(), this.getId());
+            try (FileWriter fileWriter = new FileWriter("profiler-app.json", true)) {
+                PrintWriter printWriter = new PrintWriter(fileWriter);
+                printWriter.println(jsonFile);
+            } catch (IOException e) {
+                throw new TornadoRuntimeException("JSon profiler file cannot be appened");
+            }
+        }
+    }
+
     @Override
     public void scheduleInner() {
         boolean compile = compileToTornadoVMBytecodes();
@@ -384,13 +405,8 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
 
         event = vm.execute();
-
         timeProfiler.stop(ProfilerType.TOTAL_TASK_SCHEDULE_TIME);
-        if (!TornadoOptions.PROFILER_LOGS_ACCUMULATE) {
-            timeProfiler.dumpJson(new StringBuffer(), this.getId());
-        } else {
-            bufferLogProfiler.append(timeProfiler.createJson(new StringBuffer(), this.getId()));
-        }
+        updateProfiler();
     }
 
     @Override
