@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * The University of Manchester.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 package uk.ac.manchester.tornado.annotation;
 
 import org.objectweb.asm.AnnotationVisitor;
@@ -11,13 +28,7 @@ import java.util.List;
 public class ASMMethodVisitor extends MethodVisitor {
 
     private List<ParallelAnnotationProvider> parallelAnnotations;
-    //TODO
-    // 1) should dynamically load the @Parallel annotation from the tornado-api module?
-    // 2) Can I directly import it?
-    // 3) Should we move the @Reduce and @Parallel annotations to this module? What problems would it cause?
-    // 4) Hardcoded String for now. Should leave it like this?
-//    static Class parallelAnnotationClass = null;
-    static String parallelAnnotationClass = "uk.ac.manchester.tornado.api.annotations.Parallel";
+    static String parallelAnnotationClassPath = System.getProperty("tornado.load.annotation.parallel");
 
     public ASMMethodVisitor(int api, MethodVisitor methodVisitor, List<ParallelAnnotationProvider> parallelAnnotations) {
         super(api, methodVisitor);
@@ -25,23 +36,11 @@ public class ASMMethodVisitor extends MethodVisitor {
     }
 
     @Override
-    public AnnotationVisitor visitLocalVariableAnnotation(
-            int typeRef,
-            TypePath typePath,
-            Label[] start,
-            Label[] end,
-            int[] index,
-            String descriptor,
-            boolean visible) {
-        String annotationName = descriptor.
-                replaceFirst("L", "").
-                replaceAll(";", "").
-                replaceAll("/", ".");
+    public AnnotationVisitor visitLocalVariableAnnotation(int typeRef, TypePath typePath, Label[] start, Label[] end, int[] index, String descriptor, boolean visible) {
+        String annotationName = descriptor.replaceFirst("L", "").replaceAll(";", "").replaceAll("/", ".");
 
-//        if (Parallel.class.getName().equals(annotationName)) {
-        if (parallelAnnotationClass.equals(annotationName)) {
-            ParallelAnnotationProvider parallelAnnotation =
-                    new ParallelAnnotation(start[0].getOffset(), end[0].getOffset() - start[0].getOffset(), index[0]);
+        if (parallelAnnotationClassPath.equals(annotationName)) {
+            ParallelAnnotationProvider parallelAnnotation = new ParallelAnnotation(start[0].getOffset(), end[0].getOffset() - start[0].getOffset(), index[0]);
             parallelAnnotations.add(parallelAnnotation);
         }
 

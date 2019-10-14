@@ -93,12 +93,14 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
     }
 
-
-    /* A singleton is used because we don't need to support all the logic of loading the desired class
-       bytecode and instantiating the helper classes for the ASM library. Therefore, we use the singleton to call
-       ASMClassVisitor::getParallelAnnotations which will handle everything in the right module.
-       We can't have ASMClassVisitor::getParallelAnnotations be a static method because we dynamically load
-       the class and the interface does not allow it.
+    /*
+     * A singleton is used because we don't need to support all the logic of loading
+     * the desired class bytecode and instantiating the helper classes for the ASM
+     * library. Therefore, we use the singleton to call
+     * ASMClassVisitor::getParallelAnnotations which will handle everything in the
+     * right module. We can't have ASMClassVisitor::getParallelAnnotations be a
+     * static method because we dynamically load the class and the interface does
+     * not allow it.
      */
     private static ASMClassVisitorProvider asmClassVisitorProvider;
     static {
