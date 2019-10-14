@@ -92,3 +92,52 @@ $ cat tornado-features.json
     }
 }
 ```
+
+## Task-Schedule API augmented with profile calls
+
+TornadoVM Task-Schedules have a set of methods to query profile metrics such as kernel time, data transfers and compilation time. 
+
+```java
+public interface ProfileInterface {
+
+    long getTotalTime();
+
+    long getCompileTime();
+
+    long getTornadoCompilerTime();
+
+    long getDriverInstallTime();
+
+    long getDataTransfersTime();
+
+    long getWriteTime();
+
+    long getReadTime();
+
+    long getDeviceWriteTime();
+
+    long getDeviceKernelTime();
+
+    long getDeviceReadTime();
+
+    String getProfileLog();
+}
+```
+
+Example:
+
+```java
+ TaskSchedule schedule = new TaskSchedule("s0")
+                .streamIn(a, b)
+                .task("t0", Sample::methodToRun, a, b, c)
+                .streamOut(c);
+
+// Query copy-in time (from Host to Device)
+long copyInTime = schedule.getDeviceWriteTime();
+long copyOutTime = schedule.getDeviceReadTime();
+long kernelTime = schedule.getDeviceKernelTime();
+long compilationTime = schedule.getCompileTime();
+```
+
+
+
