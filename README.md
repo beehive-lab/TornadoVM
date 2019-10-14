@@ -4,6 +4,7 @@
 heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, GPUs (NVIDIA and AMD), Intel integrated GPUs, and Intel FPGAs. 
 
 ### Releases
+  * TornadoVM 0.4  - 14/10/2019 : See [CHANGELOG](CHANGELOG.md)
   * TornadoVM 0.3  - 22/07/2019 : See [CHANGELOG](CHANGELOG.md)
   * TornadoVM 0.2  - 25/02/2019 : See [CHANGELOG](CHANGELOG.md)
   * Tornado 0.1.0  - 07/09/2018 : See [CHANGELOG](CHANGELOG.md)
