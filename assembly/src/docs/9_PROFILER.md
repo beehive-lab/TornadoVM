@@ -56,12 +56,12 @@ When the task-schedule is executed multiple times, timers related to compilation
 
 ### Print timers at the end of the execution
 
-The option `-Dtornado.log.profiler=True` prints a full report only when the method `ts.getProfileLog` is called.
+The options `-Dtornado.profiler=True -Dtornado.log.profiler=True` print a full report only when the method `ts.getProfileLog` is called.
 
 
 ### Save profiler into a file
 
-Use the option `-Dtornado.profiler.save=True`.  This option is set to `False` by default.
+Use the option `-Dtornado.profiler=True -Dtornado.profiler.save=True`.  This option is set to `False` by default.
 
 
 ### Code feature extraction for the OpenCL generated code
