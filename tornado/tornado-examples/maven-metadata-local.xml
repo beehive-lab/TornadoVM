@@ -3,11 +3,12 @@
   <groupId>tornado</groupId>
   <artifactId>tornado-examples</artifactId>
   <versioning>
-    <release>0.3</release>
+    <release>0.4</release>
     <versions>
       <version>0.2</version>
       <version>0.3</version>
+      <version>0.4</version>
     </versions>
-    <lastUpdated>20190722101617</lastUpdated>
+    <lastUpdated>20191014094018</lastUpdated>
   </versioning>
 </metadata>
