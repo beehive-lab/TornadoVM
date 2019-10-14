@@ -1,6 +1,19 @@
 # TornadoVM Changelog
 This file summarizes the new features and major changes for each *TornadoVM* version. 
 
+## TornadoVM 0.4
+14/10/2019
+
+  * Profiler supported (See [PROFILER](assembly/src/docs/9_PROFILER.md))
+    * Use `-Dtornado.profiler=True` to enable profiler
+  * Feature extraction added (See [PROFILER](assembly/src/docs/9_PROFILER.md))
+    * Use `-Dtornado.feature.extraction=True` to enable code extraction features
+  * Mac OSx support (See [INSTALL](INSTALL.md))
+  * Automatic reductions composition (map-reduce) within the same task-schedule
+  * Bug related to a memory leak when running on GPUs solved
+  * Bug fixes and stability improvements
+
+
 ## TornadoVM 0.3
 22/07/2019
 
