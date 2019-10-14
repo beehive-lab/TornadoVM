@@ -6,6 +6,7 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
   * Profiler supported (See [PROFILER](assembly/src/docs/9_PROFILER.md))
     * Use `-Dtornado.profiler=True` to enable profiler
+    * Use `-Dtornado.profiler=True -Dtornado.profiler.save=True` to dump the profiler logs
   * Feature extraction added (See [PROFILER](assembly/src/docs/9_PROFILER.md))
     * Use `-Dtornado.feature.extraction=True` to enable code extraction features
   * Mac OSx support (See [INSTALL](INSTALL.md))
