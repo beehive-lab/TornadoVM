@@ -127,6 +127,7 @@ Currently, this project is maintained and updated by the following contributors:
 * [Juan Fumero](https://jjfumero.github.io/)
 * [Michail Papadimitriou](https://mikepapadim.github.io)
 * [Maria Xekalaki](https://github.com/mairooni)
+* [Athanasios Stratikopoulos](https://personalpages.manchester.ac.uk/staff/athanasios.stratikopoulos)
 * [Christos Kotselidis](https://www.kotselidis.net)
 
 ## License
