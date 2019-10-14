@@ -43,10 +43,12 @@ public class VectorAddInt {
 
         //@formatter:off
         TaskSchedule schedule = new TaskSchedule("s0")
+                .streamIn(a, b)
                 .task("t0", VectorAddInt::vectorAdd, a, b, c)
                 .streamOut(c);
         //@formatter:on
 
+        boolean wrongResult;
         for (int idx = 0; idx < 10; idx++) {
             // Parallel
             schedule.execute();
@@ -54,7 +56,7 @@ public class VectorAddInt {
             vectorAdd(a, b, result);
 
             // Check Result
-            boolean wrongResult = false;
+            wrongResult = false;
             for (int i = 0; i < c.length; i++) {
                 if (c[i] != 30) {
                     wrongResult = true;
@@ -64,8 +66,10 @@ public class VectorAddInt {
             if (wrongResult) {
                 System.out.println("Result is wrong");
             } else {
-                System.out.println("Result is correct");
+                System.out.println("Result is correct. Total time: " + schedule.getTotalTime() + " (ns)");
             }
         }
+
+        System.out.println(schedule.getProfileLog());
     }
 }

@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework:
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -57,9 +57,6 @@
     if(VERBOSE) {\
         printf("uk.ac.manchester.tornado.drivers.opencl> Returned: %s = %d\n",name,error_id); \
     } \
-    if(error_id != CL_SUCCESS){ \
-        return rc; \
-    }
 
 #define OPENCL_CHECK_ERROR(name,func,rc) if(VERBOSE) {\
         printf("uk.ac.manchester.tornado.drivers.opencl> Calling: %s\n",name); \

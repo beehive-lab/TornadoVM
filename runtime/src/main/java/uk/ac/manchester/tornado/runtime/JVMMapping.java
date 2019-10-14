@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -25,12 +25,15 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
+import java.util.List;
+
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.mm.OCLTupleRawEvent;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
@@ -69,9 +72,9 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long size, long offset) {
+    public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long size, long offset) {
         TornadoInternalError.unimplemented();
-        return -1;
+        return null;
     }
 
     @Override
@@ -101,9 +104,9 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public int streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
+    public List<Integer> streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
         TornadoInternalError.unimplemented();
-        return -1;
+        return null;
     }
 
     @Override
@@ -210,6 +213,26 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     @Override
     public long getMaxGlobalMemory() {
         return Runtime.getRuntime().maxMemory();
+    }
+
+    @Override
+    public long getDeviceLocalMemorySize() {
+        return 0;
+    }
+
+    @Override
+    public long[] getDeviceMaxWorkgroupDimensions() {
+        return new long[0];
+    }
+
+    @Override
+    public String getDeviceOpenCLCVersion() {
+        return "";
+    }
+
+    @Override
+    public Object getDeviceInfo() {
+        return null;
     }
 
 }

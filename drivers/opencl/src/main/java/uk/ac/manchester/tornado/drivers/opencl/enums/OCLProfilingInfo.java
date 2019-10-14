@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -31,7 +31,8 @@ public enum OCLProfilingInfo {
 	CL_PROFILING_COMMAND_QUEUED(0x1280),
 	CL_PROFILING_COMMAND_SUBMIT(0x1281),
 	CL_PROFILING_COMMAND_START(0x1282),
-	CL_PROFILING_COMMAND_END(0x1283);
+	CL_PROFILING_COMMAND_END(0x1283),
+    CL_PROFILING_COMMAND_COMPLETE(0x1284);
     // @formatter:on
 
     private final long value;

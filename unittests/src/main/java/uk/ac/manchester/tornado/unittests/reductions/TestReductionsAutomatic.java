@@ -111,12 +111,45 @@ public class TestReductionsAutomatic extends TornadoTestBase {
 
     @Test
     public void testIrregularSize03() {
-        int[] dataSizes = new int[50];
+        int[] dataSizes = new int[11];
         Random r = new Random();
         IntStream.range(0, dataSizes.length).forEach(idx -> dataSizes[idx] = r.nextInt(1000));
         for (Integer size : dataSizes) {
-            testIrregular(size);
+            if (size != 0) {
+                testIrregular(size);
+            }
         }
     }
 
+    public static void testDouble(double[] input, @Reduce double[] output) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            output[0] += input[i];
+        }
+    }
+
+    @Test
+    public void testIrregularSize04() {
+        final int size = 17;
+        double[] input = new double[size];
+        double[] result = new double[] { 0 };
+
+        IntStream.range(0, size).parallel().forEach(i -> {
+            input[i] = i;
+        });
+
+        //@formatter:off
+            TaskSchedule task = new TaskSchedule("s0")
+                .streamIn(input)
+                .task("t0", TestReductionsAutomatic::testDouble, input, result)
+                .streamOut(result);
+            //@formatter:on
+
+        task.execute();
+
+        double[] sequential = new double[1];
+        testDouble(input, sequential);
+
+        // Check result
+        assertEquals(sequential[0], result[0], 0.01);
+    }
 }

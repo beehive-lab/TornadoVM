@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -45,7 +45,6 @@ import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 
 public class TaskMetaData extends AbstractMetaData {
 
-    private String idTask;
     private Coarseness coarseness;
     private byte[] constantData;
     private int constantSize;
@@ -64,8 +63,8 @@ public class TaskMetaData extends AbstractMetaData {
     private boolean globalWorkDefined;
     private boolean canAssumeExact;
 
-    public TaskMetaData(ScheduleMetaData scheduleMetaData, String id, int numParameters) {
-        super(scheduleMetaData.getId() + "." + id);
+    public TaskMetaData(ScheduleMetaData scheduleMetaData, String taskID, int numParameters) {
+        super(scheduleMetaData.getId() + "." + taskID);
         this.scheduleMetaData = scheduleMetaData;
         this.globalSize = 0;
         this.constantSize = 0;
@@ -75,7 +74,6 @@ public class TaskMetaData extends AbstractMetaData {
         profiles = new HashMap<>();
         argumentsAccess = new Access[numParameters];
         Arrays.fill(argumentsAccess, Access.NONE);
-        this.idTask = scheduleMetaData.getId() + "." + id;
 
         inspectLocalWork();
         inspectGlobalWork();
@@ -391,7 +389,7 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     public void printThreadDims() {
-        System.out.printf("task info: %s\n", idTask);
+        System.out.printf("task info: %s\n", getId());
         System.out.printf("\tplatform          : %s\n", getDevice().getPlatformName());
         System.out.printf("\tdevice            : %s\n", getDevice().getDescription());
         System.out.printf("\tdims              : %s\n", domain == null ? "0" : Integer.toString(domain.getDepth()));

@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework:
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -43,7 +43,7 @@
 #endif
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLCommandQueue
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    clReleaseCommandQueue
  * Signature: (J)V
  */
@@ -55,7 +55,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQu
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLCommandQueue
+ * Class:     uk_ac_manchester_tornado_drivers_OCLCommandQueue
  * Method:    clGetCommandQueueInfo
  * Signature: (JI[B)V
  */
@@ -79,7 +79,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQu
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLCommandQueue
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    clSetCommandQueueProperty
  * Signature: (JJZ)V
  */
@@ -95,7 +95,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQu
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLCommandQueue
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    clFlush
  * Signature: (J)V
  */
@@ -107,7 +107,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQu
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLCommandQueue
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    clFinish
  * Signature: (J)V
  */
@@ -119,7 +119,7 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQu
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLCommandQueue
+ * Class:     uk_ac_manchester_tornado_drivers_OCLCommandQueue
  * Method:    clEnqueueNDRangeKernel
  * Signature: (JJI[J[J[J[J)J
  */
@@ -149,12 +149,13 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLCommandQ
 
     JNI_RELEASE_ARRAY(array1, global_work_offset);
     JNI_RELEASE_ARRAY(array2, global_work_size);
+    JNI_RELEASE_ARRAY(array3, local_work_size);
 
     return (jlong) kernelEvent;
 }
 
 /*
- * Class:     jacc_runtime_drivers_opencl_OCLCommandQueue
+ * Class:     uk_ac_manchester_tornado_drivers_opencl_OCLCommandQueue
  * Method:    clEnqueueTask
  * Signature: (JJ[J)J
  */

@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -42,7 +42,7 @@ public final class Tornado implements TornadoCI {
         tryLoadSettings();
     }
 
-    public static void setProperty(String key, String value) {
+    private static void setProperty(String key, String value) {
         settings.setProperty(key, value);
     }
 
@@ -54,7 +54,7 @@ public final class Tornado implements TornadoCI {
         return settings.getProperty(key, defaultValue);
     }
 
-    public static final String TORNADO_SDK_VARIABLE = "TORNADO_SDK";
+    private static final String TORNADO_SDK_VARIABLE = "TORNADO_SDK";
 
     public static final boolean VALIDATE_ARRAY_HEADERS = Boolean.parseBoolean(settings.getProperty("tornado.opencl.array.validate", "False"));
     public static final boolean TORNADO_LOOPS_REVERSE = Boolean.parseBoolean(settings.getProperty("tornado.loops.reverse", "True"));
@@ -64,7 +64,7 @@ public final class Tornado implements TornadoCI {
     public static final boolean FORCE_ALL_TO_GPU = Boolean.parseBoolean(settings.getProperty("tornado.opencl.forcegpu", "False"));
     public static final boolean USE_SYNC_FLUSH = Boolean.parseBoolean(settings.getProperty("tornado.opencl.syncflush", "False"));
     public static final boolean USE_VM_FLUSH = Boolean.parseBoolean(settings.getProperty("tornado.opencl.vmflush", "True"));
-    public static final int EVENT_WINDOW = Integer.parseInt(getProperty("tornado.opencl.eventwindow", "10240"));
+    public static final int EVENT_WINDOW = Integer.parseInt(getProperty("tornado.opencl.eventwindow", "1024"));
     public static final int MAX_WAIT_EVENTS = Integer.parseInt(getProperty("tornado.opencl.maxwaitevents", "32"));
     public static final boolean OPENCL_USE_RELATIVE_ADDRESSES = Boolean.parseBoolean(settings.getProperty("tornado.opencl.userelative", "False"));
     public static final boolean DUMP_COMPILED_METHODS = Boolean.parseBoolean(getProperty("tornado.compiled.dump", "False"));
@@ -98,16 +98,16 @@ public final class Tornado implements TornadoCI {
         final File localSettings = new File(filename);
         Properties loadProperties = new Properties();
         if (localSettings.exists()) {
-            try {
-                loadProperties.load(new FileInputStream(localSettings));
+            try (FileInputStream fileInputStream = new FileInputStream(localSettings)) {
+                loadProperties.load(fileInputStream);
             } catch (IOException e) {
                 warn("Unable to load settings from %s", localSettings.getAbsolutePath());
             }
         }
 
         /*
-         * merge local and system properties, note that command line arguments
-         * override saved properties
+         * merge local and system properties, note that command line arguments override
+         * saved properties
          */
         Set<String> localKeys = loadProperties.stringPropertyNames();
         Set<String> systemKeys = settings.stringPropertyNames();

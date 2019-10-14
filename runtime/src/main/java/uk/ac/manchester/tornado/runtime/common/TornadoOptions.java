@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -35,7 +35,18 @@ public class TornadoOptions {
 
     public static StringBuffer FPGA_BINARIES = System.getProperty("tornado.precompiled.binary", null) != null ? new StringBuffer(System.getProperty("tornado.precompiled.binary", null)) : null;
 
-    // Temporal option
+    // Temporal option for null checks
     public static final boolean IGNORE_NULL_CHECKS = Boolean.parseBoolean(System.getProperty("tornado.ignore.nullchecks", "False"));
 
+    public static boolean isProfilerEnabled() {
+        return Boolean.parseBoolean(System.getProperty("tornado.profiler", "False"));
+    }
+
+    public static boolean isSaveProfilerEnabled() {
+        return Boolean.parseBoolean(System.getProperty("tornado.profiler.save", "False"));
+    }
+
+    public static final boolean PROFILER_LOGS_ACCUMULATE = Boolean.parseBoolean(System.getProperty("tornado.log.profiler", "False"));
+
+    public final static boolean FEATURE_EXTRACTION = Boolean.parseBoolean(System.getProperty("tornado.feature.extraction", "False"));
 }

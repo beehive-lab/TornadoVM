@@ -29,6 +29,7 @@ import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsDoubles extends TornadoTestBase {
@@ -37,7 +38,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
     private static final int SIZE2 = 32;
 
-    public static void reductionAddDoubles(double[] input, @Reduce double[] result) {
+    private static void reductionAddDoubles(double[] input, @Reduce double[] result) {
         result[0] = 0.0f;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += input[i];
@@ -68,7 +69,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.01f);
     }
 
-    public static void reductionAddDoubles2(double[] input, @Reduce double[] result) {
+    private static void reductionAddDoubles2(double[] input, @Reduce double[] result) {
         double error = 2f;
         for (@Parallel int i = 0; i < input.length; i++) {
             double v = (error * input[i]);
@@ -76,7 +77,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         }
     }
 
-    public static void reductionAddDoubles3(double[] input, @Reduce double[] result) {
+    private static void reductionAddDoubles3(double[] input, @Reduce double[] result) {
         double error = 2f;
         for (@Parallel int i = 0; i < input.length; i++) {
             double v = (error * input[i]);
@@ -84,7 +85,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         }
     }
 
-    public static void reductionAddDoubles4(double[] inputA, double[] inputB, @Reduce double[] result) {
+    private static void reductionAddDoubles4(double[] inputA, double[] inputB, @Reduce double[] result) {
         double error = 2f;
         for (@Parallel int i = 0; i < inputA.length; i++) {
             result[0] += (error * (inputA[i] + inputB[i]));
@@ -141,7 +142,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
     }
 
     @Test
-    public void testSumdoubles4() {
+    public void testSumDoubles4() {
         double[] inputA = new double[SIZE];
         double[] inputB = new double[SIZE];
         double[] result = new double[1];
@@ -166,7 +167,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
-    public static void multiplyDoubles(double[] input, @Reduce double[] result) {
+    private static void multiplyDoubles(double[] input, @Reduce double[] result) {
         result[0] = 1.0f;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] *= input[i];
@@ -174,7 +175,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
     }
 
     @Test
-    public void testMultdoubles() {
+    public void testMultDoubles() {
         double[] input = new double[SIZE];
         double[] result = new double[1];
 
@@ -201,7 +202,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
-    public static void maxReductionAnnotation(double[] input, @Reduce double[] result) {
+    private static void maxReductionAnnotation(double[] input, @Reduce double[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] = Math.max(result[0], input[i]);
         }
@@ -234,7 +235,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.01);
     }
 
-    public static void minReductionAnnotation(double[] input, @Reduce double[] result) {
+    private static void minReductionAnnotation(double[] input, @Reduce double[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] = Math.min(result[0], input[i]);
         }
@@ -267,4 +268,124 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.01);
     }
 
+    private static void tornadoRemoveOutliers(final double[] values, @Reduce double[] result) {
+        final double sqrt = Math.sqrt(12.2321 / values.length);
+        final double min = result[0] - (2 * sqrt);
+        final double max = result[0] + (2 * sqrt);
+
+        // Reduce with filter
+        for (@Parallel int i = 0; i < values.length; i++) {
+            if (values[i] > max || values[i] < min) {
+                result[0]++;
+            }
+        }
+    }
+
+    @TornadoNotSupported
+    public void testRemoveOutliers() {
+        double[] input = new double[SIZE];
+
+        IntStream.range(0, SIZE).forEach(idx -> {
+            input[idx] = 2.0;
+        });
+
+        double[] result = new double[1];
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(input)
+                .task("t0", TestReductionsDoubles::tornadoRemoveOutliers, input, result)
+                .streamOut(result)
+                .execute();
+        //@formatter:on
+
+        double[] sequential = new double[1];
+        tornadoRemoveOutliers(input, sequential);
+
+        assertEquals(sequential[0], result[0], 0.01);
+    }
+
+    private static void prepareTornadoSumForMeanComputation(final double[] values, @Reduce double[] result) {
+        for (@Parallel int i = 0; i < values.length; i++) {
+            result[0] += values[i];
+        }
+    }
+
+    private static void computeMapWithReduceValue(final double[] values, @Reduce double[] result) {
+        for (@Parallel int i = 0; i < values.length; i++) {
+            values[i] = result[0] + i;
+        }
+    }
+
+    @Test
+    public void testMultipleReductions() {
+        double[] data = new double[SIZE];
+        double[] sequentialReduce = new double[1];
+        double[] sequentialResult = new double[data.length];
+
+        IntStream.range(0, data.length).forEach(idx -> {
+            data[idx] = Math.random();
+            sequentialResult[idx] = data[idx];
+        });
+
+        double[] reduceResult = new double[1];
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(data)
+                .task("t0", TestReductionsDoubles::prepareTornadoSumForMeanComputation, data, reduceResult)
+                .task("t1", TestReductionsDoubles::computeMapWithReduceValue, data, reduceResult)
+                .streamOut(reduceResult, data)
+                .execute();
+        //@formatter:on
+
+        prepareTornadoSumForMeanComputation(sequentialResult, sequentialReduce);
+        computeMapWithReduceValue(sequentialResult, sequentialReduce);
+
+        for (int i = 0; i < data.length; i++) {
+            assertEquals(sequentialResult[i], data[i], 0.01);
+        }
+    }
+
+    private static void computeStandardDeviation(final double[] values, final double[] sum, @Reduce final double[] std) {
+        double s = sum[0] / values.length;
+        for (@Parallel int i = 0; i < values.length; i++) {
+            std[0] += Math.pow(values[i] - s, 2);
+        }
+    }
+
+    @TornadoNotSupported
+    public void testMultipleReductions2() {
+
+        double[] data = new double[32];
+        double[] data2 = new double[32];
+
+        double[] resultSum = new double[1];
+        double[] resultStd = new double[1];
+
+        double[] sequentialSum = new double[1];
+        double[] sequentialStd = new double[1];
+        double[] sequentialData = new double[data.length];
+
+        IntStream.range(0, data.length).forEach(idx -> {
+            data[idx] = Math.random();
+            data[idx] = data2[idx];
+            sequentialData[idx] = data[idx];
+        });
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(data)
+                .task("t0", TestReductionsDoubles::prepareTornadoSumForMeanComputation, data, resultSum)
+                .task("t1", TestReductionsDoubles::computeStandardDeviation, data2, resultSum, resultStd)
+                .streamOut(resultSum, resultStd)
+                .execute();
+        //@formatter:on
+
+        prepareTornadoSumForMeanComputation(sequentialData, sequentialSum);
+        computeStandardDeviation(sequentialData, sequentialSum, sequentialStd);
+
+        assertEquals(sequentialStd[0], resultStd[0], 0.01);
+
+    }
 }

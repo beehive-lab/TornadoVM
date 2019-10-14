@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2019, APT Group, School of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,7 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 
-public class VectorAddIntBenchmarking {
+public class VectorAddIntMT {
 
     private static void vectorAdd(int[] a, int[] b, int[] c) {
         for (int i = 0; i < c.length; i++) {
@@ -87,7 +87,7 @@ public class VectorAddIntBenchmarking {
             ;
         } else {
             long startInit = System.nanoTime();
-            graph.task("t0", VectorAddIntBenchmarking::vectorAdd, a, b, result).streamOut(result);
+            graph.task("t0", VectorAddIntMT::vectorAdd, a, b, result).streamOut(result);
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }

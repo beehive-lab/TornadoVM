@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -41,6 +41,8 @@
  */
 package uk.ac.manchester.tornado.api.mm;
 
+import java.util.List;
+
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 
@@ -62,7 +64,7 @@ public interface ObjectBuffer {
 
     int enqueueRead(Object reference, long hostOffset, int[] events, boolean useDeps);
 
-    int enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps);
+    List<Integer> enqueueWrite(Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps);
 
     void allocate(Object reference, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException;
 

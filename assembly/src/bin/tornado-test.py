@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 #
 # This file is part of Tornado: A heterogeneous programming framework: 
@@ -66,6 +66,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.logic.TestLogic",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic",
 	"uk.ac.manchester.tornado.unittests.fields.TestFields",
+	"uk.ac.manchester.tornado.unittests.profiler.TestProfiler",
 	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
 ]
 

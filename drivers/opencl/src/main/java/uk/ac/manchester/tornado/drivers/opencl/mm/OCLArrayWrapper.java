@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -34,6 +34,8 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
 import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
 
 import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
@@ -61,9 +63,6 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     private boolean onDevice;
     private boolean isFinal;
     private long batchSize;
-
-    // TODO remove this
-    private final int[] internalEvents = new int[2];
 
     public OCLArrayWrapper(final OCLDeviceContext device, final JavaKind kind, long batchSize) {
         this(device, kind, false, batchSize);
@@ -170,9 +169,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         if (isFinal) {
             returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         } else {
-            internalEvents[1] = -1;
-            internalEvents[0] = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
-            returnEvent = internalEvents[0];
+            returnEvent = enqueueReadArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         }
         return useDeps ? returnEvent : -1;
     }
@@ -195,31 +192,33 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     abstract protected int enqueueReadArrayData(long bufferId, long offset, long bytes, T value, long hostOffset, int[] waitEvents);
 
     @Override
-    public int enqueueWrite(final Object value, long batchSize, long hostOffset, final int[] events, boolean useDeps) {
+    public List<Integer> enqueueWrite(final Object value, long batchSize, long hostOffset, final int[] events, boolean useDeps) {
         final T array = cast(value);
+        ArrayList<Integer> listEvents = new ArrayList<>();
+
         if (array == null) {
             throw new TornadoRuntimeException("ERROR] Data to be copied is NULL");
         }
-
         final int returnEvent;
         if (isFinal && onDevice) {
             returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
         } else {
-            int index = 0;
-            internalEvents[0] = -1;
-            if (!onDevice || !isFinal) {
-                if (batchSize <= 0) {
-                    internalEvents[0] = buildArrayHeader(Array.getLength(array)).enqueueWrite((useDeps) ? events : null);
-                } else {
-                    internalEvents[0] = buildArrayHeaderBatch(batchSize).enqueueWrite((useDeps) ? events : null);
-                }
-                index++;
+            // We first write the header for the object and then we write actual
+            // buffer
+            final int headerEvent;
+            if (batchSize <= 0) {
+                headerEvent = buildArrayHeader(Array.getLength(array)).enqueueWrite((useDeps) ? events : null);
+            } else {
+                headerEvent = buildArrayHeaderBatch(batchSize).enqueueWrite((useDeps) ? events : null);
             }
-            internalEvents[index] = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
+            returnEvent = enqueueWriteArrayData(toBuffer(), bufferOffset + arrayHeaderSize, bytesToAllocate - arrayHeaderSize, array, hostOffset, (useDeps) ? events : null);
             onDevice = true;
-            returnEvent = (index == 0) ? internalEvents[0] : deviceContext.enqueueMarker(internalEvents);
+            // returnEvent = deviceContext.enqueueMarker(internalEvents);
+
+            listEvents.add(headerEvent);
+            listEvents.add(returnEvent);
         }
-        return useDeps ? returnEvent : -1;
+        return useDeps ? listEvents : null;
     }
 
     /**

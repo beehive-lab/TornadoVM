@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -25,6 +25,8 @@
 package uk.ac.manchester.tornado.drivers.opencl;
 
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public abstract class OCLKernelScheduler {
@@ -34,7 +36,7 @@ public abstract class OCLKernelScheduler {
     protected double min;
     protected double max;
 
-    public OCLKernelScheduler(final OCLDeviceContext context) {
+    OCLKernelScheduler(final OCLDeviceContext context) {
         deviceContext = context;
     }
 
@@ -44,6 +46,18 @@ public abstract class OCLKernelScheduler {
 
     public int submit(final OCLKernel kernel, final TaskMetaData meta, long batchThreads) {
         return submit(kernel, meta, null, batchThreads);
+    }
+
+    private void updateProfiler(final int taskEvent, final TaskMetaData meta) {
+        if (TornadoOptions.isProfilerEnabled()) {
+            Event tornadoKernelEvent = deviceContext.resolveEvent(taskEvent);
+            tornadoKernelEvent.waitForEvents();
+            long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
+            // Register globalTime
+            meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getExecutionTime());
+            // Register the time for the task
+            meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getExecutionTime());
+        }
     }
 
     public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
@@ -67,11 +81,7 @@ public abstract class OCLKernelScheduler {
             taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
         }
 
-        if (deviceContext.printOCLKernelTime()) {
-            Event resolveEvent = deviceContext.resolveEvent(taskEvent);
-            System.out.println("[OCL Kernel Execution Time] " + resolveEvent.getExecutionTime() + " (ns)");
-        }
-
+        updateProfiler(taskEvent, meta);
         return taskEvent;
     }
 
