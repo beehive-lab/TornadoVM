@@ -45,7 +45,7 @@ public class OCLAddressLowering extends AddressLowering {
 
     @Override
     public AddressNode lower(ValueNode base, ValueNode offset) {
-        OCLMemoryBase memoryRegister = OCLArchitecture.hp;
+        OCLMemoryBase memoryRegister = OCLArchitecture.globalSpace;
         if (base instanceof FixedArrayNode) {
             memoryRegister = ((FixedArrayNode) base).getMemoryRegister();
         } else if (base instanceof LocalArrayNode) {

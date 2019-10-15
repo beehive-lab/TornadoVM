@@ -498,14 +498,14 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNode newArray) {
         LocalArrayNode localArrayNode;
         ConstantNode newLengthNode = ConstantNode.forInt(length, graph);
-        localArrayNode = graph.addWithoutUnique(new LocalArrayNode(OCLArchitecture.lp, newArray.elementType(), newLengthNode));
+        localArrayNode = graph.addWithoutUnique(new LocalArrayNode(OCLArchitecture.localSpace, newArray.elementType(), newLengthNode));
         newArray.replaceAtUsages(localArrayNode);
     }
 
     private void lowerPrivateNewArray(StructuredGraph graph, int size, NewArrayNode newArray) {
         FixedArrayNode fixedArrayNode;
         final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
-        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.hp, newArray.elementType(), newLengthNode));
+        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.globalSpace, newArray.elementType(), newLengthNode));
         newArray.replaceAtUsages(fixedArrayNode);
     }
 
