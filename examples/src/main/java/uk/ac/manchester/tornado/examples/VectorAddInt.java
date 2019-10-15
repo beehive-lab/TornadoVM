@@ -43,6 +43,7 @@ public class VectorAddInt {
 
         //@formatter:off
         TaskSchedule schedule = new TaskSchedule("s0")
+                .streamIn(a, b)
                 .task("t0", VectorAddInt::vectorAdd, a, b, c)
                 .streamOut(c);
         //@formatter:on
@@ -65,8 +66,10 @@ public class VectorAddInt {
             if (wrongResult) {
                 System.out.println("Result is wrong");
             } else {
-                System.out.println("Result is correct");
+                System.out.println("Result is correct. Total time: " + schedule.getTotalTime() + " (ns)");
             }
         }
+
+        System.out.println(schedule.getProfileLog());
     }
 }

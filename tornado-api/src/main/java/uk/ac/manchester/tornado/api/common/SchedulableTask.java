@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -42,6 +42,7 @@
 package uk.ac.manchester.tornado.api.common;
 
 import uk.ac.manchester.tornado.api.mm.TaskMetaDataInterface;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 
 public interface SchedulableTask {
 
@@ -62,5 +63,9 @@ public interface SchedulableTask {
     void setBatchThreads(long batchThreads);
 
     long getBatchThreads();
+
+    void attachProfiler(TornadoProfiler tornadoProfiler);
+
+    TornadoProfiler getProfiler();
 
 }

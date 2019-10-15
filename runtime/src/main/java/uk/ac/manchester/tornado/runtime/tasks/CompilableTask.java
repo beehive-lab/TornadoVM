@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -30,6 +30,7 @@ import java.util.Objects;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
@@ -44,6 +45,8 @@ public class CompilableTask implements SchedulableTask {
 
     private final Object[] resolvedArgs;
     private long batchNumThreads;
+
+    private TornadoProfiler profiler;
 
     public CompilableTask(ScheduleMetaData meta, String id, Method method, Object... args) {
         this.method = method;
@@ -130,6 +133,16 @@ public class CompilableTask implements SchedulableTask {
     @Override
     public long getBatchThreads() {
         return batchNumThreads;
+    }
+
+    @Override
+    public void attachProfiler(TornadoProfiler tornadoProfiler) {
+        this.profiler = tornadoProfiler;
+    }
+
+    @Override
+    public TornadoProfiler getProfiler() {
+        return this.profiler;
     }
 
 }

@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -425,7 +425,8 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return sb.toString();
     }
 
-    public Object toVerboseString() {
+    @Override
+    public Object getDeviceInfo() {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("id=0x%x, name=%s, type=%s, available=%s\n", id, getDeviceName(), getDeviceType().toString(), isDeviceAvailable()));
         sb.append(String.format("freq=%s, max compute units=%d\n", humanReadableFreq(getDeviceMaxClockFrequency()), getDeviceMaxComputeUnits()));
