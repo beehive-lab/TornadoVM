@@ -424,15 +424,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                     final int offset = arrayBaseOffset(elementKind);
                     final int size = offset + (elementKind.getByteCount() * length);
                     if (isAGPUSnippet) {
-                        LocalArrayNode localArrayNode;
-                        ConstantNode newLengthNode = ConstantNode.forInt(length, graph);
-                        localArrayNode = graph.addWithoutUnique(new LocalArrayNode(OCLArchitecture.lp, newArray.elementType(), newLengthNode));
-                        newArray.replaceAtUsages(localArrayNode);
+                        lowerLocalNewArray(graph, length, newArray);
                     } else {
-                        FixedArrayNode fixedArrayNode;
-                        final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
-                        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.hp, newArray.elementType(), newLengthNode));
-                        newArray.replaceAtUsages(fixedArrayNode);
+                        lowerPrivateNewArray(graph, size, newArray);
                     }
                     newArray.clearInputs();
                     GraphUtil.unlinkFixedNode(newArray);
@@ -482,13 +476,13 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         return ConstantNode.forConstant(base, metaAccess, graph);
     }
 
-    public AddressNode createArrayLocalAddress(StructuredGraph graph, ValueNode array, ValueNode index) {
+    private AddressNode createArrayLocalAddress(StructuredGraph graph, ValueNode array, ValueNode index) {
 
         return (AddressNode) graph.unique(new OffsetAddressNode(array, index));
 
     }
 
-    public boolean isLocalIdNode(StoreIndexedNode storeIndexed) {
+    private boolean isLocalIdNode(StoreIndexedNode storeIndexed) {
         Node nd = storeIndexed.inputs().first().asNode();
         if (nd instanceof MarkLocalArray) {
             return true;
@@ -497,12 +491,26 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
     }
 
-    public boolean isLocalIdNode(LoadIndexedNode loadIndexedNode) {
+    private boolean isLocalIdNode(LoadIndexedNode loadIndexedNode) {
         Node nd = loadIndexedNode.inputs().first().asNode();
         if (nd instanceof MarkLocalArray) {
             return true;
         } else {
             return false;
         }
+    }
+
+    private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNode newArray) {
+        LocalArrayNode localArrayNode;
+        ConstantNode newLengthNode = ConstantNode.forInt(length, graph);
+        localArrayNode = graph.addWithoutUnique(new LocalArrayNode(OCLArchitecture.lp, newArray.elementType(), newLengthNode));
+        newArray.replaceAtUsages(localArrayNode);
+    }
+
+    private void lowerPrivateNewArray(StructuredGraph graph, int size, NewArrayNode newArray) {
+        FixedArrayNode fixedArrayNode;
+        final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
+        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.hp, newArray.elementType(), newLengthNode));
+        newArray.replaceAtUsages(fixedArrayNode);
     }
 }

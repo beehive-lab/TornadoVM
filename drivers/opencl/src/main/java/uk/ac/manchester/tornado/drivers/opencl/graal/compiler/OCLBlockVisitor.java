@@ -116,8 +116,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             // Temporary fix to remove the end scope of the most outer loop
             // without changing the loop schemantics in IR level.
             if (Tornado.REMOVE_OUTER_LOOPS) {
-                if (loopCount == 1) { // TODO: Add a more generic fix for
-                } else {
+                if (loopCount > 1) { // TODO: Add a more generic fix for
                     asm.beginScope();
                 }
             } else {

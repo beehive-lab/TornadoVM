@@ -36,7 +36,7 @@ import org.graalvm.compiler.phases.BasePhase;
  * Then, it replaced the length with the optimal size.
  *
  */
-public class TornadoLocalMemoryOptimalAllocation extends BasePhase<TornadoHighTierContext> {
+public class TornadoLocalMemoryAllocation extends BasePhase<TornadoHighTierContext> {
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
@@ -73,6 +73,7 @@ public class TornadoLocalMemoryOptimalAllocation extends BasePhase<TornadoHighTi
         while (context.getMeta().getDomain().get(0).cardinality() % value != 0) {
             value--;
         }
-        return 256;
+        return 256; // TODO: In a second iteration we need to change this with the value. This due
+                    // to hardcoded behaviour of 256 LWG for reductions
     }
 }

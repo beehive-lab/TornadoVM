@@ -55,7 +55,7 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.ExceptionSuppression;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalMemoryOptimalAllocation;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLocalMemoryAllocation;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoShapeAnalysis;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 
@@ -123,7 +123,7 @@ public class OCLHighTier extends TornadoHighTier {
 
         appendPhase(new TornadoOpenCLIntrinsicsReplacements());
 
-        appendPhase(new TornadoLocalMemoryOptimalAllocation());
+        appendPhase(new TornadoLocalMemoryAllocation());
 
         appendPhase(new ExceptionSuppression());
 

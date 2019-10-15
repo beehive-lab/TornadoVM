@@ -118,24 +118,24 @@ public enum OCLKind implements PlatformKind {
         return ILLEGAL;
     }
 
-    public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(ResolvedJavaType type) {
-        if (type.toJavaName().toLowerCase() == "int") {
-            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY;
-        } else if (type.toJavaName().toLowerCase() == "double") {
-            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_DOUBLE_ARRAY;
-        } else if (type.toJavaName().toLowerCase() == "float") {
-            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_FLOAT_ARRAY;
-        } else if (type.toJavaName().toLowerCase() == "short") {
-            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_SHORT_ARRAY;
-        } else if (type.toJavaName().toLowerCase() == "long") {
-            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_LONG_ARRAY;
-        } else if (type.toJavaName().toLowerCase() == "char") {
-            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_CHAR_ARRAY;
-        } else if (type.toJavaName().toLowerCase() == "byte") {
-            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_BYTE_ARRAY;
-        }
-        return null;
-    }
+     public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(ResolvedJavaType type) {
+        if (type.toJavaName().toLowerCase().equalsIgnoreCase(JavaKind.Int.name())) {
+             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY;
+         } else if (type.toJavaName().toLowerCase().equalsIgnoreCase(JavaKind.Double.name())) {
+             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_DOUBLE_ARRAY;
+         } else if (type.toJavaName().toLowerCase().equalsIgnoreCase(JavaKind.Float.name())) {
+             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_FLOAT_ARRAY;
+         } else if (type.toJavaName().toLowerCase().equalsIgnoreCase(JavaKind.Short.name())) {
+             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_SHORT_ARRAY;
+         } else if (type.toJavaName().toLowerCase().equalsIgnoreCase( JavaKind.Long.name())) {
+              return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_LONG_ARRAY;
+         } else if (type.toJavaName().toLowerCase().equalsIgnoreCase(JavaKind.Char.name())) {
+             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_CHAR_ARRAY;
+         } else if (type.toJavaName().toLowerCase().equalsIgnoreCase(JavaKind.Byte.name())){
+             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_BYTE_ARRAY;
+         }
+     return null;
+     }
 
     public static OCLKind fromClass(Class<?> type) {
         if (!type.isArray()) {
