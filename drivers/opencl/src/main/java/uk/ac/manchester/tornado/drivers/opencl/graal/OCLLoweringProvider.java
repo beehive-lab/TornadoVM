@@ -256,12 +256,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         if (!(loadIndexed.stamp() instanceof OCLStamp)) {
             loadStamp = loadStamp(loadIndexed.stamp(), elementKind);
         }
-
-        if (isLocalIdNode(loadIndexed)) {
-            address = createArrayLocalAddress(graph, loadIndexed.array(), loadIndexed.index());
-        } else {
-            address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
-        }
+        address = createArrayAccess(graph, loadIndexed, elementKind);
         ReadNode memoryRead = graph.add(new ReadNode(address, NamedLocationIdentity.getArrayLocation(elementKind), loadStamp, BarrierType.NONE));
         loadIndexed.replaceAtUsages(memoryRead);
         graph.replaceFixed(loadIndexed, memoryRead);
@@ -512,5 +507,15 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
         fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.hp, newArray.elementType(), newLengthNode));
         newArray.replaceAtUsages(fixedArrayNode);
+    }
+
+    private AddressNode createArrayAccess(StructuredGraph graph, LoadIndexedNode loadIndexed, JavaKind elementKind) {
+        AddressNode address;
+        if (isLocalIdNode(loadIndexed)) {
+            address = createArrayLocalAddress(graph, loadIndexed.array(), loadIndexed.index());
+        } else {
+            address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
+        }
+        return address;
     }
 }
