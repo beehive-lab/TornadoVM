@@ -71,7 +71,6 @@ public class SaxpyMT {
         float[] x = new float[numElements];
         float[] y = new float[numElements];
         float[] b = new float[numElements];
-        float[] result = new float[numElements];
 
         for (int i = 0; i < numElements; i++) {
             x[i] = 450;
@@ -125,7 +124,6 @@ public class SaxpyMT {
                     graph.execute();
                     end = System.nanoTime();
             }
-            //saxpy(alpha, x, result, b);
             System.out.println("Total Time:" + (end - start) + " ns");
         }
         boolean wrongResult = false;
