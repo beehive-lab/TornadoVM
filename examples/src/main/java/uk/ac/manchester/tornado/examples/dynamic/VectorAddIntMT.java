@@ -119,7 +119,7 @@ public class VectorAddIntMT {
                     break;
                 case "multi":
                     start = System.nanoTime();
-                    vectorAddThreads(a, b, c, maxThreadCount, th);
+                    vectorAddThreads(a, b, result, maxThreadCount, th);
                     end = System.nanoTime();
                     break;
                 default:
