@@ -35,8 +35,14 @@ public class VectorAddIntMT {
         int balk = array1.length / threads;
         for (int i = 0; i < threads; i++) {
             final int current = i;
+            int lowBound = current * balk;
+            int upperBound = (current + 1) * balk;
+            if(current==threads-1) {
+                upperBound = array1.length;
+            }
+            int finalUpperBound = upperBound;
             th[i] = new Thread(() -> {
-                for (int k = current * balk; k < (current + 1) * balk; k++) {
+                for (int k = lowBound; k < finalUpperBound; k++) {
                     result[k] = array1[k] + array2[k];
                 }
             });

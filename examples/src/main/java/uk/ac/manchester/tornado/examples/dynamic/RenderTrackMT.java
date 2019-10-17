@@ -70,8 +70,14 @@ public class RenderTrackMT {
         int balk = input.Y() / threads;
         for (int i = 0; i < threads; i++) {
             final int current = i;
+            int lowBound = current * balk;
+            int upperBound = (current + 1) * balk;
+            if(current==threads-1) {
+                upperBound = input.Y();
+            }
+            int finalUpperBound = upperBound;
             th[i] = new Thread(() -> {
-                for (int k = current * balk; k < (current + 1) * balk; k++) {
+                for (int k = lowBound; k < finalUpperBound; k++) {
                     for (int x = 0; x < input.X(); x++) {
                         Byte3 pixel = null;
                         final int result = (int) input.get(x, k).getS2();

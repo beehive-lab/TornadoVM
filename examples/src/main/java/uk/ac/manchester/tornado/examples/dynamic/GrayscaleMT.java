@@ -54,7 +54,7 @@ public class GrayscaleMT {
         private BufferedImage image;
 
         private static final boolean PARALLEL_COMPUTATION = true;
-        private static final boolean MT = false;
+        private static final boolean MT = true;
 
         private static TaskSchedule tornadoTask;
 
@@ -183,12 +183,17 @@ public class GrayscaleMT {
             Thread[] th = new Thread[maxThreadCount];
 
             long start = System.nanoTime();
-
-            int balk = (w * s) / (maxThreadCount);
+            int balk = imageRGB.length / (maxThreadCount);
             for (int idx = 0; idx < maxThreadCount; idx++) {
                 final int current = idx;
+                int lowBound = current * balk;
+                int upperBound = (current + 1) * balk;
+                if(current==maxThreadCount-1) {
+                    upperBound = imageRGB.length;
+                }
+                int finalUpperBound = upperBound;
                 th[idx] = new Thread(() -> {
-                    for (int kc = current * balk; kc < (current + 1) * balk; kc++) {
+                    for (int kc = lowBound; kc < finalUpperBound; kc++) {
                         int rgb = imageRGB[kc];
                         int alpha = (rgb >> 24) & 0xff;
                         int red = (rgb >> 16) & 0xFF;
