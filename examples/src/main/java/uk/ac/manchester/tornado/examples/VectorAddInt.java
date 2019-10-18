@@ -25,9 +25,10 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 public class VectorAddInt {
 
     private static void vectorAdd(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
-        }
+        // for (@Parallel int i = 0; i < c.length; i++) {
+        // c[i] = a[i] + b[i];
+        // }
+        c[0] = a[0] + b[0];
     }
 
     public static void main(String[] args) {

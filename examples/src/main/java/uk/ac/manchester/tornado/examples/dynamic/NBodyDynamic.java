@@ -157,7 +157,8 @@ public class NBodyDynamic {
                     s0.execute();
                     end = System.nanoTime();
             }
-            System.out.println("Total time:  " + (end - start) + " ns" + "\n");
+            double milliseconds = (end - start) / 1000000.0;
+            System.out.println("Total time:  " + (end - start) + " ns  = " + milliseconds + "(ms) \n");
         }
 
         if (VALIDATION) {

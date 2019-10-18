@@ -646,7 +646,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public Object getDeviceInfo(){
+    public Object getDeviceInfo() {
         return device.getDeviceInfo();
     }
 
