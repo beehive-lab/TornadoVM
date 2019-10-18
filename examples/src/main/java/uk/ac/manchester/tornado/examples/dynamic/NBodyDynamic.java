@@ -129,7 +129,11 @@ public class NBodyDynamic {
         System.arraycopy(initialVelocity, 0, velocity, 0, initialVelocity.length);
 
         long startInit = System.nanoTime();
-        final TaskSchedule s0 = new TaskSchedule("s0").task("t0", NBodyDynamic::nBody, numBodies, positions, velocity, delT, espSqr, inputSize).streamOut(positions, velocity);
+        // @formatter:off
+        final TaskSchedule s0 = new TaskSchedule("s0")
+                .task("t0", NBodyDynamic::nBody, numBodies, positions, velocity, delT, espSqr, inputSize)
+                .streamOut(positions, velocity);
+        // @formatter:on
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
