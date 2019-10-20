@@ -27,6 +27,11 @@ import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 
+/**
+ * The multi-threaded execution of renderTrack for large input data sizes throws a Segmentation Fault.
+ * When running with large heap size this problem does not appear. For example:
+ * @param -Xms20G -Xmx20G
+ */
 public class RenderTrackMT {
 
     public static String executionType;
