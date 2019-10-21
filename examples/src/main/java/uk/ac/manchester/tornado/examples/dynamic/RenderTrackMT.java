@@ -36,7 +36,7 @@ public class RenderTrackMT {
 
     public static String executionType;
     public static int iterations;
-    public static boolean VALIDATION = false;
+    public static boolean VALIDATION = true;
 
     public static void renderTrack(ImageByte3 output, ImageFloat3 input) {
         for (@Parallel int y = 0; y < input.Y(); y++) {
@@ -123,6 +123,22 @@ public class RenderTrackMT {
         }
     }
 
+    public static boolean validate(ImageFloat3 input, ImageByte3 output) {
+        boolean validation = true;
+        ImageByte3 validationOutput = new ImageByte3(output.X(), output.Y());
+
+        renderTrack(validationOutput, input);
+
+        for (int i = 0; i < validationOutput.Y(); i++) {
+            for (int j = 0; j < validationOutput.X(); j++) {
+                if ( (validationOutput.get(i,j).getX() != output.get(i,j).getX()) || (validationOutput.get(i,j).getY() != output.get(i,j).getY()) || (validationOutput.get(i,j).getZ() != output.get(i,j).getZ()) ) {
+                    return false;
+                }
+            }
+        }
+        return validation;
+    }
+
     public static void main(String[] args) throws InterruptedException {
 
         if (args.length < 3) {
@@ -191,6 +207,14 @@ public class RenderTrackMT {
                     end = System.nanoTime();
             }
             System.out.println("Total time:  " + (end - start) + " ns" + " \n");
+        }
+
+        if (VALIDATION) {
+            if (validate(input, output)) {
+                System.out.println("Validation: " + "SUCCESS " + "\n");
+            } else {
+                System.out.println("Validation: " + "FAIL " + "\n");
+            }
         }
 
     }
