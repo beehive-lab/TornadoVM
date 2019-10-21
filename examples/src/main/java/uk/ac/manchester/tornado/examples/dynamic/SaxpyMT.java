@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,35 +15,34 @@
  * limitations under the License.
  * 
  */
-package uk.ac.manchester.tornado.examples.dynamic;
 
-import java.util.Arrays;
+package uk.ac.manchester.tornado.examples.dynamic;
 
 import uk.ac.manchester.tornado.api.Policy;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
-public class VectorAddIntMT {
+public class SaxpyMT {
 
-    private static void vectorAdd(int[] a, int[] b, int[] c) {
-        for (@Parallel int i = 0; i < c.length; i++) {
-            c[i] = a[i] + b[i];
+    public static void saxpy(float alpha, float[] x, float[] y, float[] b) {
+        for (@Parallel int i = 0; i < y.length; i++) {
+            y[i] = alpha * x[i] + b[i];
         }
     }
 
-    private static void vectorAddThreads(int[] array1, int[] array2, int[] result, int threads, Thread[] th) throws InterruptedException {
-        int balk = array1.length / threads;
+    public static void saxpyThreads(float alpha, float[] x, float[] y, float[] b, int threads, Thread[] th) throws InterruptedException {
+        int balk = y.length / threads;
         for (int i = 0; i < threads; i++) {
             final int current = i;
             int lowBound = current * balk;
             int upperBound = (current + 1) * balk;
             if(current==threads-1) {
-                upperBound = array1.length;
+                upperBound = y.length;
             }
             int finalUpperBound = upperBound;
             th[i] = new Thread(() -> {
                 for (int k = lowBound; k < finalUpperBound; k++) {
-                    result[k] = array1[k] + array2[k];
+                    y[k] = alpha * x[k] + b[k];
                 }
             });
         }
@@ -55,53 +54,44 @@ public class VectorAddIntMT {
         }
     }
 
-    public static boolean validate(int size, int[] seq, int[] par) {
-        boolean validation = true;
-        for (int i = 0; i < size; i++) {
-            if (seq[i] != 30 || par[i] != 30) {
-                validation = false;
-                break;
-            }
-        }
-        return validation;
-    }
-
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
 
         if (args.length < 3) {
-            System.out.println("Usage: <size> <mode:performance|end|sequential|multi> <iterations>");
+            System.out.println("Usage: <elements> <mode:performance|end|sequential> <iterations>");
             System.exit(-1);
         }
 
-        int size = Integer.parseInt(args[0]);
+        int numElements = Integer.parseInt(args[0]);
         String executionType = args[1];
         int iterations = Integer.parseInt(args[2]);
-
-        int maxThreadCount = Runtime.getRuntime().availableProcessors();
-        Thread[] th = new Thread[maxThreadCount];
-
-        int[] a = new int[size];
-        int[] b = new int[size];
-        int[] c = new int[size];
-        int[] result = new int[size];
+        TaskSchedule graph;
         long start,end;
+        float alpha = 2f;
 
-        Arrays.fill(a, 10);
-        Arrays.fill(b, 20);
+        float[] x = new float[numElements];
+        float[] y = new float[numElements];
+        float[] b = new float[numElements];
 
-        TaskSchedule graph = new TaskSchedule("s0");
+        for (int i = 0; i < numElements; i++) {
+            x[i] = 450;
+            y[i] = 0;
+            b[i] = 20;
+        }
+
+        graph = new TaskSchedule("s0");
         if (executionType.equals("multi") || executionType.equals("sequential")) {
             ;
         } else {
             long startInit = System.nanoTime();
-            graph.task("t0", VectorAddIntMT::vectorAdd, a, b, result).streamOut(result);
+            graph.task("t0", SaxpyMT::saxpy, alpha, x, y, b).streamOut(y);
             long stopInit = System.nanoTime();
             System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
         }
 
-        System.out.println("Version running: " + executionType + " ! ");
-        for (int i = 0; i < iterations; i++) {
-            System.gc();
+        int maxSystemThreads = Runtime.getRuntime().availableProcessors();
+        Thread[] threads = new Thread[maxSystemThreads];
+        System.out.println("Number of threads: " + maxSystemThreads);
+        for (int idx = 0; idx < iterations; idx++) {
             switch (executionType) {
                 case "performance":
                     start = System.nanoTime();
@@ -114,12 +104,19 @@ public class VectorAddIntMT {
                     end = System.nanoTime();
                     break;
                 case "sequential":
+                    System.gc();
                     start = System.nanoTime();
+                    saxpy(alpha, x, y, b);
                     end = System.nanoTime();
                     break;
                 case "multi":
+                    System.gc();
                     start = System.nanoTime();
-                    vectorAddThreads(a, b, result, maxThreadCount, th);
+                    try {
+                        saxpyThreads(alpha, x, y, b, maxSystemThreads, threads);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                     end = System.nanoTime();
                     break;
                 default:
@@ -127,14 +124,19 @@ public class VectorAddIntMT {
                     graph.execute();
                     end = System.nanoTime();
             }
-            System.out.println("Total time:  " + (end - start) + " ns" + " \n");
+            System.out.println("Total Time:" + (end - start) + " ns");
         }
-
-        vectorAdd(a, b, c);
-        if (validate(c.length, c, result)) {
-            System.out.println("Result is correct");
+        boolean wrongResult = false;
+        for (int i = 0; i < y.length; i++) {
+            if (Math.abs(y[i] - (alpha * x[i] + b[i])) > 0.01) {
+                wrongResult = true;
+                break;
+            }
+        }
+        if (!wrongResult) {
+            System.out.println("Test success");
         } else {
-            System.out.println("Result is false");
+            System.out.println("Result is wrong");
         }
     }
 }

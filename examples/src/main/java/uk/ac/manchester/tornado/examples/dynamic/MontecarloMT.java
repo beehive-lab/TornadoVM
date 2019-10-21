@@ -55,12 +55,17 @@ public class MontecarloMT {
     }
 
     public static void computeMontecarloThreads(float[] output, final int iterations, int threads, Thread[] th) throws InterruptedException {
-        int n = output.length;
         int balk = output.length / threads;
         for (int i = 0; i < threads; i++) {
             final int current = i;
+            int lowBound = current * balk;
+            int upperBound = (current + 1) * balk;
+            if(current==threads-1) {
+                upperBound = output.length;
+            }
+            int finalUpperBound = upperBound;
             th[i] = new Thread(() -> {
-                for (int k = current * balk; k < (current + 1) * balk; k++) {
+                for (int k = lowBound; k < finalUpperBound; k++) {
                     long seed = k;
                     // generate a pseudo random number (you do need it twice)
                     seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
