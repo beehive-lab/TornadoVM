@@ -26,7 +26,6 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import org.graalvm.compiler.core.common.LIRKind;
@@ -48,8 +47,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryO
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary.TestZeroExpression;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.LoadStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreAtomicAddFloatStmt;
@@ -297,7 +296,7 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     public void emitLoad(AllocatableValue result, OCLAddressCast cast, MemoryAccess address) {
         trace("emitLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
-        if (cast.getMemorySpace().name().equals(OCLAssemblerConstants.GLOBAL_MEM_MODIFIER)) {
+        if (cast.getMemorySpace().name() == OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) {
             getGen().append(new LoadStmt(result, cast, address));
         } else {
             getGen().append(new LoadStmt(result, cast, address, address.getIndex()));

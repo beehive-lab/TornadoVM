@@ -119,19 +119,19 @@ public enum OCLKind implements PlatformKind {
     }
 
      public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(ResolvedJavaType type) {
-        if (type.toJavaName().toLowerCase().equalsIgnoreCase(JavaKind.Int.name())) {
+        if (type.getJavaKind() == JavaKind.Int) {
              return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY;
-         } else if (type.toJavaName().toLowerCase().equalsIgnoreCase(JavaKind.Double.name())) {
+         } else if (type.getJavaKind() == JavaKind.Double) {
              return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_DOUBLE_ARRAY;
-         } else if (type.toJavaName().toLowerCase().equalsIgnoreCase(JavaKind.Float.name())) {
+         } else if (type.getJavaKind() == JavaKind.Float) {
              return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_FLOAT_ARRAY;
-         } else if (type.toJavaName().toLowerCase().equalsIgnoreCase(JavaKind.Short.name())) {
+         } else if (type.getJavaKind() == JavaKind.Short) {
              return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_SHORT_ARRAY;
-         } else if (type.toJavaName().toLowerCase().equalsIgnoreCase( JavaKind.Long.name())) {
+         } else if (type.getJavaKind() == JavaKind.Long) {
               return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_LONG_ARRAY;
-         } else if (type.toJavaName().toLowerCase().equalsIgnoreCase(JavaKind.Char.name())) {
+         } else if (type.getJavaKind() == JavaKind.Char) {
              return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_CHAR_ARRAY;
-         } else if (type.toJavaName().toLowerCase().equalsIgnoreCase(JavaKind.Byte.name())){
+         } else if (type.getJavaKind() == JavaKind.Byte){
              return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_BYTE_ARRAY;
          }
      return null;

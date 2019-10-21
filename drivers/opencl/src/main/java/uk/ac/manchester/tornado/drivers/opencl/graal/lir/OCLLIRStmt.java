@@ -33,10 +33,10 @@ import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic;
-import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
+import uk.ac.manchester.tornado.drivers.opencl.graal.meta.OCLMemorySpace;
 
 public class OCLLIRStmt {
 
@@ -193,7 +193,7 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            if (this.cast.getMemorySpace().name().equals(OCLAssemblerConstants.LOCAL_MEM_MODIFIER)) {
+            if (this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL) {
                 emitIntegerBasedIndexCode(crb, asm);
             } else {
                 emitPointerBaseIndexCode(crb, asm);
@@ -338,7 +338,7 @@ public class OCLLIRStmt {
         @Override
         public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.indent();
-            if (this.cast.getMemorySpace().name().equals(OCLAssemblerConstants.LOCAL_MEM_MODIFIER)) {
+            if (this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL) {
                 emitIntegerStore(crb, asm);
             } else {
                 emitNormalCode(crb, asm);
