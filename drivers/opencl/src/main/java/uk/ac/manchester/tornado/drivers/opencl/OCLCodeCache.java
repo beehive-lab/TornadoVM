@@ -337,8 +337,12 @@ public class OCLCodeCache {
             if(deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
                 compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
                 linkCommand = composeXilinxHLSLinkCommand(entryPoint);
-            } else
-                compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
+            } else if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Intel(R) Corporation")) {
+                 compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
+            } else {
+                // Should not reach here
+                throw new TornadoRuntimeException("FPGA vendor not supported.");
+            }
             commandRename = new String[] { BASH, FPGA_CLEANUP_SCRIPT, deviceContext.getPlatformContext().getPlatform().getVendor() };
 
             Path path = Paths.get(FPGA_BIN_LOCATION);
@@ -346,8 +350,9 @@ public class OCLCodeCache {
                 return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
             } else {
                 callOSforCompilation(compilationCommand, commandRename);
-                if(deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx"))
+                if(deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
                     callOSforCompilation(linkCommand, null);
+                }
             }
             return installEntryPointForBinaryForFPGAs(resolveBitstreamDirectory(), LOOKUP_BUFFER_KERNEL_NAME);
         } else {
