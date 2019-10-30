@@ -27,6 +27,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.AccessIndexedNode;
 
@@ -57,7 +58,7 @@ public class VectorLoadNode extends AccessIndexedNode {
      *            the instruction producing the index
      */
     public VectorLoadNode(OCLKind kind, ValueNode array, ValueNode index) {
-        super(TYPE, OCLStampFactory.getStampFor(kind), array, index, JavaKind.Illegal);
+        super(TYPE, OCLStampFactory.getStampFor(kind), array, index, null, JavaKind.Illegal);
         this.kind = kind;
     }
 
@@ -79,6 +80,6 @@ public class VectorLoadNode extends AccessIndexedNode {
 
     @Override
     public JavaKind elementKind() {
-        return ((OCLStamp) stamp()).getOCLKind().getElementKind().asJavaKind();
+        return ((OCLStamp) stamp(NodeView.DEFAULT)).getOCLKind().getElementKind().asJavaKind();
     }
 }

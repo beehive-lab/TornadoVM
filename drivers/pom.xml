@@ -14,26 +14,26 @@
     </modules>
 
     <dependencies>
-        <dependency>
-            <groupId>graal</groupId>
-            <artifactId>graal</artifactId>
-            <version>${graal.version}</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>graal</groupId>-->
+<!--            <artifactId>graal</artifactId>-->
+<!--            <version>${graal.version}</version>-->
+<!--        </dependency>-->
 
-        <dependency>
-            <groupId>jvmci</groupId>
-            <artifactId>api</artifactId>
-            <scope>system</scope>
-            <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-api.jar</systemPath>
-            <version>${jvmci.version}</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>jvmci</groupId>-->
+<!--            <artifactId>api</artifactId>-->
+<!--            <scope>system</scope>-->
+<!--            <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-api.jar</systemPath>-->
+<!--            <version>${jvmci.version}</version>-->
+<!--        </dependency>-->
 
-        <dependency>
-            <groupId>jvmci</groupId>
-            <artifactId>hotspot</artifactId>
-            <scope>system</scope>
-            <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
-            <version>${jvmci.version}</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>jvmci</groupId>-->
+<!--            <artifactId>hotspot</artifactId>-->
+<!--            <scope>system</scope>-->
+<!--            <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>-->
+<!--            <version>${jvmci.version}</version>-->
+<!--        </dependency>-->
     </dependencies>
 </project>

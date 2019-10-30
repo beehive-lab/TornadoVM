@@ -24,20 +24,17 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Graph.Mark;
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.LogicConstantNode;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.*;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.java.ArrayLengthNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
@@ -48,13 +45,19 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
+import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopUnroller;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeReplacement;
 
 public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext> {
+
+    private static final TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();
+    private static final DebugContext debugContext = DebugContext.create(getTornadoRuntime().getOptions(),
+            new GraalDebugHandlersFactory(snippetReflection));
 
     public static final int MAX_ITERATIONS = 10;
 
@@ -257,18 +260,18 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                         propagateParameters(graph, param, context.getArgs());
                     }
                 }
-                Debug.dump(Debug.INFO_LEVEL, graph, "After Phase Propagate Parameters");
+                debugContext.dump(DebugContext.INFO_LEVEL, graph, "After Phase Propagate Parameters");
             } else {
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                     assumeNonNull(graph, param);
                 }
-                Debug.dump(Debug.INFO_LEVEL, graph, "After Phase assume non null Parameters");
+                debugContext.dump(DebugContext.INFO_LEVEL, graph, "After Phase assume non null Parameters");
             }
 
             canonicalizer.apply(graph, context);
 
             graph.getNewNodes(mark).filter(PiNode.class).forEach(pi -> {
-                if (pi.stamp() instanceof ObjectStamp && pi.object().stamp() instanceof ObjectStamp) {
+                if (pi.stamp(NodeView.DEFAULT) instanceof ObjectStamp && pi.object().stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
                     pi.replaceAtUsages(pi.object());
 
                     pi.clearInputs();
@@ -277,7 +280,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 }
             });
 
-            Debug.dump(Debug.INFO_LEVEL, graph, "After Phase Pi Node Removal");
+            debugContext.dump(DebugContext.INFO_LEVEL, graph, "After Phase Pi Node Removal");
 
             if (!Tornado.ACCELERATOR_IS_FPGA) {
                 loopUnroller.execute(graph, context);
@@ -289,7 +292,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             deadCodeElimination.run(graph);
 
-            Debug.dump(Debug.INFO_LEVEL, graph, "After TaskSpecialisation iteration=" + iterations);
+            debugContext.dump(DebugContext.INFO_LEVEL, graph, "After TaskSpecialisation iteration=" + iterations);
 
             // boolean hasGuardingPiNodes =
             // graph.getNodes().filter(GuardingPiNode.class).isNotEmpty();

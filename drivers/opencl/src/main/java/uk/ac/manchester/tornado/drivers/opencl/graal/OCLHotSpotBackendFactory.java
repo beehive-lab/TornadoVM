@@ -32,6 +32,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plu
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
+import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins;
 import org.graalvm.compiler.replacements.classfile.ClassfileBytecodeProvider;
 
@@ -54,6 +55,8 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoConstantFieldProvi
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoForeignCallsProvider;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoReplacements;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
+
+import java.util.Collections;
 
 public class OCLHotSpotBackendFactory {
 
@@ -97,7 +100,8 @@ public class OCLHotSpotBackendFactory {
             Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider);
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
             plugins = createGraphBuilderPlugins(metaAccess, bytecodeProvider);
-            TornadoReplacements replacements = new TornadoReplacements(options, p, snippetReflection, bytecodeProvider, target);
+            GraalDebugHandlersFactory graalDebugHandlersFactory = new GraalDebugHandlersFactory(snippetReflection);
+            TornadoReplacements replacements = new TornadoReplacements(options, graalDebugHandlersFactory, p, snippetReflection, bytecodeProvider, target);
 
             replacements.setGraphBuilderPlugins(plugins);
 
@@ -105,7 +109,7 @@ public class OCLHotSpotBackendFactory {
 
             providers = new OCLProviders(metaAccess, codeCache, constantReflection, snippetReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, plugins, suites);
 
-            lowerer.initialize(options, new DummySnippetFactory(), providers, snippetReflection);
+            lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
         }
         try (InitTimer rt = timer("instantiate backend")) {
             OCLBackend backend = new OCLBackend(options, providers, target, codeCache, openclContext, deviceContext);
@@ -121,7 +125,8 @@ public class OCLHotSpotBackendFactory {
         OCLGraphBuilderPlugins.registerParameterPlugins(plugins);
         OCLGraphBuilderPlugins.registerNewInstancePlugins(plugins);
 
-        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, bytecodeProvider, true);
+//        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, bytecodeProvider, true);
+        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, bytecodeProvider, true, false);
         OCLGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
         return plugins;
     }

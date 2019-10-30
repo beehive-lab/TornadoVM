@@ -31,9 +31,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import org.graalvm.compiler.debug.Debug.Scope;
+//import org.graalvm.compiler.debug.Debug.Scope;
 import org.graalvm.compiler.debug.*;
-import org.graalvm.compiler.debug.internal.method.MethodMetricsRootScopeInfo;
+//import org.graalvm.compiler.debug.internal.method.MethodMetricsRootScopeInfo;
 import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
@@ -44,9 +44,12 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
 
+import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
+import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -54,8 +57,7 @@ import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Option
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoExecutor;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
 
 public class TornadoSketcher {
 
@@ -63,7 +65,11 @@ public class TornadoSketcher {
 
     private static final Map<ResolvedJavaMethod, Future<Sketch>> cache = new ConcurrentHashMap<>();
 
-    private static final DebugTimer Sketcher = Debug.timer("Sketcher");
+    private static final TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();
+    private static final DebugContext debugContext = DebugContext.create(getTornadoRuntime().getOptions(),
+            new GraalDebugHandlersFactory(snippetReflection));
+
+    private static final TimerKey Sketcher = DebugContext.timer("Sketcher");
 
     private static final OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
 
@@ -77,37 +83,39 @@ public class TornadoSketcher {
     }
 
     static void buildSketch(SketchRequest request) {
-        DebugEnvironment.ensureInitialized(getTornadoRuntime().getOptions());
+//        DebugEnvironment.ensureInitialized(getTornadoRuntime().getOptions());
+
+//        debugContext.scope(request.resolvedMethod);
 
         if (cache.containsKey(request.resolvedMethod)) {
             return;
         }
         cache.put(request.resolvedMethod, request);
-        try (Scope ignored = MethodMetricsRootScopeInfo.createRootScopeIfAbsent(request.resolvedMethod)) {
-            try (Scope ignored1 = Debug.scope("SketchCompiler")) {
+//        try (DebugContext.Scope ignored = MethodMetricsRootScopeInfo.createRootScopeIfAbsent(request.resolvedMethod)) {
+            try (DebugContext.Scope ignored1 = debugContext.scope("SketchCompiler")) {
                 request.result = buildSketch(request.meta, request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier);
             } catch (Throwable e) {
-                throw Debug.handle(e);
+                throw debugContext.handle(e);
             }
-        }
+//        }
     }
 
     private static Sketch buildSketch(TaskMetaData meta, ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier) {
         info("Building sketch of %s", resolvedMethod.getName());
         TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("sketch-" + resolvedMethod.getName(), sketchId.getAndIncrement());
-        Builder builder = new Builder(getTornadoRuntime().getOptions(), AllowAssumptions.YES);
+        Builder builder = new Builder(getTornadoRuntime().getOptions(), debugContext, AllowAssumptions.YES);
         builder.method(resolvedMethod);
         builder.compilationId(id);
         builder.name("sketch-" + resolvedMethod.getName());
         final StructuredGraph graph = builder.build();
 
-        try (Scope ignored = Debug.scope("Tornado-Sketcher", new DebugDumpScope("Tornado-Sketcher")); DebugCloseable ignored1 = Sketcher.start()) {
+        try (DebugContext.Scope ignored = debugContext.scope("Tornado-Sketcher", new DebugDumpScope("Tornado-Sketcher")); DebugCloseable ignored1 = Sketcher.start(debugContext)) {
             final TornadoSketchTierContext highTierContext = new TornadoSketchTierContext(providers, graphBuilderSuite, optimisticOpts, resolvedMethod, meta);
             if (graph.start().next() == null) {
                 graphBuilderSuite.apply(graph, highTierContext);
                 new DeadCodeEliminationPhase(Optional).apply(graph);
             } else {
-                Debug.dump(Debug.BASIC_LEVEL, graph, "initial state");
+                debugContext.dump(DebugContext.BASIC_LEVEL, graph, "initial state");
             }
 
             sketchTier.apply(graph, highTierContext);

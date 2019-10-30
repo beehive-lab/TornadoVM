@@ -36,13 +36,13 @@ import java.util.WeakHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import jdk.internal.vm.compiler.collections.EconomicMap;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
 import org.graalvm.compiler.lir.constopt.ConstantLoadOptimization;
 import org.graalvm.compiler.lir.phases.PostAllocationOptimizationStage;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -56,6 +56,22 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 
 public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeCI {
+
+    private static final OptionValues options;
+    static {
+        EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
+//        opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
+        opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
+
+        opts.put(GraalOptions.OmitHotExceptionStacktrace, false);
+
+        opts.put(GraalOptions.MatchExpressions, true);
+        opts.put(GraalOptions.RemoveNeverExecutedCode, false);
+        opts.put(ConstantLoadOptimization.Options.LIROptConstantLoadOptimization, false);
+        opts.put(PostAllocationOptimizationStage.Options.LIROptRedundantMoveElimination, false);
+
+        options = new OptionValues(opts);
+    }
 
     private static final Executor EXECUTOR = Executors.newCachedThreadPool();
     private static final TornadoCoreRuntime runtime = new TornadoCoreRuntime();
@@ -90,22 +106,9 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
 
     private static final int DEFAULT_DRIVER = 0;
 
-    private final OptionValues options;
-
-    public TornadoCoreRuntime() {
+    private TornadoCoreRuntime() {
         objectMappings = new WeakHashMap<>();
 
-        EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
-        opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
-
-        opts.put(GraalOptions.OmitHotExceptionStacktrace, false);
-
-        opts.put(GraalOptions.MatchExpressions, true);
-        opts.put(GraalOptions.RemoveNeverExecutedCode, false);
-        opts.put(ConstantLoadOptimization.Options.LIROptConstantLoadOptimization, false);
-        opts.put(PostAllocationOptimizationStage.Options.LIROptRedundantMoveElimination, false);
-
-        options = new OptionValues(opts);
         guarantee(!GraalOptions.OmitHotExceptionStacktrace.getValue(options), "error");
 
         if (!(JVMCI.getRuntime() instanceof HotSpotJVMCIRuntime)) {
@@ -143,7 +146,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
         return drivers;
     }
 
-    public OptionValues getOptions() {
+    public static OptionValues getOptions() {
         return options;
     }
 

@@ -64,4 +64,10 @@ public class OCLMoveFactory implements MoveFactory {
         return null;
     }
 
+    @Override
+    public LIRInstruction createStackLoad(AllocatableValue result, Constant input) {
+        unimplemented();
+        return null;
+    }
+
 }

@@ -263,7 +263,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-scm-plugin</artifactId>
-                <version>1.9.5</version>
+                <version>1.11.2</version>
                 <configuration>
                     <goals>install</goals>
                 </configuration>
@@ -271,16 +271,162 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
+<!--                <version>3.5.1</version>-->
+                <version>3.8.1</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>11</source>
+                    <target>11</target>
+<!--                    <source>8</source>-->
+<!--                    <target>8</target>-->
+<!--                    <release>8</release>-->
+                    <compilerArgs>
+                        <arg>--add-modules</arg>
+                        <arg>ALL-SYSTEM</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.ci/jdk.vm.ci.common=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.hotspot.meta=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.replacements.classfile=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.util=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.cfg=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.framemap=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED,jdk.internal.vm.compiler</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED,jdk.internal.vm.compiler</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.graph=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.graph.spi=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.gen=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodeinfo=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.calc=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.spi=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/jdk.internal.vm.compiler.collections=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.api.runtime=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.code=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.target=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.debug=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.hotspot=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.java=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.asm=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.phases=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.graphbuilderconf=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.options=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.tiers=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.util=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.printer=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.runtime=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.graph.iterators=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.java=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.bytecode=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.spi=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/jdk.internal.vm.compiler.word=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.api.replacements=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.replacements=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.phases=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.type=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.extended=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.loop=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.info=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.policy=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.walker=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.loop.phases=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.debug=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.util=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.virtual=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.constopt=ALL-UNNAMED </arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.ci/jdk.vm.ci.hotspot=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.asm=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.cfg=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.schedule=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.virtual.phases.ea=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.ssa=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.calc=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.gen=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.match=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory.address=ALL-UNNAMED</arg>
+                        <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.type=ALL-UNNAMED</arg>
+                    </compilerArgs>
                     <showDeprecation>true</showDeprecation>
                 </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.1.1</version>
                 <configuration>
                     <descriptors>
                         <descriptor>assembly.xml</descriptor>
@@ -290,7 +436,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.1</version>
+                <version>3.1.2</version>
                 <configuration>
                     <archive>
                         <manifest>
@@ -325,30 +471,30 @@
     </build>
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>graal</groupId>
-                <artifactId>graal</artifactId>
-                <version>${graal.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>graal</groupId>
-                <artifactId>truffle-api</artifactId>
-                <version>${graal.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>jvmci</groupId>
-                <artifactId>api</artifactId>
-                <scope>system</scope>
-                <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-api.jar</systemPath>
-                <version>${jvmci.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>jvmci</groupId>
-                <artifactId>hotspot</artifactId>
-                <scope>system</scope>
-                <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
-                <version>${jvmci.version}</version>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>graal</groupId>-->
+<!--                <artifactId>graal</artifactId>-->
+<!--                <version>${graal.version}</version>-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--                <groupId>graal</groupId>-->
+<!--                <artifactId>truffle-api</artifactId>-->
+<!--                <version>${graal.version}</version>-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--                <groupId>jvmci</groupId>-->
+<!--                <artifactId>api</artifactId>-->
+<!--                <scope>system</scope>-->
+<!--                <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-api.jar</systemPath>-->
+<!--                <version>${jvmci.version}</version>-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--                <groupId>jvmci</groupId>-->
+<!--                <artifactId>hotspot</artifactId>-->
+<!--                <scope>system</scope>-->
+<!--                <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>-->
+<!--                <version>${jvmci.version}</version>-->
+<!--            </dependency>-->
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
@@ -357,7 +503,8 @@
             <dependency>
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-core</artifactId>
-                <version>4.10.4</version>
+<!--                <version>4.10.4</version>-->
+                <version>8.2.0</version>
                 <type>jar</type>
             </dependency>
         </dependencies>
@@ -366,12 +513,12 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <version>2.5</version>
+            <version>2.12.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.5</version>
+            <version>2.12.1</version>
         </dependency>
     </dependencies>
     <modules>

@@ -1,11 +1,12 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
+import jdk.internal.vm.compiler.word.LocationIdentity;
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
 import org.graalvm.compiler.nodes.memory.FixedAccessNode;
@@ -43,7 +44,7 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
     public static final NodeClass<OCLWriteAtomicNode> TYPE = NodeClass.create(OCLWriteAtomicNode.class);
 
     public OCLWriteAtomicNode(AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType, ValueNode acc, Stamp accStamp, JavaKind elementKind,
-            ATOMIC_OPERATION operation) {
+                              ATOMIC_OPERATION operation) {
         super(TYPE, address, location, value, barrierType);
 
         this.address = address;
@@ -126,6 +127,6 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
 
     @Override
     public Stamp getAccessStamp() {
-        return value().stamp();
+        return value().stamp(NodeView.DEFAULT);
     }
 }

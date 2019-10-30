@@ -33,6 +33,7 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
@@ -92,7 +93,7 @@ public class OCLFPBinaryIntrinsicNode extends BinaryNode implements ArithmeticLI
 
     @Override
     public Stamp foldStamp(Stamp stampX, Stamp stampY) {
-        return stamp();
+        return stamp(NodeView.DEFAULT);
     }
 
     @Override

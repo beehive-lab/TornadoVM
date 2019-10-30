@@ -33,12 +33,6 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 public class TornadoSnippetReflectionProvider implements SnippetReflectionProvider {
 
     @Override
-    public <T> T asObject(Class<T> type, JavaConstant jc) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
     public Object asObject(ResolvedJavaType type, JavaConstant constant) {
         unimplemented();
         return null;
@@ -57,7 +51,19 @@ public class TornadoSnippetReflectionProvider implements SnippetReflectionProvid
     }
 
     @Override
+    public <T> T asObject(Class<T> type, JavaConstant constant) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
     public <T> T getInjectedNodeIntrinsicParameter(Class<T> type) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Class<?> originalClass(ResolvedJavaType type) {
         unimplemented();
         return null;
     }

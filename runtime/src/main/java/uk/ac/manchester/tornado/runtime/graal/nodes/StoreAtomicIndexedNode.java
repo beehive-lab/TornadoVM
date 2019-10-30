@@ -75,7 +75,10 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     }
 
     public StoreAtomicIndexedNode(ValueNode outputArray, ValueNode index, JavaKind elementKind, ValueNode value, ValueNode accumulator, ValueNode inputArray, ValueNode startNode) {
-        super(TYPE, StampFactory.forVoid(), outputArray, index, elementKind);
+        //TODO do we need bound checking for this kind of node?
+        // Null parameter for now. Check AccessIndexedNode.java in graal
+        // null means no check has been performed until now
+        super(TYPE, StampFactory.forVoid(), outputArray, index, null, elementKind);
         this.value = value;
         this.accumulator = accumulator;
         this.inputArray = inputArray;

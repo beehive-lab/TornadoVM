@@ -30,14 +30,7 @@ import java.util.Queue;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.BinaryOpLogicNode;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.StartNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.*;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
@@ -67,7 +60,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             ParameterNode param = graph.getParameter(i);
 
             // Only interested in objects
-            if (param != null && param.stamp() instanceof ObjectStamp) {
+            if (param != null && param.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
                 accesses[i] = processUsages(param, context.getMetaAccess());
             }
             debug("access: parameter %d -> %s\n", i, accesses[i]);
@@ -201,7 +194,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             Node currentNode = nf.remove();
             if (currentNode instanceof LoadIndexedNode) {
                 isRead = true;
-                if (((ValueNode) currentNode).stamp().javaType(metaAccess).isArray()) {
+                if (((ValueNode) currentNode).stamp(NodeView.DEFAULT).javaType(metaAccess).isArray()) {
                     nf.addAll(currentNode.usages().snapshot());
                 }
             } else if (currentNode instanceof StoreIndexedNode || currentNode instanceof StoreAtomicIndexedNode) {
@@ -212,7 +205,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
                 isStored = true;
             } else if (currentNode instanceof LoadFieldNode) {
                 LoadFieldNode loadField = (LoadFieldNode) currentNode;
-                if (loadField.stamp() instanceof ObjectStamp) {
+                if (loadField.stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
                     loadField.usages().forEach(nf::add);
                 }
                 isRead = true;

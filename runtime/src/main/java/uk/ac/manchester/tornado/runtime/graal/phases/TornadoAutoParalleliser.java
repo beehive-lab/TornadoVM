@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import jdk.internal.vm.compiler.collections.EconomicMap;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.loop.InductionVariable;
 import org.graalvm.compiler.loop.LoopEx;
@@ -37,7 +39,6 @@ import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.*;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.phases.BasePhase;
-import org.graalvm.util.EconomicMap;
 
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;

@@ -39,7 +39,7 @@ public class LoadIndexedVectorNode extends LoadIndexedNode {
     private final OCLKind oclKind;
 
     public LoadIndexedVectorNode(OCLKind oclKind, ValueNode array, ValueNode index, JavaKind elementKind) {
-        super(TYPE, OCLStampFactory.getStampFor(oclKind), array, index, elementKind);
+        super(TYPE, OCLStampFactory.getStampFor(oclKind), array, index, null, elementKind);
         this.oclKind = oclKind;
     }
 

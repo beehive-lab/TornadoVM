@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector;
 
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.AccessIndexedNode;
 
@@ -53,13 +54,13 @@ public final class VectorStoreNode extends AccessIndexedNode {
     }
 
     public VectorStoreNode(OCLKind vectorKind, ValueNode array, ValueNode index, ValueNode value) {
-        super(TYPE, OCLStampFactory.getStampFor(vectorKind), array, index, JavaKind.Illegal);
+        super(TYPE, OCLStampFactory.getStampFor(vectorKind), array, index, null, JavaKind.Illegal);
         this.value = value;
     }
 
     @Override
     public JavaKind elementKind() {
-        return ((OCLStamp) stamp()).getOCLKind().getElementKind().asJavaKind();
+        return ((OCLStamp) stamp(NodeView.DEFAULT)).getOCLKind().getElementKind().asJavaKind();
     }
 
 }

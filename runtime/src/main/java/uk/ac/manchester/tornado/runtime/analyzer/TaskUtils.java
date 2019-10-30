@@ -35,6 +35,7 @@ import java.lang.reflect.Method;
 
 import org.graalvm.compiler.bytecode.Bytecodes;
 
+
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -113,6 +114,7 @@ public class TaskUtils {
                 cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKESTATIC);
                 JavaMethod jm = cp.lookupMethod(bc[i + 2], Bytecodes.INVOKESTATIC);
                 try {
+//                    Method toJavaMethod = HotSpotJDKReflection.getClass().getDeclaredMethod("getMethod");
                     Method toJavaMethod = jm.getClass().getDeclaredMethod("toJava");
                     toJavaMethod.setAccessible(true);
                     Method m = (Method) toJavaMethod.invoke(jm);

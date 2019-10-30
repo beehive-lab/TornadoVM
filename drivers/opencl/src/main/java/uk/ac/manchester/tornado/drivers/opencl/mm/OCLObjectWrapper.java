@@ -107,7 +107,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
         int index = 0;
 
         // calculate object size
-        bytesToAllocate = (fields.length > 0) ? fields[0].offset() : fieldsOffset;
+        bytesToAllocate = (fields.length > 0) ? fields[0].getOffset() : fieldsOffset;
         for (HotSpotResolvedJavaField field : fields) {
             final Field reflectedField = getField(type, field.getName());
             final Class<?> type = reflectedField.getType();
@@ -120,9 +120,9 @@ public class OCLObjectWrapper implements ObjectBuffer {
             }
 
             if (DEBUG) {
-                trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.offset());
+                trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.getOffset());
             }
-            bytesToAllocate = field.offset();
+            bytesToAllocate = field.getOffset();
             bytesToAllocate += (field.getJavaKind().isObject()) ? BYTES_OBJECT_REFERENCE : field.getJavaKind().getByteCount();
 
             ObjectBuffer wrappedField = null;
@@ -268,7 +268,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
     private void sortFieldsByOffset() {
         for (int i = 0; i < fields.length; i++) {
             for (int j = 0; j < fields.length; j++) {
-                if (fields[i].offset() < fields[j].offset()) {
+                if (fields[i].getOffset() < fields[j].getOffset()) {
                     final HotSpotResolvedJavaField tmp = fields[j];
                     fields[j] = fields[i];
                     fields[i] = tmp;
@@ -284,15 +284,15 @@ public class OCLObjectWrapper implements ObjectBuffer {
         buffer.putLong(0);
 
         if (fields.length > 0) {
-            buffer.position(fields[0].offset());
+            buffer.position(fields[0].getOffset());
             for (int i = 0; i < fields.length; i++) {
                 HotSpotResolvedJavaField field = fields[i];
                 Field f = getField(type, field.getName());
                 if (DEBUG) {
-                    trace("writing field: name=%s, offset=%d", field.getName(), field.offset());
+                    trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
                 }
 
-                buffer.position(field.offset());
+                buffer.position(field.getOffset());
                 writeFieldToBuffer(i, f, object);
             }
         }
@@ -302,14 +302,14 @@ public class OCLObjectWrapper implements ObjectBuffer {
         buffer.rewind();
 
         if (fields.length > 0) {
-            buffer.position(fields[0].offset());
+            buffer.position(fields[0].getOffset());
 
             for (int i = 0; i < fields.length; i++) {
                 HotSpotResolvedJavaField field = fields[i];
                 Field f = getField(type, field.getName());
                 f.setAccessible(true);
                 if (DEBUG) {
-                    trace("reading field: name=%s, offset=%d", field.getName(), field.offset());
+                    trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
                 }
                 readFieldFromBuffer(i, f, object);
             }

@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.loop.CountedLoopInfo;
 import org.graalvm.compiler.loop.LoopEx;
@@ -37,13 +37,20 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 
 import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
-import static org.graalvm.compiler.debug.Debug.INFO_LEVEL;
-import static org.graalvm.compiler.loop.DefaultLoopPolicies.ExactFullUnrollMaxNodes;
-import static org.graalvm.compiler.loop.DefaultLoopPolicies.FullUnrollMaxNodes;
+import static org.graalvm.compiler.debug.DebugContext.INFO_LEVEL;
+import static org.graalvm.compiler.loop.DefaultLoopPolicies.Options.ExactFullUnrollMaxNodes;
+import static org.graalvm.compiler.loop.DefaultLoopPolicies.Options.FullUnrollMaxNodes;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
 public class TornadoLoopUnroller extends BasePhase<PhaseContext> {
+
+    private static final TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();
+    private static final DebugContext debugContext = DebugContext.create(getTornadoRuntime().getOptions(),
+            new GraalDebugHandlersFactory(snippetReflection));
 
     private final CanonicalizerPhase canonicalizer;
 
@@ -56,7 +63,7 @@ public class TornadoLoopUnroller extends BasePhase<PhaseContext> {
             return false;
         }
         CountedLoopInfo counted = loop.counted();
-        long maxTrips = counted.constantMaxTripCount();
+        long maxTrips = counted.constantMaxTripCount().asLong();
         int maxNodes = (counted.isExactTripCount() && counted.isConstantExactTripCount()) ? ExactFullUnrollMaxNodes.getValue(options) : FullUnrollMaxNodes.getValue(options);
         maxNodes = Math.min(maxNodes, MaximumDesiredSize.getValue(options) - loop.loopBegin().graph().getNodeCount());
         int size = Math.max(1, loop.size() - 1 - loop.loopBegin().phis().count());
@@ -98,9 +105,9 @@ public class TornadoLoopUnroller extends BasePhase<PhaseContext> {
                 dataCounted.detectedCountedLoops();
                 for (LoopEx loop : dataCounted.countedLoops()) {
                     if (shouldFullUnroll(graph.getOptions(), loop)) {
-                        Debug.log("FullUnroll %s", loop);
+                        debugContext.log("FullUnroll %s", loop);
                         LoopTransformations.fullUnroll(loop, context, canonicalizer);
-                        Debug.dump(INFO_LEVEL, graph, "After fullUnroll %s", loop);
+                        debugContext.dump(INFO_LEVEL, graph, "After fullUnroll %s", loop);
                         peeled = true;
                         break;
                     }

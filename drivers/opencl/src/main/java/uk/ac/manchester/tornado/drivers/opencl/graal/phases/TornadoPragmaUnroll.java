@@ -26,8 +26,8 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
 import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
-import static org.graalvm.compiler.loop.DefaultLoopPolicies.ExactFullUnrollMaxNodes;
-import static org.graalvm.compiler.loop.DefaultLoopPolicies.FullUnrollMaxNodes;
+import static org.graalvm.compiler.loop.DefaultLoopPolicies.Options.ExactFullUnrollMaxNodes;
+import static org.graalvm.compiler.loop.DefaultLoopPolicies.Options.FullUnrollMaxNodes;
 
 import java.util.List;
 
@@ -60,7 +60,7 @@ public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
             return false;
         }
         CountedLoopInfo counted = loop.counted();
-        long maxTrips = counted.constantMaxTripCount();
+        long maxTrips = counted.constantMaxTripCount().asLong();
         int maxNodes = (counted.isExactTripCount() && counted.isConstantExactTripCount()) ? ExactFullUnrollMaxNodes.getValue(options) : FullUnrollMaxNodes.getValue(options);
         maxNodes = Math.min(maxNodes, MaximumDesiredSize.getValue(options) - loop.loopBegin().graph().getNodeCount());
         int size = Math.max(1, loop.size() - 1 - loop.loopBegin().phis().count());

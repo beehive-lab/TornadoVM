@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -35,14 +36,14 @@ public class TornadoStampResolver extends BasePhase<TornadoSketchTierContext> {
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
 
         graph.getNodes().filter(PhiNode.class).forEach((PhiNode phi) -> {
-            Stamp stamp = phi.stamp();
+            Stamp stamp = phi.stamp(NodeView.DEFAULT);
             if (stamp.isEmpty()) {
 
                 for (ValueNode n : phi.values()) {
                     if (stamp.isEmpty()) {
-                        stamp = n.stamp();
+                        stamp = n.stamp(NodeView.DEFAULT);
                     } else {
-                        stamp = stamp.meet(n.stamp());
+                        stamp = stamp.meet(n.stamp(NodeView.DEFAULT));
                     }
                 }
                 phi.setStamp(stamp);

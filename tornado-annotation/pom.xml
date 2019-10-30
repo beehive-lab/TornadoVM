@@ -18,14 +18,14 @@
             <artifactId>tornado-runtime</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>jvmci</groupId>
-            <artifactId>api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jvmci</groupId>
-            <artifactId>hotspot</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>jvmci</groupId>-->
+<!--            <artifactId>api</artifactId>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>jvmci</groupId>-->
+<!--            <artifactId>hotspot</artifactId>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>

@@ -33,13 +33,8 @@ import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.spi.CodeGenProviders;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.lir.ConstantValue;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LabelRef;
+import org.graalvm.compiler.lir.*;
 import org.graalvm.compiler.lir.StandardOp.SaveRegistersOp;
-import org.graalvm.compiler.lir.SwitchStrategy;
-import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
 
@@ -72,6 +67,9 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLTernary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
+import java.util.BitSet;
+import java.util.List;
+
 public class OCLLIRGenerator extends LIRGenerator {
 
     private OCLBuiltinTool oclBuiltinTool;
@@ -84,31 +82,7 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Value emitAtomicReadAndAdd(Value address, Value delta) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Value emitAtomicReadAndWrite(Value address, Value newValue) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
     public Value emitCompress(Value pointer, CompressEncoding encoding, boolean nonNull) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Variable emitLogicCompareAndSwap(Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Variable emitStringIndexOf(Value sourcePointer, Value sourceCount, Value targetPointer, Value targetCount, int constantTargetCount) {
         unimplemented();
         return null;
     }
@@ -120,10 +94,31 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Value emitValueCompareAndSwap(Value address, Value expectedValue, Value newValue) {
+    public void emitConvertNullToZero(AllocatableValue result, Value input) {
+        unimplemented();
+    }
+
+    @Override
+    public void emitConvertZeroToNull(AllocatableValue result, Value input) {
+        unimplemented();
+    }
+
+//    @Override
+//    public void emitSpeculationFence() {
+//        unimplemented();
+//    }
+
+    @Override
+    public Variable emitStringIndexOf(Value sourcePointer, Value sourceCount, Value targetPointer, Value targetCount, int constantTargetCount) {
         unimplemented();
         return null;
     }
+
+//    @Override
+//    public Value emitValueCompareAndSwap(Value address, Value expectedValue, Value newValue) {
+//        unimplemented();
+//        return null;
+//    }
 
     @Override
     public LIRKind getLIRKind(Stamp stamp) {
@@ -183,16 +178,45 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable emitArrayEquals(JavaKind jk, Value value, Value value1, Value value2) {
+    public Variable emitByteSwap(Value value) {
         unimplemented();
         return null;
     }
 
     @Override
-    public Variable emitByteSwap(Value value) {
+    public Variable emitArrayCompareTo(JavaKind kind1, JavaKind kind2, Value array1, Value array2, Value length1, Value length2) {
         unimplemented();
         return null;
     }
+
+//    @Override
+//    public Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length, int constantLength, boolean directPointers) {
+//        unimplemented();
+//        return null;
+//    }
+
+    @Override
+    public Variable emitArrayEquals(JavaKind kind1, Value value, Value array1, Value array2) {
+        unimplemented();
+        return null;
+    }
+
+//    @Override
+//    public Variable emitArrayIndexOf(JavaKind kind, boolean findTwoConsecutive, Value sourcePointer, Value sourceCount, Value... searchValues) {
+//        unimplemented();
+//        return null;
+//    }
+//
+//    @Override
+//    public void emitStringLatin1Inflate(Value src, Value dst, Value len) {
+//        unimplemented();
+//    }
+//
+//    @Override
+//    public Variable emitStringUTF16Compress(Value src, Value dst, Value len) {
+//        unimplemented();
+//        return null;
+//    }
 
     @Override
     public void emitCompareBranch(PlatformKind pk, Value value, Value value1, Condition cndtn, boolean bln, LabelRef lr, LabelRef lr1, double d) {
@@ -279,6 +303,30 @@ public class OCLLIRGenerator extends LIRGenerator {
         if (!TornadoOptions.IGNORE_NULL_CHECKS) {
             unimplemented();
         }
+    }
+
+    @Override
+    public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitAtomicReadAndAdd(Value address, ValueKind<?> valueKind, Value delta) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitAtomicReadAndWrite(Value address, ValueKind<?> valueKind, Value newValue) {
+        unimplemented();
+        return null;
     }
 
     @Override

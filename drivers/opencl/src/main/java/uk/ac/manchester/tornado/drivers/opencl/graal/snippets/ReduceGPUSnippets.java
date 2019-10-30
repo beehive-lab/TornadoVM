@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.snippets;
 
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -631,8 +632,8 @@ public class ReduceGPUSnippets implements Snippets {
         @SuppressWarnings("unused")
         private final SnippetInfo reduceIntSnippetLocalMemory = snippet(ReduceGPUSnippets.class, "reduceIntAddLocalMemory");
 
-        public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
-            super(options, providers, snippetReflection, target);
+        public Templates(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
+            super(options, debugHandlersFactories ,providers, snippetReflection, target);
         }
 
         private SnippetInfo getSnippetFromOCLBinaryNode(OCLIntBinaryIntrinsicNode value) {
@@ -745,7 +746,8 @@ public class ReduceGPUSnippets implements Snippets {
                 args.add("value", extra);
             }
 
-            template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
+//            template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
+            template(storeAtomicIndexed, args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
         }
     }
 }

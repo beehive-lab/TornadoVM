@@ -40,6 +40,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
+import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 
 import jdk.vm.ci.meta.JavaKind;
@@ -252,7 +253,7 @@ public final class VectorPlugins {
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
                 // No need to set stamp as it is inferred from the stamp of the
                 // incoming value
-                StoreIndexedNode indexedStore = new StoreIndexedNode(array, index, elementKind, value);
+                StoreIndexedNode indexedStore = new StoreIndexedNode(array, index, null, null, elementKind, value);
                 b.append(b.append(indexedStore));
                 return true;
             }

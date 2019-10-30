@@ -25,50 +25,50 @@
  */
 package uk.ac.manchester.tornado.runtime.graal;
 
-import java.util.ArrayList;
-import java.util.List;
-import jdk.vm.ci.runtime.JVMCI;
-import org.graalvm.compiler.debug.*;
-import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.serviceprovider.GraalServices;
+//import java.util.ArrayList;
+//import java.util.List;
+//import jdk.vm.ci.runtime.JVMCI;
+//import org.graalvm.compiler.debug.*;
+//import org.graalvm.compiler.options.OptionValues;
+//import org.graalvm.compiler.serviceprovider.GraalServices;
 
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.*;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
+//import static org.graalvm.compiler.debug.GraalDebugConfig.Options.*;
+//import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
 public class TornadoDebugEnvironment {
 
-    public static GraalDebugConfig initialize(Object... capabilities) {
-        // Initialize JVMCI before loading class Debug
-        JVMCI.initialize();
-        if (!Debug.isEnabled()) {
-            return null;
-        }
-
-        List<DebugDumpHandler> dumpHandlers = new ArrayList<>();
-        List<DebugVerifyHandler> verifyHandlers = new ArrayList<>();
-        OptionValues options = getTornadoRuntime().getOptions();
-
-        GraalDebugConfig debugConfig = new GraalDebugConfig(options, Log.getValue(options), Count.getValue(options), TrackMemUse.getValue(options), Time.getValue(options), Dump.getValue(options),
-                Verify.getValue(options), MethodFilter.getValue(options), MethodMeter.getValue(options), TTY.out, dumpHandlers, verifyHandlers);
-
-        for (DebugConfigCustomizer customizer : GraalServices.load(DebugConfigCustomizer.class)) {
-            if (!customizer.getClass().getSimpleName().startsWith("Truffle")) {
-                customizer.customize(debugConfig);
-            }
-        }
-
-        Debug.setConfig(debugConfig);
-
-        if (capabilities != null) {
-            for (Object o : capabilities) {
-                for (DebugDumpHandler handler : debugConfig.dumpHandlers()) {
-                    handler.addCapability(o);
-                }
-            }
-        }
-
-        System.out.printf("DEBUG: %s %s %s\n", Debug.isEnabled(), Debug.isDumpEnabledForMethod(), Debug.currentScope());
-        return debugConfig;
-    }
+//    public static GraalDebugConfig initialize(Object... capabilities) {
+//        // Initialize JVMCI before loading class Debug
+//        JVMCI.initialize();
+//        if (!Debug.isEnabled()) {
+//            return null;
+//        }
+//
+//        List<DebugDumpHandler> dumpHandlers = new ArrayList<>();
+//        List<DebugVerifyHandler> verifyHandlers = new ArrayList<>();
+//        OptionValues options = getTornadoRuntime().getOptions();
+//
+//        GraalDebugConfig debugConfig = new GraalDebugConfig(options, Log.getValue(options), Count.getValue(options), TrackMemUse.getValue(options), Time.getValue(options), Dump.getValue(options),
+//                Verify.getValue(options), MethodFilter.getValue(options), MethodMeter.getValue(options), TTY.out, dumpHandlers, verifyHandlers);
+//
+//        for (DebugConfigCustomizer customizer : GraalServices.load(DebugConfigCustomizer.class)) {
+//            if (!customizer.getClass().getSimpleName().startsWith("Truffle")) {
+//                customizer.customize(debugConfig);
+//            }
+//        }
+//
+//        Debug.setConfig(debugConfig);
+//
+//        if (capabilities != null) {
+//            for (Object o : capabilities) {
+//                for (DebugDumpHandler handler : debugConfig.dumpHandlers()) {
+//                    handler.addCapability(o);
+//                }
+//            }
+//        }
+//
+//        System.out.printf("DEBUG: %s %s %s\n", Debug.isEnabled(), Debug.isDumpEnabledForMethod(), Debug.currentScope());
+//        return debugConfig;
+//    }
 
 }

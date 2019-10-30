@@ -38,11 +38,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 public class OCLAddressLowering extends AddressLowering {
 
     @Override
-    public AddressNode lower(ValueNode address) {
-        return lower(address, null);
-    }
-
-    @Override
     public AddressNode lower(ValueNode base, ValueNode offset) {
         OCLMemoryBase memoryRegister = OCLArchitecture.hp;
         if (base instanceof FixedArrayNode) {

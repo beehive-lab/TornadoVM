@@ -23,17 +23,16 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler.plugins;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_VECTORS;
-
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
-
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNode;
+
+import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_VECTORS;
 
 public class OCLVectorNodePlugin implements NodePlugin {
 
@@ -63,8 +62,7 @@ public class OCLVectorNodePlugin implements NodePlugin {
 
     private OCLKind resolveOCLKind(ResolvedJavaType type) {
         if (type instanceof HotSpotResolvedJavaType) {
-            final HotSpotResolvedJavaType resolvedType = (HotSpotResolvedJavaType) type;
-            return OCLKind.fromClass(resolvedType.mirror());
+            return OCLKind.fromResolvedJavaType(type);
         }
 
         return OCLKind.ILLEGAL;

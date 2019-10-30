@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.runtime.graal.nodes;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 
@@ -37,7 +38,7 @@ public class AtomicAccessNode extends FloatingNode {
     @Input(InputType.Association) protected ValueNode value;
 
     public AtomicAccessNode(ValueNode value) {
-        super(TYPE, value.stamp());
+        super(TYPE, value.stamp(NodeView.DEFAULT));
         assert stamp != null;
         this.value = value;
     }

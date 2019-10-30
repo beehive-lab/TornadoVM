@@ -148,6 +148,7 @@ def runSingleCommand(cmd, args):
 	out, err = p.communicate()
 	end = time.time()
 
+	print err
 	print out
 	print "Total Time (s): " + str(end-start)
 

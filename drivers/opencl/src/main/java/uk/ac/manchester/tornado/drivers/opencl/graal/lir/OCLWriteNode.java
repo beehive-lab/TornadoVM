@@ -23,11 +23,12 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
+import jdk.internal.vm.compiler.word.LocationIdentity;
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
 import org.graalvm.compiler.nodes.memory.LIRLowerableAccess;
@@ -75,7 +76,7 @@ public class OCLWriteNode extends AbstractWriteNode implements LIRLowerableAcces
 
     @Override
     public Stamp getAccessStamp() {
-        return value().stamp();
+        return value().stamp(NodeView.DEFAULT);
     }
 
 }

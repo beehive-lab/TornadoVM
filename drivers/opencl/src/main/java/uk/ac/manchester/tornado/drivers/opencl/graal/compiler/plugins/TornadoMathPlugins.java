@@ -28,7 +28,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryInt
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode.Operation.*;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MAX;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode.Operation.MIN;
-import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntTernaryIntrinsicNode.Operation.CLAMP;
+//import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntTernaryIntrinsicNode.Operation.CLAMP;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.ABS;
 
 import org.graalvm.compiler.nodes.ValueNode;
@@ -40,11 +40,9 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registratio
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.collections.math.TornadoMath;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPBinaryIntrinsicNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLFPUnaryIntrinsicNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntTernaryIntrinsicNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.*;
+//import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntTernaryIntrinsicNode;
+
 
 public class TornadoMathPlugins {
 
@@ -199,7 +197,13 @@ public class TornadoMathPlugins {
 
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y, ValueNode z) {
-                b.push(kind, b.append(OCLIntTernaryIntrinsicNode.create(x, y, z, CLAMP, kind)));
+//                b.push(kind, b.append(OCLIntTernaryIntrinsicNode.create(x, y, z, CLAMP, kind)));
+
+                System.out.println("\"CALLED CLAMP\" = " + "CALLED CLAMP");
+
+                ValueNode minZX = b.append(OCLIntBinaryIntrinsicNode.create(z, x, MIN, kind));
+                b.push(kind, minZX);
+                b.push(kind, b.append(OCLIntBinaryIntrinsicNode.create(y, minZX, MAX, kind)));
                 return true;
             }
 

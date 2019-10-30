@@ -23,7 +23,12 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
+import jdk.vm.ci.code.Register;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import uk.ac.manchester.tornado.runtime.common.*;
+
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
 
@@ -62,8 +67,14 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopCond
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopInitOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopPostOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
+
+    private static final TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();
+    private static final DebugContext debugContext = DebugContext.create(getTornadoRuntime().getOptions(),
+            new GraalDebugHandlersFactory(snippetReflection));
+
 
     protected LIR lir;
     private int currentBlockIndex;
@@ -74,7 +85,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     public OCLCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
             OCLCompilationResult compilationResult, OptionValues options) {
-        super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, compilationResult);
+        super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, debugContext, compilationResult, Register.None);
         nonInlinedMethods = new HashSet<>();
     }
 
@@ -259,7 +270,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             ((OCLAssembler) asm).emitLine("// BLOCK %d", block.getId());
         }
 
-        if (PrintLIRWithAssembly.getValue(getOptions())) {
+        if (Options.PrintLIRWithAssembly.getValue(getOptions())) {
             blockComment(String.format("block B%d %s", block.getId(), block.getLoop()));
         }
 
@@ -276,7 +287,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                     loops++;
                 continue;
             }
-            if (PrintLIRWithAssembly.getValue(getOptions())) {
+            if (Options.PrintLIRWithAssembly.getValue(getOptions())) {
                 blockComment(String.format("%d %s", op.id(), op));
             }
 

@@ -10,27 +10,45 @@
     <artifactId>tornado-runtime</artifactId>
     <name>tornado-runtime</name>
 
+<!--    <build>-->
+<!--        <plugins>-->
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-compiler-plugin</artifactId>-->
+<!--                &lt;!&ndash;                <version>3.5.1</version>&ndash;&gt;-->
+<!--                <version>3.8.1</version>-->
+<!--                <configuration>-->
+<!--                    &lt;!&ndash;                    <source>1.8</source>&ndash;&gt;-->
+<!--                    &lt;!&ndash;                    <target>1.8</target>&ndash;&gt;-->
+<!--                    <source>11</source>-->
+<!--                    <target>11</target>-->
+<!--                    <showDeprecation>true</showDeprecation>-->
+<!--                </configuration>-->
+<!--        </plugin>-->
+<!--        </plugins>-->
+<!--    </build>-->
+
     <dependencies>
 	     <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>tornado-api</artifactId>
         	<version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>graal</groupId>
-            <artifactId>graal</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>graal</groupId>
-            <artifactId>truffle-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jvmci</groupId>
-            <artifactId>api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jvmci</groupId>
-            <artifactId>hotspot</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>graal</groupId>-->
+<!--            <artifactId>graal</artifactId>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>graal</groupId>-->
+<!--            <artifactId>truffle-api</artifactId>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>jvmci</groupId>-->
+<!--            <artifactId>api</artifactId>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>jvmci</groupId>-->
+<!--            <artifactId>hotspot</artifactId>-->
+<!--        </dependency>-->
     </dependencies>
 </project>

@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jdk.internal.vm.compiler.collections.EconomicSet;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
@@ -62,7 +63,6 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
 import org.graalvm.compiler.phases.util.Providers;
-import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CompilationRequest;
@@ -193,12 +193,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     @Override
     public RegisterAllocationConfig newRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo) {
         return new RegisterAllocationConfig(registerConfig, allocationRestrictedTo);
-    }
-
-    @Override
-    public EconomicSet<Register> translateToCallerRegisters(EconomicSet<Register> calleeRegisters) {
-        unimplemented("Translate to caller registers method not implemented yet.");
-        return null;
     }
 
     private Method getLookupMethod() {
@@ -404,7 +398,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return deviceContext;
     }
 
-    @Override
+//    @Override
     protected OCLAssembler createAssembler(FrameMap frameMap) {
         return new OCLAssembler(target);
     }
@@ -412,6 +406,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     @Override
     public void emitCode(CompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
         emitCode((OCLCompilationResultBuilder) crb, lir, method);
+    }
+
+    @Override
+    public EconomicSet<Register> translateToCallerRegisters(EconomicSet<Register> calleeRegisters) {
+        unimplemented();
+        return null;
     }
 
     public void emitCode(OCLCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
@@ -613,28 +613,28 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return crb;
     }
 
-    @Override
+//    @Override
     public FrameMap newFrameMap(RegisterConfig registerConfig) {
         return new OCLFrameMap(getCodeCache(), registerConfig, this);
     }
 
-    @Override
+//    @Override
     public FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig) {
         RegisterConfig registerConfigNonNull = registerConfig == null ? getCodeCache().getRegisterConfig() : registerConfig;
         return new OCLFrameMapBuilder(newFrameMap(registerConfigNonNull), getCodeCache(), registerConfig);
     }
 
-    @Override
+//    @Override
     public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, StructuredGraph graph, Object stub) {
         return new OCLLIRGenerationResult(identifier, lir, frameMapBuilder, new CallingConvention(0, null, (AllocatableValue[]) null));
     }
 
-    @Override
+//    @Override
     public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenResult) {
         return new OCLLIRGenerator(getProviders(), lirGenResult);
     }
 
-    @Override
+//    @Override
     public NodeLIRBuilderTool newNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool lirGen) {
         return new OCLNodeLIRBuilder(graph, lirGen, new OCLNodeMatchRules(lirGen));
     }

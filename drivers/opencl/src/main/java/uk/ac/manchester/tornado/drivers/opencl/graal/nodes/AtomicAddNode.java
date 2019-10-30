@@ -40,7 +40,7 @@ public class AtomicAddNode extends AccessIndexedNode implements Lowerable {
     @Input ValueNode value;
 
     public AtomicAddNode(ValueNode array, ValueNode index, JavaKind elementKind, ValueNode value) {
-        super(TYPE, StampFactory.forVoid(), array, index, elementKind);
+        super(TYPE, StampFactory.forVoid(), array, index, null, elementKind);
         this.value = value;
     }
 
