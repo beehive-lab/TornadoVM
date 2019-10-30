@@ -82,7 +82,7 @@ public class OCLCodeCache {
     private final String INTEL_ALTERA_EMULATOR = "-march=emulator";
     private final String INTEL_NALLATECH_BOARD_NAME = "-board=p385a_sch_ax115";
     private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
-    private final String FPGA_CLEANUP_SCRIPT = "./bin/cleanFpga.sh";
+    private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
     private final String FPGA_TASKSCHEDULE = "s0.t0.";
     private boolean COMPILED_BUFFER_KERNEL = false;
 
