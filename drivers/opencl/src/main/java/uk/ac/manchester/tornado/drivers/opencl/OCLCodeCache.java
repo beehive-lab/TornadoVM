@@ -245,7 +245,7 @@ public class OCLCodeCache {
 
     }
 
-    public String[] composeIntelHLSCommand(String inputFile, String outputFile) {
+    private String[] composeIntelHLSCommand(String inputFile, String outputFile) {
         StringJoiner bufferCommand = new StringJoiner(" ");
 
         bufferCommand.add(INTEL_ALTERA_OPENCL_COMPILER);
@@ -270,7 +270,7 @@ public class OCLCodeCache {
         return bufferCommand.toString().split(" ");
     }
 
-    public String[] composeXilinxHLSCompileCommand(String inputFile, String kernelName) {
+    private String[] composeXilinxHLSCompileCommand(String inputFile, String kernelName) {
         StringJoiner bufferCommand = new StringJoiner(" ");
 
         bufferCommand.add("xocc");
@@ -288,7 +288,7 @@ public class OCLCodeCache {
         return bufferCommand.toString().split(" ");
     }
 
-    public String[] composeXilinxHLSLinkCommand(String kernelName) {
+    private String[] composeXilinxHLSLinkCommand(String kernelName) {
         StringJoiner bufferCommand = new StringJoiner(" ");
 
         bufferCommand.add("xocc");
