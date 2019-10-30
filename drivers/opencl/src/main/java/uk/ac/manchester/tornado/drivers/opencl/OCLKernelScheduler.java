@@ -76,7 +76,7 @@ public abstract class OCLKernelScheduler {
 
         final int taskEvent;
         if (meta.shouldUseDefaultOpenCLScheduling()) {
-            if(deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
+            if(deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) { //TODO Isolate this check in the Xilinx backend as the driver throws error if localWorkSize is null
                 taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
             } else {
                 taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);

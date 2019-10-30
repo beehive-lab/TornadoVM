@@ -330,7 +330,7 @@ public class OCLCodeCache {
         }
     }
 
-    public OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) {
+    public OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) { //TODO Override this method for each FPGA backend
         String[] compilationCommand;
         final String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
         final String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
