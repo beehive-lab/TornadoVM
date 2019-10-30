@@ -318,6 +318,18 @@ public class OCLCodeCache {
         }
     }
 
+    private boolean shouldGenerateXilinxBitstream(File fpgaBitStreamFile, OCLDeviceContext deviceContext) {
+        if (!RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {
+            if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
     public OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) {
         String[] compilationCommand;
         final String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
@@ -368,15 +380,13 @@ public class OCLCodeCache {
                     System.out.println(sourceCode);
                 }
 
-                if (!RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {
-                    if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
-                        compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
-                        callOSforCompilation(compilationCommand, null);
-                    }
+                if(shouldGenerateXilinxBitstream(fpgaBitStreamFile, deviceContext)) {
+                    compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
+                    callOSforCompilation(compilationCommand, null);
                 }
-            } else
-                // Should not reach here
+            } else {
                 return null;
+            }
         }
         return null;
     }
