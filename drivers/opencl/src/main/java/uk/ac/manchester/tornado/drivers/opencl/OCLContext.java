@@ -197,24 +197,31 @@ public class OCLContext extends TornadoLogger {
         return program;
     }
 
+    private OCLProgram lookupFPGAOpenCLProgram(long deviceId) {
+        // search if program has been already loaded
+        int programsLength = programs.size();
+        for (int i=0; i<programsLength; i++) {
+            OCLProgram fetchedProgram = programs.get(i);
+            int numDevices = fetchedProgram.getNumDevices();
+            long[] devices = fetchedProgram.getDevices();
+            for (int j=0; j<numDevices; j++) {
+                if (devices[j] == deviceId) {
+                    return programs.get(i);
+               }
+            }
+        }
+        return null;
+    }
+
     public OCLProgram createProgramWithBinary(long deviceId, byte[] binary, long[] lengths, OCLDeviceContext deviceContext) {
         OCLProgram program = null;
 
         try {
-            // search if program has been already loaded
-            int programsLength = programs.size();
-            for (int i=0; i<programsLength; i++) {
-                OCLProgram fetchedProgram = programs.get(i);
-                int numDevices = fetchedProgram.getNumDevices();
-                long[] devices = fetchedProgram.getDevices();
-                for (int j=0; j<numDevices; j++) {
-                    if (devices[j] == deviceId) {
-                        return programs.get(i);
-                    }
-                }
+            program = lookupFPGAOpenCLProgram(deviceId);
+            if (program == null) {
+                program = new OCLProgram(clCreateProgramWithBinary(id, deviceId, binary, lengths), deviceContext);
+                programs.add(program);
             }
-            program = new OCLProgram(clCreateProgramWithBinary(id, deviceId, binary, lengths), deviceContext);
-            programs.add(program);
         } catch (OCLException e) {
             error(e.getMessage());
         }
