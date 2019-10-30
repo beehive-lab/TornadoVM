@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -41,6 +41,8 @@
  */
 package uk.ac.manchester.tornado.api.common;
 
+import java.util.List;
+
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
@@ -50,14 +52,14 @@ import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 public interface TornadoDevice {
 
     /**
-     * It allocates an object in the pre-defined heap of the target device. It
-     * also ensure that there is enough space for the input object.
-     * 
+     * It allocates an object in the pre-defined heap of the target device. It also
+     * ensure that there is enough space for the input object.
+     *
      * @param object
      *            to be allocated
      * @param batchSize
-     *            size of the object to be allocated. If this value is <= 0,
-     *            then it allocates the sizeof(object).
+     *            size of the object to be allocated. If this value is <= 0, then it
+     *            allocates the sizeof(object).
      * @param state
      *            state of the object in the target device
      *            {@link TornadoDeviceObjectState}
@@ -67,7 +69,7 @@ public interface TornadoDevice {
 
     /**
      * It allocates and copy in the content of the object to the target device.
-     * 
+     *
      * @param object
      *            to be allocated
      * @param objectState
@@ -76,24 +78,24 @@ public interface TornadoDevice {
      * @param events
      *            list of pending events (dependencies)
      * @param batchSize
-     *            size of the object to be allocated. If this value is <= 0,
-     *            then it allocates the sizeof(object).
+     *            size of the object to be allocated. If this value is <= 0, then it
+     *            allocates the sizeof(object).
      * @param hostOffset
      *            offset in bytes for the copy within the host input array (or
      *            object)
      * @return an event ID
      */
-    int ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long hostOffset);
+    List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long hostOffset);
 
     /**
      * It always copies in the input data (object) from the host to the target
      * device.
-     * 
+     *
      * @param object
      *            to be copied
      * @param batchSize
-     *            size of the object to be allocated. If this value is <= 0,
-     *            then it allocates the sizeof(object).
+     *            size of the object to be allocated. If this value is <= 0, then it
+     *            allocates the sizeof(object).
      * @param hostOffset
      *            offset in bytes for the copy within the host input array (or
      *            object)
@@ -104,12 +106,12 @@ public interface TornadoDevice {
      *            list of previous events
      * @return and event ID
      */
-    int streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
+    List<Integer> streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events);
 
     /**
      * It copies a device buffer from the target device to the host. Copies are
      * non-blocking
-     * 
+     *
      * @param object
      *            to be copied.
      * @param hostOffset
@@ -127,7 +129,7 @@ public interface TornadoDevice {
     /**
      * It copies a device buffer from the target device to the host. Copies are
      * blocking between the device and the host.
-     * 
+     *
      * @param object
      *            to be copied.
      * @param hostOffset
@@ -144,7 +146,7 @@ public interface TornadoDevice {
 
     /**
      * It resolves an pending event.
-     * 
+     *
      * @param event
      *            ID
      * @return an object of type {@link Event}
@@ -195,6 +197,13 @@ public interface TornadoDevice {
 
     long getMaxGlobalMemory();
 
+    long getDeviceLocalMemorySize();
+
+    long[] getDeviceMaxWorkgroupDimensions();
+
     boolean isDistibutedMemory();
 
+    String getDeviceOpenCLCVersion();
+
+    Object getDeviceInfo();
 }

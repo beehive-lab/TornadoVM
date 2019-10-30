@@ -1,6 +1,6 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -31,17 +31,7 @@ import java.util.Objects;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedNode;
-import org.graalvm.compiler.nodes.IfNode;
-import org.graalvm.compiler.nodes.InvokeNode;
-import org.graalvm.compiler.nodes.LogicNode;
-import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.StartNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.*;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
@@ -56,18 +46,36 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
 /**
  * Code analysis class for reductions in TornadoVM
- *
  */
 public class ReduceCodeAnalysis {
 
     // @formatter:off
     public enum REDUCE_OPERATION {
-        ADD, 
-        MUL, 
-        MIN, 
+        ADD,
+        MUL,
+        MIN,
         MAX
     }
     // @formatter:on
+
+    private static boolean checkIfVarIsInLoop(StoreIndexedNode store) {
+        Node node = store.predecessor();
+        boolean hasPred = true;
+        while (hasPred) {
+            if (node instanceof LoopBeginNode) {
+                return true;
+            } else if (node instanceof StartNode) {
+                hasPred = false;
+            } else if (node instanceof MergeNode) {
+                MergeNode merge = (MergeNode) node;
+                EndNode endNode = merge.forwardEndAt(0);
+                node = endNode.predecessor();
+            } else {
+                node = node.predecessor();
+            }
+        }
+        return false;
+    }
 
     public static ArrayList<REDUCE_OPERATION> getReduceOperation(StructuredGraph graph, ArrayList<Integer> reduceIndices) {
         ArrayList<ValueNode> reduceOperation = new ArrayList<>();
@@ -81,8 +89,12 @@ public class ReduceCodeAnalysis {
             NodeIterable<Node> usages = parameterNode.usages();
             // Get Input-Range for the reduction loop
             for (Node node : usages) {
+
                 if (node instanceof StoreIndexedNode) {
                     StoreIndexedNode store = (StoreIndexedNode) node;
+                    if (!checkIfVarIsInLoop(store)) {
+                        continue;
+                    }
                     if (store.value() instanceof BinaryNode || store.value() instanceof BinaryArithmeticNode) {
                         ValueNode value = store.value();
                         reduceOperation.add(value);
@@ -119,10 +131,28 @@ public class ReduceCodeAnalysis {
         return operations;
     }
 
+    private static ArrayLengthNode inspectArrayLengthNode(Node aux) {
+        ArrayLengthNode arrayLengthNode = null;
+        aux = aux.successors().first();
+        if (aux instanceof IfNode) {
+            IfNode ifNode = (IfNode) aux;
+            LogicNode condition = ifNode.condition();
+            if (condition instanceof IntegerLessThanNode) {
+                IntegerLessThanNode iln = (IntegerLessThanNode) condition;
+                if (iln.getX() instanceof ArrayLengthNode) {
+                    arrayLengthNode = (ArrayLengthNode) iln.getX();
+                } else if (iln.getY() instanceof ArrayLengthNode) {
+                    arrayLengthNode = (ArrayLengthNode) iln.getY();
+                }
+            }
+        }
+        return arrayLengthNode;
+    }
+
     /**
-     * A method can apply multiple reduction variables. We return a list of all
-     * its loop bounds.
-     * 
+     * A method can apply multiple reduction variables. We return a list of all its
+     * loop bounds.
+     *
      * @param graph
      *            Graal-IR graph to analyze
      * @param reduceIndexes
@@ -141,14 +171,21 @@ public class ReduceCodeAnalysis {
             NodeIterable<Node> usages = parameterNode.usages();
 
             // Get Input-Range for the reduction loop
-            for (Node node : usages)
+            for (Node node : usages) {
                 if (node instanceof StoreIndexedNode) {
                     Node aux = node;
                     LoopBeginNode loopBegin = null;
                     ArrayLengthNode arrayLength = null;
 
                     while (!(aux instanceof LoopBeginNode)) {
-                        aux = aux.predecessor();
+                        // Move reference to predecessor (bottom-up traversal)
+                        if (aux instanceof MergeNode) {
+                            MergeNode mergeNode = (MergeNode) aux;
+                            aux = mergeNode.forwardEndAt(0);
+                        } else {
+                            aux = aux.predecessor();
+                        }
+
                         if (aux instanceof StartNode) {
                             break;
                         } else if (aux instanceof LoopBeginNode) {
@@ -158,17 +195,25 @@ public class ReduceCodeAnalysis {
                         }
                     }
 
+                    if (arrayLength == null) {
+                        // XXX: Patch to support PE when using ArrayLength at the beginning of the
+                        // method.
+                        // TODO: Find a better way to PE loop bounds
+                        arrayLength = inspectArrayLengthNode(aux);
+                    }
+
                     if (loopBegin != null) {
                         loopBound.add(Objects.requireNonNull(arrayLength).array());
                     }
                 }
+            }
         }
         return loopBound;
     }
 
     /**
      * It obtains a list of reduce parameters for each task.
-     * 
+     *
      * @return {@link MetaReduceTasks}
      */
     public static MetaReduceCodeAnalysis analysisTaskSchedule(ArrayList<TaskPackage> taskPackages) {
@@ -203,9 +248,7 @@ public class ReduceCodeAnalysis {
             ArrayList<ValueNode> loopBound = findLoopUpperBoundNode(graph, reduceIndices);
             for (int i = 0; i < graph.method().getParameters().length; i++) {
                 for (ValueNode valueNode : loopBound) {
-
                     int position = !graph.method().isStatic() ? i + 1 : i;
-
                     if (valueNode.equals(graph.getParameter(position))) {
                         Object object = taskPackages.get(taskIndex).getTaskParameters()[i + 1];
                         inputSize = Array.getLength(object);
@@ -222,9 +265,8 @@ public class ReduceCodeAnalysis {
     }
 
     /**
-     * It performs a loop-range substitution for the lower part of the
-     * reduction.
-     * 
+     * It performs a loop-range substitution for the lower part of the reduction.
+     *
      * @param graph
      *            Input Graal {@link StructuredGraph}
      * @param lowValue

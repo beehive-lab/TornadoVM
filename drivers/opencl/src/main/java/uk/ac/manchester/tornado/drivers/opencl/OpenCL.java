@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -226,7 +226,7 @@ public class OpenCL {
             final int platformIndex = Integer.parseInt(args[0]);
             final int deviceIndex = Integer.parseInt(args[1]);
             OCLDevice device = getDevice(platformIndex, deviceIndex);
-            System.out.println(device.toVerboseString());
+            System.out.println(device.getDeviceInfo());
         } else {
             System.out.println("usage: OpenCL <platform> <device>");
         }

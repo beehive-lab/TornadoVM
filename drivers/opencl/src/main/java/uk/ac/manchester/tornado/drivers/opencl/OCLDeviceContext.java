@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -29,7 +29,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_SYNC_FLUSH;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import java.nio.ByteOrder;
-import java.util.Arrays;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
@@ -85,7 +84,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         return str.split(";");
     }
 
-    public boolean printOCLKernelTime() {
+    boolean printOCLKernelTime() {
         return PRINT_OCL_KERNEL_TIME;
     }
 
@@ -334,7 +333,8 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         long base = events.get(0).getCLSubmitTime();
         System.out.println("event: device,type,info,submitted,start,end,status");
         events.stream().forEach((e) -> {
-            System.out.printf("event: %s,%s,0x%x,%d,%d,%d,%s\n", deviceName, e.getName(), e.getId(), e.getCLSubmitTime() - base, e.getCLStartTime() - base, e.getCLEndTime() - base, e.getStatus());
+            System.out.printf("event: %s,%s,0x%x,%d,%d,%d,%s\n", deviceName, e.getName(), e.getOclEventID(), e.getCLSubmitTime() - base, e.getCLStartTime() - base, e.getCLEndTime() - base,
+                    e.getStatus());
         });
 
     }
@@ -388,7 +388,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         return codeCache.installSource(meta, id, entryPoint, code);
     }
 
-    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean isFPGA) {
+    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code) {
         return codeCache.installFPGASource(id, entryPoint, code);
     }
 

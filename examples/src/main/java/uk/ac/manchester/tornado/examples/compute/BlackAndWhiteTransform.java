@@ -55,13 +55,13 @@ public class BlackAndWhiteTransform {
         private static final long serialVersionUID = 1L;
         private BufferedImage image;
 
-        private static final boolean PARALLEL_COMPUTATION = true;
+        private static final boolean PARALLEL_COMPUTATION = Boolean.parseBoolean(System.getProperty("run::parallel", "False"));
 
         private static final String IMAGE_FILE = "/tmp/image.jpg";
 
         private static TaskSchedule tornadoTask;
 
-        public LoadImage() {
+        LoadImage() {
             try {
                 image = ImageIO.read(new File(IMAGE_FILE));
             } catch (IOException e) {
@@ -83,6 +83,14 @@ public class BlackAndWhiteTransform {
 
                     image[i * s + j] = gray;
                 }
+            }
+        }
+
+        private void writeImage(String fileName) {
+            try {
+                ImageIO.write(image, "jpg", new File("/tmp/" + fileName));
+            } catch (IOException e) {
+                throw new RuntimeException("Input file not found: " + IMAGE_FILE);
             }
         }
 
@@ -122,6 +130,9 @@ public class BlackAndWhiteTransform {
 
             // draw the image
             g.drawImage(this.image, 0, 0, null);
+
+            writeImage("parallel.jpg");
+
         }
 
         private void sequentialComputation(Graphics g) {
@@ -151,6 +162,8 @@ public class BlackAndWhiteTransform {
 
             // draw the image
             g.drawImage(this.image, 0, 0, null);
+
+            writeImage("sequential.jpg");
         }
 
         @Override

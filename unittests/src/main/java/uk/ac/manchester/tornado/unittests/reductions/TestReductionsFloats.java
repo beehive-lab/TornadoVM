@@ -38,7 +38,7 @@ public class TestReductionsFloats extends TornadoTestBase {
     private static final int SIZE2 = 32;
     private static final int PI_SIZE = 32768;
 
-    public static void reductionAddFloats(float[] input, @Reduce float[] result) {
+    private static void reductionAddFloats(float[] input, @Reduce float[] result) {
         result[0] = 0.0f;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += input[i];
@@ -73,7 +73,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
-    public static void reductionAddFloats2(float[] input, @Reduce float[] result) {
+    private static void reductionAddFloats2(float[] input, @Reduce float[] result) {
         float error = 2f;
         for (@Parallel int i = 0; i < input.length; i++) {
             float v = (error * input[i]);
@@ -81,7 +81,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         }
     }
 
-    public static void reductionAddFloats3(float[] input, @Reduce float[] result) {
+    private static void reductionAddFloats3(float[] input, @Reduce float[] result) {
         float error = 2f;
         for (@Parallel int i = 0; i < input.length; i++) {
             float v = (error * input[i]);
@@ -89,7 +89,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         }
     }
 
-    public static void reductionAddFloats4(float[] inputA, float[] inputB, @Reduce float[] result) {
+    private static void reductionAddFloats4(float[] inputA, float[] inputB, @Reduce float[] result) {
         float error = 2f;
         for (@Parallel int i = 0; i < inputA.length; i++) {
             result[0] += (error * (inputA[i] + inputB[i]));
@@ -150,20 +150,20 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
-    public static void multiplyFloats(float[] input, @Reduce float[] result) {
+    private static void multiplyFloats(float[] input, @Reduce float[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] *= input[i];
         }
     }
 
-    public static void computeSum(final float[] values, @Reduce float[] result) {
+    private static void computeSum(final float[] values, @Reduce float[] result) {
         result[0] = 0;
         for (@Parallel int i = 0; i < values.length; i++) {
             result[0] += values[i];
         }
     }
 
-    public static void computeAvg(final int length, float[] result) {
+    private static void computeAvg(final int length, float[] result) {
         result[0] = result[0] / length;
     }
 
@@ -225,7 +225,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.1f);
     }
 
-    public static void reductionAddFloatsConditionally(float[] input, @Reduce float[] result) {
+    private static void reductionAddFloatsConditionally(float[] input, @Reduce float[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
             float v = 0.0f;
             if (input[0] == -1) {
@@ -262,7 +262,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.01f);
     }
 
-    public static void computePi(float[] input, @Reduce float[] result) {
+    private static void computePi(float[] input, @Reduce float[] result) {
         for (@Parallel int i = 1; i < input.length; i++) {
             float value = (float) (Math.pow(-1, i + 1) / (2 * i - 1));
             result[0] += value + input[i];
@@ -292,7 +292,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(3.14, piValue, 0.01f);
     }
 
-    public static void maxReductionAnnotation(float[] input, @Reduce float[] result) {
+    private static void maxReductionAnnotation(float[] input, @Reduce float[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] = Math.max(result[0], input[i]);
         }
@@ -322,7 +322,7 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.01f);
     }
 
-    public static void minReductionAnnotation(float[] input, @Reduce float[] result, float neutral) {
+    private static void minReductionAnnotation(float[] input, @Reduce float[] result, float neutral) {
         result[0] = neutral;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] = Math.min(result[0], input[i]);

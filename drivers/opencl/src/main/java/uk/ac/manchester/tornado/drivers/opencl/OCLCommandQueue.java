@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework: 
- * https://github.com/beehive-lab/tornado
+ * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -248,9 +248,9 @@ public class OCLCommandQueue extends TornadoLogger {
         guarantee(!retain.get(currentEvent), "overwriting retained event");
 
         /*
-         * OpenCL can generate an out of resources error which produces an
-         * invalid event (-1) we need to avoid releasing any invalid events and
-         * trigger a fatal exception when we miss an event
+         * OpenCL can generate an out of resources error which produces an invalid event
+         * (-1). We need to avoid releasing any invalid events and trigger a fatal
+         * exception when we miss an event
          */
         if (eventId == -1) {
             fatal("invalid event: event=0x%x, description=%s, tag=0x%x\n", eventId, EVENT_DESCRIPTIONS[descriptorId], tag);
