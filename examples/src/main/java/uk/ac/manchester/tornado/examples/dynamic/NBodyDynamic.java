@@ -129,7 +129,11 @@ public class NBodyDynamic {
         System.arraycopy(initialVelocity, 0, velocity, 0, initialVelocity.length);
 
         long startInit = System.nanoTime();
-        final TaskSchedule s0 = new TaskSchedule("s0").task("t0", NBodyDynamic::nBody, numBodies, positions, velocity, delT, espSqr, inputSize).streamOut(positions, velocity);
+        // @formatter:off
+        final TaskSchedule s0 = new TaskSchedule("s0")
+                .task("t0", NBodyDynamic::nBody, numBodies, positions, velocity, delT, espSqr, inputSize)
+                .streamOut(positions, velocity);
+        // @formatter:on
         long stopInit = System.nanoTime();
         System.out.println("Initialization time:  " + (stopInit - startInit) + " ns" + "\n");
 
@@ -157,7 +161,8 @@ public class NBodyDynamic {
                     s0.execute();
                     end = System.nanoTime();
             }
-            System.out.println("Total time:  " + (end - start) + " ns" + "\n");
+            double milliseconds = (end - start) / 1000000.0;
+            System.out.println("Total time:  " + (end - start) + " ns  = " + milliseconds + "(ms) \n");
         }
 
         if (VALIDATION) {
