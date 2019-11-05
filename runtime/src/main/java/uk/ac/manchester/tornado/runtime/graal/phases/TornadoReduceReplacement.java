@@ -41,10 +41,7 @@ import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import org.graalvm.compiler.phases.BasePhase;
 
 import uk.ac.manchester.tornado.api.annotations.Reduce;
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceAddNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceMulNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceSubNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.*;
 
 public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext> {
 
@@ -215,7 +212,10 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         ValueNode accumulator = reductionNode.accumulator;
         ValueNode inputArray = reductionNode.inputArray;
         ValueNode startNode = reductionNode.startNode;
-        final StoreAtomicIndexedNode atomicStoreNode = graph.addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), value, accumulator, inputArray, startNode));
+
+        StoreAtomicIndexedNodeExtension storeAtomicIndexedNodeExtension = new StoreAtomicIndexedNodeExtension(startNode);
+        graph.addOrUnique(storeAtomicIndexedNodeExtension);
+        final StoreAtomicIndexedNode atomicStoreNode = graph.addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), value, accumulator, inputArray, storeAtomicIndexedNodeExtension));
 
         ValueNode arithmeticNode = null;
         if (value instanceof OCLReduceAddNode) {

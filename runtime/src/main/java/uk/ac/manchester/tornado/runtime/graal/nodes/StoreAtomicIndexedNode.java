@@ -48,21 +48,25 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     @Input ValueNode accumulator;
     @Input ValueNode inputArray;
 
-    @OptionalInput(State) FrameState stateAfter;
-    @OptionalInput ValueNode extraOperation;
-    @OptionalInput ValueNode startNode;
+    @Input StoreAtomicIndexedNodeExtension extension;
+
+//    @OptionalInput(State) FrameState stateAfter;
+//    @OptionalInput ValueNode extraOperation;
+//    @OptionalInput ValueNode startNode;
     //@formatter:on
 
     @Override
     public FrameState stateAfter() {
-        return stateAfter;
+//        return stateAfter;
+        return extension.getStateAfter();
     }
 
     @Override
     public void setStateAfter(FrameState x) {
         assert x == null || x.isAlive() : "frame state must be in a graph";
-        updateUsages(stateAfter, x);
-        stateAfter = x;
+        updateUsages(extension.getStateAfter(), x);
+//        stateAfter = x;
+        extension.setStateAfter(x);
     }
 
     @Override
@@ -74,7 +78,7 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
         return value;
     }
 
-    public StoreAtomicIndexedNode(ValueNode outputArray, ValueNode index, JavaKind elementKind, ValueNode value, ValueNode accumulator, ValueNode inputArray, ValueNode startNode) {
+    public StoreAtomicIndexedNode(ValueNode outputArray, ValueNode index, JavaKind elementKind, ValueNode value, ValueNode accumulator, ValueNode inputArray, StoreAtomicIndexedNodeExtension extension) {
         //TODO do we need bound checking for this kind of node?
         // Null parameter for now. Check AccessIndexedNode.java in graal
         // null means no check has been performed until now
@@ -82,7 +86,8 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
         this.value = value;
         this.accumulator = accumulator;
         this.inputArray = inputArray;
-        this.startNode = startNode;
+//        this.startNode = startNode;
+        this.extension = extension;
     }
 
     @Override
@@ -91,7 +96,8 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     }
 
     public FrameState getState() {
-        return stateAfter;
+        return extension.getStateAfter();
+//        return stateAfter;
     }
 
     public ValueNode getAccumulator() {
@@ -99,7 +105,8 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     }
 
     public ValueNode getStartNode() {
-        return startNode;
+        return extension.getStartNode();
+//        return startNode;
     }
 
     public ValueNode getInputArray() {
@@ -107,10 +114,11 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     }
 
     public void setOptionalOperation(ValueNode node) {
-        this.extraOperation = node;
+        extension.setExtraOperation(node);
     }
 
     public ValueNode getExtraOperation() {
-        return extraOperation;
+        return extension.getExtraOperation();
+//        return extraOperation;
     }
 }

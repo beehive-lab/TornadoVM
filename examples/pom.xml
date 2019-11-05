@@ -26,12 +26,27 @@
         </dependency>
         <dependency>
             <groupId>org.ejml</groupId>
-            <artifactId>ejml-all</artifactId>
-            <version>0.31</version>
+            <artifactId>ejml-simple</artifactId>
+            <version>0.38</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.ejml</groupId>
+                    <artifactId>ejml-cdense</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.ejml</groupId>
+                    <artifactId>ejml-zdense</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.ejml</groupId>
+                    <artifactId>ejml-fdense</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
+            <version>8.2.0</version>
         </dependency>
     </dependencies>
 </project>

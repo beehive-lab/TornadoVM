@@ -60,7 +60,7 @@ public class TornadoAPIProvider {
             Constructor<?> constructor = klass.getConstructor(String.class);
             taskGraphImpl = (AbstractTaskGraph) constructor.newInstance(name);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException e) {
-            throw new RuntimeException("[ERROR] Tornado API Implementation class not found");
+            throw new RuntimeException("[ERROR] Tornado API Implementation class not found", e);
         }
         return taskGraphImpl;
     }

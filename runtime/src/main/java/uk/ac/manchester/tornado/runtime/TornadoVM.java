@@ -425,6 +425,7 @@ public class TornadoVM extends TornadoLogger {
                     } catch (Error | Exception e) {
                         fatal("unable to compile task %s", task.getName());
                         debug(e.getMessage());
+                        throw e;
                     }
                     final long compileEnd = System.nanoTime();
                     if (graphContext.meta().isDebug()) {

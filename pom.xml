@@ -271,155 +271,151 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-<!--                <version>3.5.1</version>-->
                 <version>3.8.1</version>
                 <configuration>
                     <source>11</source>
                     <target>11</target>
-<!--                    <source>8</source>-->
-<!--                    <target>8</target>-->
-<!--                    <release>8</release>-->
                     <compilerArgs>
                         <arg>--add-modules</arg>
                         <arg>ALL-SYSTEM</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.ci/jdk.vm.ci.common=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.ci/jdk.vm.ci.common=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.hotspot.meta=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.hotspot.meta=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.replacements.classfile=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.replacements.classfile=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.util=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.util=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.cfg=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.cfg=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.framemap=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.framemap=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED,jdk.internal.vm.compiler</arg>
+                        <arg>jdk.internal.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED,jdk.internal.vm.compiler,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED,jdk.internal.vm.compiler</arg>
+                        <arg>jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED,jdk.internal.vm.compiler,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.graph=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.graph=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.graph.spi=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.graph.spi=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.gen=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.gen=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodeinfo=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodeinfo=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.calc=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.calc=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.spi=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.spi=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/jdk.internal.vm.compiler.collections=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/jdk.internal.vm.compiler.collections=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.api.runtime=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.api.runtime=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.code=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.code=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.target=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.target=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.debug=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.debug=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.hotspot=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.hotspot=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.java=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.java=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.asm=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.asm=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.phases=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.phases=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.graphbuilderconf=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.graphbuilderconf=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.options=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.options=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.tiers=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.tiers=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.util=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.util=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.printer=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.printer=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.runtime=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.runtime=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.graph.iterators=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.graph.iterators=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.java=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.java=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.bytecode=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.bytecode=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.spi=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.spi=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/jdk.internal.vm.compiler.word=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/jdk.internal.vm.compiler.word=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.api.replacements=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.api.replacements=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.replacements=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.replacements=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.phases=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.phases=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.type=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.type=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.extended=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.extended=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.loop=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.loop=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.info=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.info=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.policy=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.policy=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.walker=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.walker=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.loop.phases=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.loop.phases=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.debug=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.debug=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.util=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.util=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.virtual=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.virtual=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.constopt=ALL-UNNAMED </arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.constopt=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.ci/jdk.vm.ci.hotspot=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.ci/jdk.vm.ci.hotspot=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.asm=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.asm=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.cfg=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.cfg=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.schedule=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.schedule=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.virtual.phases.ea=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.virtual.phases.ea=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.ssa=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.ssa=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.calc=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.common.calc=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.gen=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.gen=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.match=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.match=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory.address=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory.address=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
-                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.type=ALL-UNNAMED</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.type=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                     </compilerArgs>
                     <showDeprecation>true</showDeprecation>
                 </configuration>

@@ -18,7 +18,8 @@
 
 package uk.ac.manchester.tornado.matrix;
 
-import org.ejml.factory.SingularMatrixException;
+
+import org.ejml.data.SingularMatrixException;
 import org.ejml.simple.SimpleMatrix;
 
 import uk.ac.manchester.tornado.api.collections.types.Matrix4x4Float;

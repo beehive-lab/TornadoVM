@@ -30,7 +30,8 @@
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
-            <version>4.10.4</version>
+<!--            <version>4.10.4</version>-->
+            <version>8.2.0</version>
             <type>jar</type>
         </dependency>
         <dependency>

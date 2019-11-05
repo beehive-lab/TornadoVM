@@ -78,8 +78,8 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
 # ################################################################################################################
 ## Options
-__MAIN_TORNADO_TEST_RUNNER__ = " uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
-__MAIN_TORNADO_JUNIT__ 		 = "org.junit.runner.JUnitCore "
+__MAIN_TORNADO_TEST_RUNNER__ = " tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
+__MAIN_TORNADO_JUNIT__ 		 = "junit/org.junit.runner.JUnitCore "
 __IGV_OPTIONS__ 			 = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintCFG=true "
 __PRINT_OPENCL_KERNEL__ 	 = "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ 			 = "-Dtornado.debug=True "
@@ -215,9 +215,9 @@ def runTests(args):
 	## Run test
 	cmd = ""
 	if (args.useOptirun):
-		cmd = "optirun tornado " + __IGNORE_INTEL_PLATFORM__ + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
+		cmd = "optirun tornado " + __IGNORE_INTEL_PLATFORM__ + options + " -m " + __MAIN_TORNADO_TEST_RUNNER__
 	else:
-		cmd = "tornado " + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
+		cmd = "tornado " + options + " -m " + __MAIN_TORNADO_TEST_RUNNER__
 	if (args.testClass != None):
 
 		if (args.fast):
@@ -258,7 +258,7 @@ def runTests(args):
 def runWithJUnit(args):
 	""" Run the tests using JUNIT """
 
-	cmd = "tornado " + __MAIN_TORNADO_JUNIT__ 
+	cmd = "tornado -m" + __MAIN_TORNADO_JUNIT__
 
 	if (args.testClass != None):
 		cmd = cmd + args.testClass

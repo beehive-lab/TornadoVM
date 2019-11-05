@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
 
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.CompiledCode;
@@ -33,6 +34,7 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class OCLCodeProvider implements CodeCacheProvider {
 
@@ -83,7 +85,7 @@ public class OCLCodeProvider implements CodeCacheProvider {
 
     @Override
     public boolean shouldDebugNonSafepoints() {
-        unimplemented("Debug non safe points not implemented yet.");
+        Tornado.warn("Debug non safe points not implemented yet.");
         return false;
     }
 
