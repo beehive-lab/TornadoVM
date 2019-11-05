@@ -66,9 +66,6 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
      * Creates a vector using the provided backing array
      *
      * @param numElements
-     * @param offset
-     * @param step
-     * @param elementSize
      * @param array
      */
     protected VectorFloat3(int numElements, float[] array) {
@@ -78,11 +75,6 @@ public class VectorFloat3 implements PrimitiveStorage<FloatBuffer> {
 
     /**
      * Creates a vector using the provided backing array
-     *
-     * @param numElements
-     * @param offset
-     * @param step
-     * @param storage
      */
     public VectorFloat3(float[] array) {
         this(array.length / elementSize, array);
