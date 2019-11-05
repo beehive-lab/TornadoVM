@@ -41,14 +41,14 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import java.nio.FloatBuffer;
+
 import static java.lang.Math.min;
 import static java.lang.String.format;
 import static java.nio.FloatBuffer.wrap;
 import static java.util.Arrays.copyOfRange;
 import static uk.ac.manchester.tornado.api.collections.types.FloatOps.fmt;
 import static uk.ac.manchester.tornado.api.collections.types.StorageFormats.toRowMajor;
-
-import java.nio.FloatBuffer;
 
 public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
     /**
