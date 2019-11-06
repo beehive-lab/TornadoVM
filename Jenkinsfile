@@ -32,21 +32,21 @@ pipeline {
             }
         }
         stage('tornado-unittests') {
-			timeout(time: 5, unit: 'MINUTES'){
+			timeout(time: 5, unit: 'MINUTES') {
             	steps {
                 	sh 'make tests'
             	}
 			}
         }       
 		stage('tornado-benchmarks') {
-			timeout(time: 5, unit: 'MINUTES'){
+			timeout(time: 5, unit: 'MINUTES') {
             	steps {
                 	sh 'python assembly/src/bin/tornado-benchmarks.py --skipSeq --iterations 5 '
             	}
 			}
         } 
         stage('build-n-run-kfusion') {
-			timeout(time: 5, unit: 'MINUTES'){
+			timeout(time: 5, unit: 'MINUTES') {
             	steps {
                 	sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && mvn clean install -DskipTests && kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/conf/bm-traj2.settings'
             	}
