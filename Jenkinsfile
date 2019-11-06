@@ -1,8 +1,8 @@
 pipeline {
     agent any
     options {
-        	timestamps()
-        timeout(time: 1, unit: 'HOURS')
+        timestamps()
+        timeout(time: 30, unit: 'MINUTES')
     }
     environment {
         JAVA_HOME="/opt/jenkins/jdk1.8.0_131"
@@ -32,23 +32,23 @@ pipeline {
             }
         }
         stage('tornado-unittests') {
-            	steps {
-					timeout(time: 5, unit: 'MINUTES') {
-                		sh 'make tests'
-            		}
+        	steps {
+				timeout(time: 5, unit: 'MINUTES') {
+               		sh 'make tests'
+            	}
 			}
         }       
 		stage('tornado-benchmarks') {
-            	steps {
-					timeout(time: 5, unit: 'MINUTES') {
-                		sh 'python assembly/src/bin/tornado-benchmarks.py --skipSeq --iterations 5 '
+        	steps {
+				timeout(time: 5, unit: 'MINUTES') {
+                	sh 'python assembly/src/bin/tornado-benchmarks.py --skipSeq --iterations 5 '
             	}
 			}
         } 
         stage('build-n-run-kfusion') {
-            	steps {
-					timeout(time: 5, unit: 'MINUTES') {
-                		sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && mvn clean install -DskipTests && kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/conf/bm-traj2.settings'
+        	steps {
+				timeout(time: 5, unit: 'MINUTES') {
+                	sh 'cd /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor && mvn clean install -DskipTests && kfusion kfusion.tornado.Benchmark /var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/conf/bm-traj2.settings'
             	}
 			}
         }
