@@ -32,9 +32,11 @@ pipeline {
             }
         }
         stage('tornado-unittests') {
-            steps {
-                sh 'make tests'
-            }
+			timeout(time: 5, unit: 'MINUTES'){
+            	steps {
+                	sh 'make tests'
+            	}
+			}
         }       
 		stage('tornado-benchmarks') {
             steps {
