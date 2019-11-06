@@ -1,7 +1,5 @@
 # <type>: (If applied, this commit will...) <subject> (Max 50 char)
 # |<----  Using a Maximum Of 50 Characters  ---->|
-# Example:
-# [research][WIP] Add support for PTX compiler bakcend
 
 
 # Explain why this change is being made
@@ -12,18 +10,13 @@
 
 # --- COMMIT END ---
 # Type can be 
-#    research (new on-going research feature)
 #    feat     (new feature)
 #    fix      (bug fix)
 #    refactor (refactoring production code)
 #    style    (formatting, missing semi colons, etc; no code change)
 #    docs     (changes to documentation)
 #    test     (adding or refactoring tests; no production code change)
-#    license  (Edits regarding licensing; no production code change)
-#    hack     (Temporary fix to make things move forward; please avoid it)
-#    ci       (changes related to Jenkins, git-actions, etc)
-#    release  (version bump/new release; no production code change)
-#    WIP      (Work In Progress; for intermediate commits to keep patches reasonably sized)
+#    chore    (updating grunt tasks etc; no production code change)
 # --------------------
 # Remember to
 #    Capitalize the subject line
@@ -35,4 +28,3 @@
 # --------------------
 # For more information about this template, check out
 # https://gist.github.com/adeekshith/cd4c95a064977cdc6c50
-# https://gist.github.com/zakkak/7e06725ebd1336bfebebe254de3de8250
