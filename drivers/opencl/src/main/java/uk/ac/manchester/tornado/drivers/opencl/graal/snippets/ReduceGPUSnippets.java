@@ -746,15 +746,7 @@ public class ReduceGPUSnippets implements Snippets {
                 args.add("value", extra);
             }
 
-//            template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
-
-            SnippetTemplate snippetTemplate = template(storeAtomicIndexed, args);
-
-            if (snippetTemplate == null) {
-                System.out.println("\"IS NULL\" = " + "IS NULL");
-            }
-
-            snippetTemplate.instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
+            template(storeAtomicIndexed, args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
         }
     }
 }

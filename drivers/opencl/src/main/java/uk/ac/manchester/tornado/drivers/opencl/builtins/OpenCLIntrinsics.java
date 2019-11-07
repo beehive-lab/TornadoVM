@@ -26,34 +26,21 @@
 package uk.ac.manchester.tornado.drivers.opencl.builtins;
 
 import org.graalvm.compiler.api.replacements.Fold;
-
 import uk.ac.manchester.tornado.api.annotations.ReductionOp;
 
 public class OpenCLIntrinsics {
 
-    public static int get_global_id(int value) {
-        return 0;
-    }
+    public static native int get_global_id(int value);
 
-    public static int get_local_id(int value) {
-        return 0;
-    }
+    public static native int get_local_id(int value);
 
-    public static int get_global_size(int value) {
-        return 0;
-    }
+    public static native int get_global_size(int value);
 
-    public static int get_local_size(int value) {
-        return 0;
-    }
+    public static native int get_local_size(int value);
 
-    public static int get_group_id(int value) {
-        return 0;
-    }
+    public static native int get_group_id(int value);
 
-    public static int get_group_size(int value) {
-        return 0;
-    }
+    public static native int get_group_size(int value);
 
     /**
      * <p>
@@ -62,9 +49,7 @@ public class OpenCLIntrinsics {
      * </code>
      * </p>
      */
-    public static void localBarrier() {
-
-    }
+    public static native void localBarrier();
 
     /**
      * <p>
@@ -73,21 +58,13 @@ public class OpenCLIntrinsics {
      * </code>
      * </p>
      */
-    public static void globalBarrier() {
+    public static native void globalBarrier();
 
-    }
+    public static native void printf();
 
-    public static void printf() {
+    public static native void printEmpty();
 
-    }
-
-    public static void printEmpty() {
-
-    }
-
-    public static void createLocalMemory(int[] array, int size) {
-
-    }
+    public static native void createLocalMemory(int[] array, int size);
 
     public static int fmax(float a, float b) {
         return 0;
