@@ -430,8 +430,6 @@ public class TestReductionsDoubles extends TornadoTestBase {
             sequentialData[idx] = data[idx];
         });
 
-        System.out.println("[CLIENT] " + Arrays.toString(data) + " : " + data);
-
         //@formatter:off
         new TaskSchedule("s0")
                 .streamIn(data)
@@ -441,24 +439,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
                 .execute();
         //@formatter:on
 
-        //@formatter:off
-//        new TaskSchedule("s0")
-//                .streamIn(data)
-//                .task("t0", TestReductionsDoubles::prepareTornadoSum, data, resultSum)
-//                .streamOut(resultSum)
-//                .execute();
-//
-//        new TaskSchedule("s1")
-//                .streamIn(data)
-//                .task("t1", TestReductionsDoubles::computeMax, data, resultSum, resultStd)
-//                .streamOut(resultStd)
-//                .execute();
-        //@formatter:on
-
-        System.out.println("FROM GPU: " + resultStd[0]);
-
         prepareTornadoSum(sequentialData, sequentialSum);
-        System.out.println("SUM: " + sequentialSum[0]);
         compute2(sequentialData, sequentialStd);
 
         assertEquals(sequentialStd[0], resultStd[0], 0.01);
