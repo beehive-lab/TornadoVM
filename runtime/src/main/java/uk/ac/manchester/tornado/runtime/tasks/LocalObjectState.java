@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 public class LocalObjectState {
 
     private boolean streamIn;
+    private boolean forceStreamIn;
     private boolean streamOut;
 
     private GlobalObjectState global;
@@ -53,6 +54,14 @@ public class LocalObjectState {
 
     void setStreamIn(boolean streamIn) {
         this.streamIn = streamIn;
+    }
+
+    void setForceStreamIn(boolean streamIn) {
+        this.forceStreamIn = streamIn;
+    }
+
+    public boolean isForceStreamIn() {
+        return this.forceStreamIn;
     }
 
     public boolean isStreamOut() {

@@ -379,11 +379,11 @@ class ReduceTaskSchedule {
 
                 for (Integer paramIndex : listOfReduceIndexParameters) {
 
-                    Object originalReduceVariable = taskPackage.getTaskParameters()[paramIndex + 1];
+                    Object originalReduceArray = taskPackage.getTaskParameters()[paramIndex + 1];
 
                     // If the array has been already created, we don't have to create another one,
                     // just obtain the already created reference from the cache-table.
-                    if (originalReduceVariables.containsKey(originalReduceVariable)) {
+                    if (originalReduceVariables.containsKey(originalReduceArray)) {
                         continue;
                     }
 
@@ -409,19 +409,19 @@ class ReduceTaskSchedule {
 
                     // Set the new array size
                     int sizeReductionArray = obtainSizeArrayResult(DEFAULT_DRIVER_INDEX, deviceToRun, inputSize);
-                    Object newArray = createNewReduceArray(originalReduceVariable, sizeReductionArray);
-                    Object neutralElement = getNeutralElement(originalReduceVariable);
+                    Object newArray = createNewReduceArray(originalReduceArray, sizeReductionArray);
+                    Object neutralElement = getNeutralElement(originalReduceArray);
                     fillOutputArrayWithNeutral(newArray, neutralElement);
 
                     neutralElementsNew.put(newArray, neutralElement);
-                    neutralElementsOriginal.put(originalReduceVariable, neutralElement);
+                    neutralElementsOriginal.put(originalReduceArray, neutralElement);
 
                     taskPackage.getTaskParameters()[paramIndex + 1] = newArray;
 
                     // Store metadata
                     streamReduceList.add(newArray);
                     sizesReductionArray.add(sizeReductionArray);
-                    originalReduceVariables.put(originalReduceVariable, newArray);
+                    originalReduceVariables.put(originalReduceArray, newArray);
                 }
                 streamReduceTable.put(taskNumber, streamReduceList);
             }
@@ -446,6 +446,8 @@ class ReduceTaskSchedule {
                 }
             }
 
+            // XXX: Tune this
+            // rewrittenTaskSchedule.forceCopyIn(taskPackages.get(taskNumber).getTaskParameters()[1]);
             rewrittenTaskSchedule.addTask(taskPackages.get(taskNumber));
 
             // Add extra task with the final reduction

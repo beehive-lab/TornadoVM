@@ -348,13 +348,13 @@ public class TestReductionsDoubles extends TornadoTestBase {
     }
 
     private static void computeStandardDeviation(final double[] values, final double[] sum, @Reduce final double[] std) {
-        double s = sum[0] / values.length;
+        final double s = sum[0] / values.length;
         for (@Parallel int i = 0; i < values.length; i++) {
             std[0] += Math.pow(values[i] - s, 2);
         }
     }
 
-    @TornadoNotSupported
+    @Test
     public void testMultipleReductions2() {
 
         double[] data = new double[32];
@@ -369,7 +369,7 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
         IntStream.range(0, data.length).forEach(idx -> {
             data[idx] = Math.random();
-            data[idx] = data2[idx];
+            data2[idx] = data[idx];
             sequentialData[idx] = data[idx];
         });
 
@@ -384,6 +384,82 @@ public class TestReductionsDoubles extends TornadoTestBase {
 
         prepareTornadoSumForMeanComputation(sequentialData, sequentialSum);
         computeStandardDeviation(sequentialData, sequentialSum, sequentialStd);
+
+        assertEquals(sequentialStd[0], resultStd[0], 0.01);
+
+    }
+
+    private static void prepareTornadoSum(final double[] values, @Reduce double[] result) {
+        result[0] = 0;
+        for (@Parallel int i = 0; i < values.length; i++) {
+            result[0] += values[i];
+        }
+    }
+
+    private static void computeMax(final double[] values, final double[] sum, @Reduce final double[] std) {
+        final double s = sum[0] / values.length;
+        for (@Parallel int i = 0; i < values.length; i++) {
+            std[0] += values[i] + s;
+        }
+    }
+
+    private static void compute2(final double[] values, @Reduce final double[] std) {
+        std[0] = 0;
+        for (@Parallel int i = 0; i < values.length; i++) {
+            std[0] += values[i];
+        }
+    }
+
+    @Test
+    public void testMultipleReductions3() {
+
+        final int size = 8;
+        double[] data = new double[size];
+        double[] data2 = new double[size];
+
+        double[] resultSum = new double[1];
+        double[] resultStd = new double[1];
+
+        double[] sequentialSum = new double[1];
+        double[] sequentialStd = new double[1];
+        double[] sequentialData = new double[data.length];
+
+        IntStream.range(0, data.length).forEach(idx -> {
+            data[idx] = 1;
+            data2[idx] = data[idx];
+            sequentialData[idx] = data[idx];
+        });
+
+        System.out.println("[CLIENT] " + Arrays.toString(data) + " : " + data);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .streamIn(data)
+                .task("t0", TestReductionsDoubles::prepareTornadoSum, data, resultSum)
+                .task("t1", TestReductionsDoubles::compute2, data, resultStd)
+                .streamOut(resultStd)
+                .execute();
+        //@formatter:on
+
+        //@formatter:off
+//        new TaskSchedule("s0")
+//                .streamIn(data)
+//                .task("t0", TestReductionsDoubles::prepareTornadoSum, data, resultSum)
+//                .streamOut(resultSum)
+//                .execute();
+//
+//        new TaskSchedule("s1")
+//                .streamIn(data)
+//                .task("t1", TestReductionsDoubles::computeMax, data, resultSum, resultStd)
+//                .streamOut(resultStd)
+//                .execute();
+        //@formatter:on
+
+        System.out.println("FROM GPU: " + resultStd[0]);
+
+        prepareTornadoSum(sequentialData, sequentialSum);
+        System.out.println("SUM: " + sequentialSum[0]);
+        compute2(sequentialData, sequentialStd);
 
         assertEquals(sequentialStd[0], resultStd[0], 0.01);
 
