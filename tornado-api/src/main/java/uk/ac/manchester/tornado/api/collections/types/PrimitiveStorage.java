@@ -41,13 +41,14 @@
  */
 package uk.ac.manchester.tornado.api.collections.types;
 
+import java.io.Serializable;
 import java.nio.Buffer;
 
-public interface PrimitiveStorage<T extends Buffer> {
+public interface PrimitiveStorage<T extends Buffer> extends Serializable {
 
-    public void loadFromBuffer(T buffer);
+    void loadFromBuffer(T buffer);
 
-    public T asBuffer();
+    T asBuffer();
 
-    public int size();
+    int size();
 }
