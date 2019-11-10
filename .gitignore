@@ -34,6 +34,7 @@ autom4te.cache
 /benchmarks/target/
 /examples/target/
 /runtime/target/
+/tornado-annotation/target
 /drivers/opencl-jni/target/mac-amd64-release/
 /assembly/target/
 /drivers/target/
