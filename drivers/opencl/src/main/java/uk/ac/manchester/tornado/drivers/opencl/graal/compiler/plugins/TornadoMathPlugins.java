@@ -198,11 +198,8 @@ public class TornadoMathPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y, ValueNode z) {
 //                b.push(kind, b.append(OCLIntTernaryIntrinsicNode.create(x, y, z, CLAMP, kind)));
-
-                System.out.println("\"CALLED CLAMP\" = " + "CALLED CLAMP");
-
                 ValueNode minZX = b.append(OCLIntBinaryIntrinsicNode.create(z, x, MIN, kind));
-                b.push(kind, minZX);
+//                b.push(kind, minZX);
                 b.push(kind, b.append(OCLIntBinaryIntrinsicNode.create(y, minZX, MAX, kind)));
                 return true;
             }

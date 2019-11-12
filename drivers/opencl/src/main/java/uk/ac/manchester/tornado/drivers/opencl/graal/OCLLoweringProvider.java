@@ -58,6 +58,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode.ATOMIC_OPERATION;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.*;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
@@ -196,7 +197,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         StructuredGraph graph = integerDivRemNode.graph();
         switch (integerDivRemNode.getOp()) {
             case DIV:
-                ValueNode div = graph.addOrUnique(SignedDivNode.create(integerDivRemNode.getX(), integerDivRemNode.getY(), null, NodeView.DEFAULT));
+//                FixedWithNextNode div = (FixedWithNextNode) graph.addOrUnique(SignedDivNode.create(integerDivRemNode.getX(), integerDivRemNode.getY(), integerDivRemNode.getZeroCheck(), NodeView.DEFAULT));
+                ValueNode div = graph.addOrUnique(DivNode.create(integerDivRemNode.getX(), integerDivRemNode.getY()));
                 graph.replaceFixedWithFloating(integerDivRemNode, div);
                 break;
             case REM:
