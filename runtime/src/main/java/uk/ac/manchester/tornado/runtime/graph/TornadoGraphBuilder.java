@@ -140,7 +140,7 @@ public class TornadoGraphBuilder {
                         value = (ObjectNode) objectNodes[variableIndex];
                     } else if (objectNodes[variableIndex] instanceof DependentReadNode) {
                         value = ((DependentReadNode) objectNodes[variableIndex]).getValue();
-                        if (states.get(variableIndex).isForceStreamIn()) {
+                        if (states.get(variableIndex).isForcedStreamIn()) {
                             createStreamInNode(context, graph, value, args, argIndex);
                         }
                     } else if (objectNodes[variableIndex] instanceof CopyInNode) {

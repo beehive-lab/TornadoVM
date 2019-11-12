@@ -475,7 +475,6 @@ class ReduceTaskSchedule {
                     Object parameterToMethod = taskPackages.get(taskNumber).getTaskParameters()[i + 1];
                     if (variableReduceTable.containsKey(parameterToMethod)) {
                         if (variableReduceTable.get(parameterToMethod).size() > 1) {
-                            System.out.println("FORCING STREAM_IN: " + parameterToMethod);
                             rewrittenTaskSchedule.forceCopyIn(parameterToMethod);
                         }
                     }

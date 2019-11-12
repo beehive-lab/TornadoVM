@@ -60,7 +60,7 @@ public class LocalObjectState {
         this.forceStreamIn = streamIn;
     }
 
-    public boolean isForceStreamIn() {
+    public boolean isForcedStreamIn() {
         return this.forceStreamIn;
     }
 
