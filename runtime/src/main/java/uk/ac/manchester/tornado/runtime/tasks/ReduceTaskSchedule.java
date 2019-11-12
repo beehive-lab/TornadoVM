@@ -66,7 +66,7 @@ class ReduceTaskSchedule {
     private HashMap<Object, Object> neutralElementsNew = new HashMap<>();
     private HashMap<Object, Object> neutralElementsOriginal = new HashMap<>();
     private TaskSchedule rewrittenTaskSchedule;
-    private HashMap<Object, LinkedList<Integer>> variableReduceTable;
+    private HashMap<Object, LinkedList<Integer>> reduceOperandTable;
 
     ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects) {
         this.taskPackages = taskPackages;
@@ -304,12 +304,12 @@ class ReduceTaskSchedule {
                 // This part is used to STREAM_IN data when performing multiple reductions in
                 // the same task-schedule
                 if (tableReduce.containsKey(taskNumber)) {
-                    if (!variableReduceTable.containsKey(streamInObjects.get(i))) {
+                    if (!reduceOperandTable.containsKey(streamInObjects.get(i))) {
                         LinkedList<Integer> taskList = new LinkedList<>();
                         taskList.add(taskNumber);
-                        variableReduceTable.put(streamInObjects.get(i), taskList);
+                        reduceOperandTable.put(streamInObjects.get(i), taskList);
                     } else {
-                        variableReduceTable.get(streamInObjects.get(i)).add(taskNumber);
+                        reduceOperandTable.get(streamInObjects.get(i)).add(taskNumber);
                     }
                 }
 
@@ -372,8 +372,8 @@ class ReduceTaskSchedule {
             originalReduceVariables = new HashMap<>();
         }
 
-        if (variableReduceTable == null) {
-            variableReduceTable = new HashMap<>();
+        if (reduceOperandTable == null) {
+            reduceOperandTable = new HashMap<>();
         }
 
         int deviceToRun = 0;
@@ -473,8 +473,8 @@ class ReduceTaskSchedule {
                 // We only analyze for parallel tasks
                 for (int i = 0; i < taskPackages.get(taskNumber).getTaskParameters().length - 1; i++) {
                     Object parameterToMethod = taskPackages.get(taskNumber).getTaskParameters()[i + 1];
-                    if (variableReduceTable.containsKey(parameterToMethod)) {
-                        if (variableReduceTable.get(parameterToMethod).size() > 1) {
+                    if (reduceOperandTable.containsKey(parameterToMethod)) {
+                        if (reduceOperandTable.get(parameterToMethod).size() > 1) {
                             rewrittenTaskSchedule.forceCopyIn(parameterToMethod);
                         }
                     }
