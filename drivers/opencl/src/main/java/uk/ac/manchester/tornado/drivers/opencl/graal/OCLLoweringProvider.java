@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal;
 
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
 import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
+import org.graalvm.compiler.nodes.memory.MemoryNode;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
@@ -106,6 +107,8 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceSubNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
+
+import javax.lang.model.element.ElementKind;
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
@@ -298,20 +301,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode value = storeIndexed.value();
         ValueNode array = storeIndexed.array();
         AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-
-        AbstractWriteNode memoryWrite = null;
-        if (isSimpleCharOrShort(elementKind, value)) {
-            // XXX: This call is due to an error in Graal when storing a
-            // variable of type char or short. In future integrations with JVMCI
-            // and Graal, this issue is completely solved.
-            memoryWrite = graph.add(new OCLWriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), elementKind));
-        } else if (isLocalIdNode(storeIndexed)) {
-            address = createArrayLocalAddress(graph, array, storeIndexed.index());
-            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind())));
-        } else {
-            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind())));
-        }
-
+        AbstractWriteNode memoryWrite = createMemWriteNode(elementKind, value, array, address, graph, storeIndexed);
         memoryWrite.setStateAfter(storeIndexed.stateAfter());
         graph.replaceFixedWithFixed(storeIndexed, memoryWrite);
     }
@@ -507,5 +497,21 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             address = createArrayAddress(graph, loadIndexed.array(), elementKind, loadIndexed.index());
         }
         return address;
+    }
+
+    private AbstractWriteNode createMemWriteNode(JavaKind elementKind, ValueNode value, ValueNode array, AddressNode address, StructuredGraph graph, StoreIndexedNode storeIndexed) {
+        AbstractWriteNode memoryWrite;
+        if (isSimpleCharOrShort(elementKind, value)) {
+            // XXX: This call is due to an error in Graal when storing a variable of type
+            // char or short. In future integrations with JVMCI and Graal, this issue is
+            // completely solved.
+            memoryWrite = graph.add(new OCLWriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), elementKind));
+        } else if (isLocalIdNode(storeIndexed)) {
+            address = createArrayLocalAddress(graph, array, storeIndexed.index());
+            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind())));
+        } else {
+            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind())));
+        }
+        return memoryWrite;
     }
 }
