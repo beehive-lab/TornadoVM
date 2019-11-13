@@ -112,7 +112,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     private static final boolean USE_ATOMICS = false;
     private final ConstantReflectionProvider constantReflection;
     private final TornadoVMConfig vmConfig;
-    private static boolean isAGPUSnippet = false;
+    private static boolean gpuSnippet = false;
 
     private ReduceGPUSnippets.Templates GPUReduceSnippets;
     private ReduceCPUSnippets.Templates CPUReduceSnippets;
@@ -190,7 +190,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
             // GPU SCHEDULER
             if (n instanceof PhiNode) {
-                isAGPUSnippet = true;
+                gpuSnippet = true;
                 threadID = (ValueNode) n;
                 break;
             }
@@ -418,7 +418,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                     JavaKind elementKind = elementType.getJavaKind();
                     final int offset = arrayBaseOffset(elementKind);
                     final int size = offset + (elementKind.getByteCount() * length);
-                    if (isAGPUSnippet) {
+                    if (gpuSnippet) {
                         lowerLocalNewArray(graph, length, newArray);
                     } else {
                         lowerPrivateNewArray(graph, size, newArray);
@@ -472,27 +472,17 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private AddressNode createArrayLocalAddress(StructuredGraph graph, ValueNode array, ValueNode index) {
-
         return (AddressNode) graph.unique(new OffsetAddressNode(array, index));
-
     }
 
     private boolean isLocalIdNode(StoreIndexedNode storeIndexed) {
         Node nd = storeIndexed.inputs().first().asNode();
-        if (nd instanceof MarkLocalArray) {
-            return true;
-        } else {
-            return false;
-        }
+        return (nd instanceof MarkLocalArray);
     }
 
     private boolean isLocalIdNode(LoadIndexedNode loadIndexedNode) {
         Node nd = loadIndexedNode.inputs().first().asNode();
-        if (nd instanceof MarkLocalArray) {
-            return true;
-        } else {
-            return false;
-        }
+        return (nd instanceof MarkLocalArray);
     }
 
     private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNode newArray) {
