@@ -62,9 +62,6 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      * Creates a vector using the provided backing array
      * 
      * @param numElements
-     * @param offset
-     * @param step
-     * @param elementSize
      * @param array
      */
     protected VectorInt(int numElements, int[] array) {
