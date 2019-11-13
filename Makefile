@@ -21,9 +21,10 @@ test-slam:
 
 
 test-hdgraphics:
-	tornado-test.py -V -J"-Ds0.t0.device=0:3" uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats
-	tornado-test.py -V -J"-Ds0.t0.device=0:3" uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles
-	tornado-test.py -V -J"-Ds0.t0.device=0:3" uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers
+	@[ "${HDGRAPHICS_ID}" ] || ( echo ">> HDGRAPHICS_ID is not set. Please do \`export HDGRAPHICS_ID=<dev-id>\`"; exit 1 )
+	tornado-test.py -V -J"-Ds0.t0.device=0:${HDGRAPHICS_ID}" uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats
+	tornado-test.py -V -J"-Ds0.t0.device=0:${HDGRAPHICS_ID}" uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles
+	tornado-test.py -V -J"-Ds0.t0.device=0:${HDGRAPHICS_ID}" uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers
 
 
 eclipse:
