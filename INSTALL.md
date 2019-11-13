@@ -16,7 +16,7 @@ TornadoVM has been succefully tested on the following platforms:
 
   * CentOS >= 7.3
   * Fedora >= 21
-  * Ubuntu 16.04, 18.04 and 18.10
+  * Ubuntu >= 16.04
   * Mac OS X Mojave 10.14.6
 
 
@@ -148,6 +148,15 @@ $ make
 ```
 and done!! 
 
+## Know issues 
+
+### For Ubuntu >= 16.04, install the package  `ocl-icd-opencl-dev`
+
+In Ubuntu >= 16.04 CMake can cause the following error:  Could NOT find OpenCL (missing: OpenCL_LIBRARY) (found version "2.2"). Then the following package should be installed:
+ 
+```bash 
+$ apt-get install ocl-icd-opencl-dev
+```
 
 ## Running Examples 
 
