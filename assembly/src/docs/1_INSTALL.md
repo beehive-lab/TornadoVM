@@ -259,3 +259,33 @@ Then :
  3. Set the Java formatter profile in Tornado
 
 
+## TornadoVM Maven Projects
+
+To use the TornadoVM API in our projects, you can checkout our maven repository as follows:
+
+
+```xml
+   <repositories>
+     <repository>
+       <id>universityOfManchester-graal</id>
+       <url>https://raw.githubusercontent.com/beehive-lab/tornado/maven-tornadovm</url>
+     </repository>
+   </repositories>
+  
+   <dependencies>   
+      <dependency>
+         <groupId>tornado</groupId>
+         <artifactId>tornado-api</artifactId>
+         <version>0.4</version>
+      </dependency>
+   </dependencies>
+```
+
+Notice that, for running with TornadoVM, you will need either the docker images or the full JVM with TornadoVM enabled. 
+
+#### Versions available
+
+* 0.4
+* 0.3 
+* 0.2   
+* 0.1.0 
