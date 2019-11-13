@@ -31,9 +31,9 @@ import org.graalvm.compiler.phases.BasePhase;
 
 /**
  * 
- * It filters the nodes for the lenght of the FixedArray node for the local
- * memory and calculates the optimal local memory size based on driver info.
- * Then, it replaced the length with the optimal size.
+ * It filters the nodes for the length of the FixedArray node for the local
+ * memory and calculates an optimal local memory size based on driver info.
+ * Then, it replaces the length with the optimal size.
  *
  */
 public class TornadoLocalMemoryAllocation extends BasePhase<TornadoHighTierContext> {
