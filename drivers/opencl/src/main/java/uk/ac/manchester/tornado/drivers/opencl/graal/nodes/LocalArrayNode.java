@@ -18,7 +18,7 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: Michalis Padimitriou
+ * Authors: Juan Fumero, Michalis Padimitriou
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
@@ -79,10 +79,6 @@ public class LocalArrayNode extends FixedNode implements LIRLowerable, MarkLocal
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        /*
-         * using as_T reinterprets the data as type T - consider: float x = (float) 1;
-         * and int value = 1, float x = &(value);
-         */
         final Value lengthValue = gen.operand(length);
 
         LIRKind lirKind = LIRKind.value(gen.getLIRGeneratorTool().target().arch.getWordKind());
