@@ -16,7 +16,7 @@ TornadoVM has been succefully tested on the following platforms:
 
   * CentOS >= 7.3
   * Fedora >= 21
-  * Ubuntu 16.04, 18.04 and 18.10
+  * Ubuntu >= 16.04
   * Mac OS X Mojave 10.14.6
 
 
@@ -138,15 +138,8 @@ Then export `CMAKE_ROOT` variable to the cmake installation. You can add it to t
 ```bash
 export CMAKE_ROOT=/opt/cmake-3.10.1
 ```
-### 4. Install `ocl-icd-opencl-dev` (If the OS is an Ubuntu Distro)
 
-In Ubuntu CMake can cause the following error:  Could NOT find OpenCL (missing: OpenCL_LIBRARY) (found version "2.2")
- 
-```bash 
-$ apt-get install ocl-icd-opencl-dev
-```
-
-### 6. Compile TornadoVM
+### 5. Compile TornadoVM
 
 ```bash
 $ cd ~/tornadovm
@@ -155,6 +148,15 @@ $ make
 ```
 and done!! 
 
+## Know issues 
+
+### For Ubuntu >= 16.04, install the package  `ocl-icd-opencl-dev`
+
+In Ubuntu >= 16.04 CMake can cause the following error:  Could NOT find OpenCL (missing: OpenCL_LIBRARY) (found version "2.2"). Then the following package should be installed:
+ 
+```bash 
+$ apt-get install ocl-icd-opencl-dev
+```
 
 ## Running Examples 
 
