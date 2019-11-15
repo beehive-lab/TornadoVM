@@ -461,6 +461,18 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     @Override
+    public void forceStreamInInner(Object... objects) {
+        for (Object object : objects) {
+            if (object == null) {
+                warn("null object passed into streamIn() in schedule %s", graphContext.getId());
+                continue;
+            }
+            streamInObjects.add(object);
+            graphContext.getObjectState(object).setForceStreamIn(true);
+        }
+    }
+
+    @Override
     public void streamOutInner(Object... objects) {
         for (Object object : objects) {
             if (object == null) {
