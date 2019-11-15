@@ -202,6 +202,12 @@ public class TaskSchedule implements TornadoAPI, ProfileInterface {
     }
 
     @Override
+    public TornadoAPI forceCopyIn(Object... objects) {
+        taskScheduleImpl.forceStreamInInner(objects);
+        return this;
+    }
+
+    @Override
     public TaskSchedule streamOut(Object... objects) {
         taskScheduleImpl.streamOutInner(objects);
         return this;

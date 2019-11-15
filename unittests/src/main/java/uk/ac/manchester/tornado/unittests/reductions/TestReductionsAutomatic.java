@@ -37,7 +37,7 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         }
     }
 
-    public static void testFloat(float[] input, @Reduce float[] output) {
+    private static void testFloat(float[] input, @Reduce float[] output) {
         for (@Parallel int i = 0; i < input.length; i++) {
             output[0] += input[i];
         }
@@ -121,7 +121,7 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         }
     }
 
-    public static void testDouble(double[] input, @Reduce double[] output) {
+    private static void testDouble(double[] input, @Reduce double[] output) {
         for (@Parallel int i = 0; i < input.length; i++) {
             output[0] += input[i];
         }
