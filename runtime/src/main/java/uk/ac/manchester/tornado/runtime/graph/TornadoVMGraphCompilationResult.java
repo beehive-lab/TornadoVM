@@ -63,7 +63,7 @@ public class TornadoVMGraphCompilationResult {
         globalTaskID++;
     }
 
-    public void emitAsyncNode(AbstractNode node, int contextID, int dependencyBC, long offset, long batchSize, long nThreads) {
+    void emitAsyncNode(AbstractNode node, int contextID, int dependencyBC, long offset, long batchSize, long nThreads) {
         if (node instanceof CopyInNode) {
             bitcodeASM.copyToContext(((CopyInNode) node).getValue().getIndex(), contextID, dependencyBC, offset, batchSize);
         } else if (node instanceof AllocateNode) {
