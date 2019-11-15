@@ -285,7 +285,7 @@ Then :
 
 ## TornadoVM Maven Projects
 
-To use the TornadoVM API in our projects, you can checkout our maven repository as follows:
+To use the TornadoVM API in your projects, you can checkout our maven repository as follows:
 
 
 ```xml
