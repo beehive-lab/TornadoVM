@@ -86,6 +86,8 @@ public interface AbstractTaskGraph extends ProfileInterface {
 
     void streamInInner(Object... objects);
 
+    void forceStreamInInner(Object... objects);
+
     void streamOutInner(Object... objects);
 
     void dump();
