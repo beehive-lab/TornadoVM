@@ -173,7 +173,6 @@ public class OCLLIRStmt {
             asm.emit("]");
             asm.delimiter();
             asm.eol();
-
         }
 
         public void emitPointerBaseIndexCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
