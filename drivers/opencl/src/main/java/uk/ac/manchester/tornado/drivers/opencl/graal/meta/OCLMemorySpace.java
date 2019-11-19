@@ -55,9 +55,10 @@ public class OCLMemorySpace extends Value {
             return OCLArchitecture.constantSpace;
         } else if (this == PRIVATE) {
             return OCLArchitecture.privateSpace;
+        } else {
+            TornadoInternalError.shouldNotReachHere();
+            return null;
         }
-        TornadoInternalError.shouldNotReachHere();
-        return null;
     }
 
     public String name() {
