@@ -73,11 +73,10 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
 
         Value baseValue = base == null ? Value.ILLEGAL : gen.operand(base);
         Value indexValue = index == null ? Value.ILLEGAL : gen.operand(index);
-        Variable addressValue = null;
         if (index == null) {
             gen.setResult(this, new MemoryAccess(memoryRegister, baseValue, false));
         }
-        setMemoryAccess(gen, baseValue, indexValue, addressValue, tool);
+        setMemoryAccess(gen, baseValue, indexValue, tool);
     }
 
     private boolean isLocalMemoryAccess() {
@@ -99,7 +98,8 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
         return 0;
     }
 
-    private void setMemoryAccess(NodeLIRBuilderTool gen, Value baseValue, Value indexValue, Value addressValue, OCLLIRGenerator tool) {
+    private void setMemoryAccess(NodeLIRBuilderTool gen, Value baseValue, Value indexValue, OCLLIRGenerator tool) {
+        Variable addressValue;
         if (isLocalMemoryAccess()) {
             gen.setResult(this, new MemoryAccess(memoryRegister, baseValue, indexValue, false));
         } else {
