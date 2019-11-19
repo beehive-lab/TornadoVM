@@ -238,10 +238,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         }
     }
 
-    private boolean isCompilingForFPGA(TornadoHighTierContext context) {
-        return Tornado.ACCELERATOR_IS_FPGA && context.getDeviceMapping().getDeviceType().toString().toUpperCase().equals("ACCELERATOR");
-    }
-
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
 
