@@ -90,10 +90,8 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
         isKernel = value;
     }
 
-    public void setLoopRemoval() {
-        if (isParallel() && Tornado.ACCELERATOR_IS_FPGA) {
-            REMOVE_OUTER_LOOPS = true;
-        }
+    public boolean shouldRemoveLoop() {
+        return (isParallel() && Tornado.ACCELERATOR_IS_FPGA);
     }
 
     public boolean isKernel() {

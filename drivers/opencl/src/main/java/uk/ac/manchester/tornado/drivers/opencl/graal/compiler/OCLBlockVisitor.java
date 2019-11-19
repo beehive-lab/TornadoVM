@@ -58,7 +58,6 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
         merges = new HashSet<>();
         switches = new HashSet<>();
         switchClosed = new HashSet<>();
-        resBuilder.setLoopRemoval();
     }
 
     private void emitBeginBlockForElseStatement(Block dom, Block block) {
@@ -114,8 +113,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             loopCount++;
             openclBuilder.emitLoopHeader(block);
             // Temporary fix to remove the end scope of the most outer loop
-            // without changing the loop schemantics in IR level.
-            if (Tornado.REMOVE_OUTER_LOOPS) {
+            // without changing the loop schematics in IR level.
+            if (openclBuilder.shouldRemoveLoop()) {
                 if (loopCount > 1) { // TODO: Add a more generic fix for
                     asm.beginScope();
                 }
@@ -165,7 +164,7 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
             // Temporary fix to remove the end scope of the most outer loop
             // without changing the loop schematics in IR level.
             loopEnds++;
-            if (Tornado.REMOVE_OUTER_LOOPS) {
+            if (openclBuilder.shouldRemoveLoop()) {
                 if (loopCount - loopEnds > 0) {
                     asm.endScope();
                 }
