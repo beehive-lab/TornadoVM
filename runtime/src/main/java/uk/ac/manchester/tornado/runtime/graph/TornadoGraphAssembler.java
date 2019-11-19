@@ -46,8 +46,8 @@ public class TornadoGraphAssembler {
         ADD_DEP((byte) 19),             // ADD_DEP(list index)
         CONTEXT((byte) 20),             // CONTEXT(ctx)
         END((byte) 21),                 // END(ctx)
-        CONSTANT_ARG((byte) 22),
-        REFERENCE_ARG((byte) 23);
+        CONSTANT_ARGUMENT((byte) 22),
+        REFERENCE_ARGUMENT((byte) 23);
         // @formatter:on
 
         private byte value;
@@ -152,12 +152,12 @@ public class TornadoGraphAssembler {
     }
 
     void constantArg(int index) {
-        buffer.put(TornadoVMBytecodes.CONSTANT_ARG.value);
+        buffer.put(TornadoVMBytecodes.CONSTANT_ARGUMENT.value);
         buffer.putInt(index);
     }
 
     void referenceArg(int index) {
-        buffer.put(TornadoVMBytecodes.REFERENCE_ARG.value);
+        buffer.put(TornadoVMBytecodes.REFERENCE_ARGUMENT.value);
         buffer.putInt(index);
     }
 

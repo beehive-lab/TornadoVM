@@ -360,8 +360,8 @@ public interface TornadoAPI {
      * @param args
      *            Arguments to the kernel
      * @param accesses
-     *            Accesses ({@link uk.ac.manchester.tornado.api.common.Access}
-     *            for each input parameter to the method
+     *            Accesses ({@link uk.ac.manchester.tornado.api.common.Access} for
+     *            each input parameter to the method
      * @param device
      *            Device to be executed
      * @param dimensions
@@ -396,6 +396,8 @@ public interface TornadoAPI {
      */
     TornadoAPI streamIn(Object... objects);
 
+    TornadoAPI forceCopyIn(Object... objects);
+
     /**
      * Open a stream channel between the device and the host.
      * 
@@ -416,9 +418,9 @@ public interface TornadoAPI {
      * It enables batch processing on the target device.
      * 
      * @param batchSize
-     *            size of the batch represented as a string. For example
-     *            "512MB", "1GB". If the batchSize is <= 0 the whole array is
-     *            computed without splitting in smaller batches.
+     *            size of the batch represented as a string. For example "512MB",
+     *            "1GB". If the batchSize is <= 0 the whole array is computed
+     *            without splitting in smaller batches.
      * @return link to the {@TornadoAPI} to allow function composition.
      */
     TornadoAPI batch(String batchSize);
@@ -437,8 +439,8 @@ public interface TornadoAPI {
     void executeWithProfiler(Policy policy);
 
     /**
-     * Run with dynamic reconfiguration with an input policy. All combinations
-     * run in sequential.
+     * Run with dynamic reconfiguration with an input policy. All combinations run
+     * in sequential.
      *
      * @param policy
      *            Input policy, See {@link Policy}
@@ -446,9 +448,9 @@ public interface TornadoAPI {
     void executeWithProfilerSequential(Policy policy);
 
     /**
-     * Run with dynamic reconfiguration with an input policy. All combinations
-     * run in sequential. It uses an internal table based on history to predict
-     * the device to run.
+     * Run with dynamic reconfiguration with an input policy. All combinations run
+     * in sequential. It uses an internal table based on history to predict the
+     * device to run.
      *
      * @param policy
      *            Input policy, See {@link Policy}
