@@ -55,14 +55,12 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
         this.base = base;
         this.index = index;
         this.memoryRegister = memoryRegister;
-
     }
 
     public OCLAddressNode(ValueNode base, ValueNode index) {
         super(TYPE);
         this.base = base;
         this.index = index;
-
     }
 
     public OCLAddressNode(ValueNode base, OCLMemoryBase memoryRegister) {
