@@ -274,7 +274,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             } else if (op instanceof OCLControlFlow.LoopBreakOp) {
                 breakInst = op;
                 continue;
-            } else if ((Tornado.REMOVE_OUTER_LOOPS && loops == 0)
+            } else if ((shouldRemoveLoop() && loops == 0)
                     && (op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp)) {
                 if (op instanceof OCLControlFlow.LoopPostOp)
                     loops++;
