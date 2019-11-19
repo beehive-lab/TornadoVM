@@ -459,12 +459,12 @@ public final class OCLAssembler extends Assembler {
         public static final OCLBinaryTemplate NEW_ARRAY = new OCLBinaryTemplate("new array", "char %s[%s]");
 
         public static final OCLBinaryTemplate NEW_LOCAL_FLOAT_ARRAY = new OCLBinaryTemplate("local memory array float", "__local float %s[%s]");
-        public static final OCLBinaryTemplate NEW_LOCAL_INT_ARRAY = new OCLBinaryTemplate("local memory array float", "__local int %s[%s]");
-        public static final OCLBinaryTemplate NEW_LOCAL_DOUBLE_ARRAY = new OCLBinaryTemplate("local memory array float", "__local double %s[%s]");
-        public static final OCLBinaryTemplate NEW_LOCAL_LONG_ARRAY = new OCLBinaryTemplate("local memory array float", "__local long %s[%s]");
-        public static final OCLBinaryTemplate NEW_LOCAL_SHORT_ARRAY = new OCLBinaryTemplate("local memory array float", "__local short %s[%s]");
-        public static final OCLBinaryTemplate NEW_LOCAL_CHAR_ARRAY = new OCLBinaryTemplate("local memory array float", "__local char %s[%s]");
-        public static final OCLBinaryTemplate NEW_LOCAL_BYTE_ARRAY = new OCLBinaryTemplate("local memory array float", "__local byte %s[%s]");
+        public static final OCLBinaryTemplate NEW_LOCAL_INT_ARRAY = new OCLBinaryTemplate("local memory array int", "__local int %s[%s]");
+        public static final OCLBinaryTemplate NEW_LOCAL_DOUBLE_ARRAY = new OCLBinaryTemplate("local memory array double", "__local double %s[%s]");
+        public static final OCLBinaryTemplate NEW_LOCAL_LONG_ARRAY = new OCLBinaryTemplate("local memory array long", "__local long %s[%s]");
+        public static final OCLBinaryTemplate NEW_LOCAL_SHORT_ARRAY = new OCLBinaryTemplate("local memory array short", "__local short %s[%s]");
+        public static final OCLBinaryTemplate NEW_LOCAL_CHAR_ARRAY = new OCLBinaryTemplate("local memory array char", "__local char %s[%s]");
+        public static final OCLBinaryTemplate NEW_LOCAL_BYTE_ARRAY = new OCLBinaryTemplate("local memory array byte", "__local byte %s[%s]");
         // @formatter:on
         private final String template;
 
