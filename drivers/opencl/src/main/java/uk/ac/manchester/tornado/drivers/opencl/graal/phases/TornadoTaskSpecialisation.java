@@ -56,19 +56,19 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeReplacement
 
 public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext> {
 
-    public static final int MAX_ITERATIONS = 10;
+    private static final int MAX_ITERATIONS = 10;
 
     private final CanonicalizerPhase canonicalizer;
     private final TornadoValueTypeReplacement valueTypeReplacement;
     private final DeadCodeEliminationPhase deadCodeElimination;
-    private final TornadoLoopUnroller loopUnroller;
+    private final TornadoLoopUnroller loopUnroll;
     private long batchThreads;
 
     public TornadoTaskSpecialisation(CanonicalizerPhase canonicalizer) {
         this.canonicalizer = canonicalizer;
         this.valueTypeReplacement = new TornadoValueTypeReplacement();
         this.deadCodeElimination = new DeadCodeEliminationPhase();
-        this.loopUnroller = new TornadoLoopUnroller(canonicalizer);
+        this.loopUnroll = new TornadoLoopUnroller(canonicalizer);
 
     }
 
@@ -252,10 +252,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             if (context.hasArgs()) {
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                    if (Tornado.ACCELERATOR_IS_FPGA && context.getDeviceMapping().getDeviceType().equals("ACCELERATOR")) {
-                    } else {
-                        propagateParameters(graph, param, context.getArgs());
-                    }
+                    propagateParameters(graph, param, context.getArgs());
                 }
                 Debug.dump(Debug.INFO_LEVEL, graph, "After Phase Propagate Parameters");
             } else {
@@ -270,18 +267,14 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             graph.getNewNodes(mark).filter(PiNode.class).forEach(pi -> {
                 if (pi.stamp() instanceof ObjectStamp && pi.object().stamp() instanceof ObjectStamp) {
                     pi.replaceAtUsages(pi.object());
-
                     pi.clearInputs();
                     pi.safeDelete();
-                    // graph.removeFloating(pi);
                 }
             });
 
             Debug.dump(Debug.INFO_LEVEL, graph, "After Phase Pi Node Removal");
 
-            if (!Tornado.ACCELERATOR_IS_FPGA) {
-                loopUnroller.execute(graph, context);
-            }
+            loopUnroll.execute(graph, context);
 
             valueTypeReplacement.execute(graph, context);
 
@@ -291,8 +284,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             Debug.dump(Debug.INFO_LEVEL, graph, "After TaskSpecialisation iteration=" + iterations);
 
-            // boolean hasGuardingPiNodes =
-            // graph.getNodes().filter(GuardingPiNode.class).isNotEmpty();
             hasWork = (lastNodeCount != graph.getNodeCount() || graph.getNewNodes(mark).isNotEmpty()) // ||
                                                                                                       // hasGuardingPiNodes)
                     && (iterations < MAX_ITERATIONS);
@@ -316,7 +307,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             // isNullNode.usages().filter(GuardingPiNode.class).distinct()) {
             // guardingPiNode.replaceAtUsages(param);
             // }
-
         }
 
     }

@@ -36,6 +36,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernary
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.OCLAddressCast;
+import uk.ac.manchester.tornado.drivers.opencl.graal.meta.OCLMemorySpace;
 
 public class OCLLIRStmt {
 
@@ -143,6 +144,8 @@ public class OCLLIRStmt {
         protected OCLAddressCast cast;
         @Use
         protected MemoryAccess address;
+        @Use
+        protected Value index;
 
         public LoadStmt(AllocatableValue lhs, OCLAddressCast cast, MemoryAccess address) {
             super(TYPE);
@@ -151,9 +154,28 @@ public class OCLLIRStmt {
             this.address = address;
         }
 
-        @Override
-        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-            asm.indent();
+        public LoadStmt(AllocatableValue lhs, OCLAddressCast cast, MemoryAccess address, Value index) {
+            super(TYPE);
+            this.lhs = lhs;
+            this.cast = cast;
+            this.address = address;
+            this.index = index;
+        }
+
+        public void emitIntegerBasedIndexCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.emitValue(crb, lhs);
+            asm.space();
+            asm.assign();
+            asm.space();
+            address.emit(crb, asm);
+            asm.emit("[");
+            asm.emitValue(crb, index);
+            asm.emit("]");
+            asm.delimiter();
+            asm.eol();
+        }
+
+        public void emitPointerBaseIndexCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
             asm.emitValue(crb, lhs);
             asm.space();
             asm.assign();
@@ -165,6 +187,16 @@ public class OCLLIRStmt {
             asm.emit(")");
             asm.delimiter();
             asm.eol();
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            if (this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL) {
+                emitIntegerBasedIndexCode(crb, asm);
+            } else {
+                emitPointerBaseIndexCode(crb, asm);
+            }
         }
 
         public AllocatableValue getResult() {
@@ -253,6 +285,8 @@ public class OCLLIRStmt {
         protected OCLAddressCast cast;
         @Use
         protected MemoryAccess address;
+        @Use
+        protected Value index;
 
         public StoreStmt(OCLAddressCast cast, MemoryAccess address, Value rhs) {
             super(TYPE);
@@ -261,11 +295,32 @@ public class OCLLIRStmt {
             this.address = address;
         }
 
-        @Override
-        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+        public StoreStmt(OCLAddressCast cast, MemoryAccess address, Value rhs, Value index) {
+            super(TYPE);
+            this.rhs = rhs;
+            this.cast = cast;
+            this.address = address;
+            this.index = index;
+        }
+
+        public void emitIntegerStore(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            // ul_12[index] = 102;
+            // __local float ul_12[512];
+            address.emit(crb, asm);
+            asm.emit("[");
+            asm.emitValue(crb, index);
+            asm.emit("]");
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emitValue(crb, rhs);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        public void emitNormalCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
 
             // asm.emitLine("*((__global char *) ul_12) = 102;");
-            asm.indent();
             asm.emit("*(");
             cast.emit(crb, asm);
             asm.space();
@@ -277,6 +332,16 @@ public class OCLLIRStmt {
             asm.emitValue(crb, rhs);
             asm.delimiter();
             asm.eol();
+        }
+
+        @Override
+        public void emitCode(OCLCompilationResultBuilder crb, OCLAssembler asm) {
+            asm.indent();
+            if (this.cast.getMemorySpace().getBase().memorySpace == OCLMemorySpace.LOCAL) {
+                emitIntegerStore(crb, asm);
+            } else {
+                emitNormalCode(crb, asm);
+            }
         }
 
         public Value getRhs() {

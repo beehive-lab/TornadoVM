@@ -242,7 +242,6 @@ public class OCLCodeCache {
                 RuntimeUtilities.writeStreamToFile(file, source, true);
             }
         }
-
     }
 
     private String[] composeIntelHLSCommand(String inputFile, String outputFile) {

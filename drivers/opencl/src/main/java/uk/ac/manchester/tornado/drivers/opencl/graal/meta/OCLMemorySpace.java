@@ -48,16 +48,17 @@ public class OCLMemorySpace extends Value {
 
     public OCLArchitecture.OCLMemoryBase getBase() {
         if (this == GLOBAL || this == HEAP) {
-            return OCLArchitecture.hp;
+            return OCLArchitecture.globalSpace;
         } else if (this == LOCAL) {
-            return OCLArchitecture.lp;
+            return OCLArchitecture.localSpace;
         } else if (this == CONSTANT) {
-            return OCLArchitecture.cp;
+            return OCLArchitecture.constantSpace;
         } else if (this == PRIVATE) {
-            return OCLArchitecture.pp;
+            return OCLArchitecture.privateSpace;
+        } else {
+            TornadoInternalError.shouldNotReachHere();
+            return null;
         }
-        TornadoInternalError.shouldNotReachHere();
-        return null;
     }
 
     public String name() {
