@@ -27,11 +27,16 @@ import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageByte3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
 
+/**
+ * The multi-threaded execution of renderTrack for large input data sizes throws a Segmentation Fault.
+ * When running with large heap size this problem does not appear. For example:
+ * @param -Xms20G -Xmx20G
+ */
 public class RenderTrackMT {
 
     public static String executionType;
     public static int iterations;
-    public static boolean VALIDATION = false;
+    public static boolean VALIDATION = true;
 
     public static void renderTrack(ImageByte3 output, ImageFloat3 input) {
         for (@Parallel int y = 0; y < input.Y(); y++) {
@@ -70,8 +75,14 @@ public class RenderTrackMT {
         int balk = input.Y() / threads;
         for (int i = 0; i < threads; i++) {
             final int current = i;
+            int lowBound = current * balk;
+            int upperBound = (current + 1) * balk;
+            if(current==threads-1) {
+                upperBound = input.Y();
+            }
+            int finalUpperBound = upperBound;
             th[i] = new Thread(() -> {
-                for (int k = current * balk; k < (current + 1) * balk; k++) {
+                for (int k = lowBound; k < finalUpperBound; k++) {
                     for (int x = 0; x < input.X(); x++) {
                         Byte3 pixel = null;
                         final int result = (int) input.get(x, k).getS2();
@@ -110,6 +121,22 @@ public class RenderTrackMT {
         for (int i = 0; i < threads; i++) {
             th[i].join();
         }
+    }
+
+    public static boolean validate(ImageFloat3 input, ImageByte3 output) {
+        boolean validation = true;
+        ImageByte3 validationOutput = new ImageByte3(output.X(), output.Y());
+
+        renderTrack(validationOutput, input);
+
+        for (int i = 0; i < validationOutput.Y(); i++) {
+            for (int j = 0; j < validationOutput.X(); j++) {
+                if ( (validationOutput.get(i,j).getX() != output.get(i,j).getX()) || (validationOutput.get(i,j).getY() != output.get(i,j).getY()) || (validationOutput.get(i,j).getZ() != output.get(i,j).getZ()) ) {
+                    return false;
+                }
+            }
+        }
+        return validation;
     }
 
     public static void main(String[] args) throws InterruptedException {
@@ -180,6 +207,14 @@ public class RenderTrackMT {
                     end = System.nanoTime();
             }
             System.out.println("Total time:  " + (end - start) + " ns" + " \n");
+        }
+
+        if (VALIDATION) {
+            if (validate(input, output)) {
+                System.out.println("Validation: " + "SUCCESS " + "\n");
+            } else {
+                System.out.println("Validation: " + "FAIL " + "\n");
+            }
         }
 
     }
