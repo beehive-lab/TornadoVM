@@ -74,7 +74,7 @@ public class ReduceGPUSnippets implements Snippets {
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID] = localArray[0];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
@@ -121,7 +121,7 @@ public class ReduceGPUSnippets implements Snippets {
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID] = localArray[0];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
@@ -168,7 +168,7 @@ public class ReduceGPUSnippets implements Snippets {
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID] = localArray[0];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
@@ -215,7 +215,7 @@ public class ReduceGPUSnippets implements Snippets {
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID] = localArray[0];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
@@ -262,7 +262,7 @@ public class ReduceGPUSnippets implements Snippets {
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID] = localArray[0];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
@@ -309,7 +309,7 @@ public class ReduceGPUSnippets implements Snippets {
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID] = localArray[0];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
@@ -356,7 +356,7 @@ public class ReduceGPUSnippets implements Snippets {
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID] = localArray[0];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
@@ -380,7 +380,7 @@ public class ReduceGPUSnippets implements Snippets {
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID] = localArray[0];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
@@ -403,7 +403,7 @@ public class ReduceGPUSnippets implements Snippets {
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID] = localArray[0];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
@@ -427,7 +427,7 @@ public class ReduceGPUSnippets implements Snippets {
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID] = localArray[0];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
@@ -474,7 +474,7 @@ public class ReduceGPUSnippets implements Snippets {
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID] = localArray[0];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
