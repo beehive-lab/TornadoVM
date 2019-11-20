@@ -24,20 +24,18 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
 import org.graalvm.compiler.core.common.LIRKind;
-
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.calc.FloatingNode;
+import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryTemplate;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary;
@@ -45,11 +43,12 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt;
 
 @NodeInfo
-public class FixedArrayNode extends FloatingNode implements LIRLowerable {
+public class FixedArrayNode extends FixedNode implements LIRLowerable {
 
     public static final NodeClass<FixedArrayNode> TYPE = NodeClass.create(FixedArrayNode.class);
 
-    @Input protected ConstantNode length;
+    @Input
+    protected ConstantNode length;
 
     protected OCLKind elementKind;
     protected OCLMemoryBase memoryRegister;
@@ -63,10 +62,6 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
         this.elemenType = elementType;
         this.elementKind = OCLKind.fromResolvedJavaType(elementType);
         this.arrayTemplate = OCLBinaryTemplate.NEW_ARRAY;
-    }
-
-    public FixedArrayNode(ResolvedJavaType elementType, ConstantNode length) {
-        this(OCLArchitecture.hp, elementType, length);
     }
 
     public OCLMemoryBase getMemoryRegister() {
@@ -88,8 +83,8 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         /*
-         * using as_T reinterprets the data as type T - consider: float x =
-         * (float) 1; and int value = 1, float x = &(value);
+         * using as_T reinterprets the data as type T - consider: float x = (float) 1;
+         * and int value = 1, float x = &(value);
          */
         final Value lengthValue = gen.operand(length);
 
@@ -100,10 +95,6 @@ public class FixedArrayNode extends FloatingNode implements LIRLowerable {
         final OCLLIRStmt.ExprStmt expr = new OCLLIRStmt.ExprStmt(declaration);
         gen.getLIRGeneratorTool().append(expr);
         gen.setResult(this, variable);
-    }
-
-    public void setLocalType(OCLBinaryTemplate template) {
-        this.arrayTemplate = template;
     }
 
 }

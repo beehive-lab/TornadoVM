@@ -235,6 +235,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return maxComputeUnits;
     }
 
+    @Override
     public int getDeviceMaxClockFrequency() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
@@ -243,6 +244,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return buffer.getInt();
     }
 
+    @Override
     public long getDeviceMaxAllocationSize() {
         if (maxAllocationSize != -1) {
             return maxAllocationSize;
@@ -298,6 +300,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return maxWorkItemDimensions;
     }
 
+    @Override
     public long[] getDeviceMaxWorkItemSizes() {
         if (maxWorkItemSizes != null) {
             return maxWorkItemSizes;
@@ -333,6 +336,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return maxWorkGroupSize;
     }
 
+    @Override
     public long getDeviceMaxConstantBufferSize() {
         if (maxConstantBufferSize != -1) {
             return maxConstantBufferSize;

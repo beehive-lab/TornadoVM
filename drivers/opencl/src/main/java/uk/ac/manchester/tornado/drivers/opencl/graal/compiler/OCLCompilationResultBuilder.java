@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
-import uk.ac.manchester.tornado.runtime.common.*;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
 
 import java.util.ArrayList;
@@ -62,6 +60,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopCond
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopInitOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopPostOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
@@ -88,6 +87,10 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     public void setKernel(boolean value) {
         isKernel = value;
+    }
+
+    public boolean shouldRemoveLoop() {
+        return (isParallel() && Tornado.ACCELERATOR_IS_FPGA);
     }
 
     public boolean isKernel() {
@@ -270,8 +273,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             } else if (op instanceof OCLControlFlow.LoopBreakOp) {
                 breakInst = op;
                 continue;
-            } else if ((Tornado.REMOVE_OUTER_LOOPS && loops == 0)
-                    && (op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp)) {
+            } else if ((shouldRemoveLoop() && loops == 0) && (op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp)) {
                 if (op instanceof OCLControlFlow.LoopPostOp)
                     loops++;
                 continue;
