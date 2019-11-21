@@ -272,11 +272,7 @@ public class OCLCodeCache {
     private String[] composeXilinxHLSCompileCommand(String inputFile, String kernelName) {
         StringJoiner bufferCommand = new StringJoiner(" ", "xocc ", "");
 
-        if (Tornado.FPGA_EMULATION) {
-            bufferCommand.add("-t " + "sw_emu");
-        } else {
-            bufferCommand.add("-t " + "hw");
-        }
+        bufferCommand.add(Tornado.FPGA_EMULATION ? ("-t " + "sw_emu") : ("-t " + "hw"));
         bufferCommand.add("--platform " + "xilinx_kcu1500_dynamic_5_0 " + "-c " + "-k " + kernelName);
         bufferCommand.add("-g " + "-I./" + DIRECTORY_BITSTREAM);
         bufferCommand.add("--xp " + "misc:solution_name=lookupBufferAddress");
@@ -290,11 +286,7 @@ public class OCLCodeCache {
     private String[] composeXilinxHLSLinkCommand(String kernelName) {
         StringJoiner bufferCommand = new StringJoiner(" ", "xocc ", "");
 
-        if (Tornado.FPGA_EMULATION) {
-            bufferCommand.add("-t " + "sw_emu");
-        } else {
-            bufferCommand.add("-t " + "hw");
-        }
+        bufferCommand.add(Tornado.FPGA_EMULATION ? ("-t " + "sw_emu") : ("-t " + "hw"));
         bufferCommand.add("--platform " + "xilinx_kcu1500_dynamic_5_0 " + "-l " + "-g");
         bufferCommand.add("--xp " + "misc:solution_name=link");
         bufferCommand.add("--report_dir " + DIRECTORY_BITSTREAM + "reports");
@@ -319,11 +311,7 @@ public class OCLCodeCache {
 
     private boolean shouldGenerateXilinxBitstream(File fpgaBitStreamFile, OCLDeviceContext deviceContext) {
         if (!RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {
-            if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
-                return true;
-            } else {
-                return false;
-            }
+            return (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx"));
         } else {
             return false;
         }
