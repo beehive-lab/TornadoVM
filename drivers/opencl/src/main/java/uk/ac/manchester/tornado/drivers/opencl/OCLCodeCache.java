@@ -270,14 +270,14 @@ public class OCLCodeCache {
     }
 
     private String[] composeXilinxHLSCompileCommand(String inputFile, String kernelName) {
-        StringJoiner bufferCommand = new StringJoiner(" ", "xocc ", "" );
+        StringJoiner bufferCommand = new StringJoiner(" ", "xocc ", "");
 
-        if(Tornado.FPGA_EMULATION) {
+        if (Tornado.FPGA_EMULATION) {
             bufferCommand.add("-t " + "sw_emu");
         } else {
             bufferCommand.add("-t " + "hw");
         }
-        bufferCommand.add("--platform " + "xilinx_kcu1500_dynamic_5_0 " + "-c " +"-k " +kernelName);
+        bufferCommand.add("--platform " + "xilinx_kcu1500_dynamic_5_0 " + "-c " + "-k " + kernelName);
         bufferCommand.add("-g " + "-I./" + DIRECTORY_BITSTREAM);
         bufferCommand.add("--xp " + "misc:solution_name=lookupBufferAddress");
         bufferCommand.add("--report_dir " + DIRECTORY_BITSTREAM + "reports");
@@ -288,14 +288,14 @@ public class OCLCodeCache {
     }
 
     private String[] composeXilinxHLSLinkCommand(String kernelName) {
-        StringJoiner bufferCommand = new StringJoiner(" ", "xocc ", "" );
+        StringJoiner bufferCommand = new StringJoiner(" ", "xocc ", "");
 
-        if(Tornado.FPGA_EMULATION) {
+        if (Tornado.FPGA_EMULATION) {
             bufferCommand.add("-t " + "sw_emu");
         } else {
             bufferCommand.add("-t " + "hw");
         }
-        bufferCommand.add("--platform " + "xilinx_kcu1500_dynamic_5_0 " + "-l " +"-g");
+        bufferCommand.add("--platform " + "xilinx_kcu1500_dynamic_5_0 " + "-l " + "-g");
         bufferCommand.add("--xp " + "misc:solution_name=link");
         bufferCommand.add("--report_dir " + DIRECTORY_BITSTREAM + "reports");
         bufferCommand.add("--log_dir " + DIRECTORY_BITSTREAM + "logs");
@@ -308,9 +308,9 @@ public class OCLCodeCache {
 
     private void callOSforCompilation(String[] compilationCommand, String[] commandRename) {
         try {
-            if(compilationCommand!=null)
+            if (compilationCommand != null)
                 RuntimeUtilities.sysCall(compilationCommand, true);
-            if(commandRename!=null)
+            if (commandRename != null)
                 RuntimeUtilities.sysCall(commandRename, true);
         } catch (IOException e) {
             throw new TornadoRuntimeException(e);
@@ -329,7 +329,7 @@ public class OCLCodeCache {
         }
     }
 
-    public OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) { //TODO Override this method for each FPGA backend
+    public OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) { // TODO Override this method for each FPGA backend
         String[] compilationCommand;
         final String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
         final String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
@@ -338,18 +338,18 @@ public class OCLCodeCache {
         appendSourceToFile(id, entryPoint, source);
         if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
             String[] commandRename;
-            String[] linkCommand=null;
+            String[] linkCommand = null;
 
             if (OPENCL_PRINT_SOURCE) {
                 String sourceCode = new String(source);
                 System.out.println(sourceCode);
             }
 
-            if(deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
+            if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
                 compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
                 linkCommand = composeXilinxHLSLinkCommand(entryPoint);
             } else if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Intel(R) Corporation")) {
-                 compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
+                compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
             } else {
                 // Should not reach here
                 throw new TornadoRuntimeException("FPGA vendor not supported.");
@@ -361,13 +361,13 @@ public class OCLCodeCache {
                 return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
             } else {
                 callOSforCompilation(compilationCommand, commandRename);
-                if(deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
+                if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
                     callOSforCompilation(linkCommand, null);
                 }
             }
             return installEntryPointForBinaryForFPGAs(resolveBitstreamDirectory(), LOOKUP_BUFFER_KERNEL_NAME);
         } else {
-            if(!COMPILED_BUFFER_KERNEL) {
+            if (!COMPILED_BUFFER_KERNEL) {
                 COMPILED_BUFFER_KERNEL = true;
 
                 if (Tornado.ACCELERATOR_IS_FPGA) {
@@ -379,7 +379,7 @@ public class OCLCodeCache {
                     System.out.println(sourceCode);
                 }
 
-                if(shouldGenerateXilinxBitstream(fpgaBitStreamFile, deviceContext)) {
+                if (shouldGenerateXilinxBitstream(fpgaBitStreamFile, deviceContext)) {
                     compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
                     callOSforCompilation(compilationCommand, null);
                 }
