@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestConditionals extends TornadoTestBase {
@@ -203,6 +204,63 @@ public class TestConditionals extends TornadoTestBase {
             assertEquals(10, a[i]);   
         }
     }
-    
-    
+
+    public static void ternaryCondition(int[] a) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            a[i] = (a[i] == 20) ? 10 : 5;
+        }
+    }
+
+    @Test
+    public void testTernaryCondition() {
+
+        final int  size = 10;
+        int[] a = new int[size];
+
+        Arrays.fill(a, 20);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestConditionals::ternaryCondition, a)
+                .streamOut(a)
+                .execute();
+        //formatter:on
+
+        for (int i = 0; i < a.length; i++) {
+            assertEquals(10, a[i]);
+        }
+    }
+
+    public static void ternaryComplexCondition(int[] a, int[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            for (int x = 0; x < a.length; x++) {
+                    if (i == a.length) {
+                        a[x] = (a[x] == 20) ? a[x]+b[x] : 5;
+                    }
+            }
+        }
+    }
+
+    @TornadoNotSupported
+    public void testComplexTernaryCondition() {
+
+        final int  size = 8192;
+        int[] a = new int[size];
+        int[] b = new int[size];
+
+
+        Arrays.fill(a, 20);
+        Arrays.fill(b, 30);
+
+        //@formatter:off
+        new TaskSchedule("s0")
+                .task("t0", TestConditionals::ternaryComplexCondition, a, b)
+                .streamOut(a)
+                .execute();
+        //formatter:on
+
+        for (int i = 0; i < a.length; i++) {
+            assertEquals(50, a[i]);
+        }
+    }
 }

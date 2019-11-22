@@ -201,4 +201,88 @@ public class TestBatches extends TornadoTestBase {
         }
     }
 
+    @Test
+    public void test50MBShort() {
+
+        // Fill 160MB of input Array
+        int size = 80000000;
+        short[] arrayA = new short[size];
+        short[] arrayB = new short[size];
+        short[] arrayC = new short[size];
+
+        Random r = new Random();
+        IntStream.range(0, arrayA.length).sequential().forEach(idx -> {
+            arrayA[idx] = (short) r.nextInt(Short.MAX_VALUE / 2);
+            arrayB[idx] = (short) r.nextInt(Short.MAX_VALUE / 2);
+        });
+
+        TaskSchedule ts = new TaskSchedule("s0");
+
+        // @formatter:off
+        ts.batch("50MB")   // Process Slots of 50 MB
+                .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
+                .streamOut((Object) arrayC)
+                .execute();
+        // @formatter:on
+
+        for (int i = 0; i < arrayA.length; i++) {
+            assertEquals(arrayA[i] + arrayB[i], arrayC[i]);
+        }
+    }
+
+    @Test
+    public void test50MBDouble() {
+
+        int size = 20000000;
+        double[] arrayA = new double[size];
+        double[] arrayB = new double[size];
+        double[] arrayC = new double[size];
+
+        IntStream.range(0, arrayA.length).sequential().forEach(idx -> {
+            arrayA[idx] = idx;
+            arrayB[idx] = idx;
+        });
+
+        TaskSchedule ts = new TaskSchedule("s0");
+
+        // @formatter:off
+        ts.batch("50MB")   // Process Slots of 50 MB
+                .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
+                .streamOut((Object) arrayC)
+                .execute();
+        // @formatter:on
+
+        for (int i = 0; i < arrayA.length; i++) {
+            assertEquals(arrayA[i] + arrayB[i], arrayC[i], 0.01);
+        }
+    }
+
+    @Test
+    public void test50MBLong() {
+
+        // Fill 160MB of input Array
+        int size = 20000000;
+        long[] arrayA = new long[size];
+        long[] arrayB = new long[size];
+        long[] arrayC = new long[size];
+
+        IntStream.range(0, arrayA.length).sequential().forEach(idx -> {
+            arrayA[idx] = idx;
+            arrayB[idx] = idx;
+        });
+
+        TaskSchedule ts = new TaskSchedule("s0");
+
+        // @formatter:off
+        ts.batch("50MB")   // Process Slots of 50 MB
+                .task("t0", TestBatches::compute, arrayA, arrayB, arrayC)
+                .streamOut((Object) arrayC)
+                .execute();
+        // @formatter:on
+
+        for (int i = 0; i < arrayA.length; i++) {
+            assertEquals(arrayA[i] + arrayB[i], arrayC[i]);
+        }
+    }
+
 }

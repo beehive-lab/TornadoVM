@@ -46,6 +46,10 @@ public class ThreadConfigurationNode extends FixedWithNextNode implements LIRLow
         this.localWork = localWork;
     }
 
+    /**
+     * This an empty implementation for generating LIR for this node. This is due to
+     * a fix template used during code generation for this node.
+     */
     @Override
     public void generate(NodeLIRBuilderTool nodeLIRBuilderTool) {
     }

@@ -34,8 +34,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestReductionsDoubles extends TornadoTestBase {
 
+    private static final int SIZE_LARGE = 65536;
     private static final int SIZE = 8192;
-
     private static final int SIZE2 = 32;
 
     private static void reductionAddDoubles(double[] input, @Reduce double[] result) {
@@ -60,6 +60,36 @@ public class TestReductionsDoubles extends TornadoTestBase {
 			.task("t0", TestReductionsDoubles::reductionAddDoubles, input, result)
 			.streamOut(result);
 		//@formatter:on
+
+        task.execute();
+
+        double[] sequential = new double[1];
+        reductionAddDoubles(input, sequential);
+
+        assertEquals(sequential[0], result[0], 0.01f);
+    }
+
+    private static void reductionAddDoublesLarge(double[] input, @Reduce double[] result) {
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] += input[i];
+        }
+    }
+
+    @Test
+    public void testSumDoublesLarge() {
+        double[] input = new double[SIZE_LARGE];
+        double[] result = new double[257];
+
+        Random r = new Random();
+        IntStream.range(0, SIZE_LARGE).parallel().forEach(i -> {
+            input[i] = r.nextDouble();
+        });
+
+        //@formatter:off
+        TaskSchedule task = new TaskSchedule("s0")
+                .task("t0", TestReductionsDoubles::reductionAddDoublesLarge, input, result)
+                .streamOut(result);
+        //@formatter:on
 
         task.execute();
 
