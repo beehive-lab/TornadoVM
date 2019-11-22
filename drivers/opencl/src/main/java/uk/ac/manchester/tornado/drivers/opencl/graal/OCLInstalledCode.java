@@ -202,7 +202,9 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         if (meta != null && meta.getConstantSize() > 0) {
             kernel.setArg(index, ByteBuffer.wrap(meta.getConstantData()));
         } else {
-            kernel.setArgUnused(index);
+            buffer.clear();
+            buffer.putLong(stack.toConstantAddress());
+            kernel.setArg(index, buffer);
         }
         index++;
 
@@ -216,7 +218,9 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         index++;
 
         // private memory
-        kernel.setArgUnused(index);
+        buffer.clear();
+        buffer.putLong(stack.toPrivateAddress());
+        kernel.setArg(index, buffer);
     }
 
     public int submitWithEvents(final OCLCallStack stack, final TaskMetaData meta, final int[] events, long batchThreads) {
