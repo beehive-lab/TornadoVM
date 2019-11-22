@@ -50,9 +50,11 @@ public class OCLUnary {
      */
     protected static class UnaryConsumer extends OCLLIROp {
 
-        @Opcode protected final OCLUnaryOp opcode;
+        @Opcode
+        protected final OCLUnaryOp opcode;
 
-        @Use protected Value value;
+        @Use
+        protected Value value;
 
         protected UnaryConsumer(OCLUnaryOp opcode, LIRKind lirKind, Value value) {
             super(lirKind);
@@ -146,10 +148,18 @@ public class OCLUnary {
 
         private final OCLMemoryBase base;
         private final boolean needsBase;
+        private Value index;
 
         public MemoryAccess(OCLMemoryBase base, Value value, boolean needsBase) {
             super(null, LIRKind.Illegal, value);
             this.base = base;
+            this.needsBase = needsBase;
+        }
+
+        public MemoryAccess(OCLMemoryBase base, Value value, Value index, boolean needsBase) {
+            super(null, LIRKind.Illegal, value);
+            this.base = base;
+            this.index = index;
             this.needsBase = needsBase;
         }
 
@@ -169,6 +179,10 @@ public class OCLUnary {
 
         public OCLMemoryBase getBase() {
             return base;
+        }
+
+        public Value getIndex() {
+            return index;
         }
 
         @Override

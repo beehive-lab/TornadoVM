@@ -77,13 +77,6 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
                 ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
                 GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(dimension));
                 graph.replaceFixed(invoke, groupIdNode);
-            } else if (methodName.equals("Direct#OpenCLIntrinsics.createLocalMemory")) {
-                NodeInputList<ValueNode> arguments = invoke.callTarget().arguments();
-                FixedArrayNode array = (FixedArrayNode) arguments.get(0);
-                ConstantNode size = getConstantNodeFromArguments(invoke, 1);
-                array.setLocalType(OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY);
-                NewLocalArrayNode newLocalArrayNode = graph.addOrUnique(new NewLocalArrayNode(size, JavaKind.Int, OCLArchitecture.lp, OCLKind.INT, array));
-                graph.replaceFixed(invoke, newLocalArrayNode);
             } else if (methodName.equals("Direct#OpenCLIntrinsics.printEmpty")) {
                 OpenCLPrintf printfNode = graph.addOrUnique(new OpenCLPrintf("\"\""));
                 graph.replaceFixed(invoke, printfNode);

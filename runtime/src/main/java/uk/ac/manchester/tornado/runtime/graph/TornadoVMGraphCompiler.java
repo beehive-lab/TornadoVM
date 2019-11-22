@@ -155,8 +155,8 @@ public class TornadoVMGraphCompiler {
     }
 
     /*
-     * Simplest case where all tasks within a task-schedule are executed on the
-     * same device.
+     * Simplest case where all tasks within a task-schedule are executed on the same
+     * device.
      */
     private static TornadoVMGraphCompilationResult compileSingleContext(TornadoGraph graph, TornadoExecutionContext context, TornadoAcceleratorDevice device, long batchSize) {
 
@@ -223,8 +223,8 @@ public class TornadoVMGraphCompiler {
     }
 
     /**
-     * It replaces the last STREAM_OUT for STREAM_OUT_BLOCKING byte-code.
-     * Otherwise, it adds a barrier
+     * It replaces the last STREAM_OUT for STREAM_OUT_BLOCKING byte-code. Otherwise,
+     * it adds a barrier
      * 
      * @param result
      * @param numDepLists

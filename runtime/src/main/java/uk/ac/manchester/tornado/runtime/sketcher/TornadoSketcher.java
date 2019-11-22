@@ -25,6 +25,13 @@
  */
 package uk.ac.manchester.tornado.runtime.sketcher;
 
+import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoExecutor;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -129,7 +136,6 @@ public class TornadoSketcher {
                  .forEach(invoke -> getTornadoExecutor()
                  .execute(new SketchRequest(meta, invoke.callTarget().targetMethod(), providers, graphBuilderSuite, sketchTier)));
             // @formatter:on
-
             return new Sketch(CachedGraph.fromReadonlyCopy(graph), meta);
 
         } catch (Throwable e) {

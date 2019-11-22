@@ -89,18 +89,18 @@ public class OCLArchitecture extends Architecture {
 
     }
 
-    public static final OCLMemoryBase hp = new OCLMemoryBase(0, HEAP_REF_NAME, OCLMemorySpace.GLOBAL);
+    public static final OCLMemoryBase globalSpace = new OCLMemoryBase(0, HEAP_REF_NAME, OCLMemorySpace.GLOBAL);
     public static OCLRegister sp;
-    public static final OCLMemoryBase cp = new OCLMemoryBase(2, CONSTANT_REGION_NAME, OCLMemorySpace.CONSTANT);
-    public static final OCLMemoryBase lp = new OCLMemoryBase(3, LOCAL_REGION_NAME, OCLMemorySpace.LOCAL);
-    public static final OCLMemoryBase pp = new OCLMemoryBase(4, PRIVATE_REGION_NAME, OCLMemorySpace.GLOBAL);
+    public static final OCLMemoryBase constantSpace = new OCLMemoryBase(2, CONSTANT_REGION_NAME, OCLMemorySpace.CONSTANT);
+    public static final OCLMemoryBase localSpace = new OCLMemoryBase(3, LOCAL_REGION_NAME, OCLMemorySpace.LOCAL);
+    public static final OCLMemoryBase privateSpace = new OCLMemoryBase(4, PRIVATE_REGION_NAME, OCLMemorySpace.GLOBAL);
 
     public static OCLRegister[] abiRegisters;
 
     public OCLArchitecture(final OCLKind wordKind, final ByteOrder byteOrder) {
         super("Tornado OpenCL", wordKind, byteOrder, false, null, LOAD_STORE | STORE_STORE, 0, 0);
         sp = new OCLRegister(1, FRAME_BASE_NAME, wordKind);
-        abiRegisters = new OCLRegister[] { hp, sp, cp, lp, pp };
+        abiRegisters = new OCLRegister[] { globalSpace, sp, constantSpace, localSpace, privateSpace };
     }
 
     @Override

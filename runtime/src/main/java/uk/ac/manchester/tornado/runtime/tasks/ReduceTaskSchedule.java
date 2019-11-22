@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.runtime.tasks;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map.Entry;
 
 import org.graalvm.compiler.debug.DebugContext;
@@ -70,6 +71,7 @@ class ReduceTaskSchedule {
     private HashMap<Object, Object> neutralElementsNew = new HashMap<>();
     private HashMap<Object, Object> neutralElementsOriginal = new HashMap<>();
     private TaskSchedule rewrittenTaskSchedule;
+    private HashMap<Object, LinkedList<Integer>> reduceOperandTable;
 
     ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects) {
         this.taskPackages = taskPackages;
@@ -86,8 +88,8 @@ class ReduceTaskSchedule {
             if (binaries.length == 1) {
                 binaries = MetaDataUtils.processPrecompiledBinariesFromFile(binaries[0]);
                 StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < binaries.length; i++) {
-                    sb.append(binaries[i].replaceAll(" ", "")).append(",");
+                for (String binary : binaries) {
+                    sb.append(binary.replaceAll(" ", "")).append(",");
                 }
                 sb = sb.deleteCharAt(sb.length() - 1);
                 originalBinaries = new StringBuffer(sb.toString());
@@ -299,13 +301,27 @@ class ReduceTaskSchedule {
         taskPackage.setNumThreadsToRun(sizeTargetDevice);
     }
 
-    private void updateStreamInOutVariables() {
+    private void updateStreamInOutVariables(HashMap<Integer, MetaReduceTasks> tableReduce) {
         // Update Stream IN and Stream OUT
         for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
 
             // Update streamIn if needed (substitute if output appears as
             // stream-in with the new created array).
             for (int i = 0; i < streamInObjects.size(); i++) {
+
+                // Update table that consistency between input variables and reduce tasks.
+                // This part is used to STREAM_IN data when performing multiple reductions in
+                // the same task-schedule
+                if (tableReduce.containsKey(taskNumber)) {
+                    if (!reduceOperandTable.containsKey(streamInObjects.get(i))) {
+                        LinkedList<Integer> taskList = new LinkedList<>();
+                        taskList.add(taskNumber);
+                        reduceOperandTable.put(streamInObjects.get(i), taskList);
+                    } else {
+                        reduceOperandTable.get(streamInObjects.get(i)).add(taskNumber);
+                    }
+                }
+
                 if (originalReduceVariables.containsKey(streamInObjects.get(i))) {
                     streamInObjects.set(i, originalReduceVariables.get(streamInObjects.get(i)));
                 }
@@ -365,6 +381,10 @@ class ReduceTaskSchedule {
             originalReduceVariables = new HashMap<>();
         }
 
+        if (reduceOperandTable == null) {
+            reduceOperandTable = new HashMap<>();
+        }
+
         int deviceToRun = 0;
 
         // Create new buffer variables and update the corresponding streamIn and
@@ -388,11 +408,11 @@ class ReduceTaskSchedule {
 
                 for (Integer paramIndex : listOfReduceIndexParameters) {
 
-                    Object originalReduceVariable = taskPackage.getTaskParameters()[paramIndex + 1];
+                    Object originalReduceArray = taskPackage.getTaskParameters()[paramIndex + 1];
 
                     // If the array has been already created, we don't have to create another one,
                     // just obtain the already created reference from the cache-table.
-                    if (originalReduceVariables.containsKey(originalReduceVariable)) {
+                    if (originalReduceVariables.containsKey(originalReduceArray)) {
                         continue;
                     }
 
@@ -418,26 +438,26 @@ class ReduceTaskSchedule {
 
                     // Set the new array size
                     int sizeReductionArray = obtainSizeArrayResult(DEFAULT_DRIVER_INDEX, deviceToRun, inputSize);
-                    Object newArray = createNewReduceArray(originalReduceVariable, sizeReductionArray);
-                    Object neutralElement = getNeutralElement(originalReduceVariable);
+                    Object newArray = createNewReduceArray(originalReduceArray, sizeReductionArray);
+                    Object neutralElement = getNeutralElement(originalReduceArray);
                     fillOutputArrayWithNeutral(newArray, neutralElement);
 
                     neutralElementsNew.put(newArray, neutralElement);
-                    neutralElementsOriginal.put(originalReduceVariable, neutralElement);
+                    neutralElementsOriginal.put(originalReduceArray, neutralElement);
 
                     taskPackage.getTaskParameters()[paramIndex + 1] = newArray;
 
                     // Store metadata
                     streamReduceList.add(newArray);
                     sizesReductionArray.add(sizeReductionArray);
-                    originalReduceVariables.put(originalReduceVariable, newArray);
+                    originalReduceVariables.put(originalReduceArray, newArray);
                 }
                 streamReduceTable.put(taskNumber, streamReduceList);
             }
         }
 
         rewrittenTaskSchedule = new TaskSchedule(taskScheduleReduceName);
-        updateStreamInOutVariables();
+        updateStreamInOutVariables(metaReduceTable.getTable());
 
         // Compose Task Schedule
         for (int taskNumber = 0; taskNumber < taskPackages.size(); taskNumber++) {
@@ -452,6 +472,21 @@ class ReduceTaskSchedule {
                 if (originalReduceVariables.containsKey(key)) {
                     Object value = originalReduceVariables.get(key);
                     taskPackages.get(taskNumber).getTaskParameters()[i + 1] = value;
+                }
+            }
+
+            // Analyze of we have multiple reduce tasks in the same task-schedule. In the
+            // case we reuse same input data, we need to stream in the input the rest of the
+            // reduce parallel tasks
+            if (tableReduce.containsKey(taskNumber)) {
+                // We only analyze for parallel tasks
+                for (int i = 0; i < taskPackages.get(taskNumber).getTaskParameters().length - 1; i++) {
+                    Object parameterToMethod = taskPackages.get(taskNumber).getTaskParameters()[i + 1];
+                    if (reduceOperandTable.containsKey(parameterToMethod)) {
+                        if (reduceOperandTable.get(parameterToMethod).size() > 1) {
+                            rewrittenTaskSchedule.forceCopyIn(parameterToMethod);
+                        }
+                    }
                 }
             }
 

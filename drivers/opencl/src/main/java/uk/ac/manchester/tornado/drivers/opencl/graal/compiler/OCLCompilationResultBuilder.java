@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
+<<<<<<< HEAD
 import jdk.vm.ci.code.Register;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
@@ -30,6 +31,8 @@ import uk.ac.manchester.tornado.runtime.common.*;
 
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
+=======
+>>>>>>> develop-features
 import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
 
 import java.util.ArrayList;
@@ -67,7 +70,11 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopCond
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopInitOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLControlFlow.LoopPostOp;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
+<<<<<<< HEAD
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
+=======
+import uk.ac.manchester.tornado.runtime.common.Tornado;
+>>>>>>> develop-features
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
@@ -99,6 +106,10 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     public void setKernel(boolean value) {
         isKernel = value;
+    }
+
+    public boolean shouldRemoveLoop() {
+        return (isParallel() && Tornado.ACCELERATOR_IS_FPGA);
     }
 
     public boolean isKernel() {
@@ -281,8 +292,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             } else if (op instanceof OCLControlFlow.LoopBreakOp) {
                 breakInst = op;
                 continue;
-            } else if ((Tornado.REMOVE_OUTER_LOOPS && loops == 0)
-                    && (op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp)) {
+            } else if ((shouldRemoveLoop() && loops == 0) && (op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp)) {
                 if (op instanceof OCLControlFlow.LoopPostOp)
                     loops++;
                 continue;

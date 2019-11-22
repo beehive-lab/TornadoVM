@@ -64,7 +64,13 @@ public class OpenCLIntrinsics {
 
     public static native void printEmpty();
 
+<<<<<<< HEAD
     public static native void createLocalMemory(int[] array, int size);
+=======
+    public static void printEmpty() {
+
+    }
+>>>>>>> develop-features
 
     public static int fmax(float a, float b) {
         return 0;

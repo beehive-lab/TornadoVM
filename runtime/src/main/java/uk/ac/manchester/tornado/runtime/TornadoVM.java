@@ -27,7 +27,6 @@ package uk.ac.manchester.tornado.runtime;
 
 import static uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus.COMPLETE;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.PRINT_COMPILE_TIMES;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_VM_FLUSH;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.VM_USE_DEPS;
 
@@ -37,7 +36,6 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 
-import jdk.vm.ci.meta.JavaTypeProfile.ProfiledType;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -452,9 +450,9 @@ public class TornadoVM extends TornadoLogger {
                         continue;
                     }
 
-                    if (argType == TornadoVMBytecodes.CONSTANT_ARG.value()) {
+                    if (argType == TornadoVMBytecodes.CONSTANT_ARGUMENT.value()) {
                         stack.push(constants.get(argIndex));
-                    } else if (argType == TornadoVMBytecodes.REFERENCE_ARG.value()) {
+                    } else if (argType == TornadoVMBytecodes.REFERENCE_ARGUMENT.value()) {
                         final GlobalObjectState globalState = resolveGlobalObjectState(argIndex);
                         final DeviceObjectState objectState = globalState.getDeviceState(contexts.get(contextIndex));
 

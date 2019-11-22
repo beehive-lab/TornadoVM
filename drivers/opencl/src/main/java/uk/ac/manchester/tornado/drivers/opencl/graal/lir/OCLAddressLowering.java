@@ -34,14 +34,17 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 
 public class OCLAddressLowering extends AddressLowering {
 
     @Override
     public AddressNode lower(ValueNode base, ValueNode offset) {
-        OCLMemoryBase memoryRegister = OCLArchitecture.hp;
+        OCLMemoryBase memoryRegister = OCLArchitecture.globalSpace;
         if (base instanceof FixedArrayNode) {
             memoryRegister = ((FixedArrayNode) base).getMemoryRegister();
+        } else if (base instanceof LocalArrayNode) {
+            memoryRegister = ((LocalArrayNode) base).getMemoryRegister();
         } else if (!((base instanceof ParameterNode) || (base instanceof FloatingReadNode) || (base instanceof PiNode))) {
             TornadoInternalError.unimplemented("address origin unimplemented: %s", base.getClass().getName());
         }

@@ -16,7 +16,7 @@ TornadoVM has been succefully tested on the following platforms:
 
   * CentOS >= 7.3
   * Fedora >= 21
-  * Ubuntu 16.04, 18.04 and 18.10
+  * Ubuntu >= 16.04
   * Mac OS X Mojave 10.14.6
 
 
@@ -148,6 +148,15 @@ $ make
 ```
 and done!! 
 
+## Know issues 
+
+### For Ubuntu >= 16.04, install the package  `ocl-icd-opencl-dev`
+
+In Ubuntu >= 16.04 CMake can cause the following error:  Could NOT find OpenCL (missing: OpenCL_LIBRARY) (found version "2.2"). Then the following package should be installed:
+ 
+```bash 
+$ apt-get install ocl-icd-opencl-dev
+```
 
 ## Running Examples 
 
@@ -272,4 +281,37 @@ Then :
  2. Check the `Use the Eclipse code` formatter radio button
  2. Set the Eclipse Java Formatter config file to the XML file stored in /scripts/templates/eclise-settings/Tornado.xml
  3. Set the Java formatter profile in Tornado
+
+
+## TornadoVM Maven Projects
+
+To use the TornadoVM API in your projects, you can checkout our maven repository as follows:
+
+
+```xml
+   <repositories>
+     <repository>
+       <id>universityOfManchester-graal</id>
+       <url>https://raw.githubusercontent.com/beehive-lab/tornado/maven-tornadovm</url>
+     </repository>
+   </repositories>
+  
+   <dependencies>   
+      <dependency>
+         <groupId>tornado</groupId>
+         <artifactId>tornado-api</artifactId>
+         <version>0.4</version>
+      </dependency>
+   </dependencies>
+```
+
+Notice that, for running with TornadoVM, you will need either the docker images or the full JVM with TornadoVM enabled. 
+
+#### Versions available
+
+* 0.4
+* 0.3 
+* 0.2   
+* 0.1.0 
+
 

@@ -1,6 +1,6 @@
 /*
  * This file is part of Tornado: A heterogeneous programming framework:
- * https://github.com/beehive-lab/tornadovm
+ * https://github.com/beehive-lab/tornado
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
@@ -20,27 +20,16 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Authors: Juan Fumero
+ * Authors: Michalis Papadimitriou
  *
  */
 
-#define CL_TARGET_OPENCL_VERSION 120
-#ifdef __APPLE__
-    #include <OpenCL/cl.h>
-#else 
-    #include <CL/cl.h>
-#endif
+package uk.ac.manchester.tornado.runtime.graal.phases;
 
-/*
- * It returns the time in nanoseconds
+/**
+ * This interface is used for accessing the local array node type outside the
+ * opencl-driver package
  */
-long getTimeEvent(cl_event event) {
-    cl_int status = clWaitForEvents(1, &event);
-    if(status!=CL_SUCCESS)
-         printf("[ERROR clWaitForEvents]: %d\n", status);
-    cl_ulong time_start, time_end;
-    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
-    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
-    return (time_end - time_start);
-}
+public interface MarkLocalArray {
 
+}

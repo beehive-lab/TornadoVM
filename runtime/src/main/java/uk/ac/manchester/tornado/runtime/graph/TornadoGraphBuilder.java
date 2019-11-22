@@ -52,6 +52,30 @@ import uk.ac.manchester.tornado.runtime.tasks.TornadoGraphBitcodes;
 
 public class TornadoGraphBuilder {
 
+    private static void createStreamInNode(ContextNode context, TornadoGraph graph, ObjectNode value, AbstractNode[] args, int argIndex) {
+        final StreamInNode streamInNode = new StreamInNode(context);
+        streamInNode.setValue(value);
+        graph.add(streamInNode);
+        context.addUse(streamInNode);
+        args[argIndex] = streamInNode;
+    }
+
+    private static void createAllocateNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex) {
+        final AllocateNode allocateNode = new AllocateNode(context);
+        allocateNode.setValue((ObjectNode) arg);
+        graph.add(allocateNode);
+        context.addUse(allocateNode);
+        args[argIndex] = allocateNode;
+    }
+
+    private static void createCopyInNode(ContextNode context, TornadoGraph graph, AbstractNode arg, AbstractNode[] args, int argIndex) {
+        final CopyInNode copyInNode = new CopyInNode(context);
+        copyInNode.setValue((ObjectNode) arg);
+        graph.add(copyInNode);
+        context.addUse(copyInNode);
+        args[argIndex] = copyInNode;
+    }
+
     public static TornadoGraph buildGraph(TornadoExecutionContext graphContext, ByteBuffer buffer) {
         TornadoGraph graph = new TornadoGraph();
         Access[] accesses = null;
@@ -92,33 +116,18 @@ public class TornadoGraphBuilder {
                 final int variableIndex = buffer.getInt();
 
                 final AbstractNode arg = objectNodes[variableIndex];
-
                 if (!(arg instanceof ContextOpNode)) {
-
                     if (accesses[argIndex] == Access.WRITE) {
-                        final AllocateNode allocateNode = new AllocateNode(context);
-                        allocateNode.setValue((ObjectNode) arg);
-                        graph.add(allocateNode);
-                        context.addUse(allocateNode);
-                        args[argIndex] = allocateNode;
+                        createAllocateNode(context, graph, arg, args, argIndex);
                     } else {
                         final ObjectNode objectNode = (ObjectNode) arg;
                         final LocalObjectState state = states.get(objectNode.getIndex());
                         if (state.isStreamIn()) {
-                            final StreamInNode streamInNode = new StreamInNode(context);
-                            streamInNode.setValue(objectNode);
-                            graph.add(streamInNode);
-                            context.addUse(streamInNode);
-                            args[argIndex] = streamInNode;
+                            createStreamInNode(context, graph, objectNode, args, argIndex);
                         } else {
-                            final CopyInNode copyInNode = new CopyInNode(context);
-                            copyInNode.setValue((ObjectNode) arg);
-                            graph.add(copyInNode);
-                            context.addUse(copyInNode);
-                            args[argIndex] = copyInNode;
+                            createCopyInNode(context, graph, arg, args, argIndex);
                         }
                     }
-
                 } else {
                     args[argIndex] = arg;
                 }
@@ -126,12 +135,14 @@ public class TornadoGraphBuilder {
                 final AbstractNode nextAccessNode;
                 if (accesses[argIndex] == Access.WRITE || accesses[argIndex] == Access.READ_WRITE) {
                     final DependentReadNode depRead = new DependentReadNode(context);
-
                     final ObjectNode value;
                     if (objectNodes[variableIndex] instanceof ObjectNode) {
                         value = (ObjectNode) objectNodes[variableIndex];
                     } else if (objectNodes[variableIndex] instanceof DependentReadNode) {
                         value = ((DependentReadNode) objectNodes[variableIndex]).getValue();
+                        if (states.get(variableIndex).isForcedStreamIn()) {
+                            createStreamInNode(context, graph, value, args, argIndex);
+                        }
                     } else if (objectNodes[variableIndex] instanceof CopyInNode) {
                         value = ((CopyInNode) objectNodes[variableIndex]).getValue();
                     } else if (objectNodes[variableIndex] instanceof AllocateNode) {
@@ -149,6 +160,9 @@ public class TornadoGraphBuilder {
 
                 objectNodes[variableIndex] = nextAccessNode;
                 argIndex++;
+
+                // end-of load reference condition
+
             } else if (op == TornadoGraphBitcodes.LOAD_PRIM.index()) {
                 final int variableIndex = buffer.getInt();
                 args[argIndex] = constantNodes[variableIndex];

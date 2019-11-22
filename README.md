@@ -19,6 +19,11 @@ We also maintain a live TornadoVM whitepaper document which you can download [he
 
 #### B) Using Docker
 
+_We have tested our docker images for CentOS >= 7.4 and Ubuntu >= 16.04._
+We currently have two docker images:
+* TornadoVM docker image for NVIDIA GPUs
+* TornadoVM docker image for Intel Integrated Graphics
+
 ##### TornadoVM Docker for NVIDIA GPUs:
 
 It requires the [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) runtime. 
@@ -44,6 +49,17 @@ $ ./run_intel.sh tornado example/MatrixMultiplication
 
 See our [docker-tornado](https://github.com/beehive-lab/docker-tornado) repository for more details.
 
+
+##### Example:
+
+```bash
+## Run with TornadoVM on an NVIDIA GPU 
+$ ./run_nvidia.sh tornado example/MatrixMultiplication 2048   ## Running on NVIDIA GP100
+Computing MxM of 2048x2048
+	CPU Execution: 0.36 GFlops, Total time = 48254 ms
+	GPU Execution: 277.09 GFlops, Total Time = 62 ms
+	Speedup: 778x 
+```
 
 ## What can I do with TornadoVM? 
 

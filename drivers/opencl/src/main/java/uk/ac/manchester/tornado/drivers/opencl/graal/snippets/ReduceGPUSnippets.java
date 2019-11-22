@@ -629,9 +629,6 @@ public class ReduceGPUSnippets implements Snippets {
         private final SnippetInfo partialReduceMinFloatSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceFloatMinGlobal");
         private final SnippetInfo partialReduceMinDoubleSnippetGlobal = snippet(ReduceGPUSnippets.class, "partialReduceDoubleMinGlobal");
 
-        @SuppressWarnings("unused")
-        private final SnippetInfo reduceIntSnippetLocalMemory = snippet(ReduceGPUSnippets.class, "reduceIntAddLocalMemory");
-
         public Templates(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             super(options, debugHandlersFactories ,providers, snippetReflection, target);
         }
@@ -743,6 +740,7 @@ public class ReduceGPUSnippets implements Snippets {
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", globalId);
             if (extra != null) {
+                // extra.as
                 args.add("value", extra);
             }
 

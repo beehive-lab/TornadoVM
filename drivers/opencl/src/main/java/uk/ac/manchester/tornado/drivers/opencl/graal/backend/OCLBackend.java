@@ -59,6 +59,7 @@ import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
@@ -109,6 +110,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLNodeMatchRules;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLReferenceMapBuilder;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
@@ -120,7 +122,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
-    private final static String FPGA_ATTRIBUTE = "__attribute__((reqd_work_group_size(<1>,<2>,<3>))) ";
     private boolean flag = false;
 
     @Override
@@ -265,12 +266,16 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
         String platformName = device.getPlatformName();
 
-        if (device.getDevice().getDeviceType() != OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR || !platformName.contains("FPGA")) {
+        if (device.getDevice().getDeviceType() != OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR || !isFPGA(platformName)) {
             return false;
-        } else if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && platformName.contains("FPGA")) {
+        } else if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (platformName.contains("FPGA") || platformName.contains("Xilinx"))) {
             return true;
         }
         return false;
+    }
+
+    private boolean isFPGA(String platformName) {
+        return ((platformName.contains("FPGA") || platformName.contains("Xilinx")));
     }
 
     /*
@@ -305,13 +310,13 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             OCLProviders providers = (OCLProviders) getProviders();
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
 
+            boolean isCompilationForFPGAs = isJITCompilationForFPGAs(deviceFullName);
+
             if (Tornado.ACCELERATOR_IS_FPGA) {
                 lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode());
             } else {
                 lookupCode = deviceContext.installCode(result);
             }
-
-            boolean isCompilationForFPGAs = isJITCompilationForFPGAs(deviceFullName);
 
             if (deviceContext.isKernelAvailable() && !isCompilationForFPGAs) {
                 lookupCodeAvailable = true;
@@ -512,21 +517,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
              * starting at address 0x0. (I assume that this is an interesting case that
              * leads to a few issues.) Iris Pro is the only culprit at the moment.
              */
-            if (Tornado.ACCELERATOR_IS_FPGA && !methodName.equals(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
-                // TODO: FIX with info at the runtime, currently is a static
-                // decision
-                String fpgaSchedulingAttribute;
-                if (crb.isParallel()) {
-                    fpgaSchedulingAttribute = FPGA_ATTRIBUTE.replace("<1>", "64");
-                    fpgaSchedulingAttribute = fpgaSchedulingAttribute.replace("<2>", "1");
-                    fpgaSchedulingAttribute = fpgaSchedulingAttribute.replace("<3>", "1");
-                } else {
-                    fpgaSchedulingAttribute = FPGA_ATTRIBUTE.replace("<1>", "1");
-                    fpgaSchedulingAttribute = fpgaSchedulingAttribute.replace("<2>", "1");
-                    fpgaSchedulingAttribute = fpgaSchedulingAttribute.replace("<3>", "1");
-                }
-                asm.emitLine(fpgaSchedulingAttribute);
+            final ControlFlowGraph cfg = (ControlFlowGraph) lir.getControlFlowGraph();
+            if (cfg.getStartBlock().getEndNode().predecessor().asNode() instanceof ThreadConfigurationNode) {
+                asm.emitAttribute(crb); // value
             }
+
             final String bumpBuffer = (deviceContext.needsBump()) ? String.format("%s void *dummy, ", OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) : "";
 
             asm.emitLine("%s void %s(%s%s)", OCLAssemblerConstants.KERNEL_MODIFIER, methodName, bumpBuffer, architecture.getABI());

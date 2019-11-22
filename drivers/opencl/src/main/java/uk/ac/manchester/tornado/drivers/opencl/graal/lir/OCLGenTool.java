@@ -85,7 +85,7 @@ public class OCLGenTool {
         if (oclKind.isVector()) {
 
             Variable vector = gen.newVariable(lirKind);
-            OCLMemoryBase base = OCLArchitecture.hp;
+            OCLMemoryBase base = OCLArchitecture.globalSpace;
             OCLBinaryIntrinsic intrinsic = VectorUtil.resolveLoadIntrinsic(oclKind);
             OCLAddressCast cast = new OCLAddressCast(base, LIRKind.value(oclKind.getElementKind()));
             MemoryAccess address = new MemoryAccess(base, result, false);
