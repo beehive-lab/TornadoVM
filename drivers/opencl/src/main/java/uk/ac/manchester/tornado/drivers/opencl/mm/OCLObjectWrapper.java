@@ -91,11 +91,7 @@ public class OCLObjectWrapper implements ObjectBuffer {
 
         resolvedType = (HotSpotResolvedJavaType) getVMRuntime().getHostJVMCIBackend().getMetaAccess().lookupJavaType(object.getClass());
 
-        if (resolvedType.getAnnotation(Vector.class) != null) {
-            vectorObject = true;
-        } else {
-            vectorObject = false;
-        }
+        vectorObject = resolvedType.getAnnotation(Vector.class) != null;
 
         vectorStorageIndex = -1;
 
