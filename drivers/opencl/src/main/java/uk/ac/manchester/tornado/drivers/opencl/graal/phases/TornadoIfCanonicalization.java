@@ -56,21 +56,15 @@ public class TornadoIfCanonicalization extends BasePhase<TornadoMidTierContext> 
     }
 
     private boolean isMerge(AbstractBeginNode begin) {
-        if (begin.next() instanceof AbstractEndNode && ((AbstractEndNode) begin.next()).merge() instanceof AbstractMergeNode)
-            return true;
-        return false;
+        return begin.next() instanceof AbstractEndNode && ((AbstractEndNode) begin.next()).merge() instanceof AbstractMergeNode;
     }
 
     private boolean isIf(EndNode end) {
-        if (end.predecessor() instanceof BeginNode && ((BeginNode) end.predecessor()).predecessor() instanceof IfNode)
-            return true;
-        return false;
+        return end.predecessor() instanceof BeginNode && ((BeginNode) end.predecessor()).predecessor() instanceof IfNode;
     }
 
     private boolean isIf(LoopEndNode end) {
-        if (end.predecessor() instanceof BeginNode && ((BeginNode) end.predecessor()).predecessor() instanceof IfNode)
-            return true;
-        return false;
+        return end.predecessor() instanceof BeginNode && ((BeginNode) end.predecessor()).predecessor() instanceof IfNode;
     }
 
     private IfNode getIf(EndNode end) {
