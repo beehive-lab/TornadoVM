@@ -354,7 +354,7 @@ public class RuntimeUtilities {
     }
 
     public static boolean ifFileExists(File fileName) {
-        return fileName.exists() ? true : false;
+        return fileName.exists();
     }
 
     public static void sysCall(String[] command, boolean printStandardOutput) throws IOException {

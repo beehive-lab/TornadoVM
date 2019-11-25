@@ -71,17 +71,14 @@ public abstract class BenchmarkDriver {
     }
 
     private boolean skipGC() {
-        if (this instanceof BitsetTornado) {
-            return true;
-        }
-        return false;
+        return this instanceof BitsetTornado;
     }
 
     public void benchmark() {
 
         setUp();
 
-        validResult = (VALIDATE) ? validate() : true;
+        validResult = (!VALIDATE) || validate();
 
         int size = toIntExact(iterations);
 

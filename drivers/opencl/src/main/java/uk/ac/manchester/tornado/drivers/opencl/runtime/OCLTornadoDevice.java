@@ -208,10 +208,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
     private boolean isOpenCLPreLoadBinary(OCLDeviceContext deviceContext, String deviceInfo) {
         OCLCodeCache installedCode = new OCLCodeCache(deviceContext);
-        if (!installedCode.isLoadBinaryOptionEnabled() || (installedCode.getOpenCLBinary(deviceInfo) == null)) {
-            return false;
-        }
-        return true;
+        return installedCode.isLoadBinaryOptionEnabled() && (installedCode.getOpenCLBinary(deviceInfo) != null);
     }
 
     private TornadoInstalledCode compileTask(SchedulableTask task) {

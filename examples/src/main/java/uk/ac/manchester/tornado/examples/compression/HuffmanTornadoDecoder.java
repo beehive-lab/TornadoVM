@@ -157,7 +157,7 @@ public class HuffmanTornadoDecoder {
 
         byte[] bits = new byte[bitSetCompressed.length()];
         for (int i = 0; i < bits.length; i++) {
-            bits[i] = (bitSetCompressed.get(i) == false) ? (byte) 0 : (byte) 1;
+            bits[i] = (byte) (bitSetCompressed.get(i) ? 1 : 0);
         }
 
         int size = 5000000;
