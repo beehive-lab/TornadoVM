@@ -74,11 +74,7 @@ public class TornadoPragmaUnroll extends BasePhase<PhaseContext> {
                 }
             }
 
-            if (loops - ifs != 0) {
-                return false;
-            }
-
-            return true;
+            return loops - ifs == 0;
         } else {
             return false;
         }

@@ -132,7 +132,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         buffer.clear();
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_AVAILABLE.getValue(), buffer.array());
 
-        return (buffer.getInt() == 1) ? true : false;
+        return buffer.getInt() == 1;
     }
 
     @Override
@@ -407,7 +407,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_ENDIAN_LITTLE.getValue(), buffer.array());
         deviceEndianLittle = buffer.getInt();
 
-        return deviceEndianLittle == CL_TRUE ? true : false;
+        return deviceEndianLittle == CL_TRUE;
     }
 
     public int getWordSize() {
