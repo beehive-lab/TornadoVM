@@ -33,12 +33,6 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 public class TornadoSnippetReflectionProvider implements SnippetReflectionProvider {
 
     @Override
-    public Object asObject(ResolvedJavaType type, JavaConstant constant) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
     public JavaConstant forBoxed(JavaKind kind, Object value) {
         unimplemented();
         return null;

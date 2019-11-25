@@ -28,7 +28,7 @@ import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase.PostAlloc
 import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase.PreAllocationOptimizationContext;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 
 import uk.ac.manchester.tornado.runtime.graal.compiler.*;
 import uk.ac.manchester.tornado.runtime.graal.phases.lir.TornadoAllocationStage;
@@ -44,7 +44,7 @@ public class TornadoSuites {
     private final LIRPhaseSuite<PreAllocationOptimizationContext> preAllocStage;
     private final LIRPhaseSuite<PostAllocationOptimizationContext> postAllocStage;
 
-    public TornadoSuites(OptionValues options, TornadoCompilerConfiguration config, CustomCanonicalizer canonicalizer, AddressLowering addressLowering) {
+    public TornadoSuites(OptionValues options, TornadoCompilerConfiguration config, CanonicalizerPhase.CustomCanonicalization canonicalizer, AddressLowering addressLowering) {
         sketchTier = config.createSketchTier(options, canonicalizer);
         highTier = config.createHighTier(options, canonicalizer);
         midTier = config.createMidTier(options);

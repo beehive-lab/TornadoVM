@@ -399,6 +399,8 @@
                         <arg>--add-exports</arg>
                         <arg>jdk.internal.vm.compiler/org.graalvm.compiler.asm=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
+                        <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.gc=tornado.runtime</arg>
+                        <arg>--add-exports</arg>
                         <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.cfg=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>
                         <arg>--add-exports</arg>
                         <arg>jdk.internal.vm.compiler/org.graalvm.compiler.phases.schedule=ALL-UNNAMED,tornado.drivers.opencl,tornado.runtime,tornado.annotation</arg>

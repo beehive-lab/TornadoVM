@@ -36,8 +36,10 @@ import java.util.WeakHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import jdk.internal.vm.compiler.collections.EconomicMap;
+//import jdk.internal.vm.compiler.collections.EconomicMap;
+import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.core.common.GraalOptions;
+import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
 import org.graalvm.compiler.lir.constopt.ConstantLoadOptimization;
 import org.graalvm.compiler.lir.phases.PostAllocationOptimizationStage;
@@ -60,8 +62,8 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
     private static final OptionValues options;
     static {
         EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
-//        opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
-        opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
+        opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
+//        opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
 
         opts.put(GraalOptions.OmitHotExceptionStacktrace, false);
 

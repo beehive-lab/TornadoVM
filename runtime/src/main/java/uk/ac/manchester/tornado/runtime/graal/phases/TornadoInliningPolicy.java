@@ -59,7 +59,7 @@ public class TornadoInliningPolicy implements InliningPolicy {
     }
 
     @Override
-    public Decision isWorthInlining(Replacements replacements, MethodInvocation invocation, int inliningDepth, boolean fullyProcessed) {
+    public Decision isWorthInlining(Replacements replacements, MethodInvocation invocation, InlineInfo calleeInfo, int inliningDepth, boolean fullyProcessed) {
         final InlineInfo info = invocation.callee();
         int nodes = info.determineNodeCount();
         if (nodes > MaximumInliningSize.getValue(info.graph().getOptions()) && !invocation.isRoot()) {

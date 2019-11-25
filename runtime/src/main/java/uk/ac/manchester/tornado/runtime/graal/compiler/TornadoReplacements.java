@@ -34,8 +34,10 @@ import org.graalvm.compiler.replacements.ReplacementsImpl;
 
 public class TornadoReplacements extends ReplacementsImpl {
 
-    public TornadoReplacements(OptionValues options, GraalDebugHandlersFactory graalDebugHandlersFactory, Providers providers, SnippetReflectionProvider snippetReflection, BytecodeProvider bytecodeProvider, TargetDescription target) {
-        super(options, graalDebugHandlersFactory, providers, snippetReflection, bytecodeProvider, target);
+//    public TornadoReplacements(OptionValues options, GraalDebugHandlersFactory graalDebugHandlersFactory, Providers providers, SnippetReflectionProvider snippetReflection, BytecodeProvider bytecodeProvider, TargetDescription target) {
+    public TornadoReplacements(GraalDebugHandlersFactory graalDebugHandlersFactory, Providers providers, SnippetReflectionProvider snippetReflection, BytecodeProvider bytecodeProvider, TargetDescription target) {
+//        super(options, graalDebugHandlersFactory, providers, snippetReflection, bytecodeProvider, target);
+        super(graalDebugHandlersFactory, providers, snippetReflection, bytecodeProvider, target);
     }
 
 }

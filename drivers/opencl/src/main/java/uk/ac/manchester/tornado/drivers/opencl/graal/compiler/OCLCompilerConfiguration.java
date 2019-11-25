@@ -30,7 +30,7 @@ import org.graalvm.compiler.lir.phases.PreAllocationOptimizationPhase.PreAllocat
 import org.graalvm.compiler.lir.phases.PreAllocationOptimizationStage;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerConfiguration;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
@@ -47,12 +47,12 @@ public class OCLCompilerConfiguration implements TornadoCompilerConfiguration {
     }
 
     @Override
-    public TornadoSketchTier createSketchTier(OptionValues options, CustomCanonicalizer canonicalizer) {
+    public TornadoSketchTier createSketchTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization canonicalizer) {
         return new TornadoSketchTier(options, canonicalizer);
     }
 
     @Override
-    public TornadoHighTier createHighTier(OptionValues options, CustomCanonicalizer canonicalizer) {
+    public TornadoHighTier createHighTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization canonicalizer) {
         return new OCLHighTier(options, canonicalizer);
     }
 

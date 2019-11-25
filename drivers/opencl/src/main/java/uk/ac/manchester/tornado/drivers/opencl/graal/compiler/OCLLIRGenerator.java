@@ -34,7 +34,6 @@ import org.graalvm.compiler.core.common.spi.CodeGenProviders;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.lir.*;
-import org.graalvm.compiler.lir.StandardOp.SaveRegistersOp;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
 
@@ -103,22 +102,33 @@ public class OCLLIRGenerator extends LIRGenerator {
         unimplemented();
     }
 
-//    @Override
-//    public void emitSpeculationFence() {
-//        unimplemented();
-//    }
-
     @Override
-    public Variable emitStringIndexOf(Value sourcePointer, Value sourceCount, Value targetPointer, Value targetCount, int constantTargetCount) {
+    public VirtualStackSlot allocateStackSlots(int slots) {
         unimplemented();
         return null;
     }
 
-//    @Override
-//    public Value emitValueCompareAndSwap(Value address, Value expectedValue, Value newValue) {
-//        unimplemented();
-//        return null;
-//    }
+    @Override
+    public Value emitReadCallerStackPointer(Stamp wordStamp) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitReadReturnAddress(Stamp wordStamp, int returnAddressSize) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public void emitZeroMemory(Value address, Value length, boolean isAligned) {
+        unimplemented();
+    }
+
+    @Override
+    public void emitSpeculationFence() {
+        unimplemented();
+    }
 
     @Override
     public LIRKind getLIRKind(Stamp stamp) {
@@ -166,7 +176,7 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public SaveRegistersOp createZapRegisters(Register[] rgstrs, JavaConstant[] jcs) {
+    public StandardOp.ZapRegistersOp createZapRegisters(Register[] zappedRegisters, JavaConstant[] zapValues) {
         unimplemented();
         return null;
     }
@@ -189,34 +199,34 @@ public class OCLLIRGenerator extends LIRGenerator {
         return null;
     }
 
-//    @Override
-//    public Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length, int constantLength, boolean directPointers) {
-//        unimplemented();
-//        return null;
-//    }
-
     @Override
-    public Variable emitArrayEquals(JavaKind kind1, Value value, Value array1, Value array2) {
+    public Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length, boolean directPointers) {
         unimplemented();
         return null;
     }
 
-//    @Override
-//    public Variable emitArrayIndexOf(JavaKind kind, boolean findTwoConsecutive, Value sourcePointer, Value sourceCount, Value... searchValues) {
-//        unimplemented();
-//        return null;
-//    }
-//
-//    @Override
-//    public void emitStringLatin1Inflate(Value src, Value dst, Value len) {
-//        unimplemented();
-//    }
-//
-//    @Override
-//    public Variable emitStringUTF16Compress(Value src, Value dst, Value len) {
-//        unimplemented();
-//        return null;
-//    }
+    @Override
+    public Variable emitArrayEquals(JavaKind kind1, JavaKind kind2, Value array1, Value array2, Value length, boolean directPointers) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Variable emitArrayIndexOf(JavaKind arrayKind, JavaKind valueKind, boolean findTwoConsecutive, Value sourcePointer, Value sourceCount, Value fromIndex, Value... searchValues) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public void emitStringLatin1Inflate(Value src, Value dst, Value len) {
+        unimplemented();
+    }
+
+    @Override
+    public Variable emitStringUTF16Compress(Value src, Value dst, Value len) {
+        unimplemented();
+        return null;
+    }
 
     @Override
     public void emitCompareBranch(PlatformKind pk, Value value, Value value1, Condition cndtn, boolean bln, LabelRef lr, LabelRef lr1, double d) {

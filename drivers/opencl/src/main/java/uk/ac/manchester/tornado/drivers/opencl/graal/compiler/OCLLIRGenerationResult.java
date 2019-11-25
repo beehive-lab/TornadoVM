@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
@@ -43,8 +44,8 @@ public class OCLLIRGenerationResult extends LIRGenerationResult {
 
     private final Map<OCLKind, Set<Variable>> variableTable;
 
-    public OCLLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, CallingConvention callingConvention) {
-        super(identifier, lir, frameMapBuilder, callingConvention);
+    public OCLLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig, CallingConvention callingConvention) {
+        super(identifier, lir, frameMapBuilder, registerAllocationConfig, callingConvention);
         variableTable = new HashMap<>();
     }
 

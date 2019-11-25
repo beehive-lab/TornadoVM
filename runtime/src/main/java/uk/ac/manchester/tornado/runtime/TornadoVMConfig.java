@@ -28,10 +28,12 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 import jdk.vm.ci.meta.JavaKind;
+import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import sun.misc.Unsafe;
 
 @SuppressWarnings("restriction")
 public class TornadoVMConfig extends HotSpotVMConfigAccess {
+//public class TornadoVMConfig extends GraalHotSpotVMConfig {
 
     TornadoVMConfig(HotSpotVMConfigStore store) {
         super(store);

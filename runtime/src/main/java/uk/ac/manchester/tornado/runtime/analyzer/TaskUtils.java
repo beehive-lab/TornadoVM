@@ -33,6 +33,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import jdk.vm.ci.meta.JavaKind;
+
 import org.graalvm.compiler.bytecode.Bytecodes;
 
 
@@ -114,13 +116,19 @@ public class TaskUtils {
                 cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKESTATIC);
                 JavaMethod jm = cp.lookupMethod(bc[i + 2], Bytecodes.INVOKESTATIC);
                 try {
-//                    Method toJavaMethod = HotSpotJDKReflection.getClass().getDeclaredMethod("getMethod");
-                    Method toJavaMethod = jm.getClass().getDeclaredMethod("toJava");
-                    toJavaMethod.setAccessible(true);
-                    Method m = (Method) toJavaMethod.invoke(jm);
+                    Class hotSpotJDKReflection = Class.forName("jdk.vm.ci.hotspot.HotSpotJDKReflection");
+                    Method getMethod = null;
+                    for (Method method : hotSpotJDKReflection.getDeclaredMethods()) {
+                        if ("getMethod".equals(method.getName())) {
+                            getMethod = method;
+                            break;
+                        }
+                    }
+                    getMethod.setAccessible(true);
+                    Method m = (Method) getMethod.invoke(hotSpotJDKReflection, jm);
                     m.setAccessible(true);
                     return m;
-                } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                } catch (SecurityException | IllegalArgumentException | ClassNotFoundException | IllegalAccessException | InvocationTargetException e) {
                     e.printStackTrace();
                 }
                 break;
@@ -134,12 +142,24 @@ public class TaskUtils {
                         continue;
                 }
                 try {
-                    Method toJavaMethod = jm.getClass().getDeclaredMethod("toJava");
-                    toJavaMethod.setAccessible(true);
-                    Method m = (Method) toJavaMethod.invoke(jm);
+                    Class hotSpotJDKReflection = Class.forName("jdk.vm.ci.hotspot.HotSpotJDKReflection");
+                    Method getMethod = null;
+                    for (Method method : hotSpotJDKReflection.getDeclaredMethods()) {
+                        if ("getMethod".equals(method.getName())) {
+                            getMethod = method;
+                            break;
+                        }
+                    }
+                    getMethod.setAccessible(true);
+                    Method m = (Method) getMethod.invoke(hotSpotJDKReflection, jm);
                     m.setAccessible(true);
+
+//                    Method toJavaMethod = jm.getClass().getDeclaredMethod("toJava");
+//                    toJavaMethod.setAccessible(true);
+//                    Method m = (Method) toJavaMethod.invoke(jm);
+//                    m.setAccessible(true);
                     return m;
-                } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                } catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | ClassNotFoundException e) {
                     e.printStackTrace();
                 }
                 break;

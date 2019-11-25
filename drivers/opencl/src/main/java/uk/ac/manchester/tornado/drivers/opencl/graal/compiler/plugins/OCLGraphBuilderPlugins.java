@@ -36,6 +36,7 @@ import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIn
 import static uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntUnaryIntrinsicNode.Operation.POPCOUNT;
 
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -118,8 +119,9 @@ public class OCLGraphBuilderPlugins {
                 actualArgs[3] = args[index];
 
                 int argIndex = 0;
-                for (int i = 0; i < newArrayNode.getUsageCount(); i++) {
-                    Node n = newArrayNode.getUsageAt(i);
+//                for (int i = 0; i < newArrayNode.getUsageCount(); i++) {
+                for (Node n : newArrayNode.usages()) {
+//                    Node n = newArrayNode.getUsageAt(i);
                     if (n instanceof StoreIndexedNode) {
                         StoreIndexedNode storeNode = (StoreIndexedNode) n;
                         ValueNode value = storeNode.value();
@@ -139,7 +141,8 @@ public class OCLGraphBuilderPlugins {
 
                 b.add(b.append(printfNode));
                 while (newArrayNode.hasUsages()) {
-                    Node n = newArrayNode.getUsageAt(0);
+//                    Node n = newArrayNode.getUsageAt(0);
+                    Node n = newArrayNode.usages().first();
                     // need to remove all nodes from the graph that operate on
                     // the new array,
                     // however, we cannot remove all inputs as they may be used
@@ -180,8 +183,9 @@ public class OCLGraphBuilderPlugins {
                 actualArgs[0] = args[0];
 
                 int argIndex = 0;
-                for (int i = 0; i < newArrayNode.getUsageCount(); i++) {
-                    Node n = newArrayNode.getUsageAt(i);
+//                for (int i = 0; i < newArrayNode.getUsageCount(); i++) {
+                for (Node n : newArrayNode.usages()) {
+//                    Node n = newArrayNode.getUsageAt(i);
                     if (n instanceof StoreIndexedNode) {
                         StoreIndexedNode storeNode = (StoreIndexedNode) n;
                         ValueNode value = storeNode.value();
@@ -201,7 +205,8 @@ public class OCLGraphBuilderPlugins {
                 b.add(b.append(printfNode));
 
                 while (newArrayNode.hasUsages()) {
-                    Node n = newArrayNode.getUsageAt(0);
+//                    Node n = newArrayNode.getUsageAt(0);
+                    Node n = newArrayNode.usages().first();
                     // need to remove all nodes from the graph that operate on
                     // the new array,
                     // however, we cannot remove all inputs as they

@@ -32,11 +32,11 @@ import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Option
 
 import org.graalvm.compiler.loop.DefaultLoopPolicies;
 import org.graalvm.compiler.loop.LoopPolicies;
+import org.graalvm.compiler.loop.phases.ConvertDeoptimizeToGuardPhase;
 import org.graalvm.compiler.loop.phases.LoopFullUnrollPhase;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.*;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
@@ -56,14 +56,20 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 
 public class OCLHighTier extends TornadoHighTier {
 
-    public OCLHighTier(OptionValues options, CustomCanonicalizer customCanonicalizer) {
+    public OCLHighTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer) {
         super(customCanonicalizer);
 
-        final CanonicalizerPhase canonicalizer = new CanonicalizerPhase(customCanonicalizer);
-
+        CanonicalizerPhase canonicalizer = null;
         if (ImmutableCode.getValue(options)) {
-            canonicalizer.disableReadCanonicalization();
+//            canonicalizer.disableReadCanonicalization();
+            canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
+        } else {
+            canonicalizer = CanonicalizerPhase.create();
         }
+
+//        final CanonicalizerPhase canonicalizer = new CanonicalizerPhase(customCanonicalizer);
+        canonicalizer = canonicalizer.copyWithCustomCanonicalization(customCanonicalizer);
+
         appendPhase(canonicalizer);
 
         if (Inline.getValue(options)) {

@@ -26,7 +26,7 @@ package uk.ac.manchester.tornado.runtime.graal.compiler;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
+//import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
@@ -40,20 +40,26 @@ import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Option
 
 public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
 
-    protected final CustomCanonicalizer customCanonicalizer;
+    protected final CanonicalizerPhase.CustomCanonicalization customCanonicalizer;
 
-    public CustomCanonicalizer getCustomCanonicalizer() {
+    public CanonicalizerPhase.CustomCanonicalization getCustomCanonicalizer() {
         return customCanonicalizer;
     }
 
-    public TornadoSketchTier(OptionValues options, CustomCanonicalizer customCanonicalizer) {
+    public TornadoSketchTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer) {
         this.customCanonicalizer = customCanonicalizer;
 
-        final CanonicalizerPhase canonicalizer = new CanonicalizerPhase(customCanonicalizer);
-
+        CanonicalizerPhase canonicalizer = null;
         if (ImmutableCode.getValue(options)) {
-            canonicalizer.disableReadCanonicalization();
+//            canonicalizer.disableReadCanonicalization();
+            canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
+        } else {
+            canonicalizer = CanonicalizerPhase.create();
         }
+
+//        final CanonicalizerPhase canonicalizer = new CanonicalizerPhase(customCanonicalizer);
+        canonicalizer = canonicalizer.copyWithCustomCanonicalization(customCanonicalizer);
+
         appendPhase(canonicalizer);
 
         if (Inline.getValue(options)) {

@@ -33,12 +33,13 @@ public class DivNode extends BinaryArithmeticNode<ArithmeticOpTable.BinaryOp.Div
     public static final NodeClass<DivNode> TYPE = NodeClass.create(DivNode.class);
 
     public DivNode(ValueNode x, ValueNode y) {
-        super(TYPE, ArithmeticOpTable::getDiv, x, y);
+//        super(TYPE, ArithmeticOpTable::getDiv, x, y);
+        super(TYPE, getArithmeticOpTable(x).getDiv(), x, y);
     }
 
-    protected DivNode(NodeClass<? extends DivNode> c, ValueNode x, ValueNode y) {
-        super(c, ArithmeticOpTable::getDiv, x, y);
-    }
+//    protected DivNode(NodeClass<? extends DivNode> c, ValueNode x, ValueNode y) {
+//        super(c, ArithmeticOpTable::getDiv, x, y);
+//    }
 
     public static ValueNode create(ValueNode x, ValueNode y) {
         ArithmeticOpTable.BinaryOp<ArithmeticOpTable.BinaryOp.Div> op = ArithmeticOpTable.forStamp(x.stamp(NodeView.DEFAULT)).getDiv();
@@ -47,9 +48,19 @@ public class DivNode extends BinaryArithmeticNode<ArithmeticOpTable.BinaryOp.Div
         return (ValueNode)(tryConstantFold != null ? tryConstantFold : canonical((DivNode)null, op, x, y));
     }
 
+    @Override
+    protected ArithmeticOpTable.BinaryOp<ArithmeticOpTable.BinaryOp.Div> getOp(ArithmeticOpTable table) {
+        return null;
+    }
+
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
         ValueNode ret = super.canonical(tool, forX, forY);
         return ret != this ? ret : canonical(this, this.getOp(forX, forY), forX, forY);
+    }
+
+    @Override
+    public ValueNode canonical(CanonicalizerTool tool) {
+        return canonical(tool, getX(), getY());
     }
 
     private static ValueNode canonical(DivNode self, ArithmeticOpTable.BinaryOp<ArithmeticOpTable.BinaryOp.Div> op, ValueNode forX, ValueNode forY) {
@@ -83,6 +94,11 @@ public class DivNode extends BinaryArithmeticNode<ArithmeticOpTable.BinaryOp.Div
         }
 
         return self != null ? self : new DivNode(forX, forY);
+    }
+
+    @Override
+    public void generate(NodeLIRBuilderTool builder) {
+        generate(builder, builder.getLIRGeneratorTool().getArithmetic());
     }
 
     public void generate(NodeLIRBuilderTool nodeValueMap, ArithmeticLIRGeneratorTool gen) {

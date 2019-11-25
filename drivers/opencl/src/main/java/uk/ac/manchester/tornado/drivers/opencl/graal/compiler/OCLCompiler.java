@@ -360,8 +360,9 @@ public class OCLCompiler {
             } catch (Throwable e) {
                 throw debugContext.handle(e);
             }
+            RegisterAllocationConfig registerAllocationConfig = backend.newRegisterAllocationConfig(registerConfig, new String[] {});
             FrameMapBuilder frameMapBuilder = backend.newFrameMapBuilder(registerConfig);
-            LIRGenerationResult lirGenRes = backend.newLIRGenerationResult(graph.compilationId(), lir, frameMapBuilder, graph, stub);
+            LIRGenerationResult lirGenRes = backend.newLIRGenerationResult(graph.compilationId(), lir, frameMapBuilder, registerAllocationConfig, graph, stub);
             LIRGeneratorTool lirGen = backend.newLIRGenerator(lirGenRes);
             NodeLIRBuilderTool nodeLirGen = backend.newNodeLIRBuilder(graph, lirGen);
 
@@ -371,7 +372,7 @@ public class OCLCompiler {
 
             try (DebugContext.Scope s = debugContext.scope("LIRStages", nodeLirGen, lir)) {
                 debugContext.dump(DebugContext.BASIC_LEVEL, lir, "After LIR generation");
-                LIRGenerationResult result = emitLowLevel(backend.getTarget(), lirGenRes, lirGen, lirSuites, backend.newRegisterAllocationConfig(registerConfig, new String[] {}));
+                LIRGenerationResult result = emitLowLevel(backend.getTarget(), lirGenRes, lirGen, lirSuites, registerAllocationConfig);
                 debugContext.dump(DebugContext.BASIC_LEVEL, lir, "Before code generation");
                 return result;
             } catch (Throwable e) {

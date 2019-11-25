@@ -26,11 +26,8 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ILLEGAL;
-<<<<<<< HEAD
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
-=======
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
->>>>>>> develop-features
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import java.util.Collection;
@@ -211,8 +208,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             // Allow NodeLIRBuilder subclass to specialise code generation of
             // any
             // interesting groups of instructions
-//            matchComplexExpressions(block, schedule);
-            matchComplexExpressions(nodes);
+            matchComplexExpressions(block, graph.getLastSchedule());
+//            matchComplexExpressions(nodes);
 
             for (int i = 0; i < nodes.size(); i++) {
                 final Node node = nodes.get(i);

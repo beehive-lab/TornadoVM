@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.compiler;
 
-import jdk.internal.vm.compiler.word.LocationIdentity;
 import jdk.vm.ci.meta.JavaKind;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
@@ -32,6 +31,7 @@ import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
+import org.graalvm.word.LocationIdentity;
 
 public class TornadoForeignCallsProvider implements ForeignCallsProvider {
 
@@ -63,6 +63,12 @@ public class TornadoForeignCallsProvider implements ForeignCallsProvider {
     public ForeignCallLinkage lookupForeignCall(ForeignCallDescriptor fcd) {
         unimplemented();
         return null;
+    }
+
+    @Override
+    public boolean isAvailable(ForeignCallDescriptor descriptor) {
+        unimplemented();
+        return false;
     }
 
     @Override

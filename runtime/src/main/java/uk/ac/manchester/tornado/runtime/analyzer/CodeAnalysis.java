@@ -25,7 +25,8 @@ package uk.ac.manchester.tornado.runtime.analyzer;
 
 import java.lang.reflect.Method;
 
-import jdk.internal.vm.compiler.collections.EconomicMap;
+//import jdk.internal.vm.compiler.collections.EconomicMap;
+import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.api.runtime.GraalJVMCICompiler;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.GraalCompiler;
@@ -88,8 +89,8 @@ public class CodeAnalysis {
 
         try (DebugContext.Scope ignored = debugContext.scope("compileMethodAndInstall", new DebugDumpScope("TornadoVM-Code-Analysis", true))) {
             EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
-//            opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
-            opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
+            opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
+//            opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
             OptionValues options = new OptionValues(opts);
             StructuredGraph graph = new StructuredGraph.Builder(options, debugContext, AllowAssumptions.YES).method(resolvedJavaMethod).compilationId(compilationIdentifier).build();
             PhaseSuite<HighTierContext> graphBuilderSuite = new PhaseSuite<>();
@@ -118,8 +119,8 @@ public class CodeAnalysis {
         Providers providers = backend.getProviders();
         CompilationIdentifier compilationID = backend.getCompilationIdentifier(method);
         EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
-//        opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
-        opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
+        opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
+//        opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
         OptionValues options = new OptionValues(opts);
         try (DebugContext.Scope ignored = debugContext.scope("compileMethodAndInstall", new DebugDumpScope(String.valueOf(compilationID), true))) {
             PhaseSuite<HighTierContext> graphBuilderPhase = backend.getSuites().getDefaultGraphBuilderSuite();

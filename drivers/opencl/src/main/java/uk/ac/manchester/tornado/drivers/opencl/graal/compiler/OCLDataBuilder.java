@@ -33,12 +33,6 @@ import jdk.vm.ci.meta.Constant;
 public class OCLDataBuilder extends DataBuilder {
 
     @Override
-    public boolean needDetailedPatchingInformation() {
-//        unimplemented();
-        return false;
-    }
-
-    @Override
     public Data createDataItem(Constant constant) {
         unimplemented("Create Data item in OpenCLDataBuilder not supported yet.");
         return null;

@@ -89,6 +89,7 @@ PACKAGE_LIST=(
 --add-opens jdk.internal.vm.compiler/org.graalvm.compiler.lir.constopt=ALL-UNNAMED,tornado.runtime,tornado.annotation,tornado.drivers.opencl
 --add-opens jdk.internal.vm.ci/jdk.vm.ci.hotspot=ALL-UNNAMED,tornado.runtime,tornado.annotation,tornado.drivers.opencl
 --add-opens jdk.internal.vm.compiler/org.graalvm.compiler.asm=ALL-UNNAMED,tornado.runtime,tornado.annotation,tornado.drivers.opencl
+--add-opens jdk.internal.vm.compiler/org.graalvm.compiler.nodes.gc=tornado.runtime
 --add-opens jdk.internal.vm.compiler/org.graalvm.compiler.nodes.cfg=ALL-UNNAMED,tornado.runtime,tornado.annotation,tornado.drivers.opencl
 --add-opens jdk.internal.vm.compiler/org.graalvm.compiler.phases.schedule=ALL-UNNAMED,tornado.runtime,tornado.annotation,tornado.drivers.opencl
 --add-opens jdk.internal.vm.compiler/org.graalvm.compiler.virtual.phases.ea=ALL-UNNAMED,tornado.runtime,tornado.annotation,tornado.drivers.opencl
@@ -165,7 +166,7 @@ case $key in
     shift # past argument
     ;;
     --igv)
-    TORNADO_FLAGS="${TORNADO_FLAGS} -Dgraal.Dump=*:5 -Dgraal.PrintGraph=true -Dgraal.PrintCFG=false"
+    TORNADO_FLAGS="${TORNADO_FLAGS} -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=false"
     shift # past argument
     ;;
     --printKernel)

@@ -1,4 +1,4 @@
-module tornado.examples {
+open module tornado.examples {
     requires ejml.ddense;
 
     requires transitive ejml.core;
@@ -16,7 +16,6 @@ module tornado.examples {
     exports uk.ac.manchester.tornado.examples.lang;
     exports uk.ac.manchester.tornado.examples.matrices;
     exports uk.ac.manchester.tornado.examples.memory;
-    exports uk.ac.manchester.tornado.examples.multithreaded;
     exports uk.ac.manchester.tornado.examples.objects;
     exports uk.ac.manchester.tornado.examples.ooo;
     exports uk.ac.manchester.tornado.examples.paralleliser;

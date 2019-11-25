@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jdk.internal.vm.compiler.collections.EconomicSet;
+import org.graalvm.collections.EconomicSet;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
@@ -408,12 +408,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new OCLAssembler(target);
     }
 
-    @Override
+//    @Override
     public void emitCode(CompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
         emitCode((OCLCompilationResultBuilder) crb, lir, method);
     }
 
-    @Override
+//    @Override
     public EconomicSet<Register> translateToCallerRegisters(EconomicSet<Register> calleeRegisters) {
         unimplemented();
         return null;
@@ -591,7 +591,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return ((OCLProviders) getProviders()).getSuitesProvider();
     }
 
-    @Override
+//    @Override
     public CompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, CompilationResult compilationResult, CompilationResultBuilderFactory factory) {
         return newCompilationResultBuilder(lirGenRes, frameMap, (OCLCompilationResult) compilationResult, factory, false, false);
     }
@@ -620,8 +620,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
 //    @Override
-    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, StructuredGraph graph, Object stub) {
-        return new OCLLIRGenerationResult(identifier, lir, frameMapBuilder, new CallingConvention(0, null, (AllocatableValue[]) null));
+    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig, StructuredGraph graph, Object stub) {
+        return new OCLLIRGenerationResult(identifier, lir, frameMapBuilder, registerAllocationConfig ,new CallingConvention(0, null, (AllocatableValue[]) null));
     }
 
 //    @Override
@@ -655,7 +655,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     @Override
-    protected CompiledCode createCompiledCode(ResolvedJavaMethod rjm, CompilationRequest cr, CompilationResult cr1) {
+    protected CompiledCode createCompiledCode(ResolvedJavaMethod rjm, CompilationRequest cr, CompilationResult cr1, boolean isDefault, OptionValues options) {
         unimplemented("Create compiled code method in OCLBackend not implemented yet.");
         return null;
     }

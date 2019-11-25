@@ -23,20 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal;
 
-<<<<<<< HEAD
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.meta.*;
-=======
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
-import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
-import org.graalvm.compiler.nodes.memory.MemoryNode;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-
-import java.util.Iterator;
-
->>>>>>> develop-features
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -47,7 +36,10 @@ import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodes.*;
-import org.graalvm.compiler.nodes.calc.*;
+import org.graalvm.compiler.nodes.calc.FloatConvertNode;
+import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
+import org.graalvm.compiler.nodes.calc.MulNode;
+import org.graalvm.compiler.nodes.calc.RemNode;
 import org.graalvm.compiler.nodes.java.*;
 import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
 import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
@@ -64,45 +56,25 @@ import org.graalvm.compiler.replacements.DefaultJavaLoweringProvider;
 import org.graalvm.compiler.replacements.SnippetCounter;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
-import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteAtomicNode.ATOMIC_OPERATION;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLWriteNode;
-<<<<<<< HEAD
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.*;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.calc.DivNode;
-=======
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.AtomicAddNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.CastNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
->>>>>>> develop-features
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorLoadNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorStoreNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceCPUSnippets;
 import uk.ac.manchester.tornado.drivers.opencl.graal.snippets.ReduceGPUSnippets;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
-<<<<<<< HEAD
 import uk.ac.manchester.tornado.runtime.graal.nodes.*;
+import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
 import java.util.Iterator;
 
 import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-=======
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceAddNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceMulNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceSubNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoDirectCallTargetNode;
-import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
-
-import javax.lang.model.element.ElementKind;
->>>>>>> develop-features
 
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
@@ -167,6 +139,18 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else {
             super.lower(node, tool);
         }
+    }
+
+    @Override
+    public Integer smallestCompareWidth() {
+        // For now don't use this optimization.
+        return null;
+    }
+
+    @Override
+    public boolean supportsBulkZeroing() {
+        unimplemented("OCLLoweringProvider::supportsBulkZeroing unimplemented");
+        return false;
     }
 
     @Override
@@ -332,7 +316,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         ValueNode object = storeField.isStatic() ? staticFieldBase(graph, field) : storeField.object();
         AddressNode address = createFieldAddress(graph, object, field);
         assert address != null;
-        WriteNode memoryWrite = graph.add(new WriteNode(address, fieldLocationIdentity(field), storeField.value(), fieldStoreBarrierType(storeField.field())));
+        WriteNode memoryWrite = graph.add(new WriteNode(address, fieldLocationIdentity(field), storeField.value(), fieldStoreBarrierType(storeField.field()), storeField.isVolatile()));
         memoryWrite.setStateAfter(storeField.stateAfter());
         graph.replaceFixedWithFixed(storeField, memoryWrite);
     }
@@ -387,7 +371,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         StructuredGraph graph = vectorStore.graph();
         JavaKind elementKind = vectorStore.elementKind();
         AddressNode address = createArrayAddress(graph, vectorStore.array(), elementKind, vectorStore.index());
-        WriteNode vectorWrite = graph.addWithoutUnique(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), vectorStore.value(), BarrierType.PRECISE));
+        //TODO is the barrier type correct? Should be volatileAccess hardcoded to true?
+//        WriteNode vectorWrite = graph.addWithoutUnique(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), vectorStore.value(), BarrierType.PRECISE));
+        WriteNode vectorWrite = graph.addWithoutUnique(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), vectorStore.value(), BarrierType.ARRAY, true));
         graph.replaceFixed(vectorStore, vectorWrite);
 
     }
@@ -432,7 +418,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
     }
 
-    @Override
+
     public int arrayBaseOffset(JavaKind kind) {
         return metaAccess.getArrayBaseOffset(kind);
 //        return getArrayBaseOffset(kind);
@@ -528,9 +514,11 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             memoryWrite = graph.add(new OCLWriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), elementKind));
         } else if (isLocalIdNode(storeIndexed)) {
             address = createArrayLocalAddress(graph, array, storeIndexed.index());
-            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind())));
+            //TODO should volatile be hardcoded to true?
+            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), true));
         } else {
-            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind())));
+            //TODO should volatile be hardcoded to true?
+            memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), true));
         }
         return memoryWrite;
     }
