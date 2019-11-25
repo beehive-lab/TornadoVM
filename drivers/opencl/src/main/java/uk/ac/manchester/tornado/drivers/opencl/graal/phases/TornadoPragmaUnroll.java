@@ -50,14 +50,9 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class TornadoPragmaUnroll extends BasePhase<TornadoHighTierContext> {
 
-    private final CanonicalizerPhase canonicalizer;
     private static final int UNROLL_FACTOR_NUMBER = 4;
 
-    public TornadoPragmaUnroll(CanonicalizerPhase canonicalizer) {
-        this.canonicalizer = canonicalizer;
-    }
-
-    public static boolean shouldFullUnroll(OptionValues options, LoopEx loop) {
+    private static boolean shouldFullUnroll(OptionValues options, LoopEx loop) {
         if (!loop.isCounted() || !loop.counted().isConstantMaxTripCount()) {
             return false;
         }
