@@ -327,18 +327,12 @@ public enum OCLKind implements PlatformKind {
     }
 
     public boolean isInteger() {
-        if (kind == ILLEGAL || isFloating()) {
-            return false;
-        }
-        return true;
+        return kind != ILLEGAL && !isFloating();
     }
 
     public boolean isFloating() {
         // TODO are vectors integers?
-        if (kind == FLOAT || kind == DOUBLE) {
-            return true;
-        }
-        return false;
+        return kind == FLOAT || kind == DOUBLE;
     }
 
     public boolean isVector() {
