@@ -56,7 +56,7 @@ public class OCLUnary {
         @Use
         protected Value value;
 
-        protected UnaryConsumer(OCLUnaryOp opcode, LIRKind lirKind, Value value) {
+        UnaryConsumer(OCLUnaryOp opcode, LIRKind lirKind, Value value) {
             super(lirKind);
             this.opcode = opcode;
             this.value = value;
@@ -150,13 +150,13 @@ public class OCLUnary {
         private final boolean needsBase;
         private Value index;
 
-        public MemoryAccess(OCLMemoryBase base, Value value, boolean needsBase) {
+        MemoryAccess(OCLMemoryBase base, Value value, boolean needsBase) {
             super(null, LIRKind.Illegal, value);
             this.base = base;
             this.needsBase = needsBase;
         }
 
-        public MemoryAccess(OCLMemoryBase base, Value value, Value index, boolean needsBase) {
+        MemoryAccess(OCLMemoryBase base, Value value, Value index, boolean needsBase) {
             super(null, LIRKind.Illegal, value);
             this.base = base;
             this.index = index;
@@ -195,7 +195,7 @@ public class OCLUnary {
 
         private final OCLMemoryBase base;
 
-        public OCLAddressCast(OCLMemoryBase base, LIRKind lirKind) {
+        OCLAddressCast(OCLMemoryBase base, LIRKind lirKind) {
             super(OCLUnaryTemplate.CAST_TO_POINTER, lirKind, null);
             this.base = base;
         }
@@ -206,7 +206,7 @@ public class OCLUnary {
             asm.emit(((OCLUnaryTemplate) opcode).getTemplate(), base.memorySpace.name() + " " + oclKind.toString());
         }
 
-        public OCLMemorySpace getMemorySpace() {
+        OCLMemorySpace getMemorySpace() {
             return base.memorySpace;
         }
 
