@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
 import java.util.List;
 
+import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
@@ -45,8 +46,8 @@ public class TornadoThreadScheduler extends BasePhase<TornadoHighTierContext> {
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
         if (graph.hasLoops() && (context.getDeviceMapping().getDeviceType() == TornadoDeviceType.ACCELERATOR)) {
-            List<EndNode> snapshot = graph.getNodes().filter(EndNode.class).snapshot();
-            EndNode end = snapshot.get(0);
+            NodeIterable<EndNode> filter = graph.getNodes().filter(EndNode.class);
+            EndNode end = filter.first();
             final LocalWorkGroupDimensionsNode localWorkGroupNode = graph.addOrUnique(new LocalWorkGroupDimensionsNode(oneD, twoD, threeD));
             ThreadConfigurationNode threadConfig = graph.addOrUnique(new ThreadConfigurationNode(localWorkGroupNode));
             graph.addBeforeFixed(end, threadConfig);
