@@ -29,6 +29,22 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
         return 0;
     }
 
+    @Override public long[] getDeviceMaxWorkItemSizes() {
+        return new long[0];
+    }
+
+    @Override public int getDeviceMaxClockFrequency() {
+        return 0;
+    }
+
+    @Override public long getDeviceMaxConstantBufferSize() {
+        return 0;
+    }
+
+    @Override public long getDeviceMaxAllocationSize() {
+        return 0;
+    }
+
     @Override public Object getDeviceInfo() {
         return null;
     }

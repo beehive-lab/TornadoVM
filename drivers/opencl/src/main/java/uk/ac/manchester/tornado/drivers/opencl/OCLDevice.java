@@ -132,7 +132,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         buffer.clear();
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_AVAILABLE.getValue(), buffer.array());
 
-        return (buffer.getInt() == 1) ? true : false;
+        return buffer.getInt() == 1;
     }
 
     @Override
@@ -235,6 +235,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return maxComputeUnits;
     }
 
+    @Override
     public int getDeviceMaxClockFrequency() {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
@@ -243,6 +244,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return buffer.getInt();
     }
 
+    @Override
     public long getDeviceMaxAllocationSize() {
         if (maxAllocationSize != -1) {
             return maxAllocationSize;
@@ -298,6 +300,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return maxWorkItemDimensions;
     }
 
+    @Override
     public long[] getDeviceMaxWorkItemSizes() {
         if (maxWorkItemSizes != null) {
             return maxWorkItemSizes;
@@ -333,6 +336,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         return maxWorkGroupSize;
     }
 
+    @Override
     public long getDeviceMaxConstantBufferSize() {
         if (maxConstantBufferSize != -1) {
             return maxConstantBufferSize;
@@ -403,7 +407,7 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_ENDIAN_LITTLE.getValue(), buffer.array());
         deviceEndianLittle = buffer.getInt();
 
-        return deviceEndianLittle == CL_TRUE ? true : false;
+        return deviceEndianLittle == CL_TRUE;
     }
 
     public int getWordSize() {

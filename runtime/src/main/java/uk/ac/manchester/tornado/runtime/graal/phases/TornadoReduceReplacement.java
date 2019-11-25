@@ -74,7 +74,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
             BinaryNode value = (BinaryNode) currentNode;
             ValueNode x = value.getX();
             isReduction = recursiveCheck(arrayToStore, indexToStore, x);
-            if (isReduction == false) {
+            if (!isReduction) {
                 ValueNode y = value.getY();
                 return recursiveCheck(arrayToStore, indexToStore, y);
             }

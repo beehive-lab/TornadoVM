@@ -47,8 +47,8 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLBinaryO
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLTernaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryIntrinsic;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler.OCLUnaryOp;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLBinary.TestZeroExpression;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.AssignStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.LoadStmt;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLLIRStmt.StoreAtomicAddFloatStmt;
@@ -296,7 +296,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
 
     public void emitLoad(AllocatableValue result, OCLAddressCast cast, MemoryAccess address) {
         trace("emitLoad: %s = (%s) %s", result.toString(), result.getPlatformKind().toString(), address.toString());
-        getGen().append(new LoadStmt(result, cast, address));
+        if (cast.getMemorySpace().name() == OCLAssemblerConstants.GLOBAL_MEM_MODIFIER) {
+            getGen().append(new LoadStmt(result, cast, address));
+        } else {
+            getGen().append(new LoadStmt(result, cast, address, address.getIndex()));
+        }
     }
 
     public void emitVectorLoad(AllocatableValue result, OCLBinaryIntrinsic op, Value index, OCLAddressCast cast, MemoryAccess address) {
@@ -379,7 +383,11 @@ public class OCLArithmeticTool extends ArithmeticLIRGenerator {
             } else {
                 if (memAccess != null) {
                     OCLAddressCast cast = new OCLAddressCast(memAccess.getBase(), LIRKind.value(oclKind));
-                    getGen().append(new StoreStmt(cast, memAccess, input));
+                    if (memAccess.getIndex() == null) {
+                        getGen().append(new StoreStmt(cast, memAccess, input));
+                    } else {
+                        getGen().append(new StoreStmt(cast, memAccess, input, memAccess.getIndex()));
+                    }
                 } else {
                     getGen().append(new StoreAtomicAddStmt(accumulator, input));
                 }

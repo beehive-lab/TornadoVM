@@ -32,6 +32,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 
 public enum OCLKind implements PlatformKind {
 
@@ -117,6 +118,25 @@ public enum OCLKind implements PlatformKind {
         return ILLEGAL;
     }
 
+     public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(ResolvedJavaType type) {
+        if (type.getJavaKind() == JavaKind.Int) {
+             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY;
+         } else if (type.getJavaKind() == JavaKind.Double) {
+             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_DOUBLE_ARRAY;
+         } else if (type.getJavaKind() == JavaKind.Float) {
+             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_FLOAT_ARRAY;
+         } else if (type.getJavaKind() == JavaKind.Short) {
+             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_SHORT_ARRAY;
+         } else if (type.getJavaKind() == JavaKind.Long) {
+              return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_LONG_ARRAY;
+         } else if (type.getJavaKind() == JavaKind.Char) {
+             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_CHAR_ARRAY;
+         } else if (type.getJavaKind() == JavaKind.Byte){
+             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_BYTE_ARRAY;
+         }
+     return null;
+     }
+
     public static OCLKind fromClass(Class<?> type) {
         if (!type.isArray()) {
             for (OCLKind k : OCLKind.values()) {
@@ -135,7 +155,8 @@ public enum OCLKind implements PlatformKind {
     private final OCLKind elementKind;
     private final Class<?> javaClass;
 
-    @SuppressWarnings({ "unchecked", "rawtypes" }) private final EnumKey key = new EnumKey(this);
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private final EnumKey key = new EnumKey(this);
 
     OCLKind(int size, Class<?> javaClass) {
         this(size, javaClass, null);
@@ -306,18 +327,12 @@ public enum OCLKind implements PlatformKind {
     }
 
     public boolean isInteger() {
-        if (kind == ILLEGAL || isFloating()) {
-            return false;
-        }
-        return true;
+        return kind != ILLEGAL && !isFloating();
     }
 
     public boolean isFloating() {
         // TODO are vectors integers?
-        if (kind == FLOAT || kind == DOUBLE) {
-            return true;
-        }
-        return false;
+        return kind == FLOAT || kind == DOUBLE;
     }
 
     public boolean isVector() {

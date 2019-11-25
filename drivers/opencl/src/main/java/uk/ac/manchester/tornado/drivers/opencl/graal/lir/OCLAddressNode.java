@@ -33,6 +33,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture.OCLMemoryBase;
+import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLLIRGenerator;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary.MemoryAccess;
 
@@ -41,9 +42,11 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
 
     public static final NodeClass<OCLAddressNode> TYPE = NodeClass.create(OCLAddressNode.class);
 
-    @OptionalInput private ValueNode base;
+    @OptionalInput
+    private ValueNode base;
 
-    @OptionalInput private ValueNode index;
+    @OptionalInput
+    private ValueNode index;
 
     private OCLMemoryBase memoryRegister;
 
@@ -52,7 +55,12 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
         this.base = base;
         this.index = index;
         this.memoryRegister = memoryRegister;
+    }
 
+    public OCLAddressNode(ValueNode base, ValueNode index) {
+        super(TYPE);
+        this.base = base;
+        this.index = index;
     }
 
     public OCLAddressNode(ValueNode base, OCLMemoryBase memoryRegister) {
@@ -65,13 +73,14 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
 
         Value baseValue = base == null ? Value.ILLEGAL : gen.operand(base);
         Value indexValue = index == null ? Value.ILLEGAL : gen.operand(index);
-
         if (index == null) {
             gen.setResult(this, new MemoryAccess(memoryRegister, baseValue, false));
         }
+        setMemoryAccess(gen, baseValue, indexValue, tool);
+    }
 
-        Variable addressValue = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
-        gen.setResult(this, new MemoryAccess(memoryRegister, addressValue, false));
+    private boolean isLocalMemoryAccess() {
+        return this.memoryRegister.name.equals(OCLAssemblerConstants.LOCAL_REGION_NAME);
     }
 
     @Override
@@ -89,4 +98,13 @@ public class OCLAddressNode extends AddressNode implements LIRLowerable {
         return 0;
     }
 
+    private void setMemoryAccess(NodeLIRBuilderTool gen, Value baseValue, Value indexValue, OCLLIRGenerator tool) {
+        Variable addressValue;
+        if (isLocalMemoryAccess()) {
+            gen.setResult(this, new MemoryAccess(memoryRegister, baseValue, indexValue, false));
+        } else {
+            addressValue = tool.getArithmetic().emitAdd(baseValue, indexValue, false);
+            gen.setResult(this, new MemoryAccess(memoryRegister, addressValue, false));
+        }
+    }
 }

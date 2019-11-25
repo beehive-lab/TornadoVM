@@ -45,7 +45,6 @@ public class TornadoThreadScheduler extends BasePhase<TornadoHighTierContext> {
 
     public TornadoThreadScheduler(CanonicalizerPhase canonicalizer) {
         this.canonicalizer = canonicalizer;
-
     }
 
     @Override
@@ -60,7 +59,6 @@ public class TornadoThreadScheduler extends BasePhase<TornadoHighTierContext> {
                     graph.addBeforeFixed(end, threadConfig);
                     break;
                 }
-
             }
         }
     }

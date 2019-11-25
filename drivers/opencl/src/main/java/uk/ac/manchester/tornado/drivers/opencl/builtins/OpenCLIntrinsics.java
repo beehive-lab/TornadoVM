@@ -85,10 +85,6 @@ public class OpenCLIntrinsics {
 
     }
 
-    public static void createLocalMemory(int[] array, int size) {
-
-    }
-
     public static int fmax(float a, float b) {
         return 0;
     }
