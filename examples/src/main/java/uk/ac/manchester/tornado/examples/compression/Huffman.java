@@ -92,7 +92,7 @@ public class Huffman {
 
         byte[] bits = new byte[bitSetCompressed.length()];
         for (int i = 0; i < bits.length; i++) {
-            bits[i] = (bitSetCompressed.get(i) == false) ? (byte) 0 : (byte) 1;
+            bits[i] = (byte) (bitSetCompressed.get(i) ? 1 : 0);
         }
 
         // 3. decode

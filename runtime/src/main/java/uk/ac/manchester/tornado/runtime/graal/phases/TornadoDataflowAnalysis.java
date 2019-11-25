@@ -106,11 +106,7 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
             Constant value2 = c.getValue();
             String v = value2.toValueString();
             int stride = Integer.parseInt(v);
-            if (stride == 1) {
-                return true;
-            } else {
-                return false;
-            }
+            return stride == 1;
         }
         return false;
     }
@@ -137,11 +133,9 @@ public class TornadoDataflowAnalysis extends BasePhase<TornadoSketchTierContext>
         // Check if the IF node found is different from the one previously
         // recorded.
         if (fatherNodeStore != null) {
-            if (!fatherNodeStore.equals(ifNode)) {
-                // We found different father IF node for each
-                // branch.
-                return true;
-            }
+            // We found different father IF node for each
+            // branch.
+            return !fatherNodeStore.equals(ifNode);
         }
         return false;
     }
