@@ -20,14 +20,14 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
-import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.util.EconomicSet;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXProviders;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
 public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
-    protected PTXBackend(Providers providers) {
+    public PTXBackend(PTXProviders providers) {
         super(providers);
     }
 
@@ -100,5 +100,17 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     @Override
     public ReferenceMapBuilder newReferenceMapBuilder(int totalFrameSize) {
         return null;
+    }
+
+    public TornadoSuitesProvider getTornadoSuites() {
+        return null;
+    }
+
+    public boolean isInitialised() {
+        return false;
+    }
+
+    public void init() {
+
     }
 }
