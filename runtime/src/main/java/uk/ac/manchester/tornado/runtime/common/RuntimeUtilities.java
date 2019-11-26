@@ -39,6 +39,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -357,29 +358,32 @@ public class RuntimeUtilities {
         return fileName.exists();
     }
 
-    public static void sysCall(String[] command, boolean printStandardOutput) throws IOException {
+    public static void systemCall(String[] command, boolean printStandardOutput) throws IOException {
         String stdOutput = null;
         StringBuffer standardOutput = new StringBuffer();
         StringBuffer errorOutput = new StringBuffer();
+        final String lineSeparator = System.lineSeparator();
 
         try {
             Process p = Runtime.getRuntime().exec(command);
             p.waitFor();
+
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
             BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            standardOutput.append("Here is the standard output of the command:\n");
+            standardOutput.append("Standard output:" + lineSeparator);
+            String fullCommand = Arrays.toString(command);
+            standardOutput.append("Command: " + fullCommand + lineSeparator + lineSeparator);
             while ((stdOutput = stdInput.readLine()) != null) {
-                standardOutput.append(stdOutput);
+                standardOutput.append(stdOutput + lineSeparator);
             }
-            errorOutput.append("Here is the standard error of the command (if any):\n");
+            errorOutput.append("Standard error of the command (if any):\n");
             while ((stdOutput = stdError.readLine()) != null) {
-                errorOutput.append(stdOutput);
+                errorOutput.append(stdOutput + lineSeparator);
             }
             if (printStandardOutput) {
                 System.out.println(standardOutput.toString());
                 System.out.println(errorOutput.toString());
             }
-
         } catch (IOException e) {
             error("Unable to make a native system call.", e);
             throw new IOException(e);
