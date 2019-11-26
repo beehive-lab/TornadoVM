@@ -163,10 +163,13 @@ public class OCLUnary {
             this.needsBase = needsBase;
         }
 
+        private boolean shouldEmitRelativeAddress() {
+            return needsBase || (!(base.memorySpace == OCLMemorySpace.LOCAL) && OPENCL_USE_RELATIVE_ADDRESSES);
+        }
+
         @Override
         public void emit(OCLCompilationResultBuilder crb, OCLAssembler asm) {
-
-            if (needsBase || (!(base.memorySpace == OCLMemorySpace.LOCAL) && OPENCL_USE_RELATIVE_ADDRESSES)) {
+            if (shouldEmitRelativeAddress()) {
                 asm.emitSymbol(ADDRESS_OF);
                 asm.emit(base.name);
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
