@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
@@ -85,12 +85,19 @@ public final class Tornado implements TornadoCI {
 
     public static boolean REMOVE_OUTER_LOOPS = Boolean.parseBoolean(getProperty("tornado.assembler.removeloops", "False"));
     public final static boolean ACCELERATOR_IS_GPU = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.asgpu", "True"));
-    public final static boolean FPGA_EMULATION = Boolean.parseBoolean(getProperty("tornado.fpga.emulation", "false"));
+
+    public final static boolean FPGA_EMULATION = isFPGAEmulation();
+
+    private static boolean isFPGAEmulation() {
+        String cl_context_emulator_device_intelfpga = System.getenv("CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA");
+        return cl_context_emulator_device_intelfpga != null && cl_context_emulator_device_intelfpga.equals("1");
+    }
+
     public final static boolean ACCELERATOR_IS_FPGA = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.fpga", "False"));
 
     public static final TornadoLogger log = new TornadoLogger(Tornado.class);
 
-    public static final void debug(final String msg) {
+    public static void debug(final String msg) {
         log.debug(msg);
     }
 
