@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.runtime.tasks;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.mm.TornadoGlobalObjectState;
@@ -40,13 +41,13 @@ public class GlobalObjectState implements TornadoGlobalObjectState {
 
     private TornadoAcceleratorDevice owner;
 
-    private final Map<TornadoAcceleratorDevice, DeviceObjectState> deviceStates;
+    private final ConcurrentHashMap<TornadoAcceleratorDevice, DeviceObjectState> deviceStates;
 
     public GlobalObjectState() {
         shared = false;
         exclusive = false;
         owner = null;
-        deviceStates = new HashMap<>();
+        deviceStates = new ConcurrentHashMap<>();
     }
 
     public boolean isShared() {
