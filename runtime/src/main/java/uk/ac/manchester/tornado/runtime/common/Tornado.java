@@ -90,7 +90,7 @@ public final class Tornado implements TornadoCI {
 
     private static boolean isFPGAEmulation() {
         String cl_context_emulator_device_intelfpga = System.getenv("CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA");
-        return cl_context_emulator_device_intelfpga != null && cl_context_emulator_device_intelfpga.equals("1");
+        return cl_context_emulator_device_intelfpga != null && (cl_context_emulator_device_intelfpga.equals("1") || cl_context_emulator_device_intelfpga.toLowerCase().equals("true"));
     }
 
     public final static boolean ACCELERATOR_IS_FPGA = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.fpga", "False"));
