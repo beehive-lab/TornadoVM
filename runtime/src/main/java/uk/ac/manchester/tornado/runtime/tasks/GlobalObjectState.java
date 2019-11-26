@@ -25,14 +25,12 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.mm.TornadoGlobalObjectState;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 public class GlobalObjectState implements TornadoGlobalObjectState {
 
