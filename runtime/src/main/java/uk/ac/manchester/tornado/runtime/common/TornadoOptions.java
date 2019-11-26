@@ -27,26 +27,67 @@ package uk.ac.manchester.tornado.runtime.common;
 
 public class TornadoOptions {
 
-    public static boolean printBytecodes = Boolean.parseBoolean(Tornado.getProperty("tornado.print.bytecodes", "False"));
+    /**
+     * Option to print TornadoVM Internal Bytecodes.
+     * 
+     */
+    public static boolean printBytecodes = getBooleanValue("tornado.print.bytecodes", "False");
 
-    public static final boolean DEBUG_POLICY = Boolean.parseBoolean(System.getProperty("tornado.dynamic.verbose", "False"));
+    /**
+     * Option to debug dynamic reconfiguration policies.
+     * 
+     * Use `-Dtornado.dynamic.verbose=True`.
+     * 
+     */
+    public static final boolean DEBUG_POLICY = getBooleanValue("tornado.dynamic.verbose", "False");
 
-    public static final boolean EXPERIMENTAL_REDUCE = Boolean.parseBoolean(System.getProperty("tornado.experimental.reduce", "True"));
+    /**
+     * Option to enable experimental and new option for performing automatic full
+     * reductions.
+     */
+    public static final boolean EXPERIMENTAL_REDUCE = getBooleanValue("tornado.experimental.reduce", "True");
 
+    /**
+     * Option to load FPGA pre-compiled binaries.
+     */
     public static StringBuffer FPGA_BINARIES = System.getProperty("tornado.precompiled.binary", null) != null ? new StringBuffer(System.getProperty("tornado.precompiled.binary", null)) : null;
 
-    // Temporal option for null checks
-    public static final boolean IGNORE_NULL_CHECKS = Boolean.parseBoolean(System.getProperty("tornado.ignore.nullchecks", "False"));
+    /**
+     * Temporal option for disabling null checks for Apache-Flink.
+     */
+    public static final boolean IGNORE_NULL_CHECKS = getBooleanValue("tornado.ignore.nullchecks", "False");
 
+    /**
+     * Option for enabling saving the profiler into a file.
+     */
+    public static final boolean PROFILER_LOGS_ACCUMULATE = getBooleanValue("tornado.log.profiler", "False");
+
+    /**
+     * Option to enable profiler-feature extractions.
+     */
+    public final static boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", "False");
+
+    /**
+     * Option to enable profiler. It can be disabled at any point during runtime.
+     * 
+     * @return boolean.
+     */
     public static boolean isProfilerEnabled() {
-        return Boolean.parseBoolean(System.getProperty("tornado.profiler", "False"));
+        return getBooleanValue("tornado.profiler", "False");
     }
 
+    /**
+     * Option for saving the profiler between different runs. It can be disabled at
+     * any point during runtime.
+     * 
+     * @return boolean.
+     */
     public static boolean isSaveProfilerEnabled() {
-        return Boolean.parseBoolean(System.getProperty("tornado.profiler.save", "False"));
+        return getBooleanValue("tornado.profiler.save", "False");
     }
 
-    public static final boolean PROFILER_LOGS_ACCUMULATE = Boolean.parseBoolean(System.getProperty("tornado.log.profiler", "False"));
+    private static boolean getBooleanValue(String property, String defaultValue) {
+        return Boolean.parseBoolean(Tornado.getProperty(property, defaultValue));
+    }
 
-    public final static boolean FEATURE_EXTRACTION = Boolean.parseBoolean(System.getProperty("tornado.feature.extraction", "False"));
 }
