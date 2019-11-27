@@ -475,6 +475,7 @@ public class OCLCodeCache {
         try {
             entryPoint = entryPoint.split("-")[1];
         } catch (NullPointerException | ArrayIndexOutOfBoundsException e) {
+            // ignore
         }
 
         long beforeLoad = (Tornado.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();

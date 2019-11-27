@@ -89,7 +89,15 @@ public final class Tornado implements TornadoCI {
         return cl_context_emulator_device_intelfpga != null && (cl_context_emulator_device_intelfpga.equals("1") || cl_context_emulator_device_intelfpga.toLowerCase().equals("true"));
     }
 
-    public final static boolean ACCELERATOR_IS_FPGA = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.fpga", "False"));
+    public final static boolean ACCELERATOR_IS_FPGA = isFPGAAccelerationEnabled();
+
+    private static boolean isFPGAAccelerationEnabled() {
+        boolean isAcceleration = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.fpga", "False"));
+        if (isAcceleration) {
+            return true;
+        }
+        return isFPGAEmulation();
+    }
 
     public static final TornadoLogger log = new TornadoLogger(Tornado.class);
 
@@ -97,7 +105,7 @@ public final class Tornado implements TornadoCI {
         log.debug(msg);
     }
 
-    public static void loadSettings(String filename) {
+    private static void loadSettings(String filename) {
         final File localSettings = new File(filename);
         Properties loadProperties = new Properties();
         if (localSettings.exists()) {
