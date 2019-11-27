@@ -344,7 +344,7 @@ public class OCLCodeCache {
                 // Should not reach here
                 throw new TornadoRuntimeException("FPGA vendor not supported yet.");
             }
-            commandRename = new String[] { BASH, FPGA_CLEANUP_SCRIPT, '"' + deviceContext.getPlatformContext().getPlatform().getVendor() + '"' };
+            commandRename = new String[] { FPGA_CLEANUP_SCRIPT, '"' + deviceContext.getPlatformContext().getPlatform().getVendor() + '"' };
 
             Path path = Paths.get(FPGA_BIN_LOCATION);
             if (RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {
