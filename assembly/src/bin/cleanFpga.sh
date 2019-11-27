@@ -13,7 +13,8 @@ mv fpga-source-comp/lookupBufferAddress fpga-source-comp/intelFPGAFiles
 current=`pwd`
 cd $FPGA_DIRECTORY
 
-if [[ $vendor = "Intel(R) Corporation" ]]
+echo "[$vendor]"
+if [[ $vendor = "Intel" ]]
 then
 	ln -s $BINARY.aocx $BINARY 
 elif [[ $vendor = "Xilinx" ]]
