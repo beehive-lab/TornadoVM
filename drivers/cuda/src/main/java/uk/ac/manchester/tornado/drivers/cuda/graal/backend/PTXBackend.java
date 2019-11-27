@@ -21,6 +21,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
 import org.graalvm.util.EconomicSet;
+import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXProviders;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
@@ -103,7 +104,8 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     public TornadoSuitesProvider getTornadoSuites() {
-        return null;
+
+        return ((PTXProviders) getProviders()).getSuitesProvider();
     }
 
     public boolean isInitialised() {
@@ -112,5 +114,9 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
 
     public void init() {
 
+    }
+
+    public CUDADeviceContext getDeviceContext() {
+        return null;
     }
 }

@@ -5,8 +5,14 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import java.util.List;
 
 public class CUDAContext extends TornadoLogger {
-    public CUDAContext(CUDAPlatform platform, long contextID, List<CUDADevice> devices) {
+    private List<CUDADevice> devices;
 
+    public CUDAContext(CUDAPlatform platform, long contextID, List<CUDADevice> devices) {
+        this.devices = devices;
+    }
+
+    public List<CUDADevice> devices() {
+        return devices;
     }
 
     public void cleanup() {

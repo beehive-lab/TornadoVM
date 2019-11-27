@@ -31,10 +31,12 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXHotSpotBackendFactory;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorDriver;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
+import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
@@ -63,11 +65,11 @@ public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDrive
     }
 
     protected void discoverDevices(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
-        final int numPlatforms = 0; //OpenCL.getNumPlatforms();
+        final int numPlatforms = CUDA.getNumPlatforms();
         if (numPlatforms > 0) {
             String platformToIgnore = getString("tornado.ignore.platform");
             for (int i = 0; i < numPlatforms; i++) {
-                final CUDAPlatform platform = null; //OpenCL.getPlatform(i);
+                final CUDAPlatform platform = CUDA.getPlatform(i);
 
                 if (platformToIgnore != null && platform.getName().startsWith(platformToIgnore)) {
                     info("Ignore " + platform.getName());
@@ -88,15 +90,16 @@ public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDrive
 
         backends[platformIndex] = new PTXBackend[numDevices];
         for (int j = 0; j < numDevices; j++) {
-            final CUDADevice device = null; //context.devices().get(j);
-            info("CUDA[%d]: device=%s", platformIndex, device.getDeviceName());
+            //final CUDADevice device = null; //context.devices().get(j);
+            //info("CUDA[%d]: device=%s", platformIndex, device.getDeviceName());
             backends[platformIndex][j] = createPTXBackend(options, vmRuntime, vmConfig, context, j);
         }
     }
 
     private PTXBackend createPTXBackend(final OptionValues options, final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, final CUDAContext context, final int deviceIndex) {
-        final CUDADevice device = null; //context.devices().get(deviceIndex);
+        final CUDADevice device = context.devices().get(deviceIndex);
         info("Creating backend for %s", device.getDeviceName());
+        System.out.println(jvmciRuntime);
         return PTXHotSpotBackendFactory.createBackend(options, jvmciRuntime.getHostJVMCIBackend(), vmConfig, context, device);
     }
 
@@ -119,7 +122,7 @@ public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDrive
 
     @Override
     public Providers getProviders() {
-        return null;
+        return getDefaultBackend().getProviders();
     }
 
     @Override
@@ -132,7 +135,9 @@ public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDrive
     }
 
     private PTXBackend checkAndInitBackend(final int platform, final int device) {
+        System.out.println(backends[platform]);
         final PTXBackend backend = backends[platform][device];
+        System.out.println(backend);
         if (!backend.isInitialised()) {
             backend.init();
         }
@@ -142,31 +147,35 @@ public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDrive
 
     @Override
     public TornadoDevice getDefaultDevice() {
-        return null;
+        return getDefaultBackend().getDeviceContext().asMapping();
     }
 
     @Override
     public int getDeviceCount() {
-        return 0;
+        return 1;
     }
 
-    @Override public
-    TornadoDevice getDevice(int index) {
-        return null;
+    @Override
+    public TornadoAcceleratorDevice getDevice(int index) {
+        try {
+            return flatBackends[index].getDeviceContext().asMapping();
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new TornadoRuntimeException("[ERROR] device required not found: " + index + " - Max: " + flatBackends.length);
+        }
     }
 
     @Override public
     TornadoDeviceType getTypeDefaultDevice() {
-        return null;
+        return TornadoDeviceType.GPU;
     }
 
     @Override public
     String getName() {
-        return null;
+        return "CUDA Driver";
     }
 
     @Override public int
     getNumPlatforms() {
-        return 0;
+        return 1;
     }
 }

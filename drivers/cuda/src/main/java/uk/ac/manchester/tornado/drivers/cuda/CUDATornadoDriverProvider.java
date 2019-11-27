@@ -40,6 +40,6 @@ public class CUDATornadoDriverProvider implements TornadoDriverProvider {
 
     @Override
     public TornadoAcceleratorDriver createDriver(OptionValues options, HotSpotJVMCIRuntime hostRuntime, TornadoVMConfig config) {
-        return new CUDADriver(null, null, null);
+        return new CUDADriver(options, hostRuntime, config);
     }
 }

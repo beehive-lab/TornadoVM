@@ -37,14 +37,17 @@ public class PTXHotSpotBackendFactory {
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();
 
         PTXProviders providers;
+        PTXSuitesProvider suites;
 
         try (InitTimer t = timer("create providers")) {
 
-            providers = new PTXProviders(metaAccess, null, constantReflection, null, null, null, null, null);
+            suites = new PTXSuitesProvider(options, null, metaAccess, compilerConfiguration, addressLowering);
+            providers = new PTXProviders(metaAccess, null, constantReflection, constantFieldProvider, foreignCalls, null, null, stampProvider, suites);
 
         }
         try (InitTimer rt = timer("instantiate backend")) {
             PTXBackend backend = new PTXBackend(providers);
+            System.out.println("PTXHotSpotBackendFactory#createBackend: " + backend);
             return backend;
         }
     }
