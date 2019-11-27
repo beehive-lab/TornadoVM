@@ -316,7 +316,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private final CompileInfo COMPILE = new CompileInfo(true, false);
+    private final CompileInfo COMPILE_ONLY = new CompileInfo(true, false);
     private final CompileInfo COMPILE_AND_UPDATE = new CompileInfo(true, true);
     private final CompileInfo NOT_COMPILE_UPDATE = new CompileInfo(false, false);
 
@@ -337,7 +337,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      */
     private CompileInfo extractCompileInfo() {
         if (result == null && isLastDeviceListEmpty()) {
-            return COMPILE;
+            return COMPILE_ONLY;
         } else if (result != null && !isLastDeviceListEmpty() && !(compareDevices(graphContext.getLastDevices(), meta().getDevice()))) {
             return COMPILE_AND_UPDATE;
         }

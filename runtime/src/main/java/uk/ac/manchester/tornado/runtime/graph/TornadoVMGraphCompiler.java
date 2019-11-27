@@ -93,7 +93,7 @@ public class TornadoVMGraphCompiler {
         private int remainingChunkSize;
         private short numBytesType;
 
-        public BatchSizeMetaData(int totalChunks, int remainingChunkSize, short numBytesType) {
+        BatchSizeMetaData(int totalChunks, int remainingChunkSize, short numBytesType) {
             this.totalChunks = totalChunks;
             this.remainingChunkSize = remainingChunkSize;
             this.numBytesType = numBytesType;
