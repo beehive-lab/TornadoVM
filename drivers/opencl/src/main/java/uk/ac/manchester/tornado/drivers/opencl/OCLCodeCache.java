@@ -227,11 +227,11 @@ public class OCLCodeCache {
         return resolveDirectory(OPENCL_LOG_DIR);
     }
 
-    public boolean isKernelAvailable() {
+    boolean isKernelAvailable() {
         return kernelAvailable;
     }
 
-    public void appendSourceToFile(String id, String entryPoint, byte[] source) {
+    private void appendSourceToFile(String id, String entryPoint, byte[] source) {
         if (Tornado.ACCELERATOR_IS_FPGA) {
             final Path outDir = Tornado.ACCELERATOR_IS_FPGA ? resolveBitstreamDirectory() : resolveSourceDirectory();
             if (entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
@@ -298,12 +298,14 @@ public class OCLCodeCache {
         return bufferCommand.toString().split(" ");
     }
 
-    private void callOSforCompilation(String[] compilationCommand, String[] commandRename) {
+    private void invokeShellCallForCompilation(String[] compilationCommand, String[] commandRename) {
         try {
-            if (compilationCommand != null)
+            if (compilationCommand != null) {
                 RuntimeUtilities.systemCall(compilationCommand, true);
-            if (commandRename != null)
+            }
+            if (commandRename != null) {
                 RuntimeUtilities.systemCall(commandRename, true);
+            }
         } catch (IOException e) {
             throw new TornadoRuntimeException(e);
         }
@@ -317,7 +319,7 @@ public class OCLCodeCache {
         }
     }
 
-    public OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) { // TODO Override this method for each FPGA backend
+    OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) { // TODO Override this method for each FPGA backend
         String[] compilationCommand;
         final String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
         final String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
@@ -348,9 +350,9 @@ public class OCLCodeCache {
             if (RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {
                 return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
             } else {
-                callOSforCompilation(compilationCommand, commandRename);
+                invokeShellCallForCompilation(compilationCommand, commandRename);
                 if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
-                    callOSforCompilation(linkCommand, null);
+                    invokeShellCallForCompilation(linkCommand, null);
                 }
             }
             return installEntryPointForBinaryForFPGAs(resolveBitstreamDirectory(), LOOKUP_BUFFER_KERNEL_NAME);
@@ -369,7 +371,7 @@ public class OCLCodeCache {
 
                 if (shouldGenerateXilinxBitstream(fpgaBitStreamFile, deviceContext)) {
                     compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
-                    callOSforCompilation(compilationCommand, null);
+                    invokeShellCallForCompilation(compilationCommand, null);
                 }
             } else {
                 return null;
@@ -544,7 +546,7 @@ public class OCLCodeCache {
         }
     }
 
-    public void reset() {
+    void reset() {
         for (OCLInstalledCode code : cache.values()) {
             code.invalidate();
         }
@@ -566,11 +568,11 @@ public class OCLCodeCache {
         return lookupCode;
     }
 
-    public boolean isCached(String id, String entryPoint) {
+    boolean isCached(String id, String entryPoint) {
         return cache.containsKey(id + "-" + entryPoint);
     }
 
-    public OCLInstalledCode getCode(String id, String entryPoint) {
+    OCLInstalledCode getCode(String id, String entryPoint) {
         return cache.get(id + "-" + entryPoint);
     }
 }
