@@ -27,8 +27,7 @@ package uk.ac.manchester.tornado.runtime.sketcher;
 
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoExecutor;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.*;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
@@ -62,8 +61,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoExecutor;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
 
 public class TornadoSketcher {
@@ -71,10 +68,6 @@ public class TornadoSketcher {
     private static final AtomicInteger sketchId = new AtomicInteger(0);
 
     private static final Map<ResolvedJavaMethod, Future<Sketch>> cache = new ConcurrentHashMap<>();
-
-    private static final TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();
-    private static final DebugContext debugContext = DebugContext.create(getTornadoRuntime().getOptions(),
-            new GraalDebugHandlersFactory(snippetReflection));
 
     private static final TimerKey Sketcher = DebugContext.timer("Sketcher");
 
@@ -99,10 +92,10 @@ public class TornadoSketcher {
         }
         cache.put(request.resolvedMethod, request);
 //        try (DebugContext.Scope ignored = MethodMetricsRootScopeInfo.createRootScopeIfAbsent(request.resolvedMethod)) {
-            try (DebugContext.Scope ignored1 = debugContext.scope("SketchCompiler")) {
+            try (DebugContext.Scope ignored1 = getDebugContext().scope("SketchCompiler")) {
                 request.result = buildSketch(request.meta, request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier);
             } catch (Throwable e) {
-                throw debugContext.handle(e);
+                throw getDebugContext().handle(e);
             }
 //        }
     }
@@ -110,19 +103,19 @@ public class TornadoSketcher {
     private static Sketch buildSketch(TaskMetaData meta, ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier) {
         info("Building sketch of %s", resolvedMethod.getName());
         TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("sketch-" + resolvedMethod.getName(), sketchId.getAndIncrement());
-        Builder builder = new Builder(getTornadoRuntime().getOptions(), debugContext, AllowAssumptions.YES);
+        Builder builder = new Builder(getOptions(), getDebugContext(), AllowAssumptions.YES);
         builder.method(resolvedMethod);
         builder.compilationId(id);
         builder.name("sketch-" + resolvedMethod.getName());
         final StructuredGraph graph = builder.build();
 
-        try (DebugContext.Scope ignored = debugContext.scope("Tornado-Sketcher", new DebugDumpScope("Tornado-Sketcher")); DebugCloseable ignored1 = Sketcher.start(debugContext)) {
+        try (DebugContext.Scope ignored = getDebugContext().scope("Tornado-Sketcher", new DebugDumpScope("Tornado-Sketcher")); DebugCloseable ignored1 = Sketcher.start(getDebugContext())) {
             final TornadoSketchTierContext highTierContext = new TornadoSketchTierContext(providers, graphBuilderSuite, optimisticOpts, resolvedMethod, meta);
             if (graph.start().next() == null) {
                 graphBuilderSuite.apply(graph, highTierContext);
                 new DeadCodeEliminationPhase(Optional).apply(graph);
             } else {
-                debugContext.dump(DebugContext.BASIC_LEVEL, graph, "initial state");
+                getDebugContext().dump(DebugContext.BASIC_LEVEL, graph, "initial state");
             }
 
             sketchTier.apply(graph, highTierContext);

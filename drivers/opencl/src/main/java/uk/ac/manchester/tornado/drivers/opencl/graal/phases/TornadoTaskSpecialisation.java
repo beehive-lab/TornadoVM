@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
 import java.lang.reflect.Array;
@@ -56,10 +57,6 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeReplacement
 public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext> {
 
     private static final int MAX_ITERATIONS = 10;
-
-    private static final TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();
-    private static final DebugContext debugContext = DebugContext.create(getTornadoRuntime().getOptions(),
-            new GraalDebugHandlersFactory(snippetReflection));
 
     private final CanonicalizerPhase canonicalizer;
     private final TornadoValueTypeReplacement valueTypeReplacement;
@@ -257,12 +254,12 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                     propagateParameters(graph, param, context.getArgs());
                 }
-                debugContext.dump(DebugContext.INFO_LEVEL, graph, "After Phase Propagate Parameters");
+                getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After Phase Propagate Parameters");
             } else {
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                     assumeNonNull(graph, param);
                 }
-                debugContext.dump(DebugContext.INFO_LEVEL, graph, "After Phase assume non null Parameters");
+                getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After Phase assume non null Parameters");
             }
 
             canonicalizer.apply(graph, context);
@@ -277,7 +274,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 }
             });
 
-            debugContext.dump(DebugContext.INFO_LEVEL, graph, "After Phase Pi Node Removal");
+            getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After Phase Pi Node Removal");
 
             loopUnroll.execute(graph, context);
 
@@ -287,7 +284,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             deadCodeElimination.run(graph);
 
-            debugContext.dump(DebugContext.INFO_LEVEL, graph, "After TaskSpecialisation iteration=" + iterations);
+            getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After TaskSpecialisation iteration=" + iterations);
 
             // boolean hasGuardingPiNodes =
             // graph.getNodes().filter(GuardingPiNode.class).isNotEmpty();

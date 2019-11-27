@@ -36,23 +36,19 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionP
 
 import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
 import static org.graalvm.compiler.core.common.GraalOptions.MaximumInliningSize;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
 public class TornadoInliningPolicy implements InliningPolicy {
 
-    private final DebugContext debugContext;
-
     public TornadoInliningPolicy() {
-        TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();
-        this.debugContext = DebugContext.create(getTornadoRuntime().getOptions(),
-                new GraalDebugHandlersFactory(snippetReflection));
     }
 
     @Override
     public boolean continueInlining(StructuredGraph graph) {
 
         if (graph.getNodeCount() >= MaximumDesiredSize.getValue(graph.getOptions())) {
-            InliningUtil.logInliningDecision(debugContext, "inlining is cut off by MaximumDesiredSize");
+            InliningUtil.logInliningDecision(getDebugContext(), "inlining is cut off by MaximumDesiredSize");
             return false;
         }
         return true;

@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ILLEGAL;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
@@ -104,10 +105,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorValueNod
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 
 public class OCLNodeLIRBuilder extends NodeLIRBuilder {
-
-    private static final TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();
-    private static final DebugContext debugContext = DebugContext.create(getTornadoRuntime().getOptions(),
-            new GraalDebugHandlersFactory(snippetReflection));
 
     private LIRKind resolveStamp(Stamp stamp) {
         LIRKind lirKind = LIRKind.Illegal;
@@ -235,9 +232,9 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                         Value operand = operand(valueNode);
                         if (ComplexMatchValue.INTERIOR_MATCH.equals(operand)) {
                             // Doesn't need to be evaluated
-                            debugContext.log("interior match for %s", valueNode);
+                            getDebugContext().log("interior match for %s", valueNode);
                         } else if (operand instanceof ComplexMatchValue) {
-                            debugContext.log("complex match for %s", valueNode);
+                            getDebugContext().log("complex match for %s", valueNode);
                             final ComplexMatchValue match = (ComplexMatchValue) operand;
                             operand = match.evaluate(this);
                             if (operand != null) {
@@ -262,10 +259,10 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void doRoot(ValueNode instr) {
-        debugContext.log("Visiting %s", instr);
+        getDebugContext().log("Visiting %s", instr);
         emitNode(instr);
         if (hasOperand(instr)) {
-            debugContext.log("Operand for %s = %s", instr, operand(instr));
+            getDebugContext().log("Operand for %s = %s", instr, operand(instr));
         }
     }
 

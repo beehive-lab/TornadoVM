@@ -85,13 +85,14 @@ public class OCLWriteNode extends AbstractWriteNode implements LIRLowerableAcces
 
     @Override
     public LocationIdentity getKilledLocationIdentity() {
-        unimplemented("OCLWriteNode::getKilledLocationIdentity not implemented");
-        return null;
+        return getLocationIdentity();
+//        unimplemented("OCLWriteNode::getKilledLocationIdentity not implemented");
+//        return null;
     }
 
-    @Override
-    public NodeIterable<FrameState> states() {
-        unimplemented("OCLWriteNode::states not implemented");
-        return null;
-    }
+//    @Override
+//    public NodeIterable<FrameState> states() {
+//        unimplemented("OCLWriteNode::states not implemented");
+//        return null;
+//    }
 }

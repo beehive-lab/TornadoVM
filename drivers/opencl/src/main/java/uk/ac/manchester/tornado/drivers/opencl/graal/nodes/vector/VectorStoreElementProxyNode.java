@@ -87,7 +87,8 @@ public final class VectorStoreElementProxyNode extends FixedWithNextNode impleme
     }
 
     public boolean canResolve() {
-        return ((origin != null && laneOrigin != null) && origin instanceof VectorValueNode && laneOrigin instanceof ConstantNode);
+        return ((origin != null && laneOrigin != null) && origin instanceof VectorValueNode && laneOrigin instanceof ConstantNode
+                && ((VectorValueNode) origin).getOCLKind().getVectorLength() > laneOrigin.asJavaConstant().asInt());
     }
 
     public ValueNode getOrigin() {

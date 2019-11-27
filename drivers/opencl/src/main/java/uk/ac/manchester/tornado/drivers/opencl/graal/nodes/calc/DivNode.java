@@ -50,7 +50,8 @@ public class DivNode extends BinaryArithmeticNode<ArithmeticOpTable.BinaryOp.Div
 
     @Override
     protected ArithmeticOpTable.BinaryOp<ArithmeticOpTable.BinaryOp.Div> getOp(ArithmeticOpTable table) {
-        return null;
+        return table.getDiv();
+//        return null;
     }
 
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {

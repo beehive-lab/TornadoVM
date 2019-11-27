@@ -228,7 +228,7 @@ public class TaskUtils {
         final Class<?> type = code.getClass();
         int count = 0;
         for (Field field : type.getDeclaredFields()) {
-            if (!field.getType().getName().contains("$$Lambda$")) {
+            if (!field.getType().getName().contains("$$Lambda$") && !field.getName().contains("LAMBDA_INSTANCE$")) {
                 count++;
             }
         }
@@ -236,7 +236,7 @@ public class TaskUtils {
         final Object[] cvs = new Object[count];
         int index = 0;
         for (Field field : type.getDeclaredFields()) {
-            if (!field.getType().getName().contains("$$Lambda$")) {
+            if (!field.getType().getName().contains("$$Lambda$") && !field.getName().contains("LAMBDA_INSTANCE$")) {
                 field.setAccessible(true);
                 try {
                     cvs[index] = field.get(code);

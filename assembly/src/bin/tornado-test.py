@@ -78,7 +78,7 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 ## Options
 __MAIN_TORNADO_TEST_RUNNER__ = " tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
 __MAIN_TORNADO_JUNIT__ 		 = "junit/org.junit.runner.JUnitCore "
-__IGV_OPTIONS__ 			 = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintCFG=true "
+__IGV_OPTIONS__ 			 = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true "
 __PRINT_OPENCL_KERNEL__ 	 = "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ 			 = "-Dtornado.debug=True "
 __IGNORE_INTEL_PLATFORM__    = "-Dtornado.ignore.platform=Intel "  # Due to a bug when running with Linux-optirun

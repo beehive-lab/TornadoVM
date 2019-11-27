@@ -61,13 +61,10 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
 public class CodeAnalysis {
-
-    private static final TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();
-    private static final DebugContext debugContext = DebugContext.create(getTornadoRuntime().getOptions(),
-            new GraalDebugHandlersFactory(snippetReflection));
 
     /**
      * Build Graal-IR for an input Java method
@@ -87,16 +84,16 @@ public class CodeAnalysis {
         ResolvedJavaMethod resolvedJavaMethod = metaAccess.lookupJavaMethod(methodToCompile);
         CompilationIdentifier compilationIdentifier = backend.getCompilationIdentifier(resolvedJavaMethod);
 
-        try (DebugContext.Scope ignored = debugContext.scope("compileMethodAndInstall", new DebugDumpScope("TornadoVM-Code-Analysis", true))) {
+        try (DebugContext.Scope ignored = getDebugContext().scope("compileMethodAndInstall", new DebugDumpScope("TornadoVM-Code-Analysis", true))) {
             EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
             opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
 //            opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
             OptionValues options = new OptionValues(opts);
-            StructuredGraph graph = new StructuredGraph.Builder(options, debugContext, AllowAssumptions.YES).method(resolvedJavaMethod).compilationId(compilationIdentifier).build();
+            StructuredGraph graph = new StructuredGraph.Builder(options, getDebugContext(), AllowAssumptions.YES).method(resolvedJavaMethod).compilationId(compilationIdentifier).build();
             PhaseSuite<HighTierContext> graphBuilderSuite = new PhaseSuite<>();
             graphBuilderSuite.appendPhase(new GraphBuilderPhase(GraphBuilderConfiguration.getDefault(new Plugins(new InvocationPlugins()))));
             graphBuilderSuite.apply(graph, new HighTierContext(providers, graphBuilderSuite, OptimisticOptimizations.ALL));
-            debugContext.dump(DebugContext.BASIC_LEVEL, graph, "CodeToAnalyze");
+            getDebugContext().dump(DebugContext.BASIC_LEVEL, graph, "CodeToAnalyze");
             return graph;
         } catch (Throwable e) {
             e.printStackTrace();
@@ -122,7 +119,7 @@ public class CodeAnalysis {
         opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
 //        opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
         OptionValues options = new OptionValues(opts);
-        try (DebugContext.Scope ignored = debugContext.scope("compileMethodAndInstall", new DebugDumpScope(String.valueOf(compilationID), true))) {
+        try (DebugContext.Scope ignored = getDebugContext().scope("compileMethodAndInstall", new DebugDumpScope(String.valueOf(compilationID), true))) {
             PhaseSuite<HighTierContext> graphBuilderPhase = backend.getSuites().getDefaultGraphBuilderSuite();
             Suites suites = backend.getSuites().getDefaultSuites(options);
             LIRSuites lirSuites = backend.getSuites().getDefaultLIRSuites(options);
@@ -131,9 +128,9 @@ public class CodeAnalysis {
             CompilationResult compilationResult = new CompilationResult(method.getSignature().toMethodDescriptor());
             CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
             GraalCompiler.compileGraph(graph, method, providers, backend, graphBuilderPhase, optimizationsOpts, profilerInfo, suites, lirSuites, compilationResult, factory, false);
-            return backend.addInstalledCode(debugContext, method, CompilationRequestIdentifier.asCompilationRequest(compilationID), compilationResult);
+            return backend.addInstalledCode(getDebugContext(), method, CompilationRequestIdentifier.asCompilationRequest(compilationID), compilationResult);
         } catch (Throwable e) {
-            throw debugContext.handle(e);
+            throw getDebugContext().handle(e);
         }
     }
 

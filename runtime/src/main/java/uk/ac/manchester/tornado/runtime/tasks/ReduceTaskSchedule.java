@@ -50,6 +50,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
 class ReduceTaskSchedule {
@@ -240,10 +241,6 @@ class ReduceTaskSchedule {
 
     private static class CompilationThread extends Thread {
 
-        private static final TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();
-        private static final DebugContext debugContext = DebugContext.create(getTornadoRuntime().getOptions(),
-                new GraalDebugHandlersFactory(snippetReflection));
-
         private Object codeTask;
         private final long sizeTargetDevice;
         private InstalledCode code;
@@ -261,7 +258,7 @@ class ReduceTaskSchedule {
         public void run() {
             StructuredGraph originalGraph = CodeAnalysis.buildHighLevelGraalGraph(codeTask);
             assert originalGraph != null;
-            StructuredGraph graph = (StructuredGraph) originalGraph.copy(debugContext);
+            StructuredGraph graph = (StructuredGraph) originalGraph.copy(getDebugContext());
             ReduceCodeAnalysis.performLoopBoundNodeSubstitution(graph, sizeTargetDevice);
             code = CodeAnalysis.compileAndInstallMethod(graph);
         }

@@ -28,6 +28,7 @@ package uk.ac.manchester.tornado.runtime;
 import static org.graalvm.compiler.debug.GraalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.SHOULD_LOAD_RMI;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -39,6 +40,7 @@ import java.util.concurrent.Executors;
 //import jdk.internal.vm.compiler.collections.EconomicMap;
 import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.core.common.GraalOptions;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
 import org.graalvm.compiler.lir.constopt.ConstantLoadOptimization;
@@ -51,10 +53,12 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
+import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 
 public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeCI {
@@ -81,6 +85,14 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
 
     public static TornadoCoreRuntime getTornadoRuntime() {
         return runtime;
+    }
+
+    private static DebugContext debugContext = null;
+    public static DebugContext getDebugContext() {
+        if (debugContext == null) {
+            debugContext = DebugContext.create(getOptions(), new GraalDebugHandlersFactory(new TornadoSnippetReflectionProvider()));
+        }
+        return debugContext;
     }
 
     public static Executor getTornadoExecutor() {

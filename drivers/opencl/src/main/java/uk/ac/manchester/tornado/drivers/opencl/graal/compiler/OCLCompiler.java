@@ -25,6 +25,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
 
@@ -107,10 +108,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
  * {@linkplain StructuredGraph graph}.
  */
 public class OCLCompiler {
-
-    private static final TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();
-    private static final DebugContext debugContext = DebugContext.create(getTornadoRuntime().getOptions(),
-            new GraalDebugHandlersFactory(snippetReflection));
 
     private static final AtomicInteger compilationId = new AtomicInteger();
 
@@ -235,7 +232,7 @@ public class OCLCompiler {
 
 //        try (DebugContext.Scope s = MethodMetricsRootScopeInfo.createRootScopeIfAbsent(r.installedCodeOwner)) {
             assert !r.graph.isFrozen();
-            try (DebugContext.Scope s0 = debugContext.scope("GraalCompiler", r.graph, r.providers.getCodeCache()); DebugCloseable a = CompilerTimer.start(debugContext)) {
+            try (DebugContext.Scope s0 = getDebugContext().scope("GraalCompiler", r.graph, r.providers.getCodeCache()); DebugCloseable a = CompilerTimer.start(getDebugContext())) {
                 emitFrontEnd(r.providers, r.backend, r.installedCodeOwner, r.args, r.meta, r.graph, r.graphBuilderSuite, r.optimisticOpts, r.profilingInfo, r.suites, r.isKernel, r.buildGraph,
                         r.batchThreads);
                 boolean isParallel = false;
@@ -244,7 +241,7 @@ public class OCLCompiler {
                 }
                 emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites, r.isKernel, isParallel);
             } catch (Throwable e) {
-                throw debugContext.handle(e);
+                throw getDebugContext().handle(e);
             }
             return r.compilationResult;
     }
@@ -267,7 +264,7 @@ public class OCLCompiler {
     public static void emitFrontEnd(Providers providers, OCLBackend backend, ResolvedJavaMethod method, Object[] args, TaskMetaData meta, StructuredGraph graph,
             PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, TornadoSuites suites, boolean isKernel, boolean buildGraph,
             long batchThreads) {
-        try (DebugContext.Scope s = debugContext.scope("FrontEnd", new DebugDumpScope("FrontEnd")); DebugCloseable a = FrontEnd.start(debugContext)) {
+        try (DebugContext.Scope s = getDebugContext().scope("FrontEnd", new DebugDumpScope("FrontEnd")); DebugCloseable a = FrontEnd.start(getDebugContext())) {
 
             /*
              * Register metadata with all tornado phases
@@ -281,7 +278,7 @@ public class OCLCompiler {
                     graphBuilderSuite.apply(graph, highTierContext);
                     new DeadCodeEliminationPhase(Optional).apply(graph);
                 } else {
-                    debugContext.dump(DebugContext.INFO_LEVEL, graph, "initial state");
+                    getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "initial state");
                 }
             }
             suites.getHighTier().apply(graph, highTierContext);
@@ -295,26 +292,26 @@ public class OCLCompiler {
             final LowTierContext lowTierContext = new LowTierContext(providers, backend);
             suites.getLowTier().apply(graph, lowTierContext);
 
-            debugContext.dump(DebugContext.BASIC_LEVEL, graph.getLastSchedule(), "Final HIR schedule");
+            getDebugContext().dump(DebugContext.BASIC_LEVEL, graph.getLastSchedule(), "Final HIR schedule");
         } catch (Throwable e) {
-            throw debugContext.handle(e);
+            throw getDebugContext().handle(e);
         }
     }
 
     public static <T extends OCLCompilationResult> void emitBackEnd(StructuredGraph graph, Object stub, ResolvedJavaMethod installedCodeOwner, OCLBackend backend, T compilationResult,
             CompilationResultBuilderFactory factory, RegisterConfig registerConfig, TornadoLIRSuites lirSuites, boolean isKernel, boolean isParallel) {
-        try (DebugContext.Scope s = debugContext.scope("BackEnd", graph.getLastSchedule()); DebugCloseable a = BackEnd.start(debugContext)) {
+        try (DebugContext.Scope s = getDebugContext().scope("BackEnd", graph.getLastSchedule()); DebugCloseable a = BackEnd.start(getDebugContext())) {
             LIRGenerationResult lirGen = null;
             lirGen = emitLIR(backend, graph, stub, registerConfig, lirSuites, compilationResult, isKernel);
-            try (DebugContext.Scope s2 = debugContext.scope("CodeGen", lirGen, lirGen.getLIR())) {
+            try (DebugContext.Scope s2 = getDebugContext().scope("CodeGen", lirGen, lirGen.getLIR())) {
                 int bytecodeSize = graph.method() == null ? 0 : graph.getBytecodeSize();
                 compilationResult.setHasUnsafeAccess(graph.hasUnsafeAccess());
                 emitCode(backend, graph.getAssumptions(), graph.method(), graph.getMethods(), bytecodeSize, lirGen, compilationResult, installedCodeOwner, factory, isKernel, isParallel);
             } catch (Throwable e) {
-                throw debugContext.handle(e);
+                throw getDebugContext().handle(e);
             }
         } catch (Throwable e) {
-            throw debugContext.handle(e);
+            throw getDebugContext().handle(e);
         }
     }
 
@@ -340,7 +337,7 @@ public class OCLCompiler {
 
     private static <T extends CompilationResult> LIRGenerationResult emitLIR0(OCLBackend backend, StructuredGraph graph, Object stub, RegisterConfig registerConfig, TornadoLIRSuites lirSuites,
             T compilationResult, boolean isKernel) {
-        try (DebugContext.Scope ds = debugContext.scope("EmitLIR"); DebugCloseable a = EmitLIR.start(debugContext)) {
+        try (DebugContext.Scope ds = getDebugContext().scope("EmitLIR"); DebugCloseable a = EmitLIR.start(getDebugContext())) {
             OptionValues options = graph.getOptions();
             ScheduleResult schedule = graph.getLastSchedule();
             Block[] blocks = schedule.getCFG().getBlocks();
@@ -351,14 +348,14 @@ public class OCLCompiler {
             LIR lir = null;
             AbstractBlockBase<?>[] codeEmittingOrder = null;
             AbstractBlockBase<?>[] linearScanOrder = null;
-            try (DebugContext.Scope s = debugContext.scope("ComputeLinearScanOrder", lir)) {
+            try (DebugContext.Scope s = getDebugContext().scope("ComputeLinearScanOrder", lir)) {
                 codeEmittingOrder = ComputeBlockOrder.computeCodeEmittingOrder(blocks.length, startBlock);
                 linearScanOrder = ComputeBlockOrder.computeLinearScanOrder(blocks.length, startBlock);
 
-                lir = new LIR(schedule.getCFG(), linearScanOrder, codeEmittingOrder, options, debugContext);
-                debugContext.dump(DebugContext.INFO_LEVEL, lir, "After linear scan order");
+                lir = new LIR(schedule.getCFG(), linearScanOrder, codeEmittingOrder, options, getDebugContext());
+                getDebugContext().dump(DebugContext.INFO_LEVEL, lir, "After linear scan order");
             } catch (Throwable e) {
-                throw debugContext.handle(e);
+                throw getDebugContext().handle(e);
             }
             RegisterAllocationConfig registerAllocationConfig = backend.newRegisterAllocationConfig(registerConfig, new String[] {});
             FrameMapBuilder frameMapBuilder = backend.newFrameMapBuilder(registerConfig);
@@ -370,16 +367,16 @@ public class OCLCompiler {
             LIRGenerationContext context = new LIRGenerationContext(lirGen, nodeLirGen, graph, schedule, isKernel);
             LIR_GENERATION_PHASE.apply(backend.getTarget(), lirGenRes, context);
 
-            try (DebugContext.Scope s = debugContext.scope("LIRStages", nodeLirGen, lir)) {
-                debugContext.dump(DebugContext.BASIC_LEVEL, lir, "After LIR generation");
+            try (DebugContext.Scope s = getDebugContext().scope("LIRStages", nodeLirGen, lir)) {
+                getDebugContext().dump(DebugContext.BASIC_LEVEL, lir, "After LIR generation");
                 LIRGenerationResult result = emitLowLevel(backend.getTarget(), lirGenRes, lirGen, lirSuites, registerAllocationConfig);
-                debugContext.dump(DebugContext.BASIC_LEVEL, lir, "Before code generation");
+                getDebugContext().dump(DebugContext.BASIC_LEVEL, lir, "Before code generation");
                 return result;
             } catch (Throwable e) {
-                throw debugContext.handle(e);
+                throw getDebugContext().handle(e);
             }
         } catch (Throwable e) {
-            throw debugContext.handle(e);
+            throw getDebugContext().handle(e);
         }
     }
 
@@ -394,7 +391,7 @@ public class OCLCompiler {
 
     public static void emitCode(OCLBackend backend, Assumptions assumptions, ResolvedJavaMethod rootMethod, List<ResolvedJavaMethod> inlinedMethods, int bytecodeSize, LIRGenerationResult lirGenRes,
             OCLCompilationResult compilationResult, ResolvedJavaMethod installedCodeOwner, CompilationResultBuilderFactory factory, boolean isKernel, boolean isParallel) {
-        try (DebugCloseable a = EmitCode.start(debugContext)) {
+        try (DebugCloseable a = EmitCode.start(getDebugContext())) {
             FrameMap frameMap = lirGenRes.getFrameMap();
             final OCLCompilationResultBuilder crb = backend.newCompilationResultBuilder(lirGenRes, frameMap, compilationResult, factory, isKernel, isParallel);
             backend.emitCode(crb, lirGenRes.getLIR(), installedCodeOwner);
@@ -409,12 +406,12 @@ public class OCLCompiler {
             compilationResult.setNonInlinedMethods(crb.getNonInlinedMethods());
             crb.finish();
 
-            if (debugContext.isCountEnabled()) {
-                DebugContext.counter("CompilationResults").increment(debugContext);
-                DebugContext.counter("CodeBytesEmitted").add(debugContext, compilationResult.getTargetCodeSize());
+            if (getDebugContext().isCountEnabled()) {
+                DebugContext.counter("CompilationResults").increment(getDebugContext());
+                DebugContext.counter("CodeBytesEmitted").add(getDebugContext(), compilationResult.getTargetCodeSize());
             }
 
-            debugContext.dump(DebugContext.BASIC_LEVEL, compilationResult, "After code generation");
+            getDebugContext().dump(DebugContext.BASIC_LEVEL, compilationResult, "After code generation");
         }
     }
 
@@ -427,7 +424,7 @@ public class OCLCompiler {
         Tornado.info("Compiling %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());
         final TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("compile-kernel" + resolvedMethod.getName(), compilationId.getAndIncrement());
 
-        Builder builder = new Builder(getTornadoRuntime().getOptions(), debugContext, AllowAssumptions.YES);
+        Builder builder = new Builder(getTornadoRuntime().getOptions(), getDebugContext(), AllowAssumptions.YES);
         builder.method(resolvedMethod);
         builder.compilationId(id);
         builder.name("compile-kernel" + resolvedMethod.getName());
@@ -454,7 +451,7 @@ public class OCLCompiler {
             final ResolvedJavaMethod currentMethod = worklist.pop();
             if (!includedMethods.contains(currentMethod)) {
                 final OCLCompilationResult compResult = new OCLCompilationResult("internal", currentMethod.getName(), meta, backend);
-                Builder builder1 = new Builder(getTornadoRuntime().getOptions(), debugContext, AllowAssumptions.YES);
+                Builder builder1 = new Builder(getTornadoRuntime().getOptions(), getDebugContext(), AllowAssumptions.YES);
                 builder1.method(resolvedMethod);
                 builder1.compilationId(id);
                 builder1.name("internal" + currentMethod.getName());
@@ -475,7 +472,7 @@ public class OCLCompiler {
 
     public static OCLCompilationResult compileSketchForDevice(Sketch sketch, CompilableTask task, OCLProviders providers, OCLBackend backend) {
 
-        final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().getReadonlyCopy().copy(debugContext);
+        final StructuredGraph kernelGraph = (StructuredGraph) sketch.getGraph().getReadonlyCopy().copy(getDebugContext());
         ResolvedJavaMethod resolvedMethod = kernelGraph.method();
 
         info("Compiling sketch %s on %s", resolvedMethod.getName(), backend.getDeviceContext().getDevice().getDeviceName());

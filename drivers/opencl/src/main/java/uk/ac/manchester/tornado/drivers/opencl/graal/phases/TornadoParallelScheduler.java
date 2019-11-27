@@ -23,6 +23,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy.PER_BLOCK;
 import static uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy.PER_ITERATION;
@@ -54,10 +55,6 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> {
-
-    private static final TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();
-    private static final DebugContext debugContext = DebugContext.create(getTornadoRuntime().getOptions(),
-            new GraalDebugHandlersFactory(snippetReflection));
 
     private ValueNode blockSize;
 
@@ -212,7 +209,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
             } else {
                 serialiseLoop(node);
             }
-            debugContext.dump(DebugContext.BASIC_LEVEL, graph, "after scheduling loop index=" + node.index());
+            getDebugContext().dump(DebugContext.BASIC_LEVEL, graph, "after scheduling loop index=" + node.index());
         });
 
         graph.clearLastSchedule();

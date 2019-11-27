@@ -28,6 +28,7 @@ import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import uk.ac.manchester.tornado.runtime.common.*;
 
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
@@ -72,10 +73,6 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
-    private static final TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();
-    private static final DebugContext debugContext = DebugContext.create(getTornadoRuntime().getOptions(),
-            new GraalDebugHandlersFactory(snippetReflection));
-
 
     protected LIR lir;
     private int currentBlockIndex;
@@ -86,7 +83,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     public OCLCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
             OCLCompilationResult compilationResult, OptionValues options) {
-        super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, debugContext, compilationResult, Register.None);
+        super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult, Register.None);
         nonInlinedMethods = new HashSet<>();
     }
 

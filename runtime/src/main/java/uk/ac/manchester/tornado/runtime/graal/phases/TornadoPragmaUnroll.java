@@ -27,6 +27,7 @@ import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
 import static org.graalvm.compiler.debug.DebugContext.INFO_LEVEL;
 import static org.graalvm.compiler.loop.DefaultLoopPolicies.Options.ExactFullUnrollMaxNodes;
 import static org.graalvm.compiler.loop.DefaultLoopPolicies.Options.FullUnrollMaxNodes;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
 import org.graalvm.compiler.debug.DebugContext;
@@ -47,10 +48,6 @@ import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 
 public class TornadoPragmaUnroll extends BasePhase<CoreProviders> {
-
-    private static final TornadoSnippetReflectionProvider snippetReflection = new TornadoSnippetReflectionProvider();
-    private static final DebugContext debugContext = DebugContext.create(getTornadoRuntime().getOptions(),
-            new GraalDebugHandlersFactory(snippetReflection));
 
     private final CanonicalizerPhase canonicalizer;
 
@@ -101,9 +98,9 @@ public class TornadoPragmaUnroll extends BasePhase<CoreProviders> {
                 dataCounted.detectedCountedLoops();
                 for (LoopEx loop : dataCounted.countedLoops()) {
                     if (shouldFullUnroll(graph.getOptions(), loop)) {
-                        debugContext.log("FullUnroll %s", loop);
+                        getDebugContext().log("FullUnroll %s", loop);
                         LoopTransformations.fullUnroll(loop, providers, canonicalizer);
-                        debugContext.dump(INFO_LEVEL, graph, "After fullUnroll %s", loop);
+                        getDebugContext().dump(INFO_LEVEL, graph, "After fullUnroll %s", loop);
                         peeled = true;
                         break;
                     }
