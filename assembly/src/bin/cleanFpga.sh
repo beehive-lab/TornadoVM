@@ -1,6 +1,7 @@
-#!/bin/bash
 
-vendor="$1"
+vendor=$1
+FPGA_DIRECTORY="fpga-source-comp"
+BINARY="lookupBufferAddress"
 
 ## Back up current kernel 
 mv fpga-source-comp/lookupBufferAddress.cl fpga-source-comp/backup_source.cl
@@ -9,12 +10,17 @@ mv fpga-source-comp/lookupBufferAddress.cl fpga-source-comp/backup_source.cl
 mv fpga-source-comp/lookupBufferAddress fpga-source-comp/intelFPGAFiles
 
 ## Create sym link to the original kerenl 
-cd fpga-source-comp/ 
-if [ "$vendor" = "Intel(R) Corporation" ]; then
-	ln -s lookupBufferAddress.aocx lookupBufferAddress && cd -
-elif [ "$vendor" = "Xilinx" ]; then
-	ln -s lookupBufferAddress.xclbin lookupBufferAddress && cd -
+current=`pwd`
+cd $FPGA_DIRECTORY
+
+if [[ $vendor = "Intel(R) Corporation" ]]
+then
+	ln -s $BINARY.aocx $BINARY 
+elif [[ $vendor = "Xilinx" ]]
+then
+	ln -s $BINARY.xclbin $BINARY
 else
-	echo "Unsupported FPGA vendor" && cd -
+	echo "FPGA Vendor no supported yet."
 fi
 
+cd $current
