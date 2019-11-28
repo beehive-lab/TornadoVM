@@ -232,16 +232,13 @@ public class OCLCodeCache {
     }
 
     private void appendSourceToFile(String id, String entryPoint, byte[] source) {
-        if (Tornado.ACCELERATOR_IS_FPGA) {
-            final Path outDir = Tornado.ACCELERATOR_IS_FPGA ? resolveBitstreamDirectory() : resolveSourceDirectory();
-            if (entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
-                File file = new File(outDir + "/" + entryPoint + OPENCL_SOURCE_SUFFIX);
-                RuntimeUtilities.writeStreamToFile(file, source, false);
-            } else {
-                File file = new File(outDir + "/" + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX);
-                RuntimeUtilities.writeStreamToFile(file, source, true);
-            }
+        final Path outDir = Tornado.ACCELERATOR_IS_FPGA ? resolveBitstreamDirectory() : resolveSourceDirectory();
+        File file = new File(outDir + "/" + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX);
+        boolean createFile = false;
+        if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
+            createFile = true;
         }
+        RuntimeUtilities.writeStreamToFile(file, source, createFile);
     }
 
     private String[] composeIntelHLSCommand(String inputFile, String outputFile) {
@@ -335,10 +332,10 @@ public class OCLCodeCache {
                 System.out.println(sourceCode);
             }
 
-            if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
+            if (deviceContext.getPlatformContext().getPlatform().getVendor().toLowerCase().startsWith("xilinx")) {
                 compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
                 linkCommand = composeXilinxHLSLinkCommand(entryPoint);
-            } else if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Intel(R) Corporation")) {
+            } else if (deviceContext.getPlatformContext().getPlatform().getVendor().toLowerCase().startsWith("intel")) {
                 compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
             } else {
                 // Should not reach here
@@ -468,7 +465,7 @@ public class OCLCodeCache {
         return code;
     }
 
-    public OCLInstalledCode installBinary(String entryPoint, byte[] binary) throws OCLException {
+    private OCLInstalledCode installBinary(String entryPoint, byte[] binary) throws OCLException {
         return installBinary(entryPoint, binary, false);
     }
 
