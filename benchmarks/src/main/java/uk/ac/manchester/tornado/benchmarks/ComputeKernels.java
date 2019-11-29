@@ -53,10 +53,9 @@ public class ComputeKernels {
      */
     public static void monteCarlo(float[] result, int size) {
 
-        int total = size;
         final int iter = 25000;
 
-        for (@Parallel int idx = 0; idx < total; idx++) {
+        for (@Parallel int idx = 0; idx < size; idx++) {
 
             long seed = idx;
             float sum = 0.0f;
