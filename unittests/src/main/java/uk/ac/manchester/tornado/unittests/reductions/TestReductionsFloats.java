@@ -298,6 +298,7 @@ public class TestReductionsFloats extends TornadoTestBase {
     }
 
     private static void computePi(float[] input, @Reduce float[] result) {
+        result[0] = 0.0f;
         for (@Parallel int i = 1; i < input.length; i++) {
             float value = input[i] + (float) (Math.pow(-1, i + 1) / (2 * i - 1));
             result[0] += value;
