@@ -610,7 +610,6 @@ public class ReduceGPUSnippets implements Snippets {
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", globalId);
             if (extra != null) {
-                // extra.as
                 args.add("value", extra);
             }
 
