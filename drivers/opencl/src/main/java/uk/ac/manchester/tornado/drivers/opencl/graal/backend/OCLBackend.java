@@ -272,12 +272,16 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
         String platformName = device.getPlatformName();
 
-        if (device.getDevice().getDeviceType() != OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR || !platformName.contains("FPGA")) {
+        if (device.getDevice().getDeviceType() != OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR || !isFPGA(platformName)) {
             return false;
-        } else if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && platformName.contains("FPGA")) {
+        } else if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (platformName.contains("FPGA") || platformName.contains("Xilinx"))) {
             return true;
         }
         return false;
+    }
+
+    private boolean isFPGA(String platformName) {
+        return ((platformName.contains("FPGA") || platformName.contains("Xilinx")));
     }
 
     /*
@@ -312,13 +316,13 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             OCLProviders providers = (OCLProviders) getProviders();
             OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
 
+            boolean isCompilationForFPGAs = isJITCompilationForFPGAs(deviceFullName);
+
             if (Tornado.ACCELERATOR_IS_FPGA) {
                 lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode());
             } else {
                 lookupCode = deviceContext.installCode(result);
             }
-
-            boolean isCompilationForFPGAs = isJITCompilationForFPGAs(deviceFullName);
 
             if (deviceContext.isKernelAvailable() && !isCompilationForFPGAs) {
                 lookupCodeAvailable = true;
