@@ -123,10 +123,7 @@ public class NWTornado {
             for (; i >= 0 && j >= 0;) {
                 int nw = 0,n = 0,w = 0,traceback;
                 if (i == max_rows - 2 && j == max_rows - 2) {
-                    out.printf("%d ", input_itemsets[i * max_cols + j]); // print
-                                                                         // the
-                                                                         // first
-                                                                         // element
+                    out.printf("%d ", input_itemsets[i * max_cols + j]); // print the first element
                 }
                 if (i == 0 && j == 0) {
                     break;

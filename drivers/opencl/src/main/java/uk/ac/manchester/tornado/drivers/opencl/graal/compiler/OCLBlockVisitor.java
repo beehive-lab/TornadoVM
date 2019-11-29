@@ -137,10 +137,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
 
     private void checkClosingBlockInsideIf(Block b, Block pdom) {
         if (pdom.isLoopHeader() && b.getDominator() != null && isIfBlock(b.getDominator())) {
-            if (b.getDominator().getDominator() != null) {
-                if (isIfBlock(b.getDominator().getDominator())) {
-                    asm.endScope();
-                }
+            if ((b.getDominator().getDominator() != null) && (isIfBlock(b.getDominator().getDominator()))) {
+                asm.endScope();
             }
         }
     }
