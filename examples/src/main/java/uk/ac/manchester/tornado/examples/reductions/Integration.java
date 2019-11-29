@@ -27,22 +27,40 @@ import java.util.stream.IntStream;
 
 public class Integration {
 
+    private static final int LOWER = 1;
+    private static final int UPPER = 4;
+
     public static float f(float x) {
-        return x * x;
+        return (float) (1 / ((x + 1) * Math.sqrt(x * Math.exp(x))));
+    }
+
+    public float integrationSequential(int size, final float a, final float b) {
+        float sum = 0.0f;
+        for (int i = 1; i < (size + 1); i++) {
+            sum += f(a + ((i - (1.f / 2.f)) * ((b - a) / size)));
+        }
+        return ((b - a) / size) * sum;
     }
 
     public float runIntegrationSequential(int size) {
 
-        final float a = -10;
-        final float b = 10;
+        System.out.println("Running Sequential version");
 
-        float sum = 0.0f;
-        for (int i = 1; i < (size + 1); i++) {
-            sum += f(a + ((i - (1 / 2)) * ((b - a) / size)));
+        final float a = LOWER;
+        final float b = UPPER;
+        float finalValue = 0.0f;
+        ArrayList<Long> timers = new ArrayList<>();
+        for (int i = 0; i < ConfigurationReduce.MAX_ITERATIONS; i++) {
+
+            long start = System.nanoTime();
+            finalValue = integrationSequential(size, a, b);
+            long end = System.nanoTime();
+            timers.add((end - start));
         }
 
-        float result = ((b - a) / size) * sum;
-        return result;
+        System.out.println("IntegrationValue: " + finalValue);
+        System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
+        return finalValue;
     }
 
     public static void integrationTornado(float[] input, @Reduce float[] sum, final float a, final float b) {
@@ -55,12 +73,14 @@ public class Integration {
 
     public float runTornado(final int size) {
 
+        System.out.println("\nRunning Tornado version");
+
         float[] input = new float[size];
         float[] result = new float[1];
         Arrays.fill(result, 0.0f);
 
-        final float a = -10;
-        final float b = 10;
+        final float a = LOWER;
+        final float b = UPPER;
 
         float finalValue = 0.0f;
         //@formatter:off
@@ -82,31 +102,30 @@ public class Integration {
             long end = System.nanoTime();
 
             finalValue = ((b - a) / size) * result[0];
-            System.out.println("IntegrationValue: " + finalValue);
+            // System.out.println("IntegrationValue: " + finalValue);
             timers.add((end - start));
         }
 
+        System.out.println("IntegrationValue: " + finalValue);
         System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
         return finalValue;
     }
 
     public static void main(String[] args) {
 
-        int size = 8192;
+        int size = 33_554_432;
         if (args.length > 0) {
             try {
                 size = Integer.parseInt(args[0]);
             } catch (NumberFormatException e) {
-                size = 8192;
+                size = 33_554_432;
             }
         }
 
         // Run Sequential
-        float result = new Integration().runIntegrationSequential(size);
-        System.out.println("Result: " + result);
+        new Integration().runIntegrationSequential(size);
 
         // Run with Tornado
         new Integration().runTornado(size);
     }
-
 }
