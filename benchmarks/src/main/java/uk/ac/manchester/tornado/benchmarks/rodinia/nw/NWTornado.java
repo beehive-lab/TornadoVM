@@ -173,8 +173,9 @@ public class NWTornado {
                 } else if (traceback == n) {
                     i--;
                     continue;
-                } else
+                } else {
                     ;
+                }
             }
 
         } catch (IOException ex) {

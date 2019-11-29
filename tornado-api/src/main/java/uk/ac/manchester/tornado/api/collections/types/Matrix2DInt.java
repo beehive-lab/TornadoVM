@@ -129,21 +129,24 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     public VectorInt column(int col) {
         int index = toRowMajor(0, col, N);
         final VectorInt v = new VectorInt(M);
-        for (int i = 0; i < M; i++)
+        for (int i = 0; i < M; i++) {
             v.set(i, storage[index + (i * N)]);
+        }
         return v;
     }
 
     public VectorInt diag() {
         final VectorInt v = new VectorInt(min(M, N));
-        for (int i = 0; i < M; i++)
+        for (int i = 0; i < M; i++) {
             v.set(i, storage[i * (N + 1)]);
+        }
         return v;
     }
 
     public void fill(int value) {
-        for (int i = 0; i < storage.length; i++)
+        for (int i = 0; i < storage.length; i++) {
             storage[i] = value;
+        }
     }
 
     public void multiply(Matrix2DInt a, Matrix2DInt b) {
@@ -199,8 +202,9 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     }
 
     public void set(Matrix2DInt m) {
-        for (int i = 0; i < m.storage.length; i++)
+        for (int i = 0; i < m.storage.length; i++) {
             storage[i] = m.storage[i];
+        }
     }
 
     public String toString(String fmt) {
@@ -225,8 +229,9 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
     }
 
     public static void scale(Matrix2DInt matrix, int value) {
-        for (int i = 0; i < matrix.storage.length; i++)
+        for (int i = 0; i < matrix.storage.length; i++) {
             matrix.storage[i] *= value;
+        }
     }
 
     @Override

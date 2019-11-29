@@ -125,21 +125,24 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     public VectorFloat column(int col) {
         int index = StorageFormats.toRowMajor(0, col, N);
         final VectorFloat v = new VectorFloat(M);
-        for (int i = 0; i < M; i++)
+        for (int i = 0; i < M; i++) {
             v.set(i, storage[index + (i * N)]);
+        }
         return v;
     }
 
     public VectorFloat diag() {
         final VectorFloat v = new VectorFloat(Math.min(M, N));
-        for (int i = 0; i < M; i++)
+        for (int i = 0; i < M; i++) {
             v.set(i, storage[i * (N + 1)]);
+        }
         return v;
     }
 
     public void fill(float value) {
-        for (int i = 0; i < storage.length; i++)
+        for (int i = 0; i < storage.length; i++) {
             storage[i] = value;
+        }
     }
 
     public void multiply(Matrix2DFloat4 a, Matrix2DFloat4 b) {
@@ -184,8 +187,9 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void set(Matrix2DFloat4 m) {
-        for (int i = 0; i < m.storage.length; i++)
+        for (int i = 0; i < m.storage.length; i++) {
             storage[i] = m.storage[i];
+        }
     }
 
     public String toString(String fmt) {
@@ -198,7 +202,6 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
             str += "\n";
         }
         str.trim();
-
         return str;
     }
 
@@ -210,8 +213,9 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     @Override
     public String toString() {
         String result = String.format("MatrixFloat <%d x %d>", M, N);
-        if (M < 16 && N < 16)
+        if (M < 16 && N < 16) {
             result += "\n" + toString(FloatOps.fmt);
+        }
         return result;
     }
 

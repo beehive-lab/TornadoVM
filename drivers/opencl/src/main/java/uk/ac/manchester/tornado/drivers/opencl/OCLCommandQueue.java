@@ -603,8 +603,9 @@ public class OCLCommandQueue extends TornadoLogger {
 
     private int enqueueBarrier_OCLv1_1(long[] events) {
         try {
-            if(events!=null)
+            if(events!=null) {
                 clEnqueueWaitForEvents(id, events);
+            }
         } catch (OCLException e) {
             fatal(e.getMessage());
         }

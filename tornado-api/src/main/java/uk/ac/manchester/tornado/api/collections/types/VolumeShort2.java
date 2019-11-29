@@ -122,8 +122,9 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     }
 
     public void fill(short value) {
-        for (int i = 0; i < storage.length; i++)
+        for (int i = 0; i < storage.length; i++) {
             storage[i] = value;
+        }
     }
 
     public VolumeShort2 duplicate() {
@@ -133,8 +134,9 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     }
 
     public void set(VolumeShort2 other) {
-        for (int i = 0; i < storage.length; i++)
+        for (int i = 0; i < storage.length; i++) {
             storage[i] = other.storage[i];
+        }
     }
 
     public String toString(String fmt) {
