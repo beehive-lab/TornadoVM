@@ -128,8 +128,9 @@ public class Matrix2DDouble implements PrimitiveStorage<DoubleBuffer> {
     public VectorDouble column(int col) {
         int index = toRowMajor(0, col, N);
         final VectorDouble v = new VectorDouble(M);
-        for (int i = 0; i < M; i++)
+        for (int i = 0; i < M; i++) {
             v.set(i, storage[index + (i * N)]);
+        }
         return v;
     }
 

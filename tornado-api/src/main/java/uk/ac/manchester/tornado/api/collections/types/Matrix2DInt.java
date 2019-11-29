@@ -216,15 +216,15 @@ public class Matrix2DInt implements PrimitiveStorage<IntBuffer> {
             }
             str += "\n";
         }
-
         return str.trim();
     }
 
     @Override
     public String toString() {
         String result = format("MatrixInt <%d x %d>", M, N);
-        if (M < 16 && N < 16)
+        if (M < 16 && N < 16) {
             result += "\n" + toString(fmt);
+        }
         return result;
     }
 

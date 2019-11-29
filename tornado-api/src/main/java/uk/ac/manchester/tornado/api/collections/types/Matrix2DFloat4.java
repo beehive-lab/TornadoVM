@@ -206,8 +206,9 @@ public class Matrix2DFloat4 implements PrimitiveStorage<FloatBuffer> {
     }
 
     public static void scale(Matrix2DFloat4 matrix, float value) {
-        for (int i = 0; i < matrix.storage.length; i++)
+        for (int i = 0; i < matrix.storage.length; i++) {
             matrix.storage[i] *= value;
+        }
     }
 
     @Override
