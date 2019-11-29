@@ -231,10 +231,8 @@ public class OCLCommandQueue extends TornadoLogger {
     private void findNextEventSlot() {
         eventIndex = retain.nextClearBit(eventIndex + 1);
 
-        if (CIRCULAR_EVENTS) {
-            if (eventIndex >= events.length) {
+        if (CIRCULAR_EVENTS && (eventIndex >= events.length)) {
                 eventIndex = 0;
-            }
         }
 
         guarantee(eventIndex != -1, "event window is full (retained=%d, capacity=%d)", retain.cardinality(), EVENT_WINDOW);
@@ -603,7 +601,7 @@ public class OCLCommandQueue extends TornadoLogger {
 
     private int enqueueBarrier_OCLv1_1(long[] events) {
         try {
-            if(events!=null) {
+            if (events != null) {
                 clEnqueueWaitForEvents(id, events);
             }
         } catch (OCLException e) {
