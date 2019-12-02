@@ -323,9 +323,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final String deviceFullName = getFullTaskIdDevice(task);
         if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && Tornado.ACCELERATOR_IS_FPGA) {
             TornadoInstalledCode tornadoInstalledCode = compileJavaToAccelerator(task);
-            if (tornadoInstalledCode != null) {
-                ensureLoadedFPGA();
-            }
+            ensureLoadedFPGA();
             return loadPreCompiledBinaryFromCache(task);
         } else if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !Tornado.ACCELERATOR_IS_FPGA) {
             return compileJavaToAccelerator(task);
