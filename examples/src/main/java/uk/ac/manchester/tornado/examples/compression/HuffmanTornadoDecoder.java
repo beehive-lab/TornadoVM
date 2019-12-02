@@ -162,8 +162,7 @@ public class HuffmanTornadoDecoder {
 
         int size = 5000000;
         int[] result = new int[size];
-        KernelPackage kernelPackage = new KernelPackage(bits, frequencies, left, right, data, result);
-        return kernelPackage;
+        return new KernelPackage(bits, frequencies, left, right, data, result);
     }
 
     public static void main(String[] args) throws ClassNotFoundException, IOException {

@@ -116,8 +116,7 @@ public class BlackScholesMT {
         float absX = TornadoMath.abs(X);
         float t = one / (one + temp4 * absX);
         float y = (float) (one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5)))));
-        float result = (X < zero) ? (one - y) : y;
-        return result;
+        return (X < zero) ? (one - y) : y;
     }
 
     private static boolean checkResult(float[] call, float[] put, float[] callPrice, float[] putPrice) {
