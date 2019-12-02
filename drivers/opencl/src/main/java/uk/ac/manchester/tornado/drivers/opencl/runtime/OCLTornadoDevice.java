@@ -473,8 +473,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
         if (BENCHMARKING_MODE || !state.hasContents()) {
             state.setContents(true);
-            List<Integer> writeEvents = state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
-            return writeEvents;
+            return state.getBuffer().enqueueWrite(object, batchSize, offset, events, events == null);
         }
         return null;
     }
