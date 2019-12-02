@@ -79,7 +79,7 @@ public class OCLTargetDescription extends TargetDescription {
     }
 
     // should use OCLKind.lookupLengthIndex instead
-    private final static int lookupLengthIndex(int vectorLength) {
+    private static int lookupLengthIndex(int vectorLength) {
         switch (vectorLength) {
             case 2:
                 return 0;

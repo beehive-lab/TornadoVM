@@ -33,7 +33,6 @@ public class PrimitiveSerialiser {
 
     private static final void align(ByteBuffer buffer, int align) {
         while (buffer.position() % align != 0) {
-            buffer.put((byte) 0);
         }
     }
 

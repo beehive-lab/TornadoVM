@@ -55,7 +55,6 @@ public class OCLAddressLowering extends AddressLowering {
         }
 
         OCLAddressNode result = new OCLAddressNode(base, offset, memoryRegister);
-        OCLAddressNode unique = base.graph().unique(result);
-        return unique;
+        return base.graph().unique(result);
     }
 }

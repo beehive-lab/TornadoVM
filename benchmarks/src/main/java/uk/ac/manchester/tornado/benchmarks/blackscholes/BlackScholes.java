@@ -109,9 +109,7 @@ public class BlackScholes {
 
         final float y = (one - (oneBySqrt2pi * TornadoMath.exp((-X * X) / two) * t * (c1 + (t * (c2 + (t * (c3 + (t * (c4 + (t * c5))))))))));
 
-        final float result = (X < zero) ? (one - y) : y;
-
-        return result;
+        return (X < zero) ? (one - y) : y;
     }
 
     static final float S_LOWER_LIMIT = 10.0f;

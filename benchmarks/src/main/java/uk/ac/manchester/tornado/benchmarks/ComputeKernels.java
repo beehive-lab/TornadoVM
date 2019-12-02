@@ -53,10 +53,9 @@ public class ComputeKernels {
      */
     public static void monteCarlo(float[] result, int size) {
 
-        int total = size;
         final int iter = 25000;
 
-        for (@Parallel int idx = 0; idx < total; idx++) {
+        for (@Parallel int idx = 0; idx < size; idx++) {
 
             long seed = idx;
             float sum = 0.0f;
@@ -164,9 +163,7 @@ public class ComputeKernels {
 
         final float y = (one - (oneBySqrt2pi * TornadoMath.exp((-X * X) / two) * t * (c1 + (t * (c2 + (t * (c3 + (t * (c4 + (t * c5))))))))));
 
-        final float result = (X < zero) ? (one - y) : y;
-
-        return result;
+        return (X < zero) ? (one - y) : y;
     }
 
     /*

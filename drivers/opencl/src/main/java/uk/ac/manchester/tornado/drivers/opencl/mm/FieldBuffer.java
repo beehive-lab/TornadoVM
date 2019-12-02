@@ -104,8 +104,7 @@ public class FieldBuffer {
             debug("fieldBuffer: read - field=%s, parent=0x%x, child=0x%x", field, ref.hashCode(), getFieldValue(ref).hashCode());
         }
         // TODO: reading with offset != 0
-        int event = objectBuffer.read(getFieldValue(ref), 0, events, useDeps);
-        return event;
+        return objectBuffer.read(getFieldValue(ref), 0, events, useDeps);
     }
 
     public long toAbsoluteAddress() {
