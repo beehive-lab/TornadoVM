@@ -90,7 +90,7 @@ public class VectorFloat4 implements PrimitiveStorage<FloatBuffer> {
         this(numElements, new float[numElements * elementSize]);
     }
 
-    private final int toIndex(int index) {
+    private int toIndex(int index) {
         return (index * elementSize);
     }
 

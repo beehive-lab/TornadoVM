@@ -126,7 +126,7 @@ public class Kmean {
         return (float) Math.sqrt(sum / numPoints);
     }
 
-    private final static float euclidDist(final int numFeatures, final float[] a, int aIndex, final float[] b, int bIndex) {
+    private static float euclidDist(final int numFeatures, final float[] a, int aIndex, final float[] b, int bIndex) {
         float value = 0f;
         for (int i = 0; i < numFeatures; i++) {
             final float dist = a[aIndex + i] - b[bIndex + i];

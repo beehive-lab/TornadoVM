@@ -103,7 +103,7 @@ public final class VectorLoadElementProxyNode extends FixedWithNextNode {
         return (isOriginResolvable() && laneOrigin != null && laneOrigin instanceof ConstantNode);
     }
 
-    private final boolean isOriginResolvable() {
+    private boolean isOriginResolvable() {
         return (origin != null && (origin instanceof VectorValueNode));
     }
 

@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class PrimitiveSerialiser {
 
-    private static final void align(ByteBuffer buffer, int align) {
+    private static void align(ByteBuffer buffer, int align) {
         while (buffer.position() % align != 0)
             buffer.put((byte) 0);
     }
