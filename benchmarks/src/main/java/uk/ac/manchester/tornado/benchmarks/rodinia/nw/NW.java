@@ -126,15 +126,10 @@ public class NW {
                 if (traceback == nw) {
                     i--;
                     j--;
-                    continue;
                 } else if (traceback == w) {
                     j--;
-                    continue;
                 } else if (traceback == n) {
                     i--;
-                    continue;
-                } else {
-                    ;
                 }
             }
 

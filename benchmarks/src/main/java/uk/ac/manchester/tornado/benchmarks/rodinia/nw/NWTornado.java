@@ -138,7 +138,6 @@ public class NWTornado {
                 } else if (j == 0) {
                     nw = w = LIMIT;
                     n = input_itemsets[(i - 1) * max_cols + j];
-                } else {
                 }
 
                 // traceback = maximum(nw, w, n);
@@ -163,15 +162,10 @@ public class NWTornado {
                 if (traceback == nw) {
                     i--;
                     j--;
-                    continue;
                 } else if (traceback == w) {
                     j--;
-                    continue;
                 } else if (traceback == n) {
                     i--;
-                    continue;
-                } else {
-                    ;
                 }
             }
 
