@@ -109,10 +109,8 @@ public class OCLObjectWrapper implements ObjectBuffer {
             final Class<?> type = reflectedField.getType();
             final boolean isFinal = Modifier.isFinal(reflectedField.getModifiers());
 
-            if (vectorObject) {
-                if (field.getAnnotation(Payload.class) != null) {
-                    vectorStorageIndex = index;
-                }
+            if (vectorObject && field.getAnnotation(Payload.class) != null) {
+                vectorStorageIndex = index;
             }
 
             if (DEBUG) {
@@ -511,7 +509,6 @@ public class OCLObjectWrapper implements ObjectBuffer {
     @Override
     public void invalidate() {
         valid = false;
-
     }
 
     @Override

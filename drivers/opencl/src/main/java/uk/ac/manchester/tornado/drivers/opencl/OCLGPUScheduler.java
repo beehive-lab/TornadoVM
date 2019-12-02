@@ -33,9 +33,12 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
     public static final double GPU_COMPUTE_UNIT_QUEUE_COEFF = 128;
     public static final double GPU_WORK_GROUP_COEFF = .125;
 
-    @SuppressWarnings("unused") private long maxComputeUnits;
-    @SuppressWarnings("unused") private double workGroupUtil;
-    @SuppressWarnings("unused") private long maxWorkGroupSize;
+    @SuppressWarnings("unused")
+    private long maxComputeUnits;
+    @SuppressWarnings("unused")
+    private double workGroupUtil;
+    @SuppressWarnings("unused")
+    private long maxWorkGroupSize;
 
     private static final int WARP_SIZE = 32;
     private boolean ADJUST_IRREGULAR = false;
@@ -60,10 +63,8 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (batchThreads <= 0) ? (long) (meta.getDomain().get(i).cardinality()) : batchThreads;
             // adjust for irregular problem sizes
-            if (ADJUST_IRREGULAR) {
-                if (value % WARP_SIZE != 0) {
-                    value = ((value / WARP_SIZE) + 1) * WARP_SIZE;
-                }
+            if (ADJUST_IRREGULAR && (value % WARP_SIZE != 0)) {
+                value = ((value / WARP_SIZE) + 1) * WARP_SIZE;
             }
             globalWork[i] = value;
         }
@@ -99,5 +100,4 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
         }
         return value;
     }
-
 }

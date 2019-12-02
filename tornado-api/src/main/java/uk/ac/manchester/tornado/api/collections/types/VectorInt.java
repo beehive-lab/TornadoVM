@@ -113,8 +113,9 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      * @param values
      */
     public void set(VectorInt values) {
-        for (int i = 0; i < values.storage.length; i++)
+        for (int i = 0; i < values.storage.length; i++) {
             storage[i] = values.storage[i];
+        }
     }
 
     /**
@@ -123,8 +124,9 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      * @param values
      */
     public void set(int[] values) {
-        for (int i = 0; i < values.length; i++)
+        for (int i = 0; i < values.length; i++) {
             storage[i] = values[i];
+        }
     }
 
     /**
@@ -133,8 +135,9 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
      * @param value
      */
     public void fill(int value) {
-        for (int i = 0; i < storage.length; i++)
+        for (int i = 0; i < storage.length; i++) {
             storage[i] = value;
+        }
     }
 
     /**
@@ -166,17 +169,17 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
 
     public static int min(VectorInt v) {
         int result = MAX_VALUE;
-        for (int i = 0; i < v.storage.length; i++)
+        for (int i = 0; i < v.storage.length; i++) {
             result = Math.min(v.storage[i], result);
-
+        }
         return result;
     }
 
     public static int max(VectorInt v) {
         int result = MIN_VALUE;
-        for (int i = 0; i < v.storage.length; i++)
+        for (int i = 0; i < v.storage.length; i++) {
             result = Math.max(v.storage[i], result);
-
+        }
         return result;
     }
 
@@ -223,15 +226,15 @@ public class VectorInt implements PrimitiveStorage<IntBuffer> {
 
     public String toString() {
         String str = format("VectorInt <%d>", numElements);
-        if (numElements < 32)
+        if (numElements < 32) {
             str += toString(fmt);
+        }
         return str;
     }
 
     @Override
     public void loadFromBuffer(IntBuffer buffer) {
         asBuffer().put(buffer);
-
     }
 
     @Override

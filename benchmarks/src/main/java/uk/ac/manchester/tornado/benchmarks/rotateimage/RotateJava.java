@@ -47,10 +47,10 @@ public class RotateJava extends BenchmarkDriver {
 
         final Float3 value = new Float3(1f, 2f, 3f);
         for (int i = 0; i < input.Y(); i++) {
-            for (int j = 0; j < input.X(); j++)
+            for (int j = 0; j < input.X(); j++) {
                 input.set(j, i, value);
+            }
         }
-
     }
 
     @Override
@@ -68,7 +68,6 @@ public class RotateJava extends BenchmarkDriver {
 
     @Override
     public void barrier() {
-
     }
 
     @Override
@@ -79,5 +78,4 @@ public class RotateJava extends BenchmarkDriver {
     public void printSummary() {
         System.out.printf("id=java-serial, elapsed=%f, per iteration=%f\n", getElapsed(), getElapsedPerIteration());
     }
-
 }

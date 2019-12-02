@@ -35,8 +35,9 @@ public class TornadoMemoryPhiElimination extends BasePhase<TornadoMidTierContext
     protected void run(StructuredGraph graph, TornadoMidTierContext context) {
         graph.getNodes().filter(MemoryPhiNode.class).forEach(memoryPhi -> {
             memoryPhi.usages().forEach(usage -> {
-                if (usage instanceof FloatingReadNode)
+                if (usage instanceof FloatingReadNode) {
                     ((FloatingReadNode) usage).setLastLocationAccess(null);
+                }
             });
             GraphUtil.tryKillUnused(memoryPhi);
         });

@@ -153,8 +153,9 @@ public class Matrix4x4Float implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void fill(float value) {
-        for (int i = 0; i < storage.length; i++)
+        for (int i = 0; i < storage.length; i++) {
             storage[i] = value;
+        }
     }
 
     public Matrix4x4Float duplicate() {
