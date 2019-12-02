@@ -82,8 +82,7 @@ public class BFS {
         Random r = new Random();
         int bound = r.nextInt(numNodes);
         IntStream streamArray = r.ints(bound, 0, numNodes);
-        int[] array = streamArray.toArray();
-        return array;
+        return streamArray.toArray();
     }
 
     public static void generateRandomGraph(int[] adjacencyMatrix, int numNodes, int root) {

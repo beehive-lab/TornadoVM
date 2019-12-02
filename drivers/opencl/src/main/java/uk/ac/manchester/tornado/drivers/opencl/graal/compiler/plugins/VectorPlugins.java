@@ -260,7 +260,7 @@ public final class VectorPlugins {
         });
     }
 
-    private static final void registerGeometricBIFS(final InvocationPlugins plugins, final OCLKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
+    private static void registerGeometricBIFS(final InvocationPlugins plugins, final OCLKind vectorKind, final Class<?> storageType, final Class<?> elementType) {
         final Class<?> declaringClass = vectorKind.getJavaClass();
 
         final Registration r = new Registration(plugins, declaringClass);

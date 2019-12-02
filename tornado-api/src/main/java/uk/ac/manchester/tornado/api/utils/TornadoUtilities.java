@@ -308,8 +308,7 @@ public class TornadoUtilities {
 
     public static double elapsedTimeInSeconds(long start, long end) {
         final long duration = end - start;
-        double elapsed = duration * 1e-9;
-        return elapsed;
+        return duration * 1e-9;
     }
 
     public static String formatArray(Object object) {

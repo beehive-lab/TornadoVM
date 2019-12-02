@@ -117,8 +117,7 @@ public class OCLHotSpotBackendFactory {
             lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
         }
         try (InitTimer rt = timer("instantiate backend")) {
-            OCLBackend backend = new OCLBackend(options, providers, target, codeCache, openclContext, deviceContext);
-            return backend;
+            return new OCLBackend(options, providers, target, codeCache, openclContext, deviceContext);
         }
     }
 

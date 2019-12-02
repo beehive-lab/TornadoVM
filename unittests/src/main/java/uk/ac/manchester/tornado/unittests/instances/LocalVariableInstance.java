@@ -91,8 +91,7 @@ public class LocalVariableInstance {
         }
 
         MyMap mm = new MyMap();
-        MiddleMap md = (MiddleMap) mm;
-        MapSkeleton msk = new MapSkeleton(md);
+        MapSkeleton msk = new MapSkeleton((MiddleMap) mm);
 
         // @formatter:off
         TaskSchedule task = new TaskSchedule("s0")

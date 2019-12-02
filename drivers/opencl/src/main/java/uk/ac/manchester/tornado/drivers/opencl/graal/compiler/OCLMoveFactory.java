@@ -48,8 +48,7 @@ public class OCLMoveFactory implements MoveFactory {
 
     @Override
     public LIRInstruction createMove(AllocatableValue av, Value value) {
-        AssignStmt assign = new AssignStmt(av, value);
-        return assign;
+        return new AssignStmt(av, value);
     }
 
     @Override
