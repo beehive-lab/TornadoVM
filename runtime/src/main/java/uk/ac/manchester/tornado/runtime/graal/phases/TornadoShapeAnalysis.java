@@ -48,7 +48,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
  */
 public class TornadoShapeAnalysis extends BasePhase<TornadoHighTierContext> {
 
-    private static final int resolveInt(ValueNode value) {
+    private static int resolveInt(ValueNode value) {
         if (value instanceof ConstantNode) {
             return ((ConstantNode) value).asJavaConstant().asInt();
         } else {

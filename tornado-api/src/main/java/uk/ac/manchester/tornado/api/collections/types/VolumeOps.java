@@ -156,9 +156,7 @@ public class VolumeOps {
         // @formatter:on
         final Float3 tmp1 = mult(new Float3(dim.getX() / volume.X(), dim.getY() / volume.Y(), dim.getZ() / volume.Z()), (0.5f * 0.00003051944088f));
 
-        final Float3 gradient = mult(new Float3(gx, gy, gz), tmp1);
-
-        return gradient;
+        return mult(new Float3(gx, gy, gz), tmp1);
 
     }
 
@@ -193,9 +191,7 @@ public class VolumeOps {
 
         final float c = (c0 * factorZ) + (c1 * factor.getZ());
 
-        final float result = c * 0.00003051944088f;
-
-        return result;
+        return c * 0.00003051944088f;
     }
 
     public static final float vs1(int x, int y, int z, VolumeShort2 v) {
