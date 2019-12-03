@@ -465,7 +465,7 @@ public class OCLCodeCache {
         return code;
     }
 
-    private OCLInstalledCode installBinary(String entryPoint, byte[] binary) throws OCLException {
+    public OCLInstalledCode installBinary(String entryPoint, byte[] binary) throws OCLException {
         return installBinary(entryPoint, binary, false);
     }
 
@@ -547,7 +547,7 @@ public class OCLCodeCache {
         }
     }
 
-    void reset() {
+    public void reset() {
         for (OCLInstalledCode code : cache.values()) {
             code.invalidate();
         }
@@ -569,11 +569,11 @@ public class OCLCodeCache {
         return lookupCode;
     }
 
-    boolean isCached(String id, String entryPoint) {
+    public boolean isCached(String id, String entryPoint) {
         return cache.containsKey(id + "-" + entryPoint);
     }
 
-    OCLInstalledCode getCode(String id, String entryPoint) {
+    public OCLInstalledCode getCode(String id, String entryPoint) {
         return cache.get(id + "-" + entryPoint);
     }
 }

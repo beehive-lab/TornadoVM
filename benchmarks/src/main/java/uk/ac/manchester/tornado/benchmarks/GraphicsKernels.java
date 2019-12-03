@@ -48,7 +48,6 @@ public final class GraphicsKernels {
         for (@Parallel int i = 0; i < c.length; i++) {
             final Float3 a = A.get(i);
             final Float3 b = B.get(i);
-
             c[i] = Float3.dot(a, b);
         }
     }
@@ -65,9 +64,7 @@ public final class GraphicsKernels {
         for (@Parallel int i = 0; i < output.Y(); i++) {
             for (@Parallel int j = 0; j < output.X(); j++) {
                 final Float3 x = input.get(j, i);
-
                 final Float3 y = rotate(m, x);
-
                 output.set(j, i, y);
             }
         }
@@ -78,11 +75,8 @@ public final class GraphicsKernels {
         IntStream.range(0, output.X() * output.Y()).parallel().forEach((int index) -> {
             final int j = index % output.X();
             final int i = index / output.X();
-
             final Float3 x = input.get(j, i);
-
             final Float3 y = rotate(m, x);
-
             output.set(j, i, y);
         });
     }
@@ -93,7 +87,6 @@ public final class GraphicsKernels {
             for (@Parallel int j = 0; j < C.X(); j++) {
                 final Float3 a = A.get(j, i);
                 final Float3 b = B.get(j, i);
-
                 C.set(j, i, Float3.dot(a, b));
             }
         }
@@ -127,7 +120,6 @@ public final class GraphicsKernels {
                         }
                     }
                 }
-
                 // int outIndex = y * outputImageWidth + x;
                 output[(y * iW) + x] = sum;
             }

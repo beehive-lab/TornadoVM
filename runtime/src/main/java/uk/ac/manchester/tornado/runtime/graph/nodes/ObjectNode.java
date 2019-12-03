@@ -38,8 +38,9 @@ public class ObjectNode extends AbstractNode {
 
     @Override
     public int compareTo(AbstractNode o) {
-        if (!(o instanceof ObjectNode))
+        if (!(o instanceof ObjectNode)) {
             return -1;
+        }
         return Integer.compare(index, ((ObjectNode) o).index);
     }
 
