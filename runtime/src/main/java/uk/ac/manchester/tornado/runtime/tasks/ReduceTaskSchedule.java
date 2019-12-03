@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.graalvm.compiler.nodes.StructuredGraph;
 
@@ -54,8 +55,8 @@ class ReduceTaskSchedule {
     private static final String TASK_SCHEDULE_PREFIX = "XXX__GENERATED_REDUCE";
     private static final int DEFAULT_GPU_WORK_GROUP = 256;
     private static final int DEFAULT_DRIVER_INDEX = 0;
-    private static int counterName = 0;
-    private static int counterSeqName = 0;
+    private static AtomicInteger counterName = new AtomicInteger(0);
+    private static AtomicInteger counterSeqName = new AtomicInteger(0);
 
     private String idTaskSchedule;
     private ArrayList<TaskPackage> taskPackages;
@@ -363,7 +364,7 @@ class ReduceTaskSchedule {
 
         HashMap<Integer, MetaReduceTasks> tableReduce = metaReduceTable.getTable();
 
-        String taskScheduleReduceName = TASK_SCHEDULE_PREFIX + counterName;
+        String taskScheduleReduceName = TASK_SCHEDULE_PREFIX + counterName.get();
         String tsName = idTaskSchedule;
 
         HashMap<Integer, ArrayList<Object>> streamReduceTable = new HashMap<>();
@@ -497,7 +498,7 @@ class ReduceTaskSchedule {
                     Object newArray = streamUpdateList.get(i);
                     int sizeReduceArray = sizesReductionArray.get(i);
                     for (REDUCE_OPERATION operation : operations) {
-                        final String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName;
+                        final String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName.get();
                         String fullName = rewrittenTaskSchedule.getTaskScheduleName() + "." + newTaskSequentialName;
                         TornadoRuntime.setProperty(fullName + ".device", "0:" + deviceToRun);
                         inspectBinariesFPGA(taskScheduleReduceName, tsName, taskPackage.getId(), true);
@@ -518,14 +519,14 @@ class ReduceTaskSchedule {
                             default:
                                 throw new TornadoRuntimeException("[ERROR] Reduce operation not supported yet.");
                         }
-                        counterSeqName++;
+                        counterSeqName.incrementAndGet();
                     }
                 }
             }
         }
         TornadoTaskSchedule.performStreamOutThreads(rewrittenTaskSchedule, streamOutObjects);
         executeExpression();
-        counterName++;
+        counterName.incrementAndGet();
         return rewrittenTaskSchedule;
     }
 

@@ -28,7 +28,8 @@ import uk.ac.manchester.tornado.api.annotations.Reduce;;
 
 public class ReductionParallelFPGA {
 
-    public static void reductionAddFloats(float[] input, @Reduce float[] result) {
+    private static void reductionAddFloats(float[] input, @Reduce float[] result) {
+        result[0] = 0;
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += input[i];
         }

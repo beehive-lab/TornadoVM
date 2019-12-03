@@ -462,7 +462,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private AddressNode createArrayLocalAddress(StructuredGraph graph, ValueNode array, ValueNode index) {
-        return (AddressNode) graph.unique(new OffsetAddressNode(array, index));
+        return graph.unique(new OffsetAddressNode(array, index));
     }
 
     private boolean isLocalIdNode(StoreIndexedNode storeIndexed) {

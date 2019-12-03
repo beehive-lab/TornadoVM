@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
@@ -74,27 +74,38 @@ public final class Tornado implements TornadoCI {
     public static final boolean VM_USE_DEPS = Boolean.parseBoolean(Tornado.getProperty("tornado.vm.deps", "False"));
 
     public static boolean FORCE_BLOCKING_API_CALLS = false;
-    public static final boolean ENABLE_PARALLELIZATION = Boolean.parseBoolean(Tornado.getProperty("tornado.kernels.parallelize", "True"));
     public static final boolean ENABLE_VECTORS = Boolean.parseBoolean(settings.getProperty("tornado.vectors.enable", "True"));
     public static final boolean TORNADO_ENABLE_BIFS = Boolean.parseBoolean(settings.getProperty("tornado.bifs.enable", "False"));
-    public static final boolean DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.debug", "False"));
+    public static final boolean DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.debug", "True"));
     public static final boolean FULL_DEBUG = Boolean.parseBoolean(settings.getProperty("tornado.fullDebug", "False"));
 
     public static final boolean SHOULD_LOAD_RMI = Boolean.parseBoolean(settings.getProperty("tornado.rmi.enable", "false"));
     public final static boolean TIME_IN_NANOSECONDS = Boolean.parseBoolean(System.getProperty("tornado.ns.time", "true"));
 
-    public static boolean REMOVE_OUTER_LOOPS = Boolean.parseBoolean(getProperty("tornado.assembler.removeloops", "False"));
-    public final static boolean ACCELERATOR_IS_GPU = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.asgpu", "True"));
-    public final static boolean FPGA_EMULATION = Boolean.parseBoolean(getProperty("tornado.fpga.emulation", "false"));
-    public final static boolean ACCELERATOR_IS_FPGA = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.fpga", "False"));
+    public final static boolean FPGA_EMULATION = isFPGAEmulation();
+
+    private static boolean isFPGAEmulation() {
+        String cl_context_emulator_device_intelfpga = System.getenv("CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA");
+        return cl_context_emulator_device_intelfpga != null && (cl_context_emulator_device_intelfpga.equals("1") || cl_context_emulator_device_intelfpga.toLowerCase().equals("true"));
+    }
+
+    public final static boolean ACCELERATOR_IS_FPGA = isFPGAAccelerationEnabled();
+
+    private static boolean isFPGAAccelerationEnabled() {
+        boolean isAcceleration = Boolean.parseBoolean(getProperty("tornado.opencl.accelerator.fpga", "False"));
+        if (isAcceleration) {
+            return true;
+        }
+        return isFPGAEmulation();
+    }
 
     public static final TornadoLogger log = new TornadoLogger(Tornado.class);
 
-    public static final void debug(final String msg) {
+    public static void debug(final String msg) {
         log.debug(msg);
     }
 
-    public static void loadSettings(String filename) {
+    private static void loadSettings(String filename) {
         final File localSettings = new File(filename);
         Properties loadProperties = new Properties();
         if (localSettings.exists()) {
@@ -103,8 +114,8 @@ public final class Tornado implements TornadoCI {
             } catch (IOException e) {
                 warn("Unable to load settings from %s", localSettings.getAbsolutePath());
             }
-        }
 
+        }
         /*
          * merge local and system properties, note that command line arguments override
          * saved properties
