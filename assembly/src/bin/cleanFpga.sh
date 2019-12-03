@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 
 vendor=$1
 FPGA_DIRECTORY="fpga-source-comp"
