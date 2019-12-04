@@ -123,6 +123,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
     private boolean flag = false;
+    private boolean backEndInitialized;
 
     @Override
     public OCLTargetDescription getTarget() {
@@ -177,7 +178,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     public boolean isInitialised() {
-        return deviceContext.isInitialised();
+        // return deviceContext.isInitialised();
+        return backEndInitialized;
     }
 
     @SuppressWarnings("unused")
@@ -245,7 +247,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     /**
      * We explore all devices in driver 0;
-     * 
+     *
      * @return
      */
     public int[] getDriverAndDevice() {
@@ -261,22 +263,21 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new int[] { 0, deviceIndex };
     }
 
+    private boolean isDeviceAnAccelerator(OCLTornadoDevice device) {
+        return device.getDevice().getDeviceType() != OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
+    }
+
     private boolean isJITCompilationForFPGAs(String deviceFullName) {
-        // To Avoid errors, check the target device is not the FPGA, because
-        // JIT compilation for FPGAs is not supported yet.
-        // Get driver index + deviceIndex
         String deviceDriver = deviceFullName.split("=")[1];
         int driverIndex = Integer.parseInt(deviceDriver.split(":")[0]);
         int deviceIndex = Integer.parseInt(deviceDriver.split(":")[1]);
         OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
         String platformName = device.getPlatformName();
-
-        if (device.getDevice().getDeviceType() != OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR || !isFPGA(platformName)) {
+        if (!isDeviceAnAccelerator() || !isFPGA(platformName)) {
             return false;
-        } else if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (platformName.contains("FPGA") || platformName.contains("Xilinx"))) {
-            return true;
+        } else {
+            return isDeviceAnAccelerator() && (isFPGA(platformName));
         }
-        return false;
     }
 
     private boolean isFPGA(String platformName) {
@@ -317,7 +318,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
             boolean isCompilationForFPGAs = isJITCompilationForFPGAs(deviceFullName);
 
-            if (Tornado.ACCELERATOR_IS_FPGA) {
+            // if (Tornado.ACCELERATOR_IS_FPGA) {
+            if (isDeviceAnAccelerator()) {
                 lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode());
             } else {
                 lookupCode = deviceContext.installCode(result);
@@ -336,14 +338,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         lookupCode = check.installEntryPointForBinaryForFPGAs(Paths.get(OCLCodeCache.FPGA_BIN_LOCATION), OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
         if (lookupCode != null) {
             lookupCodeAvailable = true;
-        }
-        initFPGAJITCompiledMode(meta, deviceContext);
-    }
-
-    private void initFPGAJITCompiledMode(TaskMetaData meta, OCLDeviceContext deviceContext) {
-        if (!flag) {
-            fpgaInitializationJITMode(meta);
-            flag = true;
+            runAndReadLookUpKernel(meta);
         }
     }
 
@@ -356,7 +351,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     private void initFPGA() {
-        // Initialize FPGA with a pre-compiled kernel
         OCLCodeCache check = new OCLCodeCache(deviceContext);
         try {
             Path lookupPath = Paths.get(KERNEL_WARMUP);
@@ -368,15 +362,9 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         }
     }
 
-    private void fpgaInitializationJITMode(TaskMetaData meta) {
-        if (isLookupCodeAvailable()) {
-            runAndReadLookUpKernel(meta);
-        }
-    }
-
     /**
      * JIT compilation of the Look Up Buffer Address into the FPGA
-     * 
+     *
      * @return {@link TaskMetaData}
      */
     private TaskMetaData fpgaInstallCodeLookUpBuffer() {
@@ -388,20 +376,25 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return meta;
     }
 
+    private boolean isDeviceAnAccelerator() {
+        return deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
+    }
+
     public void init() {
         allocateHeapMemoryOnDevice();
-        TaskMetaData meta;
+        TaskMetaData meta = null;
 
-        if (Tornado.ACCELERATOR_IS_FPGA) {
-            meta = fpgaInstallCodeLookUpBuffer();
-        } else {
+        if (!isDeviceAnAccelerator()) {
             meta = compileLookupBufferKernel();
+        } else {
+            meta = fpgaInstallCodeLookUpBuffer();
         }
 
         if (isLookupCodeAvailable()) {
             // Only run kernel is the compilation was correct.
             runAndReadLookUpKernel(meta);
         }
+        backEndInitialized = true;
     }
 
     public OCLDeviceContext getDeviceContext() {

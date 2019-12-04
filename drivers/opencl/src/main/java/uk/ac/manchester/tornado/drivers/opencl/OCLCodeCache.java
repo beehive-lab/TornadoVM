@@ -52,6 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
+import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -84,7 +85,7 @@ public class OCLCodeCache {
     private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
     private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
     private final String FPGA_TASKSCHEDULE = "s0.t0.";
-    private boolean COMPILED_BUFFER_KERNEL = false;
+    private boolean isLUBCompiled = false;
 
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
@@ -316,6 +317,10 @@ public class OCLCodeCache {
         }
     }
 
+    private boolean isPlatform(String platformName) {
+        return deviceContext.getPlatformContext().getPlatform().getVendor().toLowerCase().startsWith(platformName);
+    }
+
     OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) { // TODO Override this method for each FPGA backend
         String[] compilationCommand;
         final String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
@@ -323,23 +328,24 @@ public class OCLCodeCache {
         File fpgaBitStreamFile = new File(FPGA_BIN_LOCATION);
 
         appendSourceToFile(id, entryPoint, source);
+
+        if (OPENCL_PRINT_SOURCE) {
+            String sourceCode = new String(source);
+            System.out.println(sourceCode);
+        }
+
         if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
             String[] commandRename;
             String[] linkCommand = null;
 
-            if (OPENCL_PRINT_SOURCE) {
-                String sourceCode = new String(source);
-                System.out.println(sourceCode);
-            }
-
-            if (deviceContext.getPlatformContext().getPlatform().getVendor().toLowerCase().startsWith("xilinx")) {
+            if (isPlatform("xilinx")) {
                 compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
                 linkCommand = composeXilinxHLSLinkCommand(entryPoint);
-            } else if (deviceContext.getPlatformContext().getPlatform().getVendor().toLowerCase().startsWith("intel")) {
+            } else if (isPlatform("intel")) {
                 compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
             } else {
                 // Should not reach here
-                throw new TornadoRuntimeException("FPGA vendor not supported yet.");
+                throw new TornadoRuntimeException("[ERROR] FPGA vendor not supported yet.");
             }
 
             String vendor = deviceContext.getPlatformContext().getPlatform().getVendor().toLowerCase().split("\\(")[0];
@@ -351,24 +357,16 @@ public class OCLCodeCache {
                 return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
             } else {
                 invokeShellCallForCompilation(compilationCommand, commandRename);
-                if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
+                if (isPlatform("xilinx")) {
                     invokeShellCallForCompilation(linkCommand, null);
                 }
             }
             return installEntryPointForBinaryForFPGAs(resolveBitstreamDirectory(), LOOKUP_BUFFER_KERNEL_NAME);
         } else {
-            if (!COMPILED_BUFFER_KERNEL) {
-                COMPILED_BUFFER_KERNEL = true;
+            if (!isLUBCompiled) {
+                isLUBCompiled = true;
 
-                if (Tornado.ACCELERATOR_IS_FPGA) {
-                    appendSourceToFile(id, entryPoint, source);
-                }
-
-                if (OPENCL_PRINT_SOURCE) {
-                    String sourceCode = new String(source);
-                    System.out.println(sourceCode);
-                }
-
+                // Only for Xilinx
                 if (shouldGenerateXilinxBitstream(fpgaBitStreamFile, deviceContext)) {
                     compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
                     invokeShellCallForCompilation(compilationCommand, null);
@@ -395,7 +393,7 @@ public class OCLCodeCache {
             }
         }
 
-        if (Tornado.ACCELERATOR_IS_FPGA) {
+        if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR) {
             appendSourceToFile(id, entryPoint, source);
         }
 
