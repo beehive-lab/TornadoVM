@@ -46,11 +46,11 @@ Help us to develop TornadoVM or TornadoVM use cases:
 
 
 
-For any other contribution(s), feel free to contact us via Github issues or directly to us:
+For any other contribution(s), feel free to contact us via Github issues or via email to the following contacts:
 Main contacts:
 
-* Christos Kotselidis <christos (dot) kotselidis at manchester (dot) ac (dot) uk > 
-* Juan Fumero <juan (dot) fumero at manchester (dot) ac (dot) uk > 
+* Christos Kotselidis <christos (dot) kotselidis (at) manchester (dot) ac (dot) uk > 
+* Juan Fumero <juan (dot) fumero (at) manchester (dot) ac (dot) uk > 
 
 
 
