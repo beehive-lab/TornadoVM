@@ -178,7 +178,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     public boolean isInitialised() {
-        // return deviceContext.isInitialised();
         return backEndInitialized;
     }
 
