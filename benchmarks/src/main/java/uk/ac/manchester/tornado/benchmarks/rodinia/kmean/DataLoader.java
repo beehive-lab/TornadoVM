@@ -54,7 +54,6 @@ public class DataLoader {
         final String splitBy = " ";
 
         try {
-            int i = 0;
             br = new BufferedReader(new FileReader(file));
 
             br.mark(64 * 1024 * 1024);

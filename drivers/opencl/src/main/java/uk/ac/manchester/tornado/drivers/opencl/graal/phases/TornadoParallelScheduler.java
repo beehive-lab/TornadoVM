@@ -70,7 +70,6 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
         final MulNode mulNode = graph.addOrUnique(new MulNode(addNode, range.stride().value()));
 
-        // offset.replaceAtUsages(addNode);
         offset.replaceAtUsages(mulNode);
         offset.safeDelete();
     }
@@ -84,25 +83,20 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
     private void replaceStrideNode(TornadoSchedulingStrategy schedule, StructuredGraph graph, ParallelStrideNode stride) {
         if (schedule == PER_BLOCK) {
-            replacePerBlock(graph, stride);
+            replacePerBlock(stride);
         } else if (schedule == PER_ITERATION) {
             replacePerIteration(graph, stride);
         }
     }
 
     private void replacePerIteration(StructuredGraph graph, ParallelStrideNode stride) {
-
         final ConstantNode index = graph.addOrUnique(ConstantNode.forInt(stride.index()));
-
         final GlobalThreadSizeNode threadCount = graph.addOrUnique(new GlobalThreadSizeNode(index));
-
         stride.replaceAtUsages(threadCount);
         stride.safeDelete();
     }
 
-    private void replacePerBlock(StructuredGraph graph, ParallelStrideNode stride) {
-        // final MulNode newStride = graph.addOrUnique(new
-        // MulNode(stride.value(),)
+    private void replacePerBlock(ParallelStrideNode stride) {
         stride.replaceAtUsages(stride.value());
         stride.safeDelete();
     }
@@ -111,11 +105,11 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         if (schedule == PER_BLOCK) {
             replacePerBlock(graph, range);
         } else if (schedule == PER_ITERATION) {
-            replacePerIteration(graph, range);
+            replacePerIteration(range);
         }
     }
 
-    private void replacePerIteration(StructuredGraph graph, ParallelRangeNode range) {
+    private void replacePerIteration(ParallelRangeNode range) {
         range.replaceAtUsages(range.value());
     }
 
@@ -175,8 +169,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         range.replaceAtUsages(adjustedRange);
         range.safeDelete();
     }
-    // ================================== END-DEPRECATED
-    // ========================================
+    // ================================== END-DEPRECATED ========================================
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
@@ -201,7 +194,6 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
             }
             Debug.dump(Debug.BASIC_LEVEL, graph, "after scheduling loop index=" + node.index());
         });
-
         graph.clearLastSchedule();
     }
 
@@ -209,7 +201,6 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
         if (node.inputs().isNotEmpty()) {
             node.clearInputs();
         }
-
         if (!node.isDeleted()) {
             node.safeDelete();
         }

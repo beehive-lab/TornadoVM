@@ -40,7 +40,6 @@ import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import jdk.vm.ci.meta.JavaConstant;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block> {
 

@@ -27,7 +27,7 @@ import uk.ac.manchester.tornado.benchmarks.ComputeKernels;
 
 public class MonteCarloTornado extends BenchmarkDriver {
 
-    private float[] output,seq;
+    private float[] output;
 
     private int size;
 

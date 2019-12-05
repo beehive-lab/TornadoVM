@@ -43,7 +43,6 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphAssembler.TornadoVMBytecodes;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
@@ -81,7 +80,7 @@ public class TornadoVMGraphCompiler {
         if (deviceContexts.cardinality() == 1) {
             final ContextNode contextNode = (ContextNode) graph.getNode(deviceContexts.nextSetBit(0));
             int deviceIndex = contextNode.getDeviceIndex();
-            return compileSingleContext(graph, context, context.getDevice(deviceIndex), batchSize);
+            return compileSingleContext(graph, context, batchSize);
         } else {
             throw new TornadoRuntimeException("Multiple-Contexts are not currently supported");
         }
@@ -158,7 +157,7 @@ public class TornadoVMGraphCompiler {
      * Simplest case where all tasks within a task-schedule are executed on the same
      * device.
      */
-    private static TornadoVMGraphCompilationResult compileSingleContext(TornadoGraph graph, TornadoExecutionContext context, TornadoAcceleratorDevice device, long batchSize) {
+    private static TornadoVMGraphCompilationResult compileSingleContext(TornadoGraph graph, TornadoExecutionContext context, long batchSize) {
 
         final TornadoVMGraphCompilationResult result = new TornadoVMGraphCompilationResult();
 
@@ -170,13 +169,11 @@ public class TornadoVMGraphCompiler {
         int index = 0;
         int numDepLists = 0;
         for (int i = asyncNodes.nextSetBit(0); i != -1 && i < asyncNodes.length(); i = asyncNodes.nextSetBit(i + 1)) {
-            dependencies[index] = calculateDeps(graph, context, i);
+            dependencies[index] = calculateDeps(graph, i);
             nodeIds[index] = i;
-
             if (graph.getNode(i) instanceof TaskNode) {
                 tasks.set(index);
             }
-
             if (!dependencies[index].isEmpty()) {
                 numDepLists++;
             }
@@ -243,13 +240,12 @@ public class TornadoVMGraphCompiler {
 
     @SuppressWarnings("unused")
     private static void optimise(TornadoVMGraphCompilationResult result, TornadoGraph graph, TornadoExecutionContext context, int[] nodeIds, BitSet[] deps, BitSet tasks) {
-        printMatrix(graph, nodeIds, deps, tasks);
+        printMatrix(nodeIds, deps, tasks);
         for (int i = tasks.nextSetBit(0); i >= 0; i = tasks.nextSetBit(i + 1)) {
             BitSet dependents = new BitSet(deps[i].length());
             for (int j = deps[i].nextSetBit(0); j >= 0; j = deps[i].nextSetBit(j + 1)) {
                 if (graph.getNode(j) instanceof TaskNode) {
                     dependents.set(j);
-
                 }
             }
             if (!dependents.isEmpty()) {
@@ -282,7 +278,6 @@ public class TornadoVMGraphCompiler {
     }
 
     private static void printIvs(StructuredGraph graph) {
-
         final LoopsData data = new LoopsData(graph);
         data.detectedCountedLoops();
 
@@ -370,7 +365,7 @@ public class TornadoVMGraphCompiler {
         return sb.toString();
     }
 
-    private static void printMatrix(TornadoGraph graph, int[] nodeIds, BitSet[] deps, BitSet tasks) {
+    private static void printMatrix(int[] nodeIds, BitSet[] deps, BitSet tasks) {
         System.out.println("dependency matrix...");
         for (int i = 0; i < nodeIds.length; i++) {
             final int nodeId = nodeIds[i];
@@ -378,7 +373,7 @@ public class TornadoVMGraphCompiler {
         }
     }
 
-    private static BitSet calculateDeps(TornadoGraph graph, TornadoExecutionContext context, int i) {
+    private static BitSet calculateDeps(TornadoGraph graph, int i) {
         final BitSet deps = new BitSet(graph.getValid().length());
         final AbstractNode node = graph.getNode(i);
         for (AbstractNode input : node.getInputs()) {
