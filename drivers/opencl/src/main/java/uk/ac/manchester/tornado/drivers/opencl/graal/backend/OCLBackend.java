@@ -262,10 +262,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return new int[] { 0, deviceIndex };
     }
 
-    private boolean isDeviceAnAccelerator(OCLTornadoDevice device) {
-        return device.getDevice().getDeviceType() != OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
-    }
-
     private boolean isJITCompilationForFPGAs(String deviceFullName) {
         String deviceDriver = deviceFullName.split("=")[1];
         int driverIndex = Integer.parseInt(deviceDriver.split(":")[0]);
@@ -317,7 +313,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
             boolean isCompilationForFPGAs = isJITCompilationForFPGAs(deviceFullName);
 
-            // if (Tornado.ACCELERATOR_IS_FPGA) {
             if (isDeviceAnAccelerator()) {
                 lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode());
             } else {
