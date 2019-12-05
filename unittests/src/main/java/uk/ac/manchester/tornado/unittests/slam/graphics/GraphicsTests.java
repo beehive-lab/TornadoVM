@@ -81,9 +81,8 @@ public class GraphicsTests extends TornadoTestBase {
         verticies.set(0, 0, vertex);
     }
 
-    private static final Float3 rotate(Matrix4x4Float m, Float3 v) {
-        final Float3 result = new Float3(Float3.dot(m.row(0).asFloat3(), v), Float3.dot(m.row(1).asFloat3(), v), Float3.dot(m.row(2).asFloat3(), v));
-        return result;
+    private static Float3 rotate(Matrix4x4Float m, Float3 v) {
+        return new Float3(Float3.dot(m.row(0).asFloat3(), v), Float3.dot(m.row(1).asFloat3(), v), Float3.dot(m.row(2).asFloat3(), v));
     }
 
     private static void testRotate(Matrix4x4Float m, VectorFloat3 v, VectorFloat3 result) {
@@ -911,14 +910,12 @@ public class GraphicsTests extends TornadoTestBase {
 
     private Float8 createFloat8() {
         Random r = new Random();
-        Float8 f = new Float8(random(r), random(r), random(r), random(r), random(r), random(r), random(r), random(r));
-        return f;
+        return new Float8(random(r), random(r), random(r), random(r), random(r), random(r), random(r), random(r));
     }
 
     private Float4 createFloat4() {
         Random r = new Random();
-        Float4 f = new Float4(random(r), random(r), random(r), random(r));
-        return f;
+        return new Float4(random(r), random(r), random(r), random(r));
     }
 
     @Test

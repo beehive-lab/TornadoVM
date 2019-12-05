@@ -38,8 +38,9 @@ public class ConstantNode extends AbstractNode {
 
     @Override
     public int compareTo(AbstractNode o) {
-        if (!(o instanceof ConstantNode))
+        if (!(o instanceof ConstantNode)) {
             return -1;
+        }
         return Integer.compare(index, ((ConstantNode) o).index);
     }
 

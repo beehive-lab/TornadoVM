@@ -59,7 +59,6 @@ public class TornadoLocalMemoryAllocation extends BasePhase<TornadoHighTierConte
                 }
             }
         }
-
     }
 
     private int calculateLocalMemAllocSize(TornadoHighTierContext context) {

@@ -95,7 +95,7 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
         this(width, height, depth, new short[width * height * depth * elementSize]);
     }
 
-    private final int toIndex(int x, int y, int z) {
+    private int toIndex(int x, int y, int z) {
         return (z * X * Y * elementSize) + (y * elementSize * X) + (x * elementSize);
     }
 
@@ -122,8 +122,9 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     }
 
     public void fill(short value) {
-        for (int i = 0; i < storage.length; i++)
+        for (int i = 0; i < storage.length; i++) {
             storage[i] = value;
+        }
     }
 
     public VolumeShort2 duplicate() {
@@ -133,8 +134,9 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     }
 
     public void set(VolumeShort2 other) {
-        for (int i = 0; i < storage.length; i++)
+        for (int i = 0; i < storage.length; i++) {
             storage[i] = other.storage[i];
+        }
     }
 
     public String toString(String fmt) {
@@ -155,8 +157,7 @@ public class VolumeShort2 implements PrimitiveStorage<ShortBuffer> {
     }
 
     public String toString() {
-        String result = format("VolumeShort2 <%d x %d x %d>", Y, X, Z);
-        return result;
+        return format("VolumeShort2 <%d x %d x %d>", Y, X, Z);
     }
 
     @Override

@@ -304,8 +304,7 @@ public class RuntimeUtilities {
 
     public static double elapsedTimeInSeconds(long start, long end) {
         final long duration = end - start;
-        double elapsed = duration * 1e-9;
-        return elapsed;
+        return duration * 1e-9;
     }
 
     public static double elapsedTimeInMilliSeconds(long start, long end) {

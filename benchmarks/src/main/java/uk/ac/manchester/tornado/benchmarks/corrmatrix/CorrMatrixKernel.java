@@ -74,12 +74,11 @@ public class CorrMatrixKernel {
          */
         // generated from pop_array via sed 's/A\[\([^]]*\)\]/\(A[\1] \&
         // B[\1]\)/g'
-        final int n = numWords;
         int tot = 0,tot8 = 0;
         long ones = 0,twos = 0,fours = 0;
 
         int i;
-        for (i = 0; i <= (n - 8); i += 8) {
+        for (i = 0; i <= (numWords - 8); i += 8) {
             long twosA = 0;
             long twosB = 0;
             long foursA = 0;
@@ -145,7 +144,7 @@ public class CorrMatrixKernel {
             tot8 += Long.bitCount(eights);
         }
 
-        if (i <= (n - 4)) {
+        if (i <= (numWords - 4)) {
             final int ai = aStart + i;
             final int bi = bStart + i;
 
@@ -181,7 +180,7 @@ public class CorrMatrixKernel {
             i += 4;
         }
 
-        if (i <= (n - 2)) {
+        if (i <= (numWords - 2)) {
             final int ai = aStart + i;
             final int bi = bStart + i;
 
@@ -200,7 +199,7 @@ public class CorrMatrixKernel {
             i += 2;
         }
 
-        if (i < n) {
+        if (i < numWords) {
             final int ai = aStart + i;
             final int bi = bStart + i;
 

@@ -126,15 +126,11 @@ public class NW {
                 if (traceback == nw) {
                     i--;
                     j--;
-                    continue;
                 } else if (traceback == w) {
                     j--;
-                    continue;
                 } else if (traceback == n) {
                     i--;
-                    continue;
-                } else
-                    ;
+                }
             }
 
         } catch (IOException ex) {
@@ -196,7 +192,6 @@ public class NW {
             for (idx = 0; idx <= i; idx++) {
                 index = (idx + 1) * max_cols + (i + 1 - idx);
                 input_itemsets[index] = max(input_itemsets[index - 1 - max_cols] + referrence[index], input_itemsets[index - 1] - penalty, input_itemsets[index - max_cols] - penalty);
-
             }
         }
 
@@ -208,7 +203,6 @@ public class NW {
                 index = (max_cols - idx - 2) * max_cols + idx + max_cols - i - 2;
                 input_itemsets[index] = max(input_itemsets[index - 1 - max_cols] + referrence[index], input_itemsets[index - 1] - penalty, input_itemsets[index - max_cols] - penalty);
             }
-
         }
         final long t1 = System.nanoTime();
         System.out.printf("elapsed: %.9f s\n", (t1 - t0) * 1e-9);

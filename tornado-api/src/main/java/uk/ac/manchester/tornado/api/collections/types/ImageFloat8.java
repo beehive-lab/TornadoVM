@@ -108,7 +108,7 @@ public class ImageFloat8 implements PrimitiveStorage<FloatBuffer>, Container<Flo
         this(matrix.length / elementSize, matrix[0].length / elementSize, toRowMajor(matrix));
     }
 
-    private final int toIndex(int x, int y) {
+    private int toIndex(int x, int y) {
         return (x * elementSize) + (y * elementSize * X);
     }
 

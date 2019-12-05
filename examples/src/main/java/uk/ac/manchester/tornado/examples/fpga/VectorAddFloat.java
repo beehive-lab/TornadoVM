@@ -48,7 +48,7 @@ public class VectorAddFloat {
         .streamOut(c);
         //@formatter:on
 
-        for (float idx = 0; idx < 10; idx++) {
+        for (int idx = 0; idx < 10; idx++) {
             graph.execute();
             vectorAdd(a, b, result);
             boolean wrongResult = false;
