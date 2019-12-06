@@ -56,17 +56,15 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
 
     @Override
     protected void run(StructuredGraph graph, TornadoSketchTierContext context) {
-        replaceParameterAnnotations(graph, context);
+        replaceParameterAnnotations(graph);
         replaceLocalAnnotations(graph, context);
     }
 
-    private void replaceParameterAnnotations(StructuredGraph graph, TornadoSketchTierContext context) {
+    private void replaceParameterAnnotations(StructuredGraph graph) {
         final Annotation[][] parameterAnnotations = graph.method().getParameterAnnotations();
 
         for (int i = 0; i < parameterAnnotations.length; i++) {
-
             for (Annotation an : parameterAnnotations[i]) {
-                // System.out.printf("annotation: param[%d]: %s\n",i,an);
                 if (an instanceof Atomic) {
                     final ParameterNode param = graph.getParameter(i);
                     final AtomicAccessNode atomicAccess = graph.addOrUnique(new AtomicAccessNode(param));
@@ -86,11 +84,9 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                             break;
                         }
                     }
-
                 }
             }
         }
-
     }
 
     /*
@@ -116,7 +112,6 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
     }
 
     private void replaceLocalAnnotations(StructuredGraph graph, TornadoSketchTierContext context) {
-
         // build node -> annotation mapping
         Map<ResolvedJavaMethod, ParallelAnnotationProvider[]> methodToAnnotations = new HashMap<>();
 
@@ -137,10 +132,8 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                 for (ParallelAnnotationProvider an : methodToAnnotations.get(fs.getMethod())) {
                     if (fs.bci >= an.getStart() && fs.bci < an.getStart() + an.getLength()) {
                         Node localNode = fs.localAt(an.getIndex());
-
                         if (!parallelNodes.containsKey(localNode)) {
-                            // Tornado.info("found parallel node:
-                            // %s",localNode);
+                            // Tornado.info("found parallel node: %s",localNode);
                             parallelNodes.put(localNode, an);
                         }
                     }
@@ -149,25 +142,21 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
         });
 
         if (graph.hasLoops()) {
-
             final LoopsData data = new LoopsData(graph);
             data.detectedCountedLoops();
-
             int loopIndex = 0;
             final List<LoopEx> loops = data.outerFirst();
             if (TORNADO_LOOPS_REVERSE) {
                 Collections.reverse(loops);
             }
-            // final List<LoopEx> loops = (TORNADO_LOOPS_REVERSE) ?
-            // data.innerFirst() : data.outerFirst() Collections.reverse(loops);
+            // final List<LoopEx> loops = (TORNADO_LOOPS_REVERSE) ? data.innerFirst() :
+            // data.outerFirst() Collections.reverse(loops);
             for (LoopEx loop : loops) {
-
                 for (InductionVariable iv : loop.getInductionVariables().getValues()) {
                     if (!parallelNodes.containsKey(iv.valueNode())) {
                         continue;
                     }
-
-                    ValueNode maxIterations = null;
+                    ValueNode maxIterations;
                     List<IntegerLessThanNode> conditions = iv.valueNode().usages().filter(IntegerLessThanNode.class).snapshot();
                     if (conditions.size() == 1) {
                         final IntegerLessThanNode lessThan = conditions.get(0);
@@ -180,6 +169,7 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                     if (iv.isConstantInit() && iv.isConstantStride()) {
 
                         final ConstantNode newInit = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantInit()));
+
                         final ConstantNode newStride = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantStride()));
 
                         final ParallelOffsetNode offset = graph.addWithoutUnique(new ParallelOffsetNode(loopIndex, newInit));
@@ -189,16 +179,12 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                         final ParallelRangeNode range = graph.addWithoutUnique(new ParallelRangeNode(loopIndex, maxIterations, offset, stride));
 
                         final ValuePhiNode phi = (ValuePhiNode) iv.valueNode();
-                        final ValueNode oldStride = phi.singleBackValueOrThis(); // was
-                                                                                 // singleBackValue()
 
-                        // System.out.printf("oldStride:
-                        // %s\n",oldStride.toString());
+                        final ValueNode oldStride = phi.singleBackValueOrThis(); // was singleBackValue()
+
                         if (oldStride.usages().count() > 1) {
                             final ValueNode duplicateStride = (ValueNode) oldStride.copyWithInputs(true);
-
                             oldStride.replaceAtMatchingUsages(duplicateStride, usage -> !usage.equals(phi));
-
                             // duplicateStride.removeUsage(phi);
                             // oldStride.removeUsage(node)
                         }
@@ -215,7 +201,6 @@ public class TornadoApiReplacement extends BasePhase<TornadoSketchTierContext> {
                     }
                     loopIndex++;
                 }
-
             }
         }
     }

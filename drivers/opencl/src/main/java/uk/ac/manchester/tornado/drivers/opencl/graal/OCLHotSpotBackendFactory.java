@@ -93,7 +93,6 @@ public class OCLHotSpotBackendFactory {
 
         try (InitTimer t = timer("create providers")) {
             lowerer = new OCLLoweringProvider(metaAccess, foreignCalls, constantReflection, config, target);
-
             Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider);
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
             plugins = createGraphBuilderPlugins(metaAccess, bytecodeProvider);
@@ -113,7 +112,6 @@ public class OCLHotSpotBackendFactory {
     }
 
     protected static Plugins createGraphBuilderPlugins(HotSpotMetaAccessProvider metaAccess, BytecodeProvider bytecodeProvider) {
-
         InvocationPlugins invocationPlugins = new InvocationPlugins();
         Plugins plugins = new Plugins(invocationPlugins);
 

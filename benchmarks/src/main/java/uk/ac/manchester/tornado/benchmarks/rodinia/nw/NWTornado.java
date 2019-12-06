@@ -61,7 +61,7 @@ public class NWTornado {
     };
     // @formatter:on
 
-    private static void usage(String[] args) {
+    private static void usage() {
         System.err.printf("Usage: NW <max_rows/max_cols> <penalty> <num_threads>\n");
         System.err.printf("\t<dimension>      - x and y dimensions\n");
         System.err.printf("\t<penalty>        - penalty(positive integer)\n");
@@ -104,7 +104,6 @@ public class NWTornado {
     private static void processBottomRight(int max_rows, int max_cols, int penalty, int[] input_itemsets, int[] referrence) {
         for (@Parallel int t = 0; t < max_cols - 4; t++) {
             int i = max_cols - 4;
-            // for (int i = max_cols - 4; i >= 0; i--) {
             for (int idx = 0; idx <= i; idx++) {
                 final int index = (max_cols - idx - 2) * max_cols + idx + max_cols - i - 2;
                 input_itemsets[index] = max(input_itemsets[index - 1 - max_cols] + referrence[index], input_itemsets[index - 1] - penalty, input_itemsets[index - max_cols] - penalty);
@@ -175,13 +174,12 @@ public class NWTornado {
     }
 
     public static void main(String[] args) {
-        int idx,index;
         int input_itemsets[],output_itemsets[],referrence[];
 
-        // the lengths of the two sequences should be able to divided by 16.
-        // And at current stage max_rows needs to equal max_cols
+        // the lengths of the two sequences should be able to divided by 16 and at
+        // current stage max_rows needs to equal max_cols
         if (args.length != 3) {
-            usage(args);
+            usage();
         }
 
         final int max_rows = Integer.parseInt(args[0]) + 1;
@@ -190,7 +188,6 @@ public class NWTornado {
 
         referrence = new int[max_rows * max_cols];
         input_itemsets = new int[max_rows * max_cols];
-        output_itemsets = new int[max_rows * max_cols];
 
         Random random = new Random();
         random.setSeed(7);
@@ -219,5 +216,4 @@ public class NWTornado {
 
         traceback(max_rows, max_cols, penalty, input_itemsets, referrence);
     }
-
 }

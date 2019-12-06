@@ -100,7 +100,6 @@ public class TornadoIfCanonicalization extends BasePhase<TornadoMidTierContext> 
         } else if (isMerge(falseBranch)) {
             tryMergeClauses(graph, ifNode, falseBranch);
         }
-
     }
 
     private void tryMergeClauses(StructuredGraph graph, IfNode ifNode, AbstractBeginNode branch) {
