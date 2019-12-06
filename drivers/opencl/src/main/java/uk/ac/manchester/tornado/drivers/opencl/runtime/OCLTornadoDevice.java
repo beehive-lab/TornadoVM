@@ -171,14 +171,10 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
                 return TornadoSchedulingStrategy.PER_ITERATION;
             }
 
-            switch (device.getDeviceType()) {
-                case CL_DEVICE_TYPE_GPU:
-                    return TornadoSchedulingStrategy.PER_ITERATION;
-                case CL_DEVICE_TYPE_CPU:
-                    return TornadoSchedulingStrategy.PER_BLOCK;
-                default:
-                    return TornadoSchedulingStrategy.PER_ITERATION;
+            if (device.getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_CPU) {
+                return TornadoSchedulingStrategy.PER_BLOCK;
             }
+            return TornadoSchedulingStrategy.PER_ITERATION;
         }
         TornadoInternalError.shouldNotReachHere();
         return TornadoSchedulingStrategy.PER_ITERATION;
@@ -322,7 +318,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
         if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && Tornado.ACCELERATOR_IS_FPGA) {
-            TornadoInstalledCode tornadoInstalledCode = compileJavaToAccelerator(task);
+            compileJavaToAccelerator(task);
             ensureLoadedFPGA();
             return loadPreCompiledBinaryFromCache(task);
         } else if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !Tornado.ACCELERATOR_IS_FPGA) {
