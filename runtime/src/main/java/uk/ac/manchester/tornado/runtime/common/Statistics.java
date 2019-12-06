@@ -38,8 +38,9 @@ public class Statistics {
 
     public double getMean() {
         double sum = 0.0;
-        for (final double a : data)
+        for (final double a : data) {
             sum += a;
+        }
         return sum / size;
     }
 
@@ -58,8 +59,9 @@ public class Statistics {
     public double getVariance() {
         final double mean = getMean();
         double temp = 0;
-        for (final double a : data)
+        for (final double a : data) {
             temp += (mean - a) * (mean - a);
+        }
         return temp / size;
     }
 

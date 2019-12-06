@@ -163,7 +163,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
                 isFPGAInit = true;
             }
         }
-
     }
 
     public SnippetReflectionProvider getSnippetReflection() {

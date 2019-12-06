@@ -30,8 +30,8 @@ import org.graalvm.compiler.phases.tiers.HighTierContext;
 
 public interface TornadoSuitesProvider {
 
-    public PhaseSuite<HighTierContext> getGraphBuilderSuite();
+    PhaseSuite<HighTierContext> getGraphBuilderSuite();
 
-    public TornadoSketchTier getSketchTier();
+    TornadoSketchTier getSketchTier();
 
 }

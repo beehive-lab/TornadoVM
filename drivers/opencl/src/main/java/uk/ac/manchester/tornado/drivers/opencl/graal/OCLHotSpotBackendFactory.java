@@ -121,6 +121,7 @@ public class OCLHotSpotBackendFactory {
         }
     }
 
+//    protected static Plugins createGraphBuilderPlugins(HotSpotMetaAccessProvider metaAccess, BytecodeProvider bytecodeProvider) {
     protected static Plugins createGraphBuilderPlugins(HotSpotMetaAccessProvider metaAccess, Replacements replacements) {
 
         InvocationPlugins invocationPlugins = new InvocationPlugins();

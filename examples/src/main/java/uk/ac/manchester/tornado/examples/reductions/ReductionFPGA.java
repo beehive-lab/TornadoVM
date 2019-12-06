@@ -28,14 +28,11 @@ import uk.ac.manchester.tornado.api.annotations.Reduce;;
 
 public class ReductionFPGA {
 
-    public static void reductionSum(float[] input, @Reduce float[] result) {
-        for (@Parallel int i = 0; i < input.length; i++) {
-            result[0] += input[i];
-        }
-    }
+    private static final int ITERATIONS = 11;
 
-    public static void reductionSumSequential(float[] input, @Reduce float[] result) {
-        for (int i = 0; i < input.length; i++) {
+    private static void reductionSum(float[] input, @Reduce float[] result) {
+        result[0] = 0.0f;
+        for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += input[i];
         }
     }
@@ -56,24 +53,16 @@ public class ReductionFPGA {
             .streamOut(result);
         //@formatter:on
 
-        ArrayList<Long> timers = new ArrayList<>();
+        ArrayList<Long> timersParallelTask = new ArrayList<>();
 
-        long start = System.nanoTime();
-        task.execute();
-        long end = System.nanoTime();
+        for (int i = 0; i < ITERATIONS; i++) {
+            long start = System.nanoTime();
+            task.execute();
+            long end = System.nanoTime();
+            timersParallelTask.add((end - start));
+        }
 
-        timers.add((end - start));
-
-        //@formatter:off
-        TaskSchedule taskSequential = new TaskSchedule("s0")
-            .streamIn(input)
-            .task("t1", ReductionFPGA::reductionSumSequential, input, result)
-            .streamOut(result);
-        //@formatter:on
-
-        taskSequential.execute();
-
-        System.out.println("Median TotalTime: " + Stats.computeMedian(timers));
+        System.out.println("Parallel   Median TotalTime: " + Stats.computeMedian(timersParallelTask));
     }
 
     public static void main(String[] args) {

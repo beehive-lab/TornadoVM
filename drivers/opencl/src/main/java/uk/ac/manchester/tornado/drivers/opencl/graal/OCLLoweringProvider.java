@@ -23,6 +23,12 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal;
 
+import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
+import java.util.Iterator;
+
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.meta.*;
@@ -109,17 +115,17 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         if (node instanceof Invoke) {
             lowerInvoke((Invoke) node, tool, (StructuredGraph) node.graph());
         } else if (node instanceof VectorLoadNode) {
-            lowerVectorLoadNode((VectorLoadNode) node, tool);
+            lowerVectorLoadNode((VectorLoadNode) node);
         } else if (node instanceof VectorStoreNode) {
-            lowerVectorStoreNode((VectorStoreNode) node, tool);
+            lowerVectorStoreNode((VectorStoreNode) node);
         } else if (node instanceof AbstractDeoptimizeNode || node instanceof UnwindNode || node instanceof RemNode) {
             /*
              * No lowering, we currently generate LIR directly for these nodes.
              */
         } else if (node instanceof FloatConvertNode) {
-            lowerFloatConvertNode((FloatConvertNode) node, tool);
+            lowerFloatConvertNode((FloatConvertNode) node);
         } else if (node instanceof NewArrayNode) {
-            lowerNewArrayNode((NewArrayNode) node, tool);
+            lowerNewArrayNode((NewArrayNode) node);
         } else if (node instanceof AtomicAddNode) {
             lowerAtomicAddNode((AtomicAddNode) node, tool);
         } else if (node instanceof LoadIndexedNode) {
@@ -135,7 +141,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else if (node instanceof ArrayLengthNode) {
             lowerArrayLengthNode((ArrayLengthNode) node, tool);
         } else if (node instanceof IntegerDivRemNode) {
-            lowerIntegerDivRemNode((IntegerDivRemNode) node, tool);
+            lowerIntegerDivRemNode((IntegerDivRemNode) node);
         } else {
             super.lower(node, tool);
         }
@@ -204,13 +210,13 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     private void lowerStoreAtomicsReduction(Node node, LoweringTool tool) {
         if (USE_ATOMICS) {
-            lowerAtomicStoreIndexedNode((StoreAtomicIndexedNode) node, tool);
+            lowerAtomicStoreIndexedNode((StoreAtomicIndexedNode) node);
         } else {
             lowerReduceSnippets((StoreAtomicIndexedNode) node, tool);
         }
     }
 
-    private void lowerIntegerDivRemNode(IntegerDivRemNode integerDivRemNode, LoweringTool tool) {
+    private void lowerIntegerDivRemNode(IntegerDivRemNode integerDivRemNode) {
         StructuredGraph graph = integerDivRemNode.graph();
         switch (integerDivRemNode.getOp()) {
             case DIV:
@@ -252,7 +258,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         graph.replaceFixed(loadIndexed, memoryRead);
     }
 
-    private void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
+    private void lowerAtomicStoreIndexedNode(StoreAtomicIndexedNode storeIndexed) {
 
         StructuredGraph graph = storeIndexed.graph();
         JavaKind elementKind = storeIndexed.elementKind();
@@ -358,16 +364,14 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     }
 
-    private void lowerFloatConvertNode(FloatConvertNode floatConvert, LoweringTool tool) {
-        final StructuredGraph graph = floatConvert.graph();
-        // TODO should probably create a specific float-convert node?
-
+    private void lowerFloatConvertNode(FloatConvertNode floatConvert) {
+        final StructuredGraph graph = floatConvert.graph(); // TODO should probably create a specific float-convert node?
         final CastNode asFloat = graph.addWithoutUnique(new CastNode(floatConvert.stamp(NodeView.DEFAULT), floatConvert.getFloatConvert(), floatConvert.getValue()));
         floatConvert.replaceAtUsages(asFloat);
         floatConvert.safeDelete();
     }
 
-    private void lowerVectorStoreNode(VectorStoreNode vectorStore, LoweringTool tool) {
+    private void lowerVectorStoreNode(VectorStoreNode vectorStore) {
         StructuredGraph graph = vectorStore.graph();
         JavaKind elementKind = vectorStore.elementKind();
         AddressNode address = createArrayAddress(graph, vectorStore.array(), elementKind, vectorStore.index());
@@ -375,10 +379,9 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 //        WriteNode vectorWrite = graph.addWithoutUnique(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), vectorStore.value(), BarrierType.PRECISE));
         WriteNode vectorWrite = graph.addWithoutUnique(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), vectorStore.value(), BarrierType.ARRAY, true));
         graph.replaceFixed(vectorStore, vectorWrite);
-
     }
 
-    private void lowerVectorLoadNode(VectorLoadNode vectorLoad, LoweringTool tool) {
+    private void lowerVectorLoadNode(VectorLoadNode vectorLoad) {
         StructuredGraph graph = vectorLoad.graph();
         JavaKind elementKind = vectorLoad.elementKind();
         AddressNode address = createArrayAddress(graph, vectorLoad.array(), elementKind, vectorLoad.index());
@@ -386,12 +389,11 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         graph.replaceFixed(vectorLoad, vectorRead);
     }
 
-    private void lowerNewArrayNode(NewArrayNode newArray, LoweringTool tool) {
+    private void lowerNewArrayNode(NewArrayNode newArray) {
         final StructuredGraph graph = newArray.graph();
         final ValueNode firstInput = newArray.length();
         if (firstInput instanceof ConstantNode) {
             if (newArray.dimensionCount() == 1) {
-
                 final ConstantNode lengthNode = (ConstantNode) firstInput;
                 if (lengthNode.getValue() instanceof PrimitiveConstant) {
                     final int length = ((PrimitiveConstant) lengthNode.getValue()).asInt();
@@ -409,7 +411,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
                 } else {
                     shouldNotReachHere();
                 }
-
             } else {
                 unimplemented("multi-dimensional array declarations are not supported");
             }
@@ -468,7 +469,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private AddressNode createArrayLocalAddress(StructuredGraph graph, ValueNode array, ValueNode index) {
-        return (AddressNode) graph.unique(new OffsetAddressNode(array, index));
+        return graph.unique(new OffsetAddressNode(array, index));
     }
 
     private boolean isLocalIdNode(StoreIndexedNode storeIndexed) {

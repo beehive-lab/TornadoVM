@@ -42,18 +42,4 @@ public interface CallStack {
     boolean isOnDevice();
 
     void dump();
-
-    void clearProfiling();
-
-    long getInvokeCount();
-
-    double getTimeTotal();
-
-    double getTimeMean();
-
-    double getTimeMin();
-
-    double getTimeMax();
-
-    double getTimeSD();
 }

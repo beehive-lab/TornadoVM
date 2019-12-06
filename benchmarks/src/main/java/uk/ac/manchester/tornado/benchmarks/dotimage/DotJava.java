@@ -19,7 +19,6 @@ package uk.ac.manchester.tornado.benchmarks.dotimage;
 
 import static uk.ac.manchester.tornado.benchmarks.GraphicsKernels.dotImage;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.collections.types.Float3;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat;
 import uk.ac.manchester.tornado.api.collections.types.ImageFloat3;
@@ -32,8 +31,6 @@ public class DotJava extends BenchmarkDriver {
 
     private ImageFloat3 a,b;
     private ImageFloat c;
-
-    private TaskSchedule graph;
 
     public DotJava(int iterations, int numElementsX, int numElementsY) {
         super(iterations);

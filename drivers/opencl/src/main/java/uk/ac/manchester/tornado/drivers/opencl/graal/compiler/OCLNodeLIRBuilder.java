@@ -72,7 +72,6 @@ import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Local;
-import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
@@ -122,7 +121,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 lirKind = gen.getLIRKind(stamp);
             }
         }
-
         return lirKind;
     }
 
@@ -202,8 +200,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
             final List<Node> nodes = blockMap.get(block);
 
-            // Allow NodeLIRBuilder subclass to specialise code generation of
-            // any
+            // Allow NodeLIRBuilder subclass to specialise code generation of any
             // interesting groups of instructions
             matchComplexExpressions(block, graph.getLastSchedule());
 //            matchComplexExpressions(nodes);
@@ -243,9 +240,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                         } else if (valueNode instanceof VectorValueNode) {
                             // There can be cases in which the result of an
                             // instruction is already set before by other
-                            // instructions.
-                            // case where vector value is used as an input to a
-                            // phi
+                            // instructions. case where vector value is used as an input to a phi
                             // node before it is assigned to
                             final VectorValueNode vectorNode = (VectorValueNode) valueNode;
                             vectorNode.generate(this);
@@ -253,7 +248,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                     }
                 }
             }
-
             assert LIR.verifyBlock(gen.getResult().getLIR(), block);
         }
     }
@@ -291,7 +285,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private Value emitNegatedLogicNode(final LogicNode node) {
-        Value result = null;
+        Value result;
         trace("emitLogicNode: %s", node);
         LIRKind intLirKind = LIRKind.value(OCLKind.INT);
         LIRKind boolLirKind = LIRKind.value(OCLKind.BOOL);
@@ -337,14 +331,12 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
-
         setResult(node, result);
-
         return (OCLLIROp) result;
     }
 
     private OCLLIROp emitLogicNode(final LogicNode node) {
-        Value result = null;
+        Value result;
         trace("emitLogicNode: %s", node);
         LIRKind intLirKind = LIRKind.value(OCLKind.INT);
         LIRKind boolLirKind = LIRKind.value(OCLKind.BOOL);
@@ -409,9 +401,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
-
         setResult(node, result);
-
         return (OCLLIROp) result;
     }
 
@@ -428,7 +418,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     protected void emitDirectCall(final DirectCallTargetNode callTarget, final Value result, final Value[] parameters, final Value[] temps, final LIRFrameState callState) {
-
         final OCLDirectCall call = new OCLDirectCall(callTarget, result, parameters, callState);
         if (isLegal(result)) {
             append(new OCLLIRStmt.AssignStmt(gen.asAllocatable(result), call));
@@ -440,7 +429,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     @Override
     protected void emitIndirectCall(final IndirectCallTargetNode arg0, final Value arg1, final Value[] arg2, final Value[] arg3, final LIRFrameState arg4) {
         unimplemented();
-
     }
 
     @Override
@@ -448,8 +436,8 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         trace("emitIf: %s, condition=%s\n", x, x.condition().getClass().getName());
 
         /**
-         * test to see if this is an exception check need to implement this
-         * properly? or omit!
+         * test to see if this is an exception check need to implement this properly? or
+         * omit!
          */
         final LabelRef falseBranch = getLIRBlock(x.falseSuccessor());
         if (falseBranch.getTargetBlock().isExceptionEntry()) {
@@ -498,7 +486,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                 append(new OCLLIRStmt.AssignStmt(result, value));
             }
         }
-
         emitPragmaLoopUnroll(currentBlockDominator);
         append(new OCLControlFlow.LoopInitOp());
         append(new OCLControlFlow.LoopPostOp());
@@ -576,8 +563,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             Variable value = gen.load(operand(x.value()));
             if (keyCount == 1) {
                 assert defaultTarget != null;
-                double probability = x.probability(x.keySuccessor(0));
-                PlatformKind kind = gen.getLIRKind(x.value().stamp(NodeView.DEFAULT)).getPlatformKind();
                 unimplemented();
             } else {
                 LabelRef[] keyTargets = new LabelRef[keyCount];
@@ -600,7 +585,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
         final Value y = operandOrConjunction(node.getY());
         append(new AssignStmt(result, new OCLBinary.Expr(OCLBinaryOp.LOGICAL_OR, lirKind, x, y)));
         setResult(node, result);
-
     }
 
     private void emitLoopExit(LoopExitNode node) {
@@ -610,9 +594,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     protected void emitPrologue(final StructuredGraph graph, boolean isKernel) {
-
         if (isKernel) {
-
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                 setResult(param, getGen().getOCLGenTool().emitParameterLoad(param, param.index()));
             }
@@ -645,7 +627,6 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     protected boolean peephole(final ValueNode value) {
-
         return false;
     }
 

@@ -415,19 +415,12 @@ public class TornadoVM extends TornadoLogger {
                 }
 
                 if (installedCodes[taskIndex] == null) {
-                    final long compileStart = System.nanoTime();
                     task.mapTo(device);
                     try {
                         task.attachProfiler(timeProfiler);
                         installedCodes[taskIndex] = device.installCode(task);
                     } catch (Error | Exception e) {
                         fatal("unable to compile task %s", task.getName());
-                        debug(e.getMessage());
-                        throw e;
-                    }
-                    final long compileEnd = System.nanoTime();
-                    if (graphContext.meta().isDebug()) {
-                        debug("vm: compiled in %.9f s", (compileEnd - compileStart) * 1e-9);
                     }
                 }
 

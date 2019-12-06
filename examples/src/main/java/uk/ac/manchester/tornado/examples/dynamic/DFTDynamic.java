@@ -61,7 +61,7 @@ public class DFTDynamic {
                 break;
             }
         }
-        System.out.printf("Number validation: " + val + "\n");
+        System.out.println("Is valid?: " + val + "\n");
         return val;
     }
 

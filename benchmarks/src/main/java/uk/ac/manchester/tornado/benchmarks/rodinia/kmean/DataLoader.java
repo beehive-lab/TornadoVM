@@ -54,7 +54,6 @@ public class DataLoader {
         final String splitBy = " ";
 
         try {
-            int i = 0;
             br = new BufferedReader(new FileReader(file));
 
             br.mark(64 * 1024 * 1024);
@@ -76,8 +75,9 @@ public class DataLoader {
                     data = new float[numFeatures * numPoints];
                 }
 
-                for (int j = 1; j < values.length; j++, index++)
+                for (int j = 1; j < values.length; j++, index++) {
                     data[index] = Float.valueOf(values[j]);
+                }
             }
 
             result = new KmeansData(data, numPoints, numFeatures);
@@ -93,8 +93,6 @@ public class DataLoader {
                 }
             }
         }
-
         return result;
     }
-
 }

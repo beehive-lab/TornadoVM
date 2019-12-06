@@ -39,8 +39,8 @@ public class CorrMatrixHost {
     private static final Logger LOG = LogManager.getLogger(CorrMatrixHost.class);
 
     /**
-     * Perform matrix intersection for two lists of Lucene OpenBitSet-based
-     * packed longs
+     * Perform matrix intersection for two lists of Lucene OpenBitSet-based packed
+     * longs
      *
      * @param matrixA
      *            The first term-document matrix
@@ -201,7 +201,6 @@ public class CorrMatrixHost {
         final TaskSchedule s0 = new TaskSchedule("benchmark").streamIn(subMatrixA, subMatrixB)
                 .task("corrmatrix", CorrMatrixKernel::run, subMatrixA, NUM_SUB_ROWS, subMatrixB, NUM_SUB_ROWS, matrixA_numLongs, subResultMatrix).streamOut(subResultMatrix);
 
-        // s0.warmup();
         try {
             for (int a = 0; a < numSubBlocksA; a++) {
                 for (int b = 0; b < numSubBlocksB; b++) {
@@ -223,7 +222,6 @@ public class CorrMatrixHost {
                         if (matrixA_numLongs != matrixB[i].length) {
                             throw new Exception("All rows in the matrix need be the same length");
                         }
-
                         System.arraycopy(matrixB[i], 0, subMatrixB, (i - bSubRowStart) * matrixB_numLongs, matrixB_numLongs);
                     }
 
@@ -248,85 +246,12 @@ public class CorrMatrixHost {
             s0.dumpProfiles();
             s0.dumpEvents();
         }
-
         return resultMatrix;
     }
 
     /**
-     * Execute the GPU kernel
-     *
-     * @param subMatrixA
-     * @param matrixA_NumTerms
-     * @param subMatrixB
-     * @param matrixB_NumTerms
-     * @param numLongs
-     * @param subResultMatrix
-     * @param kernel
-     *
-     * @return resultMatrix
-     */
-    // private static void executeKernel(final long[] subMatrixA,
-    // final int matrixA_NumTerms, final long[] subMatrixB,
-    // final int matrixB_NumTerms, final int numLongs,
-    // final int[] subResultMatrix, final Task kernel,
-    // final NewTaskGraph tasks) {
-    //
-    // // Power of Two for best performance
-    // // int matrixA_NumTermsRnd = matrixA_NumTerms;
-    // // while (!isPowerOfTwo(matrixA_NumTermsRnd)) {
-    // // matrixA_NumTermsRnd += 1;
-    // // }
-    // // int matrixB_NumTermsRnd = matrixB_NumTerms;
-    // // while (!isPowerOfTwo(matrixB_NumTermsRnd)) {
-    // // matrixB_NumTermsRnd += 1;
-    // // }
-    // final Dims range = new Dims(matrixA_NumTerms, matrixB_NumTerms);
-    // kernel.getMeta().setThreadDimensions(range);
-    //
-    // // kernel.setParameters(subMatrixA, matrixA_NumTerms, subMatrixB,
-    // // matrixB_NumTerms, numLongs, subResultMatrix);
-    // if (LOG.isDebugEnabled()) {
-    // LOG.debug("Range: " + range);
-    // }
-    //
-    // try {
-    // tasks.executeOnly();
-    // } catch (JaccRuntimeException e) {
-    // e.printStackTrace();
-    // }
-    //
-    // }
-    /**
-     * Highly efficient means to compute whether a number is a power of 2<br>
-     * Based on code from
-     * http://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
-     * <p>
-     * Another very cool way to do this is ((x&(-x))==x)
-     *
-     * @param n
-     *
-     * @return boolean
-     */
-    private static boolean isPowerOfTwo(int n) {
-        return (n > 0) && ((n & (n - 1)) == 0);
-    }
-
-    /**
-     * Rounds a number to the multiple indicated
-     *
-     * @param num
-     * @param multiple
-     *
-     * @return
-     */
-    private static int roundToMultiple(double num, int multiple) {
-        return (int) (Math.ceil(num / multiple) * multiple);
-    }
-
-    /**
      * Very nice means to convert byte sizes into human readable format<br>
-     * Based on code from
-     * http://stackoverflow.com/questions/3758606/how-to-convert
+     * Based on code from http://stackoverflow.com/questions/3758606/how-to-convert
      * -byte-size-into-human-readable-format-in-java
      * <p>
      *

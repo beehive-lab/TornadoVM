@@ -21,18 +21,19 @@
  * Authors: James Clarkson
  *
  */
-package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
+package uk.ac.manchester.tornado.runtime.graal.phases;
 
+import static org.graalvm.compiler.debug.DebugContext.INFO_LEVEL;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.debug;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
-import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Graph.Mark;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.*;
@@ -46,29 +47,23 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
-import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopUnroller;
-import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeReplacement;
 
 public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext> {
 
-    private static final int MAX_ITERATIONS = 10;
+    public static final int MAX_ITERATIONS = 10;
 
     private final CanonicalizerPhase canonicalizer;
     private final TornadoValueTypeReplacement valueTypeReplacement;
     private final DeadCodeEliminationPhase deadCodeElimination;
-    private final TornadoLoopUnroller loopUnroll;
-    private long batchThreads;
+    private final TornadoLoopUnroller loopUnroller;
 
     public TornadoTaskSpecialisation(CanonicalizerPhase canonicalizer) {
         this.canonicalizer = canonicalizer;
         this.valueTypeReplacement = new TornadoValueTypeReplacement();
         this.deadCodeElimination = new DeadCodeEliminationPhase();
-        this.loopUnroll = new TornadoLoopUnroller(canonicalizer);
+        this.loopUnroller = new TornadoLoopUnroller(canonicalizer);
     }
 
     private Field lookupField(Class<?> type, String field) {
@@ -90,6 +85,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
     @FunctionalInterface
     private interface FunctionThatThrows<T, R> {
+
         R apply(T t) throws IllegalArgumentException, IllegalAccessException;
     }
 
@@ -97,15 +93,17 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         return function.apply(object);
     }
 
-    private Object lookupRefField(StructuredGraph graph, Node node, Object obj, String field) {
+    private Object lookupRefField(Object obj, String field) {
         final Class<?> type = obj.getClass();
         final Field f = lookupField(type, field);
-        Object result;
+        Object result = null;
         try {
             result = f.get(obj);
         } catch (IllegalArgumentException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
+
         return result;
     }
 
@@ -154,22 +152,21 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 default:
                     break;
             }
+
         } catch (IllegalArgumentException | IllegalAccessException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return constant;
     }
 
-    private void evaluate(final StructuredGraph graph, final Node node, final Object value) {
+    private void evaluate(final StructuredGraph graph, final Node node, final Object param) {
+        final Object value = (param instanceof WeakReference) ? ((WeakReference<?>) param).get() : param;
+
         if (node instanceof ArrayLengthNode) {
             ArrayLengthNode arrayLength = (ArrayLengthNode) node;
             int length = Array.getLength(value);
-            final ConstantNode constant;
-            if (batchThreads <= 0) {
-                constant = ConstantNode.forInt(length);
-            } else {
-                constant = ConstantNode.forInt((int) batchThreads);
-            }
+            final ConstantNode constant = ConstantNode.forInt(length);
             node.replaceAtUsages(graph.addOrUnique(constant));
             arrayLength.clearInputs();
             GraphUtil.removeFixedWithUnusedInputs(arrayLength);
@@ -183,22 +180,18 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 loadField.clearInputs();
                 graph.removeFixed(loadField);
             } else if (field.isFinal()) {
-                Object object = lookupRefField(graph, node, value, field.getName());
+                Object object = lookupRefField(value, field.getName());
                 node.usages().forEach(n -> evaluate(graph, n, object));
             }
         } else if (node instanceof IsNullNode) {
             final IsNullNode isNullNode = (IsNullNode) node;
-            final boolean isNull = (value == null);
+            final boolean isNull = (param == null);
             if (isNull) {
                 isNullNode.replaceAtUsages(LogicConstantNode.tautology(graph));
             } else {
                 isNullNode.replaceAtUsages(LogicConstantNode.contradiction(graph));
             }
             isNullNode.safeDelete();
-        } else if (node instanceof PiNode) {
-            PiNode piNode = (PiNode) node;
-            piNode.replaceAtUsages(piNode.getOriginalNode());
-            piNode.safeDelete();
         }
     }
 
@@ -208,10 +201,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             result = ConstantNode.forFloat((float) obj);
         } else if (obj instanceof Integer) {
             result = ConstantNode.forInt((int) obj);
-        } else if (obj instanceof Double) {
-            result = ConstantNode.forDouble((double) obj);
-        } else {
-            unimplemented("createConstantFromObject: %s", obj);
         }
         return result;
     }
@@ -229,22 +218,21 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
         int iterations = 0;
+
         int lastNodeCount = graph.getNodeCount();
         boolean hasWork = true;
-        this.batchThreads = context.getBatchThreads();
-
         while (hasWork) {
             final Mark mark = graph.getMark();
             if (context.hasArgs()) {
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                     propagateParameters(graph, param, context.getArgs());
                 }
-                getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After Phase Propagate Parameters");
+                getDebugContext().dump(INFO_LEVEL, graph, "After Phase Propagate Parameters");
             } else {
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                     assumeNonNull(param);
                 }
-                getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After Phase assume non null Parameters");
+                getDebugContext().dump(INFO_LEVEL, graph, "After Phase assume non null Parameters");
             }
 
             canonicalizer.apply(graph, context);
@@ -259,9 +247,9 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 }
             });
 
-            getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After Phase Pi Node Removal");
+            getDebugContext().dump(INFO_LEVEL, graph, "After Phase Pi Node Removal");
 
-            loopUnroll.execute(graph, context);
+            loopUnroller.execute(graph, context);
 
             valueTypeReplacement.execute(graph, context);
 
@@ -269,10 +257,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             deadCodeElimination.run(graph);
 
-            getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After TaskSpecialisation iteration=" + iterations);
+            getDebugContext().dump(INFO_LEVEL, graph, "After TaskSpecialisation iteration=" + iterations);
 
-            // boolean hasGuardingPiNodes =
-            // graph.getNodes().filter(GuardingPiNode.class).isNotEmpty();
             hasWork = (lastNodeCount != graph.getNodeCount() || graph.getNewNodes(mark).isNotEmpty()) // ||
                                                                                                       // hasGuardingPiNodes)
                     && (iterations < MAX_ITERATIONS);
@@ -283,18 +269,16 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         if (iterations == MAX_ITERATIONS) {
             Tornado.warn("TaskSpecialisation unable to complete after %d iterations", iterations);
         }
-        Tornado.debug("TaskSpecialisation ran %d iterations", iterations);
-        Tornado.debug("valid graph? %s", graph.verify());
+
+        debug("TaskSpecialisation ran %d iterations", iterations);
+
+        debug("valid graph? %s", graph.verify());
     }
 
     private void assumeNonNull(ParameterNode param) {
         if (param.getStackKind().isObject() && param.usages().filter(IsNullNode.class).count() > 0) {
-            final IsNullNode isNullNode = (IsNullNode) param.usages().filter(IsNullNode.class).first();
-            // for (final GuardingPiNode guardingPiNode :
-            // isNullNode.usages().filter(GuardingPiNode.class).distinct()) {
-            // guardingPiNode.replaceAtUsages(param);
-            // }
-
+            unimplemented("assumeNonNull: param %s", param);
         }
     }
+
 }

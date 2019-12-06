@@ -47,7 +47,6 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
-import uk.ac.manchester.tornado.api.mm.OCLTupleRawEvent;
 import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.type.annotations.Payload;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
@@ -109,10 +108,8 @@ public class OCLObjectWrapper implements ObjectBuffer {
             final Class<?> type = reflectedField.getType();
             final boolean isFinal = Modifier.isFinal(reflectedField.getModifiers());
 
-            if (vectorObject) {
-                if (field.getAnnotation(Payload.class) != null) {
-                    vectorStorageIndex = index;
-                }
+            if (vectorObject && field.getAnnotation(Payload.class) != null) {
+                vectorStorageIndex = index;
             }
 
             if (DEBUG) {
@@ -511,7 +508,6 @@ public class OCLObjectWrapper implements ObjectBuffer {
     @Override
     public void invalidate() {
         valid = false;
-
     }
 
     @Override

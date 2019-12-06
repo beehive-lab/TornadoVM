@@ -41,7 +41,6 @@
  */
 package uk.ac.manchester.tornado.api.annotations;
 
-import java.io.Serializable;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

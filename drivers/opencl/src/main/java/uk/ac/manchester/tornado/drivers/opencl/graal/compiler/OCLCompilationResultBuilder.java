@@ -284,8 +284,9 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                 breakInst = op;
                 continue;
             } else if ((shouldRemoveLoop() && loops == 0) && (op instanceof OCLControlFlow.LoopInitOp || op instanceof OCLControlFlow.LoopConditionOp || op instanceof OCLControlFlow.LoopPostOp)) {
-                if (op instanceof OCLControlFlow.LoopPostOp)
+                if (op instanceof OCLControlFlow.LoopPostOp) {
                     loops++;
+                }
                 continue;
             }
             if (Options.PrintLIRWithAssembly.getValue(getOptions())) {

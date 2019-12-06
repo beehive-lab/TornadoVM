@@ -314,7 +314,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return task;
     }
 
-    private int submitParallel(final OCLCallStack stack, final TaskMetaData meta, long batchThreads) {
+    private int submitParallel(final TaskMetaData meta, long batchThreads) {
         final int task;
         if (meta.enableThreadCoarsener()) {
             task = DEFAULT_SCHEDULER.submit(kernel, meta, batchThreads);
@@ -327,7 +327,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     private void launchKernel(final OCLCallStack stack, final TaskMetaData meta, long batchThreads) {
         final int task;
         if (meta.isParallel()) {
-            task = submitParallel(stack, meta, batchThreads);
+            task = submitParallel(meta, batchThreads);
         } else {
             task = submitSequential(meta);
         }

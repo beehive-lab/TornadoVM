@@ -113,8 +113,9 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
      * @param values
      */
     public void set(VectorFloat values) {
-        for (int i = 0; i < values.storage.length; i++)
+        for (int i = 0; i < values.storage.length; i++) {
             storage[i] = values.storage[i];
+        }
     }
 
     /**
@@ -123,8 +124,9 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
      * @param values
      */
     public void set(float[] values) {
-        for (int i = 0; i < values.length; i++)
+        for (int i = 0; i < values.length; i++) {
             storage[i] = values[i];
+        }
     }
 
     /**
@@ -133,8 +135,9 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
      * @param value
      */
     public void fill(float value) {
-        for (int i = 0; i < storage.length; i++)
+        for (int i = 0; i < storage.length; i++) {
             storage[i] = value;
+        }
     }
 
     /**
@@ -151,7 +154,6 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
         for (int i = 0; i < length; i++) {
             v.storage[i] = storage[i + start];
         }
-
         return v;
     }
 
@@ -166,17 +168,17 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
 
     public static float min(VectorFloat v) {
         float result = MAX_VALUE;
-        for (int i = 0; i < v.storage.length; i++)
+        for (int i = 0; i < v.storage.length; i++) {
             result = Math.min(v.storage[i], result);
-
+        }
         return result;
     }
 
     public static float max(VectorFloat v) {
         float result = MIN_VALUE;
-        for (int i = 0; i < v.storage.length; i++)
+        for (int i = 0; i < v.storage.length; i++) {
             result = Math.max(v.storage[i], result);
-
+        }
         return result;
     }
 
@@ -221,15 +223,15 @@ public class VectorFloat implements PrimitiveStorage<FloatBuffer> {
 
     public String toString() {
         String str = format("VectorFloat <%d>", numElements);
-        if (numElements < 32)
+        if (numElements < 32) {
             str += toString(fmt);
+        }
         return str;
     }
 
     @Override
     public void loadFromBuffer(FloatBuffer buffer) {
         asBuffer().put(buffer);
-
     }
 
     @Override
