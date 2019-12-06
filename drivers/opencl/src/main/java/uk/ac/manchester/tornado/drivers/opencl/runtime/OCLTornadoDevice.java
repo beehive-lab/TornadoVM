@@ -193,8 +193,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         }
     }
 
-    private void ensureLoadedFPGA() {
-        getBackend().fpgaJITinit();
+    private void runLookUpBufferAddressKernel() {
+        getBackend().runLookUpBufferAddressKernel();
     }
 
     @Override
@@ -203,7 +203,8 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private boolean isOpenCLPreLoadBinary(OCLDeviceContext deviceContext, String deviceInfo) {
-        OCLCodeCache installedCode = new OCLCodeCache(deviceContext);
+        OCLCodeCache installedCode = deviceContext.getCodeCache();
+        // OCLCodeCache installedCode = new OCLCodeCache(deviceContext);
         return installedCode.isLoadBinaryOptionEnabled() && (installedCode.getOpenCLBinary(deviceInfo) != null);
     }
 
@@ -241,17 +242,17 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             // Compile the code
-            OCLInstalledCode intalledCode = null;
+            OCLInstalledCode installedCode;
             if (isDeviceAnAccelerator(deviceContext)) {
                 // A) for FPGA
-                intalledCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode());
+                installedCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode());
             } else {
                 // B) for CPU multi-core or GPU
-                intalledCode = deviceContext.installCode(result);
+                installedCode = deviceContext.installCode(result);
             }
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
-            return intalledCode;
+            return installedCode;
 
         } catch (Exception e) {
             driver.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
@@ -294,16 +295,18 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return task.getName().replace(" ", "").split("-")[1];
     }
 
-    private TornadoInstalledCode loadPreCompiledBinaryFromCache(SchedulableTask task) {
+    private TornadoInstalledCode loadPreCompiledBinaryForTask(SchedulableTask task) {
         final OCLDeviceContext deviceContext = getDeviceContext();
-        final OCLCodeCache check = new OCLCodeCache(deviceContext);
+        final OCLCodeCache codeCache = deviceContext.getCodeCache();
         final String deviceFullName = getFullTaskIdDevice(task);
-        final Path lookupPath = Paths.get(check.getOpenCLBinary(deviceFullName));
+        final Path lookupPath = Paths.get(codeCache.getOpenCLBinary(deviceFullName));
         String entry = getTaskEntryName(task);
-        if (deviceContext.getInstalledCode(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME) != null) {
-            return deviceContext.getInstalledCode(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+
+        if (deviceContext.getInstalledCode(task.getId(), entry) != null) {
+            OCLInstalledCode installedCode = deviceContext.getInstalledCode(task.getId(), entry);
+            return installedCode;
         } else {
-            return check.installEntryPointForBinaryForFPGAs(lookupPath, entry);
+            return codeCache.installEntryPointForBinaryForFPGAs(task.getId(), lookupPath, entry);
         }
     }
 
@@ -324,19 +327,35 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && Tornado.ACCELERATOR_IS_FPGA);
     }
 
-    @Override
-    public TornadoInstalledCode installCode(SchedulableTask task) {
+    private boolean isJITTaskForFGPA(SchedulableTask task) {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
-        if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && Tornado.ACCELERATOR_IS_FPGA) {
-            compileJavaToAccelerator(task);
-            ensureLoadedFPGA();
-            return loadPreCompiledBinaryFromCache(task);
-        } else if (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !Tornado.ACCELERATOR_IS_FPGA) {
-            return compileJavaToAccelerator(task);
-        } else {
-            return loadPreCompiledBinaryFromCache(task);
+        return !isOpenCLPreLoadBinary(deviceContext, deviceFullName) && Tornado.ACCELERATOR_IS_FPGA;
+    }
+
+    private boolean isJITTaskForGPUsAndCPUs(SchedulableTask task) {
+        final OCLDeviceContext deviceContext = getDeviceContext();
+        final String deviceFullName = getFullTaskIdDevice(task);
+        return !isOpenCLPreLoadBinary(deviceContext, deviceFullName) && !Tornado.ACCELERATOR_IS_FPGA;
+    }
+
+    private TornadoInstalledCode compileJavaForFPGAs(SchedulableTask task) {
+        TornadoInstalledCode tornadoInstalledCode = compileJavaToAccelerator(task);
+        if (tornadoInstalledCode != null) {
+            runLookUpBufferAddressKernel();
+            return loadPreCompiledBinaryForTask(task);
         }
+        return null;
+    }
+
+    @Override
+    public TornadoInstalledCode installCode(SchedulableTask task) {
+        if (isJITTaskForFGPA(task)) {
+            return compileJavaForFPGAs(task);
+        } else if (isJITTaskForGPUsAndCPUs(task)) {
+            return compileJavaToAccelerator(task);
+        }
+        return loadPreCompiledBinaryForTask(task);
     }
 
     private ObjectBuffer createArrayWrapper(Class<?> type, OCLDeviceContext device, long batchSize) {

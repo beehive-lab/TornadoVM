@@ -134,7 +134,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     final OCLTargetDescription target;
     final OCLArchitecture architecture;
-    final OCLContext openclContext;
+    final OCLContext openCLContext;
     final OCLDeviceContext deviceContext;
     final OCLCodeProvider codeCache;
     OCLInstalledCode lookupCode;
@@ -153,7 +153,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         this.options = options;
         this.target = target;
         this.codeCache = codeCache;
-        this.openclContext = openclContext;
+        this.openCLContext = openclContext;
         this.deviceContext = deviceContext;
         architecture = (OCLArchitecture) target.arch;
         scheduleMeta = new ScheduleMetaData("oclbackend");
@@ -285,12 +285,12 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public TaskMetaData compileLookupBufferKernel() {
 
         TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
-        OCLCodeCache codeCache = new OCLCodeCache(deviceContext);
+        OCLCodeCache codeCache = deviceContext.getCodeCache();
+        // OCLCodeCache codeCache = new OCLCodeCache(deviceContext);
         int[] deviceInfo = getDriverAndDevice();
         String deviceFullName = getDriverAndDevice(meta, deviceInfo);
 
         if (deviceContext.isCached("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
-
             // Option 1) Getting the lookupBufferAddress from the cache
             lookupCode = deviceContext.getCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
             if (lookupCode != null) {
@@ -300,7 +300,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
             // Option 2) Loading pre-compiled lookupBufferAddress kernel FPGA
             Path lookupPath = Paths.get(codeCache.getOpenCLBinary(deviceFullName));
-            lookupCode = codeCache.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+            lookupCode = codeCache.installEntryPointForBinaryForFPGAs(meta.getId(), lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
             if (lookupCode != null) {
                 lookupCodeAvailable = true;
             }
@@ -326,14 +326,16 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return meta;
     }
 
-    public void fpgaJITinit() {
+    public void runLookUpBufferAddressKernel() {
         TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME, 0);
-        OCLCodeCache check = new OCLCodeCache(deviceContext);
-        if(deviceContext.getInstalledCode(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME) != null) {
-            lookupCode = deviceContext.getInstalledCode(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        OCLCodeCache codeCache = deviceContext.getCodeCache();
+        // OCLCodeCache codeCache = new OCLCodeCache(deviceContext);
+        if (deviceContext.getInstalledCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME) != null) {
+            lookupCode = deviceContext.getInstalledCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
         } else {
-            lookupCode = check.installEntryPointForBinaryForFPGAs(Paths.get(OCLCodeCache.FPGA_BIN_LOCATION), OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+            lookupCode = codeCache.installEntryPointForBinaryForFPGAs(meta.getId(), Paths.get(OCLCodeCache.FPGA_BIN_LOCATION), OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
         }
+
         if (lookupCode != null) {
             lookupCodeAvailable = true;
             runAndReadLookUpKernel(meta);
@@ -349,12 +351,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     private void initFPGA() {
-        OCLCodeCache check = new OCLCodeCache(deviceContext);
+        OCLCodeCache check = deviceContext.getCodeCache();
+        // OCLCodeCache check = new OCLCodeCache(deviceContext);
         try {
             Path lookupPath = Paths.get(KERNEL_WARMUP);
-            if (lookupPath != null) {
-                check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
-            }
+            check.installEntryPointForBinaryForFPGAs("oclbackend", lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
         } catch (InvalidPathException e) {
             throw new TornadoRuntimeException(e);
         }
@@ -382,11 +383,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         allocateHeapMemoryOnDevice();
         TaskMetaData meta = null;
 
-        if (!isDeviceAnAccelerator()) {
-            meta = compileLookupBufferKernel();
-        } else {
-            meta = fpgaInstallCodeLookUpBuffer();
-        }
+        // if (!isDeviceAnAccelerator()) {
+        meta = compileLookupBufferKernel();
+        // } else {
+        // meta = fpgaInstallCodeLookUpBuffer();
+        // }
 
         if (isLookupCodeAvailable()) {
             // Only run kernel is the compilation was correct.
@@ -423,14 +424,13 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     private void addVariableDef(Map<OCLKind, Set<Variable>> kindToVariable, Variable value) {
-        if (value instanceof Variable) {
-            Variable var = (Variable) value;
+        if (value != null) {
 
-            if (!(var.getPlatformKind() instanceof OCLKind)) {
+            if (!(value.getPlatformKind() instanceof OCLKind)) {
                 shouldNotReachHere();
             }
 
-            OCLKind oclKind = (OCLKind) var.getPlatformKind();
+            OCLKind oclKind = (OCLKind) value.getPlatformKind();
             if (oclKind == OCLKind.ILLEGAL) {
                 shouldNotReachHere();
             }
@@ -440,8 +440,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             }
 
             final Set<Variable> varList = kindToVariable.get(oclKind);
-            varList.add(var);
-
+            varList.add(value);
         }
     }
 
