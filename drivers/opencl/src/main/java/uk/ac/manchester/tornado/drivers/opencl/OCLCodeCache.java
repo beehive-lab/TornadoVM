@@ -227,21 +227,18 @@ public class OCLCodeCache {
         return resolveDirectory(OPENCL_LOG_DIR);
     }
 
-    public boolean isKernelAvailable() {
+    boolean isKernelAvailable() {
         return kernelAvailable;
     }
 
-    public void appendSourceToFile(String id, String entryPoint, byte[] source) {
-        if (Tornado.ACCELERATOR_IS_FPGA) {
-            final Path outDir = Tornado.ACCELERATOR_IS_FPGA ? resolveBitstreamDirectory() : resolveSourceDirectory();
-            if (entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
-                File file = new File(outDir + "/" + entryPoint + OPENCL_SOURCE_SUFFIX);
-                RuntimeUtilities.writeStreamToFile(file, source, false);
-            } else {
-                File file = new File(outDir + "/" + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX);
-                RuntimeUtilities.writeStreamToFile(file, source, true);
-            }
+    private void appendSourceToFile(String id, String entryPoint, byte[] source) {
+        final Path outDir = Tornado.ACCELERATOR_IS_FPGA ? resolveBitstreamDirectory() : resolveSourceDirectory();
+        File file = new File(outDir + "/" + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX);
+        boolean createFile = false;
+        if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
+            createFile = true;
         }
+        RuntimeUtilities.writeStreamToFile(file, source, createFile);
     }
 
     private String[] composeIntelHLSCommand(String inputFile, String outputFile) {
@@ -298,12 +295,14 @@ public class OCLCodeCache {
         return bufferCommand.toString().split(" ");
     }
 
-    private void callOSforCompilation(String[] compilationCommand, String[] commandRename) {
+    private void invokeShellCallForCompilation(String[] compilationCommand, String[] commandRename) {
         try {
-            if (compilationCommand != null)
-                RuntimeUtilities.sysCall(compilationCommand, true);
-            if (commandRename != null)
-                RuntimeUtilities.sysCall(commandRename, true);
+            if (compilationCommand != null) {
+                RuntimeUtilities.systemCall(compilationCommand, true);
+            }
+            if (commandRename != null) {
+                RuntimeUtilities.systemCall(commandRename, true);
+            }
         } catch (IOException e) {
             throw new TornadoRuntimeException(e);
         }
@@ -317,7 +316,7 @@ public class OCLCodeCache {
         }
     }
 
-    public OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) { // TODO Override this method for each FPGA backend
+    OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) { // TODO Override this method for each FPGA backend
         String[] compilationCommand;
         final String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
         final String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
@@ -333,24 +332,27 @@ public class OCLCodeCache {
                 System.out.println(sourceCode);
             }
 
-            if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
+            if (deviceContext.getPlatformContext().getPlatform().getVendor().toLowerCase().startsWith("xilinx")) {
                 compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
                 linkCommand = composeXilinxHLSLinkCommand(entryPoint);
-            } else if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Intel(R) Corporation")) {
+            } else if (deviceContext.getPlatformContext().getPlatform().getVendor().toLowerCase().startsWith("intel")) {
                 compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
             } else {
                 // Should not reach here
-                throw new TornadoRuntimeException("FPGA vendor not supported.");
+                throw new TornadoRuntimeException("FPGA vendor not supported yet.");
             }
-            commandRename = new String[] { BASH, FPGA_CLEANUP_SCRIPT, deviceContext.getPlatformContext().getPlatform().getVendor() };
+
+            String vendor = deviceContext.getPlatformContext().getPlatform().getVendor().toLowerCase().split("\\(")[0];
+
+            commandRename = new String[] { FPGA_CLEANUP_SCRIPT, vendor };
 
             Path path = Paths.get(FPGA_BIN_LOCATION);
             if (RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {
                 return installEntryPointForBinaryForFPGAs(path, LOOKUP_BUFFER_KERNEL_NAME);
             } else {
-                callOSforCompilation(compilationCommand, commandRename);
+                invokeShellCallForCompilation(compilationCommand, commandRename);
                 if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) {
-                    callOSforCompilation(linkCommand, null);
+                    invokeShellCallForCompilation(linkCommand, null);
                 }
             }
             return installEntryPointForBinaryForFPGAs(resolveBitstreamDirectory(), LOOKUP_BUFFER_KERNEL_NAME);
@@ -369,7 +371,7 @@ public class OCLCodeCache {
 
                 if (shouldGenerateXilinxBitstream(fpgaBitStreamFile, deviceContext)) {
                     compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
-                    callOSforCompilation(compilationCommand, null);
+                    invokeShellCallForCompilation(compilationCommand, null);
                 }
             } else {
                 return null;
@@ -473,6 +475,7 @@ public class OCLCodeCache {
         try {
             entryPoint = entryPoint.split("-")[1];
         } catch (NullPointerException | ArrayIndexOutOfBoundsException e) {
+            // ignore
         }
 
         long beforeLoad = (Tornado.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();

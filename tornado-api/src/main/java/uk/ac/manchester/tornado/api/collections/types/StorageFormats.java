@@ -226,16 +226,15 @@ public final class StorageFormats {
      * @return
      */
     public static int[] toRowMajor(int[][] matrix) {
-
         final int M = matrix.length;
         final int N = matrix[0].length;
 
         int[] matrixRM = new int[M * N];
-        for (int i = 0; i < M; i++)
+        for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
                 matrixRM[toRowMajor(i, j, N)] = matrix[i][j];
             }
-
+        }
         return matrixRM;
     }
 
@@ -247,17 +246,15 @@ public final class StorageFormats {
      * @return
      */
     public static byte[] toRowMajor(byte[][] matrix) {
-
         final int m = matrix[0].length;
         final int n = matrix.length;
         byte[] matrixRM = new byte[m * n];
 
-        for (int i = 0; i < m; i++)
+        for (int i = 0; i < m; i++) {
             for (int j = 0; j < n; j++) {
                 matrixRM[toRowMajor(i, j, m)] = matrix[i][j];
             }
-
+        }
         return matrixRM;
     }
-
 }

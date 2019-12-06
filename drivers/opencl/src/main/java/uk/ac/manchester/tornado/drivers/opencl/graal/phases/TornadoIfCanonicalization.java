@@ -89,9 +89,9 @@ public class TornadoIfCanonicalization extends BasePhase<TornadoMidTierContext> 
 
     private void canonicalize(StructuredGraph graph, IfNode ifNode) {
         System.out.printf("if-canonicalize: ifNode=%s\n", ifNode);
-        if (ifNode.predecessor() instanceof LoopBeginNode)
+        if (ifNode.predecessor() instanceof LoopBeginNode) {
             return;
-
+        }
         final AbstractBeginNode trueBranch = ifNode.trueSuccessor();
         final AbstractBeginNode falseBranch = ifNode.falseSuccessor();
 
@@ -100,7 +100,6 @@ public class TornadoIfCanonicalization extends BasePhase<TornadoMidTierContext> 
         } else if (isMerge(falseBranch)) {
             tryMergeClauses(graph, ifNode, falseBranch);
         }
-
     }
 
     private void tryMergeClauses(StructuredGraph graph, IfNode ifNode, AbstractBeginNode branch) {
@@ -195,16 +194,17 @@ public class TornadoIfCanonicalization extends BasePhase<TornadoMidTierContext> 
                 clauses[i] = current;
                 branchTaken[i] = branches.get(current);
 
-                if (current.predecessor() instanceof LoopBeginNode)
+                if (current.predecessor() instanceof LoopBeginNode) {
                     result = false;
-
+                }
                 if (!ifNodes.isEmpty()) {
                     final AbstractBeginNode begin = getNode(current, !branchTaken[i]);
                     System.out.printf("check-clauses: current=%s, branch=%s -> begin=%s\n", current, !branchTaken[i], begin);
-                    if (begin.next() instanceof IfNode)
+                    if (begin.next() instanceof IfNode) {
                         current = (IfNode) begin.next();
-                    else
+                    } else {
                         System.out.printf("check-clauses: next != ifNode (%s)\n", begin.next());
+                    }
                 }
 
             } else {
@@ -228,8 +228,9 @@ public class TornadoIfCanonicalization extends BasePhase<TornadoMidTierContext> 
         EndNode validEnd = null;
         for (EndNode e : merge.forwardEnds()) {
             System.out.printf("merge-cleanup: forward end=%s\n", e);
-            if (e.isAlive())
+            if (e.isAlive()) {
                 validEnd = e;
+            }
         }
 
         for (PhiNode phi : merge.phis()) {
@@ -240,14 +241,12 @@ public class TornadoIfCanonicalization extends BasePhase<TornadoMidTierContext> 
 
         FixedNode current = merge.next();
         validEnd.replaceAtPredecessor(current);
-
     }
 
     private void cleanupBranch(IfNode ifNode, boolean b) {
         final AbstractBeginNode begin = getNode(ifNode, b);
         begin.next().markDeleted();
         begin.markDeleted();
-
     }
 
     private LogicNode createClause(final StructuredGraph graph, final LogicNode left, boolean negateLeft, final LogicNode right, boolean negateRight) {
@@ -267,7 +266,6 @@ public class TornadoIfCanonicalization extends BasePhase<TornadoMidTierContext> 
             System.out.printf("merge-clauses: left=%s, right=%s\n", leftCondition, rightCondition);
             leftCondition = createClause(graph, leftCondition, false, rightCondition, !branchTaken[i]);
         }
-
         return leftCondition;
     }
 

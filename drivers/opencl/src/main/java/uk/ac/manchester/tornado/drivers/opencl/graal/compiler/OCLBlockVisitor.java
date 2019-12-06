@@ -40,7 +40,6 @@ import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import jdk.vm.ci.meta.JavaConstant;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssembler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.asm.OCLAssemblerConstants;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block> {
 
@@ -137,10 +136,8 @@ public class OCLBlockVisitor implements ControlFlowGraph.RecursiveVisitor<Block>
 
     private void checkClosingBlockInsideIf(Block b, Block pdom) {
         if (pdom.isLoopHeader() && b.getDominator() != null && isIfBlock(b.getDominator())) {
-            if (b.getDominator().getDominator() != null) {
-                if (isIfBlock(b.getDominator().getDominator())) {
-                    asm.endScope();
-                }
+            if ((b.getDominator().getDominator() != null) && (isIfBlock(b.getDominator().getDominator()))) {
+                asm.endScope();
             }
         }
     }

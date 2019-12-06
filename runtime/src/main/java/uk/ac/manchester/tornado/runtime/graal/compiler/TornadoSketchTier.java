@@ -40,7 +40,7 @@ import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Option
 
 public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
 
-    protected final CustomCanonicalizer customCanonicalizer;
+    private final CustomCanonicalizer customCanonicalizer;
 
     public CustomCanonicalizer getCustomCanonicalizer() {
         return customCanonicalizer;

@@ -47,7 +47,7 @@ public class OCLMultiDimArrayWrapper<T, E> extends OCLArrayWrapper<T> {
         this(device, factory, false, batchSize);
     }
 
-    public OCLMultiDimArrayWrapper(OCLDeviceContext device, Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> factory, boolean isFinal, long batchSize) {
+    private OCLMultiDimArrayWrapper(OCLDeviceContext device, Function<OCLDeviceContext, ? extends OCLArrayWrapper<E>> factory, boolean isFinal, long batchSize) {
         super(device, JavaKind.Object, isFinal, batchSize);
         innerWrapperFactory = factory;
         tableWrapper = new OCLLongArrayWrapper(device, false, batchSize);
