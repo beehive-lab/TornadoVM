@@ -329,7 +329,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public void fpgaJITinit() {
         TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME, 0);
         OCLCodeCache check = new OCLCodeCache(deviceContext);
-        lookupCode = check.installEntryPointForBinaryForFPGAs(Paths.get(OCLCodeCache.FPGA_BIN_LOCATION), OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        if(deviceContext.getInstalledCode(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME) != null) {
+            lookupCode = deviceContext.getInstalledCode(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        } else {
+            lookupCode = check.installEntryPointForBinaryForFPGAs(Paths.get(OCLCodeCache.FPGA_BIN_LOCATION), OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        }
         if (lookupCode != null) {
             lookupCodeAvailable = true;
             runAndReadLookUpKernel(meta);

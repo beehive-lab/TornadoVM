@@ -574,4 +574,8 @@ public class OCLCodeCache {
     public OCLInstalledCode getCode(String id, String entryPoint) {
         return cache.get(id + "-" + entryPoint);
     }
+
+    public OCLInstalledCode getInstalledCode(String entryPoint) {
+        return cache.get(entryPoint);
+    }
 }

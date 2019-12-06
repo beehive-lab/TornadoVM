@@ -207,6 +207,10 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return installedCode.isLoadBinaryOptionEnabled() && (installedCode.getOpenCLBinary(deviceInfo) != null);
     }
 
+    private boolean isDeviceAnAccelerator(OCLDeviceContext deviceContext) {
+        return deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
+    }
+
     private TornadoInstalledCode compileTask(SchedulableTask task) {
 
         final OCLDeviceContext deviceContext = getDeviceContext();
@@ -238,7 +242,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             // Compile the code
             OCLInstalledCode intalledCode = null;
-            if (Tornado.ACCELERATOR_IS_FPGA) {
+            if (isDeviceAnAccelerator(deviceContext)) {
                 // A) for FPGA
                 intalledCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode());
             } else {
@@ -286,23 +290,30 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return null;
     }
 
+    private String getTaskEntryName(SchedulableTask task) {
+        return task.getName().replace(" ", "").split("-")[1];
+    }
+
     private TornadoInstalledCode loadPreCompiledBinaryFromCache(SchedulableTask task) {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final OCLCodeCache check = new OCLCodeCache(deviceContext);
         final String deviceFullName = getFullTaskIdDevice(task);
         final Path lookupPath = Paths.get(check.getOpenCLBinary(deviceFullName));
-        String[] tempEntryToSplit = task.getName().split("- ");
-        String entry = tempEntryToSplit[1];
-        return check.installEntryPointForBinaryForFPGAs(lookupPath, entry);
+        String entry = getTaskEntryName(task);
+        if (deviceContext.getInstalledCode(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME) != null) {
+            return deviceContext.getInstalledCode(OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        } else {
+            return check.installEntryPointForBinaryForFPGAs(lookupPath, entry);
+        }
     }
 
     private String getFullTaskIdDevice(SchedulableTask task) {
         TaskMetaDataInterface meta = task.meta();
         if (meta instanceof TaskMetaData) {
-            TaskMetaData stask = (TaskMetaData) task.meta();
-            return task.getId() + ".device=" + stask.getDriverIndex() + ":" + stask.getDeviceIndex();
+            TaskMetaData metaData = (TaskMetaData) task.meta();
+            return task.getId() + ".device=" + metaData.getDriverIndex() + ":" + metaData.getDeviceIndex();
         } else {
-            throw new RuntimeException("[ERROR] TaskMedata Expected");
+            throw new RuntimeException("[ERROR] TaskMedata expected");
         }
     }
 
