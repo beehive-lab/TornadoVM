@@ -139,11 +139,6 @@ public class OCLCodeCache {
             String lookupBufferDeviceKernelName = FPGA_TASKSCHEDULE + String.format("device=%d:%d", deviceContext.getDevice().getIndex(), deviceContext.getPlatformContext().getPlatformIndex());
             precompiledBinariesPerDevice.put(lookupBufferDeviceKernelName, FPGA_BIN_LOCATION);
         }
-
-        // if (OPENCL_CACHE_ENABLE) {
-        // info("loading binaries into code cache");
-        // load();
-        // }
     }
 
     private void processPrecompiledBinaries() {
@@ -391,8 +386,6 @@ public class OCLCodeCache {
                     invokeShellCallForCompilation(linkCommand, null);
                 }
             }
-            // return installEntryPointForBinaryForFPGAs(id, resolveBitstreamDirectory(),
-            // LOOKUP_BUFFER_KERNEL_NAME);
             return installEntryPointForBinaryForFPGAs(id, path, LOOKUP_BUFFER_KERNEL_NAME);
         } else {
             if (!isLUBCompiled) {
@@ -571,30 +564,6 @@ public class OCLCodeCache {
         return !entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME) && deviceContext.getDevice().getDeviceName().toLowerCase().startsWith("xilinx");
     }
 
-    // private void load() {
-    // try {
-    // final Path cacheDir = resolveCacheDirectory();
-    // Files.list(cacheDir).filter(p -> Files.isRegularFile(p,
-    // LinkOption.NOFOLLOW_LINKS)).forEach(this::loadBinary);
-    // } catch (IOException e) {
-    // error("io exception when loading cache files: %s", e.getMessage());
-    // }
-    // }
-
-    // private void loadBinary(Path path) {
-    // final File file = path.toFile();
-    // if (file.length() == 0) {
-    // return;
-    // }
-    // info("loading %s into cache", file.getAbsoluteFile());
-    // try {
-    // final byte[] binary = Files.readAllBytes(path);
-    // installBinary(file.getName(), binary, true);
-    // } catch (OCLException | IOException e) {
-    // error("unable to load binary: %s (%s)", file, e.getMessage());
-    // }
-    // }
-
     public void reset() {
         for (OCLInstalledCode code : cache.values()) {
             code.invalidate();
@@ -626,7 +595,6 @@ public class OCLCodeCache {
     }
 
     public OCLInstalledCode getInstalledCode(String id, String entryPoint) {
-        // return cache.get(entryPoint);
         return this.getCode(id, entryPoint);
     }
 }

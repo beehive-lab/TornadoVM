@@ -286,7 +286,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
         OCLCodeCache codeCache = deviceContext.getCodeCache();
-        // OCLCodeCache codeCache = new OCLCodeCache(deviceContext);
         int[] deviceInfo = getDriverAndDevice();
         String deviceFullName = getDriverAndDevice(meta, deviceInfo);
 
@@ -329,7 +328,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public void runLookUpBufferAddressKernel() {
         TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME, 0);
         OCLCodeCache codeCache = deviceContext.getCodeCache();
-        // OCLCodeCache codeCache = new OCLCodeCache(deviceContext);
         if (deviceContext.getInstalledCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME) != null) {
             lookupCode = deviceContext.getInstalledCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
         } else {
@@ -352,7 +350,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     private void initFPGA() {
         OCLCodeCache check = deviceContext.getCodeCache();
-        // OCLCodeCache check = new OCLCodeCache(deviceContext);
         try {
             Path lookupPath = Paths.get(KERNEL_WARMUP);
             check.installEntryPointForBinaryForFPGAs("oclbackend", lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
@@ -381,14 +378,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     public void init() {
         allocateHeapMemoryOnDevice();
-        TaskMetaData meta = null;
-
-        // if (!isDeviceAnAccelerator()) {
-        meta = compileLookupBufferKernel();
-        // } else {
-        // meta = fpgaInstallCodeLookUpBuffer();
-        // }
-
+        TaskMetaData meta = compileLookupBufferKernel();
         if (isLookupCodeAvailable()) {
             // Only run kernel is the compilation was correct.
             runAndReadLookUpKernel(meta);
