@@ -9,7 +9,7 @@ Tornado supports execution and prototyping with OpenCL compatible Intel/Altera F
 We have currently tested with a Nallatech-A385 FPGA (Intel Arria 10 GT1150).
 
 * Quartus Version: 17.1.0 Build 240
-* Tornado Version: 0.2
+* Tornado Version: 0.4
 
 If the OpenCL ICD loaders are installed correclty, the output of the ```clinfo``` it shoudl be the following:  
 ```bash
@@ -43,14 +43,13 @@ The generated FPGA bitstream as well as the the generated OpenCL code can be fou
 
 Example:
 
-```bash 
-$ tornado \
+```bash
+tornado \
     -Ds0.t0.device=0:1 \
-    -Dtornado.assembler.removeloops=true \
     -Dtornado.opencl.accelerator.fpga=true \
-    -Dtornado.fpga.flags=v,report      \
-    -Dtornado.opencl.userelative=True  \
-    uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 256 normal 1  
+    -Dtornado.fpga.flags=-v,-report,-fp-relaxed  \
+    -Dtornado.opencl.userelative=True \
+    uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1
 ```
 
 ### Ahead of Time Execution Mode
@@ -59,43 +58,34 @@ Ahead of time execution mode allows the user to generate a pre-generated bitstre
 
 Example:  
 
+
 ```bash
-$ tornado \
+tornado \
     -Ds0.t0.device=0:1 \
-    -Dtornado.precompiled.binary=/path/to/lookupBufferAddress,s0.t0.device=0:1 \
-    -Dtornado.opencl.userelative=True  \
     -Ds0.t0.global.dims=1024 \
-    -Ds0.t0.local.dims=16    \
-    uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1 
+    -Ds0.t0.local.dims=64 \
+    -Dtornado.precompiled.binary=/path/to/lookupBufferAddress,s0.t0.device=0:1 \
+    -Dtornado.opencl.userelative=True \
+    uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
 ```
 
-### Emulation Mode [Intel/Altera Tools]
+### Emulation Mode [on Intel-Altera FPGAs]
 
 Emulation mode can be used for fast-prototying and ensuring program functional correctness before going through the full JIT process (HLS).
 
-The following two steps are required:
-
-1) Before executing the tornado program, the following env variable needs to be exported:  
+Before executing the tornado program, the following env variable needs to be exported:  
 
 ```bash
 $ export CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1
 ```
 
-2) All the runtime flags are the same used during the full JIT mode plus the following:  
-
-```bash
--Dtornado.fpga.emulation=true
-```
-
 Example:  
 
 ```bash
-$ env CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1 tornado  \ 
-        -Ds0.t0.device=0:1  \
-        -Dtornado.assembler.removeloops=true  \
-        -Dtornado.opencl.accelerator.fpga=true \
-        -Dtornado.opencl.userelative=True  \
-        -Dtornado.fpga.emulation=true  \
-        -Dtornado.fpga.flags=v,report  \
-        uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1 
+env CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1 tornado \
+    -Ds0.t0.device=0:1 \
+    -Dtornado.fpga.flags=-v,-report,-fp-relaxed  \
+    -Dtornado.opencl.userelative=True \
+    uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
 ```
+
