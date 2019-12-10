@@ -66,6 +66,7 @@ public class OCLCodeCache {
     public static String FPGA_BIN_LOCATION = getProperty("tornado.fpga.bin", "./" + DIRECTORY_BITSTREAM + LOOKUP_BUFFER_KERNEL_NAME);
 
     private static final String FALSE = "False";
+    private static final String TRUE = "True";
     private final String OPENCL_SOURCE_SUFFIX = ".cl";
     private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", FALSE));
     private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", FALSE));

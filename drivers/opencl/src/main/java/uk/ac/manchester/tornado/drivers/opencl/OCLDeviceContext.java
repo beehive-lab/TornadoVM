@@ -270,7 +270,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {

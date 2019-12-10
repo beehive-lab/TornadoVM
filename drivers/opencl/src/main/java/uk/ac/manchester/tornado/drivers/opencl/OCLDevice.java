@@ -306,10 +306,10 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
             return maxWorkItemSizes;
         }
 
+        final int elements = getDeviceMaxWorkItemDimensions();
+
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-
-        final int elements = getDeviceMaxWorkItemDimensions();
 
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MAX_WORK_ITEM_SIZES.getValue(), buffer.array());
 

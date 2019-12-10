@@ -150,9 +150,11 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     private void waitOnPassive() {
         try {
-            internalBuffer[0] = 1;
-            internalBuffer[1] = oclEventID;
-            clWaitForEvents(internalBuffer);
+            // TODO why use internalBuffer here?
+            // TODO why add 1 to the interalBuffer ?
+//            internalBuffer[0] = 1;
+//            internalBuffer[1] = oclEventID;
+            clWaitForEvents(new long[] {oclEventID});
         } catch (OCLException e) {
             error(e.getMessage());
         }

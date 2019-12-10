@@ -90,9 +90,9 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clW
 	cl_event* events;
 
 	if (array != NULL) {
-		len = (*env)->GetArrayLength(env, array);
 		events = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
-	    
+		len = (*env)->GetArrayLength(env, array);
+
 		OPENCL_SOFT_ERROR("clWaitForEvents",
     	        clWaitForEvents((cl_uint) len, (const cl_event *) events), 0);
 
