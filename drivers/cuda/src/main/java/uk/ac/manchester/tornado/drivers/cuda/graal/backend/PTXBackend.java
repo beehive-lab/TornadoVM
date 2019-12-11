@@ -28,8 +28,12 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
 public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
-    public PTXBackend(PTXProviders providers) {
+    final CUDADeviceContext deviceContext;
+
+    public PTXBackend(PTXProviders providers, CUDADeviceContext deviceContext) {
         super(providers);
+
+        this.deviceContext = deviceContext;
     }
 
     @Override
@@ -117,6 +121,6 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     public CUDADeviceContext getDeviceContext() {
-        return null;
+        return deviceContext;
     }
 }

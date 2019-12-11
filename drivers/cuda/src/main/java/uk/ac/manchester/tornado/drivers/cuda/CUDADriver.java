@@ -99,7 +99,6 @@ public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDrive
     private PTXBackend createPTXBackend(final OptionValues options, final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, final CUDAContext context, final int deviceIndex) {
         final CUDADevice device = context.devices().get(deviceIndex);
         info("Creating backend for %s", device.getDeviceName());
-        System.out.println(jvmciRuntime);
         return PTXHotSpotBackendFactory.createBackend(options, jvmciRuntime.getHostJVMCIBackend(), vmConfig, context, device);
     }
 
@@ -135,9 +134,7 @@ public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDrive
     }
 
     private PTXBackend checkAndInitBackend(final int platform, final int device) {
-        System.out.println(backends[platform]);
         final PTXBackend backend = backends[platform][device];
-        System.out.println(backend);
         if (!backend.isInitialised()) {
             backend.init();
         }

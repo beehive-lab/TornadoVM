@@ -3,6 +3,8 @@ package uk.ac.manchester.tornado.drivers.cuda;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
+import java.nio.ByteOrder;
+
 public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
 
     public CUDADevice(int index, long id) {
@@ -47,5 +49,9 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
 
     @Override public Object getDeviceInfo() {
         return null;
+    }
+
+    public ByteOrder getByteOrder() {
+        return ByteOrder.LITTLE_ENDIAN;
     }
 }

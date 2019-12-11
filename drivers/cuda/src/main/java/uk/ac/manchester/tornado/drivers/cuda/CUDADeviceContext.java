@@ -21,6 +21,6 @@ public class CUDADeviceContext
     }
 
     public CUDATornadoDevice asMapping() {
-        return null;
+        return new CUDATornadoDevice();
     }
 }

@@ -3,17 +3,24 @@ package uk.ac.manchester.tornado.drivers.cuda.graal;
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
+import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.runtime.JVMCIBackend;
+import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
+import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins;
 import org.graalvm.compiler.replacements.classfile.ClassfileBytecodeProvider;
 import uk.ac.manchester.tornado.drivers.cuda.CUDAContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADevice;
+import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
+import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilerConfiguration;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXAddressLowering;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.graal.DummySnippetFactory;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoConstantFieldProvider;
@@ -36,19 +43,37 @@ public class PTXHotSpotBackendFactory {
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmci.getMetaAccess();
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();
 
+        PTXArchitecture arch = new PTXArchitecture(PTXKind.UINT, device.getByteOrder());
+        CUDATargetDescription target = new CUDATargetDescription(arch);
+
         PTXProviders providers;
         PTXSuitesProvider suites;
+        GraphBuilderConfiguration.Plugins plugins;
+        PTXLoweringProvider lowerer;
 
         try (InitTimer t = timer("create providers")) {
+            lowerer = new PTXLoweringProvider(metaAccess, foreignCalls, target);
 
-            suites = new PTXSuitesProvider(options, null, metaAccess, compilerConfiguration, addressLowering);
-            providers = new PTXProviders(metaAccess, null, constantReflection, constantFieldProvider, foreignCalls, null, null, stampProvider, suites);
+            ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
+            plugins = createGraphBuilderPlugins(metaAccess, bytecodeProvider);
+
+            suites = new PTXSuitesProvider(options, plugins, metaAccess, compilerConfiguration, addressLowering);
+            providers = new PTXProviders(metaAccess, null, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, suites);
 
         }
         try (InitTimer rt = timer("instantiate backend")) {
-            PTXBackend backend = new PTXBackend(providers);
-            System.out.println("PTXHotSpotBackendFactory#createBackend: " + backend);
+            PTXBackend backend = new PTXBackend(providers, new CUDADeviceContext());
             return backend;
         }
+
+
+    }
+
+    protected static GraphBuilderConfiguration.Plugins createGraphBuilderPlugins(HotSpotMetaAccessProvider metaAccess, BytecodeProvider bytecodeProvider) {
+        InvocationPlugins invocationPlugins = new InvocationPlugins();
+        GraphBuilderConfiguration.Plugins plugins = new GraphBuilderConfiguration.Plugins(invocationPlugins);
+
+        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, bytecodeProvider, true);
+        return plugins;
     }
 }

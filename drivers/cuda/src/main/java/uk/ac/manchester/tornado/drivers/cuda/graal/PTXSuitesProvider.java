@@ -2,7 +2,9 @@ package uk.ac.manchester.tornado.drivers.cuda.graal;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase;
@@ -33,21 +35,20 @@ public class PTXSuitesProvider implements TornadoSuitesProvider {
     }
 
     private PhaseSuite<HighTierContext> createGraphBuilderSuite(GraphBuilderConfiguration.Plugins plugins) {
-        //PhaseSuite<HighTierContext> suite = new PhaseSuite<>();
-        return new PhaseSuite<>();
+        PhaseSuite<HighTierContext> suite = new PhaseSuite<>();
 
         //InvocationPlugins invocationPlugins = plugins.getInvocationPlugins();
         //OCLGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
         //OCLGraphBuilderPlugins.registerNewInstancePlugins(plugins);
         //OCLGraphBuilderPlugins.registerParameterPlugins(plugins);
 
-        //GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
-        //config.withEagerResolving(true);
+        GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
+        config.withEagerResolving(true);
 
-        // config.setUseProfiling(false);
-        //suite.appendPhase(new GraphBuilderPhase(config));
+        //config.setUseProfiling(false);
+        suite.appendPhase(new GraphBuilderPhase(config));
 
-        //return suite;
+        return suite;
     }
 
     public final TornadoLIRSuites createLIRSuites() {
