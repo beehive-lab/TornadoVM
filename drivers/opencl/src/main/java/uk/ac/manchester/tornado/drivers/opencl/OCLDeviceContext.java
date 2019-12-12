@@ -399,4 +399,12 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     public OCLInstalledCode getCode(String id, String entryPoint) {
         return codeCache.getCode(id, entryPoint);
     }
+
+    public OCLInstalledCode getInstalledCode(String id, String entryPoint) {
+        return codeCache.getInstalledCode(id, entryPoint);
+    }
+
+    public OCLCodeCache getCodeCache() {
+        return this.codeCache;
+    }
 }
