@@ -46,9 +46,8 @@ import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Option
 public class OCLLowTier extends TornadoLowTier {
 
     public OCLLowTier(OptionValues options, AddressLowering addressLowering) {
-        CanonicalizerPhase canonicalizer = null;
+        CanonicalizerPhase canonicalizer;
         if (ImmutableCode.getValue(options)) {
-//            canonicalizer.disableReadCanonicalization();
             canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
         } else {
             canonicalizer = CanonicalizerPhase.create();
@@ -79,8 +78,6 @@ public class OCLLowTier extends TornadoLowTier {
         appendPhase(new DeadCodeEliminationPhase(Required));
 
         appendPhase(new TornadoLoopCanonicalization());
-//        appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.FINAL_SCHEDULE));
-//        appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST));
         appendPhase(new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST_OUT_OF_LOOPS));
 
         if (TornadoOptions.FEATURE_EXTRACTION) {

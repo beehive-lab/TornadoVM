@@ -348,8 +348,6 @@ public class ReduceCPUSnippets implements Snippets {
                 args.add("value", extra);
             }
 
-            // TODO check this is correct
-//            template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
             template(storeAtomicIndexed, args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
         }
     }

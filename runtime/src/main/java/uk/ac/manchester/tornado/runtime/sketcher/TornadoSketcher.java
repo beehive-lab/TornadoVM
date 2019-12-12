@@ -37,9 +37,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-//import org.graalvm.compiler.debug.Debug.Scope;
 import org.graalvm.compiler.debug.*;
-//import org.graalvm.compiler.debug.internal.method.MethodMetricsRootScopeInfo;
 import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
@@ -50,18 +48,11 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
 
-import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
-import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
-import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
 
 public class TornadoSketcher {
 
@@ -83,21 +74,15 @@ public class TornadoSketcher {
     }
 
     static void buildSketch(SketchRequest request) {
-//        DebugEnvironment.ensureInitialized(getTornadoRuntime().getOptions());
-
-//        debugContext.scope(request.resolvedMethod);
-
         if (cache.containsKey(request.resolvedMethod)) {
             return;
         }
         cache.put(request.resolvedMethod, request);
-//        try (DebugContext.Scope ignored = MethodMetricsRootScopeInfo.createRootScopeIfAbsent(request.resolvedMethod)) {
-            try (DebugContext.Scope ignored1 = getDebugContext().scope("SketchCompiler")) {
+            try (DebugContext.Scope ignored = getDebugContext().scope("SketchCompiler")) {
                 request.result = buildSketch(request.meta, request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier);
             } catch (Throwable e) {
                 throw getDebugContext().handle(e);
             }
-//        }
     }
 
     private static Sketch buildSketch(TaskMetaData meta, ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier) {

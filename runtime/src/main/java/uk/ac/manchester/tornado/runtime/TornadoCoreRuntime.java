@@ -28,7 +28,6 @@ package uk.ac.manchester.tornado.runtime;
 import static org.graalvm.compiler.debug.GraalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.SHOULD_LOAD_RMI;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -37,11 +36,9 @@ import java.util.WeakHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-//import jdk.internal.vm.compiler.collections.EconomicMap;
 import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.debug.DebugContext;
-import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
 import org.graalvm.compiler.lir.constopt.ConstantLoadOptimization;
 import org.graalvm.compiler.lir.phases.PostAllocationOptimizationStage;
@@ -67,7 +64,6 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
     static {
         EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
         opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
-//        opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
 
         opts.put(GraalOptions.OmitHotExceptionStacktrace, false);
 

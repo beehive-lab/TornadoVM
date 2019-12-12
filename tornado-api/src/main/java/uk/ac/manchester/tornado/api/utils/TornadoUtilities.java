@@ -42,11 +42,7 @@
 package uk.ac.manchester.tornado.api.utils;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
-
-//import sun.misc.Unsafe;
 
 public class TornadoUtilities {
 
@@ -292,19 +288,6 @@ public class TornadoUtilities {
         }
         System.out.println();
     }
-
-//    public static Unsafe getUnsafe() {
-//        Unsafe result = null;
-//        try {
-//            Constructor<Unsafe> unsafeConstructor = Unsafe.class.getDeclaredConstructor();
-//            unsafeConstructor.setAccessible(true);
-//
-//            result = unsafeConstructor.newInstance();
-//        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-//            e.printStackTrace();
-//        }
-//        return result;
-//    }
 
     public static double elapsedTimeInSeconds(long start, long end) {
         final long duration = end - start;

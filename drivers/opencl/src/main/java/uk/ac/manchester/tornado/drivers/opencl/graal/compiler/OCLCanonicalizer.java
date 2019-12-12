@@ -31,7 +31,6 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorElementOpNode;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-//public class OCLCanonicalizer extends CustomCanonicalizer {
 public class OCLCanonicalizer implements CanonicalizerPhase.CustomCanonicalization {
 
     protected MetaAccessProvider metaAccess;

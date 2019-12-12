@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -46,10 +45,8 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
-import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoLoopUnroller;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeReplacement;
@@ -252,10 +249,8 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             graph.getNewNodes(mark).filter(PiNode.class).forEach(pi -> {
                 if (pi.stamp(NodeView.DEFAULT) instanceof ObjectStamp && pi.object().stamp(NodeView.DEFAULT) instanceof ObjectStamp) {
                     pi.replaceAtUsages(pi.object());
-
                     pi.clearInputs();
                     pi.safeDelete();
-                    // graph.removeFloating(pi);
                 }
             });
 
@@ -271,8 +266,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
             getDebugContext().dump(DebugContext.INFO_LEVEL, graph, "After TaskSpecialisation iteration=" + iterations);
 
-            // boolean hasGuardingPiNodes =
-            // graph.getNodes().filter(GuardingPiNode.class).isNotEmpty();
             hasWork = (lastNodeCount != graph.getNodeCount() || graph.getNewNodes(mark).isNotEmpty()) // ||
                                                                                                       // hasGuardingPiNodes)
                     && (iterations < MAX_ITERATIONS);
@@ -294,7 +287,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             // isNullNode.usages().filter(GuardingPiNode.class).distinct()) {
             // guardingPiNode.replaceAtUsages(param);
             // }
-
         }
     }
 }

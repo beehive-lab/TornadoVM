@@ -78,9 +78,6 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
         arrayHeaderSize = getVMConfig().getArrayBaseOffset(kind);
         onDevice = false;
         bufferOffset = -1;
-
-//        System.out.println("arrayLengthOffset = " + arrayLengthOffset);
-//        System.out.println("arrayHeaderSize = " + arrayHeaderSize);
     }
 
     public long getBatchSize() {

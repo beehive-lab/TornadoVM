@@ -34,7 +34,7 @@ import textwrap
 ## ========================================================================================
 __TORNADO_FLAGS__ = "-Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
 __JVM_FLAGS__ = "-Xms24G -Xmx24G -server "
-__RUNNER__ = " uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
+__RUNNER__ = " -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
 __DEVICES__ = [
 	"-Ddevices=0:0",
 	"-Ddevices=0:1",

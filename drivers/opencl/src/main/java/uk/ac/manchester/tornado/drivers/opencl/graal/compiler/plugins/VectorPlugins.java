@@ -237,7 +237,6 @@ public final class VectorPlugins {
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
                 // No need to set stamp as it is inferred from the stamp of the incoming value
-                //TODO no guards and bounding checks??
                 StoreIndexedNode indexedStore = new StoreIndexedNode(array, index, null, null, elementKind, value);
                 b.append(b.append(indexedStore));
                 return true;

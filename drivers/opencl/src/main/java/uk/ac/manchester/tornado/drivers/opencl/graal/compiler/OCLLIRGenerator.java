@@ -66,9 +66,6 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLTernary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
-import java.util.BitSet;
-import java.util.List;
-
 public class OCLLIRGenerator extends LIRGenerator {
 
     private OCLBuiltinTool oclBuiltinTool;

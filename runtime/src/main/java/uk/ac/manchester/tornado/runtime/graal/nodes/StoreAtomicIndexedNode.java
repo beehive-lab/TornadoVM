@@ -23,14 +23,13 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.nodes;
 
-import static org.graalvm.compiler.nodeinfo.InputType.State;
-
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.java.AccessIndexedNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.Virtualizable;
@@ -47,17 +46,11 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     @Input ValueNode value;
     @Input ValueNode accumulator;
     @Input ValueNode inputArray;
-
     @Input StoreAtomicIndexedNodeExtension extension;
-
-//    @OptionalInput(State) FrameState stateAfter;
-//    @OptionalInput ValueNode extraOperation;
-//    @OptionalInput ValueNode startNode;
     //@formatter:on
 
     @Override
     public FrameState stateAfter() {
-//        return stateAfter;
         return extension.getStateAfter();
     }
 
@@ -65,7 +58,6 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     public void setStateAfter(FrameState x) {
         assert x == null || x.isAlive() : "frame state must be in a graph";
         updateUsages(extension.getStateAfter(), x);
-//        stateAfter = x;
         extension.setStateAfter(x);
     }
 
@@ -78,15 +70,11 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
         return value;
     }
 
-    public StoreAtomicIndexedNode(ValueNode outputArray, ValueNode index, JavaKind elementKind, ValueNode value, ValueNode accumulator, ValueNode inputArray, StoreAtomicIndexedNodeExtension extension) {
-        //TODO do we need bound checking for this kind of node?
-        // Null parameter for now. Check AccessIndexedNode.java in graal
-        // null means no check has been performed until now
-        super(TYPE, StampFactory.forVoid(), outputArray, index, null, elementKind);
+    public StoreAtomicIndexedNode(ValueNode outputArray, ValueNode index, JavaKind elementKind, GuardingNode boundsCheck, ValueNode value, ValueNode accumulator, ValueNode inputArray, StoreAtomicIndexedNodeExtension extension) {
+        super(TYPE, StampFactory.forVoid(), outputArray, index, boundsCheck, elementKind);
         this.value = value;
         this.accumulator = accumulator;
         this.inputArray = inputArray;
-//        this.startNode = startNode;
         this.extension = extension;
     }
 
@@ -97,7 +85,6 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
 
     public FrameState getState() {
         return extension.getStateAfter();
-//        return stateAfter;
     }
 
     public ValueNode getAccumulator() {
@@ -106,7 +93,6 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
 
     public ValueNode getStartNode() {
         return extension.getStartNode();
-//        return startNode;
     }
 
     public ValueNode getInputArray() {
@@ -119,6 +105,5 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
 
     public ValueNode getExtraOperation() {
         return extension.getExtraOperation();
-//        return extraOperation;
     }
 }

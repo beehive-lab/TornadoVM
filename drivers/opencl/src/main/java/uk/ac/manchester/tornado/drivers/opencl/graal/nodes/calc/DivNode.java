@@ -21,8 +21,8 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 
 /*
-    This implementation is copied from the Graal compiler 0:22. We need to do this because on the OpenJDK11 version,
-    the DivNode does not exist any longer
+    This implementation is copied from the Graal compiler 0:22. We need to do this because on later versions of the compiler,
+    the DivNode as a child of FloatingNode does not exist any longer.
  */
 
 @NodeInfo(
@@ -33,13 +33,8 @@ public class DivNode extends BinaryArithmeticNode<ArithmeticOpTable.BinaryOp.Div
     public static final NodeClass<DivNode> TYPE = NodeClass.create(DivNode.class);
 
     public DivNode(ValueNode x, ValueNode y) {
-//        super(TYPE, ArithmeticOpTable::getDiv, x, y);
         super(TYPE, getArithmeticOpTable(x).getDiv(), x, y);
     }
-
-//    protected DivNode(NodeClass<? extends DivNode> c, ValueNode x, ValueNode y) {
-//        super(c, ArithmeticOpTable::getDiv, x, y);
-//    }
 
     public static ValueNode create(ValueNode x, ValueNode y) {
         ArithmeticOpTable.BinaryOp<ArithmeticOpTable.BinaryOp.Div> op = ArithmeticOpTable.forStamp(x.stamp(NodeView.DEFAULT)).getDiv();
@@ -51,7 +46,6 @@ public class DivNode extends BinaryArithmeticNode<ArithmeticOpTable.BinaryOp.Div
     @Override
     protected ArithmeticOpTable.BinaryOp<ArithmeticOpTable.BinaryOp.Div> getOp(ArithmeticOpTable table) {
         return table.getDiv();
-//        return null;
     }
 
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {

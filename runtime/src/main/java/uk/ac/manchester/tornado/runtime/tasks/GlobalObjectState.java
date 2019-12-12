@@ -68,14 +68,9 @@ public class GlobalObjectState implements TornadoGlobalObjectState {
         if (!(device instanceof TornadoAcceleratorDevice)) {
             throw new RuntimeException("Device not compatible");
         }
-
-//        System.out.println("GlobalObjectState::getDeviceState device = " + device);
-
         if (!deviceStates.containsKey(device)) {
             deviceStates.put((TornadoAcceleratorDevice) device, new DeviceObjectState());
         }
-
-//        System.out.println("GlobalObjectState::getDeviceState deviceStates.get(device) = " + deviceStates.get(device));
         return deviceStates.get(device);
     }
 

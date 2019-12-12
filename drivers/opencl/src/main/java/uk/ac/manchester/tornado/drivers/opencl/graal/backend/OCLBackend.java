@@ -384,12 +384,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return deviceContext;
     }
 
-//    @Override
     protected OCLAssembler createAssembler(FrameMap frameMap) {
         return new OCLAssembler(target);
     }
 
-//    @Override
     public void emitCode(CompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
         emitCode((OCLCompilationResultBuilder) crb, lir, method);
     }
@@ -570,7 +568,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return ((OCLProviders) getProviders()).getSuitesProvider();
     }
 
-//    @Override
     public CompilationResultBuilder newCompilationResultBuilder(LIRGenerationResult lirGenRes, FrameMap frameMap, CompilationResult compilationResult, CompilationResultBuilderFactory factory) {
         return newCompilationResultBuilder(lirGenRes, frameMap, (OCLCompilationResult) compilationResult, factory, false, false);
     }
@@ -587,28 +584,23 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return crb;
     }
 
-//    @Override
     public FrameMap newFrameMap(RegisterConfig registerConfig) {
         return new OCLFrameMap(getCodeCache(), registerConfig, this);
     }
 
-//    @Override
     public FrameMapBuilder newFrameMapBuilder(RegisterConfig registerConfig) {
         RegisterConfig registerConfigNonNull = registerConfig == null ? getCodeCache().getRegisterConfig() : registerConfig;
         return new OCLFrameMapBuilder(newFrameMap(registerConfigNonNull), getCodeCache(), registerConfig);
     }
 
-//    @Override
     public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder, RegisterAllocationConfig registerAllocationConfig, StructuredGraph graph, Object stub) {
         return new OCLLIRGenerationResult(identifier, lir, frameMapBuilder, registerAllocationConfig ,new CallingConvention(0, null, (AllocatableValue[]) null));
     }
 
-//    @Override
     public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenResult) {
         return new OCLLIRGenerator(getProviders(), lirGenResult);
     }
 
-//    @Override
     public NodeLIRBuilderTool newNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool lirGen) {
         return new OCLNodeLIRBuilder(graph, lirGen, new OCLNodeMatchRules(lirGen));
     }

@@ -59,15 +59,13 @@ public class OCLHighTier extends TornadoHighTier {
     public OCLHighTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer) {
         super(customCanonicalizer);
 
-        CanonicalizerPhase canonicalizer = null;
+        CanonicalizerPhase canonicalizer;
         if (ImmutableCode.getValue(options)) {
-//            canonicalizer.disableReadCanonicalization();
             canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
         } else {
             canonicalizer = CanonicalizerPhase.create();
         }
 
-//        final CanonicalizerPhase canonicalizer = new CanonicalizerPhase(customCanonicalizer);
         canonicalizer = canonicalizer.copyWithCustomCanonicalization(customCanonicalizer);
 
         appendPhase(canonicalizer);

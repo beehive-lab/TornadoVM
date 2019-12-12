@@ -33,10 +33,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import jdk.vm.ci.meta.JavaKind;
-
 import org.graalvm.compiler.bytecode.Bytecodes;
-
 
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.JavaMethod;
@@ -153,11 +150,6 @@ public class TaskUtils {
                     getMethod.setAccessible(true);
                     Method m = (Method) getMethod.invoke(hotSpotJDKReflection, jm);
                     m.setAccessible(true);
-
-//                    Method toJavaMethod = jm.getClass().getDeclaredMethod("toJava");
-//                    toJavaMethod.setAccessible(true);
-//                    Method m = (Method) toJavaMethod.invoke(jm);
-//                    m.setAccessible(true);
                     return m;
                 } catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | ClassNotFoundException e) {
                     e.printStackTrace();

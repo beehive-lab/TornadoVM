@@ -26,9 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.AbstractWriteNode;
@@ -39,8 +37,6 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.word.LocationIdentity;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 @NodeInfo(nameTemplate = "OCLWrite#{p#location/s}")
 public class OCLWriteNode extends AbstractWriteNode implements LIRLowerableAccess {
@@ -86,13 +82,5 @@ public class OCLWriteNode extends AbstractWriteNode implements LIRLowerableAcces
     @Override
     public LocationIdentity getKilledLocationIdentity() {
         return getLocationIdentity();
-//        unimplemented("OCLWriteNode::getKilledLocationIdentity not implemented");
-//        return null;
     }
-
-//    @Override
-//    public NodeIterable<FrameState> states() {
-//        unimplemented("OCLWriteNode::states not implemented");
-//        return null;
-//    }
 }

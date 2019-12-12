@@ -49,7 +49,7 @@ tornado \
     -Dtornado.opencl.accelerator.fpga=true \
     -Dtornado.fpga.flags=-v,-report,-fp-relaxed  \
     -Dtornado.opencl.userelative=True \
-    uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1
+    -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 1
 ```
 
 ### Ahead of Time Execution Mode
@@ -66,7 +66,7 @@ tornado \
     -Ds0.t0.local.dims=64 \
     -Dtornado.precompiled.binary=/path/to/lookupBufferAddress,s0.t0.device=0:1 \
     -Dtornado.opencl.userelative=True \
-    uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
+    -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
 ```
 
 ### Emulation Mode [on Intel-Altera FPGAs]
@@ -86,6 +86,6 @@ env CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA=1 tornado \
     -Ds0.t0.device=0:1 \
     -Dtornado.fpga.flags=-v,-report,-fp-relaxed  \
     -Dtornado.opencl.userelative=True \
-    uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
+    -m tornado.examples/uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 1024 normal 10
 ```
 

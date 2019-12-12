@@ -76,12 +76,6 @@ import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 import uk.ac.manchester.tornado.runtime.graal.nodes.*;
 import uk.ac.manchester.tornado.runtime.graal.phases.MarkLocalArray;
 
-import java.util.Iterator;
-
-import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCATION;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-
 public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     private static final boolean USE_ATOMICS = false;
@@ -161,9 +155,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     protected JavaKind getStorageKind(ResolvedJavaField field) {
-        System.out.println("OCLLoweringProvider::getStorageKind = " + field.getJavaKind().getJavaName());
         return field.getJavaKind();
-//        return null;
     }
 
     private void lowerReduceSnippets(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
@@ -220,7 +212,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         StructuredGraph graph = integerDivRemNode.graph();
         switch (integerDivRemNode.getOp()) {
             case DIV:
-//                FixedWithNextNode div = (FixedWithNextNode) graph.addOrUnique(SignedDivNode.create(integerDivRemNode.getX(), integerDivRemNode.getY(), integerDivRemNode.getZeroCheck(), NodeView.DEFAULT));
                 ValueNode div = graph.addOrUnique(DivNode.create(integerDivRemNode.getX(), integerDivRemNode.getY()));
                 graph.replaceFixedWithFloating(integerDivRemNode, div);
                 break;
@@ -249,7 +240,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
 
         Stamp loadStamp = loadIndexed.stamp(NodeView.DEFAULT);
         if (!(loadIndexed.stamp(NodeView.DEFAULT) instanceof OCLStamp)) {
-//            loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind);
             loadStamp = loadStamp(loadIndexed.stamp(NodeView.DEFAULT), elementKind, false);
         }
         address = createArrayAccess(graph, loadIndexed, elementKind);
@@ -277,8 +267,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
 
         AddressNode address = createArrayAddress(graph, array, elementKind, storeIndexed.index());
-//        OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.array(), storeIndexed.elementKind()),
-//                accumulator, accumulator.stamp(NodeView.DEFAULT), storeIndexed.elementKind(), operation));
         OCLWriteAtomicNode memoryWrite = graph.add(new OCLWriteAtomicNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()),
                 accumulator, accumulator.stamp(NodeView.DEFAULT), storeIndexed.elementKind(), operation));
         memoryWrite.setStateAfter(storeIndexed.stateAfter());
@@ -375,8 +363,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         StructuredGraph graph = vectorStore.graph();
         JavaKind elementKind = vectorStore.elementKind();
         AddressNode address = createArrayAddress(graph, vectorStore.array(), elementKind, vectorStore.index());
-        //TODO is the barrier type correct? Should be volatileAccess hardcoded to true?
-//        WriteNode vectorWrite = graph.addWithoutUnique(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), vectorStore.value(), BarrierType.PRECISE));
         WriteNode vectorWrite = graph.addWithoutUnique(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), vectorStore.value(), BarrierType.ARRAY, true));
         graph.replaceFixed(vectorStore, vectorWrite);
     }
@@ -419,10 +405,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
     }
 
-
     public int arrayBaseOffset(JavaKind kind) {
         return metaAccess.getArrayBaseOffset(kind);
-//        return getArrayBaseOffset(kind);
     }
 
     @Override
@@ -515,10 +499,8 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
             memoryWrite = graph.add(new OCLWriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), elementKind));
         } else if (isLocalIdNode(storeIndexed)) {
             address = createArrayLocalAddress(graph, array, storeIndexed.index());
-            //TODO should volatile be hardcoded to true?
             memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), true));
         } else {
-            //TODO should volatile be hardcoded to true?
             memoryWrite = graph.add(new WriteNode(address, NamedLocationIdentity.getArrayLocation(elementKind), value, arrayStoreBarrierType(storeIndexed.elementKind()), true));
         }
         return memoryWrite;

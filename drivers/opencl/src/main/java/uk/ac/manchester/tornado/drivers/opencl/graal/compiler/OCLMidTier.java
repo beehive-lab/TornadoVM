@@ -50,9 +50,8 @@ public class OCLMidTier extends TornadoMidTier {
 
         appendPhase(new ExceptionCheckingElimination());
 
-        CanonicalizerPhase canonicalizer = null;
+        CanonicalizerPhase canonicalizer;
         if (ImmutableCode.getValue(options)) {
-//            canonicalizer.disableReadCanonicalization();
             canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
         } else {
             canonicalizer = CanonicalizerPhase.create();

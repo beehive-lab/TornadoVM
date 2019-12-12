@@ -23,21 +23,16 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
-import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.phases.common.inlining.InliningUtil;
 import org.graalvm.compiler.phases.common.inlining.info.InlineInfo;
 import org.graalvm.compiler.phases.common.inlining.policy.InliningPolicy;
 import org.graalvm.compiler.phases.common.inlining.walker.MethodInvocation;
-import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 
 import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
 import static org.graalvm.compiler.core.common.GraalOptions.MaximumInliningSize;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 
 public class TornadoInliningPolicy implements InliningPolicy {
 
@@ -46,7 +41,6 @@ public class TornadoInliningPolicy implements InliningPolicy {
 
     @Override
     public boolean continueInlining(StructuredGraph graph) {
-
         if (graph.getNodeCount() >= MaximumDesiredSize.getValue(graph.getOptions())) {
             InliningUtil.logInliningDecision(getDebugContext(), "inlining is cut off by MaximumDesiredSize");
             return false;

@@ -2,6 +2,7 @@ open module tornado.examples {
     requires ejml.ddense;
 
     requires transitive ejml.core;
+    requires transitive lucene.core;
     requires transitive java.desktop;
     requires transitive tornado.api;
 

@@ -4,5 +4,4 @@ module tornado.annotation {
     requires transitive tornado.runtime;
 
     exports uk.ac.manchester.tornado.annotation;
-
 }

@@ -31,6 +31,8 @@
     #include <CL/cl.h>
 #endif
 
+#include <stdio.h>
+
 /*
  * It returns the time in nanoseconds
  */

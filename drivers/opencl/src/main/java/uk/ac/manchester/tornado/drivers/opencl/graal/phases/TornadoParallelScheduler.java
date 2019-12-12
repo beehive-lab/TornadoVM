@@ -23,36 +23,30 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
-import static uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy.PER_BLOCK;
-import static uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy.PER_ITERATION;
-
+import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
-import org.graalvm.compiler.nodes.calc.SignedDivNode;
 import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.phases.BasePhase;
-
-import jdk.vm.ci.meta.JavaKind;
-import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
-import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 import uk.ac.manchester.tornado.runtime.graal.nodes.AbstractParallelNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelOffsetNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelStrideNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
+
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy.PER_BLOCK;
+import static uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy.PER_ITERATION;
 
 public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> {
 
@@ -121,14 +115,12 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
     // CPU-Scheduling with Stride
     private void buildBlockSize(StructuredGraph graph, ParallelRangeNode range) {
-//        final ValueNode rangeByStride = graph.addOrUnique(SignedDivNode.create(range.value(), range.stride().value(), null, NodeView.DEFAULT));
         final ValueNode rangeByStride = graph.addOrUnique(DivNode.create(range.value(), range.stride().value()));
         final SubNode trueRange = graph.addOrUnique(new SubNode(rangeByStride, range.offset().value()));
         final ConstantNode index = ConstantNode.forInt(range.index(), graph);
         final GlobalThreadSizeNode threadCount = graph.addOrUnique(new GlobalThreadSizeNode(index));
         final SubNode threadCountM1 = graph.addOrUnique(new SubNode(threadCount, ConstantNode.forInt(1, graph)));
         final AddNode adjustedTrueRange = graph.addOrUnique(new AddNode(trueRange, threadCountM1));
-//        final ValueNode div = graph.addOrUnique(SignedDivNode.create(adjustedTrueRange, threadCount, null, NodeView.DEFAULT));
         final ValueNode div = graph.addOrUnique(DivNode.create(adjustedTrueRange, threadCount));
         blockSize = graph.addOrUnique(new MulNode(div, range.stride().value()));
     }
@@ -153,14 +145,12 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
     // ========================================
     // GPU-Scheduling
     private void buildBlockSizeAccelerator(StructuredGraph graph, ParallelRangeNode range) {
-//        final ValueNode rangeByStride = graph.addOrUnique(SignedDivNode.create(range.value(), range.stride().value(), null, NodeView.DEFAULT));
         final ValueNode rangeByStride = graph.addOrUnique(DivNode.create(range.value(), range.stride().value()));
         final SubNode trueRange = graph.addOrUnique(new SubNode(rangeByStride, range.offset().value()));
         final ConstantNode index = ConstantNode.forInt(range.index(), graph);
         final GlobalThreadSizeNode threadCount = graph.addOrUnique(new GlobalThreadSizeNode(index));
         final SubNode threadCountM1 = graph.addOrUnique(new SubNode(threadCount, ConstantNode.forInt(1, graph)));
         final AddNode adjustedTrueRange = graph.addOrUnique(new AddNode(trueRange, threadCountM1));
-//        blockSize = graph.addOrUnique(SignedDivNode.create(adjustedTrueRange, threadCount, null, NodeView.DEFAULT));
         blockSize = graph.addOrUnique(DivNode.create(adjustedTrueRange, threadCount));
     }
 

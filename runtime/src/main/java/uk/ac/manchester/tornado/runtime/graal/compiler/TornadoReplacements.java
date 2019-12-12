@@ -26,17 +26,13 @@ package uk.ac.manchester.tornado.runtime.graal.compiler;
 import jdk.vm.ci.code.TargetDescription;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
-import org.graalvm.compiler.debug.DebugHandlersFactory;
-import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import org.graalvm.compiler.replacements.ReplacementsImpl;
 
 public class TornadoReplacements extends ReplacementsImpl {
 
-//    public TornadoReplacements(OptionValues options, GraalDebugHandlersFactory graalDebugHandlersFactory, Providers providers, SnippetReflectionProvider snippetReflection, BytecodeProvider bytecodeProvider, TargetDescription target) {
     public TornadoReplacements(GraalDebugHandlersFactory graalDebugHandlersFactory, Providers providers, SnippetReflectionProvider snippetReflection, BytecodeProvider bytecodeProvider, TargetDescription target) {
-//        super(options, graalDebugHandlersFactory, providers, snippetReflection, bytecodeProvider, target);
         super(graalDebugHandlersFactory, providers, snippetReflection, bytecodeProvider, target);
     }
 
