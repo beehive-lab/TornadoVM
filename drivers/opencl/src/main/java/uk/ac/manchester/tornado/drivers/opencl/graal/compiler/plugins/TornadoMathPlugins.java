@@ -159,7 +159,6 @@ public class TornadoMathPlugins {
                 return true;
             }
         });
-
     }
 
     private static void registerFloatMath3Plugins(Registration r, Class<?> type, JavaKind kind) {

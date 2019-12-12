@@ -79,7 +79,6 @@ public class OCLContext extends TornadoLogger {
     private final OCLPlatform platform;
 
     private static final int MAX_ALLOCATED_REGIONS = 64;
-    private static final int BUFFER_CAPACITY = 128;
 
     public OCLContext(OCLPlatform platform, long id, List<OCLDevice> devices) {
         this.platform = platform;
