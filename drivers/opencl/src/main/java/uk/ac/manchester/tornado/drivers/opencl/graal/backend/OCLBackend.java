@@ -268,10 +268,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         int deviceIndex = Integer.parseInt(deviceDriver.split(":")[1]);
         OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
         String platformName = device.getPlatformName();
-        if (!isDeviceAnAccelerator() || !isFPGA(platformName)) {
+        if (!isDeviceAnFPGAAccelerator() || !isFPGA(platformName)) {
             return false;
         } else {
-            return isDeviceAnAccelerator() && (isFPGA(platformName));
+            return isDeviceAnFPGAAccelerator() && (isFPGA(platformName));
         }
     }
 
@@ -312,7 +312,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
             boolean isCompilationForFPGAs = isJITCompilationForFPGAs(deviceFullName);
 
-            if (isDeviceAnAccelerator()) {
+            if (isDeviceAnFPGAAccelerator()) {
                 lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode());
             } else {
                 lookupCode = deviceContext.installCode(result);
@@ -372,7 +372,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return meta;
     }
 
-    private boolean isDeviceAnAccelerator() {
+    private boolean isDeviceAnFPGAAccelerator() {
         return deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
     }
 
