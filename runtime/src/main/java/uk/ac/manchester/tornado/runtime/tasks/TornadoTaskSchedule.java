@@ -75,6 +75,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
@@ -361,21 +362,27 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         vm.compile();
     }
 
+    /**
+     * If current FPGA execution and JIT mode, then run warm-up.
+     */
     private void preCompilationForFPGA() {
-        // If current FPGA execution and JIT mode => run warmup
-        if (Tornado.FPGA_EMULATION && Tornado.ACCELERATOR_IS_FPGA) {
+        boolean compile = false;
+        if (Tornado.ACCELERATOR_IS_FPGA) {
+            if (Tornado.FPGA_EMULATION) {
+                compile = true;
+            } else if (graphContext.getDeviceFirtTask() instanceof TornadoAcceleratorDevice) {
+                TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) graphContext.getDeviceFirtTask();
+                if (device.isFullJITMode(graphContext.getTask(0))) {
+                    compile = true;
+                }
+            }
+        }
+
+        if (compile) {
             if (Tornado.DEBUG) {
-                System.out.println("Compilation for Emulation");
+                System.out.println("[DEBUG] JIT compilation for the FPGA");
             }
             compileTaskToOpenCL();
-        } else if (graphContext.getDeviceFirtTask() instanceof TornadoAcceleratorDevice && Tornado.ACCELERATOR_IS_FPGA) {
-            TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) graphContext.getDeviceFirtTask();
-            if (device.isFullJITMode(graphContext.getTask(0))) {
-                if (Tornado.DEBUG) {
-                    System.out.println("Compilation for full JIT");
-                }
-                compileTaskToOpenCL();
-            }
         }
     }
 

@@ -97,7 +97,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         return function.apply(object);
     }
 
-    private Object lookupRefField(StructuredGraph graph, Node node, Object obj, String field) {
+    private Object lookupRefField(Object obj, String field) {
         final Class<?> type = obj.getClass();
         final Field f = lookupField(type, field);
         Object result = null;
@@ -161,14 +161,11 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
         return constant;
     }
 
     private void evaluate(final StructuredGraph graph, final Node node, final Object param) {
-
         final Object value = (param instanceof WeakReference) ? ((WeakReference<?>) param).get() : param;
-        // Tornado.debug("evaluate: node=%s, object=%s", node, value);
 
         if (node instanceof ArrayLengthNode) {
             ArrayLengthNode arrayLength = (ArrayLengthNode) node;
@@ -180,21 +177,14 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         } else if (node instanceof LoadFieldNode) {
             final LoadFieldNode loadField = (LoadFieldNode) node;
             final ResolvedJavaField field = loadField.field();
-            // Tornado.debug("load field: name=%s, type=%s, declaring class=%s",
-            // field.getName(),
-            // field.getType().toJavaName(),
-            // field.getDeclaringClass().getName());
             if (field.getType().getJavaKind().isPrimitive()) {
                 ConstantNode constant = lookupPrimField(graph, node, value, field.getName(), field.getJavaKind());
                 constant = graph.addOrUnique(constant);
-                // Tornado.debug("Replaced %s with %s", node, constant);
                 node.replaceAtUsages(constant);
                 loadField.clearInputs();
                 graph.removeFixed(loadField);
-                // Tornado.debug("removed %s", loadField);
             } else if (field.isFinal()) {
-                // Tornado.debug("propagating final fields...");
-                Object object = lookupRefField(graph, node, value, field.getName());
+                Object object = lookupRefField(value, field.getName());
                 node.usages().forEach(n -> evaluate(graph, n, object));
             }
         } else if (node instanceof IsNullNode) {
@@ -206,7 +196,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 isNullNode.replaceAtUsages(LogicConstantNode.contradiction(graph));
             }
             isNullNode.safeDelete();
-            // graph.removeFloating(isNullNode);
         }
     }
 
@@ -217,7 +206,6 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         } else if (obj instanceof Integer) {
             result = ConstantNode.forInt((int) obj);
         }
-
         return result;
     }
 
@@ -233,14 +221,12 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
 
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
-
         int iterations = 0;
 
         int lastNodeCount = graph.getNodeCount();
         boolean hasWork = true;
         while (hasWork) {
             final Mark mark = graph.getMark();
-
             if (context.hasArgs()) {
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                     propagateParameters(graph, param, context.getArgs());
@@ -248,7 +234,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
                 Debug.dump(INFO_LEVEL, graph, "After Phase Propagate Parameters");
             } else {
                 for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                    assumeNonNull(graph, param);
+                    assumeNonNull(param);
                 }
                 Debug.dump(INFO_LEVEL, graph, "After Phase assume non null Parameters");
             }
@@ -293,7 +279,7 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
         debug("valid graph? %s", graph.verify());
     }
 
-    private void assumeNonNull(StructuredGraph graph, ParameterNode param) {
+    private void assumeNonNull(ParameterNode param) {
         if (param.getStackKind().isObject() && param.usages().filter(IsNullNode.class).count() > 0) {
             unimplemented("assumeNonNull: param %s", param);
         }

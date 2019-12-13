@@ -45,7 +45,6 @@ import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;

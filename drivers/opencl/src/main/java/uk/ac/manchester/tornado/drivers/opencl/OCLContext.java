@@ -79,7 +79,6 @@ public class OCLContext extends TornadoLogger {
     private final OCLPlatform platform;
 
     private static final int MAX_ALLOCATED_REGIONS = 64;
-    private static final int BUFFER_CAPACITY = 128;
 
     public OCLContext(OCLPlatform platform, long id, List<OCLDevice> devices) {
         this.platform = platform;
@@ -197,30 +196,11 @@ public class OCLContext extends TornadoLogger {
         return program;
     }
 
-    private OCLProgram lookupFPGAOpenCLProgram(long deviceId) {
-        int programsLength = programs.size();
-        for (int i = 0; i < programsLength; i++) {
-            OCLProgram fetchedProgram = programs.get(i);
-            int numDevices = fetchedProgram.getNumDevices();
-            long[] devices = fetchedProgram.getDevices();
-            for (int j = 0; j < numDevices; j++) {
-                if (devices[j] == deviceId) {
-                    return programs.get(i);
-                }
-            }
-        }
-        return null;
-    }
-
     public OCLProgram createProgramWithBinary(long deviceId, byte[] binary, long[] lengths, OCLDeviceContext deviceContext) {
         OCLProgram program = null;
 
         try {
-            program = lookupFPGAOpenCLProgram(deviceId);
-            if (program == null) {
-                program = new OCLProgram(clCreateProgramWithBinary(id, deviceId, binary, lengths), deviceContext);
-                programs.add(program);
-            }
+            program = new OCLProgram(clCreateProgramWithBinary(id, deviceId, binary, lengths), deviceContext);
         } catch (OCLException e) {
             error(e.getMessage());
         }
