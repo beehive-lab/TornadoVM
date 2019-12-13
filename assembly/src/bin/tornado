@@ -203,7 +203,7 @@ PROVIDERS=" \
 -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
 -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel "
 
-JAVA_FLAGS="-server -XX:-UseBiasedLocking -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler -XX:-UseCompressedOops ${TORNADO_FLAGS} ${PROVIDERS} ${PACKAGE_LIST[*]} "
+JAVA_FLAGS="-server -XX:+UseParallelOldGC -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler -XX:-UseBiasedLocking -XX:-UseCompressedOops ${TORNADO_FLAGS} ${PROVIDERS} ${PACKAGE_LIST[*]} "
 
 if [ $printflags -eq 1 ] ; then
 	echo $JAVA_CMD
