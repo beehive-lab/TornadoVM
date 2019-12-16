@@ -9,11 +9,11 @@ then
 	exit 0
 fi
 
-VERSION=0.4
+VERSION=0.5
 GROUPID="tornado"
 API_PATH=$TORNADO_SDK/share/java/tornado
 
-declare -a artifacts=("tornado-api" "tornado-benchmarks" "tornado-examples" "tornado-drivers-opencl" "tornado-matrices" "tornado-runtime")
+declare -a artifacts=("tornado-api" "tornado-annotation" "tornado-benchmarks" "tornado-examples" "tornado-drivers-opencl" "tornado-matrices" "tornado-runtime")
 
 for artifact in "${artifacts[@]}"
 do
@@ -26,7 +26,7 @@ do
 		-Dpackaging=jar \
 		-DgeneratePom=true \
 		-DlocalRepositoryPath=. \
-		 -DcreateChecksum=true 
+		-DcreateChecksum=true 
 done
 
 echo "Installing artifact: tornado-drivers-opencl-jni"

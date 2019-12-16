@@ -14,13 +14,14 @@ To include the latest version in your project:
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>0.4</version>
+         <version>0.5</version>
       </dependency>
    </dependencies>
 ```
 
 ## Versions available
 
+* 0.5
 * 0.4
 * 0.3 
 * 0.2   
@@ -45,5 +46,6 @@ Each Tornado module is licensed as follows:
 | Tornado-Benchmarks | [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)  |
 | Tornado-Examples |  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) |
 | Tornado-Matrices  |  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) |
+| Tornado-Annotation |  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) |
 
 
