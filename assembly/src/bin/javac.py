@@ -48,6 +48,11 @@ except:
 	classpathEnviron = ""
 	pass
 
+JDK_11_VERSION = "11.0"
+JDK_8_VERSION = "1.8"
+# Get java version
+javaVersion = subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
+
 jarFilesPath = TORNADO_SDK + "/share/java/tornado/"
 
 def runWithModulepath():
@@ -100,7 +105,7 @@ def runWithClasspath():
     print command
     os.system(command)
 
-useModuleSystem = any("module-info.java" in argument for argument in sys.argv)
+useModuleSystem = any("module-info.java" in argument for argument in sys.argv) and javaVersion == JDK_11_VERSION
 if (useModuleSystem):
     runWithModulepath()
 else:

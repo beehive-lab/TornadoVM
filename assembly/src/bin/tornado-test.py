@@ -76,8 +76,10 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
 # ################################################################################################################
 ## Options
-__MAIN_TORNADO_TEST_RUNNER__ = " tornado.unittests/uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
-__MAIN_TORNADO_JUNIT__ 		 = "junit/org.junit.runner.JUnitCore "
+__MAIN_TORNADO_TEST_RUNNER_MODULE__ = " tornado.unittests/"
+__MAIN_TORNADO_TEST_RUNNER__ = "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
+__MAIN_TORNADO_JUNIT_MODULE__ 		 = " junit/"
+__MAIN_TORNADO_JUNIT__ 		 = "org.junit.runner.JUnitCore "
 __IGV_OPTIONS__ 			 = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true "
 __PRINT_OPENCL_KERNEL__ 	 = "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ 			 = "-Dtornado.debug=True "
@@ -87,10 +89,18 @@ __PRINT_EXECUTION_TIMER__    = "-Dtornado.debug.executionTime=True "
 
 __VERSION__ = "0.6_16052019"
 
+JDK_11_VERSION = "11.0"
+JDK_8_VERSION = "1.8"
+try:
+	javaHome = os.environ["JAVA_HOME"]
+except:
+	print "[ERROR] JAVA_HOME is not defined"
+	sys.exit(-1)
+
 __TEST_NOT_PASSED__= False
 
 class Colors:
-	RED   = "\033[1;31m"  
+	RED   = "\033[1;31m"
 	BLUE  = "\033[1;34m"
 	CYAN  = "\033[1;36m"
 	GREEN = "\033[0;32m"
@@ -99,8 +109,8 @@ class Colors:
 	REVERSE = "\033[;7m"
 
 def composeAllOptions(args):
-	""" This method concatenates all JVM options that will be passed to 
-		the Tornado VM. New options should be concatenated in this method. 
+	""" This method concatenates all JVM options that will be passed to
+		the Tornado VM. New options should be concatenated in this method.
 	"""
 
 	verbose = "-Dtornado.unittests.verbose="
@@ -128,13 +138,13 @@ def composeAllOptions(args):
 
 	if (args.jvmFlags != None):
 		options = options + args.jvmFlags
-	
+
 	return options
 
 
 def runSingleCommand(cmd, args):
-	""" Run a command without processing the result of which tests 
-		are passed and failed. This method is used to pass a single 
+	""" Run a command without processing the result of which tests
+		are passed and failed. This method is used to pass a single
 		test quickly in the terminal.
 	"""
 
@@ -152,11 +162,11 @@ def runSingleCommand(cmd, args):
 
 
 def processStats(out, stats):
-	""" It updates the hash table `stats` for reporting the total number 
+	""" It updates the hash table `stats` for reporting the total number
 		of methods that were failed and passed
 	"""
-	
-	global __TEST_NOT_PASSED__ 
+
+	global __TEST_NOT_PASSED__
 
 	pattern = r'Test: class (?P<test_class>[\w\.]+)*\S*$'
 	regex = re.compile(pattern)
@@ -167,7 +177,7 @@ def processStats(out, stats):
 		match = regex.search(line)
 		if match != None:
 			className = match.groups(0)[0]
-		
+
 		l = re.sub(r'(  )+', '', line).strip()
 
 		if (l.find("[PASS]") != -1):
@@ -178,7 +188,7 @@ def processStats(out, stats):
 
 			# It removes characters for colors
 			name = name[5:-4]
-		
+
 			if (name.endswith(".")):
 				name = name[:-16]
 
@@ -187,7 +197,7 @@ def processStats(out, stats):
 			else:
 				## set a flag
 				__TEST_NOT_PASSED__ = True
-	
+
 	return stats
 
 
@@ -199,12 +209,12 @@ def runCommandWithStats(command, stats):
 
 	print err
 	print out
-	
+
 	return processStats(out, stats)
 
 
 def runTests(args):
-	""" Run the tests using the TornadoTestRunner program """	
+	""" Run the tests using the TornadoTestRunner program """
 
 	options = composeAllOptions(args)
 
@@ -213,9 +223,14 @@ def runTests(args):
 	## Run test
 	cmd = ""
 	if (args.useOptirun):
-		cmd = "optirun tornado " + __IGNORE_INTEL_PLATFORM__ + options + " -m " + __MAIN_TORNADO_TEST_RUNNER__
+		cmd = "optirun tornado " + __IGNORE_INTEL_PLATFORM__ + options
 	else:
-		cmd = "tornado " + options + " -m " + __MAIN_TORNADO_TEST_RUNNER__
+	    cmd = "tornado " + options
+
+	if (javaVersion == JDK_11_VERSION):
+	    cmd += " -m " + __MAIN_TORNADO_TEST_RUNNER_MODULE__
+	cmd += __MAIN_TORNADO_TEST_RUNNER__
+
 	if (args.testClass != None):
 
 		if (args.fast):
@@ -232,7 +247,7 @@ def runTests(args):
 				os.system(command)
 			else:
 				stats = runCommandWithStats(command, stats)
-		
+
 		end = time.time()
 		print Colors.CYAN
 
@@ -244,44 +259,48 @@ def runTests(args):
 			print Colors.CYAN
 			print stats
 			coverage = stats["[PASS]"] / float((stats["[PASS]"] + stats["[FAILED]"])) * 100.0
-			print "Coverage: " + str(round(coverage, 2))  + "%" 
+			print "Coverage: " + str(round(coverage, 2))  + "%"
 			print Colors.GREEN
 			print "=================================================="
 			print Colors.CYAN
 
 		print "Total Time(s): " + str(end-start)
 		print Colors. RESET
-		
+
 
 def runWithJUnit(args):
 	""" Run the tests using JUNIT """
 
-	cmd = "tornado -m" + __MAIN_TORNADO_JUNIT__
+	cmd = "tornado "
+	if (javaVersion == JDK_11_VERSION):
+	    cmd += " -m " + __MAIN_TORNADO_JUNIT_MODULE__
+
+	cmd += __MAIN_TORNADO_JUNIT__
 
 	if (args.testClass != None):
 		cmd = cmd + args.testClass
 		os.system(cmd)
-	else:	
+	else:
 		for t in __TEST_THE_WORLD__:
 			command = cmd + t
 			os.system(command)
 
 
 def parseArguments():
-	""" Parse command line arguments """ 
+	""" Parse command line arguments """
 	parser = argparse.ArgumentParser(description='Tool to execute tests in Tornado')
 	parser.add_argument('testClass', nargs="?", help='testClass#method')
 	parser.add_argument('--version', action="store_true", dest="version", default=False, help="Print version")
-	parser.add_argument('--verbose', "-V", action="store_true", dest="verbose", default=False, help="Run test in verbose mode")	
-	parser.add_argument('--printKernel', "-pk", action="store_true", dest="printKernel", default=False, help="Print OpenCL kernel")	
-	parser.add_argument('--junit', action="store_true", dest="junit", default=False, help="Run within JUnitCore main class")	
-	parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")	
+	parser.add_argument('--verbose', "-V", action="store_true", dest="verbose", default=False, help="Run test in verbose mode")
+	parser.add_argument('--printKernel', "-pk", action="store_true", dest="printKernel", default=False, help="Print OpenCL kernel")
+	parser.add_argument('--junit', action="store_true", dest="junit", default=False, help="Run within JUnitCore main class")
+	parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")
 	parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False, help="Debug Tornado")
-	parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")	
-	parser.add_argument('--optirun', "-optirun", action="store_true", dest="useOptirun", default=False, help="Use optirun with Tornado")	
-	parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")	
-	parser.add_argument('--printExec', dest="printExecution", action="store_true", default=False, help="Print OpenCL Kernel Execution Time")	
-	parser.add_argument('--jvm', "-J", dest="jvmFlags", required=False, default=None, help="Pass options to the JVM e.g. -J=\"-Ds0.t0.device=0:1\"")	
+	parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")
+	parser.add_argument('--optirun', "-optirun", action="store_true", dest="useOptirun", default=False, help="Use optirun with Tornado")
+	parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")
+	parser.add_argument('--printExec', dest="printExecution", action="store_true", default=False, help="Print OpenCL Kernel Execution Time")
+	parser.add_argument('--jvm', "-J", dest="jvmFlags", required=False, default=None, help="Pass options to the JVM e.g. -J=\"-Ds0.t0.device=0:1\"")
 	args = parser.parse_args()
 	return args
 
@@ -294,6 +313,10 @@ def writeStatusInFile():
 		f.write("OK")
 	f.close()
 
+def getJavaVersion():
+    # Get java version
+    global javaVersion
+    javaVersion = subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
 
 def main():
 	args = parseArguments()
@@ -302,10 +325,12 @@ def main():
 		print __VERSION__
 		sys.exit(0)
 
+	getJavaVersion()
+
 	if (args.junit):
 		runWithJUnit(args)
 	else:
-		runTests(args)	
+		runTests(args)
 
 	writeStatusInFile()
 	if (__TEST_NOT_PASSED__):
