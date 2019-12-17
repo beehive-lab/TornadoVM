@@ -1,6 +1,20 @@
 # TornadoVM Changelog
 This file summarizes the new features and major changes for each *TornadoVM* version. 
 
+## TornadoVM 0.5 
+16/12/2019
+  
+  * Initial support for Xilinx FPGAs
+  * TornadoVM API classes are now `Serializable`
+  * Initial support for local memory for reductions
+  * JVMCI built with local annotation patch removed. Now TornadoVM requires unmodified JDK8 with JVMCI support
+  * Support of multiple reductions within the same `task-schedules`
+  * Emulation mode on Intel FPGAs is fixed
+  * Fix reductions on Intel Integrated Graphics
+  * TornadoVM driver OpenCL initialization and OpenCL code cache improved
+  * Refactoring of the FPGA execution modes (full JIT and emulation modes improved).
+
+
 ## TornadoVM 0.4
 14/10/2019
 
