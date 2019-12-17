@@ -129,14 +129,16 @@ function print_version {
     exit 0
 }
 
-JARS=".:$PWD/"
-for jar in ${TORNADO_SDK}/share/java/tornado/*
-do
-  JARS="$JARS:$jar"
-done
-JARS=(\"$JARS:\")
+JAVA_CMD=${JAVA_HOME}/bin/java
+JAVA_VERSION=$("$JAVA_CMD" -version 2>&1 | awk -F[\"\.] -v OFS=. 'NR==1{print $2,$3}')
 
-TORNADO_FLAGS="-Djava.library.path=${TORNADO_SDK}/lib --module-path .:${TORNADO_SDK}/share/java/tornado:."
+TORNADO_FLAGS="-Djava.library.path=${TORNADO_SDK}/lib "
+if [ "$JAVA_VERSION" = "1.8" ]; then
+  TORNADO_FLAGS="${TORNADO_FLAGS} -Djava.ext.dirs=${TORNADO_SDK}/share/java/tornado"
+elif [ "$JAVA_VERSION" = "11.0" ]; then
+  TORNADO_FLAGS="${TORNADO_FLAGS} --module-path .:${TORNADO_SDK}/share/java/tornado:."
+fi
+
 printflags=0
 printdevices=0
 
@@ -194,7 +196,6 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-JAVA_CMD=${JAVA_HOME}/bin/java
 PROVIDERS=" \
 -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule \
 -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime \
@@ -203,7 +204,12 @@ PROVIDERS=" \
 -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
 -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel "
 
-JAVA_FLAGS="-server -XX:+UseParallelOldGC -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler -XX:-UseBiasedLocking -XX:-UseCompressedOops ${TORNADO_FLAGS} ${PROVIDERS} ${PACKAGE_LIST[*]} "
+JAVA_FLAGS="-server -XX:-UseCompressedOops "
+if [ "$JAVA_VERSION" = "1.8" ]; then
+  JAVA_FLAGS="${JAVA_FLAGS} -XX:-UseJVMCIClassLoader ${TORNADO_FLAGS} ${PROVIDERS} "
+elif [ "$JAVA_VERSION" = "11.0" ]; then
+  JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelOldGC -XX:-UseBiasedLocking ${TORNADO_FLAGS} ${PROVIDERS} ${PACKAGE_LIST[*]} "
+fi
 
 if [ $printflags -eq 1 ] ; then
 	echo $JAVA_CMD
@@ -212,7 +218,7 @@ if [ $printflags -eq 1 ] ; then
 fi
 
 if [ $printdevices -eq 1 ] ; then
-	tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput verbose	
+	tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput verbose
 	exit 0
 fi
 
