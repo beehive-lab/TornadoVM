@@ -123,6 +123,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
     private boolean flag = false;
+    private boolean backEndInitialized;
 
     @Override
     public OCLTargetDescription getTarget() {
@@ -133,7 +134,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     final OCLTargetDescription target;
     final OCLArchitecture architecture;
-    final OCLContext openclContext;
+    final OCLContext openCLContext;
     final OCLDeviceContext deviceContext;
     final OCLCodeProvider codeCache;
     OCLInstalledCode lookupCode;
@@ -152,7 +153,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         this.options = options;
         this.target = target;
         this.codeCache = codeCache;
-        this.openclContext = openclContext;
+        this.openCLContext = openclContext;
         this.deviceContext = deviceContext;
         architecture = (OCLArchitecture) target.arch;
         scheduleMeta = new ScheduleMetaData("oclbackend");
@@ -177,7 +178,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     public boolean isInitialised() {
-        return deviceContext.isInitialised();
+        return backEndInitialized;
     }
 
     @SuppressWarnings("unused")
@@ -245,7 +246,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
     /**
      * We explore all devices in driver 0;
-     * 
+     *
      * @return
      */
     public int[] getDriverAndDevice() {
@@ -262,21 +263,16 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     private boolean isJITCompilationForFPGAs(String deviceFullName) {
-        // To Avoid errors, check the target device is not the FPGA, because
-        // JIT compilation for FPGAs is not supported yet.
-        // Get driver index + deviceIndex
         String deviceDriver = deviceFullName.split("=")[1];
         int driverIndex = Integer.parseInt(deviceDriver.split(":")[0]);
         int deviceIndex = Integer.parseInt(deviceDriver.split(":")[1]);
         OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(driverIndex).getDevice(deviceIndex);
         String platformName = device.getPlatformName();
-
-        if (device.getDevice().getDeviceType() != OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR || !isFPGA(platformName)) {
+        if (!isDeviceAnFPGAAccelerator() || !isFPGA(platformName)) {
             return false;
-        } else if (device.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && (platformName.contains("FPGA") || platformName.contains("Xilinx"))) {
-            return true;
+        } else {
+            return isDeviceAnFPGAAccelerator() && (isFPGA(platformName));
         }
-        return false;
     }
 
     private boolean isFPGA(String platformName) {
@@ -289,12 +285,11 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public TaskMetaData compileLookupBufferKernel() {
 
         TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
-        OCLCodeCache codeCache = new OCLCodeCache(deviceContext);
+        OCLCodeCache codeCache = deviceContext.getCodeCache();
         int[] deviceInfo = getDriverAndDevice();
         String deviceFullName = getDriverAndDevice(meta, deviceInfo);
 
         if (deviceContext.isCached("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
-
             // Option 1) Getting the lookupBufferAddress from the cache
             lookupCode = deviceContext.getCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
             if (lookupCode != null) {
@@ -304,7 +299,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
             // Option 2) Loading pre-compiled lookupBufferAddress kernel FPGA
             Path lookupPath = Paths.get(codeCache.getOpenCLBinary(deviceFullName));
-            lookupCode = codeCache.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+            lookupCode = codeCache.installEntryPointForBinaryForFPGAs(meta.getId(), lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
             if (lookupCode != null) {
                 lookupCodeAvailable = true;
             }
@@ -317,7 +312,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
             boolean isCompilationForFPGAs = isJITCompilationForFPGAs(deviceFullName);
 
-            if (Tornado.ACCELERATOR_IS_FPGA) {
+            if (isDeviceAnFPGAAccelerator()) {
                 lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode());
             } else {
                 lookupCode = deviceContext.installCode(result);
@@ -330,20 +325,18 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return meta;
     }
 
-    public void fpgaJITinit() {
+    public void runLookUpBufferAddressKernel() {
         TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME, 0);
-        OCLCodeCache check = new OCLCodeCache(deviceContext);
-        lookupCode = check.installEntryPointForBinaryForFPGAs(Paths.get(OCLCodeCache.FPGA_BIN_LOCATION), OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        OCLCodeCache codeCache = deviceContext.getCodeCache();
+        if (deviceContext.getInstalledCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME) != null) {
+            lookupCode = deviceContext.getInstalledCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        } else {
+            lookupCode = codeCache.installEntryPointForBinaryForFPGAs(meta.getId(), Paths.get(OCLCodeCache.FPGA_BIN_LOCATION), OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        }
+
         if (lookupCode != null) {
             lookupCodeAvailable = true;
-        }
-        initFPGAJITCompiledMode(meta, deviceContext);
-    }
-
-    private void initFPGAJITCompiledMode(TaskMetaData meta, OCLDeviceContext deviceContext) {
-        if (!flag) {
-            fpgaInitializationJITMode(meta);
-            flag = true;
+            runAndReadLookUpKernel(meta);
         }
     }
 
@@ -356,27 +349,18 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     private void initFPGA() {
-        // Initialize FPGA with a pre-compiled kernel
-        OCLCodeCache check = new OCLCodeCache(deviceContext);
+        OCLCodeCache check = deviceContext.getCodeCache();
         try {
             Path lookupPath = Paths.get(KERNEL_WARMUP);
-            if (lookupPath != null) {
-                check.installEntryPointForBinaryForFPGAs(lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
-            }
+            check.installEntryPointForBinaryForFPGAs("oclbackend", lookupPath, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
         } catch (InvalidPathException e) {
             throw new TornadoRuntimeException(e);
         }
     }
 
-    private void fpgaInitializationJITMode(TaskMetaData meta) {
-        if (isLookupCodeAvailable()) {
-            runAndReadLookUpKernel(meta);
-        }
-    }
-
     /**
      * JIT compilation of the Look Up Buffer Address into the FPGA
-     * 
+     *
      * @return {@link TaskMetaData}
      */
     private TaskMetaData fpgaInstallCodeLookUpBuffer() {
@@ -388,20 +372,18 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         return meta;
     }
 
+    private boolean isDeviceAnFPGAAccelerator() {
+        return deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR;
+    }
+
     public void init() {
         allocateHeapMemoryOnDevice();
-        TaskMetaData meta;
-
-        if (Tornado.ACCELERATOR_IS_FPGA) {
-            meta = fpgaInstallCodeLookUpBuffer();
-        } else {
-            meta = compileLookupBufferKernel();
-        }
-
+        TaskMetaData meta = compileLookupBufferKernel();
         if (isLookupCodeAvailable()) {
             // Only run kernel is the compilation was correct.
             runAndReadLookUpKernel(meta);
         }
+        backEndInitialized = true;
     }
 
     public OCLDeviceContext getDeviceContext() {
@@ -432,14 +414,13 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     }
 
     private void addVariableDef(Map<OCLKind, Set<Variable>> kindToVariable, Variable value) {
-        if (value instanceof Variable) {
-            Variable var = (Variable) value;
+        if (value != null) {
 
-            if (!(var.getPlatformKind() instanceof OCLKind)) {
+            if (!(value.getPlatformKind() instanceof OCLKind)) {
                 shouldNotReachHere();
             }
 
-            OCLKind oclKind = (OCLKind) var.getPlatformKind();
+            OCLKind oclKind = (OCLKind) value.getPlatformKind();
             if (oclKind == OCLKind.ILLEGAL) {
                 shouldNotReachHere();
             }
@@ -449,8 +430,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             }
 
             final Set<Variable> varList = kindToVariable.get(oclKind);
-            varList.add(var);
-
+            varList.add(value);
         }
     }
 
