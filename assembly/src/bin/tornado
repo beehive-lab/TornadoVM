@@ -216,11 +216,5 @@ if [ $printdevices -eq 1 ] ; then
 	exit 0
 fi
 
-#echo $JAVA_CMD
-#printf "\n"
-#echo $JAVA_FLAGS
-#printf "\n"
-#echo $@
-
 ${JAVA_CMD} ${JAVA_FLAGS} $@
 

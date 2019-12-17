@@ -5,6 +5,7 @@ open module tornado.examples {
     requires transitive lucene.core;
     requires transitive java.desktop;
     requires transitive tornado.api;
+    requires org.graalvm.sdk;
 
     exports uk.ac.manchester.tornado.examples;
     exports uk.ac.manchester.tornado.examples.arrays;
@@ -22,5 +23,5 @@ open module tornado.examples {
     exports uk.ac.manchester.tornado.examples.paralleliser;
     exports uk.ac.manchester.tornado.examples.reductions;
     exports uk.ac.manchester.tornado.examples.vectors;
-
+    exports uk.ac.manchester.tornado.examples.polyglot;
 }
