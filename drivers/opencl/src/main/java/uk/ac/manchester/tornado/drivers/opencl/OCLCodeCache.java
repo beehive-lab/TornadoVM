@@ -120,21 +120,15 @@ public class OCLCodeCache {
     }
 
     public OCLCodeCache(OCLDeviceContext deviceContext) {
-
         this.deviceContext = deviceContext;
         cache = new ConcurrentHashMap<>();
         pendingTasks = new ConcurrentHashMap<>();
 
-        if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && OPENCL_BINARIES != null) {
+        if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR) {
             precompiledBinariesPerDevice = new HashMap<>();
-            processPrecompiledBinaries();
-        }
-
-        // Composing the binary entry-point for the FPGA needs a
-        // a Taskschedule and Task id as prefix which is currently
-        // passed as constant FPGA_TASKSCHEDULE (e.g s0.t0.)
-        if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && Tornado.ACCELERATOR_IS_FPGA) {
-            precompiledBinariesPerDevice = new HashMap<>();
+            if (OPENCL_BINARIES != null) {
+                processPrecompiledBinaries();
+            }
         }
     }
 
