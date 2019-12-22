@@ -151,13 +151,13 @@ public class OCLCodeCache {
         for (int i = 0; i < binaries.length; i += 2) {
             String binaryFile = binaries[i];
             String taskAndDeviceInfo = binaries[i + 1];
-            precompiledBinariesPerDevice.put(taskAndDeviceInfo, binaryFile);
+            String task = taskAndDeviceInfo.split("\\.")[0] + "." + taskAndDeviceInfo.split("\\.")[1];
+            addNewEntryInBitstreamHashMap(task, binaryFile);
 
             // For each entry, we should add also an entry for
             // lookup-buffer-address
             String device = taskAndDeviceInfo.split("\\.")[2];
-            String kernelName = "oclbackend.lookupBufferAddress." + device;
-            precompiledBinariesPerDevice.put(kernelName, binaryFile);
+            addNewEntryInBitstreamHashMap("oclbackend.lookupBufferAddress", binaryFile);
         }
     }
 
@@ -334,10 +334,10 @@ public class OCLCodeCache {
         return new String[] { id };
     }
 
-    private void addNewEntryInBitstreamHashMap(String id) {
+    private void addNewEntryInBitstreamHashMap(String id, String bitstreamDirectory) {
         String lookupBufferDeviceKernelName = id + String.format(".device=%d:%d", deviceContext.getDevice().getIndex(), deviceContext.getPlatformContext().getPlatformIndex());
         if (precompiledBinariesPerDevice != null) {
-            precompiledBinariesPerDevice.put(lookupBufferDeviceKernelName, FPGA_BIN_LOCATION);
+            precompiledBinariesPerDevice.put(lookupBufferDeviceKernelName, bitstreamDirectory);
         }
     }
 
@@ -382,7 +382,7 @@ public class OCLCodeCache {
             commandRename = new String[] { FPGA_CLEANUP_SCRIPT, vendor };
 
             Path path = Paths.get(FPGA_BIN_LOCATION);
-            addNewEntryInBitstreamHashMap(id);
+            addNewEntryInBitstreamHashMap(id, FPGA_BIN_LOCATION);
             if (RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {
                 return installEntryPointForBinaryForFPGAs(id, path, LOOKUP_BUFFER_KERNEL_NAME);
             } else {
