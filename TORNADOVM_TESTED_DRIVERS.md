@@ -1,5 +1,4 @@
-List of tested drivers for running OpenCL
-
+List of tested drivers for running OpenCL with TornadoVM
 
 ## Intel 
 
@@ -8,19 +7,23 @@ List of tested drivers for running OpenCL
 
 [Link](https://github.com/intel/compute-runtime/releases)
 
+* 19.49.15055: OK
 * 19.48.14977: OK
 * 19.47.14903: OK
-
+* 19.23.13131: OK
 
 ##### Drivers for Intel FPGAs
 
 [Link](http://fpgasoftware.intel.com/17.1/?edition=lite)
 
-* 17.1
+* 17.1 [OK]
 
 ##### Intel CPU
 
-* 1.2.0.37  (Old version for CentOS)
+[Link](https://software.intel.com/en-us/articles/opencl-drivers)
+
+* 18.1.0.0920 [OK]
+* 1.2.0.37  (Old version for CentOS) [OK]
 
 ## NVIDIA 
 
@@ -28,6 +31,7 @@ List of tested drivers for running OpenCL
 
 [Link](https://www.nvidia.com/Download/index.aspx?lang=en-us)
 
+* 440.40: OK
 * 440.36: OK 
 
 
@@ -36,3 +40,10 @@ List of tested drivers for running OpenCL
 [Link](https://www.amd.com/en/support)
 
 * 2766.4 (PAL,HSAIL) [OK] 
+
+
+## Xilinx
+
+[Link](https://www.xilinx.com/products/design-tools/software-zone/sdaccel.html)
+
+* 1.0, xocc v2018.2 [OK]
