@@ -23,7 +23,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import java.util.stream.IntStream;
 
 public class MyCompute {
-    public static void vectorAddFloat(float[] a, float[] b, float[] c) {
+    private static void vectorAddFloat(float[] a, float[] b, float[] c) {
         for (@Parallel int i = 0; i < c.length; i++) {
             c[i] = a[i] + b[i];
         }

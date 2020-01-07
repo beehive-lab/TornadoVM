@@ -22,27 +22,28 @@ import org.graalvm.polyglot.Context;
 import java.util.Arrays;
 
 /**
- * Example of GraalVM Polyglot using JavaScript and Tornado.
+ * Example of GraalVM Polyglot using Python and Tornado.
  * 
- * The JS program calls MyCompute.compute() to accelerate vector addition on a
+ * The Ruby program calls MyCompute.compute() to accelerate vector addition on a
  * GPU/FPGA.
  * 
  * How to run:
  * 
  * <code>
- *     $ tornado --debug -m tornado.examples/uk.ac.manchester.tornado.examples.polyglot.HelloPolyglot
+ *     $ tornado --debug -m tornado.examples/uk.ac.manchester.tornado.examples.polyglot.HelloPython
  * </code>
  * 
  */
-public class HelloPolyglot {
+public class HelloPython {
 
-    public static void runTornadoFromJavaScript() {
+    public static void runTornadoFromPython() {
         try (Context context = Context.newBuilder().allowAllAccess(true).build()) {
             // @formatter:off
-            float[] v = context.eval("js", 
-                    "var myclass = Java.type('uk.ac.manchester.tornado.examples.polyglot.MyCompute');" + 
-                            "var output = myclass.compute();" + 
-                            "print (output.toString());" + "output")
+            float[] v = context.eval("python",
+                    "import java\n" +
+                    "myclass = java.type('uk.ac.manchester.tornado.examples.polyglot.MyCompute')\n" +
+                            "output = myclass.compute()\n" +
+                            "print(output.toString())\n" + "output")
                     .asHostObject();
             // @formatter:on
             System.out.println(Arrays.toString(v));
@@ -51,9 +52,12 @@ public class HelloPolyglot {
 
     public static void main(String[] args) {
         System.out.println("Hello polyglot world Java!");
-        Context context = Context.create();
-        context.eval("js", "print('Hello polyglot world JavaScript!');");
-        runTornadoFromJavaScript();
+        Context context = Context.newBuilder()
+                .allowAllAccess(true)
+                .build();
+        context.eval("python", "print('Hello polyglot world from Python!')");
+        context.close();
+        runTornadoFromPython();
     }
 
 }
