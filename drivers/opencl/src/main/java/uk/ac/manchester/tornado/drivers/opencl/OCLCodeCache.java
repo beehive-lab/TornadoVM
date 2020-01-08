@@ -329,8 +329,8 @@ public class OCLCodeCache {
     }
 
     private void addNewEntryInBitstreamHashMap(String id, String bitstreamDirectory) {
-        String lookupBufferDeviceKernelName = id + String.format(".device=%d:%d", deviceContext.getDevice().getIndex(), deviceContext.getPlatformContext().getPlatformIndex());
         if (precompiledBinariesPerDevice != null) {
+            String lookupBufferDeviceKernelName = id + String.format(".device=%d:%d", deviceContext.getDevice().getIndex(), deviceContext.getPlatformContext().getPlatformIndex());
             precompiledBinariesPerDevice.put(lookupBufferDeviceKernelName, bitstreamDirectory);
         }
     }
