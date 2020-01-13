@@ -10,6 +10,7 @@ List of tested drivers for running OpenCL with TornadoVM
 * 19.49.15055: OK
 * 19.48.14977: OK
 * 19.47.14903: OK
+* 19.43.14583: OK
 * 19.23.13131: OK
 
 ##### Drivers for Intel FPGAs
@@ -33,17 +34,20 @@ List of tested drivers for running OpenCL with TornadoVM
 
 * 440.40: OK
 * 440.36: OK 
-
+* 435.21: OK 
 
 ## AMD
 
 [Link](https://www.amd.com/en/support)
 
-* 2766.4 (PAL,HSAIL) [OK] 
-
+* 2766.4 (PAL,HSAIL) [OK]
 
 ## Xilinx
 
 [Link](https://www.xilinx.com/products/design-tools/software-zone/sdaccel.html)
 
 * 1.0, xocc v2018.2 [OK]
+
+## Known Driver Issues 
+
+* Intel CPU OpenCL driver `18.1.0.0920` is not working with Ubuntu >= 19.04
