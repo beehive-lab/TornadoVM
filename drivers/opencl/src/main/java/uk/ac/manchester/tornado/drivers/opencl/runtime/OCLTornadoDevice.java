@@ -236,7 +236,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
 
             if (deviceContext.isCached(task.getId(), resolvedMethod.getName())) {
                 // Return the code from the cache
-                return deviceContext.getCode(task.getId(), resolvedMethod.getName());
+                return deviceContext.getInstalledCode(task.getId(), resolvedMethod.getName());
             }
 
             profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
@@ -244,7 +244,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
             OCLInstalledCode installedCode;
             if (isDeviceAnAccelerator(deviceContext)) {
                 // A) for FPGA
-                installedCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode());
+                installedCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), task.shouldCompile());
             } else {
                 // B) for CPU multi-core or GPU
                 installedCode = deviceContext.installCode(result);
@@ -266,7 +266,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final PrebuiltTask executable = (PrebuiltTask) task;
         if (deviceContext.isCached(task.getId(), executable.getEntryPoint())) {
-            return deviceContext.getCode(task.getId(), executable.getEntryPoint());
+            return deviceContext.getInstalledCode(task.getId(), executable.getEntryPoint());
         }
 
         final Path path = Paths.get(executable.getFilename());
@@ -324,6 +324,12 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         final OCLDeviceContext deviceContext = getDeviceContext();
         final String deviceFullName = getFullTaskIdDevice(task);
         return (!isOpenCLPreLoadBinary(deviceContext, deviceFullName) && Tornado.ACCELERATOR_IS_FPGA);
+    }
+
+    @Override
+    public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
+        String entry = getTaskEntryName(task);
+        return getDeviceContext().getInstalledCode(task.getId(), entry);
     }
 
     private boolean isJITTaskForFGPA(SchedulableTask task) {

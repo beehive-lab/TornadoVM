@@ -335,7 +335,7 @@ public class OCLCodeCache {
         }
     }
 
-    OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) { // TODO Override this method for each FPGA backend
+    OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source, boolean shouldCompile) { // TODO Override this method for each FPGA backend
         String[] compilationCommand;
         final String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
         final String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
@@ -348,19 +348,22 @@ public class OCLCodeCache {
             System.out.println(sourceCode);
         }
 
-        if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
-            String[] commandRename;
-            String[] linkCommand = null;
+        String[] commandRename;
+        String[] linkCommand = null;
+        String[] taskNames = null;
 
-            String[] taskNames = splitTaskScheduleAndTaskName(id);
-            if (pendingTasks.contains(taskNames[0])) {
+        if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
+            taskNames = splitTaskScheduleAndTaskName(id);
+            if (pendingTasks.containsKey(taskNames[0])) {
                 pendingTasks.get(taskNames[0]).add(new Pair(taskNames[1], entryPoint));
             } else {
                 ArrayList<Pair> tasks = new ArrayList<>();
                 tasks.add(new Pair(taskNames[1], entryPoint));
                 pendingTasks.put(taskNames[0], tasks);
             }
+        }
 
+        if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME) & shouldCompile) {
             if (isPlatform("xilinx")) {
                 compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
                 linkCommand = composeXilinxHLSLinkCommand(entryPoint);
@@ -389,14 +392,11 @@ public class OCLCodeCache {
         } else {
             if (!isLUBCompiled) {
                 isLUBCompiled = true;
-
                 // Only for Xilinx
                 if (shouldGenerateXilinxBitstream(fpgaBitStreamFile, deviceContext)) {
                     compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
                     invokeShellCallForCompilation(compilationCommand, null);
                 }
-            } else {
-                return null;
             }
         }
         return null;
@@ -526,9 +526,7 @@ public class OCLCodeCache {
 
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
-
             cache.put(entryPoint, code);
-
             if (entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
                 cache.put("internal-" + entryPoint, code);
             }
@@ -589,11 +587,7 @@ public class OCLCodeCache {
         return cache.containsKey(id + "-" + entryPoint);
     }
 
-    public OCLInstalledCode getCode(String id, String entryPoint) {
-        return cache.get(id + "-" + entryPoint);
-    }
-
     public OCLInstalledCode getInstalledCode(String id, String entryPoint) {
-        return this.getCode(id, entryPoint);
+        return cache.get(id + "-" + entryPoint);
     }
 }
