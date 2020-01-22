@@ -83,7 +83,6 @@ public class OCLCodeCache {
     private final String INTEL_NALLATECH_BOARD_NAME = "-board=p385a_sch_ax115";
     private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
     private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
-    private final String FPGA_TASKSCHEDULE = "s0.t0.";
     private boolean isLUBCompiled = false;
 
     // ID -> KernelName (TaskName)
@@ -122,23 +121,15 @@ public class OCLCodeCache {
     }
 
     public OCLCodeCache(OCLDeviceContext deviceContext) {
-
         this.deviceContext = deviceContext;
         cache = new ConcurrentHashMap<>();
         pendingTasks = new ConcurrentHashMap<>();
 
-        if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && OPENCL_BINARIES != null) {
+        if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR) {
             precompiledBinariesPerDevice = new HashMap<>();
-            processPrecompiledBinaries();
-        }
-
-        // Composing the binary entry-point for the FPGA needs a
-        // a Taskschedule and Task id as prefix which is currently
-        // passed as constant FPGA_TASKSCHEDULE (e.g s0.t0.)
-        if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR && Tornado.ACCELERATOR_IS_FPGA) {
-            precompiledBinariesPerDevice = new HashMap<>();
-            String lookupBufferDeviceKernelName = FPGA_TASKSCHEDULE + String.format("device=%d:%d", deviceContext.getDevice().getIndex(), deviceContext.getPlatformContext().getPlatformIndex());
-            precompiledBinariesPerDevice.put(lookupBufferDeviceKernelName, FPGA_BIN_LOCATION);
+            if (OPENCL_BINARIES != null) {
+                processPrecompiledBinaries();
+            }
         }
     }
 
@@ -155,13 +146,13 @@ public class OCLCodeCache {
         for (int i = 0; i < binaries.length; i += 2) {
             String binaryFile = binaries[i];
             String taskAndDeviceInfo = binaries[i + 1];
-            precompiledBinariesPerDevice.put(taskAndDeviceInfo, binaryFile);
+            String task = taskAndDeviceInfo.split("\\.")[0] + "." + taskAndDeviceInfo.split("\\.")[1];
+            addNewEntryInBitstreamHashMap(task, binaryFile);
 
             // For each entry, we should add also an entry for
             // lookup-buffer-address
             String device = taskAndDeviceInfo.split("\\.")[2];
-            String kernelName = "oclbackend.lookupBufferAddress." + device;
-            precompiledBinariesPerDevice.put(kernelName, binaryFile);
+            addNewEntryInBitstreamHashMap("oclbackend.lookupBufferAddress", binaryFile);
         }
     }
 
@@ -338,6 +329,13 @@ public class OCLCodeCache {
         return new String[] { id };
     }
 
+    private void addNewEntryInBitstreamHashMap(String id, String bitstreamDirectory) {
+        if (precompiledBinariesPerDevice != null) {
+            String lookupBufferDeviceKernelName = id + String.format(".device=%d:%d", deviceContext.getDevice().getIndex(), deviceContext.getPlatformContext().getPlatformIndex());
+            precompiledBinariesPerDevice.put(lookupBufferDeviceKernelName, bitstreamDirectory);
+        }
+    }
+
     OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) { // TODO Override this method for each FPGA backend
         String[] compilationCommand;
         final String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
@@ -379,6 +377,7 @@ public class OCLCodeCache {
             commandRename = new String[] { FPGA_CLEANUP_SCRIPT, vendor };
 
             Path path = Paths.get(FPGA_BIN_LOCATION);
+            addNewEntryInBitstreamHashMap(id, FPGA_BIN_LOCATION);
             if (RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {
                 return installEntryPointForBinaryForFPGAs(id, path, LOOKUP_BUFFER_KERNEL_NAME);
             } else {
