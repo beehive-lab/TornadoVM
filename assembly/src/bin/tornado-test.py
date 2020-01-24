@@ -71,7 +71,7 @@ __TEST_THE_WORLD__ = [
 __TORNADO_TESTS_WHITE_LIST__ = [
 	"uk.ac.manchester.tornado.unittests.logic.TestLogic#testLogic03"
 	"uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer#testArrayMigration",
-    "uk.ac.manchester.tornado.unittests.branching.TestConditionals#testComplexTernaryCondition",
+	"uk.ac.manchester.tornado.unittests.branching.TestConditionals#testComplexTernaryCondition",
 ]
 
 # ################################################################################################################
@@ -225,11 +225,12 @@ def runTests(args):
 	if (args.useOptirun):
 		cmd = "optirun tornado " + __IGNORE_INTEL_PLATFORM__ + options
 	else:
-	    cmd = "tornado " + options
+		cmd = "tornado " + options
 
 	if (javaVersion == JDK_11_VERSION):
-	    cmd += " -m " + __MAIN_TORNADO_TEST_RUNNER_MODULE__
-	cmd += __MAIN_TORNADO_TEST_RUNNER__
+		cmd += " -m " + __MAIN_TORNADO_TEST_RUNNER_MODULE__ + __MAIN_TORNADO_TEST_RUNNER__
+	else:
+		cmd += " " + __MAIN_TORNADO_TEST_RUNNER__
 
 	if (args.testClass != None):
 
@@ -273,9 +274,9 @@ def runWithJUnit(args):
 
 	cmd = "tornado "
 	if (javaVersion == JDK_11_VERSION):
-	    cmd += " -m " + __MAIN_TORNADO_JUNIT_MODULE__
-
-	cmd += __MAIN_TORNADO_JUNIT__
+		cmd += " -m " + __MAIN_TORNADO_JUNIT_MODULE__ + __MAIN_TORNADO_JUNIT__
+	else:
+		cmd += " " + __MAIN_TORNADO_JUNIT__
 
 	if (args.testClass != None):
 		cmd = cmd + args.testClass
@@ -314,9 +315,9 @@ def writeStatusInFile():
 	f.close()
 
 def getJavaVersion():
-    # Get java version
-    global javaVersion
-    javaVersion = subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
+	# Get java version
+	global javaVersion
+	javaVersion = subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
 
 def main():
 	args = parseArguments()
@@ -326,6 +327,7 @@ def main():
 		sys.exit(0)
 
 	getJavaVersion()
+
 
 	if (args.junit):
 		runWithJUnit(args)
