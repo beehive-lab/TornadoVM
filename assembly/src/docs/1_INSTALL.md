@@ -23,19 +23,22 @@ TornadoVM has been succefully tested on the following platforms:
 ## Installation
 
 ### 1. Install GraalVM Community Edition 19.3.0
+
 TornadoVM is built by using GraalVM Community Edition 19.3.0. The directory which contains the Java binary is used by the JAVA_HOME env variable (Step 2).
 
 GraalVM Community Edition 19.3.0 supports both JDK8 and JDK11. This means that Tornado is able to run on top of both versions.
 
-### 1.1 Download GraalVM Community Edition 19.3.0
-GraalVM 19.3.0 builds are available to download at ```https://github.com/graalvm/graalvm-ce-builds/releases```.
+#### 1.1 Download GraalVM Community Edition 19.3.0
 
-You can then extract the ``gunzip file``. 
- ```bash 
+GraalVM 19.3.0 builds are available to download at [https://github.com/graalvm/graalvm-ce-builds/releases](https://github.com/graalvm/graalvm-ce-builds/releases).
+
+You can then extract the zip file:
+
+```bash 
   $ tar -xf graalvm-ce-java{JDK_VERSION}-{OS}-{ARCHITECTURE}-19.3.0.tar.gz
- ```
+```
 
-The Java binary will be found in the `graalvm-ce-java{JDK_VERSION}-19.3.0`. This directory is used as the JAVA_HOME (Step 2).
+The Java binary will be found in the `graalvm-ce-java{JDK_VERSION}-19.3.0` directory. This directory is used as the JAVA_HOME (See step 2).
 
 ### 2. Download TornadoVM
 
@@ -103,7 +106,7 @@ and done!!
 
 ## Know issues 
 
-### For Ubuntu >= 16.04, install the package  `ocl-icd-opencl-dev`
+##### For Ubuntu >= 16.04, install the package  `ocl-icd-opencl-dev`
 
 In Ubuntu >= 16.04 CMake can cause the following error:  Could NOT find OpenCL (missing: OpenCL_LIBRARY) (found version "2.2"). Then the following package should be installed:
  
@@ -113,17 +116,20 @@ $ apt-get install ocl-icd-opencl-dev
 
 ## Running Examples
 
-**The examples and benchmarks of Tornado live in two different modules (`tornado.examples` and `tornado.benchmarks`). If using the JDK11 version of  GraalVM 19.3.0, then you have to specify the module and package in a similar manner with `java`.**   
+The examples and benchmarks of Tornado live in two different modules (`tornado.examples` and `tornado.benchmarks`). If using the JDK11 version of  GraalVM 19.3.0, then you have to specify the module and package in a similar manner with `java`.
 
 ```bash
+# Example of using TornadoVM with JDK11
 $ tornado -m tornado.examples/uk.ac.manchester.tornado.examples.HelloWorld
 ```
 
 When using GraalVM with JDK8 it is enough to specify the package only.
+
 ```bash
+# Example of using TornadoVM with JDK8
 $ tornado uk.ac.manchester.tornado.examples.HelloWorld
 ```
-**For simplicity, we will only provide examples of running `tornado` with GraalVM on top of JDK11. It is straightforward to adapt the command line arguments to JDK8.**
+For simplicity, we will only provide examples of running `tornado` with GraalVM on top of JDK11. It is straightforward to adapt the command line arguments to JDK8.
 
 Use the following command to identify the ids of the Tornado-compatible heterogeneous devices: 
 
