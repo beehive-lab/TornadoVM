@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
+ * Copyright (c) 2018 - 2020, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -30,12 +30,14 @@ import jdk.vm.ci.meta.JavaKind;
 
 public interface TornadoSnippetTypeInference {
 
-    public SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra);
+    SnippetInfo inferIntSnippet(ValueNode value, ValueNode extra);
 
-    public SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra);
+    SnippetInfo inferLongSnippet(ValueNode value, ValueNode extra);
 
-    public SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra);
+    SnippetInfo inferFloatSnippet(ValueNode value, ValueNode extra);
 
-    public SnippetInfo getSnippetInstance(JavaKind elementKind, ValueNode value, ValueNode extra);
+    SnippetInfo inferDoubleSnippet(ValueNode value, ValueNode extra);
+
+    SnippetInfo getSnippetInstance(JavaKind elementKind, ValueNode value, ValueNode extra);
 
 }
