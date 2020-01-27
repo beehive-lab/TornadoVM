@@ -30,6 +30,7 @@ import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.nodes.StructuredGraph;
 
 import jdk.vm.ci.code.InstalledCode;
@@ -68,12 +69,14 @@ class ReduceTaskSchedule {
     private HashMap<Object, Object> neutralElementsOriginal = new HashMap<>();
     private TaskSchedule rewrittenTaskSchedule;
     private HashMap<Object, LinkedList<Integer>> reduceOperandTable;
+    private CachedGraph<?> sketchGraph;
 
-    ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects) {
+    ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects, CachedGraph<?> graph) {
         this.taskPackages = taskPackages;
         this.idTaskSchedule = taskScheduleID;
         this.streamInObjects = streamInObjects;
         this.streamOutObjects = streamOutObjects;
+        this.sketchGraph = graph;
     }
 
     private void inspectBinariesFPGA(String taskScheduleName, String tsName, String taskName, boolean sequential) {
@@ -491,6 +494,11 @@ class ReduceTaskSchedule {
                 ArrayList<Integer> listOfReduceParameters = metaReduceTasks.getListOfReduceParameters(taskNumber);
                 StructuredGraph graph = metaReduceTasks.getGraph();
                 ArrayList<REDUCE_OPERATION> operations = ReduceCodeAnalysis.getReduceOperation(graph, listOfReduceParameters);
+
+                if (operations.isEmpty()) {
+                    // perform analysis with cached graph (after sketch phase)
+                    operations = ReduceCodeAnalysis.getReduceOperatorFromSketch(sketchGraph, listOfReduceParameters);
+                }
 
                 ArrayList<Object> streamUpdateList = streamReduceTable.get(taskNumber);
 

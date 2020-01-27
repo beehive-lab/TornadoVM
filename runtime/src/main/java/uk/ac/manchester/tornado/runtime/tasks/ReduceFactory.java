@@ -36,6 +36,14 @@ class ReduceFactory {
         array[0] = acc;
     }
 
+    private static void rAdd(long[] array, final int size) {
+        long acc = array[0];
+        for (int i = 1; i < size; i++) {
+            acc += array[i];
+        }
+        array[0] = acc;
+    }
+
     private static void rAdd(float[] array, final int size) {
         float acc = array[0];
         for (int i = 1; i < size; i++) {
@@ -54,6 +62,14 @@ class ReduceFactory {
 
     private static void rMul(int[] array, final int size) {
         int acc = array[0];
+        for (int i = 1; i < size; i++) {
+            acc *= array[i];
+        }
+        array[0] = acc;
+    }
+
+    private static void rMul(long[] array, final int size) {
+        long acc = array[0];
         for (int i = 1; i < size; i++) {
             acc *= array[i];
         }
@@ -84,6 +100,14 @@ class ReduceFactory {
         array[0] = acc;
     }
 
+    private static void rMax(long[] array, final int size) {
+        long acc = array[0];
+        for (int i = 1; i < size; i++) {
+            acc = Math.max(acc, array[i]);
+        }
+        array[0] = acc;
+    }
+
     private static void rMax(float[] array, final int size) {
         float acc = array[0];
         for (int i = 1; i < size; i++) {
@@ -102,6 +126,14 @@ class ReduceFactory {
 
     private static void rMin(int[] array, final int size) {
         int acc = array[0];
+        for (int i = 1; i < size; i++) {
+            acc = Math.min(acc, array[i]);
+        }
+        array[0] = acc;
+    }
+
+    private static void rMin(long[] array, final int size) {
+        long acc = array[0];
         for (int i = 1; i < size; i++) {
             acc = Math.min(acc, array[i]);
         }
@@ -129,6 +161,9 @@ class ReduceFactory {
             case "int[]":
                 task.task(taskName, ReduceFactory::rAdd, (int[]) newArray, sizeReduceArray);
                 break;
+            case "long[]":
+                task.task(taskName, ReduceFactory::rAdd, (long[]) newArray, sizeReduceArray);
+                break;
             case "float[]":
                 task.task(taskName, ReduceFactory::rAdd, (float[]) newArray, sizeReduceArray);
                 break;
@@ -144,6 +179,9 @@ class ReduceFactory {
         switch (newArray.getClass().getTypeName()) {
             case "int[]":
                 task.task(taskName, ReduceFactory::rMul, (int[]) newArray, sizeReduceArray);
+                break;
+            case "long[]":
+                task.task(taskName, ReduceFactory::rMul, (long[]) newArray, sizeReduceArray);
                 break;
             case "float[]":
                 task.task(taskName, ReduceFactory::rMul, (float[]) newArray, sizeReduceArray);
@@ -161,6 +199,9 @@ class ReduceFactory {
             case "int[]":
                 task.task(taskName, ReduceFactory::rMax, (int[]) newArray, sizeReduceArray);
                 break;
+            case "long[]":
+                task.task(taskName, ReduceFactory::rMax, (long[]) newArray, sizeReduceArray);
+                break;
             case "float[]":
                 task.task(taskName, ReduceFactory::rMax, (float[]) newArray, sizeReduceArray);
                 break;
@@ -176,6 +217,9 @@ class ReduceFactory {
         switch (newArray.getClass().getTypeName()) {
             case "int[]":
                 task.task(taskName, ReduceFactory::rMin, (int[]) newArray, sizeReduceArray);
+                break;
+            case "long[]":
+                task.task(taskName, ReduceFactory::rMin, (long[]) newArray, sizeReduceArray);
                 break;
             case "float[]":
                 task.task(taskName, ReduceFactory::rMin, (float[]) newArray, sizeReduceArray);
