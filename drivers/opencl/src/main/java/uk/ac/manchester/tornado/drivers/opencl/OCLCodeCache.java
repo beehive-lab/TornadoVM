@@ -241,14 +241,6 @@ public class OCLCodeCache {
             createFile = true;
         }
         RuntimeUtilities.writeStreamToFile(file, source, createFile);
-
-        // System.out.println("ENTRY POINT: " + entryPoint);
-        // System.out.println("ID: " + id);
-        // if (!createFile) {
-        // // Create new file for each kernel
-        // File kernelFile = new File(outDir + "/" + entryPoint + OPENCL_SOURCE_SUFFIX);
-        // RuntimeUtilities.writeStreamToFile(kernelFile, source, true);
-        // }
     }
 
     private String[] composeIntelHLSCommand(String inputFile, String outputFile) {
