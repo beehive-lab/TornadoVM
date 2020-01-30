@@ -48,8 +48,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 
 /**
- * Graal Snippets for GPU OpenCL reductions.
- * 
+ * Tornado-Graal snippets for GPUs reductions using OpenCL semantics.
  */
 public class ReduceGPUSnippets implements Snippets {
 
