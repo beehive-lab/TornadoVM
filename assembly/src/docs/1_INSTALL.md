@@ -300,7 +300,7 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>0.4</version>
+         <version>0.5</version>
       </dependency>
    </dependencies>
 ```
@@ -309,6 +309,7 @@ Notice that, for running with TornadoVM, you will need either the docker images 
 
 #### Versions available
 
+* 0.5
 * 0.4
 * 0.3 
 * 0.2   

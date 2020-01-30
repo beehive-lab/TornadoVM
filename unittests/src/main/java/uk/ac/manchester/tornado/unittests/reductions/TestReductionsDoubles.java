@@ -69,6 +69,41 @@ public class TestReductionsDoubles extends TornadoTestBase {
         assertEquals(sequential[0], result[0], 0.01f);
     }
 
+    private static double myFunction(double a, double b) {
+        return a + b;
+    }
+
+    private static void reductionWithFunctionCall(double[] input, @Reduce double[] result) {
+        result[0] = 0.0f;
+        for (@Parallel int i = 0; i < input.length; i++) {
+            result[0] = myFunction(input[i], result[0]);
+        }
+    }
+
+    @Test
+    public void testSumWithFunctionCall() {
+        double[] input = new double[SIZE];
+        double[] result = new double[1];
+
+        Random r = new Random();
+        IntStream.range(0, SIZE).parallel().forEach(i -> {
+            input[i] = r.nextDouble();
+        });
+
+        //@formatter:off
+        TaskSchedule task = new TaskSchedule("s0")
+                .task("t0", TestReductionsDoubles::reductionWithFunctionCall, input, result)
+                .streamOut(result);
+        //@formatter:on
+
+        task.execute();
+
+        double[] sequential = new double[1];
+        reductionWithFunctionCall(input, sequential);
+
+        assertEquals(sequential[0], result[0], 0.01f);
+    }
+
     private static void reductionAddDoublesLarge(double[] input, @Reduce double[] result) {
         for (@Parallel int i = 0; i < input.length; i++) {
             result[0] += input[i];
