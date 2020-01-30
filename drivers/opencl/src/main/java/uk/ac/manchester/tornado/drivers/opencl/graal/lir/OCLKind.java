@@ -118,23 +118,27 @@ public enum OCLKind implements PlatformKind {
         return ILLEGAL;
     }
 
+    public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(JavaKind type) {
+        if (type == JavaKind.Int) {
+            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY;
+        } else if (type == JavaKind.Double) {
+            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_DOUBLE_ARRAY;
+        } else if (type == JavaKind.Float) {
+            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_FLOAT_ARRAY;
+        } else if (type == JavaKind.Short) {
+            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_SHORT_ARRAY;
+        } else if (type == JavaKind.Long) {
+            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_LONG_ARRAY;
+        } else if (type == JavaKind.Char) {
+            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_CHAR_ARRAY;
+        } else if (type == JavaKind.Byte){
+            return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_BYTE_ARRAY;
+        }
+        return null;
+    }
+
      public static OCLAssembler.OCLBinaryTemplate resolveTemplateType(ResolvedJavaType type) {
-        if (type.getJavaKind() == JavaKind.Int) {
-             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_INT_ARRAY;
-         } else if (type.getJavaKind() == JavaKind.Double) {
-             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_DOUBLE_ARRAY;
-         } else if (type.getJavaKind() == JavaKind.Float) {
-             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_FLOAT_ARRAY;
-         } else if (type.getJavaKind() == JavaKind.Short) {
-             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_SHORT_ARRAY;
-         } else if (type.getJavaKind() == JavaKind.Long) {
-              return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_LONG_ARRAY;
-         } else if (type.getJavaKind() == JavaKind.Char) {
-             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_CHAR_ARRAY;
-         } else if (type.getJavaKind() == JavaKind.Byte){
-             return OCLAssembler.OCLBinaryTemplate.NEW_LOCAL_BYTE_ARRAY;
-         }
-     return null;
+        return resolveTemplateType(type.getJavaKind());
      }
 
     public static OCLKind fromClass(Class<?> type) {

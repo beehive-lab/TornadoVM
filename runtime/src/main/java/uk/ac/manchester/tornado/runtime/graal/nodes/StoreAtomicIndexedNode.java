@@ -70,7 +70,8 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
         return value;
     }
 
-    public StoreAtomicIndexedNode(ValueNode outputArray, ValueNode index, JavaKind elementKind, GuardingNode boundsCheck, ValueNode value, ValueNode accumulator, ValueNode inputArray, StoreAtomicIndexedNodeExtension extension) {
+    public StoreAtomicIndexedNode(ValueNode outputArray, ValueNode index, JavaKind elementKind, GuardingNode boundsCheck, ValueNode value, ValueNode accumulator, ValueNode inputArray,
+            StoreAtomicIndexedNodeExtension extension) {
         super(TYPE, StampFactory.forVoid(), outputArray, index, boundsCheck, elementKind);
         this.value = value;
         this.accumulator = accumulator;
@@ -105,5 +106,9 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
 
     public ValueNode getExtraOperation() {
         return extension.getExtraOperation();
+    }
+
+    public StoreAtomicIndexedNodeExtension getExtension() {
+        return extension;
     }
 }

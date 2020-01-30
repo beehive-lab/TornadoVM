@@ -100,7 +100,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
     private OCLBackend createOCLBackend(final OptionValues options, final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, final OCLContext context, final int deviceIndex) {
         final OCLDevice device = context.devices().get(deviceIndex);
         info("Creating backend for %s", device.getDeviceName());
-        return OCLHotSpotBackendFactory.createBackend(options, jvmciRuntime.getHostJVMCIBackend(), vmConfig, context, device);
+        return OCLHotSpotBackendFactory.createBackend(options, jvmciRuntime, vmConfig, context, device);
     }
 
     private static String getString(String property) {

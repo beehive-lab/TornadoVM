@@ -29,7 +29,9 @@ import static uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue.EVENT_DESC
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus.CL_COMPLETE;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus.createOCLCommandExecutionStatus;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLEventInfo.CL_EVENT_COMMAND_EXECUTION_STATUS;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.*;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_END;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_START;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_SUBMIT;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
 
 import java.nio.ByteBuffer;
@@ -150,7 +152,9 @@ public class OCLEvent extends TornadoLogger implements Event {
 
     private void waitOnPassive() {
         try {
-            clWaitForEvents(new long[] {oclEventID});
+            internalBuffer[0] = 1;
+            internalBuffer[1] = oclEventID;
+            clWaitForEvents(internalBuffer);
         } catch (OCLException e) {
             error(e.getMessage());
         }

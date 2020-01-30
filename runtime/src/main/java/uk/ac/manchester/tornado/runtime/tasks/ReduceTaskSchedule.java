@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
@@ -19,9 +19,11 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- * 
+ *
  */
 package uk.ac.manchester.tornado.runtime.tasks;
+
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +32,7 @@ import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.nodes.StructuredGraph;
 
 import jdk.vm.ci.code.InstalledCode;
@@ -48,7 +51,6 @@ import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERA
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 class ReduceTaskSchedule {
 
     private static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce-seq";
@@ -69,12 +71,14 @@ class ReduceTaskSchedule {
     private HashMap<Object, Object> neutralElementsOriginal = new HashMap<>();
     private TaskSchedule rewrittenTaskSchedule;
     private HashMap<Object, LinkedList<Integer>> reduceOperandTable;
+    private CachedGraph<?> sketchGraph;
 
-    ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects) {
+    ReduceTaskSchedule(String taskScheduleID, ArrayList<TaskPackage> taskPackages, ArrayList<Object> streamInObjects, ArrayList<Object> streamOutObjects, CachedGraph<?> graph) {
         this.taskPackages = taskPackages;
         this.idTaskSchedule = taskScheduleID;
         this.streamInObjects = streamInObjects;
         this.streamOutObjects = streamOutObjects;
+        this.sketchGraph = graph;
     }
 
     private void inspectBinariesFPGA(String taskScheduleName, String tsName, String taskName, boolean sequential) {
@@ -176,7 +180,7 @@ class ReduceTaskSchedule {
 
     /**
      * It runs a compiled method by Graal in HotSpot.
-     * 
+     *
      * @param taskPackage
      *            {@link TaskPackage} metadata that stores the method parameters.
      * @param code
@@ -493,6 +497,11 @@ class ReduceTaskSchedule {
                 StructuredGraph graph = metaReduceTasks.getGraph();
                 ArrayList<REDUCE_OPERATION> operations = ReduceCodeAnalysis.getReduceOperation(graph, listOfReduceParameters);
 
+                if (operations.isEmpty()) {
+                    // perform analysis with cached graph (after sketch phase)
+                    operations = ReduceCodeAnalysis.getReduceOperatorFromSketch(sketchGraph, listOfReduceParameters);
+                }
+
                 ArrayList<Object> streamUpdateList = streamReduceTable.get(taskNumber);
 
                 for (int i = 0; i < streamUpdateList.size(); i++) {
@@ -583,7 +592,7 @@ class ReduceTaskSchedule {
     }
 
     /**
-     * 
+     *
      * @param driverIndex
      *            Index within the Tornado drivers' index
      * @param device

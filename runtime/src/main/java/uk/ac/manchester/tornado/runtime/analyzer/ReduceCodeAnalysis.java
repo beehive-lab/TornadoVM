@@ -29,9 +29,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
 
+import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
-import org.graalvm.compiler.nodes.*;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.EndNode;
+import org.graalvm.compiler.nodes.FixedNode;
+import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.InvokeNode;
+import org.graalvm.compiler.nodes.LogicNode;
+import org.graalvm.compiler.nodes.LoopBeginNode;
+import org.graalvm.compiler.nodes.MergeNode;
+import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.PhiNode;
+import org.graalvm.compiler.nodes.StartNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
@@ -43,6 +56,8 @@ import org.graalvm.compiler.nodes.java.StoreIndexedNode;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceAddNode;
+import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 
 /**
  * Code analysis class for reductions in TornadoVM
@@ -77,41 +92,13 @@ public class ReduceCodeAnalysis {
         return false;
     }
 
-    public static ArrayList<REDUCE_OPERATION> getReduceOperation(StructuredGraph graph, ArrayList<Integer> reduceIndices) {
-        ArrayList<ValueNode> reduceOperation = new ArrayList<>();
-        for (Integer paramIndex : reduceIndices) {
-
-            if (!graph.method().isStatic()) {
-                paramIndex++;
-            }
-
-            ParameterNode parameterNode = graph.getParameter(paramIndex);
-            NodeIterable<Node> usages = parameterNode.usages();
-            // Get Input-Range for the reduction loop
-            for (Node node : usages) {
-
-                if (node instanceof StoreIndexedNode) {
-                    StoreIndexedNode store = (StoreIndexedNode) node;
-                    if (!checkIfVarIsInLoop(store)) {
-                        continue;
-                    }
-                    if (store.value() instanceof BinaryNode || store.value() instanceof BinaryArithmeticNode) {
-                        ValueNode value = store.value();
-                        reduceOperation.add(value);
-                    } else if (store.value() instanceof InvokeNode) {
-                        InvokeNode invoke = (InvokeNode) store.value();
-                        if (invoke.callTarget().targetName().startsWith("Math")) {
-                            reduceOperation.add(invoke);
-                        }
-                    }
-                }
-            }
-        }
-
+    public static ArrayList<REDUCE_OPERATION> getReduceOperation(ArrayList<ValueNode> reduceOperation) {
         // Match VALUE_NODE with OPERATION
         ArrayList<REDUCE_OPERATION> operations = new ArrayList<>();
         for (ValueNode operation : reduceOperation) {
-            if (operation instanceof AddNode) {
+            if (operation instanceof OCLReduceAddNode) {
+                operations.add(REDUCE_OPERATION.ADD);
+            } else if (operation instanceof AddNode) {
                 operations.add(REDUCE_OPERATION.ADD);
             } else if (operation instanceof MulNode) {
                 operations.add(REDUCE_OPERATION.MUL);
@@ -129,6 +116,71 @@ public class ReduceCodeAnalysis {
             }
         }
         return operations;
+    }
+
+    public static ArrayList<REDUCE_OPERATION> getReduceOperation(StructuredGraph graph, ArrayList<Integer> reduceIndices) {
+        ArrayList<ValueNode> reduceOperation = new ArrayList<>();
+        for (Integer paramIndex : reduceIndices) {
+
+            if (!graph.method().isStatic()) {
+                paramIndex++;
+            }
+
+            ParameterNode parameterNode = graph.getParameter(paramIndex);
+            NodeIterable<Node> usages = parameterNode.usages();
+            // Get Input-Range for the reduction loop
+            for (Node node : usages) {
+                if (node instanceof StoreIndexedNode) {
+                    StoreIndexedNode store = (StoreIndexedNode) node;
+                    if (!checkIfVarIsInLoop(store)) {
+                        continue;
+                    }
+                    if (store.value() instanceof BinaryNode || store.value() instanceof BinaryArithmeticNode) {
+                        ValueNode value = store.value();
+                        reduceOperation.add(value);
+                    } else if (store.value() instanceof InvokeNode) {
+                        InvokeNode invoke = (InvokeNode) store.value();
+                        if (invoke.callTarget().targetName().startsWith("Math")) {
+                            reduceOperation.add(invoke);
+                        }
+                    }
+                }
+            }
+        }
+        return getReduceOperation(reduceOperation);
+    }
+
+    public static ArrayList<REDUCE_OPERATION> getReduceOperatorFromSketch(CachedGraph<?> graph, ArrayList<Integer> reduceIndices) {
+        ArrayList<ValueNode> reduceOperation = new ArrayList<>();
+        final StructuredGraph sg = (StructuredGraph) graph.getMutableCopy(null);
+
+        for (Integer paramIndex : reduceIndices) {
+
+            if (!sg.method().isStatic()) {
+                paramIndex++;
+            }
+
+            ParameterNode parameterNode = sg.getParameter(paramIndex);
+            NodeIterable<Node> usages = parameterNode.usages();
+            // Get Input-Range for the reduction loop
+            for (Node node : usages) {
+                if (node instanceof StoreAtomicIndexedNode) {
+                    StoreAtomicIndexedNode store = (StoreAtomicIndexedNode) node;
+
+                    if (store.value() instanceof BinaryNode || store.value() instanceof BinaryArithmeticNode) {
+                        ValueNode value = store.value();
+                        reduceOperation.add(value);
+                    } else if (store.value() instanceof InvokeNode) {
+                        InvokeNode invoke = (InvokeNode) store.value();
+                        if (invoke.callTarget().targetName().startsWith("Math")) {
+                            reduceOperation.add(invoke);
+                        }
+                    }
+                }
+            }
+        }
+
+        return getReduceOperation(reduceOperation);
     }
 
     private static ArrayLengthNode inspectArrayLengthNode(Node aux) {
