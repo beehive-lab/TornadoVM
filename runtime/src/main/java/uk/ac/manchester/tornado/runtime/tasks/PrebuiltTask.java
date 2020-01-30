@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
@@ -46,13 +46,14 @@ public class PrebuiltTask implements SchedulableTask {
     protected long batchThreads;
 
     private TornadoProfiler profiler;
+    private boolean forceCompiler;
 
-    public PrebuiltTask(ScheduleMetaData scheduleMeta, String id, String entryPoint, String filename, Object[] args, Access[] access, TornadoDevice device, DomainTree domain) {
+    public PrebuiltTask(ScheduleMetaData scheduleMeta,String id,String entryPoint,String filename,Object[] args,Access[] access,TornadoDevice device,DomainTree domain) {
         this.entryPoint = entryPoint;
         this.filename = filename;
         this.args = args;
         this.argumentsAccess = access;
-        meta = new TaskMetaData(scheduleMeta, id, access.length);
+        meta = new TaskMetaData(scheduleMeta,id,access.length);
         for (int i = 0; i < access.length; i++) {
             meta.getArgumentsAccess()[i] = access[i];
         }
@@ -73,7 +74,7 @@ public class PrebuiltTask implements SchedulableTask {
 
         sb.append("task: ").append(entryPoint).append("()\n");
         for (int i = 0; i < args.length; i++) {
-            sb.append(String.format("arg  : [%s] %s\n", argumentsAccess[i], args[i]));
+            sb.append(String.format("arg  : [%s] %s\n",argumentsAccess[i],args[i]));
         }
 
         sb.append("meta : ").append(meta.toString());
@@ -162,5 +163,15 @@ public class PrebuiltTask implements SchedulableTask {
     @Override
     public TornadoProfiler getProfiler() {
         return this.profiler;
+    }
+
+    @Override
+    public void forceCompilation() {
+        this.forceCompiler = true;
+    }
+
+    @Override
+    public boolean shouldCompile() {
+        return forceCompiler;
     }
 }
