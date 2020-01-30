@@ -83,6 +83,7 @@ __PRINT_OPENCL_KERNEL__ 	 = "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ 			 = "-Dtornado.debug=True "
 __IGNORE_INTEL_PLATFORM__    = "-Dtornado.ignore.platform=Intel "  # Due to a bug when running with Linux-optirun
 __PRINT_EXECUTION_TIMER__    = "-Dtornado.debug.executionTime=True "
+__GC__                       = "-Xmx6g "
 # ################################################################################################################
 
 __VERSION__ = "0.6_16052019"
@@ -110,6 +111,8 @@ def composeAllOptions(args):
 		options = options + "True "
 	else:
 		options = options + "False "
+
+	options = options + __GC__
 
 	if (args.igv):
 		options = options + __IGV_OPTIONS__
