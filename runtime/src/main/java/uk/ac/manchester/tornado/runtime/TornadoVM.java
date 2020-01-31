@@ -418,6 +418,12 @@ public class TornadoVM extends TornadoLogger {
                     task.mapTo(device);
                     try {
                         task.attachProfiler(timeProfiler);
+                        if (taskIndex == (tasks.size() - 1)) {
+                            // If last task within the task-schedule -> we force compilation
+                            // This is useful when compiling code for Xilinx/Altera FPGAs, that has to
+                            // be a single source
+                            task.forceCompilation();
+                        }
                         installedCodes[taskIndex] = device.installCode(task);
                     } catch (Error | Exception e) {
                         fatal("unable to compile task %s", task.getName());
@@ -427,6 +433,12 @@ public class TornadoVM extends TornadoLogger {
                 if (isWarmup) {
                     popArgumentsFromStack(numArgs);
                     continue;
+                }
+
+                if (installedCodes[taskIndex] == null) {
+                    // After warming-up, it is possible to get a null pointer in the task-cache due
+                    // to lazy compilation for FPGAs. In tha case, we check again the code cache.
+                    installedCodes[taskIndex] = device.getCodeFromCache(task);
                 }
 
                 final TornadoInstalledCode installedCode = installedCodes[taskIndex];
