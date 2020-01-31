@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
@@ -47,6 +47,7 @@ public class CompilableTask implements SchedulableTask {
     private long batchNumThreads;
 
     private TornadoProfiler profiler;
+    private boolean forceCompiler;
 
     public CompilableTask(ScheduleMetaData meta, String id, Method method, Object... args) {
         this.method = method;
@@ -143,6 +144,16 @@ public class CompilableTask implements SchedulableTask {
     @Override
     public TornadoProfiler getProfiler() {
         return this.profiler;
+    }
+
+    @Override
+    public void forceCompilation() {
+        forceCompiler = true;
+    }
+
+    @Override
+    public boolean shouldCompile() {
+        return forceCompiler;
     }
 
 }
