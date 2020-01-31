@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Objects;
 
 import org.graalvm.compiler.graph.CachedGraph;
+import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ConstantNode;

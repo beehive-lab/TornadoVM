@@ -333,7 +333,7 @@ public class ReduceCPUSnippets implements Snippets {
             return snippet;
         }
 
-         @Override
+        @Override
         public SnippetInfo inferLongSnippet(ValueNode value, ValueNode extra) {
             SnippetInfo snippet = null;
             if (value instanceof OCLReduceAddNode) {

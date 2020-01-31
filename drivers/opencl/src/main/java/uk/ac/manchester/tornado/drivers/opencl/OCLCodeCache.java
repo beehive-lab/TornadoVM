@@ -83,10 +83,11 @@ public class OCLCodeCache {
     private final String INTEL_NALLATECH_BOARD_NAME = "-board=p385a_sch_ax115";
     private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
     private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
-    private boolean isLUBCompiled = false;
 
     // ID -> KernelName (TaskName)
     private ConcurrentHashMap<String, ArrayList<Pair>> pendingTasks;
+
+    private ArrayList<String> linkObjectFiles;
 
     /**
      * OpenCL Binary Options: -Dtornado.precompiled.binary=<path/to/binary,task>
@@ -124,6 +125,7 @@ public class OCLCodeCache {
         this.deviceContext = deviceContext;
         cache = new ConcurrentHashMap<>();
         pendingTasks = new ConcurrentHashMap<>();
+        linkObjectFiles = new ArrayList<>();
 
         if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR) {
             precompiledBinariesPerDevice = new HashMap<>();
@@ -281,9 +283,14 @@ public class OCLCodeCache {
         return bufferCommand.toString().split(" ");
     }
 
+    private void addObjectKernelsToLinker(StringJoiner bufferCommand) {
+        for (String kernelNameObject : linkObjectFiles) {
+            bufferCommand.add(DIRECTORY_BITSTREAM + kernelNameObject + ".xo");
+        }
+    }
+
     private String[] composeXilinxHLSLinkCommand(String kernelName) {
         StringJoiner bufferCommand = new StringJoiner(" ", "xocc ", "");
-
         bufferCommand.add(Tornado.FPGA_EMULATION ? ("-t " + "sw_emu") : ("-t " + "hw"));
         bufferCommand.add("--platform " + "xilinx_kcu1500_dynamic_5_0 " + "-l " + "-g");
         bufferCommand.add("--xp " + "misc:solution_name=link");
@@ -291,18 +298,15 @@ public class OCLCodeCache {
         bufferCommand.add("--log_dir " + DIRECTORY_BITSTREAM + "logs");
         bufferCommand.add("-O3 " + "-j12");
         bufferCommand.add("--remote_ip_cache " + DIRECTORY_BITSTREAM + "ip_cache");
-        bufferCommand.add("-o " + DIRECTORY_BITSTREAM + LOOKUP_BUFFER_KERNEL_NAME + ".xclbin " + DIRECTORY_BITSTREAM + LOOKUP_BUFFER_KERNEL_NAME + ".xo " + DIRECTORY_BITSTREAM + kernelName + ".xo");
-
+        bufferCommand.add("-o " + DIRECTORY_BITSTREAM + LOOKUP_BUFFER_KERNEL_NAME + ".xclbin");
+        addObjectKernelsToLinker(bufferCommand);
         return bufferCommand.toString().split(" ");
     }
 
-    private void invokeShellCallForCompilation(String[] compilationCommand, String[] commandRename) {
+    private void invokeShellCommand(String[] command) {
         try {
-            if (compilationCommand != null) {
-                RuntimeUtilities.systemCall(compilationCommand, true);
-            }
-            if (commandRename != null) {
-                RuntimeUtilities.systemCall(commandRename, true);
+            if (command != null) {
+                RuntimeUtilities.systemCall(command, true);
             }
         } catch (IOException e) {
             throw new TornadoRuntimeException(e);
@@ -336,7 +340,11 @@ public class OCLCodeCache {
         }
     }
 
-    OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source) { // TODO Override this method for each FPGA backend
+    private String getDeviceVendor() {
+        return deviceContext.getPlatformContext().getPlatform().getVendor().toLowerCase().split("\\(")[0];
+    }
+
+    OCLInstalledCode installFPGASource(String id, String entryPoint, byte[] source, boolean shouldCompile) { // TODO Override this method for each FPGA backend
         String[] compilationCommand;
         final String inputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME + OPENCL_SOURCE_SUFFIX;
         final String outputFile = FPGA_SOURCE_DIR + LOOKUP_BUFFER_KERNEL_NAME;
@@ -349,21 +357,25 @@ public class OCLCodeCache {
             System.out.println(sourceCode);
         }
 
-        if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
-            String[] commandRename;
-            String[] linkCommand = null;
+        String[] commandRename;
+        String[] linkCommand = null;
+        String[] taskNames;
 
-            String[] taskNames = splitTaskScheduleAndTaskName(id);
-            if (pendingTasks.contains(taskNames[0])) {
+        if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
+            taskNames = splitTaskScheduleAndTaskName(id);
+            if (pendingTasks.containsKey(taskNames[0])) {
                 pendingTasks.get(taskNames[0]).add(new Pair(taskNames[1], entryPoint));
             } else {
                 ArrayList<Pair> tasks = new ArrayList<>();
                 tasks.add(new Pair(taskNames[1], entryPoint));
                 pendingTasks.put(taskNames[0], tasks);
             }
+        }
 
+        if (!entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME) & shouldCompile) {
             if (isPlatform("xilinx")) {
                 compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
+                linkObjectFiles.add(entryPoint);
                 linkCommand = composeXilinxHLSLinkCommand(entryPoint);
             } else if (isPlatform("intel")) {
                 compilationCommand = composeIntelHLSCommand(inputFile, outputFile);
@@ -372,32 +384,26 @@ public class OCLCodeCache {
                 throw new TornadoRuntimeException("[ERROR] FPGA vendor not supported yet.");
             }
 
-            String vendor = deviceContext.getPlatformContext().getPlatform().getVendor().toLowerCase().split("\\(")[0];
+            String vendor = getDeviceVendor();
 
             commandRename = new String[] { FPGA_CLEANUP_SCRIPT, vendor };
-
             Path path = Paths.get(FPGA_BIN_LOCATION);
             addNewEntryInBitstreamHashMap(id, FPGA_BIN_LOCATION);
             if (RuntimeUtilities.ifFileExists(fpgaBitStreamFile)) {
                 return installEntryPointForBinaryForFPGAs(id, path, LOOKUP_BUFFER_KERNEL_NAME);
             } else {
-                invokeShellCallForCompilation(compilationCommand, commandRename);
-                if (isPlatform("xilinx")) {
-                    invokeShellCallForCompilation(linkCommand, null);
-                }
+                invokeShellCommand(compilationCommand);
+                invokeShellCommand(commandRename);
+                invokeShellCommand(linkCommand);
             }
             return installEntryPointForBinaryForFPGAs(id, path, LOOKUP_BUFFER_KERNEL_NAME);
         } else {
-            if (!isLUBCompiled) {
-                isLUBCompiled = true;
-
-                // Only for Xilinx
-                if (shouldGenerateXilinxBitstream(fpgaBitStreamFile, deviceContext)) {
-                    compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
-                    invokeShellCallForCompilation(compilationCommand, null);
-                }
-            } else {
-                return null;
+            // For Xilinx we can compile separated modules and then link them together in
+            // the final phase.
+            if (shouldGenerateXilinxBitstream(fpgaBitStreamFile, deviceContext)) {
+                linkObjectFiles.add(entryPoint);
+                compilationCommand = composeXilinxHLSCompileCommand(inputFile, entryPoint);
+                invokeShellCommand(compilationCommand);
             }
         }
         return null;
@@ -529,9 +535,7 @@ public class OCLCodeCache {
 
         if (status == CL_BUILD_SUCCESS) {
             debug("\tOpenCL Kernel id = 0x%x", kernel.getId());
-
             cache.put(entryPoint, code);
-
             if (entryPoint.equals(LOOKUP_BUFFER_KERNEL_NAME)) {
                 cache.put("internal-" + entryPoint, code);
             }
@@ -592,11 +596,7 @@ public class OCLCodeCache {
         return cache.containsKey(id + "-" + entryPoint);
     }
 
-    public OCLInstalledCode getCode(String id, String entryPoint) {
-        return cache.get(id + "-" + entryPoint);
-    }
-
     public OCLInstalledCode getInstalledCode(String id, String entryPoint) {
-        return this.getCode(id, entryPoint);
+        return cache.get(id + "-" + entryPoint);
     }
 }

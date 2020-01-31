@@ -53,6 +53,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong",
 	"uk.ac.manchester.tornado.unittests.reductions.InstanceReduction",
 	"uk.ac.manchester.tornado.unittests.instances.TestInstances",
 	"uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes",
@@ -85,9 +86,10 @@ __PRINT_OPENCL_KERNEL__ 	 = "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ 			 = "-Dtornado.debug=True "
 __IGNORE_INTEL_PLATFORM__    = "-Dtornado.ignore.platform=Intel "  # Due to a bug when running with Linux-optirun
 __PRINT_EXECUTION_TIMER__    = "-Dtornado.debug.executionTime=True "
+__GC__                       = "-Xmx6g "
 # ################################################################################################################
 
-__VERSION__ = "0.6_16052019"
+__VERSION__ = "0.7_27012020"
 
 JDK_11_VERSION = "11.0"
 JDK_8_VERSION = "1.8"
@@ -120,6 +122,8 @@ def composeAllOptions(args):
 		options = options + "True "
 	else:
 		options = options + "False "
+
+	options = options + __GC__
 
 	if (args.igv):
 		options = options + __IGV_OPTIONS__

@@ -285,7 +285,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
 
         if (deviceContext.isCached("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME)) {
             // Option 1) Getting the lookupBufferAddress from the cache
-            lookupCode = deviceContext.getCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+            lookupCode = deviceContext.getInstalledCode("internal", OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
             if (lookupCode != null) {
                 lookupCodeAvailable = true;
             }
@@ -307,7 +307,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
             boolean isCompilationForFPGAs = isJITCompilationForFPGAs(deviceFullName);
 
             if (isDeviceAnFPGAAccelerator()) {
-                lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode());
+                lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), false);
             } else {
                 lookupCode = deviceContext.installCode(result);
             }
@@ -362,7 +362,7 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
         ResolvedJavaMethod resolveMethod = getTornadoRuntime().resolveMethod(getLookupMethod());
         OCLProviders providers = (OCLProviders) getProviders();
         OCLCompilationResult result = OCLCompiler.compileCodeForDevice(resolveMethod, null, meta, providers, this);
-        lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode());
+        lookupCode = deviceContext.installCode(result.getId(), result.getName(), result.getTargetCode(), false);
         return meta;
     }
 
