@@ -27,10 +27,11 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 public class OCLGPUScheduler extends OCLKernelScheduler {
 
-    public static final double GPU_COMPUTE_UNIT_COEFF = 1;
-    public static final double GPU_COMPUTE_UNIT_QUEUE_COEFF = 128;
     public static final double GPU_WORK_GROUP_COEFF = .125;
 
     @SuppressWarnings("unused")
@@ -49,7 +50,9 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
         super(context);
         OCLDevice device = context.getDevice();
 
-        maxWorkItemSizes = device.getDeviceMaxWorkItemSizes();
+        maxWorkItemSizes = new long[]{16,16,1};
+//        maxWorkItemSizes = new long[]{256,256,256};
+//        maxWorkItemSizes = device.getDeviceMaxWorkItemSizes();
         maxComputeUnits = device.getDeviceMaxComputeUnits();
         maxWorkGroupSize = device.getDeviceMaxWorkGroupSize();
 
@@ -73,28 +76,33 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
     @Override
     public void calculateLocalWork(final TaskMetaData meta) {
         final long[] localWork = meta.getLocalWork();
+        System.out.println("Inside scheduler: " + Arrays.toString(localWork));
+        System.out.println("meta getdims: " + meta.getDims());
         switch (meta.getDims()) {
             case 3:
                 /// XXX: Support 3D
-                localWork[2] = calculateGroupSize(maxWorkItemSizes[2], meta.getOpenCLGpuBlock2DY(), meta.getGlobalWork()[2]);
+                localWork[2] = calculateGroupSize(maxWorkItemSizes[2], meta.getGlobalWork()[2]);
             case 2:
-                localWork[1] = calculateGroupSize(maxWorkItemSizes[1], meta.getOpenCLGpuBlock2DY(), meta.getGlobalWork()[1]);
-                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenCLGpuBlock2DX(), meta.getGlobalWork()[0]);
+                localWork[1] = calculateGroupSize(maxWorkItemSizes[1], meta.getGlobalWork()[1]);
+                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getGlobalWork()[0]);
                 break;
             case 1:
-                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getOpenCLGpuBlockX(), meta.getGlobalWork()[0]);
+                localWork[0] = calculateGroupSize(maxWorkItemSizes[0], meta.getGlobalWork()[0]);
+                System.out.println("max work item sizes 0 : " + maxWorkItemSizes[0]);
+                System.out.println("opecl gpu block x  : " + meta.getOpenCLGpuBlockX());
+                System.out.println("global work size 0    : " + meta.getGlobalWork()[0]);
                 break;
             default:
                 break;
         }
     }
 
-    private int calculateGroupSize(long maxBlockSize, long customBlockSize, long globalWorkSize) {
+    private int calculateGroupSize(long maxBlockSize, long globalWorkSize) {
         if (maxBlockSize == globalWorkSize) {
             maxBlockSize /= 4;
         }
 
-        int value = (int) Math.min(Math.max(maxBlockSize, customBlockSize), globalWorkSize);
+        int value = (int) Math.min(maxBlockSize, globalWorkSize);
         while (globalWorkSize % value != 0) {
             value--;
         }
