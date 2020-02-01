@@ -5,8 +5,13 @@ import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
+import uk.ac.manchester.tornado.drivers.cuda.CUDADriver;
+import uk.ac.manchester.tornado.drivers.cuda.graal.backend.PTXBackend;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
@@ -15,6 +20,25 @@ import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import java.util.List;
 
 public class CUDATornadoDevice implements TornadoAcceleratorDevice {
+
+    private final int deviceIndex;
+    private final int platformIndex;
+    private static CUDADriver driver = null;
+
+    public static CUDADriver findDriver() {
+        if (driver == null) {
+            driver = TornadoCoreRuntime.getTornadoRuntime().getDriver(CUDADriver.class);
+            TornadoInternalError.guarantee(driver != null, "unable to find CUDA driver");
+        }
+        return driver;
+    }
+
+
+    public CUDATornadoDevice(final int platformIndex, final int deviceIndex) {
+        this.platformIndex = platformIndex;
+        this.deviceIndex = deviceIndex;
+    }
+
     @Override
     public TornadoSchedulingStrategy getPreferredSchedule() {
         return null;
@@ -22,7 +46,7 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public CallStack createStack(int numArgs) {
-        return null;
+        return getDeviceContext().getMemoryManager().createCallStack(numArgs);
     }
 
     @Override
@@ -209,9 +233,11 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
-    public TornadoDeviceContext getDeviceContext() {
-        return null;
+    public CUDADeviceContext getDeviceContext() {
+        return getBackend().getDeviceContext();
     }
+
+    public PTXBackend getBackend() {return findDriver().getBackend(platformIndex, deviceIndex);}
 
     @Override
     public TornadoTargetDevice getDevice() {

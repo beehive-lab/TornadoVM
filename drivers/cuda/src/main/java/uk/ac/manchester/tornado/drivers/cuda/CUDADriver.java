@@ -175,4 +175,8 @@ public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDrive
     getNumPlatforms() {
         return 1;
     }
+
+    public PTXBackend getBackend(int platform, int device) {
+        return checkAndInitBackend(platform, device);
+    }
 }

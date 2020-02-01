@@ -7,8 +7,10 @@ import java.nio.ByteOrder;
 
 public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
 
-    public CUDADevice(int index, long id) {
+    private int index;
 
+    public CUDADevice(int index, long id) {
+        this.index = index;
     }
 
     public long getId() {
@@ -53,5 +55,9 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
 
     public ByteOrder getByteOrder() {
         return ByteOrder.LITTLE_ENDIAN;
+    }
+
+    public int getIndex() {
+        return index;
     }
 }

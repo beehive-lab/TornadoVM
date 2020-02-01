@@ -45,6 +45,7 @@ public class PTXHotSpotBackendFactory {
 
         PTXArchitecture arch = new PTXArchitecture(PTXKind.UINT, device.getByteOrder());
         CUDATargetDescription target = new CUDATargetDescription(arch);
+        CUDADeviceContext deviceContext = cudaContext.createDeviceContext(device.getIndex());
 
         PTXProviders providers;
         PTXSuitesProvider suites;
@@ -62,7 +63,7 @@ public class PTXHotSpotBackendFactory {
 
         }
         try (InitTimer rt = timer("instantiate backend")) {
-            PTXBackend backend = new PTXBackend(providers, new CUDADeviceContext());
+            PTXBackend backend = new PTXBackend(providers, deviceContext);
             return backend;
         }
 
