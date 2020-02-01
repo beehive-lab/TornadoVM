@@ -26,7 +26,7 @@ import uk.ac.manchester.tornado.api.TaskSchedule;;
 
 public class ReductionSequentialFPGA {
 
-    public static void reductionAddFloats(float[] input, float[] result) {
+    private static void reductionAddFloats(float[] input, float[] result) {
         result[0] = 0.0f;
         for (int i = 0; i < input.length; i++) {
             result[0] += input[i];

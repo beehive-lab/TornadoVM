@@ -54,35 +54,51 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
         for (InvokeNode invoke : invokeNodes) {
             String methodName = invoke.callTarget().targetName();
 
-            if (methodName.equals("Direct#OpenCLIntrinsics.localBarrier")) {
-                OCLBarrierNode barrier = graph.addOrUnique(new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.LOCAL));
-                graph.replaceFixed(invoke, barrier);
-            } else if (methodName.equals("Direct#OpenCLIntrinsics.globalBarrier")) {
-                OCLBarrierNode barrier = graph.addOrUnique(new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.GLOBAL));
-                graph.replaceFixed(invoke, barrier);
-            } else if (methodName.equals("Direct#OpenCLIntrinsics.get_local_id")) {
-                ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
-                LocalThreadIDFixedNode localIDNode = graph.addOrUnique(new LocalThreadIDFixedNode(dimension));
-                graph.replaceFixed(invoke, localIDNode);
-            } else if (methodName.equals("Direct#OpenCLIntrinsics.get_local_size")) {
-                ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
-                LocalGroupSizeNode groupSizeNode = graph.addOrUnique(new LocalGroupSizeNode(dimension));
-                graph.replaceFixed(invoke, groupSizeNode);
-            } else if (methodName.equals("Direct#OpenCLIntrinsics.get_global_id")) {
-                ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
-                GlobalThreadIdNode globalThreadId = graph.addOrUnique(new GlobalThreadIdNode(dimension));
-                graph.replaceFixed(invoke, globalThreadId);
-            } else if (methodName.equals("Direct#OpenCLIntrinsics.get_global_size")) {
-                ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
-                GlobalThreadSizeNode globalSize = graph.addOrUnique(new GlobalThreadSizeNode(dimension));
-                graph.replaceFixed(invoke, globalSize);
-            } else if (methodName.equals("Direct#OpenCLIntrinsics.get_group_id")) {
-                ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
-                GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(dimension));
-                graph.replaceFixed(invoke, groupIdNode);
-            } else if (methodName.equals("Direct#OpenCLIntrinsics.printEmpty")) {
-                OpenCLPrintf printfNode = graph.addOrUnique(new OpenCLPrintf("\"\""));
-                graph.replaceFixed(invoke, printfNode);
+            switch (methodName) {
+                case "Direct#OpenCLIntrinsics.localBarrier": {
+                    OCLBarrierNode barrier = graph.addOrUnique(new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.LOCAL));
+                    graph.replaceFixed(invoke, barrier);
+                    break;
+                }
+                case "Direct#OpenCLIntrinsics.globalBarrier": {
+                    OCLBarrierNode barrier = graph.addOrUnique(new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.GLOBAL));
+                    graph.replaceFixed(invoke, barrier);
+                    break;
+                }
+                case "Direct#OpenCLIntrinsics.get_local_id": {
+                    ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
+                    LocalThreadIDFixedNode localIDNode = graph.addOrUnique(new LocalThreadIDFixedNode(dimension));
+                    graph.replaceFixed(invoke, localIDNode);
+                    break;
+                }
+                case "Direct#OpenCLIntrinsics.get_local_size": {
+                    ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
+                    LocalGroupSizeNode groupSizeNode = graph.addOrUnique(new LocalGroupSizeNode(dimension));
+                    graph.replaceFixed(invoke, groupSizeNode);
+                    break;
+                }
+                case "Direct#OpenCLIntrinsics.get_global_id": {
+                    ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
+                    GlobalThreadIdNode globalThreadId = graph.addOrUnique(new GlobalThreadIdNode(dimension));
+                    graph.replaceFixed(invoke, globalThreadId);
+                    break;
+                }
+                case "Direct#OpenCLIntrinsics.get_global_size": {
+                    ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
+                    GlobalThreadSizeNode globalSize = graph.addOrUnique(new GlobalThreadSizeNode(dimension));
+                    graph.replaceFixed(invoke, globalSize);
+                    break;
+                }
+                case "Direct#OpenCLIntrinsics.get_group_id": {
+                    ConstantNode dimension = getConstantNodeFromArguments(invoke, 0);
+                    GroupIdNode groupIdNode = graph.addOrUnique(new GroupIdNode(dimension));
+                    graph.replaceFixed(invoke, groupIdNode);
+                    break;
+                }
+                case "Direct#OpenCLIntrinsics.printEmpty":
+                    OpenCLPrintf printfNode = graph.addOrUnique(new OpenCLPrintf("\"\""));
+                    graph.replaceFixed(invoke, printfNode);
+                    break;
             }
         }
     }

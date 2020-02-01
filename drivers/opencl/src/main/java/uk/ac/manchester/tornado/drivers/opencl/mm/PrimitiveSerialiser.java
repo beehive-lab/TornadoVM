@@ -32,8 +32,9 @@ import uk.ac.manchester.tornado.runtime.common.Tornado;
 public class PrimitiveSerialiser {
 
     private static final void align(ByteBuffer buffer, int align) {
-        while (buffer.position() % align != 0)
+        while (buffer.position() % align != 0) {
             buffer.put((byte) 0);
+        }
     }
 
     public static final void put(ByteBuffer buffer, Object value) {
@@ -55,8 +56,8 @@ public class PrimitiveSerialiser {
             Tornado.warn("unable to serialise: %s (%s)", value, value.getClass().getName());
         }
 
-        if (alignment != 0)
+        if (alignment != 0) {
             align(buffer, alignment);
+        }
     }
-
 }

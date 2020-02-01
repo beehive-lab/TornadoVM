@@ -40,13 +40,12 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
     public final static int RESERVED_SLOTS = 6;
     public final static int RETURN_VALUE_INDEX = 0;
-    public final static int DEOPT_VALUE_INDEX = 1;
 
     private final int numArgs;
 
     private boolean onDevice;
 
-    public OCLCallStack(long offset, int numArgs, OCLDeviceContext device) {
+    OCLCallStack(long offset, int numArgs, OCLDeviceContext device) {
         super(device, offset, (numArgs + RESERVED_SLOTS) << 3);
         this.numArgs = numArgs;
 
@@ -127,8 +126,8 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
 
     @Override
     public String toString() {
-        return String.format("Call Stack: num args = %d, device = %s, size = %s @ 0x%x (0x%x)", numArgs, deviceContext.getDevice().getDeviceName(), humanReadableByteCount(bytes, true), toAbsoluteAddress(),
-                toRelativeAddress());
+        return String.format("Call Stack: num args = %d, device = %s, size = %s @ 0x%x (0x%x)", numArgs, deviceContext.getDevice().getDeviceName(), humanReadableByteCount(bytes, true),
+                toAbsoluteAddress(), toRelativeAddress());
     }
 
     @Override
@@ -170,49 +169,5 @@ public class OCLCallStack extends OCLByteBuffer implements CallStack {
                 buffer.putLong(state.getAddress());
             }
         }
-
     }
-
-    @Override
-    public void clearProfiling() {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public long getInvokeCount() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public double getTimeTotal() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public double getTimeMean() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public double getTimeMin() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public double getTimeMax() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public double getTimeSD() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
 }

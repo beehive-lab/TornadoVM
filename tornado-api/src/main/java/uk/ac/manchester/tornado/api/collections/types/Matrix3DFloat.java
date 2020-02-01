@@ -124,8 +124,9 @@ public class Matrix3DFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void fill(float value) {
-        for (int i = 0; i < storage.length; i++)
+        for (int i = 0; i < storage.length; i++) {
             storage[i] = value;
+        }
     }
 
     public Matrix3DFloat duplicate() {
@@ -135,8 +136,9 @@ public class Matrix3DFloat implements PrimitiveStorage<FloatBuffer> {
     }
 
     public void set(Matrix3DFloat m) {
-        for (int i = 0; i < m.storage.length; i++)
+        for (int i = 0; i < m.storage.length; i++) {
             storage[i] = m.storage[i];
+        }
     }
 
     public String toString(String fmt) {

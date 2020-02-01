@@ -51,6 +51,8 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.graalvm.compiler.graph.CachedGraph;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -97,7 +99,9 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
+import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
+import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 /**
@@ -130,6 +134,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private static AtomicInteger offsetGlobalIndex = new AtomicInteger(0);
 
     private StringBuffer bufferLogProfiler = new StringBuffer();
+    private CachedGraph<?> graph;
 
     /**
      * Options for Dynamic Reconfiguration
@@ -217,6 +222,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             CompilableTask compilableTask = (CompilableTask) task;
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             new SketchRequest(compilableTask.meta(), resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
+
+            Sketch lookup = TornadoSketcher.lookup(resolvedMethod);
+            this.graph = lookup.getGraph();
         }
 
         hlBuffer.put(TornadoGraphBitcodes.CONTEXT.index());
@@ -316,7 +324,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
-    private final CompileInfo COMPILE = new CompileInfo(true, false);
+    private final CompileInfo COMPILE_ONLY = new CompileInfo(true, false);
     private final CompileInfo COMPILE_AND_UPDATE = new CompileInfo(true, true);
     private final CompileInfo NOT_COMPILE_UPDATE = new CompileInfo(false, false);
 
@@ -337,7 +345,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
      */
     private CompileInfo extractCompileInfo() {
         if (result == null && isLastDeviceListEmpty()) {
-            return COMPILE;
+            return COMPILE_ONLY;
         } else if (result != null && !isLastDeviceListEmpty() && !(compareDevices(graphContext.getLastDevices(), meta().getDevice()))) {
             return COMPILE_AND_UPDATE;
         }
@@ -361,21 +369,27 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         vm.compile();
     }
 
+    /**
+     * If current FPGA execution and JIT mode, then run warm-up.
+     */
     private void preCompilationForFPGA() {
-        // If current FPGA execution and JIT mode => run warmup
-        if (Tornado.FPGA_EMULATION && Tornado.ACCELERATOR_IS_FPGA) {
+        boolean compile = false;
+        if (Tornado.ACCELERATOR_IS_FPGA) {
+            if (Tornado.FPGA_EMULATION) {
+                compile = true;
+            } else if (graphContext.getDeviceFirtTask() instanceof TornadoAcceleratorDevice) {
+                TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) graphContext.getDeviceFirtTask();
+                if (device.isFullJITMode(graphContext.getTask(0))) {
+                    compile = true;
+                }
+            }
+        }
+
+        if (compile) {
             if (Tornado.DEBUG) {
-                System.out.println("Compilation for Emulation");
+                System.out.println("[DEBUG] JIT compilation for the FPGA");
             }
             compileTaskToOpenCL();
-        } else if (graphContext.getDeviceFirtTask() instanceof TornadoAcceleratorDevice && Tornado.ACCELERATOR_IS_FPGA) {
-            TornadoAcceleratorDevice device = (TornadoAcceleratorDevice) graphContext.getDeviceFirtTask();
-            if (device.isFullJITMode(graphContext.getTask(0))) {
-                if (Tornado.DEBUG) {
-                    System.out.println("Compilation for full JIT");
-                }
-                compileTaskToOpenCL();
-            }
         }
     }
 
@@ -581,7 +595,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void rewriteTaskForReduceSkeleton(MetaReduceCodeAnalysis analysisTaskSchedule) {
-        reduceTaskScheduleMeta = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects);
+        reduceTaskScheduleMeta = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects, graph);
         reduceTaskScheduleMeta.scheduleWithReduction(analysisTaskSchedule);
         reduceExpressionRewritten = true;
     }

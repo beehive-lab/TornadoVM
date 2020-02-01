@@ -51,10 +51,10 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
             info("auto parallelisation disabled");
             return;
         }
-        autoParallelise(graph, context);
+        autoParallelise(graph);
     }
 
-    private void autoParallelise(StructuredGraph graph, TornadoSketchTierContext context) {
+    private void autoParallelise(StructuredGraph graph) {
         if (graph.hasLoops()) {
             final LoopsData data = new LoopsData(graph);
             data.detectedCountedLoops();
@@ -123,8 +123,8 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
                 }
 
                 if (iv.isConstantInit() && iv.isConstantStride()) {
-
                     final ConstantNode newInit = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantInit()));
+
                     final ConstantNode newStride = graph.addWithoutUnique(ConstantNode.forInt((int) iv.constantStride()));
 
                     final ParallelOffsetNode offset = graph.addWithoutUnique(new ParallelOffsetNode(parallelDepth, newInit));
@@ -134,8 +134,8 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
                     final ParallelRangeNode range = graph.addWithoutUnique(new ParallelRangeNode(parallelDepth, maxIterations, offset, stride));
 
                     final ValuePhiNode phi = (ValuePhiNode) iv.valueNode();
-                    final ValueNode oldStride = phi.singleBackValueOrThis(); // was
-                                                                             // singleBackValue()
+
+                    final ValueNode oldStride = phi.singleBackValueOrThis(); // was singleBackValue()
 
                     if (oldStride.usages().count() > 1) {
                         final ValueNode duplicateStride = (ValueNode) oldStride.copyWithInputs(true);
@@ -157,5 +157,4 @@ public class TornadoAutoParalleliser extends BasePhase<TornadoSketchTierContext>
             info("automatically parallelised %s (%dD kernel)\n", graph.method().getName(), parallelDepth);
         }
     }
-
 }

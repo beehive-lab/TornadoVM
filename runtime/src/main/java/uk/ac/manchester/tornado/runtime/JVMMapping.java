@@ -33,7 +33,6 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
-import uk.ac.manchester.tornado.api.mm.OCLTupleRawEvent;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
@@ -203,6 +202,11 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     @Override
     public boolean isFullJITMode(SchedulableTask task) {
         return false;
+    }
+
+    @Override
+    public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
+        return null;
     }
 
     @Override

@@ -52,7 +52,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     private long heapPosition;
     private boolean initialised;
 
-    public static final int STACK_ALIGNMENT_SIZE = 128;
+    private static final int STACK_ALIGNMENT_SIZE = 128;
 
     public OCLMemoryManager(final OCLDeviceContext device) {
         deviceContext = device;
@@ -99,11 +99,10 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     }
 
     private static long align(final long address, final long alignment) {
-        long newAddress = (address % alignment == 0) ? address : address + (alignment - address % alignment);
-        return newAddress;
+        return (address % alignment == 0) ? address : address + (alignment - address % alignment);
     }
 
-    public long tryAllocate(final Class<?> type, final long bytes, final int headerSize, int alignment) throws TornadoOutOfMemoryException {
+    long tryAllocate(final Class<?> type, final long bytes, final int headerSize, int alignment) throws TornadoOutOfMemoryException {
         final long alignedDataStart = align(heapPosition + headerSize, alignment);
         final long headerStart = alignedDataStart - headerSize;
         if (headerStart + bytes < heapLimit) {
@@ -135,8 +134,8 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
     }
 
     /**
-     * * Returns sub-buffer that can be use to access a region managed by the
-     * memory manager.
+     * * Returns sub-buffer that can be use to access a region managed by the memory
+     * manager.
      *
      * @param offset
      *            offset within the memory managers heap
@@ -172,7 +171,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return deviceBufferAddress;
     }
 
-    public long toAbsoluteDeviceAddress(final long address) {
+    long toAbsoluteDeviceAddress(final long address) {
         long result = address;
 
         guarantee(address + deviceBufferAddress >= 0, "absolute address may have wrapped arround: %d + %d = %d", address, deviceBufferAddress, address + deviceBufferAddress);
@@ -181,15 +180,15 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return result;
     }
 
-    public long toBuffer() {
+    long toBuffer() {
         return deviceHeapPointer;
     }
 
-    public long toConstantAddress() {
+    long toConstantAddress() {
         return constantPointer;
     }
 
-    public long toPrivateAddress() {
+    long toPrivateAddress() {
         return privatePointer;
     }
 
@@ -197,7 +196,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return 0;
     }
 
-    public long toRelativeDeviceAddress(final long address) {
+    long toRelativeDeviceAddress(final long address) {
         long result = address;
         if (!(Long.compareUnsigned(address, deviceBufferAddress) < 0 || Long.compareUnsigned(address, (deviceBufferAddress + heapLimit)) > 0)) {
             result -= deviceBufferAddress;

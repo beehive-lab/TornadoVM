@@ -68,4 +68,8 @@ public interface SchedulableTask {
 
     TornadoProfiler getProfiler();
 
+    void forceCompilation();
+
+    boolean shouldCompile();
+
 }

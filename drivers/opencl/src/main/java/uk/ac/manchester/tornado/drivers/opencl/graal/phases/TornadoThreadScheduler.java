@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
 import java.util.List;
 
+import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
@@ -37,29 +38,19 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNo
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class TornadoThreadScheduler extends BasePhase<TornadoHighTierContext> {
-    private final CanonicalizerPhase canonicalizer;
 
     private int oneD = 64; // XXX: This value was chosen for Intel FPGAs due to experimental results
     private int twoD = 1;
     private int threeD = 1;
 
-    public TornadoThreadScheduler(CanonicalizerPhase canonicalizer) {
-        this.canonicalizer = canonicalizer;
-    }
-
     @Override
     protected void run(StructuredGraph graph, TornadoHighTierContext context) {
         if (graph.hasLoops() && (context.getDeviceMapping().getDeviceType() == TornadoDeviceType.ACCELERATOR)) {
-            List<EndNode> snapshot = graph.getNodes().filter(EndNode.class).snapshot();
-            int idx = 0;
-            for (EndNode end : snapshot) {
-                if (idx == 0) {
-                    final LocalWorkGroupDimensionsNode lwg = graph.addOrUnique(new LocalWorkGroupDimensionsNode(oneD, twoD, threeD));
-                    ThreadConfigurationNode threadConfig = graph.addOrUnique(new ThreadConfigurationNode(lwg));
-                    graph.addBeforeFixed(end, threadConfig);
-                    break;
-                }
-            }
+            NodeIterable<EndNode> filter = graph.getNodes().filter(EndNode.class);
+            EndNode end = filter.first();
+            final LocalWorkGroupDimensionsNode localWorkGroupNode = graph.addOrUnique(new LocalWorkGroupDimensionsNode(oneD, twoD, threeD));
+            ThreadConfigurationNode threadConfig = graph.addOrUnique(new ThreadConfigurationNode(localWorkGroupNode));
+            graph.addBeforeFixed(end, threadConfig);
         }
     }
 }

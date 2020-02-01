@@ -30,7 +30,6 @@ import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.nodes.virtual.VirtualInstanceNode;
 import org.graalvm.compiler.phases.BasePhase;
-import org.graalvm.compiler.phases.tiers.HighTierContext;
 
 public class TornadoValueTypeCleanup extends BasePhase<TornadoHighTierContext> {
 

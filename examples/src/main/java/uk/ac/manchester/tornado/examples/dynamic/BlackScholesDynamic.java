@@ -55,10 +55,10 @@ public class BlackScholesDynamic {
             final float r = R_LOWER_LIMIT * rand + R_UPPER_LIMIT * (1.0f - rand);
             final float v = SIGMA_LOWER_LIMIT * rand + SIGMA_UPPER_LIMIT * (1.0f - rand);
 
-            float d1 = (float) ((float) (TornadoMath.log(S / K) + ((r + (v * v / 2)) * T)) / v * TornadoMath.sqrt(T));
-            float d2 = (float) ((float) d1 - (v * TornadoMath.sqrt(T)));
-            callResult[idx] = (float) (S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2));
-            putResult[idx] = (float) (K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1));
+            float d1 = (TornadoMath.log(S / K) + ((r + (v * v / 2)) * T)) / v * TornadoMath.sqrt(T);
+            float d2 = d1 - (v * TornadoMath.sqrt(T));
+            callResult[idx] = S * cnd(d1) - K * TornadoMath.exp(T * (-1) * r) * cnd(d2);
+            putResult[idx] = K * TornadoMath.exp(T * -r) * cnd(-d2) - S * cnd(-d1);
         }
     }
 
@@ -75,20 +75,19 @@ public class BlackScholesDynamic {
         final float oneBySqrt2pi = 0.398942280f;
         float absX = TornadoMath.abs(X);
         float t = one / (one + temp4 * absX);
-        float y = (float) (one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5)))));
-        float result = (X < zero) ? (one - y) : y;
-        return result;
+        float y = (one - oneBySqrt2pi * TornadoMath.exp(-X * X / two) * t * (c1 + t * (c2 + t * (c3 + t * (c4 + t * c5)))));
+        return (X < zero) ? (one - y) : y;
     }
 
     private static boolean checkResult(float[] call, float[] put, float[] callPrice, float[] putPrice) {
         double delta = 1.8;
         for (int i = 0; i < call.length; i++) {
             if (Math.abs(call[i] - callPrice[i]) > delta) {
-                System.out.println("call: " + call[i] + " vs gpu " + callPrice[i]);
+                System.out.println("sequential result call: " + call[i] + " vs tornado call: " + callPrice[i]);
                 return false;
             }
             if (Math.abs(put[i] - putPrice[i]) > delta) {
-                System.out.println("put: " + put[i] + " vs gpu " + putPrice[i]);
+                System.out.println("sequential result put: " + put[i] + " vs tornado put: " + putPrice[i]);
                 return false;
             }
         }

@@ -79,7 +79,6 @@ public class OCLContext extends TornadoLogger {
     private final OCLPlatform platform;
 
     private static final int MAX_ALLOCATED_REGIONS = 64;
-    private static final int BUFFER_CAPACITY = 128;
 
     public OCLContext(OCLPlatform platform, long id, List<OCLDevice> devices) {
         this.platform = platform;
@@ -197,30 +196,11 @@ public class OCLContext extends TornadoLogger {
         return program;
     }
 
-    private OCLProgram lookupFPGAOpenCLProgram(long deviceId) {
-        int programsLength = programs.size();
-        for (int i = 0; i < programsLength; i++) {
-            OCLProgram fetchedProgram = programs.get(i);
-            int numDevices = fetchedProgram.getNumDevices();
-            long[] devices = fetchedProgram.getDevices();
-            for (int j = 0; j < numDevices; j++) {
-                if (devices[j] == deviceId) {
-                    return programs.get(i);
-                }
-            }
-        }
-        return null;
-    }
-
     public OCLProgram createProgramWithBinary(long deviceId, byte[] binary, long[] lengths, OCLDeviceContext deviceContext) {
         OCLProgram program = null;
 
         try {
-            program = lookupFPGAOpenCLProgram(deviceId);
-            if (program == null) {
-                program = new OCLProgram(clCreateProgramWithBinary(id, deviceId, binary, lengths), deviceContext);
-                programs.add(program);
-            }
+            program = new OCLProgram(clCreateProgramWithBinary(id, deviceId, binary, lengths), deviceContext);
         } catch (OCLException e) {
             error(e.getMessage());
         }
@@ -285,14 +265,16 @@ public class OCLContext extends TornadoLogger {
     }
 
     /**
-     * Allocates off-heap memory
+     * Allocates off-heap memory.
      *
      * @param bytes
+     *            to be allocated.
+     * @param alignment
+     *            alignment
      *
-     * @return
+     * @return base address
      */
     public long allocate(long bytes, long alignment) {
-        System.out.println("Allocate off heal memory: alignment ------->" + alignment + "\n");
         final long address = allocateOffHeapMemory(bytes, alignment);
         if (address == 0) {
             throw new TornadoInternalError("Unable to allocate off-heap memory");
@@ -310,7 +292,7 @@ public class OCLContext extends TornadoLogger {
         return createBuffer(flags, bytes, 0L);
     }
 
-    public long createBuffer(long flags, long bytes, long hostPointer) {
+    private long createBuffer(long flags, long bytes, long hostPointer) {
         long devicePtr = 0;
         try {
             final OCLBufferResult result = createBuffer(id, flags, bytes, hostPointer);
@@ -324,7 +306,7 @@ public class OCLContext extends TornadoLogger {
         return devicePtr;
     }
 
-    public int getPlatformIndex() {
+    int getPlatformIndex() {
         return platform.getIndex();
     }
 

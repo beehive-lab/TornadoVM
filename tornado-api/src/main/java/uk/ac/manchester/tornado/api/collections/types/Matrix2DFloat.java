@@ -136,8 +136,9 @@ public class Matrix2DFloat implements PrimitiveStorage<FloatBuffer> {
 
     public VectorFloat diag() {
         final VectorFloat v = new VectorFloat(min(M, N));
-        for (int i = 0; i < M; i++)
+        for (int i = 0; i < M; i++) {
             v.set(i, storage[i * (N + 1)]);
+        }
         return v;
     }
 

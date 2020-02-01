@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.runtime.sketcher;
 
 import org.graalvm.compiler.graph.CachedGraph;
 
+import org.graalvm.compiler.nodes.StructuredGraph;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class Sketch {

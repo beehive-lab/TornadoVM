@@ -118,8 +118,7 @@ public class TornadoSketcher {
             sketchTier.apply(graph, highTierContext);
             graph.maybeCompress();
 
-            // Compile all non-inlined call-targets into a single compilation
-            // unit
+            // Compile all non-inlined call-targets into a single compilation-unit
 
             // @formatter:off
             graph.getInvokes()

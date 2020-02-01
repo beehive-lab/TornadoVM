@@ -93,7 +93,6 @@ public class OCLHotSpotBackendFactory {
 
         try (InitTimer t = timer("create providers")) {
             lowerer = new OCLLoweringProvider(metaAccess, foreignCalls, constantReflection, config, target);
-
             Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider);
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
             plugins = createGraphBuilderPlugins(metaAccess, bytecodeProvider);
@@ -108,13 +107,11 @@ public class OCLHotSpotBackendFactory {
             lowerer.initialize(options, new DummySnippetFactory(), providers, snippetReflection);
         }
         try (InitTimer rt = timer("instantiate backend")) {
-            OCLBackend backend = new OCLBackend(options, providers, target, codeCache, openclContext, deviceContext);
-            return backend;
+            return new OCLBackend(options, providers, target, codeCache, openclContext, deviceContext);
         }
     }
 
     protected static Plugins createGraphBuilderPlugins(HotSpotMetaAccessProvider metaAccess, BytecodeProvider bytecodeProvider) {
-
         InvocationPlugins invocationPlugins = new InvocationPlugins();
         Plugins plugins = new Plugins(invocationPlugins);
 

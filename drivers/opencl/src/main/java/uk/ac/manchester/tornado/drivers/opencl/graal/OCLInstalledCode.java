@@ -56,6 +56,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
 
     private final ByteBuffer buffer = ByteBuffer.allocate(8);
     private final byte[] code;
+    private final OCLProgram program;
     private final OCLDeviceContext deviceContext;
     private final OCLKernel kernel;
     private boolean valid;
@@ -73,6 +74,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         this.scheduler = OCLScheduler.create(deviceContext);
         this.DEFAULT_SCHEDULER = new OCLGPUScheduler(deviceContext);
         this.kernel = kernel;
+        this.program = program;
         valid = kernel != null;
         buffer.order(deviceContext.getByteOrder());
     }
@@ -83,6 +85,10 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
             kernel.cleanup();
             valid = false;
         }
+    }
+
+    public OCLProgram getProgram() {
+        return program;
     }
 
     @Override
@@ -314,7 +320,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         return task;
     }
 
-    private int submitParallel(final OCLCallStack stack, final TaskMetaData meta, long batchThreads) {
+    private int submitParallel(final TaskMetaData meta, long batchThreads) {
         final int task;
         if (meta.enableThreadCoarsener()) {
             task = DEFAULT_SCHEDULER.submit(kernel, meta, batchThreads);
@@ -327,7 +333,7 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
     private void launchKernel(final OCLCallStack stack, final TaskMetaData meta, long batchThreads) {
         final int task;
         if (meta.isParallel()) {
-            task = submitParallel(stack, meta, batchThreads);
+            task = submitParallel(meta, batchThreads);
         } else {
             task = submitSequential(meta);
         }
