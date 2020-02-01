@@ -59,6 +59,10 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
         return false;
     }
 
+    @Override public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
+        return null;
+    }
+
     /**
      * It allocates an object in the pre-defined heap of the target device. It also
      * ensure that there is enough space for the input object.

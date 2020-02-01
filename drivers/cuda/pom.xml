@@ -7,7 +7,7 @@
     <parent>
         <artifactId>tornado-drivers</artifactId>
         <groupId>tornado</groupId>
-        <version>0.4</version>
+        <version>0.5</version>
     </parent>
     <artifactId>tornado-drivers-cuda</artifactId>
     <name>tornado-drivers-cuda</name>
@@ -27,7 +27,7 @@
         <dependency>
             <groupId>tornado</groupId>
             <artifactId>tornado-runtime</artifactId>
-            <version>0.4</version>
+            <version>0.5</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

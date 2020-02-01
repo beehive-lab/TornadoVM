@@ -35,32 +35,4 @@ public class CUDACallStack implements CallStack {
     @Override public void dump() {
 
     }
-
-    @Override public void clearProfiling() {
-
-    }
-
-    @Override public long getInvokeCount() {
-        return 0;
-    }
-
-    @Override public double getTimeTotal() {
-        return 0;
-    }
-
-    @Override public double getTimeMean() {
-        return 0;
-    }
-
-    @Override public double getTimeMin() {
-        return 0;
-    }
-
-    @Override public double getTimeMax() {
-        return 0;
-    }
-
-    @Override public double getTimeSD() {
-        return 0;
-    }
 }
