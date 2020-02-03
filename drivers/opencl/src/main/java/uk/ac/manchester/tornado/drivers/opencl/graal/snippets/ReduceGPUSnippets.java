@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 - 2020 APT Group, School of Computer Science,
+ * Copyright (c) 2018-2020 APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -50,8 +50,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.OCLReduceMulNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 
 /**
- * Graal Snippets for GPU OpenCL reductions.
- *
+ * Tornado-Graal snippets for GPUs reductions using OpenCL semantics.
  */
 public class ReduceGPUSnippets implements Snippets {
 
@@ -83,24 +82,23 @@ public class ReduceGPUSnippets implements Snippets {
     @Snippet
     public static void partialReduceIntAddGlobal2(int[] inputArray, int[] outputArray, int gidx, int value) {
 
+        int[] localArray = (int[]) NewArrayNode.newUninitializedArray(int.class, LOCAL_WORK_GROUP_SIZE);
+
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        int myID = localIdx + (localGroupSize * groupID);
-
-        inputArray[myID] = value;
+        localArray[localIdx] = value;
 
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
-                inputArray[myID] += inputArray[myID + stride];
-
+                localArray[localIdx] += localArray[localIdx + stride];
             }
         }
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID + 1] = inputArray[myID];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
@@ -177,23 +175,24 @@ public class ReduceGPUSnippets implements Snippets {
     @Snippet
     public static void partialReduceFloatAddGlobal2(float[] inputArray, float[] outputArray, int gidx, float value) {
 
+        float[] localArray = (float[]) NewArrayNode.newUninitializedArray(float.class, LOCAL_WORK_GROUP_SIZE);
+
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
         int myID = localIdx + (localGroupSize * groupID);
-
-        inputArray[myID] = value;
+        localArray[localIdx] = value;
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
-                inputArray[myID] += inputArray[myID + stride];
+                localArray[localIdx] += localArray[localIdx + stride];
             }
         }
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID + 1] = inputArray[myID];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
@@ -228,19 +227,19 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        int myID = localIdx + (localGroupSize * groupID);
+        double[] localArray = (double[]) NewArrayNode.newUninitializedArray(double.class, LOCAL_WORK_GROUP_SIZE);
 
-        inputArray[myID] = value;
+        localArray[localIdx] = value;
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
-                inputArray[myID] += inputArray[myID + stride];
+                localArray[localIdx] += localArray[localIdx + stride];
             }
         }
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID + 1] = inputArray[myID];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
@@ -275,19 +274,19 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        int myID = localIdx + (localGroupSize * groupID);
+        int[] localArray = (int[]) NewArrayNode.newUninitializedArray(int.class, LOCAL_WORK_GROUP_SIZE);
 
-        inputArray[myID] = value;
+        localArray[localIdx] = value;
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
-                inputArray[myID] *= inputArray[myID + stride];
+                localArray[localIdx] *= localArray[localIdx + stride];
             }
         }
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID + 1] = inputArray[myID];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
@@ -369,19 +368,20 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        int myID = localIdx + (localGroupSize * groupID);
+        float[] localArray = (float[]) NewArrayNode.newUninitializedArray(float.class, LOCAL_WORK_GROUP_SIZE);
 
-        inputArray[myID] = value;
+        localArray[localIdx] = value;
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
-                inputArray[myID] *= inputArray[myID + stride];
+                localArray[localIdx] *= localArray[localIdx + stride];
+
             }
         }
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID + 1] = inputArray[myID];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
@@ -411,30 +411,29 @@ public class ReduceGPUSnippets implements Snippets {
 
     @Snippet
     public static void partialReduceDoubleMultGlobal2(double[] inputArray, double[] outputArray, int gidx, double value) {
-
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        int myID = localIdx + (localGroupSize * groupID);
+        double[] localArray = (double[]) NewArrayNode.newUninitializedArray(double.class, LOCAL_WORK_GROUP_SIZE);
 
-        inputArray[myID] = value;
+        localArray[localIdx] = value;
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
-                inputArray[myID] *= inputArray[myID + stride];
+                localArray[localIdx] *= localArray[localIdx + stride];
+
             }
         }
 
         OpenCLIntrinsics.globalBarrier();
         if (localIdx == 0) {
-            outputArray[groupID + 1] = inputArray[myID];
+            outputArray[groupID + 1] = localArray[0];
         }
     }
 
     @Snippet
     public static void partialReduceIntMaxGlobal(int[] inputArray, int[] outputArray, int gidx) {
-
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
@@ -442,7 +441,6 @@ public class ReduceGPUSnippets implements Snippets {
         int[] localArray = (int[]) NewArrayNode.newUninitializedArray(int.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
-
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
@@ -490,7 +488,6 @@ public class ReduceGPUSnippets implements Snippets {
         float[] localArray = (float[]) NewArrayNode.newUninitializedArray(float.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
-
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
@@ -513,7 +510,6 @@ public class ReduceGPUSnippets implements Snippets {
         double[] localArray = (double[]) NewArrayNode.newUninitializedArray(double.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
-
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
@@ -537,7 +533,6 @@ public class ReduceGPUSnippets implements Snippets {
         int[] localArray = (int[]) NewArrayNode.newUninitializedArray(int.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
-
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
@@ -585,7 +580,6 @@ public class ReduceGPUSnippets implements Snippets {
         float[] localArray = (float[]) NewArrayNode.newUninitializedArray(float.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
-
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
@@ -608,7 +602,6 @@ public class ReduceGPUSnippets implements Snippets {
         double[] localArray = (double[]) NewArrayNode.newUninitializedArray(double.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
-
         for (int stride = (localGroupSize / 2); stride > 0; stride /= 2) {
             OpenCLIntrinsics.localBarrier();
             if (localIdx < stride) {
@@ -796,7 +789,6 @@ public class ReduceGPUSnippets implements Snippets {
             args.add("outputArray", storeAtomicIndexed.array());
             args.add("gidx", globalId);
             if (extra != null) {
-                // extra.as
                 args.add("value", extra);
             }
 
