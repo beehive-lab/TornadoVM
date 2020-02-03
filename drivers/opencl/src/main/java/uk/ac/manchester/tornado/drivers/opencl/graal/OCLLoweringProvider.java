@@ -39,7 +39,6 @@ import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodes.AbstractDeoptimizeNode;
-import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.CompressionNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedNode;
@@ -145,9 +144,7 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     @Override
     public void lower(Node node, LoweringTool tool) {
 
-        if (node instanceof InvokeNode && ((InvokeNode) node).callTarget().targetName().equals("Direct#NewArrayNode.newArray")) {
-            lowerInvokeNode((InvokeNode) node);
-        } else if (node instanceof Invoke) {
+        if (node instanceof Invoke) {
             lowerInvoke((Invoke) node, tool, (StructuredGraph) node.graph());
         } else if (node instanceof VectorLoadNode) {
             lowerVectorLoadNode((VectorLoadNode) node);
@@ -180,7 +177,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         } else if (node instanceof InstanceOfNode) {
             // ignore InstanceOfNode nodes
         } else {
-            System.err.println(node);
             super.lower(node, tool);
         }
     }
@@ -200,6 +196,12 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     @Override
     protected JavaKind getStorageKind(ResolvedJavaField field) {
         return field.getJavaKind();
+    }
+
+    public static boolean isGpuSnippet() {
+        // OCLLoweringProvider::gpuSnippet gets set during the lowering phase.
+        // Therefore, this getter must be called after a lowering phase in order to get the correct result
+        return gpuSnippet;
     }
 
     private void lowerReduceSnippets(StoreAtomicIndexedNode storeIndexed, LoweringTool tool) {
@@ -449,43 +451,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         }
     }
 
-    private void lowerInvokeNode(InvokeNode newArray) {
-        CallTargetNode callTarget = newArray.callTarget();
-        final StructuredGraph graph = newArray.graph();
-        final ValueNode secondInput = callTarget.arguments().get(1);
-        if (secondInput instanceof ConstantNode) {
-            final ConstantNode lengthNode = (ConstantNode) secondInput;
-            if (lengthNode.getValue() instanceof PrimitiveConstant) {
-                final int length = ((PrimitiveConstant) lengthNode.getValue()).asInt();
-                JavaKind elementKind = getJavaKindFromSignature((ConstantNode) callTarget.arguments().get(0));
-                final int offset = arrayBaseOffset(elementKind);
-                final int size = offset + (elementKind.getByteCount() * length);
-                if (gpuSnippet) {
-                    lowerLocalInvokeNodeNewArray(graph, length, elementKind, newArray);
-                } else {
-                    lowerPrivateInvokeNodeNewArray(graph, size, elementKind, newArray);
-                }
-                newArray.clearInputs();
-                GraphUtil.unlinkFixedNode(newArray);
-            } else {
-                shouldNotReachHere();
-            }
-        } else {
-            unimplemented("dynamically sized array declarations are not supported");
-        }
-    }
-
-    private JavaKind getJavaKindFromSignature(ConstantNode signatureNode) {
-        switch (signatureNode.getValue().toValueString()) {
-            case "Class:int": return JavaKind.Int;
-            case "Class:long": return JavaKind.Long;
-            case "Class:float": return JavaKind.Float;
-            case "Class:double": return JavaKind.Double;
-            default: unimplemented("Other types not supported yet: " + signatureNode.getValue().toValueString());
-        }
-        return null;
-    }
-
     public int arrayBaseOffset(JavaKind kind) {
         return metaAccess.getArrayBaseOffset(kind);
     }
@@ -538,13 +503,19 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
     }
 
     private boolean isLocalIdNode(StoreIndexedNode storeIndexed) {
+        // Either the node has as input a LocalArray or has a node which will be lowered to a LocalArray
         Node nd = storeIndexed.inputs().first().asNode();
-        return (nd instanceof MarkLocalArray);
+        InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
+        boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
+        return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
     }
 
     private boolean isLocalIdNode(LoadIndexedNode loadIndexedNode) {
+        // Either the node has as input a LocalArray or has a node which will be lowered to a LocalArray
         Node nd = loadIndexedNode.inputs().first().asNode();
-        return (nd instanceof MarkLocalArray);
+        InvokeNode node = nd.inputs().filter(InvokeNode.class).first();
+        boolean willLowerToLocalArrayNode = node != null && "Direct#NewArrayNode.newArray".equals(node.callTarget().targetName()) && gpuSnippet;
+        return (nd instanceof MarkLocalArray || willLowerToLocalArrayNode);
     }
 
     private void lowerLocalNewArray(StructuredGraph graph, int length, NewArrayNode newArray) {
@@ -558,22 +529,6 @@ public class OCLLoweringProvider extends DefaultJavaLoweringProvider {
         FixedArrayNode fixedArrayNode;
         final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
         fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.globalSpace, newArray.elementType(), newLengthNode));
-        newArray.replaceAtUsages(fixedArrayNode);
-    }
-
-    private void lowerLocalInvokeNodeNewArray(StructuredGraph graph, int length, JavaKind elementKind, InvokeNode newArray) {
-        LocalArrayNode localArrayNode;
-        ConstantNode newLengthNode = ConstantNode.forInt(length, graph);
-        ResolvedJavaType elementType = metaAccess.lookupJavaType(elementKind.toJavaClass());
-        localArrayNode = graph.addWithoutUnique(new LocalArrayNode(OCLArchitecture.localSpace, elementType, newLengthNode));
-        newArray.replaceAtUsages(localArrayNode);
-    }
-
-    private void lowerPrivateInvokeNodeNewArray(StructuredGraph graph, int size, JavaKind elementKind, InvokeNode newArray) {
-        FixedArrayNode fixedArrayNode;
-        final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
-        ResolvedJavaType elementType = metaAccess.lookupJavaType(elementKind.toJavaClass());
-        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.globalSpace, elementType, newLengthNode));
         newArray.replaceAtUsages(fixedArrayNode);
     }
 

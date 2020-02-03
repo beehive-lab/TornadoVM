@@ -28,6 +28,7 @@ import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.java.NewArrayNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
@@ -58,7 +59,7 @@ public class ReduceGPUSnippets implements Snippets {
 
     @Snippet
     public static void partialReduceIntAddGlobal(int[] inputArray, int[] outputArray, int gidx) {
-        int[] localArray = new int[LOCAL_WORK_GROUP_SIZE];
+        int[] localArray = (int[]) NewArrayNode.newUninitializedArray(int.class, LOCAL_WORK_GROUP_SIZE);
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
@@ -105,7 +106,7 @@ public class ReduceGPUSnippets implements Snippets {
 
     @Snippet
     public static void partialReduceLongAddGlobal(long[] inputArray, long[] outputArray, int gidx) {
-        long[] localArray = new long[LOCAL_WORK_GROUP_SIZE];
+        long[] localArray = (long[]) NewArrayNode.newUninitializedArray(long.class, LOCAL_WORK_GROUP_SIZE);
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
@@ -152,7 +153,7 @@ public class ReduceGPUSnippets implements Snippets {
 
     @Snippet
     public static void partialReduceFloatAddGlobal(float[] inputArray, float[] outputArray, int gidx) {
-        float[] localArray = new float[LOCAL_WORK_GROUP_SIZE];
+        float[] localArray = (float[]) NewArrayNode.newUninitializedArray(float.class, LOCAL_WORK_GROUP_SIZE);
 
         int localIdx = OpenCLIntrinsics.get_local_id(0);
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
@@ -203,7 +204,7 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        double[] localArray = new double[LOCAL_WORK_GROUP_SIZE];
+        double[] localArray = (double[]) NewArrayNode.newUninitializedArray(double.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
 
@@ -250,7 +251,7 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        int[] localArray = new int[LOCAL_WORK_GROUP_SIZE];
+        int[] localArray = (int[]) NewArrayNode.newUninitializedArray(int.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
 
@@ -297,7 +298,7 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        long[] localArray = new long[LOCAL_WORK_GROUP_SIZE];
+        long[] localArray = (long[]) NewArrayNode.newUninitializedArray(long.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
 
@@ -344,7 +345,7 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        float[] localArray = new float[LOCAL_WORK_GROUP_SIZE];
+        float[] localArray = (float[]) NewArrayNode.newUninitializedArray(float.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
 
@@ -391,7 +392,7 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        double[] localArray = new double[LOCAL_WORK_GROUP_SIZE];
+        double[] localArray = (double[]) NewArrayNode.newUninitializedArray(double.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
 
@@ -438,7 +439,7 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        int[] localArray = new int[LOCAL_WORK_GROUP_SIZE];
+        int[] localArray = (int[]) NewArrayNode.newUninitializedArray(int.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
 
@@ -462,7 +463,7 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        long[] localArray = new long[LOCAL_WORK_GROUP_SIZE];
+        long[] localArray = (long[]) NewArrayNode.newUninitializedArray(long.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
 
@@ -486,7 +487,7 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        float[] localArray = new float[LOCAL_WORK_GROUP_SIZE];
+        float[] localArray = (float[]) NewArrayNode.newUninitializedArray(float.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
 
@@ -509,7 +510,7 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        double[] localArray = new double[LOCAL_WORK_GROUP_SIZE];
+        double[] localArray = (double[]) NewArrayNode.newUninitializedArray(double.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
 
@@ -533,7 +534,7 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        int[] localArray = new int[LOCAL_WORK_GROUP_SIZE];
+        int[] localArray = (int[]) NewArrayNode.newUninitializedArray(int.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
 
@@ -557,7 +558,7 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        long[] localArray = new long[LOCAL_WORK_GROUP_SIZE];
+        long[] localArray = (long[]) NewArrayNode.newUninitializedArray(long.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
 
@@ -581,7 +582,7 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        float[] localArray = new float[LOCAL_WORK_GROUP_SIZE];
+        float[] localArray = (float[]) NewArrayNode.newUninitializedArray(float.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
 
@@ -604,7 +605,7 @@ public class ReduceGPUSnippets implements Snippets {
         int localGroupSize = OpenCLIntrinsics.get_local_size(0);
         int groupID = OpenCLIntrinsics.get_group_id(0);
 
-        double[] localArray = new double[LOCAL_WORK_GROUP_SIZE];
+        double[] localArray = (double[]) NewArrayNode.newUninitializedArray(double.class, LOCAL_WORK_GROUP_SIZE);
 
         localArray[localIdx] = inputArray[gidx];
 
@@ -798,8 +799,6 @@ public class ReduceGPUSnippets implements Snippets {
                 // extra.as
                 args.add("value", extra);
             }
-
-//            System.err.println(snippet);
 
             template(storeAtomicIndexed, args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
         }

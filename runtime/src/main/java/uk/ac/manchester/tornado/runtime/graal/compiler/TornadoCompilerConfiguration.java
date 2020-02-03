@@ -32,6 +32,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 
+import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.runtime.graal.phases.lir.TornadoAllocationStage;
 
 public interface TornadoCompilerConfiguration {
@@ -40,7 +41,7 @@ public interface TornadoCompilerConfiguration {
 
     public TornadoSketchTier createSketchTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization canonicalizer);
 
-    public TornadoHighTier createHighTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization canonicalizer);
+    public TornadoHighTier createHighTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization canonicalizer, MetaAccessProvider metaAccessProvider);
 
     public TornadoLowTier createLowTier(OptionValues options, AddressLowering addressLowering);
 

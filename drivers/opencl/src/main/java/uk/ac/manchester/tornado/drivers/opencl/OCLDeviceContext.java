@@ -190,7 +190,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
 
     /*
      * ASync reads from device
-     * 
+     *
      */
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
         return queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);

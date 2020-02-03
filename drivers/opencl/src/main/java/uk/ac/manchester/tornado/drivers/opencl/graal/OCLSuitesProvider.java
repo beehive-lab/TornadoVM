@@ -53,7 +53,7 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
     public OCLSuitesProvider(OptionValues options, Plugins plugins, MetaAccessProvider metaAccessProvider, OCLCompilerConfiguration compilerConfig, AddressLowering addressLowering) {
         graphBuilderSuite = createGraphBuilderSuite(plugins);
         canonicalizer = new OCLCanonicalizer();
-        suites = new TornadoSuites(options, compilerConfig, canonicalizer, addressLowering);
+        suites = new TornadoSuites(options, compilerConfig, metaAccessProvider, canonicalizer, addressLowering);
         lirSuites = createLIRSuites();
     }
 

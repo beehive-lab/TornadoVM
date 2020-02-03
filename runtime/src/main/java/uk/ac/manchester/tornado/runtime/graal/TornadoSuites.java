@@ -30,7 +30,12 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase.AddressLowering;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 
-import uk.ac.manchester.tornado.runtime.graal.compiler.*;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerConfiguration;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoHighTier;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoLowTier;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoMidTier;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.lir.TornadoAllocationStage;
 
 public class TornadoSuites {
@@ -44,9 +49,9 @@ public class TornadoSuites {
     private final LIRPhaseSuite<PreAllocationOptimizationContext> preAllocStage;
     private final LIRPhaseSuite<PostAllocationOptimizationContext> postAllocStage;
 
-    public TornadoSuites(OptionValues options, TornadoCompilerConfiguration config, CanonicalizerPhase.CustomCanonicalization canonicalizer, AddressLowering addressLowering) {
+    public TornadoSuites(OptionValues options, TornadoCompilerConfiguration config, MetaAccessProvider metaAccessProvider, CanonicalizerPhase.CustomCanonicalization canonicalizer, AddressLowering addressLowering) {
         sketchTier = config.createSketchTier(options, canonicalizer);
-        highTier = config.createHighTier(options, canonicalizer);
+        highTier = config.createHighTier(options, canonicalizer, metaAccessProvider);
         midTier = config.createMidTier(options);
         lowTier = config.createLowTier(options, addressLowering);
         allocStage = config.createAllocationStage(options);
