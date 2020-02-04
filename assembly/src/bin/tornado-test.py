@@ -70,9 +70,7 @@ __TEST_THE_WORLD__ = [
 
 ## List of tests that can be ignored. Format: class#testMethod
 __TORNADO_TESTS_WHITE_LIST__ = [
-	"uk.ac.manchester.tornado.unittests.logic.TestLogic#testLogic03"
-	"uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer#testArrayMigration",
-    "uk.ac.manchester.tornado.unittests.branching.TestConditionals#testComplexTernaryCondition",
+	"",
 ]
 
 # ################################################################################################################
@@ -87,7 +85,7 @@ __PRINT_EXECUTION_TIMER__    = "-Dtornado.debug.executionTime=True "
 __GC__                       = "-Xmx6g "
 # ################################################################################################################
 
-__VERSION__ = "0.7_27012020"
+__VERSION__ = "0.8_04022020"
 
 __TEST_NOT_PASSED__= False
 

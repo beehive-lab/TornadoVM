@@ -25,8 +25,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-import static org.junit.Assert.assertThat;
-
 /**
  * Test bad uses of the TornadoVM API. It should throw exceptions when possible
  * with the concrete problem.
