@@ -228,10 +228,10 @@ def runTests(args):
 		start = time.time()
 		for t in __TEST_THE_WORLD__:
 			command = cmd + t
-
 			if (args.fast):
 				os.system(command)
 			else:
+				print command
 				stats = runCommandWithStats(command, stats)
 		
 		end = time.time()
