@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester.
  * 
@@ -20,8 +22,9 @@ package uk.ac.manchester.tornado.examples.openbitset;
 
 import java.util.Random;
 
-import uk.ac.manchester.tornado.api.TaskSchedule;
 import org.apache.lucene.util.FixedBitSet;
+
+import uk.ac.manchester.tornado.api.TaskSchedule;
 
 public class FixedBitSetExample {
 

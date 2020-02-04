@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -23,6 +25,11 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.compiler;
 
+import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
+import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
+import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
+import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
@@ -30,12 +37,13 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 
-import uk.ac.manchester.tornado.runtime.graal.phases.*;
-
-import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
-import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
-import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
-import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoApiReplacement;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoAutoParalleliser;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoDataflowAnalysis;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoInliningPolicy;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoReduceReplacement;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
+import uk.ac.manchester.tornado.runtime.graal.phases.TornadoStampResolver;
 
 public class TornadoSketchTier extends PhaseSuite<TornadoSketchTierContext> {
 
