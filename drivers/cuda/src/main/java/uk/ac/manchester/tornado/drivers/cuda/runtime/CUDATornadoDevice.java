@@ -76,6 +76,8 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
+        System.out.println("CUDATornadoDevice::ensureAllocated");
+        state.setValid(true);
         return 0;
     }
 
@@ -94,6 +96,7 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long hostOffset) {
+        objectState.setValid(true);
         return null;
     }
 
@@ -113,6 +116,7 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public List<Integer> streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
+        objectState.setValid(true);
         return null;
     }
 
@@ -130,6 +134,7 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
+        objectState.setValid(true);
         return 0;
     }
 
@@ -147,6 +152,7 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
+        objectState.setValid(true);
         return 0;
     }
 
@@ -223,7 +229,7 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public String getDeviceName() {
-        return null;
+        return "CUDA tornado device";
     }
 
     @Override
@@ -233,7 +239,7 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public String getPlatformName() {
-        return null;
+        return "CUDA Platform";
     }
 
     @Override
