@@ -91,6 +91,7 @@ public class TornadoVM extends TornadoLogger {
     private double totalTime;
     private long invocations;
     private TornadoProfiler timeProfiler;
+    private boolean wasWarmUp;
 
     public TornadoVM(TornadoExecutionContext graphContext, byte[] code, int limit, TornadoProfiler timeProfiler) {
 
@@ -181,6 +182,7 @@ public class TornadoVM extends TornadoLogger {
 
     public void warmup() {
         execute(true);
+        wasWarmUp = true;
     }
 
     public void compile() {
@@ -399,6 +401,11 @@ public class TornadoVM extends TornadoLogger {
                 final long batchThreads = buffer.getLong();
 
                 final TornadoAcceleratorDevice device = contexts.get(contextIndex);
+
+                if (device.getDeviceContext().wasReset() && wasWarmUp) {
+                    throw new RuntimeException("[ERROR] reset() was called after warmup()");
+                }
+
                 boolean redeployOnDevice = graphContext.redeployOnDevice();
 
                 final CallStack stack = resolveStack(stackIndex, numArgs, stacks, device, redeployOnDevice);

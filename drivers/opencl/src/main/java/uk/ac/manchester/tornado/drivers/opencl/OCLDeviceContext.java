@@ -57,6 +57,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     private final long bumpBuffer;
 
     private final OCLCodeCache codeCache;
+    private boolean wasReset;
 
     protected OCLDeviceContext(OCLDevice device, OCLCommandQueue queue, OCLContext context) {
         this.device = device;
@@ -304,6 +305,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         queue.reset();
         memoryManager.reset();
         codeCache.reset();
+        wasReset = true;
     }
 
     public OCLTornadoDevice asMapping() {
@@ -337,6 +339,16 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     @Override
     public boolean needsBump() {
         return needsBump;
+    }
+
+    @Override
+    public boolean wasReset() {
+        return wasReset;
+    }
+
+    @Override
+    public void setResetToFalse() {
+        wasReset = false;
     }
 
     public long getBumpBuffer() {

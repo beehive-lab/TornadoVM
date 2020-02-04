@@ -49,4 +49,8 @@ public interface TornadoDeviceContext {
 
     boolean needsBump();
 
+    boolean wasReset();
+
+    void setResetToFalse();
+
 }

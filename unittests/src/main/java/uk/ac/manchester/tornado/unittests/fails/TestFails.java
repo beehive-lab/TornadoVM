@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,8 @@ import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
+import static org.junit.Assert.assertThat;
+
 /**
  * Test bad uses of the TornadoVM API. It should throw exceptions when possible
  * with the concrete problem.
@@ -37,9 +39,17 @@ public class TestFails extends TornadoTestBase {
         }
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void test() {
-        // Call reset after warm-up
+        // =============================================================================
+        // Call reset after warm-up. This is not legal in TornadoVM. WarmUP will
+        // initialize the heap and the code cache. If reset is called, it will clean all
+        // state.
+        // This is a different case of calling reset and then execute, because it will
+        // reset the internal state of variables if needed, meanwhile warmup skip many
+        // of those steps.
+        // =============================================================================
+
         float[] x = new float[100];
         float[] y = new float[100];
 
@@ -49,11 +59,9 @@ public class TestFails extends TornadoTestBase {
             }
         }, x, y).streamOut(y);
 
+        // How to provoke the failure
         ts.warmup();
-
         reset();
-
         ts.execute();
-
     }
 }
