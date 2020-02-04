@@ -21,7 +21,9 @@ package uk.ac.manchester.tornado.unittests.fails;
 import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -39,7 +41,7 @@ public class TestFails extends TornadoTestBase {
     }
 
     @Test(expected = TornadoFailureException.class)
-    public void test() {
+    public void test01() {
         // =============================================================================
         // Call reset after warm-up. This is not legal in TornadoVM. WarmUP will
         // initialize the heap and the code cache. If reset is called, it will clean all
@@ -61,6 +63,31 @@ public class TestFails extends TornadoTestBase {
         // How to provoke the failure
         ts.warmup();
         reset();
+        ts.execute();
+    }
+
+    private static void kernel(float[] a, float[] b) {
+        for (@Parallel int i = 0; i < a.length; i++) {
+            b[i] = a[i];
+        }
+    }
+
+    @Test(expected = TornadoRuntimeException.class)
+    public void test02() {
+        // This test fails because the Java method's name to be accelerated corresponds
+        // to an OpenCL token.
+
+        float[] x = new float[100];
+        float[] y = new float[100];
+
+        // @formatter:off
+        TaskSchedule ts = new TaskSchedule("s0")
+                .streamIn(x)
+                .task("s0", TestFails::kernel, x, y)
+                .streamOut(y);
+        // @formatter:on
+
+        // How to provoke the failure
         ts.execute();
     }
 }
