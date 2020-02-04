@@ -21,6 +21,7 @@ package uk.ac.manchester.tornado.unittests.fails;
 import org.junit.Test;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.TornadoDriver;
+import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -39,7 +40,7 @@ public class TestFails extends TornadoTestBase {
         }
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test(expected = TornadoFailureException.class)
     public void test() {
         // =============================================================================
         // Call reset after warm-up. This is not legal in TornadoVM. WarmUP will
