@@ -96,7 +96,7 @@ JDK_8_VERSION = "1.8"
 try:
 	javaHome = os.environ["JAVA_HOME"]
 except:
-	print "[ERROR] JAVA_HOME is not defined"
+	print "[ERROR] JAVA_HOME is not defined. JAVA_HOME should point to a distribution of GraalVM"
 	sys.exit(-1)
 
 __TEST_NOT_PASSED__= False
@@ -319,9 +319,8 @@ def writeStatusInFile():
 	f.close()
 
 def getJavaVersion():
-	# Get java version
-	global javaVersion
-	javaVersion = subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
+	# Get the java version
+	return subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
 
 def main():
 	args = parseArguments()
@@ -329,8 +328,8 @@ def main():
 	if (args.version):
 		print __VERSION__
 		sys.exit(0)
-
-	getJavaVersion()
+	global javaVersion
+	javaVersion = getJavaVersion()
 
 
 	if (args.junit):

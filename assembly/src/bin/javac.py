@@ -26,8 +26,8 @@
 
 ## Wrapper that sets the Tornado Classpath/Modulepath and invokes the Javac compiler
 
-import subprocess
 import os
+import subprocess
 import sys
 
 try:
@@ -39,7 +39,7 @@ except:
 try:
 	javaHome = os.environ["JAVA_HOME"]
 except:
-	print "[ERROR] JAVA_HOME is not defined"
+	print "[ERROR] JAVA_HOME is not defined. JAVA_HOME should point to a distribution of GraalVM"
 	sys.exit(-1)
 
 try:
@@ -48,35 +48,40 @@ except:
 	classpathEnviron = ""
 	pass
 
+__DEFAULT_MODULES__ = "ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.opencl,tornado.drivers.opencl"
+
+def getJavaVersion():
+    return subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
+
 JDK_11_VERSION = "11.0"
 JDK_8_VERSION = "1.8"
 # Get java version
-javaVersion = subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
+javaVersion = getJavaVersion()
 
-jarFilesPath = TORNADO_SDK + "/share/java/tornado/"
+__JAR_FILES_PATH__ = TORNADO_SDK + "/share/java/tornado/"
+
+def trimModulesParamString(indexToSearch):
+    moduleParamIndex = sys.argv.index(indexToSearch)
+    parameter = sys.argv[moduleParamIndex + 1]
+    # Trim any existing existing quotes from the parameter
+    parameter = parameter[1:-1] if (parameter.startswith("\"") and parameter.endswith("\"")) else parameter
+    del sys.argv[moduleParamIndex:moduleParamIndex + 2]
+    return parameter
 
 def runWithModulepath():
-    defaultModulePath = jarFilesPath
-    defaultModules = "ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.opencl,tornado.drivers.opencl"
-    print("Using modulepath")
+    defaultModulePath = __JAR_FILES_PATH__
 
     command = javaHome + "/bin/javac "
 
     if ("--add-modules" in sys.argv):
-        addModulesIndex = sys.argv.index("--add-modules")
-        addModulesParam = sys.argv[addModulesIndex + 1]
-        addModulesParam = addModulesParam[1:-1] if (addModulesParam.startswith("\"") and addModulesParam.endswith("\"")) else addModulesParam
-        command += "--add-modules " + addModulesParam + "," + defaultModules
-        del sys.argv[addModulesIndex:addModulesIndex + 2]
+        addModulesParam = trimModulesParamString("--add-modules")
+        command += "--add-modules " + addModulesParam + "," + __DEFAULT_MODULES__
     else:
-        command += "--add-modules " + defaultModules
+        command += "--add-modules " + __DEFAULT_MODULES__
 
     if ("--module-path" in sys.argv):
-        modulePathIndex = sys.argv.index("--module-path")
-        modulePathParam = sys.argv[modulePathIndex + 1]
-        modulePathParam = modulePathParam[1:-1] if (modulePathParam.startswith("\"") and modulePathParam.endswith("\"")) else modulePathParam
+        modulePathParam = trimModulesParamString("--module-path")
         command += " --module-path \"" + modulePathParam + ":" + defaultModulePath + "\""
-        del sys.argv[modulePathIndex:modulePathIndex + 2]
     else:
         command += " --module-path \"" + defaultModulePath + "\""
 
@@ -86,12 +91,11 @@ def runWithModulepath():
     os.system(command)
 
 def runWithClasspath():
-    print("Using classpath")
 
     classPathPrefix= TORNADO_SDK + "/"
     classPathVar = "."
 
-    process = subprocess.Popen(['ls', jarFilesPath], stdout=subprocess.PIPE)
+    process = subprocess.Popen(['ls', __JAR_FILES_PATH__], stdout=subprocess.PIPE)
     out, err = process.communicate()
     jarFiles = out.split("\n")
 
@@ -99,7 +103,7 @@ def runWithClasspath():
     	classPathVar = classPathVar + ":" + classpathEnviron
 
     for f in jarFiles:
-    	classPathVar = classPathVar +  ":" + jarFilesPath + f
+    	classPathVar = classPathVar +  ":" + __JAR_FILES_PATH__ + f
 
     command = javaHome + "/bin/javac -classpath \"" + classPathVar  +  "\" " + sys.argv[1]
     print command

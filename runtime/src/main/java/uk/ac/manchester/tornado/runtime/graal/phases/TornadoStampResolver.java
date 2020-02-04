@@ -38,7 +38,6 @@ public class TornadoStampResolver extends BasePhase<TornadoSketchTierContext> {
         graph.getNodes().filter(PhiNode.class).forEach((PhiNode phi) -> {
             Stamp stamp = phi.stamp(NodeView.DEFAULT);
             if (stamp.isEmpty()) {
-
                 for (ValueNode n : phi.values()) {
                     if (stamp.isEmpty()) {
                         stamp = n.stamp(NodeView.DEFAULT);

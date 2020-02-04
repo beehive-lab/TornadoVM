@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, School of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.examples.polyglot;
 
+import java.util.stream.IntStream;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-
-import java.util.stream.IntStream;
 
 public class MyCompute {
     private static void vectorAddFloat(float[] a, float[] b, float[] c) {

@@ -1,5 +1,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.lir;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
@@ -14,12 +16,10 @@ import org.graalvm.compiler.nodes.memory.FixedAccessNode;
 import org.graalvm.compiler.nodes.memory.LIRLowerableAccess;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
-import org.graalvm.word.LocationIdentity;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLStamp;
-
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 /**
  * Writes a given {@linkplain #value() value} a {@linkplain FixedAccessNode
@@ -48,7 +48,7 @@ public class OCLWriteAtomicNode extends AbstractWriteNode implements LIRLowerabl
     public static final NodeClass<OCLWriteAtomicNode> TYPE = NodeClass.create(OCLWriteAtomicNode.class);
 
     public OCLWriteAtomicNode(AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType, ValueNode acc, Stamp accStamp, JavaKind elementKind,
-                              ATOMIC_OPERATION operation) {
+            ATOMIC_OPERATION operation) {
         super(TYPE, address, location, value, barrierType);
 
         this.address = address;

@@ -61,6 +61,8 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 public class TaskUtils {
 
+    public static final String JDK_VM_CI_HOTSPOT_JDK_REFLECTION = "jdk.vm.ci.hotspot.HotSpotJDKReflection";
+
     public static CompilableTask scalaTask(String id, Object object, Object... args) {
         Class<?> type = object.getClass();
         Method entryPoint = null;
@@ -113,7 +115,7 @@ public class TaskUtils {
                 cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKESTATIC);
                 JavaMethod jm = cp.lookupMethod(bc[i + 2], Bytecodes.INVOKESTATIC);
                 try {
-                    Class hotSpotJDKReflection = Class.forName("jdk.vm.ci.hotspot.HotSpotJDKReflection");
+                    Class hotSpotJDKReflection = Class.forName(JDK_VM_CI_HOTSPOT_JDK_REFLECTION);
                     Method getMethod = null;
                     for (Method method : hotSpotJDKReflection.getDeclaredMethods()) {
                         if ("getMethod".equals(method.getName())) {
@@ -139,7 +141,7 @@ public class TaskUtils {
                         continue;
                 }
                 try {
-                    Class hotSpotJDKReflection = Class.forName("jdk.vm.ci.hotspot.HotSpotJDKReflection");
+                    Class hotSpotJDKReflection = Class.forName(JDK_VM_CI_HOTSPOT_JDK_REFLECTION);
                     Method getMethod = null;
                     for (Method method : hotSpotJDKReflection.getDeclaredMethods()) {
                         if ("getMethod".equals(method.getName())) {

@@ -26,7 +26,7 @@ TornadoVM has been succefully tested on the following platforms:
 
 TornadoVM is built by using GraalVM Community Edition 19.3.0. The directory which contains the Java binary is used by the JAVA_HOME env variable (Step 2).
 
-GraalVM Community Edition 19.3.0 supports both JDK8 and JDK11. This means that Tornado is able to run on top of both versions.
+GraalVM Community Edition 19.3.0 supports both JDK8 and JDK11. This means that TornadoVM is able to run on top of both versions.
 
 #### 1.1 Download GraalVM Community Edition 19.3.0
 

@@ -442,11 +442,10 @@ public class OCLCodeCache {
 
         final String log = program.getBuildLog(deviceContext.getDeviceId()).trim();
 
+//        if (PRINT_WARNINGS || (status == OCLBuildStatus.CL_BUILD_ERROR)) {
         if (PRINT_WARNINGS || (status != CL_BUILD_SUCCESS)) {
             if (!log.isEmpty()) {
                 debug(log);
-            } else {
-                debug("log is empty for " + program);
             }
             final Path outDir = resolveLogDirectory();
             final String identifier = id + "-" + entryPoint;

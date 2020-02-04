@@ -175,11 +175,11 @@ PROVIDERS=" \
 --vm.Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
 --vm.Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel "
 
-JAVA_FLAGS="--jvm --polyglot --vm.XX:-UseCompressedOops "
+JAVA_FLAGS="--jvm --polyglot --vm.XX:-UseCompressedOops ${TORNADO_FLAGS} ${PROVIDERS} "
 if [ "$JAVA_VERSION" = "1.8" ]; then
-  JAVA_FLAGS="${JAVA_FLAGS} --vm.XX:-UseJVMCIClassLoader ${TORNADO_FLAGS} ${PROVIDERS} "
+  JAVA_FLAGS="${JAVA_FLAGS} --vm.XX:-UseJVMCIClassLoader "
 elif [ "$JAVA_VERSION" = "11.0" ]; then
-  JAVA_FLAGS="${JAVA_FLAGS} --vm.XX:+UseParallelOldGC --vm.XX:-UseBiasedLocking ${TORNADO_FLAGS} ${PROVIDERS} ${PACKAGE_LIST[*]} "
+  JAVA_FLAGS="${JAVA_FLAGS} --vm.XX:+UseParallelOldGC --vm.XX:-UseBiasedLocking ${PACKAGE_LIST[*]} "
 fi
 
 if [ $printflags -eq 1 ] ; then
@@ -195,6 +195,3 @@ fi
 # echo $@
 
 ${NODE_CMD} ${JAVA_FLAGS} $@
-
-
-

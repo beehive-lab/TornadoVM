@@ -6,7 +6,7 @@ Setup:
 
 ```bash 
 cd $TORNADO_ROOT && make
-cd $TORNADO_ROOT/examples/src/main/java/uk/ac/manchester/tornado/examples/polyglot/node-sample
+cd $TORNADO_ROOT/examples/src/main/java/uk/ac/manchester/tornado/examples/polyglot/node
 javac.py Compute.java
 ```
 

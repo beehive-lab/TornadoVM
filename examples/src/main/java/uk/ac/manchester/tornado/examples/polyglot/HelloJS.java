@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, School of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.examples.polyglot;
 
-import org.graalvm.polyglot.Context;
-
 import java.util.Arrays;
+
+import org.graalvm.polyglot.Context;
 
 /**
  * Example of GraalVM Polyglot using JavaScript and Tornado.

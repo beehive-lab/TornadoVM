@@ -229,10 +229,6 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
         graph.addOrUnique(storeAtomicIndexedNodeExtension);
         final StoreAtomicIndexedNode atomicStoreNode = graph
                 .addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(), store.elementKind(), store.getBoundsCheck(), value, accumulator, inputArray, storeAtomicIndexedNodeExtension));
-        // final StoreAtomicIndexedNode atomicStoreNode = graph
-        // .addOrUnique(new StoreAtomicIndexedNode(store.array(), store.index(),
-        // store.elementKind(), store.getBoundsCheck(), value, accumulator, inputArray,
-        // startNode));
 
         ValueNode arithmeticNode = null;
         if (value instanceof OCLReduceAddNode) {
