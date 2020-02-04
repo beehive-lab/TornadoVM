@@ -10,6 +10,7 @@ import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADriver;
+import uk.ac.manchester.tornado.drivers.cuda.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
@@ -51,7 +52,8 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {
-        return null;
+
+        return new PTXInstalledCode("foo");
     }
 
     @Override
@@ -76,7 +78,6 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
-        System.out.println("CUDATornadoDevice::ensureAllocated");
         state.setValid(true);
         return 0;
     }
