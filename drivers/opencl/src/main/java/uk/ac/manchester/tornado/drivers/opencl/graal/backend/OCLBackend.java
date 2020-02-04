@@ -250,16 +250,16 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
      * @return
      */
     public int[] getDriverAndDevice() {
-        int numDev = TornadoCoreRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
+        int numDev = TornadoCoreRuntime.getTornadoRuntime().getDriver(1).getDeviceCount();
         int deviceIndex = 0;
         for (int i = 0; i < numDev; i++) {
-            OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(0).getDevice(i);
+            OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(1).getDevice(i);
             OCLDevice dev = device.getDevice();
             if (dev == deviceContext.getDevice()) {
                 deviceIndex = i;
             }
         }
-        return new int[] { 0, deviceIndex };
+        return new int[] { 1, deviceIndex };
     }
 
     private boolean isJITCompilationForFPGAs(String deviceFullName) {
