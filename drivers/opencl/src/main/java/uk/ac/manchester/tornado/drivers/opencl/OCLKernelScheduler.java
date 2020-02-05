@@ -26,6 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
@@ -70,7 +71,6 @@ public abstract class OCLKernelScheduler {
         }
 
         if (!meta.isLocalWorkDefined()) {
-            System.out.println("CACLULATE WORK GROUP ");
             calculateLocalWork(meta);
         }
 
@@ -83,9 +83,11 @@ public abstract class OCLKernelScheduler {
             if (deviceContext.getPlatformContext().getPlatform().getVendor().equals("Xilinx")) { // TODO Isolate this check in the Xilinx backend as the driver throws error if
                                                                                                  // localWorkSize is null
                 taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
-            } else {
-                System.out.println(" Deploy from here " + Arrays.toString(meta.getLocalWork()));
+            } else if (Tornado.NON_DEFAULT_LWGS) {
+                System.out.println(" Deploy with  " + Arrays.toString(meta.getLocalWork()));
                 taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
+            }else {
+                taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
             }
         } else {
             taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
