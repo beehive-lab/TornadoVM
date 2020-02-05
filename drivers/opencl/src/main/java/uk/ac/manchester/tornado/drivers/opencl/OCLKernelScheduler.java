@@ -84,9 +84,9 @@ public abstract class OCLKernelScheduler {
                                                                                                  // localWorkSize is null
                 taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
             } else if (Tornado.NON_DEFAULT_LWGS) {
-                System.out.println(" Deploy with  " + Arrays.toString(meta.getLocalWork()));
+//                System.out.println(" Deploy with  " + Arrays.toString(meta.getLocalWork()));
                 taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
-            }else {
+            } else {
                 taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), null, waitEvents);
             }
         } else {
