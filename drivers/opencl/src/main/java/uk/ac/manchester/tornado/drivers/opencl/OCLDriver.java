@@ -134,13 +134,14 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
             String platformToIgnore = getString("tornado.ignore.platform");
             for (int i = 0; i < numPlatforms; i++) {
                 final OCLPlatform platform = OpenCL.getPlatform(i);
-
                 if (platformToIgnore != null && platform.getName().startsWith(platformToIgnore)) {
                     info("Ignore " + platform.getName());
                 } else {
                     installDevices(i, platform, options, vmRuntime, vmConfig);
                 }
             }
+        } else {
+            throw new TornadoRuntimeException("[ERROR] OpenCL platforms not found. Please install OpenCL on your machine");
         }
     }
 
