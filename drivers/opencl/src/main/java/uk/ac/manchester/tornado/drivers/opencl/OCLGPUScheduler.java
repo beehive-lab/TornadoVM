@@ -25,11 +25,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import com.sun.org.apache.bcel.internal.generic.SWITCH;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 
 public class OCLGPUScheduler extends OCLKernelScheduler {
 
@@ -64,7 +60,6 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
 
         for (int i = 0; i < meta.getDims(); i++) {
             long value = (batchThreads <= 0) ? (long) (meta.getDomain().get(i).cardinality()) : batchThreads;
-            // adjust for irregular problem sizes
             if (ADJUST_IRREGULAR && (value % WARP_SIZE != 0)) {
                 value = ((value / WARP_SIZE) + 1) * WARP_SIZE;
             }
@@ -75,8 +70,6 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
     @Override
     public void calculateLocalWork(final TaskMetaData meta) {
         final long[] localWork = meta.getLocalWork();
-        System.out.println("Inside scheduler: " + Arrays.toString(localWork));
-        System.out.println("meta getdims: " + meta.getDims());
 
         switch (meta.getDims()) {
             case 3:
@@ -94,38 +87,32 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
     }
 
     private int calculateGroupSize(long maxBlockSize, long globalWorkSize) {
-        System.out.println(" * * *  * *  *");
-        System.out.println("maxBlockSize initial value : " + maxBlockSize);
         if (maxBlockSize == globalWorkSize) {
             maxBlockSize /= 4;
         }
 
         int value = (int) Math.min(maxBlockSize, globalWorkSize);
-        System.out.println("Initial value : " + value);
         while (globalWorkSize % value != 0) {
             value--;
         }
-        System.out.println("maxBlockSize value : " + maxBlockSize);
-        System.out.println("globalWorkSize value : " + globalWorkSize);
-        System.out.println("Dim value : " + value);
         return value;
     }
 
     private long[] calculateEffectiveMaxWorkItemSizes(TaskMetaData metaData) {
-        long[] intermediateitems = new long[] { 1, 1, 1 };
+        long[] intermediates = new long[] { 1, 1, 1 };
 
         switch (metaData.getDims()) {
             case 2:
-                intermediateitems[0] = (long) Math.sqrt(maxWorkItemSizes[0]);
-                intermediateitems[1] = (long) Math.sqrt(maxWorkItemSizes[0]);
+                intermediates[0] = (long) Math.sqrt(maxWorkItemSizes[0]);
+                intermediates[1] = (long) Math.sqrt(maxWorkItemSizes[1]);
                 break;
             case 1:
-                intermediateitems[0] = maxWorkItemSizes[0];
+                intermediates[0] = maxWorkItemSizes[0];
                 break;
             default:
                 break;
 
         }
-        return intermediateitems;
+        return intermediates;
     }
 }
