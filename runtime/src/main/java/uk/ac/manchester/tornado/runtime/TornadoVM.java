@@ -92,7 +92,7 @@ public class TornadoVM extends TornadoLogger {
     private double totalTime;
     private long invocations;
     private TornadoProfiler timeProfiler;
-    private boolean wasWarmUp;
+    private boolean finishedWarmup;
 
     public TornadoVM(TornadoExecutionContext graphContext, byte[] code, int limit, TornadoProfiler timeProfiler) {
 
@@ -183,7 +183,7 @@ public class TornadoVM extends TornadoLogger {
 
     public void warmup() {
         execute(true);
-        wasWarmUp = true;
+        finishedWarmup = true;
     }
 
     public void compile() {
@@ -403,7 +403,7 @@ public class TornadoVM extends TornadoLogger {
 
                 final TornadoAcceleratorDevice device = contexts.get(contextIndex);
 
-                if (device.getDeviceContext().wasReset() && wasWarmUp) {
+                if (device.getDeviceContext().wasReset() && finishedWarmup) {
                     throw new TornadoFailureException("[ERROR] reset() was called after warmup()");
                 }
 
