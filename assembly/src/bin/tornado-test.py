@@ -68,6 +68,12 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
 ]
 
+## List of classes to be tested for the CUDA integration project. These should remain on this branch.
+__TEST_CUDA__ = [
+]
+
+__TEST_THE_WORLD__ = __TEST_CUDA__
+
 ## List of tests that can be ignored. Format: class#testMethod
 __TORNADO_TESTS_WHITE_LIST__ = [
 	"uk.ac.manchester.tornado.unittests.logic.TestLogic#testLogic03"
