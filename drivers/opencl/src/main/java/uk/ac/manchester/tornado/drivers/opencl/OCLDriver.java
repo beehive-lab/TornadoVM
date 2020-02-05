@@ -52,9 +52,13 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
     public OCLDriver(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
         final int numPlatforms = OpenCL.getNumPlatforms();
+
+        if (numPlatforms < 1) {
+            throw new TornadoRuntimeException("[ERROR] No OpenCL platforms found. Please install OpenCL drivers on your machine");
+        }
+
         backends = new OCLBackend[numPlatforms][];
         contexts = new ArrayList<>();
-
         discoverDevices(options, vmRuntime, vmConfig);
         flatBackends = new OCLBackend[getDeviceCount()];
         int index = 0;
@@ -130,18 +134,14 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
     protected void discoverDevices(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
         final int numPlatforms = OpenCL.getNumPlatforms();
-        if (numPlatforms > 0) {
-            String platformToIgnore = getString("tornado.ignore.platform");
-            for (int i = 0; i < numPlatforms; i++) {
-                final OCLPlatform platform = OpenCL.getPlatform(i);
-                if (platformToIgnore != null && platform.getName().startsWith(platformToIgnore)) {
-                    info("Ignore " + platform.getName());
-                } else {
-                    installDevices(i, platform, options, vmRuntime, vmConfig);
-                }
+        String platformToIgnore = getString("tornado.ignore.platform");
+        for (int i = 0; i < numPlatforms; i++) {
+            final OCLPlatform platform = OpenCL.getPlatform(i);
+            if (platformToIgnore != null && platform.getName().startsWith(platformToIgnore)) {
+                info("Ignore " + platform.getName());
+            } else {
+                installDevices(i, platform, options, vmRuntime, vmConfig);
             }
-        } else {
-            throw new TornadoRuntimeException("[ERROR] OpenCL platforms not found. Please install OpenCL on your machine");
         }
     }
 
