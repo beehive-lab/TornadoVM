@@ -33,6 +33,7 @@ import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
@@ -54,7 +55,7 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
         final int numPlatforms = OpenCL.getNumPlatforms();
 
         if (numPlatforms < 1) {
-            throw new TornadoRuntimeException("[ERROR] No OpenCL platforms found. Please install OpenCL drivers on your machine");
+            throw new TornadoNoOpenCLPlatformException("[ERROR] No OpenCL platforms found. Please install OpenCL drivers on your machine");
         }
 
         backends = new OCLBackend[numPlatforms][];
