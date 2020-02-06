@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.exceptions.TornadoException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
@@ -91,6 +92,7 @@ public class TornadoVM extends TornadoLogger {
     private double totalTime;
     private long invocations;
     private TornadoProfiler timeProfiler;
+    private boolean finishedWarmup;
 
     public TornadoVM(TornadoExecutionContext graphContext, byte[] code, int limit, TornadoProfiler timeProfiler) {
 
@@ -181,6 +183,7 @@ public class TornadoVM extends TornadoLogger {
 
     public void warmup() {
         execute(true);
+        finishedWarmup = true;
     }
 
     public void compile() {
@@ -399,6 +402,11 @@ public class TornadoVM extends TornadoLogger {
                 final long batchThreads = buffer.getLong();
 
                 final TornadoAcceleratorDevice device = contexts.get(contextIndex);
+
+                if (device.getDeviceContext().wasReset() && finishedWarmup) {
+                    throw new TornadoFailureException("[ERROR] reset() was called after warmup()");
+                }
+
                 boolean redeployOnDevice = graphContext.redeployOnDevice();
 
                 final CallStack stack = resolveStack(stackIndex, numArgs, stacks, device, redeployOnDevice);
