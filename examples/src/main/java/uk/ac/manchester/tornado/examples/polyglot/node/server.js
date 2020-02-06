@@ -17,40 +17,37 @@
  */
 
 const express = require('express')
-var publicDir = require('path').join(__dirname,'/');
+const publicDir = require('path').join(__dirname,'/');
 const app = express();
-app.use(express.static(publicDir));
 const fs = require('fs')
 
+app.use(express.static(publicDir));
 const Arrays = Java.type('java.util.Arrays')
 
 function getNanoSecTime() {
 	var hrTime = process.hrtime();
 	return hrTime[0] * 1000000000 + hrTime[1];
-  }
+}
 
-// Request mapping for localhost:3000/
+// It calls Tornado to compute mandelbrot on a GPU
 app.get('/', function (req, res) {
 	var text = "Hello World from Graal JS! "
 	text += "<br>"
 	text += Java.type('Mandelbrot').getString()
 	text += "<br>"
 	var start = getNanoSecTime()
-	//var output = Arrays.toString(Java.type('Mandelbrot').compute())
 	Arrays.toString(Java.type('Mandelbrot').compute())
 	var end = getNanoSecTime()
-	//text += output
 	text += "<br>"
 	text += "Total time (s) = " + ( (end - start) * 1E-9)
 	text += "<br>"
-	
-    const Jimp = require('jimp');
-	// Load the image
+
+	// Render resulting image 
 	text += "<img src=\"/mandelbrot.png\"></img>"
 	res.send(text)
 })
 
-// Request mapping for localhost:3000/
+// It calls Java to compute mandelbrot 
 app.get('/java', function (req, res) {
 	var text = "Hello World from Graal JS! "
 	text += "<br>"
@@ -63,13 +60,12 @@ app.get('/java', function (req, res) {
 	text += "Total time (s) = " + ( (end - start) * 1E-9)
 	text += "<br>"
 
-    const Jimp = require('jimp');
-	// Load the image
+	// Render resulting image 
 	text += "<img src=\"/mandelbrot.png\"></img>"
 	res.send(text)
 })
 
 // Creates a node express server on port 3000
 app.listen(3000, function() {
-	console.log("The application is listening on port 3000. Connect to http://localhost:3000");
+	console.log("The application is listening on port 3000. ");
 })
