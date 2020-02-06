@@ -1,38 +1,75 @@
-// Copyright (c) 2020, APT Group, Department of Computer Science,
-// School of Engineering, The University of Manchester. All rights reserved.
-// Copyright (c) 2019, APT Group, School of Computer Science,
-// The University of Manchester.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+/*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * The University of Manchester.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ */
 
 const express = require('express')
-const app = express()
+var publicDir = require('path').join(__dirname,'/');
+const app = express();
+app.use(express.static(publicDir));
+const fs = require('fs')
 
 const Arrays = Java.type('java.util.Arrays')
+
+function getNanoSecTime() {
+	var hrTime = process.hrtime();
+	return hrTime[0] * 1000000000 + hrTime[1];
+  }
 
 // Request mapping for localhost:3000/
 app.get('/', function (req, res) {
 	var text = "Hello World from Graal JS! "
 	text += "<br>"
-	text += Java.type('Compute').getString()
+	text += Java.type('Mandelbrot').getString()
 	text += "<br>"
-	text += Arrays.toString(Java.type('Compute').compute())
+	var start = getNanoSecTime()
+	//var output = Arrays.toString(Java.type('Mandelbrot').compute())
+	Arrays.toString(Java.type('Mandelbrot').compute())
+	var end = getNanoSecTime()
+	//text += output
+	text += "<br>"
+	text += "Total time (s) = " + ( (end - start) * 1E-9)
+	text += "<br>"
+	
+    const Jimp = require('jimp');
+	// Load the image
+	text += "<img src=\"/mandelbrot.png\"></img>"
+	res.send(text)
+})
 
-	res.send(text);
+// Request mapping for localhost:3000/
+app.get('/java', function (req, res) {
+	var text = "Hello World from Graal JS! "
+	text += "<br>"
+	text += Java.type('Mandelbrot').getString()
+	text += "<br>"
+	var start = getNanoSecTime()
+	Arrays.toString(Java.type('Mandelbrot').sequential())
+	var end = getNanoSecTime()
+	text += "<br>"
+	text += "Total time (s) = " + ( (end - start) * 1E-9)
+	text += "<br>"
+
+    const Jimp = require('jimp');
+	// Load the image
+	text += "<img src=\"/mandelbrot.png\"></img>"
+	res.send(text)
 })
 
 // Creates a node express server on port 3000
 app.listen(3000, function() {
-	console.log("The application is listening on port 3000");
+	console.log("The application is listening on port 3000. Connect to http://localhost:3000");
 })
