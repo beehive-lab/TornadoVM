@@ -22,23 +22,31 @@ TornadoVM has been succefully tested on the following platforms:
 
 ## Installation
 
-### 1. Install GraalVM Community Edition 19.3.0
+### 1. Compile JDK 1.8 with JVMCI-8 support
+TornadoVM is built by using a JDK 1.8 version with JVMCI-8 support. The directory which contains the Java binary is used as both the JAVA_HOME (Step 2) and the JVMCI root path (Step 3).
 
-TornadoVM is built by using GraalVM Community Edition 19.3.0. The directory which contains the Java binary is used by the JAVA_HOME env variable (Step 2).
+### 1.1 Steps for a Linux-based OS
 
-GraalVM Community Edition 19.3.0 supports both JDK8 and JDK11. This means that TornadoVM is able to run on top of both versions.
-
-#### 1.1 Download GraalVM Community Edition 19.3.0
-
-GraalVM 19.3.0 builds are available to download at [https://github.com/graalvm/graalvm-ce-builds/releases](https://github.com/graalvm/graalvm-ce-builds/releases).
-
-You can then extract the zip file:
-
-```bash 
-  $ tar -xf graalvm-ce-java{JDK_VERSION}-{OS}-{ARCHITECTURE}-19.3.0.tar.gz
+```bash
+ $ git clone https://github.com/beehive-lab/mx 
+ $ export PATH=`pwd`/mx:$PATH 
+ $ git clone https://github.com/beehive-lab/graal-jvmci-8
+ $ cd graal-jvmci-8
+ $ mx build
 ```
 
-The Java binary will be found in the `graalvm-ce-java{JDK_VERSION}-19.3.0` directory. This directory is used as the JAVA_HOME (See step 2).
+These steps will generate a new Java binary into the `jdk1.8.0_<your_version>/product`, e.g., `jdk1.8.0_131/product`. This directory is used as the JAVA_HOME (Step 2) and the JVMCI root path (Step 3).
+
+### 1.2 Steps for Apple Mac OS X
+Due to conflicts between the latest llvm-clang compiler in the Mac OS X and the current version of the JDK 1.8 used by TornadoVM, the Java binary cannot be built successfully. As a work-around, you can use [this binary](https://www.dropbox.com/s/2aguj98jg5b5yh4/jdk1.8.0_131-osx-10.11.6.tgxz?dl=0) which has been compiled in an earlier Mac OS version.
+
+```bash
+ $ wget https://www.dropbox.com/s/2aguj98jg5b5yh4/jdk1.8.0_131-osx-10.11.6.tgxz
+ $ tar -xf jdk1.8.0_131-osx-10.11.6.tgxz
+ $ cd jdk1.8.0_131
+```
+
+These steps produce the `jdk1.8.0_131` directory which contains the prebuilt Java binary for Mac OS X, and it is used as the JAVA_HOME (Step 2) and the JVMCI root path (Step 3).
 
 ### 2. Download TornadoVM
 
@@ -53,7 +61,7 @@ Create the `etc/sources.env` file and add the following code in it **(after upda
 
 ```bash
 #!/bin/bash
-export JAVA_HOME=<path to GraalVM 19.3.0 jdk> ## This path is produced in Step 1
+export JAVA_HOME=<path to 1.8 jdk with JVMCI> ## This path is produced in Step 1
 export PATH=$PWD/bin/bin:$PATH    ## This directory will be automatically generated during Tornado compilation
 export TORNADO_SDK=$PWD/bin/sdk   ## This directory will be automatically generated during Tornado compilation
 export CMAKE_ROOT=/usr            ## or <path/to/cmake/cmake-3.10.2> (see step 4)
@@ -65,13 +73,49 @@ This file should be loaded once after opening the command prompt for the setup o
 $ source ./etc/sources.env
 ```
 
-### 3. Install CMAKE (if cmake < 3.6) 
+
+### 3. Setting the default maven configuration
+
+Create (or update) the file in `~/.m2/settings.xml` with the following content. Modify the `jvmci.root` with your path to JDK 1.8.0 that you built in step 1 and the `jvmci.version` with the corresponding version. 
+
+```bash
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+	https://maven.apache.org/xsd/settings-1.0.0.xsd">
+ <interactiveMode/>
+ <usePluginRegistry/>
+ 	<offline/>
+	<pluginGroups/>
+	<servers/>
+ 	<mirrors/>
+	<proxies/>
+	<profiles>
+	  <profile>
+		<id>tornado-jvmci</id>
+		<activation>
+		 	<activeByDefault>true</activeByDefault>
+		</activation>
+		<properties>
+			<!-- Your PATH TO YOUR JDK1.8-JVMCI-->
+			<jvmci.root>/home/user/jdk1.8.0_<your_version>/product</jvmci.root>
+			<!-- Your JDK1.8-JVMCI version-->
+		 	<jvmci.version>1.8.0_<your_version></jvmci.version>
+		</properties>
+	   </profile>
+	 </profiles>
+	 <activeProfiles/>
+</settings>
+```
+
+
+### 4. Install CMAKE (if cmake < 3.6) 
 
 ```
 $ cmake -version
 ```
 
-**If the version of cmake is > 3.6 then skip the rest of this step and go to Step 4.**
+**If the version of cmake is > 3.6 then skip the rest of this step and go to Step 5.**
 Otherwise try to install cmake.
 
 For simplicity it might be easier to install cmake in your home directory.
@@ -95,7 +139,7 @@ Then export `CMAKE_ROOT` variable to the cmake installation. You can add it to t
 export CMAKE_ROOT=/opt/cmake-3.10.1
 ```
 
-### 4. Compile TornadoVM
+### 5. Compile TornadoVM
 
 ```bash
 $ cd ~/tornadovm
@@ -106,7 +150,7 @@ and done!!
 
 ## Know issues 
 
-##### For Ubuntu >= 16.04, install the package  `ocl-icd-opencl-dev`
+### For Ubuntu >= 16.04, install the package  `ocl-icd-opencl-dev`
 
 In Ubuntu >= 16.04 CMake can cause the following error:  Could NOT find OpenCL (missing: OpenCL_LIBRARY) (found version "2.2"). Then the following package should be installed:
  
@@ -114,27 +158,16 @@ In Ubuntu >= 16.04 CMake can cause the following error:  Could NOT find OpenCL (
 $ apt-get install ocl-icd-opencl-dev
 ```
 
-## Running Examples
-
-The examples and benchmarks of Tornado live in two different modules (`tornado.examples` and `tornado.benchmarks`). If using the JDK11 version of  GraalVM 19.3.0, then you have to specify the module and package in a similar manner with `java`.
+## Running Examples 
 
 ```bash
-# Example of using TornadoVM with JDK11
-$ tornado -m tornado.examples/uk.ac.manchester.tornado.examples.HelloWorld
-```
-
-When using GraalVM with JDK8 it is enough to specify the package only.
-
-```bash
-# Example of using TornadoVM with JDK8
 $ tornado uk.ac.manchester.tornado.examples.HelloWorld
 ```
-For simplicity, we will only provide examples of running `tornado` with GraalVM on top of JDK11. It is straightforward to adapt the command line arguments to JDK8.
 
 Use the following command to identify the ids of the Tornado-compatible heterogeneous devices: 
 
 ```bash
-tornado -m tornado.drivers.opencl/uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput
+tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput
 ```
 Tornado device output corresponds to:
 ```bash
@@ -166,7 +199,7 @@ Where `s` is the *schedule name* and `t` is the task name.
 For example running on device [1] (Intel HD Graphics in our example) will look like this:
 
 ```bash
-$ tornado -Ds0.t0.device=0:1 -m tornado.examples/uk.ac.manchester.tornado.examples.HelloWorld
+$ tornado -Ds0.t0.device=0:1 uk.ac.manchester.tornado.examples.HelloWorld
 ```
 
 The command above will run the HelloWorld example on the integrated GPU (Intel HD Graphics).
@@ -174,7 +207,7 @@ The command above will run the HelloWorld example on the integrated GPU (Intel H
 ## Running Benchmarks #
 
 ```bash
-$ tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sadd
+$ tornado uk.ac.manchester.tornado.benchmarks.BenchmarkRunner sadd
 ```
 
 
@@ -281,3 +314,5 @@ Notice that, for running with TornadoVM, you will need either the docker images 
 * 0.3 
 * 0.2   
 * 0.1.0 
+
+

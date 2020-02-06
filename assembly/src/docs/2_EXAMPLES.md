@@ -79,8 +79,8 @@ public class VectorAddFloat {
 ## 2. Compiling and Running with Tornado SDK
 
 The example above is provided in the `examples` directory.
-To compile with Tornado SDK, `javac.py` will set all the `CLASSPATHs/MODULEPATHs` to use Tornado.
-Alternatively, you can use GraalVM 19.3.0 and define all jars in `share/java/tornado` into your `CLASSPATH/MODULEPATH`.
+To compile with Tornado SDK, there is a utility command that sets all the `CLASSPATHs` to use Tornado.
+Alternatively, you can use the standard JDK 1.8 and define all jars in `share/java/tornado` into your `CLASSPATHs`.
 
 
 ```bash

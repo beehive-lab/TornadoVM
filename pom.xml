@@ -258,10 +258,9 @@
         </profile>
 
         <profile>
-            <id>jdk11</id>
+            <id>graal-jdk-11</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
-                <jdk>11</jdk>
             </activation>
             <build>
                 <plugins>
@@ -419,12 +418,10 @@
             </build>
         </profile>
 
-
         <profile>
-            <id>jdk8</id>
+            <id>graal-jdk-8</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
-                <jdk>1.8</jdk>
             </activation>
             <build>
                 <plugins>
@@ -466,6 +463,58 @@
                         <scope>system</scope>
                         <systemPath>${env.JAVA_HOME}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
                         <version>${graal.version}</version>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+        </profile>
+
+        <profile>
+            <id>jdk-8</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.8.1</version>
+                        <configuration>
+                            <source>8</source>
+                            <target>8</target>
+                            <showDeprecation>true</showDeprecation>
+                            <excludes>
+                                <exclude>*module-info.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.graalvm.compiler</groupId>
+                        <artifactId>compiler</artifactId>
+                        <version>${graal.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.graalvm.truffle</groupId>
+                        <artifactId>truffle-api</artifactId>
+                        <version>${graal.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>jvmci</groupId>
+                        <artifactId>api</artifactId>
+                        <scope>system</scope>
+                        <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-api.jar</systemPath>
+                        <version>${jvmci.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>jvmci</groupId>
+                        <artifactId>hotspot</artifactId>
+                        <scope>system</scope>
+                        <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
+                        <version>${jvmci.version}</version>
                     </dependency>
                 </dependencies>
             </dependencyManagement>

@@ -73,7 +73,7 @@ Example:
 
 
 ```bash
-$ tornado -Dtornado.feature.extraction=True -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt 4096
+$ tornado -Dtornado.feature.extraction=True uk.ac.manchester.tornado.examples.VectorAddInt 4096
 $ cat tornado-features.json 
 {
     "sketch-vectorAdd": { 
