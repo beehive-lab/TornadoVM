@@ -35,6 +35,7 @@ import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLHotSpotBackendFactory;
@@ -54,9 +55,13 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
     public OCLDriver(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
         final int numPlatforms = OpenCL.getNumPlatforms();
+
+        if (numPlatforms < 1) {
+            throw new TornadoNoOpenCLPlatformException("[ERROR] No OpenCL platforms found. Please install OpenCL drivers on your machine");
+        }
+
         backends = new OCLBackend[numPlatforms][];
         contexts = new ArrayList<>();
-
         discoverDevices(options, vmRuntime, vmConfig);
         flatBackends = new OCLBackend[getDeviceCount()];
         int index = 0;
@@ -132,16 +137,13 @@ public final class OCLDriver extends TornadoLogger implements TornadoAccelerator
 
     protected void discoverDevices(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
         final int numPlatforms = OpenCL.getNumPlatforms();
-        if (numPlatforms > 0) {
-            String platformToIgnore = getString("tornado.ignore.platform");
-            for (int i = 0; i < numPlatforms; i++) {
-                final OCLPlatform platform = OpenCL.getPlatform(i);
-
-                if (platformToIgnore != null && platform.getName().startsWith(platformToIgnore)) {
-                    info("Ignore " + platform.getName());
-                } else {
-                    installDevices(i, platform, options, vmRuntime, vmConfig);
-                }
+        String platformToIgnore = getString("tornado.ignore.platform");
+        for (int i = 0; i < numPlatforms; i++) {
+            final OCLPlatform platform = OpenCL.getPlatform(i);
+            if (platformToIgnore != null && platform.getName().startsWith(platformToIgnore)) {
+                info("Ignore " + platform.getName());
+            } else {
+                installDevices(i, platform, options, vmRuntime, vmConfig);
             }
         }
     }

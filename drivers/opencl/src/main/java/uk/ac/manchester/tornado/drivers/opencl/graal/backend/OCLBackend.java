@@ -124,7 +124,6 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
-    private boolean flag = false;
     private boolean backEndInitialized;
 
     @Override
@@ -140,7 +139,6 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     final OCLDeviceContext deviceContext;
     final OCLCodeProvider codeCache;
     OCLInstalledCode lookupCode;
-    final AtomicInteger id = new AtomicInteger(0);
 
     final ScheduleMetaData scheduleMeta;
 
