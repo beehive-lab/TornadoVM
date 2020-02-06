@@ -1,5 +1,5 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
@@ -118,6 +118,23 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
 
     private static final int DEFAULT_DRIVER = 0;
 
+    // @formatter:off
+    public enum TORNADO_DRIVERS_DESCRIPTION {
+        OPENCL("implemented"),
+        PTX("unsupported");
+
+        String status;
+
+        TORNADO_DRIVERS_DESCRIPTION(String status) {
+            this.status = status;
+        }
+
+        String getStatus() {
+            return status;
+        }
+    }
+    // @formatter:on
+
     private TornadoCoreRuntime() {
         objectMappings = new WeakHashMap<>();
 
@@ -127,10 +144,8 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
             shouldNotReachHere("Unsupported JVMCIRuntime: ", JVMCI.getRuntime().getClass().getName());
         }
         vmRuntime = (HotSpotJVMCIRuntime) JVMCI.getRuntime();
-
         vmBackend = vmRuntime.getHostJVMCIBackend();
         vmConfig = new TornadoVMConfig(vmRuntime.getConfigStore());
-
         drivers = loadDrivers();
     }
 
@@ -143,7 +158,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
 
     private TornadoAcceleratorDriver[] loadDrivers() {
         ServiceLoader<TornadoDriverProvider> loader = ServiceLoader.load(TornadoDriverProvider.class);
-        drivers = new TornadoAcceleratorDriver[2];
+        drivers = new TornadoAcceleratorDriver[TORNADO_DRIVERS_DESCRIPTION.values().length];
         int index = 0;
         for (TornadoDriverProvider provider : loader) {
             boolean isRMI = provider.getName().equalsIgnoreCase("RMI Driver");

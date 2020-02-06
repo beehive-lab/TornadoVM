@@ -14,6 +14,7 @@ example:
 
 tests:
 	tornado-test.py --verbose
+	tornado-test.py -V -J"-Dtornado.heap.allocation=1MB" uk.ac.manchester.tornado.unittests.fails.HeapFail#test03
 	test-native.sh 
 
 test-slam:
