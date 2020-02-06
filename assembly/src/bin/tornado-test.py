@@ -97,7 +97,7 @@ JDK_8_VERSION = "1.8"
 try:
 	javaHome = os.environ["JAVA_HOME"]
 except:
-	print "[ERROR] JAVA_HOME is not defined. JAVA_HOME should point to a distribution of GraalVM"
+	print "[ERROR] JAVA_HOME is not defined."
 	sys.exit(-1)
 
 __TEST_NOT_PASSED__= False

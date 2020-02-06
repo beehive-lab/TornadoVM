@@ -41,7 +41,7 @@ except:
 try:
 	javaHome = os.environ["JAVA_HOME"]
 except:
-	print "[ERROR] JAVA_HOME is not defined. JAVA_HOME should point to a distribution of GraalVM"
+	print "[ERROR] JAVA_HOME is not defined."
 	sys.exit(-1)
 
 try:
