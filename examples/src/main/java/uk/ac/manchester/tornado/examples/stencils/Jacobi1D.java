@@ -71,7 +71,7 @@ public class Jacobi1D {
     }
 
     public static void main(String[] args) {
-        int size,steps,iterations, input;
+        int size,steps,iterations,input;
 
         size = (args.length == 1) ? Integer.parseInt(args[0]) : PB_N;
         steps = (args.length == 2) ? Integer.parseInt(args[1]) : PB_STEPS;
@@ -85,12 +85,14 @@ public class Jacobi1D {
         long start = 0;
         long end = 0;
 
+        StringBuilder se = new StringBuilder();
+        StringBuilder par = new StringBuilder();
         for (int i = 0; i < iterations; i++) {
             System.gc();
             start = System.nanoTime();
             run2DJacobi(aSeq, bSeq, steps);
             end = System.nanoTime();
-            System.out.println("\tSequential execution time of iteration is: " + (end - start) + " ns");
+            se.append("\tSequential execution time of iteration is: " + (end - start) + " ns \n");
         }
 
         // @formatter:off
@@ -102,14 +104,19 @@ public class Jacobi1D {
         start = 0;
         end = 0;
 
-        start = System.nanoTime();
-        for (int t = 0; t < steps; t++) {
-            graph.execute();
+        for (int i = 0; i < iterations; i++) {
+            start = System.nanoTime();
+            for (int t = 0; t < steps; t++) {
+                graph.execute();
+            }
+            end = System.nanoTime();
+            par.append("\tTornado execution time of iteration is: " + (end - start) + " ns \n");
         }
-        end = System.nanoTime();
-        System.out.println("\tTornado execution time of iteration is: " + (end - start) + " ns");
 
         graph.syncObject(a);
+
+        System.out.println(se);
+        System.out.println(par);
         System.out.println("\tVerify : " + verify(a, aSeq));
         // System.out.println("---" + Arrays.toString(aSeq));
 
