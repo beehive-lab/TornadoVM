@@ -30,13 +30,13 @@ public class Jacobi1D {
 
     }
 
-    private static void run2DJacobi(float[] a, float[] b) {
+    private static void run2DJacobi(float[] a, float[] b, int steps) {
 
-        for (int t = 0; t < PB_STEPS; t++) {
-            for (int i = 1; i < PB_N - 1; i++) {
+        for (int t = 0; t < steps; t++) {
+            for (int i = 1; i < a.length - 1; i++) {
                 b[i] = (float) (0.3333 * (a[i - 1] + a[i] + a[i + 1]));
             }
-            for (int j = 1; j < PB_N - 1; j++) {
+            for (int j = 1; j < a.length - 1; j++) {
                 a[j] = b[j];
             }
         }
@@ -71,7 +71,11 @@ public class Jacobi1D {
     }
 
     public static void main(String[] args) {
-        int size = PB_N;
+        int size,steps,iterations, input;
+
+        size = (args.length == 1) ? Integer.parseInt(args[0]) : PB_N;
+        steps = (args.length == 2) ? Integer.parseInt(args[1]) : PB_STEPS;
+        iterations = (args.length == 3) ? Integer.parseInt(args[2]) : ITERATIONS;
 
         float[] a = initArrayA(size);
         float[] b = initArrayB(size);
@@ -81,10 +85,10 @@ public class Jacobi1D {
         long start = 0;
         long end = 0;
 
-        for (int i = 0; i < ITERATIONS; i++) {
+        for (int i = 0; i < iterations; i++) {
             System.gc();
             start = System.nanoTime();
-            run2DJacobi(aSeq, bSeq);
+            run2DJacobi(aSeq, bSeq, steps);
             end = System.nanoTime();
             System.out.println("\tSequential execution time of iteration is: " + (end - start) + " ns");
         }
@@ -99,16 +103,29 @@ public class Jacobi1D {
         end = 0;
 
         start = System.nanoTime();
-        for (int t = 0; t < PB_STEPS; t++) {
+        for (int t = 0; t < steps; t++) {
             graph.execute();
         }
         end = System.nanoTime();
         System.out.println("\tTornado execution time of iteration is: " + (end - start) + " ns");
 
         graph.syncObject(a);
-        // System.out.println("***" + Arrays.toString(a));
+        System.out.println("\tVerify : " + verify(a, aSeq));
         // System.out.println("---" + Arrays.toString(aSeq));
 
+        // System.out.println("***" + Arrays.toString(a));
     }
 
+    private static boolean verify(float[] tornado, float[] serial) {
+        boolean verified = true;
+
+        for (int i = 0; i < tornado.length; i++) {
+            if (Math.abs(tornado[i]) - Math.abs(serial[i]) > 0.9f) {
+                System.out.println(tornado[i] + " : " + serial[i]);
+                verified = false;
+                break;
+            }
+        }
+        return verified;
+    }
 }
