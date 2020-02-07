@@ -7,6 +7,7 @@
   * OpenCL: GPUs and CPUs >= 1.2, FPGAs >= 1.0 
   * GCC or clang/LLVM (GCC >= 5.5)
   * Python 2.7 (>= 2.7.5)
+  * JDK 8 >= 1.8.0_141
   
   For Mac OS X users: the OpenCL support for your Apple model can be confirmed [here](https://support.apple.com/en-gb/HT202823).
 
@@ -25,28 +26,17 @@ TornadoVM has been succefully tested on the following platforms:
 ### 1. Compile JDK 1.8 with JVMCI-8 support
 TornadoVM is built by using a JDK 1.8 version with JVMCI-8 support. The directory which contains the Java binary is used as both the JAVA_HOME (Step 2) and the JVMCI root path (Step 3).
 
-### 1.1 Steps for a Linux-based OS
-
 ```bash
- $ git clone https://github.com/beehive-lab/mx 
+ $ git clone --depth 1 https://github.com/beehive-lab/mx 
  $ export PATH=`pwd`/mx:$PATH 
- $ git clone https://github.com/beehive-lab/graal-jvmci-8
+ $ git clone --depth 1 https://github.com/beehive-lab/graal-jvmci-8
  $ cd graal-jvmci-8
  $ mx build
 ```
 
-These steps will generate a new Java binary into the `jdk1.8.0_<your_version>/product`, e.g., `jdk1.8.0_131/product`. This directory is used as the JAVA_HOME (Step 2) and the JVMCI root path (Step 3).
-
-### 1.2 Steps for Apple Mac OS X
-Due to conflicts between the latest llvm-clang compiler in the Mac OS X and the current version of the JDK 1.8 used by TornadoVM, the Java binary cannot be built successfully. As a work-around, you can use [this binary](https://www.dropbox.com/s/2aguj98jg5b5yh4/jdk1.8.0_131-osx-10.11.6.tgxz?dl=0) which has been compiled in an earlier Mac OS version.
-
-```bash
- $ wget https://www.dropbox.com/s/2aguj98jg5b5yh4/jdk1.8.0_131-osx-10.11.6.tgxz
- $ tar -xf jdk1.8.0_131-osx-10.11.6.tgxz
- $ cd jdk1.8.0_131
-```
-
-These steps produce the `jdk1.8.0_131` directory which contains the prebuilt Java binary for Mac OS X, and it is used as the JAVA_HOME (Step 2) and the JVMCI root path (Step 3).
+These steps will generate on Linux a new Java binary into `jdk1.8.0_<your_version>/<os-architecture>/product` and `jdk1.8.0_<your_version>/<os-architecture>/product/Contents/Home` for MacOS.
+ 
+E.g: `jdk1.8.0_131/product`. This directory is used as the JAVA_HOME (Step 2) and the JVMCI root path (Step 3).
 
 ### 2. Download TornadoVM
 
