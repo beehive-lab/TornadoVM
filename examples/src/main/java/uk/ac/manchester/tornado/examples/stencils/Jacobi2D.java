@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, School of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -142,7 +142,7 @@ public class Jacobi2D {
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                if (Math.abs(tornado[i]) - Math.abs(serial[i]) > 0.9f) {
+                if (Math.abs(tornado[i]) - Math.abs(serial[i]) > 0.5f) {
                     System.out.println(tornado[i * size + j] + " : " + serial[i * size + j]);
                     verified = false;
                     break;
