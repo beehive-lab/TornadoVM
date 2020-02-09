@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.examples.stencils;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
+import java.util.Arrays;
 import java.util.Random;
 
 public class Convolution2D {
@@ -28,15 +29,12 @@ public class Convolution2D {
 
     private static void run2DConvolutionTornado(int nx, int ny, float[] a, float[] b) {
         float c11,c12,c13,c21,c22,c23,c31,c32,c33;
-        c11 = +0.2f;
-        c21 = +0.5f;
-        c31 = -0.8f;
-        c12 = -0.3f;
-        c22 = +0.6f;
-        c32 = -0.9f;
-        c13 = +0.4f;
-        c23 = +0.7f;
-        c33 = +0.10f;
+
+        // @formatter:off
+        c11 = +0.2f;  c21 = +0.5f;  c31 = -0.8f;
+        c12 = -0.3f;  c22 = +0.6f;  c32 = -0.9f;
+        c13 = +0.4f;  c23 = +0.7f;  c33 = +0.10f;
+        // @formatter:off
 
         for (@Parallel int i = 1; i < nx - 1; i++) {
             for (@Parallel int j = 1; j < ny - 1; j++) {
@@ -48,16 +46,13 @@ public class Convolution2D {
 
     private static void run2DconvolutionSequential(int nx, int ny, float[] a, float[] b) {
         float c11,c12,c13,c21,c22,c23,c31,c32,c33;
-        c11 = +0.2f;
-        c21 = +0.5f;
-        c31 = -0.8f;
-        c12 = -0.3f;
-        c22 = +0.6f;
-        c32 = -0.9f;
-        c13 = +0.4f;
-        c23 = +0.7f;
-        c33 = +0.10f;
 
+        // @formatter:off
+        c11 = +0.2f;  c21 = +0.5f;  c31 = -0.8f;
+        c12 = -0.3f;  c22 = +0.6f;  c32 = -0.9f;
+        c13 = +0.4f;  c23 = +0.7f;  c33 = +0.10f;
+        // @formatter:off
+        
         for (int i = 1; i < nx - 1; i++) {
             for (int j = 1; j < ny - 1; j++) {
                 b[i * nx + j] = c11 * a[(i - 1) * nx + (j - 1)] + c21 * a[(i - 1) * nx + (j + 0)] + c31 * a[(i - 1) * nx + (j + 1)] + c12 * a[(i + 0) * nx + (j - 1)] + c22 * a[(i + 0) * nx + (j + 0)]
@@ -85,7 +80,7 @@ public class Convolution2D {
 
         if (args.length > 1) {
             size = Integer.parseInt(args[0]);
-            iterations =  Integer.parseInt(args[1]);
+            iterations = Integer.parseInt(args[1]);
         }
 
         float[] a = initArrayA(size);
@@ -94,8 +89,8 @@ public class Convolution2D {
         float[] b = new float[size * size];
         float[] bSeq = new float[size * size];
 
-        long start = 0;
-        long end = 0;
+        long start;
+        long end;
 
         StringBuilder se = new StringBuilder();
         StringBuilder par = new StringBuilder();
@@ -120,15 +115,15 @@ public class Convolution2D {
             start = System.nanoTime();
             graph.execute();
             end = System.nanoTime();
-            par.append("\tTornado execution time of iteration is: " + (end - start) + " ns");
+            par.append("\tTornado execution time of iteration is: " + (end - start) + " ns \n");
         }
 
         System.out.println(se);
         System.out.println(par);
         System.out.println("\tVerify : " + verify(b, bSeq, size));
-        // System.out.println("---" + Arrays.toString(aSeq));
-
-        // System.out.println("***" + Arrays.toString(a));
+//        System.out.println("---" + Arrays.toString(bSeq));
+//        System.out.println("---                   ---");
+//        System.out.println("***" + Arrays.toString(b));
     }
 
     private static boolean verify(float[] tornado, float[] serial, int size) {
@@ -136,7 +131,7 @@ public class Convolution2D {
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                if (Math.abs(tornado[i * size + j]) - Math.abs(serial[i * size + j]) > 0.5f) {
+                if (Math.abs(tornado[i * size + j]) - Math.abs(serial[i * size + j]) > 0.1f) {
                     System.out.println(tornado[i * size + j] + " : " + serial[i * size + j]);
                     verified = false;
                     break;
