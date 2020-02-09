@@ -66,6 +66,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.fields.TestFields",
 	"uk.ac.manchester.tornado.unittests.profiler.TestProfiler",
 	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
+	"uk.ac.manchester.tornado.unittests.fails.TestFails",
 ]
 
 ## List of classes to be tested for the CUDA integration project. These should remain on this branch.
@@ -76,9 +77,7 @@ __TEST_THE_WORLD__ = __TEST_CUDA__
 
 ## List of tests that can be ignored. Format: class#testMethod
 __TORNADO_TESTS_WHITE_LIST__ = [
-	"uk.ac.manchester.tornado.unittests.logic.TestLogic#testLogic03"
-	"uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer#testArrayMigration",
-    "uk.ac.manchester.tornado.unittests.branching.TestConditionals#testComplexTernaryCondition",
+	"",
 ]
 
 # ################################################################################################################
@@ -93,7 +92,7 @@ __PRINT_EXECUTION_TIMER__    = "-Dtornado.debug.executionTime=True "
 __GC__                       = "-Xmx6g "
 # ################################################################################################################
 
-__VERSION__ = "0.7_27012020"
+__VERSION__ = "0.8_04022020"
 
 __TEST_NOT_PASSED__= False
 
@@ -226,7 +225,6 @@ def runTests(args):
 	else:
 		cmd = "tornado " + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
 	if (args.testClass != None):
-
 		if (args.fast):
 			cmd = cmd + " " + args.testClass
 			os.system(cmd)
@@ -236,10 +234,10 @@ def runTests(args):
 		start = time.time()
 		for t in __TEST_THE_WORLD__:
 			command = cmd + t
-
 			if (args.fast):
 				os.system(command)
 			else:
+				print command
 				stats = runCommandWithStats(command, stats)
 		
 		end = time.time()

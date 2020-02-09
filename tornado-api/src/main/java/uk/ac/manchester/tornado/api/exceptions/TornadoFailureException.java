@@ -1,8 +1,8 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -10,12 +10,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
- * 
+ *
  * GNU Classpath is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with GNU Classpath; see the file COPYING.  If not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -25,7 +25,7 @@
  * making a combined work based on this library.  Thus, the terms and
  * conditions of the GNU General Public License cover the whole
  * combination.
- * 
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent
@@ -39,18 +39,25 @@
  * exception statement from your version.
  *
  */
-package uk.ac.manchester.tornado.api;
+package uk.ac.manchester.tornado.api.exceptions;
 
-import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
+public class TornadoFailureException extends RuntimeException {
 
-public interface TornadoDeviceContext {
+    private static final long serialVersionUID = -7515308573010965892L;
+    private final String message;
 
-    TornadoMemoryProvider getMemoryManager();
+    public TornadoFailureException(final String msg) {
+        message = msg;
+    }
 
-    boolean needsBump();
+    public TornadoFailureException(Exception e) {
+        message = e.getMessage();
+        this.initCause(e.getCause());
+    }
 
-    boolean wasReset();
-
-    void setResetToFalse();
+    @Override
+    public String getMessage() {
+        return message;
+    }
 
 }
