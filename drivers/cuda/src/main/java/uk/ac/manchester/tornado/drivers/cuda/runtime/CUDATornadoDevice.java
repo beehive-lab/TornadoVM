@@ -1,7 +1,9 @@
 package uk.ac.manchester.tornado.drivers.cuda.runtime;
 
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
+import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
@@ -11,12 +13,19 @@ import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADriver;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXInstalledCode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.PTXBackend;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResult;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompiler;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
+import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
+import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.util.List;
 
@@ -52,8 +61,25 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public TornadoInstalledCode installCode(SchedulableTask task) {
+        if (!(task instanceof CompilableTask)) TornadoInternalError.unimplemented("Non compilable tasks are not yet implemented in the CUDA driver");
 
-        return new PTXInstalledCode("foo");
+        final CUDADeviceContext deviceContext = getDeviceContext();
+
+        final CompilableTask executable = (CompilableTask) task;
+        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
+        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod);
+
+        // copy meta data into task
+        final TaskMetaData sketchMeta = sketch.getMeta();
+        final TaskMetaData taskMeta = executable.meta();
+        final Access[] sketchAccess = sketchMeta.getArgumentsAccess();
+        final Access[] taskAccess = taskMeta.getArgumentsAccess();
+        System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
+
+        PTXProviders providers = (PTXProviders) getBackend().getProviders();
+        final PTXCompilationResult result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
+
+        return deviceContext.installCode(result);
     }
 
     @Override

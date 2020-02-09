@@ -1,9 +1,12 @@
 package uk.ac.manchester.tornado.drivers.cuda;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import uk.ac.manchester.tornado.drivers.cuda.graal.PTXInstalledCode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
 import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDATornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.Initialisable;
+import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class CUDADeviceContext
@@ -33,5 +36,9 @@ public class CUDADeviceContext
 
     public CUDATornadoDevice asMapping() {
         return new CUDATornadoDevice(context.getPlatformIndex(), device.getIndex());
+    }
+
+    public TornadoInstalledCode installCode(PTXCompilationResult result) {
+        return new PTXInstalledCode("foo");
     }
 }
