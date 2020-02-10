@@ -76,6 +76,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
@@ -947,6 +948,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             int deviceWinnerIndex = synchronizeWithPolicy(policy, totalTimers);
             policyTimeTable.put(policy, deviceWinnerIndex);
             if (TornadoOptions.DEBUG_POLICY) {
+                System.out.println(getListDevices());
                 System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
             }
         }
@@ -1161,6 +1163,33 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
         }
     }
 
+    private String getListDevices() {
+        StringBuilder str = new StringBuilder();
+        str.append("                  : [");
+        int num = TornadoRuntime.getTornadoRuntime().getDriver(0).getDeviceCount();
+        for (int i = 0; i < num; i++) {
+            TornadoDeviceType deviceType = TornadoRuntime.getTornadoRuntime().getDriver(0).getDevice(i).getDeviceType();
+            String type = "JAVA";
+            switch (deviceType) {
+                case CPU:
+                    type = "CPU  ";
+                    break;
+                case GPU:
+                    type = "GPU  ";
+                    break;
+                case FPGA:
+                    type = "FPGA  ";
+                    break;
+                case ACCELERATOR:
+                    type = "ACCELERATOR";
+                    break;
+            }
+            str.append(type + " ,");
+        }
+        str.append("JVM]");
+        return str.toString();
+    }
+
     private void runWithSequentialProfiler(Policy policy) {
         final Timer timer = (TIME_IN_NANOSECONDS) ? new NanoSecTimer() : new MillesecTimer();
         int numDevices = getTornadoRuntime().getDriver(DEFAULT_DRIVER_INDEX).getDeviceCount();
@@ -1180,6 +1209,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             updateHistoryTables(policy, deviceWinnerIndex);
 
             if (TornadoOptions.DEBUG_POLICY) {
+                System.out.println(getListDevices());
                 System.out.println("BEST Position: #" + deviceWinnerIndex + " " + Arrays.toString(totalTimers));
             }
         }
