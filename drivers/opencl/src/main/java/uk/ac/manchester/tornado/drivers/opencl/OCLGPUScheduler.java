@@ -31,11 +31,8 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
 
     public static final double GPU_WORK_GROUP_COEFF = .125;
 
-    @SuppressWarnings("unused")
     private long maxComputeUnits;
-    @SuppressWarnings("unused")
     private double workGroupUtil;
-    @SuppressWarnings("unused")
     private long maxWorkGroupSize;
 
     private static final int WARP_SIZE = 32;
@@ -74,6 +71,10 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
         switch (meta.getDims()) {
             case 3:
                 localWork[2] = 1;
+//                localWork[2] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[2], meta.getGlobalWork()[2]);
+                localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1]);
+                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0]);
+                break;
             case 2:
                 localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1]);
                 localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0]);
@@ -102,9 +103,14 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
         long[] intermediates = new long[] { 1, 1, 1 };
 
         switch (metaData.getDims()) {
-            case 2:
-                intermediates[0] = (long) Math.sqrt(maxWorkItemSizes[0]);
+            case 3:
+                intermediates[2] = (long) Math.sqrt(maxWorkItemSizes[2]);
                 intermediates[1] = (long) Math.sqrt(maxWorkItemSizes[1]);
+                intermediates[0] = (long) Math.sqrt(maxWorkItemSizes[0]);
+                break;
+            case 2:
+                intermediates[1] = (long) Math.sqrt(maxWorkItemSizes[1]);
+                intermediates[0] = (long) Math.sqrt(maxWorkItemSizes[0]);
                 break;
             case 1:
                 intermediates[0] = maxWorkItemSizes[0];
