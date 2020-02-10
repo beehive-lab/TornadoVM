@@ -46,7 +46,7 @@ public class GSeidel2D {
                                                 + a[(i + 1) * size + j] 
                                                 + a[(i + 1) * size + (j + 1)]) 
                                                 / 9.0);
-                    //@formatter:off
+                    //@formatter:on
                 }
             }
         }
@@ -67,9 +67,9 @@ public class GSeidel2D {
                         + a[(i + 1) * size + j]
                         + a[(i + 1) * size + (j + 1)])
                         / 9.0);
-                //@formatter:off 
+                //@formatter:on
             }
-        } 
+        }
     }
 
     private static float[] initArrayA(int size) {
@@ -107,7 +107,7 @@ public class GSeidel2D {
         for (int i = 0; i < iterations; i++) {
             System.gc();
             start = System.nanoTime();
-            aSeq = run2Dseidel(aSeq, steps,size);
+            aSeq = run2Dseidel(aSeq, steps, size);
             end = System.nanoTime();
             se.append("Sequential execution time of iteration is: " + (end - start) + " ns \n");
         }
