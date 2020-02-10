@@ -8,17 +8,21 @@ import java.nio.ByteOrder;
 public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
 
     private int index;
+    private String name;
 
     public CUDADevice(int index, long id) {
         this.index = index;
     }
+
+    native static String cuDeviceGetName(int deviceId);
 
     public long getId() {
         return 1;
     }
 
     @Override public String getDeviceName() {
-        return "NVIDIA GPU";
+        if (name == null) name = cuDeviceGetName(index);
+        return name;
     }
 
     @Override public long getDeviceGlobalMemorySize() {
