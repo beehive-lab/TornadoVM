@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, School of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,11 +17,10 @@
  */
 package uk.ac.manchester.tornado.examples.stencils;
 
+import java.util.Random;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-
-import java.util.Arrays;
-import java.util.Random;
 
 public class Convolution2D {
     final static int PB_N = 128;
@@ -44,7 +43,7 @@ public class Convolution2D {
         }
     }
 
-    private static void run2DconvolutionSequential(int nx, int ny, float[] a, float[] b) {
+    private static float[] run2DConvolutionSequential(int nx, int ny, float[] a, float[] b) {
         float c11,c12,c13,c21,c22,c23,c31,c32,c33;
 
         // @formatter:off
@@ -59,6 +58,7 @@ public class Convolution2D {
                         + c32 * a[(i + 0) * nx + (j + 1)] + c13 * a[(i + 1) * nx + (j - 1)] + c23 * a[(i + 1) * nx + (j + 0)] + c33 * a[(i + 1) * nx + (j + 1)];
             }
         }
+        return b;
     }
 
     private static float[] initArrayA(int size) {
@@ -94,12 +94,13 @@ public class Convolution2D {
 
         StringBuilder se = new StringBuilder();
         StringBuilder par = new StringBuilder();
+
         for (int i = 0; i < iterations; i++) {
             System.gc();
             start = System.nanoTime();
-            run2DconvolutionSequential(size, size, aSeq, bSeq);
+            bSeq  =run2DConvolutionSequential(size, size, aSeq, bSeq);
             end = System.nanoTime();
-            se.append("\tSequential execution time of iteration is: " + (end - start) + " ns \n");
+            se.append("Sequential execution time of iteration is: " + (end - start) + " ns \n");
         }
 
         // @formatter:off
@@ -108,22 +109,16 @@ public class Convolution2D {
                 .streamOut(b);
         // @formatter:on
 
-        start = 0;
-        end = 0;
-
         for (int i = 0; i < iterations; i++) {
             start = System.nanoTime();
             graph.execute();
             end = System.nanoTime();
-            par.append("\tTornado execution time of iteration is: " + (end - start) + " ns \n");
+            par.append("Tornado execution time of iteration is: " + (end - start) + " ns \n");
         }
 
         System.out.println(se);
         System.out.println(par);
-        System.out.println("\tVerify : " + verify(b, bSeq, size));
-//        System.out.println("---" + Arrays.toString(bSeq));
-//        System.out.println("---                   ---");
-//        System.out.println("***" + Arrays.toString(b));
+        System.out.println("Verify : " + verify(b, bSeq, size));
     }
 
     private static boolean verify(float[] tornado, float[] serial, int size) {
