@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, School of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,19 +20,13 @@ package uk.ac.manchester.tornado.examples.stencils;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
-import java.util.Arrays;
-
 public class Jacobi2D {
 
     final static int PB_STEPS = 20;
     final static int PB_N = 1024;
     final static int ITERATIONS = 31;
 
-    private static void run2DJacobiTornado() {
-
-    }
-
-    private static void run2DJacobi(float[] a, float[] b, int steps, int size) {
+    private static float[] run2DJacobi(float[] a, float[] b, int steps, int size) {
         for (int t = 0; t < steps; t++) {
             for (int i = 1; i < size - 1; i++) {
                 for (int j = 1; j < size - 1; j++) {
@@ -45,6 +39,7 @@ public class Jacobi2D {
                 }
             }
         }
+        return a;
     }
 
     private static void kernelOne(float[] a, float[] b, int size) {
@@ -86,9 +81,15 @@ public class Jacobi2D {
     public static void main(String[] args) {
         int size,steps,iterations;
 
-        size = (args.length == 1) ? Integer.parseInt(args[0]) : PB_N;
-        steps = (args.length == 2) ? Integer.parseInt(args[1]) : PB_STEPS;
-        iterations = (args.length == 3) ? Integer.parseInt(args[2]) : ITERATIONS;
+        size = PB_N;
+        steps = PB_STEPS;
+        iterations = ITERATIONS;
+
+        if (args.length > 1) {
+            size = Integer.parseInt(args[0]);
+            steps = Integer.parseInt(args[1]);
+            iterations = Integer.parseInt(args[2]);
+        }
 
         float[] a = initArrayA(size);
         float[] b = initArrayB(size);
@@ -96,27 +97,26 @@ public class Jacobi2D {
         float[] aSeq = initArrayA(size);
         float[] bSeq = initArrayB(size);
 
-        long start = 0;
-        long end = 0;
+        long start;
+        long end;
 
         StringBuilder se = new StringBuilder();
         StringBuilder par = new StringBuilder();
+
         for (int i = 0; i < iterations; i++) {
             System.gc();
             start = System.nanoTime();
-            run2DJacobi(aSeq, bSeq, steps, size);
+            aSeq = run2DJacobi(aSeq, bSeq, steps, size);
             end = System.nanoTime();
-            se.append("\tSequential execution time of iteration is: " + (end - start) + " ns \n");
+            se.append("Sequential execution time of iteration is: " + (end - start) + " ns \n");
         }
 
         // @formatter:off
         final TaskSchedule graph = new TaskSchedule("s0")
-                .task("t0", Jacobi2D::kernelOne, a,b,size)
-                .task("t1", Jacobi2D::kernelTwo, a, b, size);
+                .task("t0", Jacobi2D::kernelOne, a, b, size)
+                .task("t1", Jacobi2D::kernelTwo, a, b, size)
+                .streamOut(a);
         // @formatter:on
-
-        start = 0;
-        end = 0;
 
         for (int i = 0; i < iterations; i++) {
             start = System.nanoTime();
@@ -124,17 +124,13 @@ public class Jacobi2D {
                 graph.execute();
             }
             end = System.nanoTime();
-            par.append("\tTornado execution time of iteration is: " + (end - start) + " ns \n");
+            par.append("Tornado execution time of iteration is: " + (end - start) + " ns \n");
         }
-
-        graph.syncObject(a);
 
         System.out.println(se);
         System.out.println(par);
-        System.out.println("\tVerify : " + verify(a, aSeq, size));
-        // System.out.println("---" + Arrays.toString(aSeq));
+        System.out.println("Verify : " + verify(a, aSeq, size));
 
-        // System.out.println("***" + Arrays.toString(a));
     }
 
     private static boolean verify(float[] tornado, float[] serial, int size) {
@@ -142,7 +138,7 @@ public class Jacobi2D {
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                if (Math.abs(tornado[i]) - Math.abs(serial[i]) > 0.5f) {
+                if (Math.abs(tornado[i * size + j]) - Math.abs(serial[i * size + j]) > 0.1f) {
                     System.out.println(tornado[i * size + j] + " : " + serial[i * size + j]);
                     verified = false;
                     break;
