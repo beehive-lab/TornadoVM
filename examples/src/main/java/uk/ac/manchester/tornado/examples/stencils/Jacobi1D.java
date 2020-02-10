@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, School of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,12 +26,7 @@ public class Jacobi1D {
     final static int PB_N = 1024;
     final static int ITERATIONS = 31;
 
-    private static void run2DJacobiTornado() {
-
-    }
-
-    private static void run2DJacobi(float[] a, float[] b, int steps) {
-
+    private static float[] run2DJacobi(float[] a, float[] b, int steps) {
         for (int t = 0; t < steps; t++) {
             for (int i = 1; i < a.length - 1; i++) {
                 b[i] = (float) (0.3333 * (a[i - 1] + a[i] + a[i + 1]));
@@ -40,6 +35,7 @@ public class Jacobi1D {
                 a[j] = b[j];
             }
         }
+        return a;
     }
 
     private static void kernelOne(float[] a, float[] b, int size) {
@@ -71,38 +67,43 @@ public class Jacobi1D {
     }
 
     public static void main(String[] args) {
-        int size,steps,iterations,input;
+        int size,steps,iterations;
 
-        size = (args.length == 1) ? Integer.parseInt(args[0]) : PB_N;
-        steps = (args.length == 2) ? Integer.parseInt(args[1]) : PB_STEPS;
-        iterations = (args.length == 3) ? Integer.parseInt(args[2]) : ITERATIONS;
+        size = PB_N;
+        steps = PB_STEPS;
+        iterations = ITERATIONS;
+
+        if (args.length > 1) {
+            size = Integer.parseInt(args[0]);
+            steps = Integer.parseInt(args[1]);
+            iterations = Integer.parseInt(args[2]);
+        }
 
         float[] a = initArrayA(size);
         float[] b = initArrayB(size);
         float[] aSeq = initArrayA(size);
         float[] bSeq = initArrayB(size);
 
-        long start = 0;
-        long end = 0;
+        long start;
+        long end;
 
         StringBuilder se = new StringBuilder();
         StringBuilder par = new StringBuilder();
+
         for (int i = 0; i < iterations; i++) {
             System.gc();
             start = System.nanoTime();
-            run2DJacobi(aSeq, bSeq, steps);
+            aSeq = run2DJacobi(aSeq, bSeq, steps);
             end = System.nanoTime();
-            se.append("\tSequential execution time of iteration is: " + (end - start) + " ns \n");
+            se.append("Sequential execution time of iteration is: " + (end - start) + " ns \n");
         }
 
         // @formatter:off
         final TaskSchedule graph = new TaskSchedule("s0")
-                .task("t0", Jacobi1D::kernelOne, a,b,size)
-                .task("t1", Jacobi1D::kernelTwo, a, b, size);
+                .task("t0", Jacobi1D::kernelOne, a, b, size)
+                .task("t1", Jacobi1D::kernelTwo, a, b, size)
+                .streamOut(a);
         // @formatter:on
-
-        start = 0;
-        end = 0;
 
         for (int i = 0; i < iterations; i++) {
             start = System.nanoTime();
@@ -110,24 +111,19 @@ public class Jacobi1D {
                 graph.execute();
             }
             end = System.nanoTime();
-            par.append("\tTornado execution time of iteration is: " + (end - start) + " ns \n");
+            par.append("Tornado execution time of iteration is: " + (end - start) + " ns \n");
         }
-
-        graph.syncObject(a);
 
         System.out.println(se);
         System.out.println(par);
-        System.out.println("\tVerify : " + verify(a, aSeq));
-        // System.out.println("---" + Arrays.toString(aSeq));
-
-        // System.out.println("***" + Arrays.toString(a));
+        System.out.println("Verify : " + verify(a, aSeq));
     }
 
     private static boolean verify(float[] tornado, float[] serial) {
         boolean verified = true;
 
         for (int i = 0; i < tornado.length; i++) {
-            if (Math.abs(tornado[i]) - Math.abs(serial[i]) > 0.9f) {
+            if (Math.abs(tornado[i]) - Math.abs(serial[i]) > 0.5f) {
                 System.out.println(tornado[i] + " : " + serial[i]);
                 verified = false;
                 break;
