@@ -29,10 +29,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 public class OCLGPUScheduler extends OCLKernelScheduler {
 
-    public static final double GPU_WORK_GROUP_COEFF = .125;
-
     private long maxComputeUnits;
-    private double workGroupUtil;
     private long maxWorkGroupSize;
 
     private static final int WARP_SIZE = 32;
@@ -47,8 +44,6 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
         maxWorkItemSizes = device.getDeviceMaxWorkItemSizes();
         maxComputeUnits = device.getDeviceMaxComputeUnits();
         maxWorkGroupSize = device.getDeviceMaxWorkGroupSize();
-
-        workGroupUtil = GPU_WORK_GROUP_COEFF;
     }
 
     @Override
@@ -71,7 +66,6 @@ public class OCLGPUScheduler extends OCLKernelScheduler {
         switch (meta.getDims()) {
             case 3:
                 localWork[2] = 1;
-//                localWork[2] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[2], meta.getGlobalWork()[2]);
                 localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1]);
                 localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0]);
                 break;
