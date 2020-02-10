@@ -22,6 +22,11 @@ import java.util.Random;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
+/**
+ * Convolution2D stencil computation. This version has been adapted from
+ * the PolyBench-ACC benchmark-suite available in:
+ * https://github.com/cavazos-lab/PolyBench-ACC.
+ */
 public class Convolution2D {
     final static int PB_N = 128;
     final static int ITERATIONS = 1;

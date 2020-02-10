@@ -20,6 +20,11 @@ package uk.ac.manchester.tornado.examples.stencils;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
+/**
+ * Jacobi2D stencil computation. This version has been adapted from the
+ * PolyBench-ACC benchmark-suite available in:
+ * https://github.com/cavazos-lab/PolyBench-ACC.
+ */
 public class Jacobi2D {
 
     final static int PB_STEPS = 20;

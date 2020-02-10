@@ -23,6 +23,11 @@ import java.util.LinkedList;
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 
+/**
+ * FDTD solver stencil computation. This version has been adapted from the
+ * PolyBench-ACC benchmark-suite available in:
+ * https://github.com/cavazos-lab/PolyBench-ACC.
+ */
 public class FDTDSolver {
     final static int PB_STEPS = 20;
     final static int PB_N = 1024;
@@ -185,5 +190,4 @@ public class FDTDSolver {
         }
         return verified;
     }
-
 }
