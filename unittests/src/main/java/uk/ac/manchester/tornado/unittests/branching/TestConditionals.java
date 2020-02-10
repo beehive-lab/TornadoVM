@@ -26,7 +26,6 @@ import org.junit.Test;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 public class TestConditionals extends TornadoTestBase {
@@ -234,14 +233,14 @@ public class TestConditionals extends TornadoTestBase {
     public static void ternaryComplexCondition(int[] a, int[] b) {
         for (@Parallel int i = 0; i < a.length; i++) {
             for (int x = 0; x < a.length; x++) {
-                    if (i == a.length) {
+                    if (i == a.length - 128) {
                         a[x] = (a[x] == 20) ? a[x]+b[x] : 5;
                     }
             }
         }
     }
 
-    @TornadoNotSupported
+    @Test
     public void testComplexTernaryCondition() {
 
         final int  size = 8192;
