@@ -82,7 +82,6 @@ public final class Tornado implements TornadoCI {
     public static final boolean SHOULD_LOAD_RMI = Boolean.parseBoolean(settings.getProperty("tornado.rmi.enable", "false"));
     public final static boolean TIME_IN_NANOSECONDS = Boolean.parseBoolean(System.getProperty("tornado.ns.time", "true"));
 
-    public static final boolean NON_DEFAULT_LWGS = Boolean.parseBoolean(settings.getProperty("tornado.oclscheduler", "true"));
     public final static boolean FPGA_EMULATION = isFPGAEmulation();
 
     private static boolean isFPGAEmulation() {

@@ -313,8 +313,6 @@ public class TaskMetaData extends AbstractMetaData {
         if (localWorkDefined) {
             guarantee(localWork.length == dims, "task %s has local work dims specified of wrong length", getId());
         } else {
-//            localWork = new long[dims];
-
             localWork = new long[] { 1, 1, 1 };
         }
     }
@@ -440,8 +438,8 @@ public class TaskMetaData extends AbstractMetaData {
     }
 
     @Override
-    public boolean shouldUseDefaultOpenCLScheduling() {
-        return super.shouldUseDefaultOpenCLScheduling() || scheduleMetaData.shouldUseDefaultOpenCLScheduling();
+    public boolean shouldUseOpenCLDriverScheduling() {
+        return super.shouldUseOpenCLDriverScheduling() || scheduleMetaData.shouldUseOpenCLDriverScheduling();
     }
 
     @Override
