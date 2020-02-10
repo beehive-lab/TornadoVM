@@ -26,6 +26,8 @@ TornadoVM has been succefully tested on the following platforms:
 ### 1. Compile JDK 1.8 with JVMCI-8 support
 TornadoVM is built by using a JDK 1.8 version with JVMCI-8 support. The directory which contains the Java binary is used as both the JAVA_HOME (Step 2) and the JVMCI root path (Step 3).
 
+Before building the new JDK, the JAVA_HOME environment variable should point to an already existing installation of a JDK 8 >= 1.8.0_141.
+
 ```bash
  $ git clone --depth 1 https://github.com/beehive-lab/mx 
  $ export PATH=`pwd`/mx:$PATH 
@@ -138,7 +140,7 @@ $ make
 ```
 and done!! 
 
-## Know issues 
+## Known issues 
 
 ### For Ubuntu >= 16.04, install the package  `ocl-icd-opencl-dev`
 
