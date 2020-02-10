@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020, APT Group, School of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,14 +18,10 @@
 
 package uk.ac.manchester.tornado.examples.stencils;
 
-import org.omg.Messaging.SYNC_WITH_TRANSPORT;
+import java.util.LinkedList;
+
 import uk.ac.manchester.tornado.api.TaskSchedule;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 
 public class FDTDSolver {
     final static int PB_STEPS = 20;
@@ -102,9 +98,9 @@ public class FDTDSolver {
 
         for (int i = 0; i < nx; i++) {
             for (int j = 0; j < ny; j++) {
-                ex[i * nx + j] = ((float) i * (j + 1) + 1 / nx);
-                ey[i * nx + j] = ((float) (i - 1) * (j + 2) + 2 / nx);
-                hz[i * nx + j] = ((float) (i - 9) * (j + 4) + 3 / nx);
+                ex[i * nx + j] = ((float) (i * (j + 1) + 1) / nx);
+                ey[i * nx + j] = ((float) ((i - 1) * (j + 2) + 2) / nx);
+                hz[i * nx + j] = ((float) ((i - 9) * (j + 4) + 3) / nx);
             }
         }
         initList.add(ex);
@@ -114,40 +110,42 @@ public class FDTDSolver {
     }
 
     public static void main(String[] args) {
-        int size = 0,steps,iterations,input;
+        int size,steps,iterations;
 
         size = PB_N;
         steps = PB_STEPS;
         iterations = ITERATIONS;
-        try {
-            size = (args[0] != null) ? Integer.parseInt(args[0]) : PB_N;
-            steps = (args[1] != null) ? Integer.parseInt(args[1]) : PB_STEPS;
-            iterations = (args[2] != null) ? Integer.parseInt(args[2]) : ITERATIONS;
-        } catch (NullPointerException e) {
-            System.out.println("Null args");
+
+        if (args.length > 1) {
+            size = Integer.parseInt(args[0]);
+            steps = Integer.parseInt(args[1]);
+            iterations = Integer.parseInt(args[2]);
         }
 
-        System.out.println("Size : " + size + " Step : " + steps + " Iterarions : " + iterations);
-        System.out.println("args   = = " + args.length);
-
         LinkedList<float[]> initializedArrays = initArrays(steps, size, size);
+        LinkedList<float[]> initializedArraysSeq = initArrays(steps, size, size);
 
         float[] fict = initializedArrays.get(0);
         float[] ex = initializedArrays.get(1);
         float[] ey = initializedArrays.get(2);
         float[] hz = initializedArrays.get(3);
 
-        long start = 0L;
-        long end = 0L;
+        float[] fictSeq = initializedArraysSeq.get(0);
+        float[] exSeq = initializedArraysSeq.get(1);
+        float[] eySeq = initializedArraysSeq.get(2);
+        float[] hzSeq = initializedArraysSeq.get(3);
+
+        long start,end;
 
         StringBuilder se = new StringBuilder();
         StringBuilder par = new StringBuilder();
+
         for (int i = 0; i < iterations; i++) {
             System.gc();
             start = System.nanoTime();
-            hz = fdtd(steps, size, size, fict, ex, ey, hz);
+            hzSeq = fdtd(steps, size, size, fictSeq, exSeq, eySeq, hzSeq);
             end = System.nanoTime();
-            se.append("\tSequential execution time of iteration is: " + (end - start) + " ns \n");
+            se.append("Sequential execution time of iteration is: " + (end - start) + " ns \n");
         }
 
         TaskSchedule graph = new TaskSchedule("s0");
@@ -155,7 +153,6 @@ public class FDTDSolver {
             System.gc();
             start = System.nanoTime();
             for (int step = 0; step < steps; step++) {
-                // graph.streamIn(size, size, fict, ey, hz, step);
                 //@formatter:off
                 graph
                         .task("t0", FDTDSolver::kernelOne, size, size, fict, ey, hz, step)
@@ -166,14 +163,27 @@ public class FDTDSolver {
                 graph.streamOut(hz);
             }
             end = System.nanoTime();
-            graph.syncObject(hz);
-            par.append("\tTornado execution time of iteration is: " + (end - start) + " ns \n");
+            par.append("Tornado execution time of iteration is: " + (end - start) + " ns \n");
         }
 
         System.out.println(se);
         System.out.println(par);
-        // System.out.println("\tVerify : " + verify(a, aSeq));
-        // System.out.println(Arrays.toString(hz));
+        System.out.println("Verify : " + verify(hz, hzSeq, size));
+    }
+
+    private static boolean verify(float[] tornado, float[] serial, int size) {
+        boolean verified = true;
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (Math.abs(tornado[i * size + j]) - Math.abs(serial[i * size + j]) > 0.1f) {
+                    System.out.println(tornado[i * size + j] + " : " + serial[i * size + j]);
+                    verified = false;
+                    break;
+                }
+            }
+        }
+        return verified;
     }
 
 }
