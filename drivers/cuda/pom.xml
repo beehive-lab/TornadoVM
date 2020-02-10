@@ -24,18 +24,6 @@
             <artifactId>tornado-runtime</artifactId>
             <version>${tornado.version}</version>
         </dependency>
-        <dependency>
-            <groupId>tornado</groupId>
-            <artifactId>tornado-runtime</artifactId>
-            <version>0.5</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>tornado</groupId>
-            <artifactId>tornado-api</artifactId>
-            <version>0.5</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
 </project>

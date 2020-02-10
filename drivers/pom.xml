@@ -12,6 +12,7 @@
         <module>opencl</module>
         <module>opencl-jni</module>
         <module>cuda</module>
+        <module>cuda-jni</module>
     </modules>
 
     <dependencies>
