@@ -29,9 +29,9 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
  * https://github.com/cavazos-lab/PolyBench-ACC.
  */
 public class FDTDSolver {
-    final static int PB_STEPS = 20;
-    final static int PB_N = 1024;
-    final static int ITERATIONS = 31;
+    final static int PB_STEPS = 5;
+    final static int PB_N = 256;
+    final static int ITERATIONS = 1;
 
     public static void kernelOne(int nx, int ny, float[] fict, float[] ey, float[] hz, int step) {
         for (@Parallel int i = 0; i < nx; i++) {
@@ -61,8 +61,8 @@ public class FDTDSolver {
         }
     }
 
-    private static float[] fdtd(int tmax, int nx, int ny, float[] fict, float[] ex, float[] ey, float[] hz) {
-        for (int t = 0; t < tmax; t++) {
+    private static float[] fdtd(int maxSteps, int nx, int ny, float[] fict, float[] ex, float[] ey, float[] hz) {
+        for (int t = 0; t < maxSteps; t++) {
             for (int j = 0; j < ny; j++) {
                 ey[0 * nx + j] = fict[t];
             }
@@ -88,17 +88,18 @@ public class FDTDSolver {
         return hz;
     }
 
-    private static LinkedList<float[]> initArrays(int tmax, int nx, int ny) {
+    private static LinkedList<float[]> initArrays(int maxSteps, int nx, int ny) {
         LinkedList<float[]> initList = new LinkedList<>();
 
-        float[] fict = new float[tmax];
+        float[] fict = new float[maxSteps];
         float[] ex = new float[nx * ny];
         float[] ey = new float[nx * ny];
         float[] hz = new float[nx * ny];
 
-        for (int i = 0; i < tmax; i++) {
+        for (int i = 0; i < maxSteps; i++) {
             fict[i] = (float) i;
         }
+
         initList.add(fict);
 
         for (int i = 0; i < nx; i++) {
@@ -108,6 +109,7 @@ public class FDTDSolver {
                 hz[i * nx + j] = ((float) ((i - 9) * (j + 4) + 3) / nx);
             }
         }
+
         initList.add(ex);
         initList.add(ey);
         initList.add(hz);
@@ -116,6 +118,7 @@ public class FDTDSolver {
 
     public static void main(String[] args) {
         int size,steps,iterations;
+        long start,end;
 
         size = PB_N;
         steps = PB_STEPS;
@@ -128,19 +131,16 @@ public class FDTDSolver {
         }
 
         LinkedList<float[]> initializedArrays = initArrays(steps, size, size);
-        LinkedList<float[]> initializedArraysSeq = initArrays(steps, size, size);
 
         float[] fict = initializedArrays.get(0);
         float[] ex = initializedArrays.get(1);
         float[] ey = initializedArrays.get(2);
         float[] hz = initializedArrays.get(3);
 
-        float[] fictSeq = initializedArraysSeq.get(0);
-        float[] exSeq = initializedArraysSeq.get(1);
-        float[] eySeq = initializedArraysSeq.get(2);
-        float[] hzSeq = initializedArraysSeq.get(3);
-
-        long start,end;
+        float[] fictSeq = fict;
+        float[] exSeq = ex;
+        float[] eySeq = ey;
+        float[] hzSeq = hz;
 
         StringBuilder se = new StringBuilder();
         StringBuilder par = new StringBuilder();
@@ -153,19 +153,19 @@ public class FDTDSolver {
             se.append("Sequential execution time of iteration is: " + (end - start) + " ns \n");
         }
 
-        TaskSchedule graph = new TaskSchedule("s0");
         for (int i = 0; i < iterations; i++) {
             System.gc();
             start = System.nanoTime();
             for (int step = 0; step < steps; step++) {
                 //@formatter:off
-                graph
+                TaskSchedule graph = new TaskSchedule("s0")
                         .task("t0", FDTDSolver::kernelOne, size, size, fict, ey, hz, step)
                         .task("t1", FDTDSolver::kernelTwo, size, size, ex, hz)
                         .task("t2", FDTDSolver::kernelThree, size, size, ex, hz, ey);
                 //@formatter:on
-                graph.execute();
                 graph.streamOut(hz);
+                graph.execute();
+                graph.clearProfiles();
             }
             end = System.nanoTime();
             par.append("Tornado execution time of iteration is: " + (end - start) + " ns \n");
