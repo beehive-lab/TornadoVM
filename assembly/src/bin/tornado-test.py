@@ -49,6 +49,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.images.TestResizeImage",
 	"uk.ac.manchester.tornado.unittests.branching.TestConditionals",
 	"uk.ac.manchester.tornado.unittests.loops.TestLoops",
+	"uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions",
 	"uk.ac.manchester.tornado.unittests.matrices.TestMatrices",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats",
