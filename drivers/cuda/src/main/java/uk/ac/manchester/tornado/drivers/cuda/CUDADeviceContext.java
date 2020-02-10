@@ -30,6 +30,14 @@ public class CUDADeviceContext
         return false;
     }
 
+    @Override public boolean wasReset() {
+        return false;
+    }
+
+    @Override public void setResetToFalse() {
+
+    }
+
     @Override public boolean isInitialised() {
         return false;
     }

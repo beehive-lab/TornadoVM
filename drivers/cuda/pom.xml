@@ -30,6 +30,12 @@
             <version>0.5</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>tornado</groupId>
+            <artifactId>tornado-api</artifactId>
+            <version>0.5</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
 </project>
