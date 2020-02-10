@@ -98,7 +98,6 @@ public class TaskMetaData extends AbstractMetaData {
         if (localWorkDefined) {
             final String[] values = getProperty(getId() + ".local.dims").split(",");
             localWork = new long[] { 1, 1, 1 };
-            // localWork = new long[values.length];
             for (int i = 0; i < values.length; i++) {
                 localWork[i] = Long.parseLong(values[i]);
             }
