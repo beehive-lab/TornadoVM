@@ -61,8 +61,6 @@ public abstract class OCLKernelScheduler {
     }
 
     public int submit(final OCLKernel kernel, final TaskMetaData meta, final int[] waitEvents, long batchThreads) {
-        long[] localWork;
-
         if (!meta.isGlobalWorkDefined()) {
             calculateGlobalWork(meta, batchThreads);
         }
@@ -75,11 +73,10 @@ public abstract class OCLKernelScheduler {
             meta.printThreadDims();
         }
 
-        localWork = (meta.shouldUseOpenCLDriverScheduling() ? null : meta.getLocalWork());
-
         final int taskEvent;
 
-        taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), localWork, waitEvents);
+        taskEvent = deviceContext.enqueueNDRangeKernel(kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), (meta.shouldUseOpenCLDriverScheduling() ? null : meta.getLocalWork()),
+                waitEvents);
 
         updateProfiler(taskEvent, meta);
         return taskEvent;
