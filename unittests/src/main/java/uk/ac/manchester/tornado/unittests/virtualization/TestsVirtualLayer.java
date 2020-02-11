@@ -177,8 +177,8 @@ public class TestsVirtualLayer {
         }
 
         /*
-         * The following expression is not correct for Tornado to execute on
-         * different devices.
+         * The following expression is not correct for Tornado to execute on different
+         * devices.
          */
         final int N = 128;
         int[] data = new int[N];
@@ -202,9 +202,9 @@ public class TestsVirtualLayer {
     }
 
     /**
-     * This test is not legal in Tornado. This test executes everything on the
-     * same device, even if the user forces to change. A task schedule is always
-     * executed on the same device. Device can change once the task is executed.
+     * This test is not legal in Tornado. This test executes everything on the same
+     * device, even if the user forces to change. A task schedule is always executed
+     * on the same device. Device can change once the task is executed.
      */
     @Ignore
     public void testVirtualLayer02() {
@@ -232,9 +232,9 @@ public class TestsVirtualLayer {
     }
 
     /**
-     * Tasks within the same task schedules are always executed on the same
-     * device. Currently, it is not possible to change device for a single tasks
-     * in a group of tasks.
+     * Tasks within the same task schedules are always executed on the same device.
+     * Currently, it is not possible to change device for a single tasks in a group
+     * of tasks.
      * 
      */
     @Test
@@ -265,11 +265,11 @@ public class TestsVirtualLayer {
     }
 
     /**
-     * It creates one task scheduler and one task. Then it executes the same
-     * task in different devices.
+     * It creates one task scheduler and one task. Then it executes the same task in
+     * different devices.
      * 
-     * The task is just one instance for all the devices. The loop iterates over
-     * the devices under the same Tornado Driver and executes the task.
+     * The task is just one instance for all the devices. The loop iterates over the
+     * devices under the same Tornado Driver and executes the task.
      */
     @Test
     public void testDynamicDeviceSwitch() {
@@ -323,8 +323,8 @@ public class TestsVirtualLayer {
     }
 
     /**
-     * It creates two task schedulers and two tasks and executes them on
-     * different devices.
+     * It creates two task schedulers and two tasks and executes them on different
+     * devices.
      */
     @Test
     public void testSchedulerDevices() {
