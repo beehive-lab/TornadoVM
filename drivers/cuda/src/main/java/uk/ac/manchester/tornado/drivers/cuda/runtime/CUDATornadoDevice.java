@@ -10,10 +10,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
-import uk.ac.manchester.tornado.drivers.cuda.CUDAContext;
-import uk.ac.manchester.tornado.drivers.cuda.CUDADevice;
-import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
-import uk.ac.manchester.tornado.drivers.cuda.CUDADriver;
+import uk.ac.manchester.tornado.drivers.cuda.*;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.PTXBackend;
@@ -34,8 +31,6 @@ import java.util.List;
 public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
     private final CUDADevice device;
-    private final int deviceIndex;
-    private final int platformIndex;
     private static CUDADriver driver = null;
 
     public static CUDADriver findDriver() {
@@ -47,12 +42,8 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
     }
 
 
-    public CUDATornadoDevice(final int platformIndex, final int deviceIndex) {
-        this.platformIndex = platformIndex;
-        this.deviceIndex = deviceIndex;
-
-        CUDAContext context = findDriver().getPlatformContext(platformIndex);
-        device = context.devices().get(deviceIndex);
+    public CUDATornadoDevice(final int deviceIndex) {
+        device = CUDA.getPlatform().getDevice(deviceIndex);
     }
 
     @Override
@@ -280,7 +271,7 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
         return getBackend().getDeviceContext();
     }
 
-    public PTXBackend getBackend() {return findDriver().getBackend(platformIndex, deviceIndex);}
+    public PTXBackend getBackend() {return findDriver().getBackend(device.getIndex());}
 
     @Override
     public TornadoTargetDevice getDevice() {

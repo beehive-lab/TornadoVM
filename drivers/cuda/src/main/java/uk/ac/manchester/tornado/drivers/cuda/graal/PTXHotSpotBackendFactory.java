@@ -39,13 +39,13 @@ public class PTXHotSpotBackendFactory {
     private static final PTXCompilerConfiguration compilerConfiguration = new PTXCompilerConfiguration();
     private static final PTXAddressLowering addressLowering = new PTXAddressLowering();
 
-    public static PTXBackend createBackend(OptionValues options, JVMCIBackend jvmci, TornadoVMConfig config, CUDAContext cudaContext, CUDADevice device) {
+    public static PTXBackend createBackend(OptionValues options, JVMCIBackend jvmci, TornadoVMConfig config, CUDADevice device) {
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmci.getMetaAccess();
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();
 
         PTXArchitecture arch = new PTXArchitecture(PTXKind.UINT, device.getByteOrder());
         CUDATargetDescription target = new CUDATargetDescription(arch);
-        CUDADeviceContext deviceContext = cudaContext.createDeviceContext(device.getIndex());
+        CUDADeviceContext deviceContext = device.getContext().getDeviceContext();
 
         PTXProviders providers;
         PTXSuitesProvider suites;

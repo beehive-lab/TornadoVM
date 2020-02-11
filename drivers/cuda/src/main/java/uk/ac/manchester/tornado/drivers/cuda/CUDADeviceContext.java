@@ -43,7 +43,7 @@ public class CUDADeviceContext
     }
 
     public CUDATornadoDevice asMapping() {
-        return new CUDATornadoDevice(context.getPlatformIndex(), device.getIndex());
+        return new CUDATornadoDevice(device.getIndex());
     }
 
     public TornadoInstalledCode installCode(PTXCompilationResult result) {

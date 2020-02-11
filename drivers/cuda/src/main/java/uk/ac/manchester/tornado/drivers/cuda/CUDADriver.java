@@ -45,78 +45,23 @@ import java.util.List;
 
 public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDriver {
 
-    private final PTXBackend[] flatBackends;
-    private final PTXBackend[][] backends;
-    private final List<CUDAContext> contexts;
+    private final PTXBackend[] backends;
 
     public CUDADriver(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
-        final int numPlatforms = 1; //OpenCL.getNumPlatforms();
-        backends = new PTXBackend[numPlatforms][];
-        contexts = new ArrayList<>();
 
-        discoverDevices(options, vmRuntime, vmConfig);
-        flatBackends = new PTXBackend[getDeviceCount()];
-        int index = 0;
-        for (int i = 0; i < getNumPlatforms(); i++) {
-            for (int j = 0; j < getNumDevices(i); j++, index++) {
-                flatBackends[index] = backends[i][j];
-            }
+        int deviceCount = CUDA.getPlatform().getDeviceCount();
+        backends = new PTXBackend[deviceCount];
+        info("CUDA: Has %d devices...", deviceCount);
+
+        for (int i = 0; i < deviceCount; i++) {
+            installDevice(i, options, vmRuntime, vmConfig);
         }
     }
 
-    protected void discoverDevices(final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
-        final int numPlatforms = CUDA.getNumPlatforms();
-        if (numPlatforms > 0) {
-            String platformToIgnore = getString("tornado.ignore.platform");
-            for (int i = 0; i < numPlatforms; i++) {
-                final CUDAPlatform platform = CUDA.getPlatform(i);
-
-                if (platformToIgnore != null && platform.getName().startsWith(platformToIgnore)) {
-                    info("Ignore " + platform.getName());
-                } else {
-                    installDevices(i, platform, options, vmRuntime, vmConfig);
-                }
-            }
-        }
-    }
-
-    private void installDevices(int platformIndex, CUDAPlatform platform, final OptionValues options, final HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
-        info("CUDA[%d]: Platform %s", platformIndex, platform.getName());
-        final CUDAContext context = platform.createContext();
-        assert context != null : "CUDA context is null";
-        contexts.add(context);
-        final int numDevices = context.getNumDevices();
-        info("OpenCL[%d]: Has %d devices...", platformIndex, numDevices);
-
-        backends[platformIndex] = new PTXBackend[numDevices];
-        for (int j = 0; j < numDevices; j++) {
-            //final CUDADevice device = null; //context.devices().get(j);
-            //info("CUDA[%d]: device=%s", platformIndex, device.getDeviceName());
-            backends[platformIndex][j] = createPTXBackend(options, vmRuntime, vmConfig, context, j);
-        }
-    }
-
-    private PTXBackend createPTXBackend(final OptionValues options, final HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig vmConfig, final CUDAContext context, final int deviceIndex) {
-        final CUDADevice device = context.devices().get(deviceIndex);
+    private void installDevice(int deviceIndex, OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
+        CUDADevice device = CUDA.getPlatform().getDevice(deviceIndex);
         info("Creating backend for %s", device.getDeviceName());
-        return PTXHotSpotBackendFactory.createBackend(options, jvmciRuntime.getHostJVMCIBackend(), vmConfig, context, device);
-    }
-
-    private static String getString(String property) {
-        if (System.getProperty(property) == null) {
-            return null;
-        } else {
-            return System.getProperty(property);
-        }
-
-    }
-
-    public int getNumDevices(int platform) {
-        try {
-            return backends[platform].length;
-        } catch (NullPointerException e) {
-            return 0;
-        }
+        backends[deviceIndex] = PTXHotSpotBackendFactory.createBackend(options, vmRuntime.getHostJVMCIBackend(), vmConfig, device);
     }
 
     @Override
@@ -130,11 +75,11 @@ public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDrive
     }
 
     public PTXBackend getDefaultBackend() {
-        return checkAndInitBackend(0, 0);
+        return checkAndInitBackend(0);
     }
 
-    private PTXBackend checkAndInitBackend(final int platform, final int device) {
-        final PTXBackend backend = backends[platform][device];
+    private PTXBackend checkAndInitBackend(final int device) {
+        final PTXBackend backend = backends[device];
         if (!backend.isInitialised()) {
             backend.init();
         }
@@ -155,9 +100,9 @@ public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDrive
     @Override
     public TornadoAcceleratorDevice getDevice(int index) {
         try {
-            return flatBackends[index].getDeviceContext().asMapping();
+            return backends[index].getDeviceContext().asMapping();
         } catch (ArrayIndexOutOfBoundsException e) {
-            throw new TornadoRuntimeException("[ERROR] device required not found: " + index + " - Max: " + flatBackends.length);
+            throw new TornadoRuntimeException("[ERROR] device required not found: " + index + " - Max: " + backends.length);
         }
     }
 
@@ -176,11 +121,7 @@ public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDrive
         return 1;
     }
 
-    public PTXBackend getBackend(int platform, int device) {
-        return checkAndInitBackend(platform, device);
-    }
-
-    public CUDAContext getPlatformContext(int index) {
-        return contexts.get(index);
+    public PTXBackend getBackend(int device) {
+        return checkAndInitBackend(device);
     }
 }

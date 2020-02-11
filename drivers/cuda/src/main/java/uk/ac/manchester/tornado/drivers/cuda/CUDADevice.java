@@ -9,9 +9,11 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
 
     private int index;
     private String name;
+    private CUDAContext context;
 
-    public CUDADevice(int index, long id) {
+    public CUDADevice(int index) {
         this.index = index;
+        context = new CUDAContext(this);
     }
 
     native static String cuDeviceGetName(int deviceId);
@@ -63,5 +65,9 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
 
     public int getIndex() {
         return index;
+    }
+
+    public CUDAContext getContext() {
+        return context;
     }
 }

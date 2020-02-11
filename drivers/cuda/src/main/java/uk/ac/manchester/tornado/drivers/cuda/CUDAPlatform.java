@@ -9,94 +9,46 @@ import java.util.List;
 import java.util.Set;
 
 public class CUDAPlatform extends TornadoLogger {
-    private final int index;
-    private final long id;
-    private final List<CUDADevice> devices;
-    private final Set<CUDAContext> contexts;
+    private final CUDADevice[] devices;
 
-    public CUDAPlatform(int index, long id) {
-        this.index = index;
-        this.id = id;
-        this.devices = new ArrayList<>();
-        this.contexts = new HashSet<>();
+    public CUDAPlatform() {
+        devices = new CUDADevice[cuDeviceGetCount()];
 
-        final int deviceCount = 1;
-
-        final long[] ids = new long[]{1};
-        for (int i = 0; i < ids.length; i++) {
-            devices.add(new CUDADevice(i, ids[i]));
+        for (int i = 0; i < devices.length; i++) {
+            devices[i] = new CUDADevice(i);
         }
-
     }
 
-    native static String clGetPlatformInfo(long id, int info);
+    //native static String clGetPlatformInfo(long id, int info);
 
-    native static int clGetDeviceCount(long id, long type);
+    public native static int cuDeviceGetCount();
 
-    native static int clGetDeviceIDs(long id, long type, long[] devices);
+    //native static int clGetDeviceIDs(long id, long type, long[] devices);
 
-    native static long clCreateContext(long platform, long[] devices) throws Exception;
-
-    public CUDAContext createContext() {
-        CUDAContext contextObject = null;
-        final LongBuffer deviceIds = LongBuffer.allocate(devices.size());
-        for (CUDADevice device : devices) {
-            deviceIds.put(device.getId());
-        }
-
-        try {
-            //long contextId = clCreateContext(id, deviceIds.array());
-            contextObject = new CUDAContext(this, 1 /*contextId*/, devices);
-            contexts.add(contextObject);
-        } catch (Exception e) {
-            error(e.getMessage());
-            e.printStackTrace();
-        }
-        return contextObject;
-    }
+    //native static long clCreateContext(long platform, long[] devices) throws Exception;
 
     public void cleanup() {
-        for (CUDAContext context : contexts) {
-            if (context != null) {
-                context.cleanup();
+        for (CUDADevice device : devices) {
+            if (device != null) {
+                device.getContext().cleanup();
             }
         }
-    }
-
-    public String getProfile() {
-        return ""; //clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_PROFILE.getValue());
-    }
-
-    public String getVersion() {
-
-        return "0.0.0"; //clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_VERSION.getValue());
-    }
-
-    public String getName() {
-        return "CUDA platform"; //clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_NAME.getValue());
-    }
-
-    public String getVendor() {
-
-        return "NVIDIA"; //clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_VENDOR.getValue());
-    }
-
-    public String getExtensions() {
-
-        return ""; //clGetPlatformInfo(id, OCLPlatformInfo.CL_PLATFORM_EXTENSIONS.getValue());
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(String.format("name=%s, num. devices=%d, ", getName(), devices.size()));
-        sb.append(String.format("version=%s", getVersion()));
+        sb.append(String.format("name=CUDA-PTX, num. devices=%d" , devices.length));
 
         return sb.toString().trim();
     }
 
-    public int getIndex() {
-        return index;
+    public int getDeviceCount() {
+        return devices.length;
+    }
+
+    public CUDADevice getDevice(int deviceIndex) {
+        return devices[deviceIndex];
     }
 }

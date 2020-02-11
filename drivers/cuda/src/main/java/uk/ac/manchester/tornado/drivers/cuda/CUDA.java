@@ -7,13 +7,14 @@ public class CUDA {
 
     public static final String CUDA_JNI_LIBRARY = "tornado-cuda";
 
-    private static final List<CUDAPlatform> platforms = new ArrayList<>();
+    private static final CUDAPlatform platform;
     private static boolean initialised = false;
 
     static {
         System.loadLibrary(CUDA_JNI_LIBRARY);
 
         initialise();
+        platform = new CUDAPlatform();
 
         // add a shutdown hook to free-up all OpenCL resources on VM exit
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -35,16 +36,10 @@ public class CUDA {
     }
 
     public static void cleanup() {
-        for (CUDAPlatform platform : platforms) {
-            platform.cleanup();
-        }
+        platform.cleanup();
     }
 
-    public static int getNumPlatforms() {
-        return 1;
-    }
-
-    public static CUDAPlatform getPlatform(int index) {
-        return new CUDAPlatform(0, 0);
+    public static CUDAPlatform getPlatform() {
+        return platform;
     }
 }
