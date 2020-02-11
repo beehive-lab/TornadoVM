@@ -88,6 +88,7 @@ public class Mandelbrot {
     public static short[] sequential() {
         short[] result = new short[SIZE * SIZE];
         mandelbrot(SIZE, result);
+        writeFile(result, SIZE);
         return result;
     }
 
