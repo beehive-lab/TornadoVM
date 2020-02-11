@@ -315,7 +315,7 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public String getDeviceOpenCLCVersion() {
-        return null;
+        return "N/A";
     }
 
     @Override
