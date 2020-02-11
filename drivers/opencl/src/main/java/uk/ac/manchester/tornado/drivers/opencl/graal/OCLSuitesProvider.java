@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -53,7 +55,7 @@ public class OCLSuitesProvider implements TornadoSuitesProvider {
     public OCLSuitesProvider(OptionValues options, Plugins plugins, MetaAccessProvider metaAccessProvider, OCLCompilerConfiguration compilerConfig, AddressLowering addressLowering) {
         graphBuilderSuite = createGraphBuilderSuite(plugins);
         canonicalizer = new OCLCanonicalizer();
-        suites = new TornadoSuites(options, compilerConfig, canonicalizer, addressLowering);
+        suites = new TornadoSuites(options, compilerConfig, metaAccessProvider, canonicalizer, addressLowering);
         lirSuites = createLIRSuites();
     }
 

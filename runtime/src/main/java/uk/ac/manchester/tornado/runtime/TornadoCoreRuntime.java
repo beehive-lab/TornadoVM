@@ -1,7 +1,9 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -36,13 +38,15 @@ import java.util.WeakHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.core.common.GraalOptions;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
 import org.graalvm.compiler.lir.constopt.ConstantLoadOptimization;
 import org.graalvm.compiler.lir.phases.PostAllocationOptimizationStage;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.util.EconomicMap;
+import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -53,9 +57,25 @@ import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoRuntimeCI;
 import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 import uk.ac.manchester.tornado.runtime.tasks.GlobalObjectState;
 
 public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeCI {
+
+    private static final OptionValues options;
+    static {
+        EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
+        opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
+
+        opts.put(GraalOptions.OmitHotExceptionStacktrace, false);
+
+        opts.put(GraalOptions.MatchExpressions, true);
+        opts.put(GraalOptions.RemoveNeverExecutedCode, false);
+        opts.put(ConstantLoadOptimization.Options.LIROptConstantLoadOptimization, false);
+        opts.put(PostAllocationOptimizationStage.Options.LIROptRedundantMoveElimination, false);
+
+        options = new OptionValues(opts);
+    }
 
     private static final Executor EXECUTOR = Executors.newCachedThreadPool();
     private static final TornadoCoreRuntime runtime = new TornadoCoreRuntime();
@@ -63,6 +83,14 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
 
     public static TornadoCoreRuntime getTornadoRuntime() {
         return runtime;
+    }
+
+    private static DebugContext debugContext = null;
+    public static DebugContext getDebugContext() {
+        if (debugContext == null) {
+            debugContext = DebugContext.create(getOptions(), new GraalDebugHandlersFactory(new TornadoSnippetReflectionProvider()));
+        }
+        return debugContext;
     }
 
     public static Executor getTornadoExecutor() {
@@ -90,32 +118,34 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
 
     private static final int DEFAULT_DRIVER = 0;
 
-    private final OptionValues options;
+    // @formatter:off
+    public enum TORNADO_DRIVERS_DESCRIPTION {
+        OPENCL("implemented"),
+        PTX("unsupported");
 
-    public TornadoCoreRuntime() {
+        String status;
+
+        TORNADO_DRIVERS_DESCRIPTION(String status) {
+            this.status = status;
+        }
+
+        String getStatus() {
+            return status;
+        }
+    }
+    // @formatter:on
+
+    private TornadoCoreRuntime() {
         objectMappings = new WeakHashMap<>();
 
-        EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
-        opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
-
-        opts.put(GraalOptions.OmitHotExceptionStacktrace, false);
-
-        opts.put(GraalOptions.MatchExpressions, true);
-        opts.put(GraalOptions.RemoveNeverExecutedCode, false);
-        opts.put(ConstantLoadOptimization.Options.LIROptConstantLoadOptimization, false);
-        opts.put(PostAllocationOptimizationStage.Options.LIROptRedundantMoveElimination, false);
-
-        options = new OptionValues(opts);
         guarantee(!GraalOptions.OmitHotExceptionStacktrace.getValue(options), "error");
 
         if (!(JVMCI.getRuntime() instanceof HotSpotJVMCIRuntime)) {
             shouldNotReachHere("Unsupported JVMCIRuntime: ", JVMCI.getRuntime().getClass().getName());
         }
         vmRuntime = (HotSpotJVMCIRuntime) JVMCI.getRuntime();
-
         vmBackend = vmRuntime.getHostJVMCIBackend();
         vmConfig = new TornadoVMConfig(vmRuntime.getConfigStore());
-
         drivers = loadDrivers();
     }
 
@@ -128,7 +158,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
 
     private TornadoAcceleratorDriver[] loadDrivers() {
         ServiceLoader<TornadoDriverProvider> loader = ServiceLoader.load(TornadoDriverProvider.class);
-        drivers = new TornadoAcceleratorDriver[2];
+        drivers = new TornadoAcceleratorDriver[TORNADO_DRIVERS_DESCRIPTION.values().length];
         int index = 0;
         for (TornadoDriverProvider provider : loader) {
             boolean isRMI = provider.getName().equalsIgnoreCase("RMI Driver");
@@ -143,7 +173,7 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
         return drivers;
     }
 
-    public OptionValues getOptions() {
+    public static OptionValues getOptions() {
         return options;
     }
 

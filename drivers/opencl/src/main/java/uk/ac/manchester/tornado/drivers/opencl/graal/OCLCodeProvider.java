@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -33,6 +35,7 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
+import uk.ac.manchester.tornado.runtime.common.Tornado;
 
 public class OCLCodeProvider implements CodeCacheProvider {
 
@@ -83,7 +86,7 @@ public class OCLCodeProvider implements CodeCacheProvider {
 
     @Override
     public boolean shouldDebugNonSafepoints() {
-        unimplemented("Debug non safe points not implemented yet.");
+        Tornado.warn("Debug non safe points not implemented yet.");
         return false;
     }
 

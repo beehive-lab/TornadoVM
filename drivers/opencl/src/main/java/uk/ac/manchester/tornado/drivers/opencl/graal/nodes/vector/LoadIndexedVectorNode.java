@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -39,7 +41,7 @@ public class LoadIndexedVectorNode extends LoadIndexedNode {
     private final OCLKind oclKind;
 
     public LoadIndexedVectorNode(OCLKind oclKind, ValueNode array, ValueNode index, JavaKind elementKind) {
-        super(TYPE, OCLStampFactory.getStampFor(oclKind), array, index, elementKind);
+        super(TYPE, OCLStampFactory.getStampFor(oclKind), array, index, null, elementKind);
         this.oclKind = oclKind;
     }
 

@@ -2,6 +2,8 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -306,10 +308,10 @@ public class OCLDevice extends TornadoLogger implements TornadoTargetDevice {
             return maxWorkItemSizes;
         }
 
+        final int elements = getDeviceMaxWorkItemDimensions();
+
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
-
-        final int elements = getDeviceMaxWorkItemDimensions();
 
         clGetDeviceInfo(id, OCLDeviceInfo.CL_DEVICE_MAX_WORK_ITEM_SIZES.getValue(), buffer.array());
 
