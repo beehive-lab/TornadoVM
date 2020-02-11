@@ -13,7 +13,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_cu
 
     CUcontext ctx;
     cuCtxCreate(&ctx, CU_CTX_SCHED_YIELD, dev);
-    return;
+    return (jint) 0;
 }
 
 /*

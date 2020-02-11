@@ -290,22 +290,22 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public long getMaxAllocMemory() {
-        return 0;
+        return device.getDeviceMaxAllocationSize();
     }
 
     @Override
     public long getMaxGlobalMemory() {
-        return 0;
+        return device.getDeviceGlobalMemorySize();
     }
 
     @Override
     public long getDeviceLocalMemorySize() {
-        return 0;
+        return device.getDeviceLocalMemorySize();
     }
 
     @Override
     public long[] getDeviceMaxWorkgroupDimensions() {
-        return new long[0];
+        return device.getDeviceMaxWorkItemSizes();
     }
 
     @Override
@@ -320,7 +320,7 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public Object getDeviceInfo() {
-        return null;
+        return device.getDeviceInfo();
     }
 
     @Override
