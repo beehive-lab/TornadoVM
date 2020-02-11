@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -37,9 +39,10 @@ import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LabelRef;
-import org.graalvm.compiler.lir.StandardOp.SaveRegistersOp;
+import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.lir.VirtualStackSlot;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
 
@@ -84,31 +87,7 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Value emitAtomicReadAndAdd(Value address, Value delta) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Value emitAtomicReadAndWrite(Value address, Value newValue) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
     public Value emitCompress(Value pointer, CompressEncoding encoding, boolean nonNull) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Variable emitLogicCompareAndSwap(Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Variable emitStringIndexOf(Value sourcePointer, Value sourceCount, Value targetPointer, Value targetCount, int constantTargetCount) {
         unimplemented();
         return null;
     }
@@ -120,9 +99,41 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Value emitValueCompareAndSwap(Value address, Value expectedValue, Value newValue) {
+    public void emitConvertNullToZero(AllocatableValue result, Value input) {
+        unimplemented();
+    }
+
+    @Override
+    public void emitConvertZeroToNull(AllocatableValue result, Value input) {
+        unimplemented();
+    }
+
+    @Override
+    public VirtualStackSlot allocateStackSlots(int slots) {
         unimplemented();
         return null;
+    }
+
+    @Override
+    public Value emitReadCallerStackPointer(Stamp wordStamp) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitReadReturnAddress(Stamp wordStamp, int returnAddressSize) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public void emitZeroMemory(Value address, Value length, boolean isAligned) {
+        unimplemented();
+    }
+
+    @Override
+    public void emitSpeculationFence() {
+        unimplemented();
     }
 
     @Override
@@ -171,7 +182,7 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public SaveRegistersOp createZapRegisters(Register[] rgstrs, JavaConstant[] jcs) {
+    public StandardOp.ZapRegistersOp createZapRegisters(Register[] zappedRegisters, JavaConstant[] zapValues) {
         unimplemented();
         return null;
     }
@@ -183,13 +194,42 @@ public class OCLLIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable emitArrayEquals(JavaKind jk, Value value, Value value1, Value value2) {
+    public Variable emitByteSwap(Value value) {
         unimplemented();
         return null;
     }
 
     @Override
-    public Variable emitByteSwap(Value value) {
+    public Variable emitArrayCompareTo(JavaKind kind1, JavaKind kind2, Value array1, Value array2, Value length1, Value length2) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length, boolean directPointers) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Variable emitArrayEquals(JavaKind kind1, JavaKind kind2, Value array1, Value array2, Value length, boolean directPointers) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Variable emitArrayIndexOf(JavaKind arrayKind, JavaKind valueKind, boolean findTwoConsecutive, Value sourcePointer, Value sourceCount, Value fromIndex, Value... searchValues) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public void emitStringLatin1Inflate(Value src, Value dst, Value len) {
+        unimplemented();
+    }
+
+    @Override
+    public Variable emitStringUTF16Compress(Value src, Value dst, Value len) {
         unimplemented();
         return null;
     }
@@ -279,6 +319,30 @@ public class OCLLIRGenerator extends LIRGenerator {
         if (!TornadoOptions.IGNORE_NULL_CHECKS) {
             unimplemented();
         }
+    }
+
+    @Override
+    public Variable emitLogicCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitValueCompareAndSwap(LIRKind accessKind, Value address, Value expectedValue, Value newValue) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitAtomicReadAndAdd(Value address, ValueKind<?> valueKind, Value delta) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Value emitAtomicReadAndWrite(Value address, ValueKind<?> valueKind, Value newValue) {
+        unimplemented();
+        return null;
     }
 
     @Override

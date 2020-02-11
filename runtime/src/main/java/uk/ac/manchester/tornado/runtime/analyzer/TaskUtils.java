@@ -2,6 +2,8 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -61,6 +63,8 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 public class TaskUtils {
 
+    public static final String JDK_VM_CI_HOTSPOT_JDK_REFLECTION = "jdk.vm.ci.hotspot.HotSpotJDKReflection";
+
     public static CompilableTask scalaTask(String id, Object object, Object... args) {
         Class<?> type = object.getClass();
         Method entryPoint = null;
@@ -113,12 +117,19 @@ public class TaskUtils {
                 cp.loadReferencedType(bc[i + 2], Bytecodes.INVOKESTATIC);
                 JavaMethod jm = cp.lookupMethod(bc[i + 2], Bytecodes.INVOKESTATIC);
                 try {
-                    Method toJavaMethod = jm.getClass().getDeclaredMethod("toJava");
-                    toJavaMethod.setAccessible(true);
-                    Method m = (Method) toJavaMethod.invoke(jm);
+                    Class hotSpotJDKReflection = Class.forName(JDK_VM_CI_HOTSPOT_JDK_REFLECTION);
+                    Method getMethod = null;
+                    for (Method method : hotSpotJDKReflection.getDeclaredMethods()) {
+                        if ("getMethod".equals(method.getName())) {
+                            getMethod = method;
+                            break;
+                        }
+                    }
+                    getMethod.setAccessible(true);
+                    Method m = (Method) getMethod.invoke(hotSpotJDKReflection, jm);
                     m.setAccessible(true);
                     return m;
-                } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                } catch (SecurityException | IllegalArgumentException | ClassNotFoundException | IllegalAccessException | InvocationTargetException e) {
                     e.printStackTrace();
                 }
                 break;
@@ -132,12 +143,19 @@ public class TaskUtils {
                         continue;
                 }
                 try {
-                    Method toJavaMethod = jm.getClass().getDeclaredMethod("toJava");
-                    toJavaMethod.setAccessible(true);
-                    Method m = (Method) toJavaMethod.invoke(jm);
+                    Class hotSpotJDKReflection = Class.forName(JDK_VM_CI_HOTSPOT_JDK_REFLECTION);
+                    Method getMethod = null;
+                    for (Method method : hotSpotJDKReflection.getDeclaredMethods()) {
+                        if ("getMethod".equals(method.getName())) {
+                            getMethod = method;
+                            break;
+                        }
+                    }
+                    getMethod.setAccessible(true);
+                    Method m = (Method) getMethod.invoke(hotSpotJDKReflection, jm);
                     m.setAccessible(true);
                     return m;
-                } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                } catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | ClassNotFoundException e) {
                     e.printStackTrace();
                 }
                 break;
@@ -206,7 +224,7 @@ public class TaskUtils {
         final Class<?> type = code.getClass();
         int count = 0;
         for (Field field : type.getDeclaredFields()) {
-            if (!field.getType().getName().contains("$$Lambda$")) {
+            if (!field.getType().getName().contains("$$Lambda$") && !field.getName().contains("LAMBDA_INSTANCE$")) {
                 count++;
             }
         }
@@ -214,7 +232,7 @@ public class TaskUtils {
         final Object[] cvs = new Object[count];
         int index = 0;
         for (Field field : type.getDeclaredFields()) {
-            if (!field.getType().getName().contains("$$Lambda$")) {
+            if (!field.getType().getName().contains("$$Lambda$") && !field.getName().contains("LAMBDA_INSTANCE$")) {
                 field.setAccessible(true);
                 try {
                     cvs[index] = field.get(code);

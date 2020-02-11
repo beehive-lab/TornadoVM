@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -35,6 +37,7 @@ import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
@@ -66,10 +69,10 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
         this.vector = vector;
         this.lane = lane;
 
-        Stamp vstamp = vector.stamp();
+        Stamp vstamp = vector.stamp(NodeView.DEFAULT);
         OCLKind vectorKind = OCLKind.ILLEGAL;
         if (vstamp instanceof ObjectStamp) {
-            ObjectStamp ostamp = (ObjectStamp) vector.stamp();
+            ObjectStamp ostamp = (ObjectStamp) vector.stamp(NodeView.DEFAULT);
             // System.out.printf("ostamp: type=%s\n", ostamp.type());
 
             if (ostamp.type() != null) {
@@ -78,12 +81,12 @@ public abstract class VectorElementOpNode extends FloatingNode implements LIRLow
                 guarantee(vectorKind.getVectorLength() >= laneId(), "Invalid lane %d on type %s", laneId(), oclKind);
             }
         } else if (vstamp instanceof OCLStamp) {
-            final OCLStamp vectorStamp = (OCLStamp) vector.stamp();
+            final OCLStamp vectorStamp = (OCLStamp) vector.stamp(NodeView.DEFAULT);
             vectorKind = vectorStamp.getOCLKind();
             guarantee(vectorKind.isVector(), "Cannot apply vector operation to non-vector type: %s", vectorKind);
             guarantee(vectorKind.getVectorLength() >= laneId(), "Invalid lane %d on type %s", laneId(), oclKind);
         } else {
-            shouldNotReachHere("invalid type on vector operation: %s (stamp=%s (class=%s))", vector, vector.stamp(), vector.stamp().getClass().getName());
+            shouldNotReachHere("invalid type on vector operation: %s (stamp=%s (class=%s))", vector, vector.stamp(NodeView.DEFAULT), vector.stamp(NodeView.DEFAULT).getClass().getName());
         }
 
     }

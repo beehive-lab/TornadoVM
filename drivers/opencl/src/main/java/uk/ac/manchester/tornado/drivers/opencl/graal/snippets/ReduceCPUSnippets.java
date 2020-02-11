@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2018 - 2020, APT Group, School of Computer Science,
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
+ * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -23,6 +25,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.snippets;
 
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -46,13 +49,13 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 
 /**
  * Graal-Snippets for CPU OpenCL reductions.
- * 
+ *
  */
 public class ReduceCPUSnippets implements Snippets {
 
     /**
      * Reduction array has to be of size = number of local threads (CPU threads).
-     * 
+     *
      * @param inputArray
      * @param outputArray
      * @param gidx
@@ -291,8 +294,8 @@ public class ReduceCPUSnippets implements Snippets {
         private final SnippetInfo partialReduceMaxDoubleSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMaxGlobal");
         private final SnippetInfo partialReduceMinDoubleSnippetGlobal = snippet(ReduceCPUSnippets.class, "partialReduceDoubleMinGlobal");
 
-        public Templates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
-            super(options, providers, snippetReflection, target);
+        public Templates(OptionValues options, Iterable<DebugHandlersFactory> debugHandlersFactories, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
+            super(options, debugHandlersFactories, providers, snippetReflection, target);
         }
 
         private SnippetInfo getSnippetFromOCLBinaryNodeInteger(OCLIntBinaryIntrinsicNode value) {
@@ -435,7 +438,7 @@ public class ReduceCPUSnippets implements Snippets {
                 args.add("value", extra);
             }
 
-            template(args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
+            template(storeAtomicIndexed, args).instantiate(providers.getMetaAccess(), storeAtomicIndexed, SnippetTemplate.DEFAULT_REPLACER, args);
         }
     }
 }

@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -23,6 +25,10 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.phases;
 
+import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
+import static org.graalvm.compiler.core.common.GraalOptions.MaximumInliningSize;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.phases.common.inlining.InliningUtil;
@@ -30,28 +36,27 @@ import org.graalvm.compiler.phases.common.inlining.info.InlineInfo;
 import org.graalvm.compiler.phases.common.inlining.policy.InliningPolicy;
 import org.graalvm.compiler.phases.common.inlining.walker.MethodInvocation;
 
-import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
-import static org.graalvm.compiler.core.common.GraalOptions.MaximumInliningSize;
-
 public class TornadoInliningPolicy implements InliningPolicy {
+
+    public TornadoInliningPolicy() {
+    }
 
     @Override
     public boolean continueInlining(StructuredGraph graph) {
         if (graph.getNodeCount() >= MaximumDesiredSize.getValue(graph.getOptions())) {
-            InliningUtil.logInliningDecision("inlining is cut off by MaximumDesiredSize");
+            InliningUtil.logInliningDecision(getDebugContext(), "inlining is cut off by MaximumDesiredSize");
             return false;
         }
         return true;
     }
 
     @Override
-    public boolean isWorthInlining(Replacements replacements, MethodInvocation invocation, int inliningDepth, boolean fullyProcessed) {
-        boolean doInline = true;
+    public Decision isWorthInlining(Replacements replacements, MethodInvocation invocation, InlineInfo calleeInfo, int inliningDepth, boolean fullyProcessed) {
         final InlineInfo info = invocation.callee();
         int nodes = info.determineNodeCount();
         if (nodes > MaximumInliningSize.getValue(info.graph().getOptions()) && !invocation.isRoot()) {
-            doInline = false;
+            return Decision.NO;
         }
-        return doInline;
+        return Decision.YES;
     }
 }

@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -236,7 +238,7 @@ public final class VectorPlugins {
                 OCLKind kind = OCLKind.fromResolvedJavaType(resolvedType);
                 JavaKind elementKind = kind.getElementKind().asJavaKind();
                 // No need to set stamp as it is inferred from the stamp of the incoming value
-                StoreIndexedNode indexedStore = new StoreIndexedNode(array, index, elementKind, value);
+                StoreIndexedNode indexedStore = new StoreIndexedNode(array, index, null, null, elementKind, value);
                 b.append(b.append(indexedStore));
                 return true;
             }

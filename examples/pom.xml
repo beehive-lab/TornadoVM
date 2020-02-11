@@ -2,6 +2,18 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
     <parent>
         <groupId>tornado</groupId>
         <artifactId>tornado</artifactId>
@@ -24,14 +36,46 @@
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
+
         <dependency>
             <groupId>org.ejml</groupId>
-            <artifactId>ejml-all</artifactId>
-            <version>0.31</version>
+            <artifactId>ejml-simple</artifactId>
+            <version>0.38</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.ejml</groupId>
+                    <artifactId>ejml-cdense</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.ejml</groupId>
+                    <artifactId>ejml-zdense</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.ejml</groupId>
+                    <artifactId>ejml-fdense</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
+            <version>8.2.0</version>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>jdk-8</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.graalvm.truffle</groupId>
+                    <artifactId>truffle-api</artifactId>
+                    <version>${graal.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>

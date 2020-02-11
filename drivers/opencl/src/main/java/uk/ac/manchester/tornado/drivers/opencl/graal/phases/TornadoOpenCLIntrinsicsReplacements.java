@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -23,17 +25,30 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
+import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
 
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
+import uk.ac.manchester.tornado.drivers.opencl.graal.OCLLoweringProvider;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.FixedArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GroupIdNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalArrayNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalGroupSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.LocalThreadIDFixedNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLBarrierNode;
@@ -41,6 +56,13 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OpenCLPrintf;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
 
 public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTierContext> {
+
+    private MetaAccessProvider metaAccess;
+
+    public TornadoOpenCLIntrinsicsReplacements(MetaAccessProvider metaAccess) {
+        super();
+        this.metaAccess = metaAccess;
+    }
 
     private ConstantNode getConstantNodeFromArguments(InvokeNode invoke, int index) {
         NodeInputList<ValueNode> arguments = invoke.callTarget().arguments();
@@ -54,7 +76,11 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
         for (InvokeNode invoke : invokeNodes) {
             String methodName = invoke.callTarget().targetName();
 
-            switch (methodName) {
+                switch (methodName) {
+                case "Direct#NewArrayNode.newArray": {
+                    lowerInvokeNode(invoke);
+                    break;
+                }
                 case "Direct#OpenCLIntrinsics.localBarrier": {
                     OCLBarrierNode barrier = graph.addOrUnique(new OCLBarrierNode(OCLBarrierNode.OCLMemFenceFlags.LOCAL));
                     graph.replaceFixed(invoke, barrier);
@@ -101,6 +127,60 @@ public class TornadoOpenCLIntrinsicsReplacements extends BasePhase<TornadoHighTi
                     break;
             }
         }
+    }
+
+    private void lowerLocalInvokeNodeNewArray(StructuredGraph graph, int length, JavaKind elementKind, InvokeNode newArray) {
+        LocalArrayNode localArrayNode;
+        ConstantNode newLengthNode = ConstantNode.forInt(length, graph);
+        ResolvedJavaType elementType = metaAccess.lookupJavaType(elementKind.toJavaClass());
+        localArrayNode = graph.addWithoutUnique(new LocalArrayNode(OCLArchitecture.localSpace, elementType, newLengthNode));
+        newArray.replaceAtUsages(localArrayNode);
+    }
+
+    private void lowerPrivateInvokeNodeNewArray(StructuredGraph graph, int size, JavaKind elementKind, InvokeNode newArray) {
+        FixedArrayNode fixedArrayNode;
+        final ConstantNode newLengthNode = ConstantNode.forInt(size, graph);
+        ResolvedJavaType elementType = metaAccess.lookupJavaType(elementKind.toJavaClass());
+        fixedArrayNode = graph.addWithoutUnique(new FixedArrayNode(OCLArchitecture.globalSpace, elementType, newLengthNode));
+        newArray.replaceAtUsages(fixedArrayNode);
+    }
+
+    private void lowerInvokeNode(InvokeNode newArray) {
+        CallTargetNode callTarget = newArray.callTarget();
+        final StructuredGraph graph = newArray.graph();
+        final ValueNode secondInput = callTarget.arguments().get(1);
+        if (secondInput instanceof ConstantNode) {
+            final ConstantNode lengthNode = (ConstantNode) secondInput;
+            if (lengthNode.getValue() instanceof PrimitiveConstant) {
+                final int length = ((PrimitiveConstant) lengthNode.getValue()).asInt();
+                JavaKind elementKind = getJavaKindFromConstantNode((ConstantNode) callTarget.arguments().get(0));
+                final int offset = metaAccess.getArrayBaseOffset(elementKind);;
+                final int size = offset + (elementKind.getByteCount() * length);
+                // This phase should come after OCL lowering, therefore OCLLoweringProvider::gpuSnippet should be set
+                if (OCLLoweringProvider.isGpuSnippet()) {
+                    lowerLocalInvokeNodeNewArray(graph, length, elementKind, newArray);
+                } else {
+                    lowerPrivateInvokeNodeNewArray(graph, size, elementKind, newArray);
+                }
+                newArray.clearInputs();
+                GraphUtil.unlinkFixedNode(newArray);
+            } else {
+                shouldNotReachHere();
+            }
+        } else {
+            unimplemented("dynamically sized array declarations are not supported");
+        }
+    }
+
+    private JavaKind getJavaKindFromConstantNode(ConstantNode signatureNode) {
+        switch (signatureNode.getValue().toValueString()) {
+            case "Class:int": return JavaKind.Int;
+            case "Class:long": return JavaKind.Long;
+            case "Class:float": return JavaKind.Float;
+            case "Class:double": return JavaKind.Double;
+            default: unimplemented("Other types not supported yet: " + signatureNode.getValue().toValueString());
+        }
+        return null;
     }
 
 }

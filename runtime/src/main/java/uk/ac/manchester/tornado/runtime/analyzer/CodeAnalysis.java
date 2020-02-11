@@ -2,6 +2,8 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -23,16 +25,18 @@
  */
 package uk.ac.manchester.tornado.runtime.analyzer;
 
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+
 import java.lang.reflect.Method;
 
+import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.api.runtime.GraalJVMCICompiler;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.GraalCompiler;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.CompilationRequestIdentifier;
 import org.graalvm.compiler.core.target.Backend;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.hotspot.HotSpotGraalOptionValues;
 import org.graalvm.compiler.java.GraphBuilderPhase;
@@ -51,7 +55,6 @@ import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.Suites;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.runtime.RuntimeProvider;
-import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -79,15 +82,15 @@ public class CodeAnalysis {
         ResolvedJavaMethod resolvedJavaMethod = metaAccess.lookupJavaMethod(methodToCompile);
         CompilationIdentifier compilationIdentifier = backend.getCompilationIdentifier(resolvedJavaMethod);
 
-        try (Scope ignored = Debug.scope("compileMethodAndInstall", new DebugDumpScope("TornadoVM-Code-Analysis", true))) {
+        try (DebugContext.Scope ignored = getDebugContext().scope("compileMethodAndInstall", new DebugDumpScope("TornadoVM-Code-Analysis", true))) {
             EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
-            opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
+            opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
             OptionValues options = new OptionValues(opts);
-            StructuredGraph graph = new StructuredGraph.Builder(options, AllowAssumptions.YES).method(resolvedJavaMethod).compilationId(compilationIdentifier).build();
+            StructuredGraph graph = new StructuredGraph.Builder(options, getDebugContext(), AllowAssumptions.YES).method(resolvedJavaMethod).compilationId(compilationIdentifier).build();
             PhaseSuite<HighTierContext> graphBuilderSuite = new PhaseSuite<>();
             graphBuilderSuite.appendPhase(new GraphBuilderPhase(GraphBuilderConfiguration.getDefault(new Plugins(new InvocationPlugins()))));
             graphBuilderSuite.apply(graph, new HighTierContext(providers, graphBuilderSuite, OptimisticOptimizations.ALL));
-            Debug.dump(Debug.BASIC_LEVEL, graph, "CodeToAnalyze");
+            getDebugContext().dump(DebugContext.BASIC_LEVEL, graph, "CodeToAnalyze");
             return graph;
         } catch (Throwable e) {
             e.printStackTrace();
@@ -110,20 +113,20 @@ public class CodeAnalysis {
         Providers providers = backend.getProviders();
         CompilationIdentifier compilationID = backend.getCompilationIdentifier(method);
         EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
-        opts.putAll(HotSpotGraalOptionValues.HOTSPOT_OPTIONS.getMap());
+        opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
         OptionValues options = new OptionValues(opts);
-        try (Scope ignored = Debug.scope("compileMethodAndInstall", new DebugDumpScope(String.valueOf(compilationID), true))) {
+        try (DebugContext.Scope ignored = getDebugContext().scope("compileMethodAndInstall", new DebugDumpScope(String.valueOf(compilationID), true))) {
             PhaseSuite<HighTierContext> graphBuilderPhase = backend.getSuites().getDefaultGraphBuilderSuite();
             Suites suites = backend.getSuites().getDefaultSuites(options);
             LIRSuites lirSuites = backend.getSuites().getDefaultLIRSuites(options);
             OptimisticOptimizations optimizationsOpts = OptimisticOptimizations.ALL;
             ProfilingInfo profilerInfo = graph.getProfilingInfo(method);
-            CompilationResult compilationResult = new CompilationResult();
+            CompilationResult compilationResult = new CompilationResult(method.getSignature().toMethodDescriptor());
             CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
-            GraalCompiler.compileGraph(graph, method, providers, backend, graphBuilderPhase, optimizationsOpts, profilerInfo, suites, lirSuites, compilationResult, factory);
-            return backend.addInstalledCode(method, CompilationRequestIdentifier.asCompilationRequest(compilationID), compilationResult);
+            GraalCompiler.compileGraph(graph, method, providers, backend, graphBuilderPhase, optimizationsOpts, profilerInfo, suites, lirSuites, compilationResult, factory, false);
+            return backend.addInstalledCode(getDebugContext(), method, CompilationRequestIdentifier.asCompilationRequest(compilationID), compilationResult);
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw getDebugContext().handle(e);
         }
     }
 

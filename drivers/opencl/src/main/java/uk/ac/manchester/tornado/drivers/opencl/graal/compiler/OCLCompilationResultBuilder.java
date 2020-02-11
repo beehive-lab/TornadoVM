@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -23,6 +25,7 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.trace;
 
 import java.util.ArrayList;
@@ -51,6 +54,7 @@ import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.CodeCacheProvider;
+import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -73,7 +77,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
 
     public OCLCompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
             OCLCompilationResult compilationResult, OptionValues options) {
-        super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, compilationResult);
+        super(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, getDebugContext(), compilationResult, Register.None);
         nonInlinedMethods = new HashSet<>();
     }
 
@@ -262,7 +266,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
             ((OCLAssembler) asm).emitLine("// BLOCK %d", block.getId());
         }
 
-        if (PrintLIRWithAssembly.getValue(getOptions())) {
+        if (Options.PrintLIRWithAssembly.getValue(getOptions())) {
             blockComment(String.format("block B%d %s", block.getId(), block.getLoop()));
         }
 
@@ -279,7 +283,7 @@ public class OCLCompilationResultBuilder extends CompilationResultBuilder {
                 }
                 continue;
             }
-            if (PrintLIRWithAssembly.getValue(getOptions())) {
+            if (Options.PrintLIRWithAssembly.getValue(getOptions())) {
                 blockComment(String.format("%d %s", op.id(), op));
             }
 
