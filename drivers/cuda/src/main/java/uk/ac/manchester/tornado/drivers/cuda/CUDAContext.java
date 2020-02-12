@@ -18,17 +18,13 @@ public class CUDAContext extends TornadoLogger {
         deviceContext = new CUDADeviceContext(device, this);
     }
 
-    public native static int cuCtxCreate(int deviceIndex);
+    public native static void cuCtxCreate(int deviceIndex);
 
     public native static void cuCtxDestroy(int deviceIndex);
 
 
     public void cleanup() {
         cuCtxDestroy(device.getIndex());
-    }
-
-    public int getNumDevices() {
-        return 1;
     }
 
     public CUDADeviceContext getDeviceContext() {

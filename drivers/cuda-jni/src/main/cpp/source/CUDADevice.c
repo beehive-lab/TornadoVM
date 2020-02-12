@@ -7,7 +7,7 @@
  * Signature: (JI[B)V
  */
 JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_cuDeviceGetName
-(JNIEnv *env, jclass clazz, jint device_id) {
+  (JNIEnv *env, jclass clazz, jint device_id) {
     CUdevice dev;
     char name[256];
     CUresult deviceGet = cuDeviceGet(&dev, (int) device_id);
@@ -22,7 +22,7 @@ JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_
  * Signature: (I)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_cuDeviceGetAttribute
-(JNIEnv *env, jclass clazz, jint device_id, jint attr_id) {
+  (JNIEnv *env, jclass clazz, jint device_id, jint attr_id) {
 
     CUdevice dev;
     cuDeviceGet(&dev, (int) device_id);
@@ -39,7 +39,7 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_cuD
  * Signature: (I)J
  */
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_cuDeviceTotalMem
-(JNIEnv *env, jclass clazz, jint device_id) {
+  (JNIEnv *env, jclass clazz, jint device_id) {
     CUdevice dev;
     cuDeviceGet(&dev, (int) device_id);
 

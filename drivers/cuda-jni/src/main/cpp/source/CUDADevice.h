@@ -12,7 +12,7 @@ extern "C" {
  * Signature: (JI[B)V
  */
 JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_cuDeviceGetName
-(JNIEnv *, jclass, jint);
+  (JNIEnv *, jclass, jint);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDADevice
@@ -20,7 +20,7 @@ JNIEXPORT jstring JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_
  * Signature: (I)I
  */
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDADevice_cuDeviceGetAttribute
-(JNIEnv *, jclass, jint, jint);
+  (JNIEnv *, jclass, jint, jint);
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDADevice
