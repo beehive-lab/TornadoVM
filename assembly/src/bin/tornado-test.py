@@ -4,6 +4,8 @@
 # This file is part of Tornado: A heterogeneous programming framework: 
 # https://github.com/beehive-lab/tornado
 #
+# Copyright (c) 2020, APT Group, Department of Computer Science,
+# School of Engineering, The University of Manchester. All rights reserved.
 # Copyright (c) 2013-2019, APT Group, School of Computer Science,
 # The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -77,9 +79,11 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
 # ################################################################################################################
 ## Options
-__MAIN_TORNADO_TEST_RUNNER__ = " uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
+__MAIN_TORNADO_TEST_RUNNER_MODULE__ = " tornado.unittests/"
+__MAIN_TORNADO_TEST_RUNNER__ = "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
+__MAIN_TORNADO_JUNIT_MODULE__ 		 = " junit/"
 __MAIN_TORNADO_JUNIT__ 		 = "org.junit.runner.JUnitCore "
-__IGV_OPTIONS__ 			 = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=true -Dgraal.PrintCFG=true "
+__IGV_OPTIONS__ 			 = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=true "
 __PRINT_OPENCL_KERNEL__ 	 = "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ 			 = "-Dtornado.debug=True "
 __IGNORE_INTEL_PLATFORM__    = "-Dtornado.ignore.platform=Intel "  # Due to a bug when running with Linux-optirun
@@ -88,6 +92,14 @@ __GC__                       = "-Xmx6g "
 # ################################################################################################################
 
 __VERSION__ = "0.8_04022020"
+
+JDK_11_VERSION = "11.0"
+JDK_8_VERSION = "1.8"
+try:
+	javaHome = os.environ["JAVA_HOME"]
+except:
+	print "[ERROR] JAVA_HOME is not defined."
+	sys.exit(-1)
 
 __TEST_NOT_PASSED__= False
 
@@ -150,6 +162,7 @@ def runSingleCommand(cmd, args):
 	out, err = p.communicate()
 	end = time.time()
 
+	print err
 	print out
 	print "Total Time (s): " + str(end-start)
 
@@ -216,9 +229,15 @@ def runTests(args):
 	## Run test
 	cmd = ""
 	if (args.useOptirun):
-		cmd = "optirun tornado " + __IGNORE_INTEL_PLATFORM__ + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
+		cmd = "optirun tornado " + __IGNORE_INTEL_PLATFORM__ + options
 	else:
-		cmd = "tornado " + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
+		cmd = "tornado " + options
+
+	if (javaVersion == JDK_11_VERSION):
+		cmd += " -m " + __MAIN_TORNADO_TEST_RUNNER_MODULE__ + __MAIN_TORNADO_TEST_RUNNER__
+	else:
+		cmd += " " + __MAIN_TORNADO_TEST_RUNNER__
+
 	if (args.testClass != None):
 		if (args.fast):
 			cmd = cmd + " " + args.testClass
@@ -258,7 +277,11 @@ def runTests(args):
 def runWithJUnit(args):
 	""" Run the tests using JUNIT """
 
-	cmd = "tornado " + __MAIN_TORNADO_JUNIT__ 
+	cmd = "tornado "
+	if (javaVersion == JDK_11_VERSION):
+		cmd += " -m " + __MAIN_TORNADO_JUNIT_MODULE__ + __MAIN_TORNADO_JUNIT__
+	else:
+		cmd += " " + __MAIN_TORNADO_JUNIT__
 
 	if (args.testClass != None):
 		cmd = cmd + args.testClass
@@ -274,16 +297,16 @@ def parseArguments():
 	parser = argparse.ArgumentParser(description='Tool to execute tests in Tornado')
 	parser.add_argument('testClass', nargs="?", help='testClass#method')
 	parser.add_argument('--version', action="store_true", dest="version", default=False, help="Print version")
-	parser.add_argument('--verbose', "-V", action="store_true", dest="verbose", default=False, help="Run test in verbose mode")	
-	parser.add_argument('--printKernel', "-pk", action="store_true", dest="printKernel", default=False, help="Print OpenCL kernel")	
-	parser.add_argument('--junit', action="store_true", dest="junit", default=False, help="Run within JUnitCore main class")	
-	parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")	
+	parser.add_argument('--verbose', "-V", action="store_true", dest="verbose", default=False, help="Run test in verbose mode")
+	parser.add_argument('--printKernel', "-pk", action="store_true", dest="printKernel", default=False, help="Print OpenCL kernel")
+	parser.add_argument('--junit', action="store_true", dest="junit", default=False, help="Run within JUnitCore main class")
+	parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")
 	parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False, help="Debug Tornado")
-	parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")	
-	parser.add_argument('--optirun', "-optirun", action="store_true", dest="useOptirun", default=False, help="Use optirun with Tornado")	
-	parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")	
-	parser.add_argument('--printExec', dest="printExecution", action="store_true", default=False, help="Print OpenCL Kernel Execution Time")	
-	parser.add_argument('--jvm', "-J", dest="jvmFlags", required=False, default=None, help="Pass options to the JVM e.g. -J=\"-Ds0.t0.device=0:1\"")	
+	parser.add_argument('--fast', "-f", action="store_true", dest="fast", default=False, help="Visualize Fast")
+	parser.add_argument('--optirun', "-optirun", action="store_true", dest="useOptirun", default=False, help="Use optirun with Tornado")
+	parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")
+	parser.add_argument('--printExec', dest="printExecution", action="store_true", default=False, help="Print OpenCL Kernel Execution Time")
+	parser.add_argument('--jvm', "-J", dest="jvmFlags", required=False, default=None, help="Pass options to the JVM e.g. -J=\"-Ds0.t0.device=0:1\"")
 	args = parser.parse_args()
 	return args
 
@@ -296,6 +319,9 @@ def writeStatusInFile():
 		f.write("OK")
 	f.close()
 
+def getJavaVersion():
+	# Get the java version
+	return subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
 
 def main():
 	args = parseArguments()
@@ -303,6 +329,9 @@ def main():
 	if (args.version):
 		print __VERSION__
 		sys.exit(0)
+	global javaVersion
+	javaVersion = getJavaVersion()
+
 
 	if (args.junit):
 		runWithJUnit(args)

@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester.
  * 
@@ -19,34 +21,35 @@
 package uk.ac.manchester.tornado.examples.openbitset;
 
 import java.util.Random;
-import org.apache.lucene.util.OpenBitSet;
+
+import org.apache.lucene.util.FixedBitSet;
 
 import uk.ac.manchester.tornado.api.TaskSchedule;
 
-public class OpenBitSetExample {
+public class FixedBitSetExample {
 
-    public static OpenBitSet genBitSet(int numWords) {
+    public static FixedBitSet genBitSet(int numWords) {
         long[] bits = new long[numWords];
         Random rand = new Random();
         for (int i = 0; i < numWords; i++) {
             bits[i] = rand.nextLong();
         }
 
-        return new OpenBitSet(bits, numWords);
+        return new FixedBitSet(bits, numWords);
     }
 
     public static final void main(String[] args) {
 
         final int numElements = 64;
-        OpenBitSet a = genBitSet(numElements);
-        OpenBitSet b = genBitSet(numElements);
+        FixedBitSet a = genBitSet(numElements);
+        FixedBitSet b = genBitSet(numElements);
 
-        TaskSchedule s0 = new TaskSchedule("s0").task("intersect", OpenBitSet::intersectionCount, a, b);
+        TaskSchedule s0 = new TaskSchedule("s0").task("intersect", FixedBitSet::intersectionCount, a, b);
 
         s0.execute();
 
         long value = s0.getReturnValue("intersect");
-        System.out.printf("value = %d (%d)\n", value, OpenBitSet.intersectionCount(a, b));
+        System.out.printf("value = %d (%d)\n", value, FixedBitSet.intersectionCount(a, b));
 
     }
 

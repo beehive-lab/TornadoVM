@@ -2,6 +2,8 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -60,7 +62,7 @@ public class TornadoAPIProvider {
             Constructor<?> constructor = klass.getConstructor(String.class);
             taskGraphImpl = (AbstractTaskGraph) constructor.newInstance(name);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException e) {
-            throw new RuntimeException("[ERROR] Tornado API Implementation class not found");
+            throw new RuntimeException("[ERROR] Tornado API Implementation class not found", e);
         }
         return taskGraphImpl;
     }

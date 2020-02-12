@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -118,8 +120,7 @@ public class OCLGraphBuilderPlugins {
                 actualArgs[3] = args[index];
 
                 int argIndex = 0;
-                for (int i = 0; i < newArrayNode.getUsageCount(); i++) {
-                    Node n = newArrayNode.getUsageAt(i);
+                for (Node n : newArrayNode.usages()) {
                     if (n instanceof StoreIndexedNode) {
                         StoreIndexedNode storeNode = (StoreIndexedNode) n;
                         ValueNode value = storeNode.value();
@@ -139,7 +140,7 @@ public class OCLGraphBuilderPlugins {
 
                 b.add(b.append(printfNode));
                 while (newArrayNode.hasUsages()) {
-                    Node n = newArrayNode.getUsageAt(0);
+                    Node n = newArrayNode.usages().first();
                     // need to remove all nodes from the graph that operate on
                     // the new array,
                     // however, we cannot remove all inputs as they may be used
@@ -180,8 +181,7 @@ public class OCLGraphBuilderPlugins {
                 actualArgs[0] = args[0];
 
                 int argIndex = 0;
-                for (int i = 0; i < newArrayNode.getUsageCount(); i++) {
-                    Node n = newArrayNode.getUsageAt(i);
+                for (Node n : newArrayNode.usages()) {
                     if (n instanceof StoreIndexedNode) {
                         StoreIndexedNode storeNode = (StoreIndexedNode) n;
                         ValueNode value = storeNode.value();
@@ -201,7 +201,7 @@ public class OCLGraphBuilderPlugins {
                 b.add(b.append(printfNode));
 
                 while (newArrayNode.hasUsages()) {
-                    Node n = newArrayNode.getUsageAt(0);
+                    Node n = newArrayNode.usages().first();
                     // need to remove all nodes from the graph that operate on
                     // the new array,
                     // however, we cannot remove all inputs as they

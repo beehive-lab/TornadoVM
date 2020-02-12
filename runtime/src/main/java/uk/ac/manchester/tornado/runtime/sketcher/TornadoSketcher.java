@@ -2,6 +2,8 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,8 +29,9 @@ package uk.ac.manchester.tornado.runtime.sketcher;
 
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getOptions;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoExecutor;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.fatal;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.info;
 
@@ -39,13 +42,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
 import org.graalvm.compiler.debug.DebugCloseable;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
-import org.graalvm.compiler.debug.DebugEnvironment;
-import org.graalvm.compiler.debug.DebugTimer;
-import org.graalvm.compiler.debug.internal.method.MethodMetricsRootScopeInfo;
+import org.graalvm.compiler.debug.TimerKey;
 import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
@@ -59,6 +59,7 @@ import org.graalvm.compiler.phases.util.Providers;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCompilerIdentifier;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSketchTier;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
@@ -70,7 +71,7 @@ public class TornadoSketcher {
 
     private static final Map<ResolvedJavaMethod, Future<Sketch>> cache = new ConcurrentHashMap<>();
 
-    private static final DebugTimer Sketcher = Debug.timer("Sketcher");
+    private static final TimerKey Sketcher = DebugContext.timer("Sketcher");
 
     private static final OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
 
@@ -96,25 +97,21 @@ public class TornadoSketcher {
     }
 
     static void buildSketch(SketchRequest request) {
-        DebugEnvironment.ensureInitialized(getTornadoRuntime().getOptions());
-
         if (cache.containsKey(request.resolvedMethod)) {
             return;
         }
         cache.put(request.resolvedMethod, request);
-        try (Scope ignored = MethodMetricsRootScopeInfo.createRootScopeIfAbsent(request.resolvedMethod)) {
-            try (Scope ignored1 = Debug.scope("SketchCompiler")) {
+            try (DebugContext.Scope ignored = getDebugContext().scope("SketchCompiler")) {
                 request.result = buildSketch(request.meta, request.resolvedMethod, request.providers, request.graphBuilderSuite, request.sketchTier);
             } catch (Throwable e) {
-                throw Debug.handle(e);
+                throw getDebugContext().handle(e);
             }
-        }
     }
 
     private static Sketch buildSketch(TaskMetaData meta, ResolvedJavaMethod resolvedMethod, Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, TornadoSketchTier sketchTier) {
         info("Building sketch of %s", resolvedMethod.getName());
         TornadoCompilerIdentifier id = new TornadoCompilerIdentifier("sketch-" + resolvedMethod.getName(), sketchId.getAndIncrement());
-        Builder builder = new Builder(getTornadoRuntime().getOptions(), AllowAssumptions.YES);
+        Builder builder = new Builder(getOptions(), getDebugContext(), AllowAssumptions.YES);
         builder.method(resolvedMethod);
         builder.compilationId(id);
         builder.name("sketch-" + resolvedMethod.getName());
@@ -125,13 +122,13 @@ public class TornadoSketcher {
             throw new TornadoRuntimeException("[ERROR] Java method name corresponds to an OpenCL Token. Change the Java method's name: " + resolvedMethod.getName());
         }
 
-        try (Scope ignored = Debug.scope("Tornado-Sketcher", new DebugDumpScope("Tornado-Sketcher")); DebugCloseable ignored1 = Sketcher.start()) {
+        try (DebugContext.Scope ignored = getDebugContext().scope("Tornado-Sketcher", new DebugDumpScope("Tornado-Sketcher")); DebugCloseable ignored1 = Sketcher.start(getDebugContext())) {
             final TornadoSketchTierContext highTierContext = new TornadoSketchTierContext(providers, graphBuilderSuite, optimisticOpts, resolvedMethod, meta);
             if (graph.start().next() == null) {
                 graphBuilderSuite.apply(graph, highTierContext);
                 new DeadCodeEliminationPhase(Optional).apply(graph);
             } else {
-                Debug.dump(Debug.BASIC_LEVEL, graph, "initial state");
+                getDebugContext().dump(DebugContext.BASIC_LEVEL, graph, "initial state");
             }
 
             sketchTier.apply(graph, highTierContext);

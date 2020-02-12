@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -32,12 +34,11 @@ import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Option
 
 import org.graalvm.compiler.loop.DefaultLoopPolicies;
 import org.graalvm.compiler.loop.LoopPolicies;
+import org.graalvm.compiler.loop.phases.ConvertDeoptimizeToGuardPhase;
 import org.graalvm.compiler.loop.phases.LoopFullUnrollPhase;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
-import org.graalvm.compiler.phases.common.ConvertDeoptimizeToGuardPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
@@ -46,6 +47,7 @@ import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 
+import jdk.vm.ci.meta.MetaAccessProvider;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoOpenCLIntrinsicsReplacements;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoParallelScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.phases.TornadoPragmaUnroll;
@@ -61,14 +63,18 @@ import uk.ac.manchester.tornado.runtime.graal.phases.TornadoValueTypeCleanup;
 
 public class OCLHighTier extends TornadoHighTier {
 
-    public OCLHighTier(OptionValues options, CustomCanonicalizer customCanonicalizer) {
+    public OCLHighTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization customCanonicalizer, MetaAccessProvider metaAccessProvider) {
         super(customCanonicalizer);
 
-        final CanonicalizerPhase canonicalizer = new CanonicalizerPhase(customCanonicalizer);
-
+        CanonicalizerPhase canonicalizer;
         if (ImmutableCode.getValue(options)) {
-            canonicalizer.disableReadCanonicalization();
+            canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
+        } else {
+            canonicalizer = CanonicalizerPhase.create();
         }
+
+        canonicalizer = canonicalizer.copyWithCustomCanonicalization(customCanonicalizer);
+
         appendPhase(canonicalizer);
 
         if (Inline.getValue(options)) {
@@ -121,7 +127,7 @@ public class OCLHighTier extends TornadoHighTier {
         // After the first Lowering, Tornado replaces reductions with snippets
         // that contains method calls to barriers.
 
-        appendPhase(new TornadoOpenCLIntrinsicsReplacements());
+        appendPhase(new TornadoOpenCLIntrinsicsReplacements(metaAccessProvider));
 
         appendPhase(new TornadoLocalMemoryAllocation());
 

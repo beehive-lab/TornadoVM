@@ -4,6 +4,8 @@
 # This file is part of Tornado: A heterogeneous programming framework: 
 # https://github.com/beehive-lab/tornado
 #
+# Copyright (c) 2020, APT Group, Department of Computer Science,
+# School of Engineering, The University of Manchester. All rights reserved.
 # Copyright (c) 2013-2019, APT Group, School of Computer Science,
 # The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,6 +26,9 @@
 #
 # Authors: James Clarkson
 #
+
+#Include tornado modules and module exports
+source tornadoExportList.sh
 
 if [ -z "${TORNADO_SDK}" ]; then
     echo "Please ensure the TORNADO_SDK environment variable is set correctly"
@@ -57,7 +62,16 @@ function print_version {
     exit 0
 }
 
-TORNADO_FLAGS="-Djava.ext.dirs=${TORNADO_SDK}/share/java/tornado -Djava.library.path=${TORNADO_SDK}/lib"
+JAVA_CMD=${JAVA_HOME}/bin/java
+JAVA_VERSION=$("$JAVA_CMD" -version 2>&1 | awk -F[\"\.] -v OFS=. 'NR==1{print $2,$3}')
+
+TORNADO_FLAGS="-Djava.library.path=${TORNADO_SDK}/lib "
+if [ "$JAVA_VERSION" = "1.8" ]; then
+  TORNADO_FLAGS="${TORNADO_FLAGS} -Djava.ext.dirs=${TORNADO_SDK}/share/java/tornado"
+elif [ "$JAVA_VERSION" = "11.0" ]; then
+  TORNADO_FLAGS="${TORNADO_FLAGS} --module-path .:${TORNADO_SDK}/share/java/tornado:."
+fi
+
 printflags=0
 printdevices=0
 
@@ -80,7 +94,7 @@ case $key in
     shift # past argument
     ;;
     --igv)
-    TORNADO_FLAGS="${TORNADO_FLAGS} -Dgraal.Dump=*:5 -Dgraal.PrintGraph=true -Dgraal.PrintCFG=false"
+    TORNADO_FLAGS="${TORNADO_FLAGS} -Dgraal.Dump=*:5 -Dgraal.PrintGraph=Network -Dgraal.PrintCFG=false"
     shift # past argument
     ;;
     --printKernel)
@@ -115,7 +129,6 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-JAVA_CMD=${JAVA_HOME}/bin/java
 PROVIDERS=" \
 -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule \
 -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime \
@@ -124,7 +137,12 @@ PROVIDERS=" \
 -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
 -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel "
 
-JAVA_FLAGS="-server -XX:-UseJVMCIClassLoader -XX:-UseCompressedOops ${TORNADO_FLAGS} ${PROVIDERS} "
+JAVA_FLAGS="-server -XX:-UseCompressedOops ${TORNADO_FLAGS} ${PROVIDERS} "
+if [ "$JAVA_VERSION" = "1.8" ]; then
+  JAVA_FLAGS="${JAVA_FLAGS} -XX:-UseJVMCIClassLoader "
+elif [ "$JAVA_VERSION" = "11.0" ]; then
+  JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelOldGC -XX:-UseBiasedLocking ${PACKAGE_LIST[*]} "
+fi
 
 if [ $printflags -eq 1 ] ; then
 	echo $JAVA_CMD
@@ -133,7 +151,7 @@ if [ $printflags -eq 1 ] ; then
 fi
 
 if [ $printdevices -eq 1 ] ; then
-	tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput verbose	
+	tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput verbose
 	exit 0
 fi
 

@@ -4,6 +4,8 @@
 # This file is part of Tornado: A heterogeneous programming framework:
 # https://github.com/beehive-lab/tornado
 #
+# Copyright (c) 2020, APT Group, Department of Computer Science,
+# School of Engineering, The University of Manchester. All rights reserved.
 # Copyright (c) 2013-2019, APT Group, School of Computer Science,
 # The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,14 +29,29 @@
 
 import argparse
 import os
+import subprocess
 import textwrap
+
+try:
+	javaHome = os.environ["JAVA_HOME"]
+except:
+	print "[ERROR] JAVA_HOME is not defined"
+	sys.exit(-1)
+
+JDK_11_VERSION = "11.0"
+JDK_8_VERSION = "1.8"
+# Get java version
+javaVersion = subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
 
 ## ========================================================================================
 ## Script Options
 ## ========================================================================================
+__RUNNER__ = ""
+if (javaVersion == JDK_11_VERSION):
+    __RUNNER__ = " -m tornado.benchmarks/"
+__RUNNER__ += "uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
 __TORNADO_FLAGS__ = "-Dtornado.kernels.coarsener=False -Dtornado.profiles.print=True -Dtornado.profiling.enable=True -Dtornado.opencl.schedule=True"
 __JVM_FLAGS__ = "-Xms24G -Xmx24G -server "
-__RUNNER__ = " uk.ac.manchester.tornado.benchmarks.BenchmarkRunner "
 __DEVICES__ = [
 	"-Ddevices=0:0",
 	"-Ddevices=0:1",

@@ -4,6 +4,8 @@
 # This file is part of Tornado: A heterogeneous programming framework: 
 # https://github.com/beehive-lab/tornado
 #
+# Copyright (c) 2020, APT Group, Department of Computer Science,
+# School of Engineering, The University of Manchester. All rights reserved.
 # Copyright (c) 2013-2019, APT Group, School of Computer Science,
 # The University of Manchester. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,16 +26,22 @@
 #
 
 
-## Wrapper that sets the Tornado ClassPaths and Invoke Javac compiler
+## Wrapper that sets the Tornado Classpath/Modulepath and invokes the Javac compiler
 
-import subprocess
 import os
+import subprocess
 import sys
 
 try:
-	preffix = os.environ["TORNADO_SDK"]
+	TORNADO_SDK = os.environ["TORNADO_SDK"]
 except:
 	print "[ERROR] TORNADO_SDK is not defined"
+	sys.exit(-1)
+
+try:
+	javaHome = os.environ["JAVA_HOME"]
+except:
+	print "[ERROR] JAVA_HOME is not defined."
 	sys.exit(-1)
 
 try:
@@ -42,23 +50,70 @@ except:
 	classpathEnviron = ""
 	pass
 
-classPathPrefix= preffix + "/"
-jarFilesPaths = classPathPrefix + "share/java/tornado"
+__DEFAULT_MODULES__ = "ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.opencl,tornado.drivers.opencl"
 
-classPathVar = "."
+def getJavaVersion():
+    return subprocess.Popen(javaHome + '/bin/java -version 2>&1 | awk -F[\\\"\.] -v OFS=. \'NR==1{print $2,$3}\'', stdout=subprocess.PIPE, shell=True).communicate()[0][:-1]
 
-process = subprocess.Popen(['ls', jarFilesPaths], stdout=subprocess.PIPE)
-out, err = process.communicate()
-files = out.split("\n")
+JDK_11_VERSION = "11.0"
+JDK_8_VERSION = "1.8"
+# Get java version
+javaVersion = getJavaVersion()
 
-if (classpathEnviron != ""):
-	classPathVar = classPathVar + ":" + classpathEnviron
+__JAR_FILES_PATH__ = TORNADO_SDK + "/share/java/tornado/"
 
-for f in files:
-	classPathVar = classPathVar +  ":" + classPathPrefix + "/share/java/tornado/" +  f 
+def trimModulesParamString(indexToSearch):
+    moduleParamIndex = sys.argv.index(indexToSearch)
+    parameter = sys.argv[moduleParamIndex + 1]
+    # Trim any existing existing quotes from the parameter
+    parameter = parameter[1:-1] if (parameter.startswith("\"") and parameter.endswith("\"")) else parameter
+    del sys.argv[moduleParamIndex:moduleParamIndex + 2]
+    return parameter
 
-command = "javac -classpath \"" + classPathVar  +  "\" " + sys.argv[1]
+def runWithModulepath():
+    defaultModulePath = __JAR_FILES_PATH__
 
-print command
-os.system(command) 
+    command = javaHome + "/bin/javac "
+
+    if ("--add-modules" in sys.argv):
+        addModulesParam = trimModulesParamString("--add-modules")
+        command += "--add-modules " + addModulesParam + "," + __DEFAULT_MODULES__
+    else:
+        command += "--add-modules " + __DEFAULT_MODULES__
+
+    if ("--module-path" in sys.argv):
+        modulePathParam = trimModulesParamString("--module-path")
+        command += " --module-path \"" + modulePathParam + ":" + defaultModulePath + "\""
+    else:
+        command += " --module-path \"" + defaultModulePath + "\""
+
+    # We pass the rest of the parameters to javac
+    command += " " + ' '.join(sys.argv[1:])
+    print(command)
+    os.system(command)
+
+def runWithClasspath():
+
+    classPathPrefix= TORNADO_SDK + "/"
+    classPathVar = "."
+
+    process = subprocess.Popen(['ls', __JAR_FILES_PATH__], stdout=subprocess.PIPE)
+    out, err = process.communicate()
+    jarFiles = out.split("\n")
+
+    if (classpathEnviron != ""):
+    	classPathVar = classPathVar + ":" + classpathEnviron
+
+    for f in jarFiles:
+    	classPathVar = classPathVar +  ":" + __JAR_FILES_PATH__ + f
+
+    command = javaHome + "/bin/javac -classpath \"" + classPathVar  +  "\" " + sys.argv[1]
+    print command
+    os.system(command)
+
+useModuleSystem = any("module-info.java" in argument for argument in sys.argv) and javaVersion == JDK_11_VERSION
+if (useModuleSystem):
+    runWithModulepath()
+else:
+    runWithClasspath()
 

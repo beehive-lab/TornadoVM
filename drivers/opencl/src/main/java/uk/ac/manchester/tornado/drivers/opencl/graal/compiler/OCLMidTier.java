@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -50,9 +52,11 @@ public class OCLMidTier extends TornadoMidTier {
 
         appendPhase(new ExceptionCheckingElimination());
 
-        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        CanonicalizerPhase canonicalizer;
         if (ImmutableCode.getValue(options)) {
-            canonicalizer.disableReadCanonicalization();
+            canonicalizer = CanonicalizerPhase.createWithoutReadCanonicalization();
+        } else {
+            canonicalizer = CanonicalizerPhase.create();
         }
 
         // if (OptCanonicalizer.getValue()) {

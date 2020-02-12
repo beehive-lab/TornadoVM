@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -26,23 +28,12 @@ package uk.ac.manchester.tornado.runtime.graal.compiler;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
+
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 public class TornadoSnippetReflectionProvider implements SnippetReflectionProvider {
-
-    @Override
-    public <T> T asObject(Class<T> type, JavaConstant jc) {
-        unimplemented();
-        return null;
-    }
-
-    @Override
-    public Object asObject(ResolvedJavaType type, JavaConstant constant) {
-        unimplemented();
-        return null;
-    }
 
     @Override
     public JavaConstant forBoxed(JavaKind kind, Object value) {
@@ -57,7 +48,19 @@ public class TornadoSnippetReflectionProvider implements SnippetReflectionProvid
     }
 
     @Override
+    public <T> T asObject(Class<T> type, JavaConstant constant) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
     public <T> T getInjectedNodeIntrinsicParameter(Class<T> type) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public Class<?> originalClass(ResolvedJavaType type) {
         unimplemented();
         return null;
     }

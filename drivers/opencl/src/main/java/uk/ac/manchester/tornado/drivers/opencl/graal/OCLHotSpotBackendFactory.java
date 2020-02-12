@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -26,17 +28,23 @@ package uk.ac.manchester.tornado.drivers.opencl.graal;
 import static jdk.vm.ci.common.InitTimer.timer;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
-import org.graalvm.compiler.bytecode.BytecodeProvider;
+import java.util.Collections;
+
+import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
+import org.graalvm.compiler.hotspot.meta.HotSpotGCProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
+import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins;
 import org.graalvm.compiler.replacements.classfile.ClassfileBytecodeProvider;
 
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
@@ -64,9 +72,12 @@ public class OCLHotSpotBackendFactory {
     private static final OCLCompilerConfiguration compilerConfiguration = new OCLCompilerConfiguration();
     private static final OCLAddressLowering addressLowering = new OCLAddressLowering();
 
-    public static OCLBackend createBackend(OptionValues options, JVMCIBackend jvmci, TornadoVMConfig config, OCLContext openclContext, OCLDevice device) {
-        HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmci.getMetaAccess();
-        HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();
+    public static OCLBackend createBackend(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig config, OCLContext openclContext, OCLDevice device) {
+        JVMCIBackend jvmciBackend = jvmciRuntime.getHostJVMCIBackend();
+        HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmciBackend.getMetaAccess();
+        HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmciBackend.getConstantReflection();
+        HotSpotGraalCompiler hotSpotGraalCompiler = ((HotSpotGraalCompiler) jvmciRuntime.getCompiler());
+        HotSpotGCProvider hotSpotGCProvider = new HotSpotGCProvider(hotSpotGraalCompiler.getGraalRuntime().getVMConfig());
 
         OCLKind wordKind = OCLKind.ILLEGAL;
         switch (device.getWordSize()) {
@@ -93,32 +104,33 @@ public class OCLHotSpotBackendFactory {
 
         try (InitTimer t = timer("create providers")) {
             lowerer = new OCLLoweringProvider(metaAccess, foreignCalls, constantReflection, config, target);
-            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider);
+            Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, hotSpotGCProvider);
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
-            plugins = createGraphBuilderPlugins(metaAccess, bytecodeProvider);
-            TornadoReplacements replacements = new TornadoReplacements(options, p, snippetReflection, bytecodeProvider, target);
+            GraalDebugHandlersFactory graalDebugHandlersFactory = new GraalDebugHandlersFactory(snippetReflection);
+            TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, snippetReflection, bytecodeProvider, target);
+            plugins = createGraphBuilderPlugins(metaAccess, replacements);
 
             replacements.setGraphBuilderPlugins(plugins);
 
             suites = new OCLSuitesProvider(options, plugins, metaAccess, compilerConfiguration, addressLowering);
 
-            providers = new OCLProviders(metaAccess, codeCache, constantReflection, snippetReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, plugins, suites);
+            providers = new OCLProviders(metaAccess, codeCache, constantReflection, snippetReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider,  plugins, suites, hotSpotGCProvider);
 
-            lowerer.initialize(options, new DummySnippetFactory(), providers, snippetReflection);
+            lowerer.initialize(options, Collections.singleton(graalDebugHandlersFactory), new DummySnippetFactory(), providers, snippetReflection);
         }
         try (InitTimer rt = timer("instantiate backend")) {
             return new OCLBackend(options, providers, target, codeCache, openclContext, deviceContext);
         }
     }
 
-    protected static Plugins createGraphBuilderPlugins(HotSpotMetaAccessProvider metaAccess, BytecodeProvider bytecodeProvider) {
+    protected static Plugins createGraphBuilderPlugins(HotSpotMetaAccessProvider metaAccess, Replacements replacements) {
         InvocationPlugins invocationPlugins = new InvocationPlugins();
         Plugins plugins = new Plugins(invocationPlugins);
 
         OCLGraphBuilderPlugins.registerParameterPlugins(plugins);
         OCLGraphBuilderPlugins.registerNewInstancePlugins(plugins);
 
-        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, bytecodeProvider, true);
+        StandardGraphBuilderPlugins.registerInvocationPlugins(metaAccess, snippetReflection, invocationPlugins, replacements, true, false);
         OCLGraphBuilderPlugins.registerInvocationPlugins(plugins, invocationPlugins);
         return plugins;
     }

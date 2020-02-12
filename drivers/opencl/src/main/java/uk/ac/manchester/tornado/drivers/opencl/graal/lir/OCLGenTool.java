@@ -2,6 +2,8 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -32,6 +34,7 @@ import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerat
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 
 import jdk.vm.ci.meta.AllocatableValue;
@@ -67,12 +70,12 @@ public class OCLGenTool {
 
     public Value emitParameterLoad(ParameterNode paramNode, int index) {
 
-        trace("emitParameterLoad: stamp=%s", paramNode.stamp());
+        trace("emitParameterLoad: stamp=%s", paramNode.stamp(NodeView.DEFAULT));
 
         // assert !(paramValue instanceof Variable) : "Creating a copy of a
         // variable via this method is not supported (and potentially a bug): "
         // + paramValue;
-        LIRKind lirKind = gen.getLIRKind(paramNode.stamp());
+        LIRKind lirKind = gen.getLIRKind(paramNode.stamp(NodeView.DEFAULT));
 
         OCLKind oclKind = (OCLKind) lirKind.getPlatformKind();
 
