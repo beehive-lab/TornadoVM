@@ -5,12 +5,8 @@ pipeline {
         timeout(time: 30, unit: 'MINUTES')
     }
     environment {
-        JAVA_HOME="/opt/jenkins/jdk1.8.0_131"
-        GRAAL_ROOT="/opt/jenkins"
+        JAVA_HOME="/opt/jenkins/graal-jvmci-8/openjdk1.8.0_242/linux-amd64/product"
         TORNADO_ROOT="/var/lib/jenkins/workspace/Tornado-pipeline"
-        TORNADO_REVISION='$(echo `git rev-parse --short HEAD`)'
-        GRAAL_VERSION="0.22"
-        JVMCI_VERSION="1.8.0_131"
         PATH="/var/lib/jenkins/workspace/Slambench/slambench-tornado-refactor/bin:/var/lib/jenkins/workspace/Tornado-pipeline/bin/bin:$PATH"    
         TORNADO_SDK="/var/lib/jenkins/workspace/Tornado-pipeline/bin/sdk" 
         CMAKE_ROOT="/opt/jenkins/cmake-3.10.2-Linux-x86_64"
