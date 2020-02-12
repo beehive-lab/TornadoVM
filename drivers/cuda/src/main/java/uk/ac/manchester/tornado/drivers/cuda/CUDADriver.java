@@ -40,9 +40,6 @@ import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDriver {
 
     private final PTXBackend[] backends;
@@ -106,18 +103,18 @@ public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDrive
         }
     }
 
-    @Override public
-    TornadoDeviceType getTypeDefaultDevice() {
+    @Override
+    public TornadoDeviceType getTypeDefaultDevice() {
         return TornadoDeviceType.GPU;
     }
 
-    @Override public
-    String getName() {
+    @Override
+    public String getName() {
         return "CUDA Driver";
     }
 
-    @Override public int
-    getNumPlatforms() {
+    @Override
+    public int getNumPlatforms() {
         return 1;
     }
 

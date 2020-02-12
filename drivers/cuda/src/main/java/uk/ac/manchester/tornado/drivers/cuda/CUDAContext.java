@@ -2,9 +2,6 @@ package uk.ac.manchester.tornado.drivers.cuda;
 
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class CUDAContext extends TornadoLogger {
 
     private final CUDADevice device;
@@ -29,5 +26,9 @@ public class CUDAContext extends TornadoLogger {
 
     public CUDADeviceContext getDeviceContext() {
         return deviceContext;
+    }
+
+    public long createBuffer(long numBytes) {
+        return 0;
     }
 }

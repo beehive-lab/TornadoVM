@@ -1,12 +1,12 @@
 package uk.ac.manchester.tornado.drivers.cuda;
 
-import java.util.ArrayList;
-import java.util.List;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 public class CUDA {
 
     public static final String CUDA_JNI_LIBRARY = "tornado-cuda";
 
+    public final static int CALL_STACK_LIMIT = Integer.parseInt(getProperty("tornado.cuda.callstack.limit", "8192"));
     private static final CUDAPlatform platform;
     private static boolean initialised = false;
 

@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.runtime.TornadoVMConfig;
 public class CUDATornadoDriverProvider implements TornadoDriverProvider {
     @Override
     public String getName() {
-        return "CUDA Driver";
+        return "CUDA Driver Provider";
     }
 
     @Override

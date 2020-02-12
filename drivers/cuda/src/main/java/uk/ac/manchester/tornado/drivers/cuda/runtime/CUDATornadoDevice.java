@@ -1,34 +1,44 @@
 package uk.ac.manchester.tornado.drivers.cuda.runtime;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.mm.ObjectBuffer;
 import uk.ac.manchester.tornado.api.mm.TornadoDeviceObjectState;
 import uk.ac.manchester.tornado.api.mm.TornadoMemoryProvider;
-import uk.ac.manchester.tornado.drivers.cuda.*;
-import uk.ac.manchester.tornado.drivers.cuda.graal.PTXInstalledCode;
+import uk.ac.manchester.tornado.drivers.cuda.CUDA;
+import uk.ac.manchester.tornado.drivers.cuda.CUDADevice;
+import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
+import uk.ac.manchester.tornado.drivers.cuda.CUDADriver;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompiler;
+import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAByteBuffer;
+import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAIntArrayWrapper;
+import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.CallStack;
-import uk.ac.manchester.tornado.runtime.common.TornadoAcceleratorDevice;
-import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.runtime.common.*;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.util.List;
 
 public class CUDATornadoDevice implements TornadoAcceleratorDevice {
+
+    private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
 
     private final CUDADevice device;
     private static CUDADriver driver = null;
@@ -84,7 +94,8 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
         return false;
     }
 
-    @Override public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
+    @Override
+    public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
         return null;
     }
 
@@ -101,8 +112,70 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public int ensureAllocated(Object object, long batchSize, TornadoDeviceObjectState state) {
+        if (!state.hasBuffer()) {
+            try {
+                ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, batchSize);
+                buffer.allocate(object, batchSize);
+                state.setBuffer(buffer);
+
+                final Class<?> type = object.getClass();
+                if (!type.isArray()) {
+                    if (batchSize > 0) {
+                        throw new TornadoRuntimeException("[ERROR] Batch computation with non-arrays not supported yet.");
+                    }
+                    buffer.write(object);
+                }
+            } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
+                e.printStackTrace();
+            }
+        }
         state.setValid(true);
-        return 0;
+        return -1;
+    }
+
+    private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg, long batchSize) {
+        ObjectBuffer result = null;
+        if (type.isArray()) {
+
+            if (!type.getComponentType().isArray()) {
+                result = createArrayWrapper(type, getDeviceContext(), batchSize);
+            } else {
+                final Class<?> componentType = type.getComponentType();
+                if (RuntimeUtilities.isPrimitiveArray(componentType)) {
+                    //result = createMultiArrayWrapper(componentType, type, device, batchSize);
+                } else {
+                    TornadoInternalError.unimplemented("multi-dimensional array of type %s", type.getName());
+                }
+            }
+
+        } else if (!type.isPrimitive() && !type.isArray()) {
+            //result = new OCLObjectWrapper(device, arg, batchSize);
+        }
+
+        TornadoInternalError.guarantee(result != null, "Unable to create buffer for object: " + type);
+        return result;
+    }
+
+    private ObjectBuffer createArrayWrapper(Class<?> type, CUDADeviceContext deviceContext, long batchSize) {
+        ObjectBuffer result = null;
+        if (type == int[].class) {
+            result = new CUDAIntArrayWrapper(deviceContext);
+        } else if (type == short[].class) {
+            //result = new OCLShortArrayWrapper(device, batchSize);
+        } else if (type == byte[].class) {
+            //result = new OCLByteArrayWrapper(device, batchSize);
+        } else if (type == float[].class) {
+            //result = new OCLFloatArrayWrapper(device, batchSize);
+        } else if (type == double[].class) {
+            //result = new OCLDoubleArrayWrapper(device, batchSize);
+        } else if (type == long[].class) {
+            //result = new OCLLongArrayWrapper(device, batchSize);
+        } else if (type == char[].class) {
+            //result = new OCLCharArrayWrapper(device, batchSize);
+        } else {
+            TornadoInternalError.unimplemented("array of type %s", type.getName());
+        }
+        return result;
     }
 
     /**
@@ -120,7 +193,12 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public List<Integer> ensurePresent(Object object, TornadoDeviceObjectState objectState, int[] events, long batchSize, long hostOffset) {
-        objectState.setValid(true);
+        if (!objectState.isValid()) ensureAllocated(object, batchSize, objectState);
+
+        if (BENCHMARKING_MODE || !objectState.hasContents()) {
+            objectState.setContents(true);
+            return objectState.getBuffer().enqueueWrite(object, batchSize, hostOffset, events, events == null);
+        }
         return null;
     }
 
@@ -140,8 +218,11 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public List<Integer> streamIn(Object object, long batchSize, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
-        objectState.setValid(true);
-        return null;
+        if (batchSize > 0 || !objectState.isValid()) {
+            ensureAllocated(object, batchSize, objectState);
+        }
+        objectState.setContents(true);
+        return objectState.getBuffer().enqueueWrite(object, batchSize, hostOffset, events, events == null);
     }
 
     /**
@@ -158,8 +239,12 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public int streamOut(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
-        objectState.setValid(true);
-        return 0;
+        TornadoInternalError.guarantee(objectState.isValid(), "invalid variable");
+        int event = objectState.getBuffer().enqueueRead(object, hostOffset, events, events == null);
+        if (events != null) {
+            return event;
+        }
+        return -1;
     }
 
     /**
@@ -176,8 +261,8 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public int streamOutBlocking(Object object, long hostOffset, TornadoDeviceObjectState objectState, int[] events) {
-        objectState.setValid(true);
-        return 0;
+        TornadoInternalError.guarantee(objectState.isValid(), "invalid variable");
+        return objectState.getBuffer().read(object, hostOffset, events, events == null);
     }
 
     /**
@@ -188,82 +273,90 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
      */
     @Override
     public Event resolveEvent(int event) {
-        return null;
+        return getDeviceContext().resolveEvent(event);
     }
 
     @Override
     public void ensureLoaded() {
-
+        getDeviceContext().flushEvents();
     }
 
     @Override
     public void markEvent() {
-
+        getDeviceContext().markEvent();
     }
 
     @Override
     public void flushEvents() {
-
+        getDeviceContext().flushEvents();
     }
 
     @Override
     public int enqueueBarrier() {
-        return 0;
+        return getDeviceContext().enqueueBarrier();
     }
 
     @Override
     public int enqueueBarrier(int[] events) {
-        return 0;
+        return getDeviceContext().enqueueBarrier(events);
     }
 
     @Override
     public int enqueueMarker() {
-        return 0;
+        return getDeviceContext().enqueueMarker();
     }
 
     @Override
     public int enqueueMarker(int[] events) {
-        return 0;
+        return getDeviceContext().enqueueMarker(events);
     }
 
     @Override
     public void sync() {
-
+        getDeviceContext().sync();
     }
 
     @Override
     public void flush() {
-
+        getDeviceContext().flush();
     }
 
     @Override
     public void reset() {
-
+        getDeviceContext().reset();
     }
 
     @Override
     public void dumpEvents() {
-
+        getDeviceContext().dumpEvents();
     }
 
     @Override
     public void dumpMemory(String file) {
+        final CUDAMemoryManager mm = getDeviceContext().getMemoryManager();
+        final CUDAByteBuffer buffer = mm.getSubBuffer(0, (int) mm.getHeapSize());
+        buffer.read();
 
+        try (FileOutputStream fos = new FileOutputStream(file); FileChannel channel = fos.getChannel()) {
+            channel.write(buffer.buffer());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public String getDeviceName() {
-        return "CUDA tornado device";
+        return "cuda-" + device.getIndex();
     }
 
     @Override
     public String getDescription() {
-        return null;
+        return String.format("%s %s", device.getDeviceName(), device.getDeviceType());
     }
 
     @Override
     public String getPlatformName() {
-        return "CUDA Platform";
+        return CUDA.getPlatform().getName();
     }
 
     @Override
@@ -271,21 +364,23 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
         return getBackend().getDeviceContext();
     }
 
-    public PTXBackend getBackend() {return findDriver().getBackend(device.getIndex());}
+    public PTXBackend getBackend() {
+        return findDriver().getBackend(device.getIndex());
+    }
 
     @Override
     public TornadoTargetDevice getDevice() {
-        return null;
+        return device;
     }
 
     @Override
     public TornadoMemoryProvider getMemoryProvider() {
-        return null;
+        return getDeviceContext().getMemoryManager();
     }
 
     @Override
     public TornadoDeviceType getDeviceType() {
-        return null;
+        return TornadoDeviceType.GPU;
     }
 
     @Override

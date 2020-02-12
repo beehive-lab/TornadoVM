@@ -2,12 +2,6 @@ package uk.ac.manchester.tornado.drivers.cuda;
 
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
-import java.nio.LongBuffer;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 public class CUDAPlatform extends TornadoLogger {
     private final CUDADevice[] devices;
 
@@ -19,13 +13,7 @@ public class CUDAPlatform extends TornadoLogger {
         }
     }
 
-    //native static String clGetPlatformInfo(long id, int info);
-
     public native static int cuDeviceGetCount();
-
-    //native static int clGetDeviceIDs(long id, long type, long[] devices);
-
-    //native static long clCreateContext(long platform, long[] devices) throws Exception;
 
     public void cleanup() {
         for (CUDADevice device : devices) {
@@ -39,7 +27,7 @@ public class CUDAPlatform extends TornadoLogger {
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(String.format("name=CUDA-PTX, num. devices=%d" , devices.length));
+        sb.append(String.format("name=%s, num. devices=%d" ,getName(), devices.length));
 
         return sb.toString().trim();
     }
@@ -50,5 +38,9 @@ public class CUDAPlatform extends TornadoLogger {
 
     public CUDADevice getDevice(int deviceIndex) {
         return devices[deviceIndex];
+    }
+
+    public String getName() {
+        return "NVIDIA-PTX";
     }
 }

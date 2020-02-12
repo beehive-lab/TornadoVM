@@ -34,6 +34,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         super(providers);
 
         this.deviceContext = deviceContext;
+        init();
     }
 
     @Override
@@ -117,7 +118,20 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     public void init() {
+        allocateHeapMemoryOnDevice();
+    }
 
+    /**
+     * It allocates the smallest of the requested heap size or the max global memory
+     * size.
+     */
+    public void allocateHeapMemoryOnDevice() {
+        //long memorySize = Math.min(DEFAULT_HEAP_ALLOCATION, deviceContext.getDevice().getDeviceMaxAllocationSize());
+        //if (memorySize < DEFAULT_HEAP_ALLOCATION) {
+            //Tornado.info("Unable to allocate %s of heap space - resized to %s", humanReadableByteCount(DEFAULT_HEAP_ALLOCATION, false), humanReadableByteCount(memorySize, false));
+        //}
+        //Tornado.info("%s: allocating %s of heap space", deviceContext.getDevice().getDeviceName(), humanReadableByteCount(memorySize, false));
+        deviceContext.getMemoryManager().allocateRegion(DEFAULT_HEAP_ALLOCATION);
     }
 
     public CUDADeviceContext getDeviceContext() {
