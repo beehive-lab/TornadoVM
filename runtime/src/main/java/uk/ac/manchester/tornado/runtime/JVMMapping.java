@@ -205,6 +205,11 @@ public class JVMMapping implements TornadoAcceleratorDevice {
     }
 
     @Override
+    public TornadoInstalledCode getCodeFromCache(SchedulableTask task) {
+        return null;
+    }
+
+    @Override
     public long getMaxAllocMemory() {
         return Runtime.getRuntime().maxMemory();
     }

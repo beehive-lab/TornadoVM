@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -51,6 +51,7 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -75,7 +76,6 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
-import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
@@ -98,7 +98,9 @@ import uk.ac.manchester.tornado.runtime.graph.TornadoVMGraphCompiler;
 import uk.ac.manchester.tornado.runtime.graph.nodes.ContextNode;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
+import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
 import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
+import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleMetaData;
 
 /**
@@ -131,6 +133,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     private static AtomicInteger offsetGlobalIndex = new AtomicInteger(0);
 
     private StringBuffer bufferLogProfiler = new StringBuffer();
+    private CachedGraph<?> graph;
 
     /**
      * Options for Dynamic Reconfiguration
@@ -218,6 +221,9 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
             CompilableTask compilableTask = (CompilableTask) task;
             final ResolvedJavaMethod resolvedMethod = getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             new SketchRequest(compilableTask.meta(), resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier()).run();
+
+            Sketch lookup = TornadoSketcher.lookup(resolvedMethod);
+            this.graph = lookup.getGraph();
         }
 
         hlBuffer.put(TornadoGraphBitcodes.CONTEXT.index());
@@ -513,6 +519,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
 
     @Override
     public void warmup() {
+        getDevice().getDeviceContext().setResetToFalse();
         timeProfiler.clean();
 
         compileToTornadoVMBytecodes();
@@ -588,7 +595,7 @@ public class TornadoTaskSchedule implements AbstractTaskGraph {
     }
 
     private void rewriteTaskForReduceSkeleton(MetaReduceCodeAnalysis analysisTaskSchedule) {
-        reduceTaskScheduleMeta = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects);
+        reduceTaskScheduleMeta = new ReduceTaskSchedule(this.getId(), taskPackages, streamInObjects, streamOutObjects, graph);
         reduceTaskScheduleMeta.scheduleWithReduction(analysisTaskSchedule);
         reduceExpressionRewritten = true;
     }

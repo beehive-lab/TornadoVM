@@ -53,6 +53,7 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats",
 	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles",
+	"uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong",
 	"uk.ac.manchester.tornado.unittests.reductions.InstanceReduction",
 	"uk.ac.manchester.tornado.unittests.instances.TestInstances",
 	"uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes",
@@ -65,13 +66,12 @@ __TEST_THE_WORLD__ = [
 	"uk.ac.manchester.tornado.unittests.fields.TestFields",
 	"uk.ac.manchester.tornado.unittests.profiler.TestProfiler",
 	"uk.ac.manchester.tornado.unittests.dynamic.TestDynamic",
+	"uk.ac.manchester.tornado.unittests.fails.TestFails",
 ]
 
 ## List of tests that can be ignored. Format: class#testMethod
 __TORNADO_TESTS_WHITE_LIST__ = [
-	"uk.ac.manchester.tornado.unittests.logic.TestLogic#testLogic03"
-	"uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer#testArrayMigration",
-    "uk.ac.manchester.tornado.unittests.branching.TestConditionals#testComplexTernaryCondition",
+	"",
 ]
 
 # ################################################################################################################
@@ -83,9 +83,10 @@ __PRINT_OPENCL_KERNEL__ 	 = "-Dtornado.opencl.source.print=True "
 __DEBUG_TORNADO__ 			 = "-Dtornado.debug=True "
 __IGNORE_INTEL_PLATFORM__    = "-Dtornado.ignore.platform=Intel "  # Due to a bug when running with Linux-optirun
 __PRINT_EXECUTION_TIMER__    = "-Dtornado.debug.executionTime=True "
+__GC__                       = "-Xmx6g "
 # ################################################################################################################
 
-__VERSION__ = "0.6_16052019"
+__VERSION__ = "0.8_04022020"
 
 __TEST_NOT_PASSED__= False
 
@@ -110,6 +111,8 @@ def composeAllOptions(args):
 		options = options + "True "
 	else:
 		options = options + "False "
+
+	options = options + __GC__
 
 	if (args.igv):
 		options = options + __IGV_OPTIONS__
@@ -216,7 +219,6 @@ def runTests(args):
 	else:
 		cmd = "tornado " + options + " " + __MAIN_TORNADO_TEST_RUNNER__ 
 	if (args.testClass != None):
-
 		if (args.fast):
 			cmd = cmd + " " + args.testClass
 			os.system(cmd)
@@ -226,10 +228,10 @@ def runTests(args):
 		start = time.time()
 		for t in __TEST_THE_WORLD__:
 			command = cmd + t
-
 			if (args.fast):
 				os.system(command)
 			else:
+				print command
 				stats = runCommandWithStats(command, stats)
 		
 		end = time.time()

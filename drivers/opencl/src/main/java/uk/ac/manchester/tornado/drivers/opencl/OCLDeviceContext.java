@@ -29,6 +29,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.USE_SYNC_FLUSH;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import java.nio.ByteOrder;
+import java.util.Comparator;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
@@ -56,6 +57,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     private final long bumpBuffer;
 
     private final OCLCodeCache codeCache;
+    private boolean wasReset;
 
     protected OCLDeviceContext(OCLDevice device, OCLCommandQueue queue, OCLContext context) {
         this.device = device;
@@ -303,6 +305,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         queue.reset();
         memoryManager.reset();
         codeCache.reset();
+        wasReset = true;
     }
 
     public OCLTornadoDevice asMapping() {
@@ -322,13 +325,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
             return;
         }
 
-        events.sort((OCLEvent o1, OCLEvent o2) -> {
-            int result = Long.compare(o1.getCLSubmitTime(), o2.getCLSubmitTime());
-            if (result == 0) {
-                result = Long.compare(o1.getCLStartTime(), o2.getCLStartTime());
-            }
-            return result;
-        });
+        events.sort(Comparator.comparingLong(OCLEvent::getCLSubmitTime).thenComparingLong(OCLEvent::getCLStartTime));
 
         long base = events.get(0).getCLSubmitTime();
         System.out.println("event: device,type,info,submitted,start,end,status");
@@ -342,6 +339,16 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     @Override
     public boolean needsBump() {
         return needsBump;
+    }
+
+    @Override
+    public boolean wasReset() {
+        return wasReset;
+    }
+
+    @Override
+    public void setResetToFalse() {
+        wasReset = false;
     }
 
     public long getBumpBuffer() {
@@ -388,16 +395,12 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
         return codeCache.installSource(meta, id, entryPoint, code);
     }
 
-    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code) {
-        return codeCache.installFPGASource(id, entryPoint, code);
+    public OCLInstalledCode installCode(String id, String entryPoint, byte[] code, boolean shouldCompile) {
+        return codeCache.installFPGASource(id, entryPoint, code, shouldCompile);
     }
 
     public boolean isCached(String id, String entryPoint) {
         return codeCache.isCached(id, entryPoint);
-    }
-
-    public OCLInstalledCode getCode(String id, String entryPoint) {
-        return codeCache.getCode(id, entryPoint);
     }
 
     public OCLInstalledCode getInstalledCode(String id, String entryPoint) {

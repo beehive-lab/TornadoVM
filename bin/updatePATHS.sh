@@ -4,7 +4,7 @@
 
 file=`ls dist/tornado-sdk/`
 echo -e "\n########################################################## "
-echo -e "\e[32mTornado build sucess\e[39m"
+echo -e "\e[32mTornado build success\e[39m"
 echo "Updating PATH and TORNADO_SDK to $file"
 
 cd bin/
