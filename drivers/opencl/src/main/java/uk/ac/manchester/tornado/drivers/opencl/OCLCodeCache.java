@@ -82,6 +82,9 @@ public class OCLCodeCache {
     private final String INTEL_NALLATECH_BOARD_NAME = "-board=p385a_sch_ax115";
     private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
     private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
+    private String fpgaName = "xilinx_kcu1500_dynamic_5_0";
+    private String optimizationLevel = "O3";
+    private String numCompilationThreads = "12";
 
     // ID -> KernelName (TaskName)
     private ConcurrentHashMap<String, ArrayList<Pair>> pendingTasks;
@@ -128,11 +131,49 @@ public class OCLCodeCache {
 
         if (deviceContext.getDevice().getDeviceType() == OCLDeviceType.CL_DEVICE_TYPE_ACCELERATOR) {
             precompiledBinariesPerDevice = new HashMap<>();
+            parseFPGAConfigurationFile();
             if (OPENCL_BINARIES != null) {
                 processPrecompiledBinaries();
             }
         }
     }
+
+    private void parseFPGAConfigurationFile() {
+        System.out.println("----Path for configuration file: " + new File("").getAbsolutePath() + "/etc/fpga.conf");
+        FileReader fileReader;
+        BufferedReader bufferedReader;
+        try {
+            fileReader = new FileReader(new File("").getAbsolutePath() + "/etc/fpga.conf");
+            bufferedReader = new BufferedReader(fileReader);
+        }catch (IOException e) {
+            System.out.println("Wrong file, please ensure you have configured the etc/fpga.conf file!");
+            return;
+        }
+        StringBuffer stringBuffer = new StringBuffer();
+        String line = null;
+        int idxLine = 0;
+
+        try {
+            while ((line=bufferedReader.readLine()) != null) {
+                switch (line) {
+                    case "DEVICE_NAME":
+                        fpgaName = line.split("=")[1];
+                        break;
+                    case "OPTIMIZATION_LEVEL":
+                        optimizationLevel = line.split("=")[1];
+                        break;
+                    case "NUM_COMPILATION_THREADS":
+                        numCompilationThreads = line.split("=")[1];
+                        break;
+                    default:
+                        break;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     private void processPrecompiledBinaries() {
         String[] binaries = OPENCL_BINARIES.toString().split(",");
@@ -272,7 +313,7 @@ public class OCLCodeCache {
         StringJoiner bufferCommand = new StringJoiner(" ", "xocc ", "");
 
         bufferCommand.add(Tornado.FPGA_EMULATION ? ("-t " + "sw_emu") : ("-t " + "hw"));
-        bufferCommand.add("--platform " + "/home/centos/src/project_data/aws-fpga/SDAccel/aws_platform/xilinx_aws-vu9p-f1-04261818_dynamic_5_0/xilinx_aws-vu9p-f1-04261818_dynamic_5_0.xpfm " + "-c " + "-k " + kernelName);
+        bufferCommand.add("--platform " + fpgaName + " -c " + "-k " + kernelName);
         bufferCommand.add("-g " + "-I./" + DIRECTORY_BITSTREAM);
         bufferCommand.add("--xp " + "misc:solution_name=lookupBufferAddress");
         bufferCommand.add("--report_dir " + DIRECTORY_BITSTREAM + "reports");
@@ -291,11 +332,11 @@ public class OCLCodeCache {
     private String[] composeXilinxHLSLinkCommand(String kernelName) {
         StringJoiner bufferCommand = new StringJoiner(" ", "xocc ", "");
         bufferCommand.add(Tornado.FPGA_EMULATION ? ("-t " + "sw_emu") : ("-t " + "hw"));
-        bufferCommand.add("--platform " + "/home/centos/src/project_data/aws-fpga/SDAccel/aws_platform/xilinx_aws-vu9p-f1-04261818_dynamic_5_0/xilinx_aws-vu9p-f1-04261818_dynamic_5_0.xpfm " + "-l " + "-g");
+        bufferCommand.add("--platform " + fpgaName + " -l " + "-g");
         bufferCommand.add("--xp " + "misc:solution_name=link");
         bufferCommand.add("--report_dir " + DIRECTORY_BITSTREAM + "reports");
         bufferCommand.add("--log_dir " + DIRECTORY_BITSTREAM + "logs");
-        bufferCommand.add("-O3 " + "-j12");
+        bufferCommand.add(optimizationLevel + " " + numCompilationThreads);
         bufferCommand.add("--remote_ip_cache " + DIRECTORY_BITSTREAM + "ip_cache");
         bufferCommand.add("-o " + DIRECTORY_BITSTREAM + LOOKUP_BUFFER_KERNEL_NAME + ".xclbin");
         addObjectKernelsToLinker(bufferCommand);
