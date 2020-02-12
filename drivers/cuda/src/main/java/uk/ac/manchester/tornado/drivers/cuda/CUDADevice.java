@@ -1,6 +1,7 @@
 package uk.ac.manchester.tornado.drivers.cuda;
 
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
+import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceAttribute;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 import java.nio.ByteOrder;
@@ -45,17 +46,23 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
     }
 
     @Override public long getDeviceGlobalMemorySize() {
-        if (totalDeviceMemory == INIT_VAL) totalDeviceMemory = cuDeviceTotalMem(index);
+        if (totalDeviceMemory == INIT_VAL) {
+            totalDeviceMemory = cuDeviceTotalMem(index);
+        }
         return totalDeviceMemory;
     }
 
     @Override public long getDeviceLocalMemorySize() {
-        if (localMemorySize == INIT_VAL) localMemorySize = cuDeviceGetAttribute(index, 8);
+        if (localMemorySize == INIT_VAL) {
+            localMemorySize = cuDeviceGetAttribute(index, CUDADeviceAttribute.MAX_SHARED_MEMORY_PER_BLOCK.value());
+        }
         return localMemorySize;
     }
 
     @Override public int getDeviceMaxComputeUnits() {
-        if (noOfWorkUnits == INIT_VAL) noOfWorkUnits = cuDeviceGetAttribute(index, 16);
+        if (noOfWorkUnits == INIT_VAL) {
+            noOfWorkUnits = cuDeviceGetAttribute(index, CUDADeviceAttribute.MULTIPROCESSOR_COUNT.value());
+        }
         return noOfWorkUnits;
     }
 
@@ -64,20 +71,24 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
 
         maxWorkItemSizes = new long[3];
 
-        maxWorkItemSizes[0] = cuDeviceGetAttribute(index, 2);
-        maxWorkItemSizes[1] = cuDeviceGetAttribute(index, 3);
-        maxWorkItemSizes[2] = cuDeviceGetAttribute(index, 4);
+        maxWorkItemSizes[0] = cuDeviceGetAttribute(index, CUDADeviceAttribute.MAX_BLOCK_DIM_X.value());
+        maxWorkItemSizes[1] = cuDeviceGetAttribute(index, CUDADeviceAttribute.MAX_BLOCK_DIM_Y.value());
+        maxWorkItemSizes[2] = cuDeviceGetAttribute(index, CUDADeviceAttribute.MAX_BLOCK_DIM_Z.value());
 
         return maxWorkItemSizes;
     }
 
     @Override public int getDeviceMaxClockFrequency() {
-        if (maxFrequency == INIT_VAL) maxFrequency = cuDeviceGetAttribute(index, 13);
+        if (maxFrequency == INIT_VAL) {
+            maxFrequency = cuDeviceGetAttribute(index, CUDADeviceAttribute.CLOCK_RATE.value());
+        }
         return maxFrequency;
     }
 
     @Override public long getDeviceMaxConstantBufferSize() {
-        if (constantBufferSize == INIT_VAL) constantBufferSize = cuDeviceGetAttribute(index, 9);
+        if (constantBufferSize == INIT_VAL) {
+            constantBufferSize = cuDeviceGetAttribute(index, CUDADeviceAttribute.TOTAL_CONSTANT_MEMORY.value());
+        }
         return constantBufferSize;
     }
 
