@@ -114,9 +114,9 @@ public class CUDAMemoryManager extends TornadoLogger implements TornadoMemoryPro
      */
     public void allocateRegion(long numBytes) {
         this.heapLimit = numBytes;
-        this.deviceHeapPointer = deviceContext.getDevice().getContext().createBuffer(numBytes);
-        //this.constantPointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, 4);
-        //this.privatePointer = deviceContext.getPlatformContext().createBuffer(OCLMemFlags.CL_MEM_READ_WRITE | OCLMemFlags.CL_MEM_ALLOC_HOST_PTR, 4);
+        this.deviceHeapPointer = deviceContext.getDevice().getContext().allocateMemory(numBytes);
+        //this.constantPointer = deviceContext.getDevice().getContext().allocateMemory(4);
+        //this.privatePointer = deviceContext.getDevice().getContext().allocateMemory(4);
     }
 
     private static long align(final long address, final long alignment) {

@@ -29,12 +29,13 @@ import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
     final CUDADeviceContext deviceContext;
+    private boolean isInitialised;
 
     public PTXBackend(PTXProviders providers, CUDADeviceContext deviceContext) {
         super(providers);
 
         this.deviceContext = deviceContext;
-        init();
+        isInitialised = false;
     }
 
     @Override
@@ -114,11 +115,15 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     }
 
     public boolean isInitialised() {
-        return false;
+        return isInitialised;
     }
 
     public void init() {
+        if (isInitialised) return;
+
         allocateHeapMemoryOnDevice();
+
+        isInitialised = true;
     }
 
     /**

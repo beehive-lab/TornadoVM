@@ -6,6 +6,10 @@ public class CUDAContext extends TornadoLogger {
 
     private final CUDADevice device;
     private final CUDADeviceContext deviceContext;
+    private long[] allocatedRegions;
+    private int allocatedRegionCount;
+
+    private static final int MAX_ALLOCATED_REGIONS = 64;
 
     public CUDAContext(CUDADevice device) {
         this.device = device;
@@ -15,12 +19,20 @@ public class CUDAContext extends TornadoLogger {
         deviceContext = new CUDADeviceContext(device, this);
     }
 
-    public native static void cuCtxCreate(int deviceIndex);
+    private native static void cuCtxCreate(int deviceIndex);
 
-    public native static void cuCtxDestroy(int deviceIndex);
+    private native static void cuCtxDestroy(int deviceIndex);
 
+    private native static long cuMemAlloc(int deviceIndex, long numBytes);
+
+    private native static void cuMemFree(int deviceIndex, long devicePtr);
 
     public void cleanup() {
+
+        for (int i = 0; i < allocatedRegionCount; i++) {
+            cuMemFree(device.getIndex(), allocatedRegions[i]);
+        }
+
         cuCtxDestroy(device.getIndex());
     }
 
@@ -28,7 +40,15 @@ public class CUDAContext extends TornadoLogger {
         return deviceContext;
     }
 
-    public long createBuffer(long numBytes) {
-        return 0;
+    public long allocateMemory(long numBytes) {
+        long devicePtr = 0;
+        try {
+            devicePtr = cuMemAlloc(device.getIndex(), numBytes);
+            allocatedRegions[allocatedRegionCount] = devicePtr;
+            allocatedRegionCount++;
+        } catch (Exception e) {
+            error(e.getMessage());
+        }
+        return devicePtr;
     }
 }

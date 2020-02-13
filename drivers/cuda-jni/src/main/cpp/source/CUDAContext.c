@@ -1,8 +1,12 @@
 #include <jni.h>
 #include <cuda.h>
+#include <stdio.h>
 
-CUcontext **contexts = NULL;
-int no_of_contexts = 0;
+#include "CUDAContext.h"
+
+CUcontext **g_contexts = NULL;
+int g_contexts_length = 0;
+
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAContext
  * Method:    cuCtxCreate
@@ -10,10 +14,10 @@ int no_of_contexts = 0;
  */
 JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_cuCtxCreate
   (JNIEnv *env, jclass clazz, jint device_index) {
-    if (contexts == NULL) {
+    if (g_contexts == NULL) {
         int no_of_devices;
         cuDeviceGetCount(&no_of_devices);
-        contexts = malloc(no_of_devices * sizeof(CUcontext*));
+        g_contexts = malloc(no_of_devices * sizeof(CUcontext*));
     }
 
     CUdevice dev;
@@ -21,9 +25,9 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_cu
 
     CUcontext *ctx = malloc(sizeof(CUcontext));
     CUresult result = cuCtxCreate(ctx, CU_CTX_SCHED_YIELD, dev);
-    contexts[device_index] = ctx; // For now I assume there is one context created for each device
+    g_contexts[device_index] = ctx; // For now I assume there is one context created for each device
 
-    no_of_contexts++;
+    g_contexts_length++;
 
     return;
 }
@@ -39,16 +43,46 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_cu
     cuCtxGetCurrent(&ctx);
 
     if (ctx == NULL) {
-        ctx = *contexts[(int) device_index];
+        ctx = *g_contexts[(int) device_index];
     }
 
     CUresult result = cuCtxDestroy(ctx);
 
-    free(contexts[(int) device_index]);
-    no_of_contexts--;
-    if (no_of_contexts == 0) {
-        free(contexts);
+    free(g_contexts[(int) device_index]);
+    g_contexts_length--;
+    if (g_contexts_length == 0) {
+        free(g_contexts);
     }
+
+    return;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAContext
+ * Method:    cuMemAlloc
+ * Signature: (IJ)J
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_cuMemAlloc
+  (JNIEnv *env, jclass clazz, jint device_index, jlong num_bytes) {
+    cuCtxSetCurrent(*g_contexts[(int) device_index]);
+
+    CUdeviceptr dev_ptr;
+    CUresult result = cuMemAlloc(&dev_ptr, (size_t) num_bytes);
+
+    if (result != 0) return (jlong) -1;
+    return (jlong) dev_ptr;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAContext
+ * Method:    cuMemFree
+ * Signature: (IJ)V
+ */
+JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAContext_cuMemFree
+  (JNIEnv *env, jclass clazz, jint device_index, jlong dev_ptr) {
+    cuCtxSetCurrent(*g_contexts[(int) device_index]);
+
+    CUresult result = cuMemFree((CUdeviceptr) dev_ptr);
 
     return;
 }
