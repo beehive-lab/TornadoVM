@@ -5,6 +5,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 public class CUDAContext extends TornadoLogger {
 
     private final CUDADevice device;
+    private final CUDAStream stream;
     private final CUDADeviceContext deviceContext;
     private long[] allocatedRegions;
     private int allocatedRegionCount;
@@ -16,7 +17,11 @@ public class CUDAContext extends TornadoLogger {
 
         cuCtxCreate(device.getIndex());
 
-        deviceContext = new CUDADeviceContext(device, this);
+        stream = new CUDAStream(device.getIndex());
+        deviceContext = new CUDADeviceContext(device, this, stream);
+
+        allocatedRegionCount = 0;
+        allocatedRegions = new long[MAX_ALLOCATED_REGIONS];
     }
 
     private native static void cuCtxCreate(int deviceIndex);
