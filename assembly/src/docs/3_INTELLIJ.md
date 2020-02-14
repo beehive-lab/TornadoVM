@@ -8,7 +8,7 @@ Download and install the latest IntelliJ IDEA Community Edition: [https://www.je
 
 Change the IntelliJ maximum memory to 2 GB or more [(instructions)](https://www.jetbrains.com/help/idea/increasing-memory-heap.html#d1366197e127).
 
-
+For Intellij to pickup the required Tornado dependencies from the poms, go to **View > Tool Windows > Maven** and select **jdk-8** under profiles.
 
 ## Required Plugins:
 
@@ -16,6 +16,12 @@ Open IntelliJ and go to **Preferences > Plugins > Browse Repositories**. Install
 
 1. [Eclipse Code Formatter:](https://plugins.jetbrains.com/plugin/6546-eclipse-code-formatter) Formats source code according to eclipse standards (.xml). After the installation of the plugin, go to: **File > Settings > Other Settings > Ecliple Code Formatter**, and select **_"Use the Eclipse code formatter"_**. Finally, load the TornadoVM code formatter (**_./scripts/templates/eclipse-settings/Tornado.xml_**) as the Eclipse Java Formatter config file, and click **Apply**.
 2. [Save Actions:](https://plugins.jetbrains.com/plugin/7642-save-actions) Allows post-save actions (e.g. code formating on save).
+
+   * To enable the auto-formatter with save-actions, go to **Settings -> Other Settings -> Save Actions**, and mark the following:
+       * Activate save actions on save
+       * Activate save actions in shortcut
+       * Reformat file
+       
 3. [Python Plugin:](https://plugins.jetbrains.com/plugin/631-python) Allows Python scripting.
 
 ## Run and Debug TornadoVM with Intellij 

@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -24,15 +26,14 @@
 package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.spi.SimplifierTool;
-import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.vector.VectorElementOpNode;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
-public class OCLCanonicalizer extends CustomCanonicalizer {
+public class OCLCanonicalizer implements CanonicalizerPhase.CustomCanonicalization {
 
     protected MetaAccessProvider metaAccess;
     protected ResolvedJavaMethod method;
@@ -56,11 +57,6 @@ public class OCLCanonicalizer extends CustomCanonicalizer {
 
     private Node canonicalizeVectorElementOp(VectorElementOpNode node) {
         return node;
-    }
-
-    @Override
-    public void simplify(Node node, SimplifierTool tool) {
-
     }
 
     public enum VectorOp {

@@ -241,7 +241,7 @@ public class TestConditionals extends TornadoTestBase {
         }
     }
 
-    @TornadoNotSupported
+    @Test
     public void testComplexTernaryCondition() {
 
         final int  size = 8192;
@@ -260,7 +260,7 @@ public class TestConditionals extends TornadoTestBase {
         //formatter:on
 
         for (int i = 0; i < a.length; i++) {
-            assertEquals(50, a[i]);
+            assertEquals(20, a[i]);
         }
     }
 }

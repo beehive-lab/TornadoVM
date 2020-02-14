@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -63,8 +65,7 @@ public class OCLVectorNodePlugin implements NodePlugin {
 
     private OCLKind resolveOCLKind(ResolvedJavaType type) {
         if (type instanceof HotSpotResolvedJavaType) {
-            final HotSpotResolvedJavaType resolvedType = (HotSpotResolvedJavaType) type;
-            return OCLKind.fromClass(resolvedType.mirror());
+            return OCLKind.fromResolvedJavaType(type);
         }
 
         return OCLKind.ILLEGAL;

@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -25,6 +27,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.nodes;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -33,6 +36,7 @@ import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.TernaryNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
@@ -55,6 +59,11 @@ public class OCLFPTernaryIntrinsicNode extends TernaryNode implements Arithmetic
 
     public static final NodeClass<OCLFPTernaryIntrinsicNode> TYPE = NodeClass.create(OCLFPTernaryIntrinsicNode.class);
     protected final Operation operation;
+
+    @Override
+    public Stamp foldStamp(Stamp stampX, Stamp stampY, Stamp stampZ) {
+        return stamp(NodeView.DEFAULT);
+    }
 
     public enum Operation {
         FMA, MAD, REMQUO

@@ -2,6 +2,8 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -192,7 +194,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
 
     /*
      * ASync reads from device
-     * 
+     *
      */
     public int enqueueReadBuffer(long bufferId, long offset, long bytes, byte[] array, long hostOffset, int[] waitEvents) {
         return queue.enqueueRead(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, waitEvents);
@@ -272,7 +274,7 @@ public class OCLDeviceContext extends TornadoLogger implements Initialisable, To
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, long[] array, long hostOffset, int[] waitEvents) {
-        return queue.enqueueRead(bufferId, true, offset, bytes, array, hostOffset, waitEvents);
+        return queue.enqueueRead(bufferId, OpenCLBlocking.TRUE, offset, bytes, array, hostOffset, waitEvents);
     }
 
     public int readBuffer(long bufferId, long offset, long bytes, float[] array, long hostOffset, int[] waitEvents) {

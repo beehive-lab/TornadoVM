@@ -18,18 +18,11 @@
 
     <properties>
         <tornado.version>0.5</tornado.version>
-        <graal.version>0.22</graal.version>
+        <graal.version>19.3.0</graal.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
         <download.cmake>false</download.cmake>
     </properties>
-
-    <repositories>
-        <repository>
-            <id>universityOfManchester-graal</id>
-            <url>https://raw.githubusercontent.com/beehive-lab/graal/maven-tornado-repos</url>
-        </repository>
-    </repositories>
 
     <profiles>
         <profile>
@@ -256,6 +249,375 @@
                 <classifier/>
             </properties>
         </profile>
+
+        <profile>
+            <id>graal-jdk-11</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.8.1</version>
+                        <configuration>
+                            <source>11</source>
+                            <target>11</target>
+                            <showDeprecation>true</showDeprecation>
+                            <compilerArgs>
+                                <arg>--add-modules</arg>
+                                <arg>ALL-SYSTEM</arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.opencl</arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.hotspot.meta=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.replacements.classfile=tornado.drivers.opencl
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.core.common.alloc=tornado.drivers.opencl
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.core.common.util=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.core.common.cfg=tornado.drivers.opencl
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.lir=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.framemap=tornado.drivers.opencl
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.opencl,tornado.runtime,tornado.annotation
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.ci/jdk.vm.ci.code=tornado.drivers.opencl,tornado.runtime</arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.graph=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.graph.spi=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.lir.gen=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodeinfo=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes.calc=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes.spi=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.api.runtime=tornado.runtime</arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.code=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.core=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.core.common=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.target=tornado.runtime</arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.debug=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.hotspot=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.java=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.lir.asm=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.lir.phases=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes.graphbuilderconf=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.options=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.phases=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.phases.tiers=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.phases.util=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.printer=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.runtime=tornado.runtime</arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.ci/jdk.vm.ci.runtime=tornado.drivers.opencl,tornado.runtime</arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.graph.iterators=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes.java=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.bytecode=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.phases.common=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.core.common.spi=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.api.replacements=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.replacements=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.core.phases=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.core.common.type=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes.extended=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.loop=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.info=tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.policy=tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.phases.common.inlining.walker=tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.loop.phases=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes.debug=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes.util=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.virtual=tornado.runtime</arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.constopt=tornado.runtime</arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.opencl,tornado.runtime</arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.asm=tornado.drivers.opencl</arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.gc=tornado.runtime</arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.cfg=tornado.drivers.opencl
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.phases.schedule=tornado.drivers.opencl
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.virtual.phases.ea=tornado.drivers.opencl
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.lir.ssa=tornado.drivers.opencl</arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.core.common.calc=tornado.drivers.opencl
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.gen=tornado.drivers.opencl</arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.core.match=tornado.drivers.opencl
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>
+                                    jdk.internal.vm.compiler/org.graalvm.compiler.nodes.memory.address=tornado.drivers.opencl,tornado.runtime
+                                </arg>
+                                <arg>--add-exports</arg>
+                                <arg>jdk.internal.vm.compiler/org.graalvm.compiler.nodes.type=tornado.drivers.opencl
+                                </arg>
+                            </compilerArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>graal-jdk-8</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.8.1</version>
+                        <configuration>
+                            <source>8</source>
+                            <target>8</target>
+                            <showDeprecation>true</showDeprecation>
+                            <excludes>
+                                <exclude>*module-info.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.graalvm.compiler</groupId>
+                        <artifactId>compiler</artifactId>
+                        <scope>system</scope>
+                        <systemPath>${env.JAVA_HOME}/jre/lib/jvmci/graal.jar</systemPath>
+                        <version>${graal.version}</version>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>jvmci</groupId>
+                        <artifactId>api</artifactId>
+                        <scope>system</scope>
+                        <systemPath>${env.JAVA_HOME}/jre/lib/jvmci/jvmci-api.jar</systemPath>
+                        <version>${graal.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>jvmci</groupId>
+                        <artifactId>hotspot</artifactId>
+                        <scope>system</scope>
+                        <systemPath>${env.JAVA_HOME}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
+                        <version>${graal.version}</version>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+        </profile>
+
+        <profile>
+            <id>jdk-8</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.8.1</version>
+                        <configuration>
+                            <source>8</source>
+                            <target>8</target>
+                            <showDeprecation>true</showDeprecation>
+                            <excludes>
+                                <exclude>*module-info.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.graalvm.compiler</groupId>
+                        <artifactId>compiler</artifactId>
+                        <version>${graal.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.graalvm.truffle</groupId>
+                        <artifactId>truffle-api</artifactId>
+                        <version>${graal.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>jvmci</groupId>
+                        <artifactId>api</artifactId>
+                        <scope>system</scope>
+                        <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-api.jar</systemPath>
+                        <version>${jvmci.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>jvmci</groupId>
+                        <artifactId>hotspot</artifactId>
+                        <scope>system</scope>
+                        <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
+                        <version>${jvmci.version}</version>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+        </profile>
     </profiles>
     <build>
         <finalName>${project.artifactId}-${project.version}-${buildNumber}</finalName>
@@ -263,24 +625,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-scm-plugin</artifactId>
-                <version>1.9.5</version>
+                <version>1.11.2</version>
                 <configuration>
                     <goals>install</goals>
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                    <showDeprecation>true</showDeprecation>
-                </configuration>
-            </plugin>
-            <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.1.1</version>
                 <configuration>
                     <descriptors>
                         <descriptor>assembly.xml</descriptor>
@@ -290,7 +642,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.1</version>
+                <version>3.1.2</version>
                 <configuration>
                     <archive>
                         <manifest>
@@ -326,30 +678,6 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>graal</groupId>
-                <artifactId>graal</artifactId>
-                <version>${graal.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>graal</groupId>
-                <artifactId>truffle-api</artifactId>
-                <version>${graal.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>jvmci</groupId>
-                <artifactId>api</artifactId>
-                <scope>system</scope>
-                <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-api.jar</systemPath>
-                <version>${jvmci.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>jvmci</groupId>
-                <artifactId>hotspot</artifactId>
-                <scope>system</scope>
-                <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
-                <version>${jvmci.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
@@ -357,7 +685,7 @@
             <dependency>
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-core</artifactId>
-                <version>4.10.4</version>
+                <version>8.2.0</version>
                 <type>jar</type>
             </dependency>
         </dependencies>
@@ -366,12 +694,12 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <version>2.5</version>
+            <version>2.12.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.5</version>
+            <version>2.12.1</version>
         </dependency>
     </dependencies>
     <modules>

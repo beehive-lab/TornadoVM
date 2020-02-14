@@ -2,6 +2,8 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -29,7 +31,9 @@ import static uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue.EVENT_DESC
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus.CL_COMPLETE;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus.createOCLCommandExecutionStatus;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLEventInfo.CL_EVENT_COMMAND_EXECUTION_STATUS;
-import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.*;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_END;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_START;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_SUBMIT;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.ENABLE_PROFILING;
 
 import java.nio.ByteBuffer;

@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester.
  * 
@@ -26,7 +28,7 @@ import java.util.Random;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.lucene.util.OpenBitSet;
+import org.apache.lucene.util.FixedBitSet;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -48,7 +50,7 @@ import uk.ac.manchester.tornado.benchmarks.BenchLogger;
 public class CorrMatrixTest extends BenchLogger {
 
     // private static final Logger LOG = Logger.getLogger(CorrMatrixTest.class);
-    private final List<Pair<OpenBitSet, OpenBitSet>> obsPairs = new ArrayList<>();;
+    private final List<Pair<FixedBitSet, FixedBitSet>> obsPairs = new ArrayList<>();;
 
     private final Random rand = new Random();
 
@@ -88,7 +90,7 @@ public class CorrMatrixTest extends BenchLogger {
                 bits[j] = rand.nextLong();
             }
 
-            obsPairs.add(i, new ImmutablePair<>(new OpenBitSet(bits, numLongs), new OpenBitSet(bits, numLongs)));
+            obsPairs.add(i, new ImmutablePair<>(new FixedBitSet(bits, numLongs), new FixedBitSet(bits, numLongs)));
         }
 
         /*
@@ -105,13 +107,13 @@ public class CorrMatrixTest extends BenchLogger {
             // FIXME This entire loop needs to be parallelized to show an
             // apples-to-apples comparison to Aparapi
             for (int i = 0; i < obsPairs.size(); i++) {
-                final Pair<OpenBitSet, OpenBitSet> docFreqVector1 = obsPairs.get(i);
+                final Pair<FixedBitSet, FixedBitSet> docFreqVector1 = obsPairs.get(i);
 
                 for (int j = 0; j < obsPairs.size(); j++) {
-                    final Pair<OpenBitSet, OpenBitSet> docFreqVector2 = obsPairs.get(j);
+                    final Pair<FixedBitSet, FixedBitSet> docFreqVector2 = obsPairs.get(j);
 
                     // # of matches in both sets of documents
-                    final int result = (int) OpenBitSet.intersectionCount(docFreqVector1.getLeft(), docFreqVector2.getRight());
+                    final int result = (int) FixedBitSet.intersectionCount(docFreqVector1.getLeft(), docFreqVector2.getRight());
                     obsResultMatrix[i][j] = result;
                 }
             }
@@ -152,8 +154,8 @@ public class CorrMatrixTest extends BenchLogger {
         // TODO It would be nice if we could find a way to put the obsPairs onto
         // the GPU directly :)
         for (int i = 0; i < obsPairs.size(); i++) {
-            final OpenBitSet obsA = obsPairs.get(i).getLeft();
-            final OpenBitSet obsB = obsPairs.get(i).getRight();
+            final FixedBitSet obsA = obsPairs.get(i).getLeft();
+            final FixedBitSet obsB = obsPairs.get(i).getRight();
 
             matrixA[i] = obsA.getBits();
             matrixB[i] = obsB.getBits();

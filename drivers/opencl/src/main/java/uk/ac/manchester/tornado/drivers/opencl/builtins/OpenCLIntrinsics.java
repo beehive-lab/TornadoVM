@@ -2,6 +2,8 @@
  * This file is part of Tornado: A heterogeneous programming framework: 
  * https://github.com/beehive-lab/tornadovm
  *
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -31,29 +33,17 @@ import uk.ac.manchester.tornado.api.annotations.ReductionOp;
 
 public class OpenCLIntrinsics {
 
-    public static int get_global_id(int value) {
-        return 0;
-    }
+    public static native int get_global_id(int value);
 
-    public static int get_local_id(int value) {
-        return 0;
-    }
+    public static native int get_local_id(int value);
 
-    public static int get_global_size(int value) {
-        return 0;
-    }
+    public static native int get_global_size(int value);
 
-    public static int get_local_size(int value) {
-        return 0;
-    }
+    public static native int get_local_size(int value);
 
-    public static int get_group_id(int value) {
-        return 0;
-    }
+    public static native int get_group_id(int value);
 
-    public static int get_group_size(int value) {
-        return 0;
-    }
+    public static native int get_group_size(int value);
 
     /**
      * <p>
@@ -62,9 +52,7 @@ public class OpenCLIntrinsics {
      * </code>
      * </p>
      */
-    public static void localBarrier() {
-
-    }
+    public static native void localBarrier();
 
     /**
      * <p>
@@ -73,17 +61,13 @@ public class OpenCLIntrinsics {
      * </code>
      * </p>
      */
-    public static void globalBarrier() {
+    public static native void globalBarrier();
 
-    }
+    public static native void printf();
 
-    public static void printf() {
+    public static native void printEmpty();
 
-    }
-
-    public static void printEmpty() {
-
-    }
+    public static native void createLocalMemory(int[] array, int size);
 
     public static int fmax(float a, float b) {
         return 0;

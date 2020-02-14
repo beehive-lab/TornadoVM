@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -87,7 +89,8 @@ public final class VectorStoreElementProxyNode extends FixedWithNextNode impleme
     }
 
     public boolean canResolve() {
-        return ((origin != null && laneOrigin != null) && origin instanceof VectorValueNode && laneOrigin instanceof ConstantNode);
+        return ((origin != null && laneOrigin != null) && origin instanceof VectorValueNode && laneOrigin instanceof ConstantNode
+                && ((VectorValueNode) origin).getOCLKind().getVectorLength() > laneOrigin.asJavaConstant().asInt());
     }
 
     public ValueNode getOrigin() {

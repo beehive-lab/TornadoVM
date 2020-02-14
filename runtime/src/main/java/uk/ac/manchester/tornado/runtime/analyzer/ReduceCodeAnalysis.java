@@ -2,6 +2,8 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -25,13 +27,11 @@ package uk.ac.manchester.tornado.runtime.analyzer;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
-import java.sql.Struct;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
 
 import org.graalvm.compiler.graph.CachedGraph;
-import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ConstantNode;

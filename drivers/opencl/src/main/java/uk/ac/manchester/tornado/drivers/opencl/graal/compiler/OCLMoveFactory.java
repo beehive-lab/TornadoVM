@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -59,6 +61,12 @@ public class OCLMoveFactory implements MoveFactory {
 
     @Override
     public LIRInstruction createLoad(AllocatableValue av, Constant cnstnt) {
+        unimplemented();
+        return null;
+    }
+
+    @Override
+    public LIRInstruction createStackLoad(AllocatableValue result, Constant input) {
         unimplemented();
         return null;
     }
