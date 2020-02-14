@@ -8,7 +8,7 @@ Download and install the latest IntelliJ IDEA Community Edition: [https://www.je
 
 Change the IntelliJ maximum memory to 2 GB or more [(instructions)](https://www.jetbrains.com/help/idea/increasing-memory-heap.html#d1366197e127).
 
-
+For Intellij to pickup the required Tornado dependencies from the poms, go to **View > Tool Windows > Maven** and select **jdk-8** under profiles.
 
 ## Required Plugins:
 
