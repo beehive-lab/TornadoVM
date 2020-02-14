@@ -25,7 +25,7 @@ public class PTXSuitesProvider implements TornadoSuitesProvider {
     public PTXSuitesProvider(OptionValues options, GraphBuilderConfiguration.Plugins plugins, MetaAccessProvider metaAccessProvider, PTXCompilerConfiguration compilerConfig, AddressLoweringPhase.AddressLowering addressLowering) {
         graphBuilderSuite = createGraphBuilderSuite(plugins);
         canonicalizer = new PTXCanonicalizer();
-        suites = new TornadoSuites(options, compilerConfig, canonicalizer, addressLowering);
+        suites = new TornadoSuites(options, compilerConfig, metaAccessProvider, canonicalizer, addressLowering);
         lirSuites = createLIRSuites();
     }
 

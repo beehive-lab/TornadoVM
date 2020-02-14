@@ -6,10 +6,6 @@ import org.graalvm.compiler.phases.common.AddressLoweringPhase;
 
 public class PTXAddressLowering extends AddressLoweringPhase.AddressLowering {
 
-    @Override public AddressNode lower(ValueNode address) {
-        return null;
-    }
-
     @Override public AddressNode lower(ValueNode base, ValueNode offset) {
         return null;
     }

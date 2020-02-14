@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler;
 
+import jdk.vm.ci.meta.MetaAccessProvider;
 import org.graalvm.compiler.lir.phases.*;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.AddressLoweringPhase;
@@ -15,12 +16,12 @@ public class PTXCompilerConfiguration implements TornadoCompilerConfiguration {
     }
 
     @Override
-    public TornadoSketchTier createSketchTier(OptionValues options, CanonicalizerPhase.CustomCanonicalizer canonicalizer) {
+    public TornadoSketchTier createSketchTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization canonicalizer) {
         return new TornadoSketchTier(options, canonicalizer);
     }
 
     @Override
-    public TornadoHighTier createHighTier(OptionValues options, CanonicalizerPhase.CustomCanonicalizer canonicalizer) {
+    public TornadoHighTier createHighTier(OptionValues options, CanonicalizerPhase.CustomCanonicalization canonicalizer, MetaAccessProvider metaAccessProvider) {
         return null;
     }
 

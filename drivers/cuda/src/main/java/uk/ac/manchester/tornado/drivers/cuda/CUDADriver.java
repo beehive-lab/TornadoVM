@@ -58,7 +58,7 @@ public class CUDADriver extends TornadoLogger implements TornadoAcceleratorDrive
     private void installDevice(int deviceIndex, OptionValues options, HotSpotJVMCIRuntime vmRuntime, TornadoVMConfig vmConfig) {
         CUDADevice device = CUDA.getPlatform().getDevice(deviceIndex);
         info("Creating backend for %s", device.getDeviceName());
-        backends[deviceIndex] = PTXHotSpotBackendFactory.createBackend(options, vmRuntime.getHostJVMCIBackend(), vmConfig, device);
+        backends[deviceIndex] = PTXHotSpotBackendFactory.createBackend(options, vmRuntime, vmConfig, device);
     }
 
     @Override

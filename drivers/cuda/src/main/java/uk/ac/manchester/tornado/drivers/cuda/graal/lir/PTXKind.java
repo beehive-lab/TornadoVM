@@ -93,19 +93,23 @@ public enum PTXKind implements PlatformKind {
         this.vectorLength = (elementKind == null) ? 1 : size;
     }
 
-    @Override public Key getKey() {
+    @Override
+    public Key getKey() {
         return null;
     }
 
-    @Override public int getSizeInBytes() {
-        return 0;
+    @Override
+    public int getSizeInBytes() {
+        return size;
     }
 
-    @Override public int getVectorLength() {
-        return 0;
+    @Override
+    public int getVectorLength() {
+        return vectorLength;
     }
 
-    @Override public char getTypeChar() {
+    @Override
+    public char getTypeChar() {
         return 0;
     }
 }
