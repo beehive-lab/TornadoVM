@@ -148,7 +148,6 @@ public class OCLCodeCache {
             System.out.println("Wrong file, please ensure you have configured the etc/fpga.conf file!");
             return;
         }
-        StringBuffer stringBuffer = new StringBuffer();
         String line;
 
         try {
@@ -164,13 +163,6 @@ public class OCLCodeCache {
                         break;
                     case "FLAGS":
                         compilationFlags = line.split("=")[1];
-                        break;
-                    case "POST_COMMAND":
-                        if(line.split("=").length>1) {
-			                StringJoiner postCommand = new StringJoiner(" ", System.getenv("TORNADO_SDK") + "/bin/" + line.split("=")[1], "");
-			                System.out.println("Post command: " + postCommand.toString());
-                            postCompilationCommand = postCommand.toString().split(" ");
-                        }
                         break;
                     default:
                         break;
@@ -442,7 +434,6 @@ public class OCLCodeCache {
                 invokeShellCommand(compilationCommand);
                 invokeShellCommand(commandRename);
                 invokeShellCommand(linkCommand);
-                invokeShellCommand(postCompilationCommand);
             }
             return installEntryPointForBinaryForFPGAs(id, path, LOOKUP_BUFFER_KERNEL_NAME);
         } else {
