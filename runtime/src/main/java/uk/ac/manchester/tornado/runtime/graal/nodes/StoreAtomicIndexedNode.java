@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -23,14 +25,13 @@
  */
 package uk.ac.manchester.tornado.runtime.graal.nodes;
 
-import static org.graalvm.compiler.nodeinfo.InputType.State;
-
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.java.AccessIndexedNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.Virtualizable;
@@ -47,22 +48,19 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     @Input ValueNode value;
     @Input ValueNode accumulator;
     @Input ValueNode inputArray;
-
-    @OptionalInput(State) FrameState stateAfter;
-    @OptionalInput ValueNode extraOperation;
-    @OptionalInput ValueNode startNode;
+    @Input StoreAtomicIndexedNodeExtension extension;
     //@formatter:on
 
     @Override
     public FrameState stateAfter() {
-        return stateAfter;
+        return extension.getStateAfter();
     }
 
     @Override
     public void setStateAfter(FrameState x) {
         assert x == null || x.isAlive() : "frame state must be in a graph";
-        updateUsages(stateAfter, x);
-        stateAfter = x;
+        updateUsages(extension.getStateAfter(), x);
+        extension.setStateAfter(x);
     }
 
     @Override
@@ -74,12 +72,13 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
         return value;
     }
 
-    public StoreAtomicIndexedNode(ValueNode outputArray, ValueNode index, JavaKind elementKind, ValueNode value, ValueNode accumulator, ValueNode inputArray, ValueNode startNode) {
-        super(TYPE, StampFactory.forVoid(), outputArray, index, elementKind);
+    public StoreAtomicIndexedNode(ValueNode outputArray, ValueNode index, JavaKind elementKind, GuardingNode boundsCheck, ValueNode value, ValueNode accumulator, ValueNode inputArray,
+            StoreAtomicIndexedNodeExtension extension) {
+        super(TYPE, StampFactory.forVoid(), outputArray, index, boundsCheck, elementKind);
         this.value = value;
         this.accumulator = accumulator;
         this.inputArray = inputArray;
-        this.startNode = startNode;
+        this.extension = extension;
     }
 
     @Override
@@ -88,7 +87,7 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     }
 
     public FrameState getState() {
-        return stateAfter;
+        return extension.getStateAfter();
     }
 
     public ValueNode getAccumulator() {
@@ -96,7 +95,7 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     }
 
     public ValueNode getStartNode() {
-        return startNode;
+        return extension.getStartNode();
     }
 
     public ValueNode getInputArray() {
@@ -104,10 +103,14 @@ public final class StoreAtomicIndexedNode extends AccessIndexedNode implements S
     }
 
     public void setOptionalOperation(ValueNode node) {
-        this.extraOperation = node;
+        extension.setExtraOperation(node);
     }
 
     public ValueNode getExtraOperation() {
-        return extraOperation;
+        return extension.getExtraOperation();
+    }
+
+    public StoreAtomicIndexedNodeExtension getExtension() {
+        return extension;
     }
 }

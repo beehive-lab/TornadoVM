@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -23,15 +25,15 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.graal.phases;
 
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy.PER_BLOCK;
 import static uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy.PER_ITERATION;
 
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.DivNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.phases.BasePhase;
@@ -40,6 +42,7 @@ import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadIdNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.GlobalThreadSizeNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.OCLIntBinaryIntrinsicNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.calc.DivNode;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.graal.nodes.AbstractParallelNode;
@@ -115,13 +118,13 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
 
     // CPU-Scheduling with Stride
     private void buildBlockSize(StructuredGraph graph, ParallelRangeNode range) {
-        final DivNode rangeByStride = graph.addOrUnique(new DivNode(range.value(), range.stride().value()));
+        final ValueNode rangeByStride = graph.addOrUnique(DivNode.create(range.value(), range.stride().value()));
         final SubNode trueRange = graph.addOrUnique(new SubNode(rangeByStride, range.offset().value()));
         final ConstantNode index = ConstantNode.forInt(range.index(), graph);
         final GlobalThreadSizeNode threadCount = graph.addOrUnique(new GlobalThreadSizeNode(index));
         final SubNode threadCountM1 = graph.addOrUnique(new SubNode(threadCount, ConstantNode.forInt(1, graph)));
         final AddNode adjustedTrueRange = graph.addOrUnique(new AddNode(trueRange, threadCountM1));
-        final DivNode div = graph.addOrUnique(new DivNode(adjustedTrueRange, threadCount));
+        final ValueNode div = graph.addOrUnique(DivNode.create(adjustedTrueRange, threadCount));
         blockSize = graph.addOrUnique(new MulNode(div, range.stride().value()));
     }
 
@@ -145,13 +148,13 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
     // ========================================
     // GPU-Scheduling
     private void buildBlockSizeAccelerator(StructuredGraph graph, ParallelRangeNode range) {
-        final DivNode rangeByStride = graph.addOrUnique(new DivNode(range.value(), range.stride().value()));
+        final ValueNode rangeByStride = graph.addOrUnique(DivNode.create(range.value(), range.stride().value()));
         final SubNode trueRange = graph.addOrUnique(new SubNode(rangeByStride, range.offset().value()));
         final ConstantNode index = ConstantNode.forInt(range.index(), graph);
         final GlobalThreadSizeNode threadCount = graph.addOrUnique(new GlobalThreadSizeNode(index));
         final SubNode threadCountM1 = graph.addOrUnique(new SubNode(threadCount, ConstantNode.forInt(1, graph)));
         final AddNode adjustedTrueRange = graph.addOrUnique(new AddNode(trueRange, threadCountM1));
-        blockSize = graph.addOrUnique(new DivNode(adjustedTrueRange, threadCount));
+        blockSize = graph.addOrUnique(DivNode.create(adjustedTrueRange, threadCount));
     }
 
     // GPU-Scheduling
@@ -192,7 +195,7 @@ public class TornadoParallelScheduler extends BasePhase<TornadoHighTierContext> 
             } else {
                 serialiseLoop(node);
             }
-            Debug.dump(Debug.BASIC_LEVEL, graph, "after scheduling loop index=" + node.index());
+            getDebugContext().dump(DebugContext.BASIC_LEVEL, graph, "after scheduling loop index=" + node.index());
         });
         graph.clearLastSchedule();
     }

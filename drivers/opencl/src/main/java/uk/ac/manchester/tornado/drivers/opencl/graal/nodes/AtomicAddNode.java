@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -40,7 +42,7 @@ public class AtomicAddNode extends AccessIndexedNode implements Lowerable {
     @Input ValueNode value;
 
     public AtomicAddNode(ValueNode array, ValueNode index, JavaKind elementKind, ValueNode value) {
-        super(TYPE, StampFactory.forVoid(), array, index, elementKind);
+        super(TYPE, StampFactory.forVoid(), array, index, null, elementKind);
         this.value = value;
     }
 

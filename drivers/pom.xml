@@ -13,27 +13,48 @@
         <module>opencl-jni</module>
     </modules>
 
-    <dependencies>
-        <dependency>
-            <groupId>graal</groupId>
-            <artifactId>graal</artifactId>
-            <version>${graal.version}</version>
-        </dependency>
+    <profiles>
+        <!--        We are forced to duplicate this for the two different profiles -->
+        <profile>
+            <id>jdk-8</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.graalvm.compiler</groupId>
+                    <artifactId>compiler</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>jvmci</groupId>
+                    <artifactId>api</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>jvmci</groupId>
+                    <artifactId>hotspot</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
 
-        <dependency>
-            <groupId>jvmci</groupId>
-            <artifactId>api</artifactId>
-            <scope>system</scope>
-            <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-api.jar</systemPath>
-            <version>${jvmci.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>jvmci</groupId>
-            <artifactId>hotspot</artifactId>
-            <scope>system</scope>
-            <systemPath>${jvmci.root}/jre/lib/jvmci/jvmci-hotspot.jar</systemPath>
-            <version>${jvmci.version}</version>
-        </dependency>
-    </dependencies>
+        <profile>
+            <id>graal-jdk-8</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.graalvm.compiler</groupId>
+                    <artifactId>compiler</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>jvmci</groupId>
+                    <artifactId>api</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>jvmci</groupId>
+                    <artifactId>hotspot</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>

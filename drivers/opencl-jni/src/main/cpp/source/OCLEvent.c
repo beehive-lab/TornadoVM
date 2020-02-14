@@ -2,6 +2,8 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -90,9 +92,9 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_opencl_OCLEvent_clW
 	cl_event* events;
 
 	if (array != NULL) {
-		len = (*env)->GetArrayLength(env, array);
 		events = (*env)->GetPrimitiveArrayCritical(env, array, NULL);
-	    
+		len = (*env)->GetArrayLength(env, array);
+
 		OPENCL_SOFT_ERROR("clWaitForEvents",
     	        clWaitForEvents((cl_uint) len, (const cl_event *) events), 0);
 

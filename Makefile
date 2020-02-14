@@ -1,10 +1,10 @@
 all: build
 
 build: 
-	./bin/compile.sh
+	./bin/compile.sh jdk-8
 
 offline:
-	./bin/compile.sh OFFLINE
+	./bin/compile.sh jdk-8 OFFLINE
 
 clean: 
 	mvn clean

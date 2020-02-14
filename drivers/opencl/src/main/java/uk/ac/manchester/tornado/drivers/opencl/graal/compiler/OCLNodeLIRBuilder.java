@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2020, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2018, 2019, APT Group, School of Computer Science,
  * The University of Manchester. All rights reserved.
  * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
@@ -26,7 +28,7 @@ package uk.ac.manchester.tornado.drivers.opencl.graal.compiler;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind.ILLEGAL;
-import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 import java.util.Collection;
@@ -40,7 +42,6 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.gen.NodeLIRBuilder;
 import org.graalvm.compiler.core.gen.NodeMatchRules;
 import org.graalvm.compiler.core.match.ComplexMatchValue;
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.lir.ConstantValue;
@@ -67,6 +68,7 @@ import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.LoweredCallTargetNode;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.SafepointNode;
@@ -112,6 +114,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLNullary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLReturnSlot;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLUnary;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.PragmaUnrollNode;
+import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.ThreadConfigurationNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalAndNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalEqualsNode;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.logic.LogicalNotNode;
@@ -143,7 +146,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     public void emitInvoke(Invoke x) {
         LoweredCallTargetNode callTarget = (LoweredCallTargetNode) x.callTarget();
 
-        final Stamp stamp = x.asNode().stamp();
+        final Stamp stamp = x.asNode().stamp(NodeView.DEFAULT);
         LIRKind lirKind = resolveStamp(stamp);
         AllocatableValue result = Value.ILLEGAL;
 
@@ -217,7 +220,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
             // Allow NodeLIRBuilder subclass to specialise code generation of any
             // interesting groups of instructions
-            matchComplexExpressions(nodes);
+            matchComplexExpressions(block, graph.getLastSchedule());
 
             for (int i = 0; i < nodes.size(); i++) {
                 final Node node = nodes.get(i);
@@ -243,9 +246,9 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
                         Value operand = operand(valueNode);
                         if (ComplexMatchValue.INTERIOR_MATCH.equals(operand)) {
                             // Doesn't need to be evaluated
-                            Debug.log("interior match for %s", valueNode);
+                            getDebugContext().log("interior match for %s", valueNode);
                         } else if (operand instanceof ComplexMatchValue) {
-                            Debug.log("complex match for %s", valueNode);
+                            getDebugContext().log("complex match for %s", valueNode);
                             final ComplexMatchValue match = (ComplexMatchValue) operand;
                             operand = match.evaluate(this);
                             if (operand != null) {
@@ -267,10 +270,10 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
     }
 
     private void doRoot(ValueNode instr) {
-        Debug.log("Visiting %s", instr);
+        getDebugContext().log("Visiting %s", instr);
         emitNode(instr);
         if (hasOperand(instr)) {
-            Debug.log("Operand for %s = %s", instr, operand(instr));
+            getDebugContext().log("Operand for %s = %s", instr, operand(instr));
         }
     }
 
@@ -616,7 +619,7 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
             final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
             int index = 0;
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
-                LIRKind lirKind = getGen().getLIRKind(param.stamp());
+                LIRKind lirKind = getGen().getLIRKind(param.stamp(NodeView.DEFAULT));
                 setResult(param, new OCLNullary.Parameter(locals[index].getName(), lirKind));
                 index++;
             }
@@ -707,13 +710,13 @@ public class OCLNodeLIRBuilder extends NodeLIRBuilder {
 
     @Override
     protected LIRKind getPhiKind(PhiNode phi) {
-        Stamp stamp = phi.stamp();
+        Stamp stamp = phi.stamp(NodeView.DEFAULT);
         if (stamp.isEmpty()) {
             for (ValueNode n : phi.values()) {
                 if (stamp.isEmpty()) {
-                    stamp = n.stamp();
+                    stamp = n.stamp(NodeView.DEFAULT);
                 } else {
-                    stamp = stamp.meet(n.stamp());
+                    stamp = stamp.meet(n.stamp(NodeView.DEFAULT));
                 }
             }
             phi.setStamp(stamp);
