@@ -18,7 +18,7 @@ public class CUDAContext extends TornadoLogger {
         cuCtxCreate(device.getIndex());
 
         stream = new CUDAStream(device.getIndex());
-        deviceContext = new CUDADeviceContext(device, this, stream);
+        deviceContext = new CUDADeviceContext(device, stream);
 
         allocatedRegionCount = 0;
         allocatedRegions = new long[MAX_ALLOCATED_REGIONS];

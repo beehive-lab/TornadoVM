@@ -6,9 +6,11 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
 import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDATornadoDevice;
+import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.Initialisable;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.nio.ByteOrder;
 
@@ -18,14 +20,12 @@ public class CUDADeviceContext
         extends TornadoLogger implements Initialisable, TornadoDeviceContext {
 
     private final CUDADevice device;
-    private final CUDAContext context;
     private final CUDAMemoryManager memoryManager;
     private final CUDAStream stream;
     private boolean wasReset;
 
-    public CUDADeviceContext(CUDADevice device, CUDAContext context, CUDAStream stream) {
+    public CUDADeviceContext(CUDADevice device, CUDAStream stream) {
         this.device = device;
-        this.context = context;
         this.stream = stream;
 
         memoryManager = new CUDAMemoryManager(this);
@@ -57,7 +57,8 @@ public class CUDADeviceContext
     }
 
     public TornadoInstalledCode installCode(PTXCompilationResult result) {
-        return new PTXInstalledCode("foo");
+        CUDAModule module = new CUDAModule(result.getTargetCode());
+        return new PTXInstalledCode(result.getName(), module, this);
     }
 
     public CUDADevice getDevice() {
@@ -176,5 +177,9 @@ public class CUDADeviceContext
     public void dumpEvents() {
         //TODO: Implement
         unimplemented();
+    }
+
+    public int enqueueKernelLaunch(CUDAModule module, String functionName, CallStack stack, TaskMetaData meta, long batchThreads) {
+        return 0;
     }
 }

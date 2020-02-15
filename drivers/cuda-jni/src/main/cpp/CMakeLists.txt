@@ -13,6 +13,7 @@ file(GLOB_RECURSE SOURCE_FILES "*.c")
 add_library(tornado-cuda SHARED
 source/CUDAPlatform.c
 source/CUDAContext.c
+source/CUDAModule.c
 source/CUDAStream.c
 source/CUDADevice.c
 source/CUDA.c
