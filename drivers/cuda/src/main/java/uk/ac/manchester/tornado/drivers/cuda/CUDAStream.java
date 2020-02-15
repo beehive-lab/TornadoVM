@@ -7,31 +7,42 @@ public class CUDAStream extends TornadoLogger {
 
     }
 
-    private native static int writeArrayHtoDAsync(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents);
+    private native static int writeArrayDtoH(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents);
+    private native static int writeArrayDtoH(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents);
+
+    private native static int writeArrayDtoHAsync(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents);
+    private native static int writeArrayDtoHAsync(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents);
+
+    private native static void writeArrayHtoD(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents);
+    private native static void writeArrayHtoD(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents);
+
     private native static int writeArrayHtoDAsync(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents);
+    private native static int writeArrayHtoDAsync(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents);
 
     public int enqueueRead(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
-        return 0;
+        return writeArrayDtoH(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueRead(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents) {
-        return 0;
+        writeArrayDtoH(bufferId, offset, length, array, hostOffset, waitEvents);
+        return -1;
     }
 
     public int enqueueAsyncRead(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
-        return 0;
+        return writeArrayDtoHAsync(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueAsyncRead(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents) {
-        return 0;
+        return writeArrayDtoHAsync(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
-    public void enqueueWrite(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
 
+    public void enqueueWrite(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        writeArrayHtoD(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
     public void enqueueWrite(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents) {
-
+        writeArrayHtoD(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueAsyncWrite(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
