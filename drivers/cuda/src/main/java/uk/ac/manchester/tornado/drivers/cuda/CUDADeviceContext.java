@@ -21,6 +21,7 @@ public class CUDADeviceContext
     private final CUDAContext context;
     private final CUDAMemoryManager memoryManager;
     private final CUDAStream stream;
+    private boolean wasReset;
 
     public CUDADeviceContext(CUDADevice device, CUDAContext context, CUDAStream stream) {
         this.device = device;
@@ -28,6 +29,7 @@ public class CUDADeviceContext
         this.stream = stream;
 
         memoryManager = new CUDAMemoryManager(this);
+        wasReset = false;
     }
 
     @Override public CUDAMemoryManager getMemoryManager() {
@@ -39,7 +41,7 @@ public class CUDADeviceContext
     }
 
     @Override public boolean wasReset() {
-        return false;
+        return wasReset;
     }
 
     @Override public void setResetToFalse() {
@@ -166,7 +168,9 @@ public class CUDADeviceContext
 
     public void reset() {
         //TODO: Implement
-        unimplemented();
+        //stream.reset();
+        memoryManager.reset();
+        wasReset = true;
     }
 
     public void dumpEvents() {
