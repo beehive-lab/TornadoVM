@@ -1,11 +1,6 @@
 #include <jni.h>
 #include <cuda.h>
 
-void to_module(JNIEnv *env, CUmodule *module_ptr, jbyteArray javaWrapper) {
-    char *module = (char *) module_ptr;
-    (*env)->GetByteArrayRegion(env, javaWrapper, 0, sizeof(CUmodule), module);
-}
-
 jbyteArray from_module(JNIEnv *env, CUmodule *module) {
     jbyteArray array = (*env)->NewByteArray(env, sizeof(CUmodule));
 

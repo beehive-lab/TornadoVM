@@ -4,8 +4,8 @@ import org.graalvm.compiler.code.CompilationResult;
 
 public class PTXCompilationResult extends CompilationResult {
 
-    public PTXCompilationResult(String add, String s) {
-        super(add);
+    public PTXCompilationResult(String functionName, String s) {
+        super(functionName);
         byte[] code = s.getBytes();
         this.setTargetCode(code, code.length);
     }

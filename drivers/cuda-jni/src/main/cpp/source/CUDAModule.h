@@ -9,6 +9,11 @@
 extern "C" {
 #endif
 
+void array_to_module(JNIEnv *env, CUmodule *module_ptr, jbyteArray javaWrapper) {
+    char *module = (char *) module_ptr;
+    (*env)->GetByteArrayRegion(env, javaWrapper, 0, sizeof(CUmodule), module);
+}
+
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAModule
  * Method:    cuModuleLoadData

@@ -1,10 +1,18 @@
 package uk.ac.manchester.tornado.drivers.cuda;
 
+import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
+import java.nio.ByteBuffer;
 
 public class CUDAStream extends TornadoLogger {
-    public CUDAStream(int index) {
 
+    private CUDAContext context;
+
+    public CUDAStream(CUDAContext context) {
+
+        this.context = context;
     }
 
     private native static int writeArrayDtoH(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents);
@@ -53,5 +61,26 @@ public class CUDAStream extends TornadoLogger {
 
     public int enqueueAsyncWrite(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents) {
         return writeArrayHtoDAsync(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
+    public int enqueueKernelLaunch(CUDAModule module, String functionName, CallStack stack, TaskMetaData meta, long batchThreads) {
+        return cuLaunchKernel(module.nativeModule, functionName, 1, 1, 1, 1, 1, 1, 0, null, getHardcodedParamsForSuperSketchyKernel());
+    }
+
+    private byte[] getHardcodedParamsForSuperSketchyKernel() {
+        long baseAddress = context.getDeviceContext().getMemoryManager().toBuffer();
+        long aAddr = baseAddress + 8320;
+        long bAddr = baseAddress + 8448;
+        long cAddr = baseAddress + 8576;
+        long length = 8;
+
+        ByteBuffer arguments = ByteBuffer.allocate(32);
+        arguments.order(context.getDeviceContext().getByteOrder());
+        arguments.putLong(length);
+        arguments.putLong(aAddr);
+        arguments.putLong(bAddr);
+        arguments.putLong(cAddr);
+
+        return arguments.array();
     }
 }

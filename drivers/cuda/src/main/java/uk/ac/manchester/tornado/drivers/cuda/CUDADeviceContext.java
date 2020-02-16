@@ -180,6 +180,6 @@ public class CUDADeviceContext
     }
 
     public int enqueueKernelLaunch(CUDAModule module, String functionName, CallStack stack, TaskMetaData meta, long batchThreads) {
-        return 0;
+        return stream.enqueueKernelLaunch(module, functionName, stack, meta, batchThreads);
     }
 }

@@ -71,6 +71,14 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_wri
 JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_writeArrayHtoDAsync__JJJ_3BJ_3I
   (JNIEnv *, jclass, jlong, jlong, jlong, jbyteArray, jlong, jintArray);
 
+/*
+* Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
+* Method:    cuLaunchKernel
+* Signature: ([BLjava/lang/String;IIIIIIJ[B[B)I
+*/
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuLaunchKernel
+(JNIEnv *, jclass, jbyteArray, jstring, jint, jint, jint, jint, jint, jint, jlong, jbyteArray, jbyteArray);
+
 #ifdef __cplusplus
 }
 #endif
