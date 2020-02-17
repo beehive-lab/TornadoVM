@@ -408,7 +408,7 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return result;
     }
 
-    private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg, OCLDeviceContext device, long batchSize) throws TornadoOutOfMemoryException {
+    private ObjectBuffer createDeviceBuffer(Class<?> type, Object arg, OCLDeviceContext device, long batchSize) {
         ObjectBuffer result = null;
         if (type.isArray()) {
 
@@ -438,21 +438,18 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
     }
 
     private void reserveMemory(Object object, long batchSize, TornadoDeviceObjectState state) {
-        try {
-            final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
-            buffer.allocate(object, batchSize);
-            state.setBuffer(buffer);
 
-            final Class<?> type = object.getClass();
-            if (!type.isArray()) {
-                checkBatchSize(batchSize);
-                buffer.write(object);
-            }
+        final ObjectBuffer buffer = createDeviceBuffer(object.getClass(), object, getDeviceContext(), batchSize);
+        buffer.allocate(object, batchSize);
+        state.setBuffer(buffer);
 
-            state.setValid(true);
-        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
-            e.printStackTrace();
+        final Class<?> type = object.getClass();
+        if (!type.isArray()) {
+            checkBatchSize(batchSize);
+            buffer.write(object);
         }
+
+        state.setValid(true);
     }
 
     private void checkForResizeBuffer(Object object, long batchSize, TornadoDeviceObjectState state) {
