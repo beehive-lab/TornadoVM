@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.common.Access;
-import uk.ac.manchester.tornado.api.exceptions.TornadoException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
@@ -81,10 +80,6 @@ public class OpenCL {
                 OpenCL.cleanup();
             }
         });
-    }
-
-    public static void throwException(String message) throws TornadoException {
-        throw new TornadoException(message);
     }
 
     native static boolean registerCallback();
