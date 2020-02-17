@@ -4,6 +4,8 @@ import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.DeviceObjectState;
 
+import java.nio.ByteBuffer;
+
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.DEBUG;
@@ -14,6 +16,7 @@ public class CUDACallStack extends CUDAByteBuffer implements CallStack {
 
     private final int numArgs;
     private boolean onDevice;
+    private byte argStart;
 
     public CUDACallStack(long offset, int numArgs, CUDADeviceContext deviceContext) {
         super((numArgs + RESERVED_SLOTS) << 3, offset, deviceContext);
@@ -29,9 +32,14 @@ public class CUDACallStack extends CUDAByteBuffer implements CallStack {
         buffer.putLong(toAbsoluteAddress());
         buffer.putInt(0);
         buffer.putInt(numArgs);
-        buffer.mark();
+        setArgStart(buffer);
 
         onDevice = false;
+    }
+
+    private void setArgStart(ByteBuffer buffer) {
+        argStart = (byte) buffer.position();
+        buffer.mark();
     }
 
     @Override
@@ -117,5 +125,13 @@ public class CUDACallStack extends CUDAByteBuffer implements CallStack {
     public int enqueueWrite(int[] events) {
         onDevice = true;
         return super.enqueueWrite(events);
+    }
+
+    public long getAddress() {
+        return super.toAbsoluteAddress();
+    }
+
+    public byte getArgPos() {
+        return argStart;
     }
 }

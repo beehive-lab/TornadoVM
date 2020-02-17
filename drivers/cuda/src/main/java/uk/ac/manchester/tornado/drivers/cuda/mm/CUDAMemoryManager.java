@@ -19,7 +19,6 @@ public class CUDAMemoryManager extends TornadoLogger implements TornadoMemoryPro
     private long heapPosition;
     private long heapLimit;
     private CUDADeviceContext deviceContext;
-    private long deviceBufferAddress;
     private long callStackPosition;
     private long callStackLimit;
     private long deviceHeapPointer;
@@ -35,9 +34,9 @@ public class CUDAMemoryManager extends TornadoLogger implements TornadoMemoryPro
     }
 
     public void init(PTXBackend backend, long address) {
-        deviceBufferAddress = address;
+        deviceHeapPointer = address;
         initialised = true;
-        info("Located heap @ 0x%x (%s) on %s", deviceBufferAddress, RuntimeUtilities.humanReadableByteCount(heapLimit, false), deviceContext.getDevice().getDeviceName());
+        info("Located heap @ 0x%x (%s) on %s", deviceHeapPointer, RuntimeUtilities.humanReadableByteCount(heapLimit, false), deviceContext.getDevice().getDeviceName());
         scheduleMeta.setDevice(backend.getDeviceContext().asMapping());
     }
 
@@ -45,9 +44,9 @@ public class CUDAMemoryManager extends TornadoLogger implements TornadoMemoryPro
         callStackPosition = 0;
         heapPosition = callStackLimit;
         Tornado.info("Reset heap @ 0x%x (%s) on %s",
-                deviceBufferAddress,
-                RuntimeUtilities.humanReadableByteCount(heapLimit, true),
-                deviceContext.getDevice().getDeviceName()
+                     deviceHeapPointer,
+                     RuntimeUtilities.humanReadableByteCount(heapLimit, true),
+                     deviceContext.getDevice().getDeviceName()
         );
     }
 
@@ -130,8 +129,10 @@ public class CUDAMemoryManager extends TornadoLogger implements TornadoMemoryPro
     public long toAbsoluteDeviceAddress(long address) {
         long result = address;
 
-        guarantee(address + deviceBufferAddress >= 0, "absolute address may have wrapped arround: %d + %d = %d", address, deviceBufferAddress, address + deviceBufferAddress);
-        result += deviceBufferAddress;
+        guarantee(address + deviceHeapPointer >= 0, "absolute address may have wrapped arround: %d + %d = %d", address,
+                  deviceHeapPointer, address + deviceHeapPointer
+        );
+        result += deviceHeapPointer;
 
         return result;
     }

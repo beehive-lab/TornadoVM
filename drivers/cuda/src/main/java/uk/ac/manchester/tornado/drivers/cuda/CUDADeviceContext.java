@@ -4,6 +4,7 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResult;
+import uk.ac.manchester.tornado.drivers.cuda.mm.CUDACallStack;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
 import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDATornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
@@ -12,6 +13,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
@@ -180,6 +182,25 @@ public class CUDADeviceContext
     }
 
     public int enqueueKernelLaunch(CUDAModule module, String functionName, CallStack stack, TaskMetaData meta, long batchThreads) {
-        return stream.enqueueKernelLaunch(module, functionName, stack, meta, batchThreads);
+        return stream.enqueueKernelLaunch(module, functionName, getKernelParams((CUDACallStack) stack));
+    }
+
+    private byte[] getKernelParams(CUDACallStack stack) {
+        ByteBuffer args = ByteBuffer.allocate(17);
+        args.order(getByteOrder());
+
+        // Heap pointer
+        args.putLong(memoryManager.toBuffer());
+
+        // Stack pointer
+        if (!stack.isOnDevice()) stack.write();
+        long address = stack.getAddress();
+        args.putLong(address);
+
+        // Arg start
+        args.put(stack.getArgPos());
+
+
+        return args.array();
     }
 }

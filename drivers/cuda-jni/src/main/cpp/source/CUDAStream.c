@@ -185,5 +185,8 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_cuL
             NULL,
             arg_config
     );
+
+    result = cuCtxSynchronize();
+
     return (jint) -1;
 }
