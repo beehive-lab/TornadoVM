@@ -106,8 +106,20 @@ export CMAKE_ROOT=/opt/cmake-3.10.1
 ```bash
 $ cd ~/tornadovm
 $ . etc/sources.env
+```
+
+To build with GraalVM and JDK 8
+
+```bash
 $ make 
 ```
+
+To build with GraalVM and JDK 11:
+
+```bash
+$ make graal-jdk-11 
+```
+
 and done!! 
 
 ## Know issues 

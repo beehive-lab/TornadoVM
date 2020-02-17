@@ -3,6 +3,12 @@ all: build
 build: 
 	./bin/compile.sh jdk-8
 
+build-graal-jdk-8: 
+	./bin/compile.sh jdk-8
+
+graal-jdk-11: 
+	./bin/compile.sh graal-jdk-11
+
 offline:
 	./bin/compile.sh jdk-8 OFFLINE
 
