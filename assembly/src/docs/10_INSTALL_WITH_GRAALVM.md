@@ -18,6 +18,7 @@ TornadoVM has been succefully tested on the following platforms:
   * Fedora >= 21
   * Ubuntu >= 16.04
   * Mac OS X Mojave 10.14.6
+  * Mac OS X Catalina 10.15.1 
 
 
 ## Installation
