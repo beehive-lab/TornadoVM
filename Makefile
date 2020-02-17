@@ -4,7 +4,7 @@ build:
 	./bin/compile.sh jdk-8
 
 graal-jdk-8: 
-	./bin/compile.sh jdk-8
+	./bin/compile.sh graal-jdk-8
 
 graal-jdk-11: 
 	./bin/compile.sh graal-jdk-11

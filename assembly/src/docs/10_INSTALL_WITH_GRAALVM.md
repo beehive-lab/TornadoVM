@@ -111,7 +111,7 @@ $ . etc/sources.env
 To build with GraalVM and JDK 8
 
 ```bash
-$ make 
+$ make graal-jdk-8
 ```
 
 To build with GraalVM and JDK 11:
