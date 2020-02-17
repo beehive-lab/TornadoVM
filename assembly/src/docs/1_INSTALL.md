@@ -1,4 +1,4 @@
-# Installing TornadoVM #
+# Installing TornadoVM 
 
 ### Pre-requisites
 
