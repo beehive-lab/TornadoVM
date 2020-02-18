@@ -3,7 +3,7 @@
 
 #include "CUDAModule.h"
 
-//TODO: Make async calls async (create stream, destroy stream, manage events)
+//TODO: Make async calls async (create stream, destroy stream, manage events), DRY
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
@@ -14,10 +14,12 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_wri
   (JNIEnv *env, jclass clazz, jlong device_ptr, jlong offset, jlong length, jbyteArray array, jlong host_offset, jintArray wait_events) {
     CUdeviceptr start_ptr = (CUdeviceptr) device_ptr + (unsigned int) offset;
 
-    char native_array[(unsigned int) length];
+    char *native_array = malloc((unsigned int) length);
     CUresult result = cuMemcpyDtoH(native_array, start_ptr, (size_t) length);
 
     (*env)->SetIntArrayRegion(env, array, host_offset, length, native_array);
+
+    free(native_array);
 
     return (jint) -1;
 }
@@ -32,10 +34,12 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_wri
 
     CUdeviceptr start_ptr = (CUdeviceptr) device_ptr + (unsigned int) offset;
 
-    int native_array[(unsigned int) length / sizeof(int)];
+    int *native_array = (int *) malloc((unsigned int) length * sizeof(int));
     CUresult result = cuMemcpyDtoH(native_array, start_ptr, (size_t) length);
 
     (*env)->SetIntArrayRegion(env, array, host_offset, length / sizeof(int), native_array);
+
+    free(native_array);
 
     return (jint) -1;
 }
@@ -49,10 +53,12 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_wri
   (JNIEnv *env, jclass clazz, jlong device_ptr, jlong offset, jlong length, jbyteArray array, jlong host_offset, jintArray wait_events) {
     CUdeviceptr start_ptr = (CUdeviceptr) device_ptr + (unsigned int) offset;
 
-    char native_array[(unsigned int) length];
+    char *native_array = malloc((unsigned int) length);
     CUresult result = cuMemcpyDtoH(native_array, start_ptr, (size_t) length);
 
     (*env)->SetIntArrayRegion(env, array, host_offset, length, native_array);
+
+    free(native_array);
 
     return (jint) -1;
 }
@@ -66,10 +72,12 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_wri
   (JNIEnv *env, jclass clazz, jlong device_ptr, jlong offset, jlong length, jintArray array, jlong host_offset, jintArray wait_events) {
     CUdeviceptr start_ptr = (CUdeviceptr) device_ptr + (unsigned int) offset;
 
-    int native_array[(unsigned int) length / sizeof(int)];
+    int *native_array = (int *) malloc((unsigned int) length * sizeof(int));
     CUresult result = cuMemcpyDtoH(native_array, start_ptr, (size_t) length);
 
     (*env)->SetIntArrayRegion(env, array, host_offset, length / sizeof(int), native_array);
+
+    free(native_array);
 
     return (jint) -1;
 }
@@ -83,10 +91,12 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_wri
   (JNIEnv *env, jclass clazz, jlong device_ptr, jlong offset, jlong length, jintArray array, jlong host_offset, jintArray wait_events) {
     CUdeviceptr start_ptr = (CUdeviceptr) device_ptr + (unsigned int) offset;
 
-    int native_array[(unsigned int) length / sizeof(int)];
+    int *native_array = (int *) malloc((unsigned int) length * sizeof(int));
     (*env)->GetIntArrayRegion(env, array, host_offset / sizeof(int), length / sizeof(int), native_array);
 
     CUresult result = cuMemcpyHtoD(start_ptr, native_array, (size_t) length);
+
+    free(native_array);
 
     return;
 }
@@ -100,10 +110,12 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_wri
   (JNIEnv *env, jclass clazz, jlong device_ptr, jlong offset, jlong length, jbyteArray array, jlong host_offset, jintArray wait_events) {
     CUdeviceptr start_ptr = (CUdeviceptr) device_ptr + (unsigned int) offset;
 
-    char native_array[(unsigned int) length];
+    char *native_array = malloc((unsigned int) length);
     (*env)->GetByteArrayRegion(env, array, host_offset, length, native_array);
 
     CUresult result = cuMemcpyHtoD(start_ptr, native_array, (size_t) length);
+
+    free(native_array);
 
     return;
 }
@@ -118,10 +130,12 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_wri
   (JNIEnv *env, jclass clazz, jlong device_ptr, jlong offset, jlong length, jbyteArray array, jlong host_offset, jintArray wait_events) {
     CUdeviceptr start_ptr = (CUdeviceptr) device_ptr + (unsigned int) offset;
 
-    char native_array[(unsigned int) length];
+    char *native_array = malloc((unsigned int) length);
     (*env)->GetByteArrayRegion(env, array, host_offset, length, native_array);
 
     CUresult result = cuMemcpyHtoD(start_ptr, native_array, (size_t) length);
+
+    free(native_array);
 
     return (jint) -1;
 }
@@ -135,10 +149,12 @@ JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAStream_wri
   (JNIEnv *env, jclass clazz, jlong device_ptr, jlong offset, jlong length, jintArray array, jlong host_offset, jintArray wait_events) {
     CUdeviceptr start_ptr = (CUdeviceptr) device_ptr + (unsigned int) offset;
 
-    int native_array[(unsigned int) length / sizeof(int)];
+    int *native_array = (int *) malloc((unsigned int) length * sizeof(int));
     (*env)->GetIntArrayRegion(env, array, host_offset / sizeof(int), length / sizeof(int), native_array);
 
     CUresult result = cuMemcpyHtoD(start_ptr, native_array, (size_t) length);
+
+    free(native_array);
 
     return (jint) -1;
 }
