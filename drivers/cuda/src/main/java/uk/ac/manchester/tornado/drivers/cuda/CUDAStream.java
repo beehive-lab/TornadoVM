@@ -53,13 +53,14 @@ public class CUDAStream extends TornadoLogger {
     }
 
     public int enqueueAsyncWrite(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents) {
+        System.out.println("Async write");
         return writeArrayHtoDAsync(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueKernelLaunch(CUDAModule module, String functionName, byte[] kernelParams) {
+    public int enqueueKernelLaunch(CUDAModule module, String functionName, byte[] kernelParams, int[] gridDim, int[] blockDim) {
         return cuLaunchKernel(module.nativeModule, functionName,
-                              1, 1, 1,
-                              1, 1, 1,
+                              gridDim[0], gridDim[1], gridDim[2],
+                              blockDim[0], blockDim[1], blockDim[2],
                               0, null,
                               kernelParams
         );

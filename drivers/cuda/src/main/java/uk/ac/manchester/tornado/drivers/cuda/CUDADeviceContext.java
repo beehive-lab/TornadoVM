@@ -11,6 +11,7 @@ import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.Initialisable;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.tasks.meta.Coarseness;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.nio.ByteBuffer;
@@ -182,7 +183,36 @@ public class CUDADeviceContext
     }
 
     public int enqueueKernelLaunch(CUDAModule module, String functionName, CallStack stack, TaskMetaData meta, long batchThreads) {
-        return stream.enqueueKernelLaunch(module, functionName, getKernelParams((CUDACallStack) stack));
+        return stream.enqueueKernelLaunch(module,
+                                          functionName,
+                                          getKernelParams((CUDACallStack) stack),
+                                          calculateGrids(meta),
+                                          calculateBlocks(meta)
+        );
+    }
+
+    private int[] calculateBlocks(TaskMetaData meta) {
+        int[] defaultBlocks = {1, 1, 1};
+        int dims = 1; // meta.getDims(); - This is not yet implemented as it comes from the compiler.
+
+        for (int i = 0; i < dims && i < 3; i++) {
+            //TODO: Use meta info to calculate this
+            defaultBlocks[i] = 1;
+        }
+
+        return defaultBlocks;
+    }
+
+    private int[] calculateGrids(TaskMetaData meta) {
+        int[] defaultGrids = {1, 1, 1};
+        int dims = 1; // meta.getDims(); - This is not yet implemented as it comes from the compiler.
+
+        for (int i = 0 ; i < dims && i < 3; i++) {
+            //TODO: Use meta info to calculate this
+            defaultGrids[i] = 1;
+        }
+
+        return defaultGrids;
     }
 
     private byte[] getKernelParams(CUDACallStack stack) {
