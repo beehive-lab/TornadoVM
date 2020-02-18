@@ -14,7 +14,6 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class ReadWriteTests extends TornadoTestBase {
 

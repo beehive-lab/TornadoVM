@@ -84,11 +84,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.type.annotations.Vector;
-import uk.ac.manchester.tornado.drivers.opencl.OCLCodeCache;
-import uk.ac.manchester.tornado.drivers.opencl.OCLContext;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDevice;
-import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDescription;
+import uk.ac.manchester.tornado.drivers.opencl.*;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLCodeProvider;
@@ -244,10 +240,10 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
      * @return
      */
     public int[] getDriverAndDevice() {
-        int numDev = TornadoCoreRuntime.getTornadoRuntime().getDriver(1).getDeviceCount();
+        int numDev = TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class).getDeviceCount();
         int deviceIndex = 0;
         for (int i = 0; i < numDev; i++) {
-            OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(1).getDevice(i);
+            OCLTornadoDevice device = (OCLTornadoDevice) TornadoCoreRuntime.getTornadoRuntime().getDriver(OCLDriver.class).getDevice(i);
             OCLDevice dev = device.getDevice();
             if (dev == deviceContext.getDevice()) {
                 deviceIndex = i;

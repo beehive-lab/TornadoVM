@@ -23,10 +23,9 @@ add_library(tornado-cuda SHARED
 #Support for CUDA Integration
 FIND_PACKAGE(CUDA)
 if(CUDA_FOUND)
-	#set_property(TARGET tornado-cuda PROPERTY C_STANDARD 99)
+	set_property(TARGET tornado-cuda PROPERTY C_STANDARD 99)
 	set_target_properties(tornado-cuda PROPERTIES LINKER_LANGUAGE C)
 	target_link_libraries(tornado-cuda ${JNI_LIB_DIRS} -lcuda)
-	set_target_properties(tornado-cuda PROPERTIES LINK_FLAGS "-L $CUDA_PATH/lib64 -Wl,-rpath,$CUDA_PATH/lib64")
 else(CUDA_FOUND)
     message("CUDA is not installed on this system.")
 endif()
