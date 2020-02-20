@@ -2,7 +2,6 @@
 
 To enable the TornadoVM profiler use `-Dtornado.profiler=True`.
 
-
 Example:
 
 ```bash
@@ -28,30 +27,28 @@ $ tornado -Dtornado.profiler=True  uk.ac.manchester.tornado.examples.VectorAddIn
 All timers are printed in nanoseconds. 
 
 
+#### Explanation
 
-### Explanation
-
-* COPY_IN_TIME: OpenCL timers for copy in (host to device)
-* COPY_OUT_TIME: OpenCL timers for copy out (device to host)
-* TOTAL_KERNEL_TIME: It is the sum of all OpenCL kernel timers. For example, if a task-schedule contains 2 tasks, this timer reports the sum of execution of the two kernels.
-* TOTAL_BYTE_CODE_GENERATION: time spent in the Tornado bytecode generation
-* TOTAL_TASK_SCHEDULE_TIME: Total execution time. It contains all timers
-* TOTAL_GRAAL_COMPILE_TIME: Total compilation with Graal (from Java to OpenCL C)
-* TOTAL_DRIVER_COMPILE_TIME: Total compilation with the driver (once the OpenCL C code is generated, the time that the driver takes to generate the final binary, such as the PTX for NVIDIA).
+* *COPY_IN_TIME*: OpenCL timers for copy in (host to device)
+* *COPY_OUT_TIME*: OpenCL timers for copy out (device to host)
+* *TOTAL_KERNEL_TIME*: It is the sum of all OpenCL kernel timers. For example, if a task-schedule contains 2 tasks, this timer reports the sum of execution of the two kernels.
+* *TOTAL_BYTE_CODE_GENERATION*: time spent in the Tornado bytecode generation
+* *TOTAL_TASK_SCHEDULE_TIME*: Total execution time. It contains all timers
+* *TOTAL_GRAAL_COMPILE_TIME*: Total compilation with Graal (from Java to OpenCL C)
+* *TOTAL_DRIVER_COMPILE_TIME*: Total compilation with the driver (once the OpenCL C code is generated, the time that the driver takes to generate the final binary, such as the PTX for NVIDIA).
 
 
 Then, for each task within a task-schedule, there are usually three timers:
 
-* TASK_COMPILE_GRAAL_TIME: time that takes to compile a given task with Graal.
-* TASK_COMPILE_DRIVER_TIME: time that takes to compile a given task with the OpenCL driver.
-* TASK_KERNEL_TIME: kernel execution for the given task (Java method).
+* *TASK_COMPILE_GRAAL_TIME*: time that takes to compile a given task with Graal.
+* *TASK_COMPILE_DRIVER_TIME*: time that takes to compile a given task with the OpenCL driver.
+* *TASK_KERNEL_TIME*: kernel execution for the given task (Java method).
 
 
 
-### Note
+#### Note
 
 When the task-schedule is executed multiple times, timers related to compilation will not appear in the Json time-report. This is because the generated binary is cached and there is no compilation after the second iteration. 
-
 
 
 ### Print timers at the end of the execution
@@ -64,36 +61,43 @@ The options `-Dtornado.profiler=True -Dtornado.log.profiler=True` print a full r
 Use the option `-Dtornado.profiler=True -Dtornado.profiler.save=True`.  This option is set to `False` by default.
 
 
-### Code feature extraction for the OpenCL generated code
+### Parsing Json files
 
-To enable TornadoVM's code feature extraction, use the following flag: `-Dtornado.feature.extraction=True`. This will generate a Json file in the local directory called `tornado-features.json`.
+TornadoVM creates the file `profiler-app.json` with multiple entries for the application (one per task-schedule invokation).
 
-
-Example:
-
+TornadoVM's distribution includes a set of utilities for parsing and obtaining statistics:
 
 ```bash
-$ tornado -Dtornado.feature.extraction=True uk.ac.manchester.tornado.examples.VectorAddInt 4096
-$ cat tornado-features.json 
-{
-    "sketch-vectorAdd": { 
-        "Global Memory Reads":  "2",
-        "Global Memory Writes":  "1",
-        "Local Memory Reads":  "0",
-        "Local Memory Writes":  "0",
-        "Total number of Loops":  "1",
-        "Parallel Loops":  "1",
-        "If Statements":  "0",
-        "Switch Statements":  "0",
-        "Switch Cases":  "0",
-        "Vector Loads":  "0",
-        "Arithmetic Operations":  "4",
-        "Math Operations":  "0"
-    }
-}
+$ createJsonFile.py profiler-app.json output.json
+$ readJsonFile.py output.json 
+
+['readJsonFile.py', 'output.json']
+Processing file: output.json
+Num entries = 10
+Entry,0 
+    TOTAL_BYTE_CODE_GENERATION,6783852
+    TOTAL_KERNEL_TIME,26560
+    TOTAL_TASK_SCHEDULE_TIME,59962224
+    COPY_OUT_TIME,32768
+    COPY_IN_TIME,81920
+    TaskName, s0.t0
+    TASK_KERNEL_TIME,26560
+    TASK_COMPILE_DRIVER_TIME,952126
+    TASK_COMPILE_GRAAL_TIME,46868099
+    TOTAL_GRAAL_COMPILE_TIME,46868099
+    TOTAL_DRIVER_COMPILE_TIME,952126
+    EndEntry,0
+
+MEDIANS    ### Print median values for each timer
+    TOTAL_KERNEL_TIME,25184.0
+    TOTAL_TASK_SCHEDULE_TIME,955967.0
+    s0.t0-TASK_KERNEL_TIME,25184.0
+    COPY_IN_TIME,74016.0
+    COPY_OUT_TIME,32816.0
 ```
 
-## Task-Schedule API augmented with profile calls
+
+### Task-Schedule API augmented with profile calls
 
 TornadoVM Task-Schedules have a set of methods to query profile metrics such as kernel time, data transfers and compilation time. 
 
@@ -134,10 +138,43 @@ Example:
 
 // Query copy-in time (from Host to Device)
 long copyInTime = schedule.getDeviceWriteTime();
+
+// Query copy-out total time (from Device to Host)
 long copyOutTime = schedule.getDeviceReadTime();
+
+// Query total kernel time
 long kernelTime = schedule.getDeviceKernelTime();
+
+// Query total compilation time
 long compilationTime = schedule.getCompileTime();
 ```
 
 
+## Code feature extraction for the OpenCL generated code
 
+To enable TornadoVM's code feature extraction, use the following flag: `-Dtornado.feature.extraction=True`. This will generate a Json file in the local directory called `tornado-features.json`.
+
+
+Example:
+
+
+```bash
+$ tornado -Dtornado.feature.extraction=True uk.ac.manchester.tornado.examples.VectorAddInt 4096
+$ cat tornado-features.json 
+{
+    "sketch-vectorAdd": { 
+        "Global Memory Reads":  "2",
+        "Global Memory Writes":  "1",
+        "Local Memory Reads":  "0",
+        "Local Memory Writes":  "0",
+        "Total number of Loops":  "1",
+        "Parallel Loops":  "1",
+        "If Statements":  "0",
+        "Switch Statements":  "0",
+        "Switch Cases":  "0",
+        "Vector Loads":  "0",
+        "Arithmetic Operations":  "4",
+        "Math Operations":  "0"
+    }
+}
+```
