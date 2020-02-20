@@ -8,7 +8,7 @@ Download and install the latest IntelliJ IDEA Community Edition: [https://www.je
 
 Change the IntelliJ maximum memory to 2 GB or more [(instructions)](https://www.jetbrains.com/help/idea/increasing-memory-heap.html#d1366197e127).
 
-
+For Intellij to pickup the required Tornado dependencies from the poms, go to **View > Tool Windows > Maven** and select **jdk-8** under profiles.
 
 ## Required Plugins:
 
@@ -32,18 +32,27 @@ Two different configurations are needed for **Build** and **Debug**.
 
 ### Build/Run Configuration 
 
-Now, in Intellij:
+1. Go to **File > Project Structure** and ensure that:
+* **In the Project Tab:**
+  * The Project SDK uses the same java version as the project (e.g. 1.8.0_131).
+  * The Project language level is using the same java version (e.g. 8 - Lambdas, type annotations etc.).
+* **In the Modules Tab:**
+  * The module SDK of every module uses the same java version (e.g. 1.8.0_131).
+
+2. In the right vertical bar in Intellij:
 ***Maven Projects > tornadovm (root) > Lifecycle > package > right click > create tornadovm [package]***
 
-Then: ***Run > Edit Configurations > Maven > tornadovm Package***.
-
+3. Then: ***Run > Edit Configurations > Maven > tornadovm Package***.
 You need to manually add and check the following information:
 
-* **Parameters** : **Command line**: add the following
+* In the **Parameters** tab : 
+  * In **Command line**, add the following:
     * `-Dcmake.root.dir=/home/michalis/opt/cmake-3.10.2-Linux-x86_64/ clean package`
         * In case that you need to reduce the amount of maven warnings add also on the above line the command **--quiet**, which constraints maven verbose to only errors.
+  * In **Profiles (separated with space)**, add the following:
+    * `jdk-8`
 
-* **Runner**: Ensure that in **JRE** tab the selected JRE corresponds to `Use Project JDK` (e.g.1.8.0_131).
+* In the **Runner** tab: Ensure that the selected **JRE** corresponds to `Use Project JDK` (e.g.1.8.0_131).
 
 Finally, one the top right corner drop-down menu select the adove custome `tornadovm [package]` configuration.
 To  build either press the **play button** on the top right corner or **Shift+F10**.

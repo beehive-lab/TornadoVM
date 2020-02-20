@@ -41,7 +41,7 @@
  */
 package uk.ac.manchester.tornado.api.exceptions;
 
-public class TornadoMemoryException extends Exception {
+public class TornadoMemoryException extends RuntimeException {
 
     private static final long serialVersionUID = 1609608023741117577L;
     private final String message;

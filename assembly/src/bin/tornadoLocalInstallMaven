@@ -32,6 +32,7 @@ cd share/java/tornado/
 TORNADOVM_VERSION="0.5"
 
 mvn install:install-file -Dfile=tornado-api-${TORNADOVM_VERSION}.jar -DgroupId=tornado -DartifactId=tornado-api -Dversion=${TORNADOVM_VERSION} -Dpackaging=jar
+mvn install:install-file -Dfile=tornado-examples-${TORNADOVM_VERSION}.jar -DgroupId=tornado -DartifactId=tornado-examples -Dversion=${TORNADOVM_VERSION} -Dpackaging=jar
 mvn install:install-file -Dfile=tornado-matrices-${TORNADOVM_VERSION}.jar -DgroupId=tornado -DartifactId=tornado-matrices -Dversion=${TORNADOVM_VERSION} -Dpackaging=jar
 mvn install:install-file -Dfile=tornado-runtime-${TORNADOVM_VERSION}.jar -DgroupId=tornado -DartifactId=tornado-runtime -Dversion=${TORNADOVM_VERSION} -Dpackaging=jar
 mvn install:install-file -Dfile=tornado-drivers-opencl-${TORNADOVM_VERSION}.jar -DgroupId=tornado -DartifactId=tornado-drivers-opencl -Dversion=${TORNADOVM_VERSION} -Dpackaging=jar
