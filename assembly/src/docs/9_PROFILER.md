@@ -63,7 +63,7 @@ Use the option `-Dtornado.profiler=True -Dtornado.profiler.save=True`.  This opt
 
 ### Parsing Json files
 
-TornadoVM creates the file `profiler-app.json` with multiple entries for the application (one per task-schedule invokation).
+TornadoVM creates the file `profiler-app.json` with multiple entries for the application (one per task-schedule invocation).
 
 TornadoVM's distribution includes a set of utilities for parsing and obtaining statistics:
 
