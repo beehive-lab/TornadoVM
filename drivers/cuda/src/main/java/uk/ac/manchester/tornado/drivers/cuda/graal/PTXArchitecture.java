@@ -2,6 +2,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
@@ -13,6 +14,8 @@ import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
 import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
 
 public class PTXArchitecture extends Architecture {
+
+    public static final RegisterCategory PTX_ABI = new RegisterCategory("abi");
 
     public PTXArchitecture(PlatformKind wordKind, ByteOrder byteOrder) {
         super("Tornado PTX",
@@ -27,12 +30,12 @@ public class PTXArchitecture extends Architecture {
     }
 
     @Override
-    public boolean canStoreValue(Register.RegisterCategory category, PlatformKind kind) {
+    public boolean canStoreValue(RegisterCategory category, PlatformKind kind) {
         return false;
     }
 
     @Override
-    public PlatformKind getLargestStorableKind(Register.RegisterCategory category) {
+    public PlatformKind getLargestStorableKind(RegisterCategory category) {
         return null;
     }
 

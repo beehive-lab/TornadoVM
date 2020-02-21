@@ -24,7 +24,7 @@ public class PTXCodeProvider implements CodeCacheProvider {
 
     @Override
     public RegisterConfig getRegisterConfig() {
-        return null;
+        return new PTXRegisterConfig();
     }
 
     @Override

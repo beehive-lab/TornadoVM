@@ -5,6 +5,7 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
@@ -22,8 +23,7 @@ public class PTXMoveFactory implements LIRGeneratorTool.MoveFactory {
 
     @Override
     public LIRInstruction createMove(AllocatableValue result, Value input) {
-        unimplemented();
-        return null;
+        return new PTXLIRStmt.AssignStmt(result, input);
     }
 
     @Override

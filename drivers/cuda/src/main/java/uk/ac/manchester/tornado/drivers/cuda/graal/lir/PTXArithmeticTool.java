@@ -5,29 +5,30 @@ import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
+import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXLIRKindTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBinaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerator;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.*;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 public class PTXArithmeticTool extends ArithmeticLIRGenerator {
     @Override
     protected boolean isNumericInteger(PlatformKind kind) {
-        unimplemented();
-        return false;
+        guarantee(kind instanceof PTXKind, "invalid platform kind");
+        return ((PTXKind) kind).isInteger();
     }
 
     @Override
     protected Variable emitAdd(LIRKind resultKind, Value a, Value b, boolean setFlags) {
-        unimplemented();
-        return null;
+        trace("emitAdd: %s + %s", a, b);
+        return emitBinaryAssign(PTXBinaryOp.ADD, resultKind, a, b);
     }
 
     @Override
@@ -109,8 +110,8 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitShl(Value a, Value b) {
-        unimplemented();
-        return null;
+        trace("emitShl: %s << %s", a, b);
+        return emitBinaryAssign(PTXBinaryOp.BITWISE_LEFT_SHIFT, LIRKind.combine(a, b), a, b);
     }
 
     @Override
@@ -211,6 +212,17 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public void emitStore(ValueKind<?> kind, Value address, Value input, LIRFrameState state) {
-        unimplemented();
+        //TODO: This is probably not great
+        getGen().append(new PTXLIRStmt.StoreStmt((PTXUnary.MemoryAccess) address, input));
+    }
+
+    public Variable emitBinaryAssign(PTXBinaryOp op, LIRKind lirKind, Value x, Value y) {
+        final Variable result = getGen().newVariable(lirKind);
+        getGen().append(new PTXLIRStmt.AssignStmt(result, genBinaryExpr(op, lirKind, x, y)));
+        return result;
+    }
+
+    public PTXLIROp genBinaryExpr(PTXBinaryOp op, LIRKind lirKind, Value x, Value y) {
+        return new PTXBinary.Expr(op, lirKind, x, y);
     }
 }

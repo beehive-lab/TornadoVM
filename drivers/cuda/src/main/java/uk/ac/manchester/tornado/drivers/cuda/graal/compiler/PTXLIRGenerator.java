@@ -11,18 +11,19 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.lir.*;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
-import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.phases.util.Providers;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXLIRKindTool;
-import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXNullaryOp;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.*;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBinaryOp.*;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXTernaryOp.SETP;
-import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryOp.*;
-import static uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt.*;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryOp.BRA;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryOp.CONDITIONAL_BRA;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt.ExprStmt;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 public class PTXLIRGenerator extends LIRGenerator {
     private PTXGenTool ptxGenTool;
@@ -148,7 +149,14 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitReturn(JavaKind javaKind, Value input) {
-        unimplemented();
+        trace("emitReturn: input=%s", input);
+        if (input != null) {
+            LIRKind lirKind = LIRKind.value(input.getPlatformKind());
+            ExprStmt stmt = new ExprStmt(new PTXUnary.Expr(PTXUnaryOp.RETURN, lirKind, input));
+            append(stmt);
+        } else {
+            append(new ExprStmt(new PTXNullary.Expr(PTXNullaryOp.RETURN, LIRKind.Illegal)));
+        }
     }
 
     @Override

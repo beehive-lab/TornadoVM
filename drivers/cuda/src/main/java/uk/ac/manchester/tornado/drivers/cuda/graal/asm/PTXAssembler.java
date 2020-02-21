@@ -300,6 +300,7 @@ public class PTXAssembler extends Assembler {
      * Unary opcodes
      */
     public static class PTXUnaryOp extends PTXGuardedOp {
+        public static final PTXUnaryOp RETURN = new PTXUnaryOp("ret");
         public static final PTXUnaryOp BRA = new PTXUnaryOp("bra");
         public static final PTXUnaryOp CONDITIONAL_BRA = new PTXUnaryOp("bra", false);
 
@@ -370,6 +371,9 @@ public class PTXAssembler extends Assembler {
      * Binary opcodes
      */
     public static class PTXBinaryOp extends PTXOp {
+
+        public static final PTXBinaryOp BITWISE_LEFT_SHIFT = new PTXBinaryOp("shl");
+        public static final PTXBinaryOp ADD = new PTXBinaryOp("add");
 
         public PTXBinaryOp(String opcode) {
             super(opcode);

@@ -95,6 +95,59 @@ public class PTXLIRStmt {
         }
     }
 
+    @Opcode("STORE")
+    public static class StoreStmt extends AbstractInstruction {
+
+        public static final LIRInstructionClass<StoreStmt> TYPE = LIRInstructionClass.create(StoreStmt.class);
+
+        @Use
+        protected Value rhs;
+        @Use
+        protected PTXUnary.MemoryAccess address;
+        @Use
+        protected Value index;
+
+        public StoreStmt(PTXUnary.MemoryAccess address, Value rhs) {
+            super(TYPE);
+            this.rhs = rhs;
+            this.address = address;
+        }
+
+        public StoreStmt(PTXUnary.MemoryAccess address, Value rhs, Value index) {
+            super(TYPE);
+            this.rhs = rhs;
+            this.address = address;
+            this.index = index;
+        }
+
+        public void emitNormalCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+
+            // asm.emitLine("*(ul_12) = 102;");
+            asm.emit("*(");
+            address.emit(crb, asm);
+            asm.emit(")");
+            asm.space();
+            asm.assign();
+            asm.space();
+            asm.emitValue(rhs);
+            asm.delimiter();
+            asm.eol();
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            emitNormalCode(crb, asm);
+        }
+
+        public Value getRhs() {
+            return rhs;
+        }
+
+        public PTXUnary.MemoryAccess getAddress() {
+            return address;
+        }
+    }
+
     @Opcode("VLOAD")
     public static class VectorLoadStmt extends AbstractInstruction {
 

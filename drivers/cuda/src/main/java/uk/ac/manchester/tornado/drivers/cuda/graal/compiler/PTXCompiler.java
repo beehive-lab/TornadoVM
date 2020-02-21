@@ -250,7 +250,7 @@ public class PTXCompiler {
             if (r.meta != null && r.meta.isParallel()) {
                 isParallel = true;
             }
-            //emitBackEnd(r, isParallel);
+            emitBackEnd(r, isParallel);
         }
         catch (Throwable e) {
             throw getDebugContext().handle(e);

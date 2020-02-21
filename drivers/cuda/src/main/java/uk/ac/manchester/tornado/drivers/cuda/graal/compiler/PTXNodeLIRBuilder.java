@@ -5,19 +5,20 @@ import jdk.vm.ci.meta.Local;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
+import org.graalvm.compiler.core.common.type.ObjectStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.gen.NodeLIRBuilder;
 import org.graalvm.compiler.core.match.ComplexMatchValue;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.LIRFrameState;
-import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.*;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.*;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.options.OptionValues;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.drivers.cuda.graal.PTXStampFactory;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.*;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.vector.VectorValueNode;
@@ -26,6 +27,7 @@ import java.util.List;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.*;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind.ILLEGAL;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt.*;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
@@ -107,7 +109,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
                 if (node instanceof ValueNode) {
                     final ValueNode valueNode = (ValueNode) node;
                     // System.out.printf("do block: node=%s\n", valueNode);
-                    if (LIRGenerator.Options.TraceLIRGeneratorLevel.getValue(options) >= 3) {
+                    if (true/*LIRGenerator.Options.TraceLIRGeneratorLevel.getValue(options) >= 3*/) {
                         TTY.println("LIRGen for " + valueNode);
                     }
 
@@ -172,9 +174,9 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
         if (op instanceof ExprStmt) {
             ExprStmt expr = (ExprStmt) op;
-            if (expr.getExpr() instanceof PTXNullary.Expr && ((PTXNullary.Expr) expr.getExpr()).getOpcode().equals(PTXNullaryOp.RETURN)) {
+            if (expr.getExpr() instanceof PTXUnary.Expr && ((PTXUnary.Expr) expr.getExpr()).getOpcode().equals(PTXNullaryOp.RETURN)) {
                 PTXUnary.Expr returnExpr = (PTXUnary.Expr) expr.getExpr();
-                append(new ExprStmt(new PTXNullary.Expr(PTXNullaryOp.RETURN, LIRKind.value(PTXKind.ILLEGAL))));
+                append(new ExprStmt(new PTXNullary.Expr(PTXNullaryOp.RETURN, LIRKind.value(ILLEGAL))));
                 insns.remove(index);
                 LIRKind lirKind = LIRKind.value(returnExpr.getPlatformKind());
                 final AllocatableValue slotAddress = new PTXReturnSlot(lirKind);
@@ -183,5 +185,102 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             }
         }
 
+    }
+
+    @Override
+    protected void emitNode(final ValueNode node) {
+        trace("emitNode: %s", node);
+        if (node instanceof LoopBeginNode) {
+            TTY.println("LoopBeginNode");
+            emitLoopBegin((LoopBeginNode) node);
+        } else if (node instanceof LoopExitNode) {
+            TTY.println("LoopExitNode");
+            //emitLoopExit((LoopExitNode) node);
+        } else if (node instanceof ShortCircuitOrNode) {
+            unimplemented("Unimplemented ShortCircuitOrNode");
+        } else {
+
+        }
+        super.emitNode(node);
+    }
+
+    private void emitLoopBegin(final LoopBeginNode loopBeginNode) {
+
+        trace("visiting emitLoopBegin %s", loopBeginNode);
+
+        final Block block = (Block) gen.getCurrentBlock();
+        final Block currentBlockDominator = block.getDominator();
+        final LIR lir = getGen().getResult().getLIR();
+        final StandardOp.LabelOp label = (StandardOp.LabelOp) lir.getLIRforBlock(block).get(0);
+
+        List<ValuePhiNode> valuePhis = loopBeginNode.valuePhis().snapshot();
+        for (ValuePhiNode phi : valuePhis) {
+            final Value value = operand(phi.firstValue());
+            if (phi.singleBackValueOrThis() == phi && value instanceof Variable) {
+                /*
+                 * preserve loop-carried dependencies outside of loops
+                 */
+                setResult(phi, value);
+            } else {
+                final AllocatableValue result = (AllocatableValue) operandForPhi(phi);
+                append(new PTXLIRStmt.AssignStmt(result, value));
+            }
+        }
+        //emitPragmaLoopUnroll(currentBlockDominator);
+        append(new PTXControlFlow.LoopInitOp());
+        //append(new PTXControlFlow.LoopPostOp());
+        label.clearIncomingValues();
+    }
+
+    @Override
+    public void visitEndNode(final AbstractEndNode end) {
+        trace("visitEnd: %s", end);
+
+        if (end instanceof LoopEndNode) {
+            return;
+        }
+
+        final AbstractMergeNode merge = end.merge();
+        for (ValuePhiNode phi : merge.valuePhis()) {
+            final ValueNode value = phi.valueAt(end);
+            if (!phi.isLoopPhi() && phi.singleValueOrThis() == phi || (value instanceof PhiNode && !((PhiNode) value).isLoopPhi())) {
+                final AllocatableValue result = gen.asAllocatable(operandForPhi(phi));
+                append(new PTXLIRStmt.AssignStmt(result, operand(value)));
+            }
+        }
+    }
+
+    public Value operandForPhi(ValuePhiNode phi) {
+        Value result = operand(phi);
+        if (result == null) {
+            Variable newOperand = gen.newVariable(getPhiKind(phi));
+            setResult(phi, newOperand);
+            return newOperand;
+        } else {
+            return result;
+        }
+    }
+
+    @Override
+    protected LIRKind getPhiKind(PhiNode phi) {
+        Stamp stamp = phi.stamp(NodeView.DEFAULT);
+        if (stamp.isEmpty()) {
+            for (ValueNode n : phi.values()) {
+                if (stamp.isEmpty()) {
+                    stamp = n.stamp(NodeView.DEFAULT);
+                } else {
+                    stamp = stamp.meet(n.stamp(NodeView.DEFAULT));
+                }
+            }
+            phi.setStamp(stamp);
+        } else if (stamp instanceof ObjectStamp) {
+            ObjectStamp oStamp = (ObjectStamp) stamp;
+            PTXKind kind = PTXKind.fromResolvedJavaType(oStamp.javaType(gen.getMetaAccess()));
+            if (kind != ILLEGAL && kind.isVector()) {
+                stamp = PTXStampFactory.getStampFor(kind);
+                phi.setStamp(stamp);
+            }
+        }
+        return gen.getLIRKind(stamp);
     }
 }
