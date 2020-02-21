@@ -4,6 +4,7 @@
 heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, GPUs (NVIDIA and AMD), Intel integrated GPUs, and Intel FPGAs. 
 
 ### Releases
+  * TornadoVM 0.6  - 21/02/2020 : See [CHANGELOG](CHANGELOG.md#tornadovm-06)
   * TornadoVM 0.5  - 16/12/2019 : See [CHANGELOG](CHANGELOG.md#tornadovm-05)
   * TornadoVM 0.4  - 14/10/2019 : See [CHANGELOG](CHANGELOG.md#tornadovm-04)
   * TornadoVM 0.3  - 22/07/2019 : See [CHANGELOG](CHANGELOG.md#tornadovm-03)
@@ -21,7 +22,7 @@ We also maintain a live TornadoVM whitepaper document which you can download [he
 #### B) Using Docker
 
 _We have tested our docker images for CentOS >= 7.4 and Ubuntu >= 16.04._
-We currently have two docker images:
+We currently have docker images for NVIDIA and Intel Integrated GPUs using OpenJDK 8 and GraalVM for JDK 8 and 11:
 * TornadoVM docker image for NVIDIA GPUs
 * TornadoVM docker image for Intel Integrated Graphics
 
@@ -37,6 +38,24 @@ $ ./run_nvidia.sh javac.py example/MatrixMultiplication.java
 $ ./run_nvidia.sh tornado example/MatrixMultiplication 
 ```
 
+Using TornadoVM with GraalVM for NVIDIA GPUs:
+
+```bash
+## Using JDK 8
+$ docker pull beehivelab/tornado-gpu-graalvm-jdk8:latest
+
+## Using JDK 11
+$ docker pull beehivelab/tornado-gpu-graalvm-jdk11:latest
+```
+
+In our [docker-tornado](https://github.com/beehive-lab/docker-tornado) repository we have all runner scripts for each configuration.
+
+```bash
+# example
+./run_nvidia_graalvm-jdk8.sh tornado ... 
+./run_nvidia_graalvm-jdk11.sh tornado ... 
+```
+
 ##### TornadoVM Docker for Intel Integrated GPUs:
 
 
@@ -48,13 +67,25 @@ $ ./run_intel.sh javac.py example/MatrixMultiplication.java
 $ ./run_intel.sh tornado example/MatrixMultiplication 
 ```
 
+Using TornadoVM with GraalVM for Intel Integrated Graphics:
+
+```bash
+## Using JDK 8
+$ docker pull beehivelab/tornado-intel-igpu-graalvm-jdk8:latest
+$ run_intel_graalvm_jdk8.sh tornado ... 
+## Using JDK 11
+$ docker pull beehivelab/tornado-intel-igpu-graalvm-jdk11:latest
+$ run_intel_graalvm_jdk11.sh tornado ... 
+```
+
+
 See our [docker-tornado](https://github.com/beehive-lab/docker-tornado) repository for more details.
 
 
 ##### Example:
 
 ```bash
-## Run with TornadoVM on an NVIDIA GPU 
+## Run with TornadoVM on an NVIDIA GPU using OpenJDK 8
 $ ./run_nvidia.sh tornado example/MatrixMultiplication 2048   ## Running on NVIDIA GP100
 Computing MxM of 2048x2048
 	CPU Execution: 0.36 GFlops, Total time = 48254 ms
@@ -146,6 +177,7 @@ Currently, this project is maintained and updated by the following contributors:
 * [Michail Papadimitriou](https://mikepapadim.github.io)
 * [Maria Xekalaki](https://github.com/mairooni)
 * [Athanasios Stratikopoulos](https://personalpages.manchester.ac.uk/staff/athanasios.stratikopoulos)
+* [Florin Blanaru](https://github.com/gigiblender)
 * [Christos Kotselidis](https://www.kotselidis.net)
 
 ## License

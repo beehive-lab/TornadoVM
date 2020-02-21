@@ -54,6 +54,8 @@ function print_usage {
     echo "              --printFlags          Prints Tornado Java flags and exits"
     echo "              --devices             Prints Tornado available devices and exits"
     echo ""
+    echo "              --mavenLocalInstall   Install all maven packages locally"
+    echo ""
     exit 0
 }
 
@@ -108,6 +110,10 @@ case $key in
     --debug)
     TORNADO_FLAGS="${TORNADO_FLAGS} -Dtornado.debug=True "
     shift
+    ;;
+    --mavenLocalInstall)
+    tornadoLocalInstallMaven
+    exit 0
     ;;
     --printFlags)
     printflags=1
