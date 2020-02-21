@@ -1,6 +1,6 @@
 # TornadoVM 
 
-🌪️ TornadoVM is a plug-in to OpenJDK that allows programmers to automatically run Java programs on 
+🌪️ TornadoVM is a plug-in to OpenJDK and GraalVM that allows programmers to automatically run Java programs on 
 heterogeneous hardware. TornadoVM currently targets OpenCL-compatible devices and it runs on multi-core CPUs, GPUs (NVIDIA and AMD), Intel integrated GPUs, and Intel FPGAs. 
 
 ### Releases
