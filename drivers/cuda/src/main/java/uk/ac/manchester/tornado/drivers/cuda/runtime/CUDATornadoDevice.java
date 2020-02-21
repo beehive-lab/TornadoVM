@@ -58,7 +58,7 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
     @Override
     public TornadoSchedulingStrategy getPreferredSchedule() {
-        return null;
+        return TornadoSchedulingStrategy.PER_ITERATION;
     }
 
     @Override

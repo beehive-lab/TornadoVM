@@ -5,7 +5,6 @@ import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.runtime.JVMCIBackend;
-import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
 import org.graalvm.compiler.hotspot.meta.HotSpotGCProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;
@@ -41,15 +40,18 @@ public class PTXHotSpotBackendFactory {
     private static final PTXCompilerConfiguration compilerConfiguration = new PTXCompilerConfiguration();
     private static final PTXAddressLowering addressLowering = new PTXAddressLowering();
 
-    public static PTXBackend createBackend(OptionValues options, HotSpotJVMCIRuntime jvmciRuntime, TornadoVMConfig config, CUDADevice device) {
+    public static PTXBackend createBackend(OptionValues options,
+                                           HotSpotJVMCIRuntime jvmciRuntime,
+                                           TornadoVMConfig vmConfig,
+                                           CUDADevice device) {
         JVMCIBackend jvmci = jvmciRuntime.getHostJVMCIBackend();
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) jvmci.getMetaAccess();
         HotSpotConstantReflectionProvider constantReflection = (HotSpotConstantReflectionProvider) jvmci.getConstantReflection();
 
-        PTXArchitecture arch = new PTXArchitecture(PTXKind.UINT, device.getByteOrder());
+        PTXArchitecture arch = new PTXArchitecture(PTXKind.U64, device.getByteOrder());
         CUDATargetDescription target = new CUDATargetDescription(arch);
         CUDADeviceContext deviceContext = device.getContext().getDeviceContext();
-        CUDACodeProvider codeCache = new CUDACodeProvider(target);
+        PTXCodeProvider codeCache = new PTXCodeProvider(target);
         HotSpotGraalCompiler hotSpotGraalCompiler = ((HotSpotGraalCompiler) jvmciRuntime.getCompiler());
         HotSpotGCProvider hotSpotGCProvider = new HotSpotGCProvider(hotSpotGraalCompiler.getGraalRuntime().getVMConfig());
 
@@ -59,7 +61,7 @@ public class PTXHotSpotBackendFactory {
         PTXLoweringProvider lowerer;
 
         try (InitTimer t = timer("create providers")) {
-            lowerer = new PTXLoweringProvider(metaAccess, foreignCalls, target, false);
+            lowerer = new PTXLoweringProvider(metaAccess, foreignCalls, target, false, vmConfig);
 
             Providers p = new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, null, stampProvider, hotSpotGCProvider);
             ClassfileBytecodeProvider bytecodeProvider = new ClassfileBytecodeProvider(metaAccess, snippetReflection);
@@ -69,20 +71,19 @@ public class PTXHotSpotBackendFactory {
 
             suites = new PTXSuitesProvider(options, plugins, metaAccess, compilerConfiguration, addressLowering);
             providers = new PTXProviders(metaAccess,
-                    codeCache,
-                    constantReflection,
-                    constantFieldProvider,
-                    foreignCalls,
-                    lowerer,
-                    replacements,
-                    stampProvider,
-                    null,
-                    suites);
+                                         codeCache,
+                                         constantReflection,
+                                         constantFieldProvider,
+                                         foreignCalls,
+                                         lowerer,
+                                         replacements,
+                                         stampProvider,
+                                         null,
+                                         suites);
 
         }
         try (InitTimer rt = timer("instantiate backend")) {
-            PTXBackend backend = new PTXBackend(providers, deviceContext);
-            return backend;
+            return new PTXBackend(providers, deviceContext, target, codeCache, options);
         }
 
 

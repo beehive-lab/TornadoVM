@@ -5,9 +5,11 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
 
-public class CUDACodeProvider implements CodeCacheProvider {
-    public CUDACodeProvider(CUDATargetDescription target) {
+public class PTXCodeProvider implements CodeCacheProvider {
+    private CUDATargetDescription target;
 
+    public PTXCodeProvider(CUDATargetDescription target) {
+        this.target = target;
     }
 
     @Override
@@ -32,7 +34,7 @@ public class CUDACodeProvider implements CodeCacheProvider {
 
     @Override
     public TargetDescription getTarget() {
-        return null;
+        return target;
     }
 
     @Override

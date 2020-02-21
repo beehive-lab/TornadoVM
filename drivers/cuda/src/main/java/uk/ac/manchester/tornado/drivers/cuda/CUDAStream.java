@@ -53,7 +53,6 @@ public class CUDAStream extends TornadoLogger {
     }
 
     public int enqueueAsyncWrite(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents) {
-        System.out.println("Async write");
         return writeArrayHtoDAsync(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 

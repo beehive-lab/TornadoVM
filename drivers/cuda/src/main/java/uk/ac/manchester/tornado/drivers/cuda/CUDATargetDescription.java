@@ -2,6 +2,10 @@ package uk.ac.manchester.tornado.drivers.cuda;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.PlatformKind;
+import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 
 public class CUDATargetDescription extends TargetDescription {
 
@@ -10,5 +14,13 @@ public class CUDATargetDescription extends TargetDescription {
 
     public CUDATargetDescription(Architecture arch) {
         super(arch, false, STACK_ALIGNMENT, 4096, INLINE_OBJECT);
+    }
+
+    public PTXArchitecture getArch() {
+        return (PTXArchitecture) arch;
+    }
+
+    public PTXKind getPTXKind(JavaKind javaKind) {
+        return (PTXKind) arch.getPlatformKind(javaKind);
     }
 }

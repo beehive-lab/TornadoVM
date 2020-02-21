@@ -13,6 +13,7 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.debug;
 
 public class CUDACallStack extends CUDAByteBuffer implements CallStack {
     public final static int RESERVED_SLOTS = 6;
+    public final static int RETURN_VALUE_INDEX = 0;
 
     private final int numArgs;
     private boolean onDevice;
