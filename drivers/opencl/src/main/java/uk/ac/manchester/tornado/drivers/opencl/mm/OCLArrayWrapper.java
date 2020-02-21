@@ -95,7 +95,7 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     @Override
-    public void allocate(Object value, long batchSize) throws TornadoOutOfMemoryException, TornadoMemoryException {
+    public void allocate(Object value, long batchSize) {
 
         long newBufferSize = 0;
         if (batchSize > 0) {
@@ -134,8 +134,8 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     /*
-     * Retrieves a buffer that will contain the contents of the array header.
-     * The header is also populated using the header from the given array.
+     * Retrieves a buffer that will contain the contents of the array header. The
+     * header is also populated using the header from the given array.
      */
     private OCLByteBuffer buildArrayHeader(final int arraySize) {
         final OCLByteBuffer header = getArrayHeader();
@@ -266,8 +266,8 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     /*
-     * Retrieves a buffer that will contain the contents of the array header.
-     * This also re-sizes the buffer.
+     * Retrieves a buffer that will contain the contents of the array header. This
+     * also re-sizes the buffer.
      */
     private OCLByteBuffer prepareArrayHeader() {
         final OCLByteBuffer header = getArrayHeader();
@@ -351,8 +351,8 @@ public abstract class OCLArrayWrapper<T> implements ObjectBuffer {
     }
 
     /*
-     * Retrieves a buffer that will contain the contents of the array header.
-     * This also re-sizes the buffer.
+     * Retrieves a buffer that will contain the contents of the array header. This
+     * also re-sizes the buffer.
      */
     private boolean validateArrayHeader(final T array) {
         final OCLByteBuffer header = prepareArrayHeader();
