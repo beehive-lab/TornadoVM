@@ -23,8 +23,8 @@ We also maintain a live TornadoVM whitepaper document which you can download [he
 
 _We have tested our docker images for CentOS >= 7.4 and Ubuntu >= 16.04._
 We currently have docker images for NVIDIA and Intel Integrated GPUs using OpenJDK 8 and GraalVM for JDK 8 and 11:
-* TornadoVM docker image for NVIDIA GPUs
-* TornadoVM docker image for Intel Integrated Graphics
+* TornadoVM docker images for NVIDIA GPUs
+* TornadoVM docker images for Intel Integrated Graphics
 
 ##### TornadoVM Docker for NVIDIA GPUs:
 
@@ -56,6 +56,17 @@ In our [docker-tornado](https://github.com/beehive-lab/docker-tornado) repositor
 ./run_nvidia_graalvm-jdk11.sh tornado ... 
 ```
 
+Example:
+
+```bash
+## Run with TornadoVM on an NVIDIA GPU using OpenJDK 8
+$ ./run_nvidia.sh tornado example/MatrixMultiplication 2048   ## Running on NVIDIA GP100
+Computing MxM of 2048x2048
+	CPU Execution: 0.36 GFlops, Total time = 48254 ms
+	GPU Execution: 277.09 GFlops, Total Time = 62 ms
+	Speedup: 778x 
+```
+
 ##### TornadoVM Docker for Intel Integrated GPUs:
 
 
@@ -78,20 +89,8 @@ $ docker pull beehivelab/tornado-intel-igpu-graalvm-jdk11:latest
 $ run_intel_graalvm_jdk11.sh tornado ... 
 ```
 
-
 See our [docker-tornado](https://github.com/beehive-lab/docker-tornado) repository for more details.
 
-
-##### Example:
-
-```bash
-## Run with TornadoVM on an NVIDIA GPU using OpenJDK 8
-$ ./run_nvidia.sh tornado example/MatrixMultiplication 2048   ## Running on NVIDIA GP100
-Computing MxM of 2048x2048
-	CPU Execution: 0.36 GFlops, Total time = 48254 ms
-	GPU Execution: 277.09 GFlops, Total Time = 62 ms
-	Speedup: 778x 
-```
 
 ## What can I do with TornadoVM? 
 
