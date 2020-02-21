@@ -116,6 +116,11 @@ public enum PTXKind implements PlatformKind {
         return 0;
     }
 
+    @Override
+    public String toString() {
+        return name().toLowerCase();
+    }
+
     public Class<?> getJavaClass() {
         guarantee(javaClass != null, "undefined java class for: %s", this);
         return javaClass;

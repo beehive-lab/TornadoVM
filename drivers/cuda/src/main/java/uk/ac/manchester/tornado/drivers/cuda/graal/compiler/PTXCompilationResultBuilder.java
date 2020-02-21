@@ -69,4 +69,8 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
     public Set<ResolvedJavaMethod> getNonInlinedMethods() {
         return nonInlinedMethods;
     }
+
+    public boolean isKernel() {
+        return isKernel;
+    }
 }

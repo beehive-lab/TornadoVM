@@ -7,7 +7,10 @@ public enum CUDADeviceAttribute {
     MAX_SHARED_MEMORY_PER_BLOCK(8),
     TOTAL_CONSTANT_MEMORY(9),
     CLOCK_RATE(13),
-    MULTIPROCESSOR_COUNT(16);
+    MULTIPROCESSOR_COUNT(16),
+    COMPUTE_CAPABILITY_MAJOR(75),
+    COMPUTE_CAPABILITY_MINOR(76)
+    ;
 
     private final int value;
 

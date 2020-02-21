@@ -36,6 +36,9 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.util.List;
 
+import static java.util.jar.Pack200.Unpacker.FALSE;
+import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
+
 public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
     private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
@@ -85,6 +88,11 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
         PTXProviders providers = (PTXProviders) getBackend().getProviders();
         final PTXCompilationResult result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
+
+        if (Boolean.parseBoolean(getProperty("tornado.opencl.source.print", FALSE))) {
+            String sourceCode = new String(result.getTargetCode());
+            System.out.println(sourceCode);
+        }
 
         return deviceContext.installCode(result);
     }

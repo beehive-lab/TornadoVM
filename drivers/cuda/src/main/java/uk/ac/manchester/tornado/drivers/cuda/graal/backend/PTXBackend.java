@@ -18,19 +18,24 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
+import uk.ac.manchester.tornado.drivers.cuda.CUDADevice;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
 import uk.ac.manchester.tornado.drivers.cuda.graal.*;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.*;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
 public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
     final CUDADeviceContext deviceContext;
     private boolean isInitialised;
     final CUDATargetDescription target;
+    private PTXArchitecture arch;
     private PTXCodeProvider codeCache;
     private OptionValues options;
 
@@ -42,6 +47,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         this.target = target;
         this.codeCache = codeCache;
         this.options = options;
+        arch = target.getArch();
         isInitialised = false;
     }
 
@@ -158,10 +164,40 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         final PTXAssembler asm = (PTXAssembler) crb.asm;
         emitPrologue(crb, asm, method, lir);
         //crb.emit(lir);
-        //emitEpilogue(asm);
+        emitEpilogue(asm);
+    }
+
+    private void emitEpilogue(PTXAssembler asm) {
+        asm.emitLine("}");
     }
 
     private void emitPrologue(PTXCompilationResultBuilder crb, PTXAssembler asm, ResolvedJavaMethod method, LIR lir) {
+        if (crb.isKernel()) {
+            emitPTXHeader(asm);
+            emitKernelFunction(asm, crb.compilationResult.getName());
+        }
+        else {
+            unimplemented("Non-kernel function calls are not implemented id CUDA_PTX yet.");
+        }
+    }
 
+    private void emitKernelFunction(PTXAssembler asm, String methodName) {
+
+        asm.emitLine(
+                "%s %s %s(%s) {",
+                PTXAssemblerConstants.EXTERNALLY_VISIBLE,
+                PTXAssemblerConstants.KERNEL_ENTRYPOINT,
+                methodName,
+                arch.getABI()
+        );
+    }
+
+    private void emitPTXHeader(PTXAssembler asm) {
+        CUDADevice device = deviceContext.getDevice();
+        String headerFormat = "%s %s";
+        asm.emitLine(headerFormat, PTXAssemblerConstants.COMPUTE_VERSION, device.getDeviceComputeCapability());
+        asm.emitLine(headerFormat, PTXAssemblerConstants.TARGET_ARCH, device.getTargetArchitecture());
+        asm.emitLine(headerFormat, PTXAssemblerConstants.ADDRESS_HEADER, arch.getWordSize() * 8);
+        asm.emitLine("");
     }
 }

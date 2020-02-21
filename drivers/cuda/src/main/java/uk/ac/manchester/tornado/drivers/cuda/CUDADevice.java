@@ -18,12 +18,18 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
     private long localMemorySize;
     private int noOfWorkUnits;
     private int maxFrequency;
+    private int computeCapabilityMajor;
+    private int computeCapabilityMinor;
     private CUDAContext context;
     private long[] maxWorkItemSizes;
+    private String computeCapability;
+    private String targetArchitecture;
 
     public CUDADevice(int index) {
         this.index = index;
         context = new CUDAContext(this);
+        computeCapabilityMajor = INIT_VAL;
+        computeCapabilityMinor = INIT_VAL;
         constantBufferSize = INIT_VAL;
         totalDeviceMemory = INIT_VAL;
         localMemorySize = INIT_VAL;
@@ -45,6 +51,22 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
     public String getDeviceName() {
         if (name == null) name = cuDeviceGetName(index);
         return name;
+    }
+
+    private void ensureComputeCapabilityAvailable() {
+        if (computeCapabilityMajor == INIT_VAL)
+            computeCapabilityMajor = cuDeviceGetAttribute(index, CUDADeviceAttribute.COMPUTE_CAPABILITY_MAJOR.value());
+
+        if (computeCapabilityMinor == INIT_VAL)
+            computeCapabilityMinor = cuDeviceGetAttribute(index, CUDADeviceAttribute.COMPUTE_CAPABILITY_MINOR.value());
+    }
+
+    public String getDeviceComputeCapability() {
+        if (computeCapability == null) {
+            ensureComputeCapabilityAvailable();
+            computeCapability = String.format("%d.%d",computeCapabilityMajor ,computeCapabilityMinor);
+        }
+        return computeCapability;
     }
 
     @Override
@@ -124,5 +146,13 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
 
     public TornadoDeviceType getDeviceType() {
         return TornadoDeviceType.GPU;
+    }
+
+    public String getTargetArchitecture() {
+        if (targetArchitecture == null) {
+            ensureComputeCapabilityAvailable();
+            targetArchitecture = String.format("sm_%d%d", computeCapabilityMajor, computeCapabilityMinor);
+        }
+        return targetArchitecture;
     }
 }

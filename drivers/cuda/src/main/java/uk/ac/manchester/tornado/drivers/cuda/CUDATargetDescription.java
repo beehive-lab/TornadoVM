@@ -3,7 +3,6 @@ package uk.ac.manchester.tornado.drivers.cuda;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.PlatformKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 

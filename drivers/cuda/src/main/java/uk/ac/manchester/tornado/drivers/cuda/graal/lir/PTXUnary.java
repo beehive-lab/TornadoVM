@@ -109,7 +109,7 @@ public class PTXUnary {
         @Override
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             if (shouldEmitRelativeAddress()) {
-                asm.emit(base.name);
+                asm.emit(base.getName());
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
                 asm.emitValue(value);
                 asm.emitSymbol(SQUARE_BRACKETS_CLOSE);

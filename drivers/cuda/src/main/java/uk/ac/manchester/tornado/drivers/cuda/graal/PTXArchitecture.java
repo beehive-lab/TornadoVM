@@ -5,6 +5,7 @@ import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.meta.PTXMemorySpace;
 
@@ -17,7 +18,12 @@ public class PTXArchitecture extends Architecture {
 
     public static final RegisterCategory PTX_ABI = new RegisterCategory("abi");
 
-    public PTXArchitecture(PlatformKind wordKind, ByteOrder byteOrder) {
+    public static PTXParam HEAP_POINTER;
+    public static PTXParam STACK_POINTER;
+    public static PTXParam ARG_START = new PTXParam(PTXAssemblerConstants.ARG_START, PTXKind.U8);
+    public static PTXParam[] abiRegisters;
+
+    public PTXArchitecture(PTXKind wordKind, ByteOrder byteOrder) {
         super("Tornado PTX",
                 wordKind,
                 byteOrder,
@@ -27,6 +33,11 @@ public class PTXArchitecture extends Architecture {
                 0,
                 0
         );
+
+        HEAP_POINTER = new PTXParam(PTXAssemblerConstants.HEAP_PTR_NAME, wordKind);
+        STACK_POINTER = new PTXParam(PTXAssemblerConstants.STACK_PTR_NAME, wordKind);
+
+        abiRegisters = new PTXParam[]{HEAP_POINTER, STACK_POINTER, ARG_START};
     }
 
     @Override
@@ -44,15 +55,47 @@ public class PTXArchitecture extends Architecture {
         return null;
     }
 
+    public String getABI() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < abiRegisters.length; i++) {
+            sb.append(abiRegisters[i].getDeclaration());
+            if (i < abiRegisters.length - 1) {
+                sb.append(", ");
+            }
+        }
+        return sb.toString();
+    }
+
     public static class PTXRegister {
         public final int number;
-        public final String name;
+        protected String name;
         public final PTXKind lirKind;
 
         public PTXRegister(int number, PTXKind lirKind) {
             this.number = number;
             this.lirKind = lirKind;
             this.name = "r" + lirKind.getTypeChar() + number;
+        }
+
+        public String getDeclaration() {
+            return String.format(".reg .%s %s", lirKind.toString(), name);
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    public static class PTXParam extends PTXRegister {
+
+        public PTXParam(String name, PTXKind lirKind) {
+            super(0, lirKind);
+            this.name = name;
+        }
+
+        @Override
+        public String getDeclaration() {
+            return String.format(".param .%s %s", lirKind.toString(), name);
         }
     }
 

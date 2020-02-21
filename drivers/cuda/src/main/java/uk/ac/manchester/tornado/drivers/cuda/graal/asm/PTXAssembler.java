@@ -38,6 +38,11 @@ public class PTXAssembler extends Assembler {
         operandStack = new ArrayList<>(10);
     }
 
+    @Override
+    public byte[] close(boolean a) {
+        return super.close(true);
+    }
+
     public void emitSymbol(String sym) {
         for (byte b : sym.getBytes()) {
             emitByte(b);
@@ -204,6 +209,16 @@ public class PTXAssembler extends Assembler {
         return ref.label().toString();
     }
 
+    public void emitLine(String value) {
+        emit(value);
+        eol();
+    }
+
+    public void emitLine(String format, Object... args) {
+        emit(format, args);
+        eol();
+    }
+
     /**
      * Base class for PTX opcodes.
      */
@@ -270,7 +285,6 @@ public class PTXAssembler extends Assembler {
 
         // @formatter:off
         public static final PTXNullaryOp RETURN = new PTXNullaryOp("ret");
-        public static final PTXNullaryOp SLOTS_BASE_ADDRESS = new PTXNullaryOp("(ulong) " + HEAP_REF_NAME);
         // @formatter:on
 
         protected PTXNullaryOp(String opcode) {

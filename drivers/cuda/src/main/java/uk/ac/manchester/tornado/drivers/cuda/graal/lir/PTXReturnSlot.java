@@ -4,7 +4,7 @@ import jdk.vm.ci.meta.AllocatableValue;
 import org.graalvm.compiler.core.common.LIRKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 
-import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.FRAME_REF_NAME;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.STACK_PTR_NAME;
 import static uk.ac.manchester.tornado.drivers.cuda.mm.CUDACallStack.RETURN_VALUE_INDEX;
 
 public class PTXReturnSlot extends AllocatableValue {
@@ -18,6 +18,6 @@ public class PTXReturnSlot extends AllocatableValue {
     }
 
     public void emit(PTXAssembler asm) {
-        asm.emit("%s[%d]", FRAME_REF_NAME, RETURN_VALUE_INDEX);
+        asm.emit("%s[%d]", STACK_PTR_NAME, RETURN_VALUE_INDEX);
     }
 }
