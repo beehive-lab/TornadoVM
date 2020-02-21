@@ -7,7 +7,7 @@
     <parent>
         <artifactId>tornado-drivers</artifactId>
         <groupId>tornado</groupId>
-        <version>0.5</version>
+        <version>0.6</version>
     </parent>
     <artifactId>tornado-drivers-cuda</artifactId>
     <name>tornado-drivers-cuda</name>
