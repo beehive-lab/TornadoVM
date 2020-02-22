@@ -102,18 +102,43 @@ public enum PTXKind implements PlatformKind {
         return vectorLength;
     }
 
-    @Override
-    public char getTypeChar() {
-        if (this == PTXKind.PRED) return 'p';
+    public String getRegisterTypeString() {
+        return  "r" + getTypeChar() + getSizeChar();
+    }
+
+    public char getSizeChar() {
         switch (this.size) {
             case 1: return 'b';
-            case 2: return 's';
-            case 4: return 0;
+            case 2: return 'h';
+            case 4: return 'i';
             case 8: return 'd';
             default: shouldNotReachHere();
         }
-
         return 0;
+    }
+
+    @Override
+    public char getTypeChar() {
+        if (this == PTXKind.PRED) return 'p';
+        if (isFloating()) return 'f';
+        if (isInteger()) {
+            if (isUnsigned()) return 'u';
+            return 's';
+        }
+
+        return 'b';
+    }
+
+    private boolean isUnsigned() {
+        if (!isInteger()) return false;
+
+        switch (kind) {
+            case U8:
+            case U16:
+            case U32:
+            case U64: return true;
+            default: return false;
+        }
     }
 
     @Override

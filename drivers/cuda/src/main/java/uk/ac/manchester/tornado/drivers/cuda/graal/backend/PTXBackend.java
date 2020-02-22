@@ -6,7 +6,10 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
+import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.lir.LIR;
+import org.graalvm.compiler.lir.LIRInstruction;
+import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
 import org.graalvm.compiler.lir.asm.DataBuilder;
 import org.graalvm.compiler.lir.framemap.FrameMap;
@@ -25,10 +28,19 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.*;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.*;
+import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -175,6 +187,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         if (crb.isKernel()) {
             emitPTXHeader(asm);
             emitKernelFunction(asm, crb.compilationResult.getName());
+            emitVariableDefs(asm, lir);
         }
         else {
             unimplemented("Non-kernel function calls are not implemented id CUDA_PTX yet.");
@@ -199,5 +212,60 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         asm.emitLine(headerFormat, PTXAssemblerConstants.TARGET_ARCH, device.getTargetArchitecture());
         asm.emitLine(headerFormat, PTXAssemblerConstants.ADDRESS_HEADER, arch.getWordSize() * 8);
         asm.emitLine("");
+    }
+
+    private void emitVariableDefs(PTXAssembler asm, LIR lir) {
+        Map<PTXKind, Set<Variable>> kindToVariable = new HashMap<>();
+        final int expectedVariables = lir.numVariables();
+        final AtomicInteger variableCount = new AtomicInteger();
+
+        for (AbstractBlockBase<?> b : lir.linearScanOrder()) {
+            for (LIRInstruction insn : lir.getLIRforBlock(b)) {
+
+                insn.forEachOutput((instruction, value, mode, flags) -> {
+                    if (value instanceof Variable) {
+                        Variable variable = (Variable) value;
+                        if (variable.getName() != null) {
+                            addVariableDef(kindToVariable, variable);
+                            variableCount.incrementAndGet();
+                        }
+                    }
+                    return value;
+                });
+            }
+        }
+
+        trace("found %d variable, expected (%d)", variableCount.get(), expectedVariables);
+
+        for (PTXKind type : kindToVariable.keySet()) {
+            asm.emitLine(
+                    "\t.reg .%s %s<%d>;",
+                    type,
+                    type.getRegisterTypeString(),
+                    kindToVariable.get(type).size()
+            );
+        }
+
+    }
+
+    private void addVariableDef(Map<PTXKind, Set<Variable>> kindToVariable, Variable value) {
+        if (value != null) {
+
+            if (!(value.getPlatformKind() instanceof PTXKind)) {
+                shouldNotReachHere();
+            }
+
+            PTXKind kind = (PTXKind) value.getPlatformKind();
+            if (kind == PTXKind.ILLEGAL) {
+                shouldNotReachHere();
+            }
+
+            if (!kindToVariable.containsKey(kind)) {
+                kindToVariable.put(kind, new HashSet<>());
+            }
+
+            final Set<Variable> varList = kindToVariable.get(kind);
+            varList.add(value);
+        }
     }
 }

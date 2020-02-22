@@ -109,7 +109,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
                 if (node instanceof ValueNode) {
                     final ValueNode valueNode = (ValueNode) node;
                     // System.out.printf("do block: node=%s\n", valueNode);
-                    if (true/*LIRGenerator.Options.TraceLIRGeneratorLevel.getValue(options) >= 3*/) {
+                    if (LIRGenerator.Options.TraceLIRGeneratorLevel.getValue(options) >= 3) {
                         TTY.println("LIRGen for " + valueNode);
                     }
 
@@ -191,7 +191,6 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
     protected void emitNode(final ValueNode node) {
         trace("emitNode: %s", node);
         if (node instanceof LoopBeginNode) {
-            TTY.println("LoopBeginNode");
             emitLoopBegin((LoopBeginNode) node);
         } else if (node instanceof LoopExitNode) {
             TTY.println("LoopExitNode");

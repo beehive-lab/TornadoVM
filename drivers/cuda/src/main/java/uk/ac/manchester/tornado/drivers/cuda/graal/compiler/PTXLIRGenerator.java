@@ -18,6 +18,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXNullaryOp
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.*;
 
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXTernaryOp.SETP;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryOp.BRA;
@@ -258,6 +259,28 @@ public class PTXLIRGenerator extends LIRGenerator {
     @Override
     public LIRInstruction createZapArgumentSpace(StackSlot[] zappedStack, JavaConstant[] zapValues) {
         unimplemented(); return null;
+    }
+
+    @Override
+    public Variable newVariable(ValueKind<?> lirKind) {
+        PlatformKind pk = lirKind.getPlatformKind();
+        ValueKind<?> actualLIRKind = lirKind;
+        PTXKind kind = PTXKind.ILLEGAL;
+        if (pk instanceof PTXKind) {
+            kind = (PTXKind) pk;
+        } else {
+            shouldNotReachHere();
+        }
+
+        final Variable var = super.newVariable(actualLIRKind);
+        trace("newVariable: %s <- %s (%s)", var.toString(), actualLIRKind.toString(), actualLIRKind.getClass().getName());
+
+        PTXLIRGenerationResult res = (PTXLIRGenerationResult) getResult();
+        int indexForType = res.insertVariableAndGetIndex(var);
+
+        var.setName(kind.getRegisterTypeString() + indexForType);
+
+        return var;
     }
 
     public PTXGenTool getPTXGenTool() {
