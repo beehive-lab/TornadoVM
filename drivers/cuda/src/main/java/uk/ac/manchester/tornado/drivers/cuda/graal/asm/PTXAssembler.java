@@ -214,9 +214,15 @@ public class PTXAssembler extends Assembler {
     public static class PTXOp {
 
         protected final String opcode;
+        protected final boolean isTyped;
 
         protected PTXOp(String opcode) {
+            this(opcode, true);
+        }
+
+        protected PTXOp(String opcode, boolean isTyped) {
             this.opcode = opcode;
+            this.isTyped = isTyped;
         }
 
         protected final void emitOpcode(PTXAssembler asm) {
@@ -273,11 +279,11 @@ public class PTXAssembler extends Assembler {
     public static class PTXNullaryOp extends PTXOp {
 
         // @formatter:off
-        public static final PTXNullaryOp RETURN = new PTXNullaryOp("ret");
+        public static final PTXNullaryOp RETURN = new PTXNullaryOp("ret", false);
         // @formatter:on
 
-        protected PTXNullaryOp(String opcode) {
-            super(opcode);
+        protected PTXNullaryOp(String opcode, boolean isTyped) {
+            super(opcode, isTyped);
         }
 
         public void emit(PTXCompilationResultBuilder crb, Variable dest) {
@@ -295,7 +301,11 @@ public class PTXAssembler extends Assembler {
 
     public static class PTXNullaryTemplate extends PTXNullaryOp {
         public PTXNullaryTemplate(String opcode) {
-            super(opcode);
+            super(opcode, true);
+        }
+
+        public PTXNullaryTemplate(String opcode, boolean isTyped) {
+            super(opcode, isTyped);
         }
 
         @Override
@@ -310,7 +320,6 @@ public class PTXAssembler extends Assembler {
      * Unary opcodes
      */
     public static class PTXUnaryOp extends PTXGuardedOp {
-        public static final PTXUnaryOp RETURN = new PTXUnaryOp("ret");
         public static final PTXUnaryOp BRA = new PTXUnaryOp("bra");
         public static final PTXUnaryOp CONDITIONAL_BRA = new PTXUnaryOp("bra", false);
 
@@ -399,6 +408,7 @@ public class PTXAssembler extends Assembler {
         public void emit(PTXCompilationResultBuilder crb, Value x, Value y, Variable dest) {
             final PTXAssembler asm = crb.getAssembler();
             emitOpcode(asm);
+            if (isTyped) asm.emit("." + dest.getPlatformKind());
             asm.emitSymbol(TAB);
             asm.emitValues(new Value[]{dest, x, y});
         }

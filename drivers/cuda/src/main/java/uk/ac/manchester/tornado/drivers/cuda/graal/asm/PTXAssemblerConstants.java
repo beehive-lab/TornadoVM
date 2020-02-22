@@ -25,4 +25,5 @@ public class PTXAssemblerConstants {
     public static final String ADDRESS_HEADER = ".address_size";
     public static final String EXTERNALLY_VISIBLE = ".visible";
     public static final String KERNEL_ENTRYPOINT = ".entry";
+    public static final String DOT = ".";
 }
