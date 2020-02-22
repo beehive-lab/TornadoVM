@@ -11,10 +11,8 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXUnary.PTXAddressCast;
 
-import static org.graalvm.compiler.lir.LIRInstruction.*;
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.*;
-import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.TAB;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBinaryIntrinsic;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.*;
 
 public class PTXLIRStmt {
 
@@ -128,13 +126,20 @@ public class PTXLIRStmt {
 
         public void emitNormalCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
 
-            // asm.emitLine("*(ul_12) = 102;");
-            asm.emit("*(");
+            // st.global.u32 		[%rd19], %r10;
+            asm.emitSymbol(TAB);
+            asm.emit("st.");
+            asm.emit(address.getBase().memorySpace.name());
+            asm.emitSymbol(DOT);
+            asm.emit(rhs.getPlatformKind().toString());
+            asm.emitSymbol(TAB);
+
+            asm.emitSymbol(SQUARE_BRACKETS_OPEN);
             address.emit(crb, asm, null);
-            asm.emit(")");
+            asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
+            asm.emitSymbol(COMMA);
             asm.space();
-            asm.assign();
-            asm.space();
+
             asm.emitValue(rhs);
             asm.delimiter();
             asm.eol();
