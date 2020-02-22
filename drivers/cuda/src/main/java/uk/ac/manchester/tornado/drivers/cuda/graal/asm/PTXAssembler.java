@@ -14,7 +14,6 @@ import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.Variable;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
-import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIROp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXReturnSlot;
 
 import java.util.ArrayList;
@@ -167,15 +166,6 @@ public class PTXAssembler extends Assembler {
         return sb.toString();
     }
 
-    private void emitValueOrOp(PTXCompilationResultBuilder crb, Value value) {
-        if (value instanceof PTXLIROp) {
-            ((PTXLIROp) value).emit(crb, this);
-        }
-        else {
-            emitValue(value);
-        }
-    }
-
     public void emit(String opcode) {
         emitSubString(opcode);
     }
@@ -191,7 +181,7 @@ public class PTXAssembler extends Assembler {
         }
     }
 
-    private void emitValues(Value[] values) {
+    public void emitValues(Value[] values) {
         for (int i = 0; i < values.length - 1; i++) {
             emitValue(values[i]);
             emitSymbol(COMMA);
@@ -230,8 +220,8 @@ public class PTXAssembler extends Assembler {
         }
 
         protected final void emitOpcode(PTXAssembler asm) {
-            asm.emit(opcode);
             asm.emitSymbol(TAB);
+            asm.emit(opcode);
         }
 
         public boolean equals(PTXOp other) {
@@ -290,9 +280,15 @@ public class PTXAssembler extends Assembler {
             super(opcode);
         }
 
-        public void emit(PTXCompilationResultBuilder crb) {
+        public void emit(PTXCompilationResultBuilder crb, Variable dest) {
             final PTXAssembler asm = crb.getAssembler();
+            asm.emitSymbol(TAB);
             emitOpcode(asm);
+
+            if (dest != null) {
+                asm.emitSymbol(TAB);
+                asm.emitValue(dest);
+            }
         }
     }
 
@@ -303,8 +299,9 @@ public class PTXAssembler extends Assembler {
         }
 
         @Override
-        public void emit(PTXCompilationResultBuilder crb) {
+        public void emit(PTXCompilationResultBuilder crb, Variable dest) {
             final PTXAssembler asm = crb.getAssembler();
+            asm.emitSymbol(TAB);
             asm.emit(opcode);
         }
     }
@@ -347,7 +344,7 @@ public class PTXAssembler extends Assembler {
             final PTXAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             asm.emit(".");
-            asm.emitValueOrOp(crb, x);
+            asm.emitValue(x);
         }
     }
 
@@ -371,7 +368,7 @@ public class PTXAssembler extends Assembler {
         @Override
         public void emit(PTXCompilationResultBuilder crb, Value value) {
             final PTXAssembler asm = crb.getAssembler();
-            asm.emit(template, asm.toString(value));
+            asm.emit(template, PTXAssembler.toString(value));
         }
 
         public String getTemplate() {
@@ -399,14 +396,11 @@ public class PTXAssembler extends Assembler {
             super(opcode);
         }
 
-        public void emit(PTXCompilationResultBuilder crb, Value x, Value y) {
+        public void emit(PTXCompilationResultBuilder crb, Value x, Value y, Variable dest) {
             final PTXAssembler asm = crb.getAssembler();
             emitOpcode(asm);
             asm.emitSymbol(TAB);
-            asm.emitValueOrOp(crb, x);
-            asm.emitSymbol(COMMA);
-            asm.space();
-            asm.emitValueOrOp(crb, y);
+            asm.emitValues(new Value[]{dest, x, y});
         }
     }
 
@@ -427,13 +421,14 @@ public class PTXAssembler extends Assembler {
         }
 
         @Override
-        public void emit(PTXCompilationResultBuilder crb, Value x, Value y) {
+        public void emit(PTXCompilationResultBuilder crb, Value x, Value y, Variable dest) {
             final PTXAssembler asm = crb.getAssembler();
             emitOpcode(asm);
+            asm.emitSymbol(TAB);
             asm.emit("(");
-            asm.emitValueOrOp(crb, x);
+            asm.emitValue(x);
             asm.emit(", ");
-            asm.emitValueOrOp(crb, y);
+            asm.emitValue(y);
             asm.emit(")");
         }
     }
@@ -458,12 +453,12 @@ public class PTXAssembler extends Assembler {
         }
 
         @Override
-        public void emit(PTXCompilationResultBuilder crb, Value x, Value y) {
+        public void emit(PTXCompilationResultBuilder crb, Value x, Value y, Variable dest) {
             final PTXAssembler asm = crb.getAssembler();
             asm.beginStackPush();
-            asm.emitValueOrOp(crb, x);
+            asm.emitValue(x);
             final String input1 = asm.getLastOp();
-            asm.emitValueOrOp(crb, y);
+            asm.emitValue(y);
             final String input2 = asm.getLastOp();
             asm.endStackPush();
 
@@ -478,10 +473,11 @@ public class PTXAssembler extends Assembler {
             super(opcode);
         }
 
-        public void emit(PTXCompilationResultBuilder crb, Value x, Value y, Value z) {
+        public void emit(PTXCompilationResultBuilder crb, Value x, Value y, Value z, Variable dest) {
             final PTXAssembler asm = crb.getAssembler();
             emitOpcode(asm);
-            asm.emitValues(new Value[] {x, y, z});
+            asm.emitSymbol(TAB);
+            asm.emitValues(new Value[] {dest, x, y, z});
         }
     }
 }

@@ -2,11 +2,14 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Opcode;
+import org.graalvm.compiler.lir.Variable;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXNullaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
 
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.*;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.STMT_DELIMITER;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.TAB;
 
 public class PTXNullary {
     /**
@@ -23,8 +26,8 @@ public class PTXNullary {
         }
 
         @Override
-        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            opcode.emit(crb);
+        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
+            opcode.emit(crb, dest);
         }
 
         @Override
@@ -43,8 +46,12 @@ public class PTXNullary {
         }
 
         @Override
-        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
             asm.emit(opcode.toString());
+            asm.emitSymbol(TAB);
+            asm.emitValue(dest);
+            asm.emitSymbol(STMT_DELIMITER);
+            asm.eol();
         }
     }
 

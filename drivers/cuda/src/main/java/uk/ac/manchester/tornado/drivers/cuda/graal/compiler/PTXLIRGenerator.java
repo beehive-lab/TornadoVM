@@ -152,9 +152,7 @@ public class PTXLIRGenerator extends LIRGenerator {
     public void emitReturn(JavaKind javaKind, Value input) {
         trace("emitReturn: input=%s", input);
         if (input != null) {
-            LIRKind lirKind = LIRKind.value(input.getPlatformKind());
-            ExprStmt stmt = new ExprStmt(new PTXUnary.Expr(PTXUnaryOp.RETURN, lirKind, input));
-            append(stmt);
+            unimplemented("Returning values from CUDA-PTX kernels is not implemented yet");
         } else {
             append(new ExprStmt(new PTXNullary.Expr(PTXNullaryOp.RETURN, LIRKind.Illegal)));
         }
@@ -174,16 +172,16 @@ public class PTXLIRGenerator extends LIRGenerator {
                                   LabelRef trueDestination,
                                   LabelRef falseDestination,
                                   double trueDestinationProbability) {
-
-        LIRKind lirKind = LIRKind.value(cmpKind);
-        Variable isTrue = newVariable(LIRKind.value(PTXKind.PRED));
-        ExprStmt compare = new ExprStmt(new PTXTernary.Expr(SETP, lirKind, isTrue, left, right));
-        ExprStmt branchTrue = new ExprStmt(new PTXUnary.Branch(CONDITIONAL_BRA, lirKind, isTrue, trueDestination));
-        ExprStmt branchFalse = new ExprStmt(new PTXUnary.Branch(BRA, lirKind, null, falseDestination));
-
-        append(compare);
-        append(branchTrue);
-        append(branchFalse);
+        unimplemented();
+//        LIRKind lirKind = LIRKind.value(cmpKind);
+//        Variable isTrue = newVariable(LIRKind.value(PTXKind.PRED));
+//        ExprStmt compare = new ExprStmt(new PTXTernary.Expr(SETP, lirKind, isTrue, left, right));
+//        ExprStmt branchTrue = new ExprStmt(new PTXUnary.Branch(CONDITIONAL_BRA, lirKind, isTrue, trueDestination));
+//        ExprStmt branchFalse = new ExprStmt(new PTXUnary.Branch(BRA, lirKind, null, falseDestination));
+//
+//        append(compare);
+//        append(branchTrue);
+//        append(branchFalse);
     }
 
     @Override

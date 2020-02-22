@@ -5,12 +5,16 @@ import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
+import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXUnary.PTXAddressCast;
 
+import static org.graalvm.compiler.lir.LIRInstruction.*;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.*;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.TAB;
 
 public class PTXLIRStmt {
 
@@ -45,13 +49,15 @@ public class PTXLIRStmt {
 
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            asm.emitValue(lhs);
-            asm.space();
-            asm.assign();
-            asm.space();
             if (rhs instanceof PTXLIROp) {
-                ((PTXLIROp) rhs).emit(crb, asm);
-            } else {
+                ((PTXLIROp) rhs).emit(crb, asm, (Variable) lhs);
+            }
+            else {
+                asm.emitSymbol(TAB);
+                asm.emit("mov." + lhs.getPlatformKind().toString());
+                asm.emitSymbol(TAB);
+                asm.emitValue(lhs);
+                asm.emitSymbol(", ");
                 asm.emitValue(rhs);
             }
             asm.delimiter();
@@ -71,7 +77,7 @@ public class PTXLIRStmt {
     public static class ExprStmt extends AbstractInstruction {
         public static final LIRInstructionClass<ExprStmt> TYPE = LIRInstructionClass.create(ExprStmt.class);
 
-        @LIRInstruction.Use
+        @Use
         protected Value expr;
 
         public ExprStmt(PTXLIROp expr) {
@@ -82,7 +88,7 @@ public class PTXLIRStmt {
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             if (expr instanceof PTXLIROp) {
-                ((PTXLIROp) expr).emit(crb, asm);
+                ((PTXLIROp) expr).emit(crb, asm, null);
             } else {
                 asm.emitValue(expr);
             }
@@ -124,7 +130,7 @@ public class PTXLIRStmt {
 
             // asm.emitLine("*(ul_12) = 102;");
             asm.emit("*(");
-            address.emit(crb, asm);
+            address.emit(crb, asm, null);
             asm.emit(")");
             asm.space();
             asm.assign();
@@ -188,9 +194,9 @@ public class PTXLIRStmt {
             asm.emit("(");
             asm.emitValue(index);
             asm.emit(", ");
-            cast.emit(crb, asm);
+            cast.emit(crb, asm, null);
             asm.space();
-            address.emit(crb, asm);
+            address.emit(crb, asm, null);
             asm.emit(")");
             asm.delimiter();
             asm.eol();

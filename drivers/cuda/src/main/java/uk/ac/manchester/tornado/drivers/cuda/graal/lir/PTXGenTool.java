@@ -48,7 +48,7 @@ public class PTXGenTool {
             PTXMemoryBase base = globalSpace;
             PTXBinaryIntrinsic intrinsic = VectorUtil.resolveLoadIntrinsic(kind);
             PTXAddressCast cast = new PTXAddressCast(base, LIRKind.value(kind.getElementKind()));
-            PTXUnary.MemoryAccess address = new PTXUnary.MemoryAccess(base, result, false);
+            PTXUnary.MemoryAccess address = new PTXUnary.MemoryAccess(base, result);
 
             emitVectorLoad(vector, intrinsic, new ConstantValue(LIRKind.value(PTXKind.S32), PrimitiveConstant.INT_0), cast, address);
             result = vector;

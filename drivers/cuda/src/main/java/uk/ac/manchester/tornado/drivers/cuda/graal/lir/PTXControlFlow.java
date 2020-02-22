@@ -3,6 +3,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
+import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
@@ -42,9 +43,13 @@ public class PTXControlFlow {
         @Use
         private final Value condition;
 
-        public LoopConditionOp(Value condition) {
+        @Use
+        private Variable dest;
+
+        public LoopConditionOp(Value condition, Variable dest) {
             super(TYPE);
             this.condition = condition;
+            this.dest = dest;
         }
 
         @Override
@@ -56,7 +61,7 @@ public class PTXControlFlow {
             asm.delimiter();
 
             if (condition instanceof PTXLIROp) {
-                ((PTXLIROp) condition).emit(crb, asm);
+                ((PTXLIROp) condition).emit(crb, asm, dest);
             } else {
                 asm.emitValue(condition);
             }

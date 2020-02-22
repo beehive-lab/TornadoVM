@@ -2,19 +2,17 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture;
+import org.graalvm.compiler.lir.Variable;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.PTXMemoryBase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.meta.PTXMemorySpace;
 
-import static org.graalvm.compiler.lir.LIRInstruction.*;
-import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.*;
+import static org.graalvm.compiler.lir.LIRInstruction.Use;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryOp;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryTemplate;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.*;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.OPENCL_USE_RELATIVE_ADDRESSES;
 
 public class PTXUnary {
 
@@ -43,8 +41,10 @@ public class PTXUnary {
         }
 
         @Override
-        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
             opcode.emit(crb, value);
+            asm.emit(TAB);
+            asm.emitValue(dest);
         }
     }
 
@@ -65,40 +65,20 @@ public class PTXUnary {
         }
     }
 
-    public static class Branch extends UnaryConsumer {
-
-        private LabelRef ref;
-
-        public Branch(PTXUnaryOp opcode, LIRKind lirKind, Value value, LabelRef ref) {
-            super(opcode, lirKind, value);
-            this.ref = ref;
-        }
-
-        @Override
-        public void emit (PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            super.emit(crb, asm);
-            asm.emitSymbol(TAB);
-            asm.emit(asm.toString(ref));
-        }
-    }
-
     public static class MemoryAccess extends UnaryConsumer {
 
         private final PTXMemoryBase base;
-        private final boolean needsBase;
         private Value index;
 
-        MemoryAccess(PTXMemoryBase base, Value value, boolean needsBase) {
+        MemoryAccess(PTXMemoryBase base, Value value) {
             super(null, LIRKind.Illegal, value);
             this.base = base;
-            this.needsBase = needsBase;
         }
 
-        MemoryAccess(PTXMemoryBase base, Value value, Value index, boolean needsBase) {
+        MemoryAccess(PTXMemoryBase base, Value value, Value index) {
             super(null, LIRKind.Illegal, value);
             this.base = base;
             this.index = index;
-            this.needsBase = needsBase;
         }
 
         private boolean shouldEmitRelativeAddress() {
@@ -107,8 +87,10 @@ public class PTXUnary {
         }
 
         @Override
-        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
             if (shouldEmitRelativeAddress()) {
+                asm.emit("ld." + value.getPlatformKind().toString());
+                asm.emit(TAB);
                 asm.emit(base.getName());
                 asm.emitSymbol(SQUARE_BRACKETS_OPEN);
                 asm.emitValue(value);
@@ -120,10 +102,6 @@ public class PTXUnary {
 
         public PTXMemoryBase getBase() {
             return base;
-        }
-
-        public Value getIndex() {
-            return index;
         }
 
         @Override
@@ -141,7 +119,7 @@ public class PTXUnary {
         }
 
         @Override
-        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
             PTXKind oclKind = (PTXKind) getPlatformKind();
             asm.emit(((PTXUnaryTemplate) opcode).getTemplate(), base.memorySpace.name() + " " + oclKind.toString());
         }

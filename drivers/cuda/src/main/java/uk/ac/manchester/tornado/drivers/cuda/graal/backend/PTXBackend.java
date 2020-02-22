@@ -175,7 +175,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
     public void emitCode(PTXCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
         final PTXAssembler asm = (PTXAssembler) crb.asm;
         emitPrologue(crb, asm, method, lir);
-        //crb.emit(lir);
+        crb.emit(lir);
         emitEpilogue(asm);
     }
 

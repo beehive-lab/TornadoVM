@@ -37,8 +37,8 @@ public class PTXBinary {
         }
 
         @Override
-        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            opcode.emit(crb, x, y);
+        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
+            opcode.emit(crb, x, y, dest);
         }
 
         public Value getX() {
@@ -63,46 +63,8 @@ public class PTXBinary {
         }
     }
 
-    public static class TestZeroExpression extends BinaryConsumer {
-
-        public TestZeroExpression(PTXBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
-            super(opcode, lirKind, x, y);
-        }
-
-        @Override
-        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            asm.emit(TAB);
-            asm.emit(opcode.toString());
-            asm.emit(TAB);
-            asm.emitValue(x);
-            asm.space();
-            asm.emit(COMMA);
-            asm.emitValue(y);
-            asm.emit(" == 0");
-        }
-    }
-
-    public static class TestNegateZeroExpression extends BinaryConsumer {
-
-        public TestNegateZeroExpression(PTXBinaryOp opcode, LIRKind lirKind, Value x, Value y) {
-            super(opcode, lirKind, x, y);
-        }
-
-        @Override
-        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            asm.emit("!((");
-            asm.emitValue(x);
-            asm.emit(" ");
-            asm.emit(opcode.toString());
-            asm.emit(" ");
-            asm.emitValue(y);
-            asm.emit(")");
-            asm.emit(" == 0)");
-        }
-    }
-
     /**
-     * OpenCL intrinsic call which consumes two inputs
+     * PTX intrinsic call which consumes two inputs
      */
     public static class Intrinsic extends BinaryConsumer {
 
@@ -123,10 +85,10 @@ public class PTXBinary {
         }
 
         @Override
-        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            asm.emitValue(x);
+        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
             asm.emit(opcode.toString());
-            asm.emitValue(y);
+            asm.emitSymbol(TAB);
+            asm.emitValues(new Value[]{dest, x, y});
         }
 
         @Override

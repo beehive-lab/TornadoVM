@@ -230,7 +230,8 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
 
         if (isLoop) {
             // HERE NEED TO ADD THE PRAGMA UNROLL
-            append(new PTXControlFlow.LoopConditionOp(condition));
+            Variable predicate = getGen().newVariable(LIRKind.value(PTXKind.PRED));
+            append(new PTXControlFlow.LoopConditionOp(condition, predicate));
         } else {
             Value operand = operand(x.condition());
             Variable newVariable = getGen().newVariable(operand.getValueKind());

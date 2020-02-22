@@ -3,6 +3,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Opcode;
+import org.graalvm.compiler.lir.Variable;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXTernaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
@@ -34,8 +35,8 @@ public class PTXTernary {
         }
 
         @Override
-        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            opcode.emit(crb, x, y, z);
+        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
+            opcode.emit(crb, x, y, z, dest);
         }
 
         @Override
