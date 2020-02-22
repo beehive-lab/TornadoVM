@@ -1,5 +1,6 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
@@ -18,7 +19,86 @@ public class PTXControlFlow {
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             asm.emit("LOOP_INIT");
+        }
+    }
+
+    public static class LoopPostOp extends AbstractInstruction {
+
+        public static final LIRInstructionClass<LoopPostOp> TYPE = LIRInstructionClass.create(LoopPostOp.class);
+
+        public LoopPostOp() {
+            super(TYPE);
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
             asm.eol();
         }
+    }
+
+    public static class LoopConditionOp extends AbstractInstruction {
+
+        public static final LIRInstructionClass<LoopConditionOp> TYPE = LIRInstructionClass.create(LoopConditionOp.class);
+        @Use
+        private final Value condition;
+
+        public LoopConditionOp(Value condition) {
+            super(TYPE);
+            this.condition = condition;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            if (asm.getByte(asm.position() - 1) == ',') {
+                asm.emitString(" ", asm.position() - 1);
+            }
+
+            asm.delimiter();
+
+            if (condition instanceof PTXLIROp) {
+                ((PTXLIROp) condition).emit(crb, asm);
+            } else {
+                asm.emitValue(condition);
+            }
+
+            if (((PTXKind) condition.getPlatformKind()).isInteger()) {
+                asm.emit(" == 1");
+            }
+            asm.delimiter();
+        }
+    }
+
+    public static class LoopBreakOp extends AbstractInstruction {
+
+        public static final LIRInstructionClass<LoopBreakOp> TYPE = LIRInstructionClass.create(LoopBreakOp.class);
+
+        public LoopBreakOp() {
+            super(TYPE);
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.loopBreak();
+            asm.delimiter();
+            asm.eol();
+        }
+
+    }
+
+    public static class ConditionalBranchOp extends AbstractInstruction {
+
+        public static final LIRInstructionClass<ConditionalBranchOp> TYPE = LIRInstructionClass.create(ConditionalBranchOp.class);
+        @Use private final Value condition;
+
+        public ConditionalBranchOp(Value condition) {
+            super(TYPE);
+            this.condition = condition;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitLine("if " + condition);
+        }
+
     }
 }

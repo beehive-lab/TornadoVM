@@ -38,11 +38,6 @@ public class PTXAssembler extends Assembler {
         operandStack = new ArrayList<>(10);
     }
 
-    @Override
-    public byte[] close(boolean a) {
-        return super.close(true);
-    }
-
     public void emitSymbol(String sym) {
         for (byte b : sym.getBytes()) {
             emitByte(b);
@@ -124,7 +119,7 @@ public class PTXAssembler extends Assembler {
 
     @Override
     public void align(int modulus) {
-        unimplemented();
+        //unimplemented();
     }
 
     @Override
@@ -217,6 +212,10 @@ public class PTXAssembler extends Assembler {
     public void emitLine(String format, Object... args) {
         emit(format, args);
         eol();
+    }
+
+    public void loopBreak() {
+        emitLine("LOOP_BREAK");
     }
 
     /**
@@ -388,6 +387,13 @@ public class PTXAssembler extends Assembler {
 
         public static final PTXBinaryOp BITWISE_LEFT_SHIFT = new PTXBinaryOp("shl");
         public static final PTXBinaryOp ADD = new PTXBinaryOp("add");
+
+        public static final PTXBinaryOp RELATIONAL_EQ = new PTXBinaryOp("==");
+        public static final PTXBinaryOp RELATIONAL_NE = new PTXBinaryOp("!=");
+        public static final PTXBinaryOp RELATIONAL_GT = new PTXBinaryOp(">");
+        public static final PTXBinaryOp RELATIONAL_LT = new PTXBinaryOp("<");
+        public static final PTXBinaryOp RELATIONAL_GTE = new PTXBinaryOp(">=");
+        public static final PTXBinaryOp RELATIONAL_LTE = new PTXBinaryOp("<=");
 
         public PTXBinaryOp(String opcode) {
             super(opcode);
