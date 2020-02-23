@@ -16,24 +16,29 @@ import org.graalvm.compiler.lir.*;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.*;
-import org.graalvm.compiler.nodes.calc.*;
+import org.graalvm.compiler.nodes.calc.IntegerBelowNode;
+import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
+import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
+import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.cfg.Block;
+import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.options.OptionValues;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXStampFactory;
-import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.*;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.logic.LogicalEqualsNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.vector.VectorValueNode;
 
+import java.util.Iterator;
 import java.util.List;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.*;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBinaryOp;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXNullaryOp;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind.ILLEGAL;
-import static uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt.*;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt.AssignStmt;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt.ExprStmt;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
@@ -200,15 +205,50 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         trace("emitNode: %s", node);
         if (node instanceof LoopBeginNode) {
             emitLoopBegin((LoopBeginNode) node);
-        } else if (node instanceof LoopExitNode) {
-            TTY.println("LoopExitNode");
-            //emitLoopExit((LoopExitNode) node);
-        } else if (node instanceof ShortCircuitOrNode) {
+        }
+        else if (node instanceof LoopExitNode) {
+            emitLoopExit();
+        }
+        else if (node instanceof ShortCircuitOrNode) {
             unimplemented("Unimplemented ShortCircuitOrNode");
-        } else {
-
         }
         super.emitNode(node);
+    }
+
+    @Override
+    public void visitLoopEnd(LoopEndNode node) {
+        // Get first IfNode after loop begin to get the loop exit condition
+        LoopBeginNode begin  = node.loopBegin();
+        final List<ValuePhiNode> phis = begin.valuePhis().snapshot();
+
+        for (ValuePhiNode phi : phis) {
+            AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
+            Value src = operand(phi.valueAt(node));
+
+            if (!dest.equals(src)) {
+                append(new PTXLIRStmt.AssignStmt(dest, src));
+            }
+        }
+
+        IfNode ifNode = null;
+        Iterator<FixedNode> nodesIterator = begin.getBlockNodes().iterator();
+        while (nodesIterator.hasNext() && ifNode == null) {
+            FixedNode fNode = nodesIterator.next();
+            if (fNode instanceof IfNode) ifNode = (IfNode) fNode;
+        }
+
+        if (ifNode == null) shouldNotReachHere("Could not find condition");
+        final Variable predicate = emitLogicNode(ifNode.condition());
+        Block loopStart = ((ControlFlowGraph) gen.getResult().getLIR().getControlFlowGraph()).blockFor(begin);
+        getGen().emitConditionalBranch(
+                LabelRef.forSuccessor(gen.getResult().getLIR(), loopStart, 0),
+                predicate,
+                false
+        );
+    }
+
+    private void emitLoopExit() {
+        append(new PTXControlFlow.LoopExit((Block) gen.getCurrentBlock()));
     }
 
     @Override
@@ -228,13 +268,13 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         final boolean isLoop = gen.getCurrentBlock().isLoopHeader();
         final boolean invertedLoop = isLoop && x.trueSuccessor() instanceof LoopExitNode;
 
-        final Value condition = (invertedLoop) ? emitNegatedLogicNode(x.condition()) : emitLogicNode(x.condition());
-        trace("condition: %s -> %s", x.condition(), condition);
+        final Variable predicate = emitLogicNode(x.condition());
 
         if (isLoop) {
-            // HERE NEED TO ADD THE PRAGMA UNROLL
-            Variable predicate = getGen().newVariable(LIRKind.value(PTXKind.PRED));
-            append(new PTXControlFlow.LoopConditionOp(condition, predicate));
+            // Branch away if already
+            getGen().emitConditionalBranch(getLIRBlock(x.falseSuccessor()), predicate, !invertedLoop);
+            append(new PTXControlFlow.LoopInitOp(getLIRBlock(x.trueSuccessor())));
+
         } else {
             Value operand = operand(x.condition());
             Variable newVariable = getGen().newVariable(operand.getValueKind());
@@ -243,35 +283,39 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         }
     }
 
-    private PTXLIROp emitLogicNode(final LogicNode node) {
-        PTXLIROp result;
+    private Variable emitLogicNode(final LogicNode node) {
+        //Value result = null;
         trace("emitLogicNode: %s", node);
         LIRKind intLirKind = LIRKind.value(PTXKind.S32);
         LIRKind boolLirKind = LIRKind.value(PTXKind.PRED);
+        Variable pred = getGen().newVariable(LIRKind.value(PTXKind.PRED));
         if (node instanceof IntegerBelowNode) {
             final IntegerBelowNode condition = (IntegerBelowNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
-            result = getGen().getArithmetic().genBinaryExpr(PTXBinaryOp.RELATIONAL_LT, boolLirKind, x, y);
+            unimplemented("Logic: IntegerBelowNode");
+            //result = getGen().getArithmetic().genBinaryExpr(PTXBinaryOp.RELATIONAL_LT, boolLirKind, x, y);
         } else if (node instanceof IntegerEqualsNode) {
             final IntegerEqualsNode condition = (IntegerEqualsNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
-            result = getGen().getArithmetic().genBinaryExpr(PTXBinaryOp.RELATIONAL_EQ, boolLirKind, x, y);
+            unimplemented("Logic: IntegerEqualsNode");
+            //result = getGen().getArithmetic().genBinaryExpr(PTXBinaryOp.RELATIONAL_EQ, boolLirKind, x, y);
         } else if (node instanceof IntegerLessThanNode) {
             final IntegerLessThanNode condition = (IntegerLessThanNode) node;
             final Value x = operand(condition.getX());
             final Value y = operand(condition.getY());
-            result = getGen().getArithmetic().genBinaryExpr(PTXBinaryOp.RELATIONAL_LT, boolLirKind, x, y);
+            append(new AssignStmt(pred, new PTXBinary.Expr(PTXBinaryOp.SETP_LT, intLirKind, x, y)));
         } else if (node instanceof IsNullNode) {
             final IsNullNode condition = (IsNullNode) node;
             final Value value = operand(condition.getValue());
-            result = getGen().getArithmetic().genBinaryExpr(PTXBinaryOp.RELATIONAL_EQ, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
+            unimplemented("Logic: IsNullNode");
+            //result = getGen().getArithmetic().genBinaryExpr(PTXBinaryOp.RELATIONAL_EQ, boolLirKind, value, new ConstantValue(intLirKind, PrimitiveConstant.NULL_POINTER));
         } else {
             throw new TornadoRuntimeException(String.format("logic node (class=%s)", node.getClass().getName()));
         }
-        setResult(node, result);
-        return result;
+        //setResult(node, result);
+        return pred;
     }
 
     private Value emitNegatedLogicNode(final LogicNode node) {
@@ -310,7 +354,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
         trace("visiting emitLoopBegin %s", loopBeginNode);
 
         final Block block = (Block) gen.getCurrentBlock();
-        final Block currentBlockDominator = block.getDominator();
+        //final Block currentBlockDominator = block.getDominator();
         final LIR lir = getGen().getResult().getLIR();
         final StandardOp.LabelOp label = (StandardOp.LabelOp) lir.getLIRforBlock(block).get(0);
 
@@ -328,8 +372,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             }
         }
         //emitPragmaLoopUnroll(currentBlockDominator);
-        append(new PTXControlFlow.LoopInitOp());
-        append(new PTXControlFlow.LoopPostOp());
+
         label.clearIncomingValues();
     }
 

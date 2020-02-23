@@ -141,51 +141,7 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
     }
 
     public void emitLoopHeader(Block block) {
-        final List<LIRInstruction> headerInstructions = lir.getLIRforBlock(block);
-        formatLoopHeader(headerInstructions);
         emitBlock(block);
-    }
-
-    private static void formatLoopHeader(List<LIRInstruction> instructions) {
-        int index = instructions.size() - 1;
-
-        LIRInstruction condition = instructions.get(index);
-        while (!(condition instanceof PTXControlFlow.LoopConditionOp)) {
-            index--;
-            condition = instructions.get(index);
-        }
-
-        instructions.remove(index);
-
-        final Set<Value> dependencies = new HashSet<>();
-        DepFinder df = new DepFinder(dependencies);
-        condition.forEachInput(df);
-
-        index--;
-        final List<LIRInstruction> moved = new ArrayList<>();
-        LIRInstruction insn = instructions.get(index);
-        while (!(insn instanceof PTXControlFlow.LoopPostOp)) {
-            if (insn instanceof PTXLIRStmt.AssignStmt) {
-                PTXLIRStmt.AssignStmt assign = (PTXLIRStmt.AssignStmt) insn;
-                if (assign.getResult() instanceof Variable) {
-                    Variable var = (Variable) assign.getResult();
-                    if (dependencies.contains(var)) {
-                        moved.add(instructions.remove(index));
-                    }
-                }
-            }
-            index--;
-            insn = instructions.get(index);
-        }
-
-        LIRInstruction loopInit = instructions.get(instructions.size() - 1);
-        while (!(loopInit instanceof PTXControlFlow.LoopInitOp)) {
-            index--;
-            loopInit = instructions.get(index);
-        }
-
-        instructions.add(index + 1, condition);
-        instructions.addAll(index - 1, moved);
     }
 
     private static boolean isMergeBlock(Block block) {
@@ -219,14 +175,15 @@ public class PTXCompilationResultBuilder extends CompilationResultBuilder {
         for (LIRInstruction op : lir.getLIRforBlock(block)) {
             if (op == null) {
                 continue;
-            } else if (op instanceof PTXControlFlow.LoopBreakOp) {
+            }
+            else if (op instanceof PTXControlFlow.LoopBreakOp) {
                 breakInst = op;
                 continue;
-            } else if ((loops == 0) && (op instanceof PTXControlFlow.LoopInitOp || op instanceof PTXControlFlow.LoopConditionOp || op instanceof PTXControlFlow.LoopPostOp)) {
-                if (op instanceof PTXControlFlow.LoopPostOp) {
+            }
+            else if ((loops == 0) && (op instanceof PTXControlFlow.LoopInitOp || op instanceof PTXControlFlow.LoopConditionOp)) {
+                if (op instanceof PTXControlFlow.LoopInitOp) {
                     loops++;
                 }
-                continue;
             }
             if (Options.PrintLIRWithAssembly.getValue(getOptions())) {
                 blockComment(String.format("%d %s", op.id(), op));

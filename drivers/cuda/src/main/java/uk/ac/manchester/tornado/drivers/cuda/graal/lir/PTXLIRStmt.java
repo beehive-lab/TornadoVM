@@ -1,14 +1,13 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.lir.*;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
-import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXUnary.PTXAddressCast;
 
 import static uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.paramSpace;
-import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBinaryIntrinsic;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.*;
 
 public class PTXLIRStmt {
@@ -217,68 +216,35 @@ public class PTXLIRStmt {
         }
     }
 
-    @Opcode("VLOAD")
-    public static class VectorLoadStmt extends AbstractInstruction {
-
-        public static final LIRInstructionClass<VectorLoadStmt> TYPE = LIRInstructionClass.create(VectorLoadStmt.class);
-
-        @Def
-        protected AllocatableValue lhs;
-        @Use
-        protected PTXAddressCast cast;
-        @Use
-        protected PTXUnary.MemoryAccess address;
+    @Opcode("GUARDED_STMT")
+    public static class ConditionalStatement extends AbstractInstruction {
+        public static final LIRInstructionClass<ConditionalStatement> TYPE = LIRInstructionClass.create(ConditionalStatement.class);
 
         @Use
-        protected Value index;
+        private final AbstractInstruction instruction;
 
-        protected PTXBinaryIntrinsic op;
+        @Use
+        private final Variable guard;
 
-        public VectorLoadStmt(AllocatableValue lhs,
-                              PTXBinaryIntrinsic op,
-                              Value index,
-                              PTXAddressCast cast,
-                              PTXUnary.MemoryAccess address) {
+        @Use
+        private final boolean isNegated;
+
+
+        public ConditionalStatement(AbstractInstruction instr, Variable guard, boolean isNegated) {
             super(TYPE);
-            this.lhs = lhs;
-            this.cast = cast;
-            this.address = address;
-            this.op = op;
-            this.index = index;
+            this.instruction = instr;
+            this.guard = guard;
+            this.isNegated = isNegated;
         }
-
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            asm.emitValue(lhs);
-            asm.space();
-            asm.assign();
-            asm.space();
-            asm.emit(op.toString());
-            asm.emit("(");
-            asm.emitValue(index);
-            asm.emit(", ");
-            cast.emit(crb, asm, null);
-            asm.space();
-            address.emit(crb, asm, null);
-            asm.emit(")");
-            asm.delimiter();
-            asm.eol();
-        }
+            asm.emitSymbol(TAB);
+            asm.emitSymbol(OP_GUARD);
+            if (isNegated) asm.emitSymbol(NEGATION);
+            asm.emitValue(guard);
 
-        public Value getResult() {
-            return lhs;
-        }
-
-        public PTXAddressCast getCast() {
-            return cast;
-        }
-
-        public PTXUnary.MemoryAccess getAddress() {
-            return address;
-        }
-
-        public PTXBinaryIntrinsic getOp() {
-            return op;
+            asm.convertNextTabToSpace();
+            instruction.emitCode(crb, asm);
         }
     }
 }

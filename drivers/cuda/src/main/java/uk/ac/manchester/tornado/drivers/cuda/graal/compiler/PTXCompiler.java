@@ -1,6 +1,5 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.compiler;
 
-import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.ProfilingInfo;
@@ -258,9 +257,8 @@ public class PTXCompiler {
 
     private static void emitBackEnd(PTXCompilationRequest r, boolean isParallel) {
         try (DebugContext.Scope s = getDebugContext().scope("BackEnd", r.graph.getLastSchedule()); DebugCloseable a = BackEnd.start(getDebugContext())) {
-            LIRGenerationResult lirGen = emitLIR(r, null);
+            LIRGenerationResult lirGen = emitLIR(r);
             try (DebugContext.Scope s2 = getDebugContext().scope("CodeGen", lirGen, lirGen.getLIR())) {
-                int bytecodeSize = r.graph.method() == null ? 0 : r.graph.getBytecodeSize();
                 r.compilationResult.setHasUnsafeAccess(r.graph.hasUnsafeAccess());
                 emitCode(r, lirGen, isParallel);
             } catch (Throwable e) {
@@ -305,7 +303,7 @@ public class PTXCompiler {
         }
     }
 
-    private static LIRGenerationResult emitLIR(PTXCompilationRequest r, RegisterConfig registerConfig) {
+    private static LIRGenerationResult emitLIR(PTXCompilationRequest r) {
         try (DebugContext.Scope ds = getDebugContext().scope("EmitLIR"); DebugCloseable a = EmitLIR.start(getDebugContext())) {
             OptionValues options = r.graph.getOptions();
             StructuredGraph.ScheduleResult schedule = r.graph.getLastSchedule();
@@ -326,8 +324,8 @@ public class PTXCompiler {
             } catch (Throwable e) {
                 throw getDebugContext().handle(e);
             }
-            RegisterAllocationConfig registerAllocationConfig = r.backend.newRegisterAllocationConfig(registerConfig, new String[] {});
-            FrameMapBuilder frameMapBuilder = r.backend.newFrameMapBuilder(registerConfig);
+            RegisterAllocationConfig registerAllocationConfig = r.backend.newRegisterAllocationConfig(null, new String[] {});
+            FrameMapBuilder frameMapBuilder = r.backend.newFrameMapBuilder(null);
             LIRGenerationResult lirGenRes = r.backend.newLIRGenerationResult(r.graph.compilationId(), lir, frameMapBuilder, registerAllocationConfig);
             LIRGeneratorTool lirGen = r.backend.newLIRGenerator(lirGenRes);
             NodeLIRBuilderTool nodeLirGen = r.backend.newNodeLIRBuilder(r.graph, lirGen);

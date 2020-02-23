@@ -1,38 +1,41 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
 import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
+import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.Variable;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+import org.graalvm.compiler.nodes.cfg.Block;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt.AbstractInstruction;
 
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.COLON;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.TAB;
+
 public class PTXControlFlow {
-    public static class LoopInitOp extends AbstractInstruction {
-        public static final LIRInstructionClass<LoopInitOp> TYPE = LIRInstructionClass.create(LoopInitOp.class);
 
-        public LoopInitOp() {
-            super(TYPE);
-        }
-
-        @Override
-        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            asm.emit("LOOP_INIT");
-        }
+    protected static void emitBlock(int blockId, PTXAssembler asm) {
+        emitBlockRef(blockId, asm);
+        asm.emitSymbol(COLON);
     }
 
-    public static class LoopPostOp extends AbstractInstruction {
+    protected static void emitBlockRef(int blockId, PTXAssembler asm) {
+        asm.emit("BLOCK_");
+        asm.emit(Integer.toString(blockId));
+    }
 
-        public static final LIRInstructionClass<LoopPostOp> TYPE = LIRInstructionClass.create(LoopPostOp.class);
+    public static class LoopInitOp extends AbstractInstruction {
+        public static final LIRInstructionClass<LoopInitOp> TYPE = LIRInstructionClass.create(LoopInitOp.class);
+        private final LabelRef block;
 
-        public LoopPostOp() {
+        public LoopInitOp(LabelRef b) {
             super(TYPE);
+            this.block = b;
         }
 
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            emitBlock(block.label().getBlockId(), asm);
             asm.eol();
         }
     }
@@ -54,22 +57,9 @@ public class PTXControlFlow {
 
         @Override
         public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
-            if (asm.getByte(asm.position() - 1) == ',') {
-                asm.emitString(" ", asm.position() - 1);
-            }
-
-            asm.delimiter();
-
-            if (condition instanceof PTXLIROp) {
-                ((PTXLIROp) condition).emit(crb, asm, dest);
-            } else {
-                asm.emitValue(condition);
-            }
-
-            if (((PTXKind) condition.getPlatformKind()).isInteger()) {
-                asm.emit(" == 1");
-            }
-            asm.delimiter();
+            asm.emit("LOOP_CONDITION_OP\t");
+            asm.emit(condition.toString());
+            asm.eol();
         }
     }
 
@@ -105,5 +95,43 @@ public class PTXControlFlow {
             asm.emitLine("if " + condition);
         }
 
+    }
+
+    public static class LoopExit extends AbstractInstruction {
+        public static final LIRInstructionClass<LoopExit> TYPE = LIRInstructionClass.create(LoopExit.class);
+
+        private final Block block;
+
+        public LoopExit(Block block) {
+            super(TYPE);
+            this.block = block;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            emitBlock(block.getId(), asm);
+            asm.eol();
+        }
+    }
+
+    public static class Branch extends AbstractInstruction {
+        public static final LIRInstructionClass<Branch> TYPE = LIRInstructionClass.create(Branch.class);
+        private final LabelRef destination;
+
+        public Branch(LabelRef destination) {
+            super(TYPE);
+            this.destination = destination;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            asm.emitSymbol(TAB);
+            asm.emit("bra");
+            asm.emitSymbol(TAB);
+
+            emitBlockRef(destination.label().getBlockId(), asm);
+            asm.delimiter();
+            asm.eol();
+        }
     }
 }

@@ -23,5 +23,6 @@ public class PTXInstalledCode extends InstalledCode implements TornadoInstalledC
 
     @Override public int launchWithoutDeps(CallStack stack, TaskMetaData meta, long batchThreads) {
         return deviceContext.enqueueKernelLaunch(module, name, stack, meta, batchThreads);
+        //return 0; //Turn off kernel execution until the compiler is stable enough to not generate infinite loops
     }
 }

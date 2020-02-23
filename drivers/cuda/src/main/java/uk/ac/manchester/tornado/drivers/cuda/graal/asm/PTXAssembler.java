@@ -18,6 +18,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXReturnSlot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.graalvm.compiler.code.HexCodeFile.encodeString;
@@ -27,19 +28,27 @@ import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConsta
 public class PTXAssembler extends Assembler {
     private boolean pushToStack;
     private List<String> operandStack;
-    private String delimiter;
     private boolean emitEOL;
+    private boolean convertTabToSpace;
 
     public PTXAssembler(TargetDescription target) {
         super(target);
         pushToStack = false;
         emitEOL = true;
-        delimiter = PTXAssemblerConstants.STMT_DELIMITER;
+        convertTabToSpace = false;
         operandStack = new ArrayList<>(10);
     }
 
     public void emitSymbol(String sym) {
-        for (byte b : sym.getBytes()) {
+        byte[] symBytes = sym.getBytes();
+        if (convertTabToSpace) {
+            byte[] tabBytes = TAB.getBytes();
+            if (Arrays.equals(symBytes, tabBytes)) {
+                symBytes = SPACE.getBytes();
+                convertTabToSpace = false;
+            }
+        }
+        for (byte b : symBytes) {
             emitByte(b);
         }
     }
@@ -96,7 +105,7 @@ public class PTXAssembler extends Assembler {
     }
 
     public void delimiter() {
-        emitSymbol(delimiter);
+        emitSymbol(STMT_DELIMITER);
     }
 
     public void eol() {
@@ -109,13 +118,8 @@ public class PTXAssembler extends Assembler {
     }
 
     public void space() {
-        emitSymbol(" ");
+        emitSymbol(PTXAssemblerConstants.SPACE);
     }
-
-    public void assign() {
-        emitSymbol(PTXAssemblerConstants.ASSIGN);
-    }
-
 
     @Override
     public void align(int modulus) {
@@ -212,6 +216,10 @@ public class PTXAssembler extends Assembler {
     public void emitConstant(ConstantValue constant) {
         emitSymbol(constant.getJavaConstant().asLong() > 0 ? "+" : "-");
         emit(constant.getConstant().toValueString());
+    }
+
+    public void convertNextTabToSpace() {
+        convertTabToSpace = true;
     }
 
     /**
@@ -328,7 +336,6 @@ public class PTXAssembler extends Assembler {
      * Unary opcodes
      */
     public static class PTXUnaryOp extends PTXOp {
-
         protected PTXUnaryOp(String opcode) {
             super(opcode);
         }
@@ -382,6 +389,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryOp RELATIONAL_GTE = new PTXBinaryOp(">=");
         public static final PTXBinaryOp RELATIONAL_LTE = new PTXBinaryOp("<=");
         public static final PTXBinaryOp MUL_LU = new PTXBinaryOp("mul.lo");
+        public static final PTXBinaryOp SETP_LT = new PTXBinaryOp("setp.lt");
 
         public PTXBinaryOp(String opcode) {
             super(opcode);
@@ -396,6 +404,7 @@ public class PTXAssembler extends Assembler {
             emitOpcode(asm);
             if (isTyped){
                 PTXKind type = (PTXKind) dest.getPlatformKind();
+                if (type == PTXKind.PRED) type = (PTXKind) x.getPlatformKind(); // Make sure setp doesn't end up with pred
                 if (isWeaklyTyped) type = type.toUntyped();
                 asm.emit("." + type);
             }

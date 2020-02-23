@@ -294,4 +294,8 @@ public class PTXLIRGenerator extends LIRGenerator {
                 PTXArchitecture.STACK_POINTER.getAllocatedVar(this)
         ));
     }
+
+    public void emitConditionalBranch(LabelRef ref, Variable predicate, boolean isNegated) {
+        append(new PTXLIRStmt.ConditionalStatement(new PTXControlFlow.Branch(ref), predicate, isNegated));
+    }
 }

@@ -7,8 +7,9 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXNullaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
 
-import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.*;
-import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.*;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXNullaryTemplate;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.STMT_DELIMITER;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.TAB;
 
 public class PTXNullary {
     /**

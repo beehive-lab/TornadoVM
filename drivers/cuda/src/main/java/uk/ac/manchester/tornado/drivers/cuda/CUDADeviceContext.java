@@ -193,7 +193,7 @@ public class CUDADeviceContext
 
     private int[] calculateBlocks(TaskMetaData meta) {
         int[] defaultBlocks = {1, 1, 1};
-        int dims = 1; // meta.getDims(); - This is not yet implemented as it comes from the compiler.
+        int dims = 0; // meta.getDims(); - This is not yet implemented as it comes from the compiler.
 
         for (int i = 0; i < dims && i < 3; i++) {
             //TODO: Use meta info to calculate this
@@ -205,7 +205,7 @@ public class CUDADeviceContext
 
     private int[] calculateGrids(TaskMetaData meta) {
         int[] defaultGrids = {1, 1, 1};
-        int dims = 1; // meta.getDims(); - This is not yet implemented as it comes from the compiler.
+        int dims = 0; // meta.getDims(); - This is not yet implemented as it comes from the compiler.
 
         for (int i = 0 ; i < dims && i < 3; i++) {
             //TODO: Use meta info to calculate this
