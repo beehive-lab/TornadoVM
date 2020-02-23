@@ -3,7 +3,6 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.compiler;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.Assumptions;
-import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.core.common.alloc.ComputeBlockOrder;
@@ -31,7 +30,6 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.LowTierContext;
 import org.graalvm.compiler.phases.util.Providers;
-import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXSuitesProvider;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.PTXBackend;
@@ -56,7 +54,6 @@ import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Option
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerationPhase.*;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
-import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.error;
 
@@ -285,7 +282,7 @@ public class PTXCompiler {
                     r.isKernel,
                     isParallel
             );
-            r.backend.emitCode(crb, lirGenRes.getLIR(), r.installedCodeOwner);
+            r.backend.emitCode(crb, ((PTXLIRGenerationResult)lirGenRes));
 
             Assumptions assumptions = r.graph.getAssumptions();
             if (assumptions != null && !assumptions.isEmpty()) {

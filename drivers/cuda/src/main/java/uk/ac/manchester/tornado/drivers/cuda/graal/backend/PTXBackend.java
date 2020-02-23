@@ -172,10 +172,10 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         return new PTXAssembler(target);
     }
 
-    public void emitCode(PTXCompilationResultBuilder crb, LIR lir, ResolvedJavaMethod method) {
+    public void emitCode(PTXCompilationResultBuilder crb, PTXLIRGenerationResult lirGenRes) {
         final PTXAssembler asm = (PTXAssembler) crb.asm;
-        emitPrologue(crb, asm, method, lir);
-        crb.emit(lir);
+        emitPrologue(crb, asm, lirGenRes);
+        crb.emit(lirGenRes.getLIR());
         emitEpilogue(asm);
     }
 
@@ -183,11 +183,11 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         asm.emitLine("}");
     }
 
-    private void emitPrologue(PTXCompilationResultBuilder crb, PTXAssembler asm, ResolvedJavaMethod method, LIR lir) {
+    private void emitPrologue(PTXCompilationResultBuilder crb, PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {
         if (crb.isKernel()) {
             emitPTXHeader(asm);
             emitKernelFunction(asm, crb.compilationResult.getName());
-            emitVariableDefs(asm, lir);
+            emitVariableDefs(asm, lirGenRes);
         }
         else {
             unimplemented("Non-kernel function calls are not implemented id CUDA_PTX yet.");
@@ -214,28 +214,8 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         asm.emitLine("");
     }
 
-    private void emitVariableDefs(PTXAssembler asm, LIR lir) {
-        Map<PTXKind, Set<Variable>> kindToVariable = new HashMap<>();
-        final int expectedVariables = lir.numVariables();
-        final AtomicInteger variableCount = new AtomicInteger();
-
-        for (AbstractBlockBase<?> b : lir.linearScanOrder()) {
-            for (LIRInstruction insn : lir.getLIRforBlock(b)) {
-
-                insn.forEachOutput((instruction, value, mode, flags) -> {
-                    if (value instanceof Variable) {
-                        Variable variable = (Variable) value;
-                        if (variable.getName() != null) {
-                            addVariableDef(kindToVariable, variable);
-                            variableCount.incrementAndGet();
-                        }
-                    }
-                    return value;
-                });
-            }
-        }
-
-        trace("found %d variable, expected (%d)", variableCount.get(), expectedVariables);
+    private void emitVariableDefs(PTXAssembler asm, PTXLIRGenerationResult lirGenRes) {
+        Map<PTXKind, Set<Variable>> kindToVariable = lirGenRes.getVariableTable();
 
         for (PTXKind type : kindToVariable.keySet()) {
             asm.emitLine(
@@ -246,26 +226,5 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
             );
         }
 
-    }
-
-    private void addVariableDef(Map<PTXKind, Set<Variable>> kindToVariable, Variable value) {
-        if (value != null) {
-
-            if (!(value.getPlatformKind() instanceof PTXKind)) {
-                shouldNotReachHere();
-            }
-
-            PTXKind kind = (PTXKind) value.getPlatformKind();
-            if (kind == PTXKind.ILLEGAL) {
-                shouldNotReachHere();
-            }
-
-            if (!kindToVariable.containsKey(kind)) {
-                kindToVariable.put(kind, new HashSet<>());
-            }
-
-            final Set<Variable> varList = kindToVariable.get(kind);
-            varList.add(value);
-        }
     }
 }

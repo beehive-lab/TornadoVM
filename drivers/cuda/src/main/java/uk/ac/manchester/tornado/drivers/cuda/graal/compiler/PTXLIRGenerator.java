@@ -284,12 +284,14 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     public void emitParameterAlloc() {
-        Variable heapPointer = newVariable(LIRKind.value(PTXKind.U64));
-        PTXArchitecture.HEAP_POINTER.allocateToVar(heapPointer);
-        Variable stackPointer = newVariable(LIRKind.value(PTXKind.U64));
-        PTXArchitecture.STACK_POINTER.allocateToVar(stackPointer);
+        append(new PTXLIRStmt.LoadStmt(
+                new PTXUnary.MemoryAccess(PTXAssemblerConstants.HEAP_PTR_NAME),
+                PTXArchitecture.HEAP_POINTER.getAllocatedVar(this)
+        ));
 
-        append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(PTXAssemblerConstants.HEAP_PTR_NAME), heapPointer));
-        append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(PTXAssemblerConstants.STACK_PTR_NAME), stackPointer));
+        append(new PTXLIRStmt.LoadStmt(
+                new PTXUnary.MemoryAccess(PTXAssemblerConstants.STACK_PTR_NAME),
+                PTXArchitecture.STACK_POINTER.getAllocatedVar(this)
+        ));
     }
 }

@@ -37,4 +37,8 @@ public class PTXLIRGenerationResult extends LIRGenerationResult {
         variableTable.computeIfAbsent(kind, k -> new HashSet<>()).add(var);
         return variableTable.get(kind).size() - 1;
     }
+
+    public Map<PTXKind, Set<Variable>> getVariableTable() {
+        return variableTable;
+    }
 }

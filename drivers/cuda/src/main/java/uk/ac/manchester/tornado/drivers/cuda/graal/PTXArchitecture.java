@@ -91,16 +91,16 @@ public class PTXArchitecture extends Architecture {
     public static class PTXRegister {
         public final int number;
         protected String name;
-        public final PTXKind lirKind;
+        public final PTXKind ptxKind;
 
-        public PTXRegister(int number, PTXKind lirKind) {
+        public PTXRegister(int number, PTXKind ptxKind) {
             this.number = number;
-            this.lirKind = lirKind;
-            this.name = "r" + lirKind.getTypeChar() + number;
+            this.ptxKind = ptxKind;
+            this.name = "r" + ptxKind.getTypeChar() + number;
         }
 
         public String getDeclaration() {
-            return String.format(".reg .%s %s", lirKind.toString(), name);
+            return String.format(".reg .%s %s", ptxKind.toString(), name);
         }
 
         public String getName() {
@@ -119,14 +119,14 @@ public class PTXArchitecture extends Architecture {
 
         @Override
         public String getDeclaration() {
-            return String.format(".param .%s %s", lirKind.toString(), name);
+            return String.format(".param .%s %s", ptxKind.toString(), name);
         }
 
-        public Variable getAllocatedVar() {
-            return allocatedTo; }
-
-        public void allocateToVar(Variable var) {
-            allocatedTo = var;
+        public Variable getAllocatedVar(LIRGeneratorTool tool) {
+            if (allocatedTo == null) {
+                allocatedTo = tool.newVariable(LIRKind.value(ptxKind));
+            }
+            return allocatedTo;
         }
     }
 

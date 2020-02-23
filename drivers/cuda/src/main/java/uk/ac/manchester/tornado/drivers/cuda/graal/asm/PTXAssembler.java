@@ -374,7 +374,7 @@ public class PTXAssembler extends Assembler {
             asm.emit(opcode);
             asm.emit(
                     template,
-                    PTXAssembler.toString(PTXArchitecture.STACK_POINTER.getAllocatedVar()),
+                    PTXAssembler.toString(PTXArchitecture.STACK_POINTER.getAllocatedVar(null)),
                     PTXAssembler.toString(value)
             );
         }
