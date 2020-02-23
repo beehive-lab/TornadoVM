@@ -191,4 +191,16 @@ public enum PTXKind implements PlatformKind {
     public boolean isFloating() {
         return kind == F16 || kind == F32 || kind == F64;
     }
+
+    public PTXKind toUntyped() {
+        switch (size) {
+            case 1: return PTXKind.B8;
+            case 2: return PTXKind.B16;
+            case 4: return PTXKind.B32;
+            case 8: return PTXKind.B64;
+            default:
+                shouldNotReachHere("can't cast to untyped: " + this);
+                return null;
+        }
+    }
 }

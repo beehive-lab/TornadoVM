@@ -221,14 +221,16 @@ public class PTXAssembler extends Assembler {
 
         protected final String opcode;
         protected final boolean isTyped;
+        protected final boolean isWeaklyTyped;
 
         protected PTXOp(String opcode) {
-            this(opcode, true);
+            this(opcode, false);
         }
 
-        protected PTXOp(String opcode, boolean isTyped) {
+        protected PTXOp(String opcode, boolean isWeaklyTyped) {
             this.opcode = opcode;
-            this.isTyped = isTyped;
+            this.isTyped = true;
+            this.isWeaklyTyped = isWeaklyTyped;
         }
 
         protected final void emitOpcode(PTXAssembler asm) {
@@ -288,8 +290,8 @@ public class PTXAssembler extends Assembler {
         public static final PTXNullaryOp RETURN = new PTXNullaryOp("ret", false);
         // @formatter:on
 
-        protected PTXNullaryOp(String opcode, boolean isTyped) {
-            super(opcode, isTyped);
+        protected PTXNullaryOp(String opcode, boolean isWeaklyTyped) {
+            super(opcode, isWeaklyTyped);
         }
 
         public void emit(PTXCompilationResultBuilder crb, Variable dest) {
@@ -310,8 +312,8 @@ public class PTXAssembler extends Assembler {
             super(opcode, true);
         }
 
-        public PTXNullaryTemplate(String opcode, boolean isTyped) {
-            super(opcode, isTyped);
+        public PTXNullaryTemplate(String opcode, boolean isWeaklyTyped) {
+            super(opcode, isWeaklyTyped);
         }
 
         @Override
@@ -334,26 +336,6 @@ public class PTXAssembler extends Assembler {
         public void emit(PTXCompilationResultBuilder crb, Value value) {
             final PTXAssembler asm = crb.getAssembler();
             emitOpcode(asm);
-        }
-    }
-
-    /**
-     * Unary intrinsics
-     */
-    public static class PTXUnaryIntrinsic extends PTXUnaryOp {
-        public static final PTXUnaryIntrinsic THREAD_ID = new PTXUnaryIntrinsic("blockIdx * blockDim + threadIdx");
-        public static final PTXUnaryOp GLOBAL_SIZE = new PTXUnaryIntrinsic("gridDim * blockDim");
-
-        public PTXUnaryIntrinsic(String opcode) {
-            super(opcode);
-        }
-
-        @Override
-        public void emit(PTXCompilationResultBuilder crb, Value x) {
-            final PTXAssembler asm = crb.getAssembler();
-            emitOpcode(asm);
-            asm.emit(".");
-            asm.emitValue(x);
         }
     }
 
@@ -390,7 +372,7 @@ public class PTXAssembler extends Assembler {
      */
     public static class PTXBinaryOp extends PTXOp {
 
-        public static final PTXBinaryOp BITWISE_LEFT_SHIFT = new PTXBinaryOp("shl");
+        public static final PTXBinaryOp BITWISE_LEFT_SHIFT = new PTXBinaryOp("shl", true);
         public static final PTXBinaryOp ADD = new PTXBinaryOp("add");
 
         public static final PTXBinaryOp RELATIONAL_EQ = new PTXBinaryOp("==");
@@ -405,10 +387,18 @@ public class PTXAssembler extends Assembler {
             super(opcode);
         }
 
+        public PTXBinaryOp(String opcode, boolean isWeaklyTyped) {
+            super(opcode, isWeaklyTyped);
+        }
+
         public void emit(PTXCompilationResultBuilder crb, Value x, Value y, Variable dest) {
             final PTXAssembler asm = crb.getAssembler();
             emitOpcode(asm);
-            if (isTyped) asm.emit("." + dest.getPlatformKind());
+            if (isTyped){
+                PTXKind type = (PTXKind) dest.getPlatformKind();
+                if (isWeaklyTyped) type = type.toUntyped();
+                asm.emit("." + type);
+            }
             asm.emitSymbol(TAB);
             asm.emitValues(new Value[]{dest, x, y});
         }
