@@ -2,6 +2,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.Variable;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.PTXMemoryBase;
@@ -10,6 +11,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResult
 import uk.ac.manchester.tornado.drivers.cuda.graal.meta.PTXMemorySpace;
 
 import static org.graalvm.compiler.lir.LIRInstruction.Use;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.paramSpace;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryOp;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryTemplate;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.*;
@@ -68,17 +70,25 @@ public class PTXUnary {
     public static class MemoryAccess extends UnaryConsumer {
 
         private final PTXMemoryBase base;
-        private Value index;
+        private ConstantValue index;
+        private String name;
 
         MemoryAccess(PTXMemoryBase base, Value value) {
             super(null, LIRKind.Illegal, value);
             this.base = base;
         }
 
-        MemoryAccess(PTXMemoryBase base, Value value, Value index) {
+        MemoryAccess(PTXMemoryBase base, Value value, ConstantValue index) {
             super(null, LIRKind.Illegal, value);
             this.base = base;
+
             this.index = index;
+        }
+
+        public MemoryAccess(String name) {
+            super(null, LIRKind.Illegal, null);
+            this.base = paramSpace;
+            this.name = name;
         }
 
         private boolean shouldEmitRelativeAddress() {
@@ -88,16 +98,13 @@ public class PTXUnary {
 
         @Override
         public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
-            if (shouldEmitRelativeAddress()) {
-                asm.emit("ld." + value.getPlatformKind().toString());
-                asm.emit(TAB);
-                asm.emit(base.getName());
-                asm.emitSymbol(SQUARE_BRACKETS_OPEN);
-                asm.emitValue(value);
-                asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
-            } else {
-                asm.emitValue(value);
+            asm.emitSymbol(SQUARE_BRACKETS_OPEN);
+            if (name != null) asm.emit(name);
+            if (value != null) asm.emitValue(value);
+            if (index != null) {
+                asm.emitConstant(index);
             }
+            asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
         }
 
         public PTXMemoryBase getBase() {

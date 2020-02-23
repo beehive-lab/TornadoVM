@@ -523,5 +523,30 @@ public class PTXCompiler {
         }
 
         return kernelCompResult;
+
+        //return hardCodedKernel();
+    }
+
+    static PTXCompilationResult hardCodedKernel() {
+        return new PTXCompilationResult("init",
+                                        ".version 6.1\n" + ".target sm_30\n" + ".address_size 64\n" + "\n"
+                                                + ".visible .entry init(\n" + "\t.param .u64 heap_pointer,\n"
+                                                + "\t.param .u64 stack_pointer\n" + ")\n" + "{\n"
+                                                + "\t.reg .pred \t%p<3>;\n" + "\t.reg .b32 \t%r<8>;\n"
+                                                + "\t.reg .b64 \t%rd<11>;\n" + "\n" + "\n"
+                                                + "\tld.param.u64 \t%rd6, [stack_pointer];\n"
+                                                + "\tmov.u32 \t%r1, %ntid.x;\n" + "\tmov.u32 \t%r3, %ctaid.x;\n"
+                                                + "\tmov.u32 \t%r4, %tid.x;\n" + "\tmad.lo.s32 \t%r2, %r1, %r3, %r4;\n"
+                                                + "\tsetp.gt.u32\t%p1, %r2, 7;\n" + "\t@%p1 bra \tBB0_3;\n" + "\n"
+                                                + "\tld.u64 \t%rd7, [%rd6+48];\n" + "\tcvt.s64.s32\t%rd10, %r2;\n"
+                                                + "\tmov.u32 \t%r5, %nctaid.x;\n" + "\tmul.lo.s32 \t%r6, %r5, %r1;\n"
+                                                + "\tcvt.s64.s32\t%rd2, %r6;\n" + "\tcvta.to.global.u64 \t%rd3, %rd7;\n"
+                                                + "\n" + "BB0_2:\n" + "\tshl.b64 \t%rd8, %rd10, 2;\n"
+                                                + "\tadd.s64 \t%rd9, %rd8, %rd3;\n" + "\tmov.u32 \t%r7, 3;\n"
+                                                + "\tst.global.u32 \t[%rd9+24], %r7;\n"
+                                                + "\tadd.s64 \t%rd10, %rd10, %rd2;\n"
+                                                + "\tsetp.lt.u64\t%p2, %rd10, 8;\n" + "\t@%p2 bra \tBB0_2;\n" + "\n"
+                                                + "BB0_3:\n" + "\tret;\n" + "}"
+        );
     }
 }

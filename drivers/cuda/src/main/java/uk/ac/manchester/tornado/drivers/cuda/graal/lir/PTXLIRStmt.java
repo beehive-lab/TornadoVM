@@ -1,16 +1,13 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
-import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.Value;
-import org.graalvm.compiler.lir.LIRInstruction;
-import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.Opcode;
-import org.graalvm.compiler.lir.Variable;
+import jdk.vm.ci.meta.*;
+import org.graalvm.compiler.lir.*;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXUnary.PTXAddressCast;
 
+import static uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.paramSpace;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBinaryIntrinsic;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.*;
 
@@ -99,6 +96,58 @@ public class PTXLIRStmt {
         }
     }
 
+    @Opcode("LOAD")
+    public static class LoadStmt extends AbstractInstruction {
+        public static final LIRInstructionClass<LoadStmt> TYPE = LIRInstructionClass.create(LoadStmt.class);
+
+        @Use
+        protected Variable dest;
+
+        @Use
+        PTXUnary.MemoryAccess address;
+
+        @Use
+        protected ConstantValue index;
+
+        public LoadStmt(PTXUnary.MemoryAccess address, Variable dest) {
+            super(TYPE);
+
+            this.dest = dest;
+            this.address = address;
+        }
+
+        public LoadStmt(PTXUnary.MemoryAccess address, Variable dest, ConstantValue index) {
+            super(TYPE);
+
+            this.address = address;
+            this.dest = dest;
+            this.index = index;
+        }
+
+        @Override
+        public void emitCode(PTXCompilationResultBuilder crb, PTXAssembler asm) {
+            //ld.u64 	%rd9, [%rd8];
+            asm.emitSymbol(TAB);
+            asm.emit("ld.");
+            if (address.getBase() == paramSpace) {
+                asm.emit(address.getBase().memorySpace.name());
+                asm.emitSymbol(DOT);
+            }
+            asm.emit(dest.getPlatformKind().toString());
+            asm.emitSymbol(TAB);
+
+            asm.emitValue(dest);
+            asm.emitSymbol(COMMA);
+            asm.space();
+            address.emit(crb, asm, null);
+            if (index != null) {
+                asm.emitConstant(index);
+            }
+            asm.delimiter();
+            asm.eol();
+        }
+    }
+
     @Opcode("STORE")
     public static class StoreStmt extends AbstractInstruction {
 
@@ -134,9 +183,7 @@ public class PTXLIRStmt {
             asm.emit(rhs.getPlatformKind().toString());
             asm.emitSymbol(TAB);
 
-            asm.emitSymbol(SQUARE_BRACKETS_OPEN);
             address.emit(crb, asm, null);
-            asm.emitSymbol(SQUARE_BRACKETS_CLOSE);
             asm.emitSymbol(COMMA);
             asm.space();
 

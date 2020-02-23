@@ -12,6 +12,7 @@ import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.Variable;
+import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXReturnSlot;
@@ -208,6 +209,11 @@ public class PTXAssembler extends Assembler {
         emitLine("LOOP_BREAK");
     }
 
+    public void emitConstant(ConstantValue constant) {
+        emitSymbol(constant.getJavaConstant().asLong() > 0 ? "+" : "-");
+        emit(constant.getConstant().toValueString());
+    }
+
     /**
      * Base class for PTX opcodes.
      */
@@ -319,21 +325,15 @@ public class PTXAssembler extends Assembler {
     /**
      * Unary opcodes
      */
-    public static class PTXUnaryOp extends PTXGuardedOp {
-        public static final PTXUnaryOp BRA = new PTXUnaryOp("bra");
-        public static final PTXUnaryOp CONDITIONAL_BRA = new PTXUnaryOp("bra", false);
+    public static class PTXUnaryOp extends PTXOp {
 
         protected PTXUnaryOp(String opcode) {
             super(opcode);
         }
 
-        protected PTXUnaryOp(String opcode, boolean isNegated) {
-            super(opcode, true, isNegated);
-        }
-
         public void emit(PTXCompilationResultBuilder crb, Value value) {
             final PTXAssembler asm = crb.getAssembler();
-            emitOpcode(asm, value);
+            emitOpcode(asm);
         }
     }
 
@@ -358,12 +358,6 @@ public class PTXAssembler extends Assembler {
     }
 
     public static class PTXUnaryTemplate extends PTXUnaryOp {
-        public static final PTXUnaryTemplate LOAD_PARAM_S32 = new PTXUnaryTemplate("load param", "[%s]");
-        public static final PTXUnaryTemplate LOAD_PARAM_U32 = new PTXUnaryTemplate("load param", "[%s]");
-        public static final PTXUnaryTemplate LOAD_PARAM_F32 = new PTXUnaryTemplate("load param", "[%s]");
-        public static final PTXUnaryTemplate LOAD_PARAM_U64 = new PTXUnaryTemplate("load param", "[%s]");
-        public static final PTXUnaryTemplate LOAD_PARAM_S64 = new PTXUnaryTemplate("load param", "[%s]");
-        public static final PTXUnaryTemplate LOAD_PARAM_F64 = new PTXUnaryTemplate("load param", "[%s]");
 
         public static final PTXUnaryTemplate CAST_TO_POINTER = new PTXUnaryTemplate("cast ptr", "(%s *)");
 
@@ -377,7 +371,12 @@ public class PTXAssembler extends Assembler {
         @Override
         public void emit(PTXCompilationResultBuilder crb, Value value) {
             final PTXAssembler asm = crb.getAssembler();
-            asm.emit(template, PTXAssembler.toString(value));
+            asm.emit(opcode);
+            asm.emit(
+                    template,
+                    PTXAssembler.toString(PTXArchitecture.STACK_POINTER.getAllocatedVar()),
+                    PTXAssembler.toString(value)
+            );
         }
 
         public String getTemplate() {

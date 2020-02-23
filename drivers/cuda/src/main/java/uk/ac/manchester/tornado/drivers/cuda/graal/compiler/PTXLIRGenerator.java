@@ -13,16 +13,14 @@ import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
 import org.graalvm.compiler.phases.util.Providers;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDescription;
+import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXLIRKindTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXNullaryOp;
-import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryOp;
+import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.*;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXTernaryOp.SETP;
-import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryOp.BRA;
-import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryOp.CONDITIONAL_BRA;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt.ExprStmt;
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
@@ -283,5 +281,15 @@ public class PTXLIRGenerator extends LIRGenerator {
 
     public PTXGenTool getPTXGenTool() {
         return ptxGenTool;
+    }
+
+    public void emitParameterAlloc() {
+        Variable heapPointer = newVariable(LIRKind.value(PTXKind.U64));
+        PTXArchitecture.HEAP_POINTER.allocateToVar(heapPointer);
+        Variable stackPointer = newVariable(LIRKind.value(PTXKind.U64));
+        PTXArchitecture.STACK_POINTER.allocateToVar(stackPointer);
+
+        append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(PTXAssemblerConstants.HEAP_PTR_NAME), heapPointer));
+        append(new PTXLIRStmt.LoadStmt(new PTXUnary.MemoryAccess(PTXAssemblerConstants.STACK_PTR_NAME), stackPointer));
     }
 }

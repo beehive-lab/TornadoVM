@@ -4,8 +4,8 @@ public class PTXAssemblerConstants {
 
     public static final String HEAP_PTR_NAME = "heap_pointer";
     public static final String STACK_PTR_NAME = "stack_pointer";
-    public static final String ARG_START = "arg_start";
     public static final String GLOBAL_MEM_MODIFIER = "global";
+    public static final String PARAM_MEM_MODIFIER = "param";
 
     public static final String TAB = "\t";
     public static final String COMMA = ",";
@@ -17,7 +17,7 @@ public class PTXAssemblerConstants {
     public static final String SQUARE_BRACKETS_OPEN = "[";
     public static final String SQUARE_BRACKETS_CLOSE = "]";
 
-    public static final int STACK_BASE_OFFSET = 6;
+    public static final int STACK_BASE_OFFSET = 48;
     public static final String OP_GUARD = "@";
     public static final String NEGATION = "!";
     public static final String COMPUTE_VERSION = ".version";

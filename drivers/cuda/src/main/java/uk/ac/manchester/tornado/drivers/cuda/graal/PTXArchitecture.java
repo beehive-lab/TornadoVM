@@ -1,10 +1,10 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal;
 
 import jdk.vm.ci.code.Architecture;
-import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
+import org.graalvm.compiler.lir.Variable;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.meta.PTXMemorySpace;
@@ -20,7 +20,6 @@ public class PTXArchitecture extends Architecture {
 
     public static PTXParam HEAP_POINTER;
     public static PTXParam STACK_POINTER;
-    public static PTXParam ARG_START = new PTXParam(PTXAssemblerConstants.ARG_START, PTXKind.U8);
     public static PTXParam[] abiRegisters;
 
     public PTXArchitecture(PTXKind wordKind, ByteOrder byteOrder) {
@@ -37,7 +36,7 @@ public class PTXArchitecture extends Architecture {
         HEAP_POINTER = new PTXParam(PTXAssemblerConstants.HEAP_PTR_NAME, wordKind);
         STACK_POINTER = new PTXParam(PTXAssemblerConstants.STACK_PTR_NAME, wordKind);
 
-        abiRegisters = new PTXParam[]{HEAP_POINTER, STACK_POINTER, ARG_START};
+        abiRegisters = new PTXParam[]{HEAP_POINTER, STACK_POINTER};
     }
 
     @Override
@@ -88,6 +87,8 @@ public class PTXArchitecture extends Architecture {
 
     public static class PTXParam extends PTXRegister {
 
+        private Variable allocatedTo;
+
         public PTXParam(String name, PTXKind lirKind) {
             super(0, lirKind);
             this.name = name;
@@ -96,6 +97,13 @@ public class PTXArchitecture extends Architecture {
         @Override
         public String getDeclaration() {
             return String.format(".param .%s %s", lirKind.toString(), name);
+        }
+
+        public Variable getAllocatedVar() {
+            return allocatedTo; }
+
+        public void allocateToVar(Variable var) {
+            allocatedTo = var;
         }
     }
 
@@ -110,4 +118,5 @@ public class PTXArchitecture extends Architecture {
     }
 
     public static final PTXMemoryBase globalSpace = new PTXMemoryBase(0, PTXMemorySpace.GLOBAL);
+    public static final PTXMemoryBase paramSpace = new PTXMemoryBase(1, PTXMemorySpace.PARAM);
 }
