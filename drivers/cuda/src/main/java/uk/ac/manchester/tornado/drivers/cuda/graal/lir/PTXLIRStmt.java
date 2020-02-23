@@ -48,8 +48,19 @@ public class PTXLIRStmt {
                 ((PTXLIROp) rhs).emit(crb, asm, (Variable) lhs);
             }
             else {
+                PTXKind lhsKind = (PTXKind) lhs.getPlatformKind();
+                PTXKind rhsKind = (PTXKind) rhs.getPlatformKind();
+
                 asm.emitSymbol(TAB);
-                asm.emit("mov." + lhs.getPlatformKind().toString());
+                if (lhsKind == rhsKind) {
+                    asm.emit("mov." + lhsKind.toString());
+                }
+                else {
+                    asm.emit("cvt.");
+                    asm.emit(lhsKind.toString());
+                    asm.emitSymbol(DOT);
+                    asm.emit(rhsKind.toString());
+                }
                 asm.emitSymbol(TAB);
                 asm.emitValue(lhs);
                 asm.emitSymbol(", ");
