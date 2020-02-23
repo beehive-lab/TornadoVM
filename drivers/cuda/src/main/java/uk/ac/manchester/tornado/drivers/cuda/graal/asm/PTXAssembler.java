@@ -399,6 +399,7 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryOp RELATIONAL_LT = new PTXBinaryOp("<");
         public static final PTXBinaryOp RELATIONAL_GTE = new PTXBinaryOp(">=");
         public static final PTXBinaryOp RELATIONAL_LTE = new PTXBinaryOp("<=");
+        public static final PTXBinaryOp MUL_LU = new PTXBinaryOp("mul.lo");
 
         public PTXBinaryOp(String opcode) {
             super(opcode);
@@ -476,7 +477,7 @@ public class PTXAssembler extends Assembler {
     }
 
     public static class PTXTernaryOp extends PTXOp {
-        public static final PTXTernaryOp SETP = new PTXTernaryOp("setp");
+        public static final PTXTernaryOp MAD_LO = new PTXTernaryOp("mad.lo");
 
         protected PTXTernaryOp(String opcode) {
             super(opcode);
@@ -485,6 +486,8 @@ public class PTXAssembler extends Assembler {
         public void emit(PTXCompilationResultBuilder crb, Value x, Value y, Value z, Variable dest) {
             final PTXAssembler asm = crb.getAssembler();
             emitOpcode(asm);
+            asm.emitSymbol(DOT);
+            asm.emit(dest.getPlatformKind().toString());
             asm.emitSymbol(TAB);
             asm.emitValues(new Value[] {dest, x, y, z});
         }
