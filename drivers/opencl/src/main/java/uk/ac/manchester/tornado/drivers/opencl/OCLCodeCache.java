@@ -292,21 +292,16 @@ public class OCLCodeCache {
         bufferCommand.add(INTEL_ALTERA_OPENCL_COMPILER);
         bufferCommand.add(inputFile);
 
-        if (INTEL_FPGA_COMPILATION_FLAGS != null) {
+        bufferCommand.add(compilationFlags);
+        /*if (INTEL_FPGA_COMPILATION_FLAGS != null) {
             String[] flags = INTEL_FPGA_COMPILATION_FLAGS.split(",");
             for (String flag : flags) {
                 if (FPGA_FLAGS.contains(flag)) {
                     bufferCommand.add(flag);
                 }
             }
-        }
-        if (Tornado.FPGA_EMULATION) {
-            bufferCommand.add(INTEL_ALTERA_EMULATOR);
-        } else {
-            bufferCommand.add(INTEL_NALLATECH_BOARD_NAME); // XXX: Specific to
-                                                           // the FPGA model we
-                                                           // currently have
-        }
+        }*/
+        bufferCommand.add("-board=" + fpgaName);
         bufferCommand.add("-o " + outputFile);
         return bufferCommand.toString().split(" ");
     }
