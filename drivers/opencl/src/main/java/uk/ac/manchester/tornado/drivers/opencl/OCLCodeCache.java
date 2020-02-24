@@ -77,6 +77,7 @@ public class OCLCodeCache {
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
     private final String INTEL_ALTERA_OPENCL_COMPILER = "aoc";
+    private final String XILINX_OPENCL_COMPILER = "xocc";
     private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
     private String fpgaName;
     private String compilationFlags;
@@ -294,7 +295,9 @@ public class OCLCodeCache {
     }
 
     private String[] composeXilinxHLSCompileCommand(String inputFile, String kernelName) {
-        StringJoiner bufferCommand = new StringJoiner(" ", "xocc ", "");
+        StringJoiner bufferCommand = new StringJoiner(" ");
+
+        bufferCommand.add(XILINX_OPENCL_COMPILER);
 
         bufferCommand.add(Tornado.FPGA_EMULATION ? ("-t " + "sw_emu") : ("-t " + "hw"));
         bufferCommand.add("--platform " + fpgaName + " -c " + "-k " + kernelName);
