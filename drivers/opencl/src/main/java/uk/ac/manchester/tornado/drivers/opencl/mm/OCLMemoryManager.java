@@ -102,7 +102,7 @@ public class OCLMemoryManager extends TornadoLogger implements TornadoMemoryProv
         return (address % alignment == 0) ? address : address + (alignment - address % alignment);
     }
 
-    long tryAllocate(final Class<?> type, final long bytes, final int headerSize, int alignment) throws TornadoOutOfMemoryException {
+    long tryAllocate(final Class<?> type, final long bytes, final int headerSize, int alignment) {
         final long alignedDataStart = align(heapPosition + headerSize, alignment);
         final long headerStart = alignedDataStart - headerSize;
         if (headerStart + bytes < heapLimit) {

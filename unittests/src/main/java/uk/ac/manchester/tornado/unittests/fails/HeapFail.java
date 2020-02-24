@@ -42,7 +42,7 @@ public class HeapFail {
      * </code>
      *
      */
-    @Test(expected = NullPointerException.class)
+    @Test(expected = TornadoOutOfMemoryException.class)
     public void test03() throws TornadoOutOfMemoryException {
         // This test simulates small amount of memory on the target device and we
         // allocate more than available. We should get a concrete error message back

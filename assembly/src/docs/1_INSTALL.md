@@ -1,4 +1,4 @@
-# Installing TornadoVM #
+# Installing TornadoVM 
 
 ### Pre-requisites
 
@@ -19,6 +19,7 @@ TornadoVM has been succefully tested on the following platforms:
   * Fedora >= 21
   * Ubuntu >= 16.04
   * Mac OS X Mojave 10.14.6
+  * Mac OS X Catalina 10.15.3
 
 
 ## Installation
@@ -115,7 +116,7 @@ For simplicity it might be easier to install cmake in your home directory.
   * We require a newer version so that OpenCL is configured properly.
 
 ```bash
-$ cd ~/Downloads
+I$ cd ~/Downloads
 $ wget https://cmake.org/files/v3.10/cmake-3.10.1-Linux-x86_64.tar.gz
 $ cd ~/opt
 $ tar -tvf ~/Downloads/cmake-3.10.1-Linux-x86_64.tar.gz
@@ -292,7 +293,7 @@ To use the TornadoVM API in your projects, you can checkout our maven repository
       <dependency>
          <groupId>tornado</groupId>
          <artifactId>tornado-api</artifactId>
-         <version>0.5</version>
+         <version>0.6</version>
       </dependency>
    </dependencies>
 ```
@@ -301,10 +302,9 @@ Notice that, for running with TornadoVM, you will need either the docker images 
 
 #### Versions available
 
+* 0.6
 * 0.5
 * 0.4
 * 0.3 
 * 0.2   
 * 0.1.0 
-
-

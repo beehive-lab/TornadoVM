@@ -114,7 +114,6 @@ public class OCLInstalledCode extends InstalledCode implements TornadoInstalledC
         debug("\tstack    : buffer id=0x%x, address=0x%x relative=0x%x", stack.toBuffer(), stack.toAbsoluteAddress(), stack.toRelativeAddress());
 
         setKernelArgs(stack, meta);
-        stack.write();
 
         int task;
         if (meta == null) {

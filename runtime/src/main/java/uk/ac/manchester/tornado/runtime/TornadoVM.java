@@ -40,9 +40,9 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
-import uk.ac.manchester.tornado.api.exceptions.TornadoException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.common.CallStack;
@@ -549,7 +549,7 @@ public class TornadoVM extends TornadoLogger {
                 if (graphContext.meta().isDebug()) {
                     debug("vm: invalid op 0x%x(%d)", op, op);
                 }
-                throw new TornadoException("[ERROR] TornadoVM Bytecode not recognized");
+                throw new TornadoRuntimeException("[ERROR] TornadoVM Bytecode not recognized");
             }
         }
 
