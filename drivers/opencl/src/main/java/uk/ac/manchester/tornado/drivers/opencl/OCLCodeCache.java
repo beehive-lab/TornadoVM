@@ -289,7 +289,7 @@ public class OCLCodeCache {
         bufferCommand.add(inputFile);
 
         bufferCommand.add(compilationFlags);
-        bufferCommand.add("-board=" + fpgaName);
+        bufferCommand.add(Tornado.FPGA_EMULATION ? ("-march=" + fpgaName) : ("-board=" + fpgaName));
         bufferCommand.add("-o " + outputFile);
         return bufferCommand.toString().split(" ");
     }
