@@ -76,15 +76,10 @@ public class OCLCodeCache {
     private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "/var/opencl-codecache");
     private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
     private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
-    private final HashSet<String> FPGA_FLAGS = new HashSet<>(Arrays.asList("-v", "-fast-compile", "-high-effort", "-fp-relaxed", "-report", "-incremental", "-profile"));
     private final String INTEL_ALTERA_OPENCL_COMPILER = "aoc";
-    private final String INTEL_ALTERA_EMULATOR = "-march=emulator";
-    private final String INTEL_NALLATECH_BOARD_NAME = "-board=p385a_sch_ax115";
-    private final String INTEL_FPGA_COMPILATION_FLAGS = getProperty("tornado.fpga.flags", null);
     private final String FPGA_CLEANUP_SCRIPT = System.getenv("TORNADO_SDK") + "/bin/cleanFpga.sh";
     private String fpgaName;
     private String compilationFlags;
-    private String[] postCompilationCommand;
     private String directoryBitstream;
     public static String fpgaBinLocation;
     private String fpgaSourceDir;
@@ -293,14 +288,6 @@ public class OCLCodeCache {
         bufferCommand.add(inputFile);
 
         bufferCommand.add(compilationFlags);
-        /*if (INTEL_FPGA_COMPILATION_FLAGS != null) {
-            String[] flags = INTEL_FPGA_COMPILATION_FLAGS.split(",");
-            for (String flag : flags) {
-                if (FPGA_FLAGS.contains(flag)) {
-                    bufferCommand.add(flag);
-                }
-            }
-        }*/
         bufferCommand.add("-board=" + fpgaName);
         bufferCommand.add("-o " + outputFile);
         return bufferCommand.toString().split(" ");
