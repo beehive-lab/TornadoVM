@@ -5,13 +5,10 @@ import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
-import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
-import org.graalvm.compiler.lir.gen.LIRGenerator;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXLIRKindTool;
-import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBinaryOp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerator;
 
@@ -206,8 +203,9 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Variable emitLoad(LIRKind kind, Value address, LIRFrameState state) {
-        unimplemented();
-        return null;
+        Variable dest = getGen().newVariable(kind);
+        getGen().append(new PTXLIRStmt.LoadStmt((PTXUnary.MemoryAccess) address, dest));
+        return dest;
     }
 
     @Override

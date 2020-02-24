@@ -80,7 +80,7 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             int paramOffset = 0;
             for (final ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
                 setResult(param, getGen().getPTXGenTool().emitParameterLoad(param, paramOffset));
-                paramOffset += gen.getLIRKind(param.stamp(NodeView.DEFAULT)).getPlatformKind().getSizeInBytes() * 8;
+                paramOffset += gen.getLIRKind(param.stamp(NodeView.DEFAULT)).getPlatformKind().getSizeInBytes();
             }
         } else {
             final Local[] locals = graph.method().getLocalVariableTable().getLocalsAt(0);
