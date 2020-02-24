@@ -82,6 +82,7 @@ When the state change from pending to available the awsxlcbin binary code can be
 
 ```
 $ sudo -E /bin/bash
+$ source etc/sources.env
 $ tornado -Ds0.t0.device=0:0 --debug -Xmx20g -Xms20g --printKernel -Dtornado.opencl.accelerator.fpga=true -Dtornado.opencl.userelative=True uk.ac.manchester.tornado.examples.dynamic.DFTDynamic 512 default 1
 ```
 
@@ -98,14 +99,88 @@ __kernel void lookupBufferAddress(__global uchar *_heap_base, ulong _frame_base,
   _frame[0]  =  (ulong) _heap_base;
 }
 
+Initialization time:  1166006276 ns
+
 [DEBUG] JIT compilation for the FPGA
 __attribute__((reqd_work_group_size(64,1,1)))
 __kernel void computeDft(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global uchar *_private_region)
 {
-  long l_17, l_33, l_16, l_32, l_18, l_34; 
-  float f_31, f_6, f_24, f_26, f_25, f_28, f_27, f_30, f_29, f_15, f_20, f_22, f_21, f_7, f_10, f_12, f_11, f_14, f_13; 
-  int i_9, i_8, i_5, i_37, i_4, i_38; 
-  ulong ul_36, ul_3, ul_19, ul_35, ul_23, ul_2, ul_1, ul_0; 
+  int i_8, i_9, i_38, i_4, i_5, i_37; 
+  ulong ul_3, ul_19, ul_35, ul_36, ul_23, ul_0, ul_1, ul_2; 
+  float f_14, f_13, f_12, f_11, f_10, f_7, f_6, f_31, f_30, f_29, f_28, f_27, f_26, f_25, f_24, f_22, f_21, f_20, f_15; 
+  long l_16, l_32, l_17, l_33, l_18, l_34; 
+
+  __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
+
+
+  // BLOCK 0
+  ul_0  =  (ulong) _frame[6];
+  ul_1  =  (ulong) _frame[7];
+  ul_2  =  (ulong) _frame[8];
+  ul_3  =  (ulong) _frame[9];
+  i_4  =  get_global_id(0);
+  // BLOCK 1 MERGES [0 5 ]
+  i_5  =  i_4;
+  // BLOCK 2
+  // BLOCK 3 MERGES [2 4 ]
+  f_6  =  0.0F;
+  f_7  =  0.0F;
+  i_8  =  0;
+  #pragma unroll 4
+  for(;i_8 < 512;)  {
+    // BLOCK 4
+    i_9  =  i_8 + 1;
+    f_10  =  (float) i_8;
+    f_11  =  f_10 * 6.2831855F;
+    f_12  =  (float) i_5;
+    f_13  =  f_11 * f_12;
+    f_14  =  f_13 / 512.0F;
+    f_15  =  sin(f_14);
+    l_16  =  (long) i_8;
+    l_17  =  l_16 << 2;
+    l_18  =  l_17 + 24L;
+    ul_19  =  ul_0 + l_18;
+    f_20  =  *((__global float *) &_heap_base[ul_19]);
+    f_21  =  f_15 * f_20;
+    f_22  =  cos(f_14);
+    ul_23  =  ul_1 + l_18;
+    f_24  =  *((__global float *) &_heap_base[ul_23]);
+    f_25  =  f_22 * f_24;
+    f_26  =  f_21 + f_25;
+    f_27  =  f_7 - f_26;
+    f_28  =  f_22 * f_20;
+    f_29  =  f_15 * f_24;
+    f_30  =  f_28 + f_29;
+    f_31  =  f_6 + f_30;
+    f_6  =  f_31;
+    f_7  =  f_27;
+    i_8  =  i_9;
+  }
+  // BLOCK 5
+  l_32  =  (long) i_5;
+  l_33  =  l_32 << 2;
+  l_34  =  l_33 + 24L;
+  ul_35  =  ul_2 + l_34;
+  *((__global float *) &_heap_base[ul_35])  =  f_6;
+  ul_36  =  ul_3 + l_34;
+  *((__global float *) &_heap_base[ul_36])  =  f_7;
+  i_37  =  get_global_size(0);
+  i_38  =  i_37 + i_5;
+  i_5  =  i_38;
+  // BLOCK 6
+  return;
+}
+
+INFO: Could not load AFI for data retention, code: 18 - Loading in classic mode.
+IOCTL DRM_IOCTL_XOCL_READ_AXLF Failed: 76
+ERROR: Failed to load xclbin.
+__attribute__((reqd_work_group_size(64,1,1)))
+__kernel void computeDft(__global uchar *_heap_base, ulong _frame_base, __constant uchar *_constant_region, __local uchar *_local_region, __global uchar *_private_region)
+{
+  int i_8, i_9, i_38, i_4, i_5, i_37; 
+  ulong ul_3, ul_19, ul_35, ul_36, ul_23, ul_0, ul_1, ul_2; 
+  float f_14, f_13, f_12, f_11, f_10, f_7, f_6, f_31, f_30, f_29, f_28, f_27, f_26, f_25, f_24, f_22, f_21, f_20, f_15; 
+  long l_16, l_32, l_17, l_33, l_18, l_34; 
 
   __global ulong *_frame = (__global ulong *) &_heap_base[_frame_base];
 
@@ -177,9 +252,9 @@ task info: s0.t0
 	global work offset: [0]
 	global work size  : [512]
 	local  work size  : [64]
+Total time:  5242666512 ns 
 
 Is valid?: true
 
 Validation: SUCCESS
-
 ```
