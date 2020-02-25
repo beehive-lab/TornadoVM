@@ -8,6 +8,7 @@ import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADriver;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAByteBuffer;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAIntArrayWrapper;
+import uk.ac.manchester.tornado.drivers.cuda.mm.CUDALongArrayWrapper;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -57,6 +58,30 @@ public class ReadWriteTests extends TornadoTestBase {
         Arrays.fill(b, 2);
 
         CUDAIntArrayWrapper arrayWrapper = new CUDAIntArrayWrapper(context);
+
+        try {
+            arrayWrapper.allocate(a, 0);
+        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
+            e.printStackTrace();
+        }
+
+        arrayWrapper.enqueueWrite(a, 0, 0, null, false);
+        arrayWrapper.enqueueRead(b, 0, null, false);
+
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            assertEquals(1, b[i]);
+        }
+    }
+
+    @Test
+    public void testLongArrayReadWrite() {
+        long[] a = new long[NUM_ELEMENTS];
+        long[] b = new long[NUM_ELEMENTS];
+
+        Arrays.fill(a, 1);
+        Arrays.fill(b, 2);
+
+        CUDALongArrayWrapper arrayWrapper = new CUDALongArrayWrapper(context);
 
         try {
             arrayWrapper.allocate(a, 0);
