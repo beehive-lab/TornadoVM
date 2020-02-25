@@ -110,8 +110,6 @@ public class PTXArchitecture extends Architecture {
 
     public static class PTXParam extends PTXRegister {
 
-        private Variable allocatedTo;
-
         public PTXParam(String name, PTXKind lirKind) {
             super(0, lirKind);
             this.name = name;
@@ -120,13 +118,6 @@ public class PTXArchitecture extends Architecture {
         @Override
         public String getDeclaration() {
             return String.format(".param .%s %s", ptxKind.toString(), name);
-        }
-
-        public Variable getAllocatedVar(LIRGeneratorTool tool) {
-            if (allocatedTo == null) {
-                allocatedTo = tool.newVariable(LIRKind.value(ptxKind));
-            }
-            return allocatedTo;
         }
     }
 
@@ -141,20 +132,10 @@ public class PTXArchitecture extends Architecture {
     }
 
     public static class PTXBuiltInRegister extends Variable {
-        private Variable allocatedTo;
 
         protected PTXBuiltInRegister(String name) {
             super(LIRKind.value(PTXKind.U32), 0);
             setName(name);
-        }
-
-        public Variable getAllocatedTo(LIRGeneratorTool tool) {
-            if (allocatedTo == null) {
-                allocatedTo = tool.newVariable(this.getValueKind());
-                tool.append(new PTXLIRStmt.AssignStmt(allocatedTo, this));
-            }
-
-            return allocatedTo;
         }
     }
 

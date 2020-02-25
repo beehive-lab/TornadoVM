@@ -13,6 +13,7 @@ import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.PTXBuiltInRegisterArray;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXTernary;
 
@@ -35,11 +36,12 @@ public class GlobalThreadIdNode extends FloatingNode implements LIRLowerable {
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         LIRKind kind = tool.getLIRKind(stamp);
+        PTXNodeLIRBuilder ptxNodeBuilder = (PTXNodeLIRBuilder) gen;
 
         PTXBuiltInRegisterArray builtIns = new PTXBuiltInRegisterArray(((ConstantValue)gen.operand(index)).getJavaConstant().asInt());
-        Variable threadID = builtIns.threadID.getAllocatedTo(tool);
-        Variable blockDim = builtIns.blockDim.getAllocatedTo(tool);
-        Variable blockID = builtIns.blockID.getAllocatedTo(tool);
+        Variable threadID =  ptxNodeBuilder.getBuiltInAllocation(builtIns.threadID);
+        Variable blockDim = ptxNodeBuilder.getBuiltInAllocation(builtIns.blockDim);
+        Variable blockID = ptxNodeBuilder.getBuiltInAllocation(builtIns.blockID);
         Variable result = tool.newVariable(kind);
 
         tool.append(new PTXLIRStmt.AssignStmt(

@@ -1,14 +1,15 @@
 package uk.ac.manchester.tornado.drivers.cuda.graal.backend;
 
-import jdk.vm.ci.code.*;
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.CompilationRequest;
+import jdk.vm.ci.code.CompiledCode;
+import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
-import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
 import org.graalvm.compiler.lir.asm.DataBuilder;
@@ -32,15 +33,10 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.runtime.graal.backend.TornadoBackend;
 import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
-import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap.ReferenceMapBuilderFactory {
 
@@ -131,9 +127,18 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         return new PTXFrameMap(getCodeCache(), registerConfig, this);
     }
 
-    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder,
+    public LIRGenerationResult newLIRGenerationResult(CompilationIdentifier identifier,
+                                                      LIR lir,
+                                                      FrameMapBuilder frameMapBuilder,
                                                       RegisterAllocationConfig registerAllocationConfig) {
-        return new PTXLIRGenerationResult(identifier, lir, frameMapBuilder, registerAllocationConfig, new CallingConvention(0, null, (AllocatableValue[]) null));
+
+        return new PTXLIRGenerationResult(
+                identifier,
+                lir,
+                frameMapBuilder,
+                registerAllocationConfig,
+                new CallingConvention(0, null, (AllocatableValue[]) null)
+        );
     }
 
     public LIRGeneratorTool newLIRGenerator(LIRGenerationResult lirGenRes) {
@@ -150,7 +155,7 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
                                                                    CompilationResultBuilderFactory factory,
                                                                    boolean isKernel,
                                                                    boolean isParallel) {
-        PTXAssembler asm = createAssembler();
+        PTXAssembler asm = createAssembler((PTXLIRGenerationResult) lirGenRes);
         PTXFrameContext frameContext = new PTXFrameContext();
         DataBuilder dataBuilder = new PTXDataBuilder();
         PTXCompilationResultBuilder crb = new PTXCompilationResultBuilder(
@@ -168,8 +173,8 @@ public class PTXBackend extends TornadoBackend<PTXProviders> implements FrameMap
         return crb;
     }
 
-    private PTXAssembler createAssembler() {
-        return new PTXAssembler(target);
+    private PTXAssembler createAssembler(PTXLIRGenerationResult result) {
+        return new PTXAssembler(target, result);
     }
 
     public void emitCode(PTXCompilationResultBuilder crb, PTXLIRGenerationResult lirGenRes) {

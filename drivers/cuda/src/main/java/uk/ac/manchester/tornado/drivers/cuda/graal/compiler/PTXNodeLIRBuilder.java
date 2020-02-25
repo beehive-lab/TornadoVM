@@ -25,12 +25,15 @@ import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.options.OptionValues;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.PTXBuiltInRegister;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXStampFactory;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.*;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.vector.VectorValueNode;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
@@ -43,8 +46,10 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContex
 import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerator.trace;
 
 public class PTXNodeLIRBuilder extends NodeLIRBuilder {
+    private final Map<String, Variable> builtInAllocations;
     public PTXNodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool lirGen, PTXNodeMatchRules ptxNodeMatchRules) {
         super(graph, lirGen, ptxNodeMatchRules);
+        builtInAllocations = new HashMap<>();
     }
 
     @Override
@@ -426,5 +431,14 @@ public class PTXNodeLIRBuilder extends NodeLIRBuilder {
             }
         }
         return gen.getLIRKind(stamp);
+    }
+
+    public Variable getBuiltInAllocation(PTXBuiltInRegister builtIn) {
+        if (builtInAllocations.containsKey(builtIn.getName())) return builtInAllocations.get(builtIn.getName());
+
+        Variable allocateTo = getGen().newVariable(builtIn.getValueKind());
+        append(new AssignStmt(allocateTo, builtIn));
+        builtInAllocations.put(builtIn.getName(), allocateTo);
+        return allocateTo;
     }
 }

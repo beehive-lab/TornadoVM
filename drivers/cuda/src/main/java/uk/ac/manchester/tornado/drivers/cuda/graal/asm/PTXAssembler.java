@@ -13,7 +13,9 @@ import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.Variable;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture;
+import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.PTXParam;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerationResult;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXReturnSlot;
 
@@ -30,13 +32,19 @@ public class PTXAssembler extends Assembler {
     private List<String> operandStack;
     private boolean emitEOL;
     private boolean convertTabToSpace;
+    private PTXLIRGenerationResult lirGenRes;
 
-    public PTXAssembler(TargetDescription target) {
+    public PTXAssembler(TargetDescription target, PTXLIRGenerationResult lirGenRes) {
         super(target);
         pushToStack = false;
         emitEOL = true;
         convertTabToSpace = false;
         operandStack = new ArrayList<>(10);
+        this.lirGenRes = lirGenRes;
+    }
+
+    public Variable getVarForParam(PTXParam param) {
+        return lirGenRes.getVarForParam(param);
     }
 
     public void emitSymbol(String sym) {
@@ -363,7 +371,7 @@ public class PTXAssembler extends Assembler {
             asm.emit(opcode);
             asm.emit(
                     template,
-                    PTXAssembler.toString(PTXArchitecture.STACK_POINTER.getAllocatedVar(null)),
+                    asm.getVarForParam(PTXArchitecture.STACK_POINTER),
                     PTXAssembler.toString(value)
             );
         }

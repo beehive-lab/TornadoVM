@@ -7,6 +7,7 @@ import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
+import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXKind;
 
 import java.util.HashMap;
@@ -19,10 +20,9 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guara
 public class PTXLIRGenerationResult extends LIRGenerationResult {
 
     private final Map<PTXKind, Set<Variable>> variableTable;
+    private Map<String, Variable> paramAllocations;
 
-    public PTXLIRGenerationResult(CompilationIdentifier identifier,
-                                  LIR lir,
-                                  FrameMapBuilder frameMapBuilder,
+    public PTXLIRGenerationResult(CompilationIdentifier identifier, LIR lir, FrameMapBuilder frameMapBuilder,
                                   RegisterAllocationConfig registerAllocationConfig,
                                   CallingConvention callingConvention) {
         super(identifier, lir, frameMapBuilder, registerAllocationConfig, callingConvention);
@@ -40,5 +40,13 @@ public class PTXLIRGenerationResult extends LIRGenerationResult {
 
     public Map<PTXKind, Set<Variable>> getVariableTable() {
         return variableTable;
+    }
+
+    public Variable getVarForParam(PTXArchitecture.PTXParam param) {
+        return paramAllocations.get(param.getName());
+    }
+
+    public void setParameterAllocations(Map<String, Variable> parameterAllocations) {
+        paramAllocations = parameterAllocations;
     }
 }

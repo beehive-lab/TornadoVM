@@ -64,7 +64,7 @@ public class PTXGenTool {
                 JavaConstant.forInt(index + STACK_BASE_OFFSET)
         );
         gen.append(new PTXLIRStmt.LoadStmt(
-                new MemoryAccess(globalSpace, PTXArchitecture.STACK_POINTER.getAllocatedVar(gen), stackIndex),
+                new MemoryAccess(globalSpace, gen.getParameterAllocation(PTXArchitecture.STACK_POINTER), stackIndex),
                 (Variable) dst
         ));
     }

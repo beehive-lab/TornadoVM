@@ -12,6 +12,7 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXNodeLIRBuilder;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXBinary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt;
 
@@ -36,10 +37,11 @@ public class GlobalThreadSizeNode extends FloatingNode implements LIRLowerable {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
         LIRKind kind = tool.getLIRKind(stamp);
         Variable result = tool.newVariable(kind);
+        PTXNodeLIRBuilder ptxNodeBuilder = (PTXNodeLIRBuilder) gen;
 
         PTXBuiltInRegisterArray builtIns = new PTXBuiltInRegisterArray(((ConstantValue)gen.operand(index)).getJavaConstant().asInt());
-        Variable gridDim = builtIns.gridDim.getAllocatedTo(tool);
-        Variable blockDim = builtIns.blockDim.getAllocatedTo(tool);
+        Variable gridDim = ptxNodeBuilder.getBuiltInAllocation(builtIns.gridDim);
+        Variable blockDim = ptxNodeBuilder.getBuiltInAllocation(builtIns.blockDim);
 
         tool.append(new PTXLIRStmt.AssignStmt(result, new PTXBinary.Expr(MUL_LU, kind, gridDim, blockDim)));
         gen.setResult(this, result);

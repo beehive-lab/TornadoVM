@@ -19,6 +19,9 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXNullaryOp
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt.ExprStmt;
@@ -26,6 +29,8 @@ import static uk.ac.manchester.tornado.runtime.graal.compiler.TornadoCodeGenerat
 
 public class PTXLIRGenerator extends LIRGenerator {
     private PTXGenTool ptxGenTool;
+
+    private final Map<String, Variable> parameterAllocations;
 
     public PTXLIRGenerator(Providers providers, LIRGenerationResult lirGenRes) {
         super(
@@ -37,6 +42,8 @@ public class PTXLIRGenerator extends LIRGenerator {
         );
 
         ptxGenTool = new PTXGenTool(this);
+        parameterAllocations = new HashMap<>();
+        ((PTXLIRGenerationResult)lirGenRes).setParameterAllocations(parameterAllocations);
     }
 
     @Override
@@ -284,18 +291,26 @@ public class PTXLIRGenerator extends LIRGenerator {
     }
 
     public void emitParameterAlloc() {
+        Variable heapPointer = newVariable(LIRKind.value(PTXArchitecture.HEAP_POINTER.ptxKind));
+        parameterAllocations.put(PTXArchitecture.HEAP_POINTER.getName(), heapPointer);
         append(new PTXLIRStmt.LoadStmt(
                 new PTXUnary.MemoryAccess(PTXAssemblerConstants.HEAP_PTR_NAME),
-                PTXArchitecture.HEAP_POINTER.getAllocatedVar(this)
+                heapPointer
         ));
 
+        Variable stackPointer = newVariable(LIRKind.value(PTXArchitecture.STACK_POINTER.ptxKind));
+        parameterAllocations.put(PTXArchitecture.STACK_POINTER.getName(), stackPointer);
         append(new PTXLIRStmt.LoadStmt(
                 new PTXUnary.MemoryAccess(PTXAssemblerConstants.STACK_PTR_NAME),
-                PTXArchitecture.STACK_POINTER.getAllocatedVar(this)
+                stackPointer
         ));
     }
 
     public void emitConditionalBranch(LabelRef ref, Variable predicate, boolean isNegated) {
         append(new PTXLIRStmt.ConditionalStatement(new PTXControlFlow.Branch(ref), predicate, isNegated));
+    }
+
+    public Variable getParameterAllocation(PTXArchitecture.PTXParam param) {
+        return parameterAllocations.get(param.getName());
     }
 }
