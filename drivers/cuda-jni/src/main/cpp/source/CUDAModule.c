@@ -25,3 +25,24 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAModu
 
     return from_module(env, &module);
 }
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAModule
+ * Method:    cuFuncGetAttribute
+ * Signature: (Ljava/lang/String;I[B)I
+ */
+JNIEXPORT jint JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAModule_cuFuncGetAttribute
+  (JNIEnv *env, jclass clazz, jstring func_name, jint attribute, jbyteArray module) {
+    CUmodule native_module;
+    array_to_module(env, &native_module, module);
+
+    const char *native_function_name = (*env)->GetStringUTFChars(env, func_name, 0);
+    CUfunction kernel;
+    CUresult result = cuModuleGetFunction(&kernel, native_module, native_function_name);
+    (*env)->ReleaseStringUTFChars(env, func_name, native_function_name);
+
+    int return_value;
+    result = cuFuncGetAttribute(&return_value, (CUfunction_attribute) attribute, kernel);
+
+    return (jint) return_value;
+}

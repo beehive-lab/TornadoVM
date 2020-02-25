@@ -11,30 +11,41 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
 
     private static int INIT_VAL = -1;
 
-    private int index;
     private String name;
-    private long constantBufferSize;
-    private long totalDeviceMemory;
-    private long localMemorySize;
-    private int noOfWorkUnits;
-    private int maxFrequency;
-    private int computeCapabilityMajor;
-    private int computeCapabilityMinor;
+    private int[] maxGridSizes;
     private CUDAContext context;
     private long[] maxWorkItemSizes;
     private String computeCapability;
     private String targetArchitecture;
 
+    private int index;
+    private int warpSize;
+    private int maxFrequency;
+    private int maxRegisters;
+    private int noOfWorkUnits;
+    private long localMemorySize;
+    private int warpsPerProcessor;
+    private long totalDeviceMemory;
+    private long constantBufferSize;
+    private int computeCapabilityMajor;
+    private int computeCapabilityMinor;
+    private int registerAllocationSize;
+
     public CUDADevice(int index) {
         this.index = index;
-        context = new CUDAContext(this);
+        registerAllocationSize = INIT_VAL;
         computeCapabilityMajor = INIT_VAL;
         computeCapabilityMinor = INIT_VAL;
         constantBufferSize = INIT_VAL;
         totalDeviceMemory = INIT_VAL;
+        warpsPerProcessor = INIT_VAL;
         localMemorySize = INIT_VAL;
         noOfWorkUnits = INIT_VAL;
+        maxRegisters = INIT_VAL;
         maxFrequency = INIT_VAL;
+        warpSize = INIT_VAL;
+
+        context = new CUDAContext(this);
     }
 
     native static String cuDeviceGetName(int deviceId);
@@ -95,15 +106,25 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
 
     @Override
     public long[] getDeviceMaxWorkItemSizes() {
-        if (maxWorkItemSizes != null) return maxWorkItemSizes;
-
-        maxWorkItemSizes = new long[3];
-
-        maxWorkItemSizes[0] = cuDeviceGetAttribute(index, CUDADeviceAttribute.MAX_BLOCK_DIM_X.value());
-        maxWorkItemSizes[1] = cuDeviceGetAttribute(index, CUDADeviceAttribute.MAX_BLOCK_DIM_Y.value());
-        maxWorkItemSizes[2] = cuDeviceGetAttribute(index, CUDADeviceAttribute.MAX_BLOCK_DIM_Z.value());
+        if (maxWorkItemSizes == null) {
+            maxWorkItemSizes = new long[3];
+            maxWorkItemSizes[0] = cuDeviceGetAttribute(index, CUDADeviceAttribute.MAX_BLOCK_DIM_X.value());
+            maxWorkItemSizes[1] = cuDeviceGetAttribute(index, CUDADeviceAttribute.MAX_BLOCK_DIM_Y.value());
+            maxWorkItemSizes[2] = cuDeviceGetAttribute(index, CUDADeviceAttribute.MAX_BLOCK_DIM_Z.value());
+        }
 
         return maxWorkItemSizes;
+    }
+
+    public int[] getDeviceMaxGridSizes() {
+        if (maxGridSizes == null) {
+            maxGridSizes = new int[3];
+            maxGridSizes[0] = cuDeviceGetAttribute(index, CUDADeviceAttribute.MAX_GRID_DIM_X.value());
+            maxGridSizes[1] = cuDeviceGetAttribute(index, CUDADeviceAttribute.MAX_GRID_DIM_Y.value());
+            maxGridSizes[2] = cuDeviceGetAttribute(index, CUDADeviceAttribute.MAX_GRID_DIM_Z.value());
+        }
+
+        return maxGridSizes;
     }
 
     @Override
@@ -154,5 +175,71 @@ public class CUDADevice extends TornadoLogger implements TornadoTargetDevice {
             targetArchitecture = String.format("sm_%d%d", computeCapabilityMajor, computeCapabilityMinor);
         }
         return targetArchitecture;
+    }
+
+    public int getWarpSize() {
+        if (warpSize == INIT_VAL) {
+            warpSize = cuDeviceGetAttribute(index, CUDADeviceAttribute.WARP_SIZE.value());
+        }
+        return warpSize;
+    }
+
+    public int getRegisterAllocationUnitSize() {
+        if (registerAllocationSize == INIT_VAL) {
+            // Unfortunately there is no way to get this from the driver
+            // From the documentation: https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications__technical-specifications-per-compute-capability
+            ensureComputeCapabilityAvailable();
+            if (computeCapabilityMajor == 1) {
+                if (computeCapabilityMinor < 2) {
+                    registerAllocationSize = 256;
+                }
+                else {
+                    registerAllocationSize = 512;
+                }
+            }
+            else if (computeCapabilityMajor == 2) {
+                registerAllocationSize = 64;
+            }
+            else {
+                registerAllocationSize = 256;
+            }
+        }
+        return this.registerAllocationSize;
+    }
+
+    public int getWarpAllocationGranularity() {
+        // Unfortunately there is no way to get this from the driver
+        // From the documentation: https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications__technical-specifications-per-compute-capability
+        return computeCapabilityMajor > 1 ? 4 : 2;
+    }
+
+    public int getMaxRegisters() {
+        if (maxRegisters == INIT_VAL) {
+            maxRegisters = cuDeviceGetAttribute(index, CUDADeviceAttribute.MAX_REGISTERS_PER_BLOCK.value());
+        }
+        return this.maxRegisters;
+    }
+
+    public int getWarpsPerProcessor() {
+        // Unfortunately there is no way to get this from the driver
+        // From the documentation: https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications__technical-specifications-per-compute-capability
+        if (warpsPerProcessor == INIT_VAL) {
+            ensureComputeCapabilityAvailable();
+            if (computeCapabilityMajor == 1) {
+                if (computeCapabilityMinor < 2) {
+                    warpsPerProcessor = 24;
+                }
+                else {
+                    warpsPerProcessor = 32;
+                }
+            }
+            else if (computeCapabilityMajor == 2) {
+                warpsPerProcessor = 48;
+            }
+            else {
+                warpsPerProcessor = 64;
+            }
+        }
+        return this.warpsPerProcessor;
     }
 }

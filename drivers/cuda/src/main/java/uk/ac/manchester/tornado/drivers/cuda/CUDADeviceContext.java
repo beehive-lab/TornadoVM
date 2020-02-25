@@ -11,11 +11,11 @@ import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.Initialisable;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.tasks.meta.Coarseness;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 
@@ -25,6 +25,7 @@ public class CUDADeviceContext
     private final CUDADevice device;
     private final CUDAMemoryManager memoryManager;
     private final CUDAStream stream;
+    private final CUDAOccupancyCalculator occupancyCalculator;
     private boolean wasReset;
 
     public CUDADeviceContext(CUDADevice device, CUDAStream stream) {
@@ -33,6 +34,7 @@ public class CUDADeviceContext
 
         memoryManager = new CUDAMemoryManager(this);
         wasReset = false;
+        occupancyCalculator = new CUDAOccupancyCalculator(device);
     }
 
     @Override public CUDAMemoryManager getMemoryManager() {
@@ -60,7 +62,7 @@ public class CUDADeviceContext
     }
 
     public TornadoInstalledCode installCode(PTXCompilationResult result) {
-        CUDAModule module = new CUDAModule(result.getTargetCode());
+        CUDAModule module = new CUDAModule(result.getTargetCode(), result.getName());
         return new PTXInstalledCode(result.getName(), module, this);
     }
 
@@ -182,36 +184,41 @@ public class CUDADeviceContext
         unimplemented();
     }
 
-    public int enqueueKernelLaunch(CUDAModule module, String functionName, CallStack stack, TaskMetaData meta, long batchThreads) {
-        return stream.enqueueKernelLaunch(module,
-                                          functionName,
-                                          getKernelParams((CUDACallStack) stack),
-                                          calculateGrids(meta),
-                                          calculateBlocks(meta)
+    public int enqueueKernelLaunch(CUDAModule module, CallStack stack, TaskMetaData meta, long batchThreads) {
+        int[] blocks = calculateBlocks(meta, module);
+        return stream.enqueueKernelLaunch(
+                module,
+                getKernelParams((CUDACallStack) stack),
+                calculateGrids(meta, blocks),
+                blocks
         );
     }
 
-    private int[] calculateBlocks(TaskMetaData meta) {
+    private int[] calculateBlocks(TaskMetaData meta, CUDAModule module) {
         int[] defaultBlocks = {1, 1, 1};
-        int dims = 0; // meta.getDims(); - This is not yet implemented as it comes from the compiler.
+        int dims = meta.getDims();
+        int threadLimitByModule = module.getNumberOfRegisters();
 
         for (int i = 0; i < dims && i < 3; i++) {
-            //TODO: Use meta info to calculate this
-            defaultBlocks[i] = 1;
+            int maxBlocks = Math.min(module.maxThreadsPerBlock(), meta.getDomain().get(i).cardinality());
+            defaultBlocks[i] = occupancyCalculator.getMaximalBlockSize(threadLimitByModule, maxBlocks, i);
         }
 
+        System.out.println("Executing with blocks: " + Arrays.toString(defaultBlocks));
         return defaultBlocks;
     }
 
-    private int[] calculateGrids(TaskMetaData meta) {
+    private int[] calculateGrids(TaskMetaData meta, int[] blocks) {
         int[] defaultGrids = {1, 1, 1};
-        int dims = 0; // meta.getDims(); - This is not yet implemented as it comes from the compiler.
+        int dims = meta.getDims();
+        int[] maxGridSizes = device.getDeviceMaxGridSizes();
 
         for (int i = 0 ; i < dims && i < 3; i++) {
-            //TODO: Use meta info to calculate this
-            defaultGrids[i] = 1;
+            int workSize = meta.getDomain().get(i).cardinality();
+            defaultGrids[i] = Math.min(workSize / blocks[i], maxGridSizes[i]);
         }
 
+        System.out.println("Executing with grids: " + Arrays.toString(defaultGrids));
         return defaultGrids;
     }
 
