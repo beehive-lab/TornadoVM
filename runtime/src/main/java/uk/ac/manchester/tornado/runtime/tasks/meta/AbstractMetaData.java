@@ -56,7 +56,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
             "-cl-no-signed-zeros", "-cl-unsafe-math-optimizations", "-cl-finite-math-only", "-cl-fast-relaxed-math", "-w"));
     private TornadoProfiler profiler;
 
-    private static final int DEFAULT_DRIVER_INDEX = 1;
+    private static final int DEFAULT_DRIVER_INDEX = 0;
     private static final int DEFAULT_DEVICE_INDEX = 0;
 
     private static String getProperty(String key) {
@@ -108,7 +108,7 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      * @param device
      */
     public void setDriverDevice(int driverIndex, TornadoAcceleratorDevice device) {
-        this.driverIndex = deviceIndex;
+        this.driverIndex = driverIndex;
         this.deviceIndex = getDeviceIndex(driverIndex, device);
         this.device = device;
     }

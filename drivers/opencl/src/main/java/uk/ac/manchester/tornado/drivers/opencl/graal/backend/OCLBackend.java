@@ -275,6 +275,8 @@ public class OCLBackend extends TornadoBackend<OCLProviders> implements FrameMap
     public TaskMetaData compileLookupBufferKernel() {
 
         TaskMetaData meta = new TaskMetaData(scheduleMeta, OCLCodeCache.LOOKUP_BUFFER_KERNEL_NAME);
+        meta.setDevice(deviceContext.asMapping());
+
         OCLCodeCache codeCache = deviceContext.getCodeCache();
         int[] deviceInfo = getDriverAndDevice();
         String deviceFullName = getDriverAndDevice(meta, deviceInfo);
