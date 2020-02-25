@@ -2,7 +2,6 @@ package uk.ac.manchester.tornado.drivers.cuda;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
-import uk.ac.manchester.tornado.drivers.cuda.graal.PTXInstalledCode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDACallStack;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
@@ -11,7 +10,6 @@ import uk.ac.manchester.tornado.runtime.common.CallStack;
 import uk.ac.manchester.tornado.runtime.common.Initialisable;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -26,12 +24,14 @@ public class CUDADeviceContext
     private final CUDAMemoryManager memoryManager;
     private final CUDAStream stream;
     private final CUDAOccupancyCalculator occupancyCalculator;
+    private final CUDACodeCache codeCache;
     private boolean wasReset;
 
     public CUDADeviceContext(CUDADevice device, CUDAStream stream) {
         this.device = device;
         this.stream = stream;
 
+        codeCache = new CUDACodeCache(this);
         memoryManager = new CUDAMemoryManager(this);
         wasReset = false;
         occupancyCalculator = new CUDAOccupancyCalculator(device);
@@ -62,8 +62,7 @@ public class CUDADeviceContext
     }
 
     public TornadoInstalledCode installCode(PTXCompilationResult result) {
-        CUDAModule module = new CUDAModule(result.getTargetCode(), result.getName());
-        return new PTXInstalledCode(result.getName(), module, this);
+        return codeCache.installSource(result);
     }
 
     public CUDADevice getDevice() {
@@ -138,23 +137,23 @@ public class CUDADeviceContext
         unimplemented();
     }
 
-    public int enqueueKernelLaunch(CUDAModule module, CallStack stack, TaskMetaData meta, long batchThreads) {
-        int[] blocks = calculateBlocks(meta, module);
+    public int enqueueKernelLaunch(CUDAModule module, CallStack stack, long batchThreads) {
+        int[] blocks = calculateBlocks(module);
         return stream.enqueueKernelLaunch(
                 module,
                 getKernelParams((CUDACallStack) stack),
-                calculateGrids(meta, blocks),
+                calculateGrids(module, blocks),
                 blocks
         );
     }
 
-    private int[] calculateBlocks(TaskMetaData meta, CUDAModule module) {
+    private int[] calculateBlocks(CUDAModule module) {
         int[] defaultBlocks = {1, 1, 1};
-        int dims = meta.getDims();
+        int dims = module.dims;
         int threadLimitByModule = module.getNumberOfRegisters();
 
         for (int i = 0; i < dims && i < 3; i++) {
-            int maxBlocks = Math.min(module.maxThreadsPerBlock(), meta.getDomain().get(i).cardinality());
+            int maxBlocks = Math.min(module.maxThreadsPerBlock(), module.domain.get(i).cardinality());
             defaultBlocks[i] = occupancyCalculator.getMaximalBlockSize(threadLimitByModule, maxBlocks, i);
         }
 
@@ -162,13 +161,13 @@ public class CUDADeviceContext
         return defaultBlocks;
     }
 
-    private int[] calculateGrids(TaskMetaData meta, int[] blocks) {
+    private int[] calculateGrids(CUDAModule module, int[] blocks) {
         int[] defaultGrids = {1, 1, 1};
-        int dims = meta.getDims();
+        int dims = module.dims;
         int[] maxGridSizes = device.getDeviceMaxGridSizes();
 
         for (int i = 0 ; i < dims && i < 3; i++) {
-            int workSize = meta.getDomain().get(i).cardinality();
+            int workSize = module.domain.get(i).cardinality();
             defaultGrids[i] = Math.min(workSize / blocks[i], maxGridSizes[i]);
         }
 
@@ -257,5 +256,9 @@ public class CUDADeviceContext
 
     public int enqueueWriteBuffer(long bufferId, long offset, long length, long[] array, long hostOffset, int[] waitEvents) {
         return stream.enqueueAsyncWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
+    public boolean shouldCompile(String name) {
+        return !codeCache.isCached(name);
     }
 }

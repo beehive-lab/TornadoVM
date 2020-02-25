@@ -37,9 +37,6 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.util.List;
 
-import static java.util.jar.Pack200.Unpacker.FALSE;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
-
 public class CUDATornadoDevice implements TornadoAcceleratorDevice {
 
     private static final boolean BENCHMARKING_MODE = Boolean.parseBoolean(System.getProperties().getProperty("tornado.benchmarking", "False"));
@@ -87,12 +84,14 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
 
-        PTXProviders providers = (PTXProviders) getBackend().getProviders();
-        final PTXCompilationResult result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
-
-        if (Boolean.parseBoolean(getProperty("tornado.opencl.source.print", FALSE))) {
-            String sourceCode = new String(result.getTargetCode());
-            System.out.println(sourceCode);
+        PTXCompilationResult result;
+        if (deviceContext.shouldCompile(PTXCompiler.buildFunctionName(resolvedMethod, executable))) {
+            PTXProviders providers = (PTXProviders) getBackend().getProviders();
+            result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
+        }
+        else {
+            System.out.println("CACHE HIT");
+            result = new PTXCompilationResult(PTXCompiler.buildFunctionName(resolvedMethod, executable), taskMeta);
         }
 
         return deviceContext.installCode(result);

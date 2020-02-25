@@ -2,6 +2,7 @@ package uk.ac.manchester.tornado.drivers.cuda.graal.compiler;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.code.CompilationResult;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -11,9 +12,11 @@ import java.util.Set;
 public class PTXCompilationResult extends CompilationResult {
 
     private Set<ResolvedJavaMethod> nonInlinedMethods;
+    private TaskMetaData taskMetaData;
 
-    public PTXCompilationResult(String functionName) {
+    public PTXCompilationResult(String functionName, TaskMetaData taskMetaData) {
         super(functionName);
+        this.taskMetaData = taskMetaData;
     }
 
     public PTXCompilationResult(String functionName, String s) {
@@ -42,5 +45,9 @@ public class PTXCompilationResult extends CompilationResult {
         buffer.put((byte) '\n');
         buffer.put(oldCode);
         setTargetCode(newCode, size);
+    }
+
+    public TaskMetaData getTaskMeta() {
+        return taskMetaData;
     }
 }

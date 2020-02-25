@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <cuda.h>
+#include <stdio.h>
 
 jbyteArray from_module(JNIEnv *env, CUmodule *module) {
     jbyteArray array = (*env)->NewByteArray(env, sizeof(CUmodule));
@@ -22,6 +23,13 @@ JNIEXPORT jbyteArray JNICALL Java_uk_ac_manchester_tornado_drivers_cuda_CUDAModu
 
     CUmodule module;
     CUresult result = cuModuleLoadData(&module, ptx);
+
+    if (result != 0) {
+        printf("PTX to cubin JIT compilation failed! (%d)\n", result);
+        fflush(stdout);
+        jbyteArray error_array = (*env)->NewByteArray(env, 0);
+        return error_array;
+    }
 
     return from_module(env, &module);
 }

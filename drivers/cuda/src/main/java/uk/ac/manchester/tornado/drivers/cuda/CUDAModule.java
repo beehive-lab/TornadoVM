@@ -1,12 +1,19 @@
 package uk.ac.manchester.tornado.drivers.cuda;
 
+import uk.ac.manchester.tornado.runtime.domain.DomainTree;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
+
 public class CUDAModule {
     public final byte[] nativeModule;
     public final String kernelFunctionName;
+    public final DomainTree domain;
+    public final int dims;
 
-    public CUDAModule(byte[] source, String kernelFunctionName) {
+    public CUDAModule(byte[] source, String kernelFunctionName, TaskMetaData taskMetaData) {
         nativeModule = cuModuleLoadData(source);
         this.kernelFunctionName = kernelFunctionName;
+        domain = taskMetaData.getDomain();
+        dims = taskMetaData.getDims();
     }
 
     private native static byte[] cuModuleLoadData(byte[] source);
@@ -19,6 +26,10 @@ public class CUDAModule {
 
     public int getNumberOfRegisters() {
         return cuFuncGetAttribute(kernelFunctionName, CUFunctionAttribute.NUM_REGS, nativeModule);
+    }
+
+    public boolean getIsPTXJITSuccess() {
+        return nativeModule.length != 0;
     }
 
     private static class CUFunctionAttribute {

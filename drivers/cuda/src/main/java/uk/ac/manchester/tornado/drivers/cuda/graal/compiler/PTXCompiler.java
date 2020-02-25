@@ -32,6 +32,7 @@ import org.graalvm.compiler.phases.util.Providers;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXSuitesProvider;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.PTXBackend;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.graal.TornadoLIRSuites;
 import uk.ac.manchester.tornado.runtime.graal.TornadoSuites;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoHighTierContext;
@@ -44,6 +45,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskMetaData;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -51,6 +53,7 @@ import java.util.*;
 
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXLIRGenerationPhase.*;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getDebugContext;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.*;
@@ -423,7 +426,7 @@ public class PTXCompiler {
         OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
         ProfilingInfo profilingInfo = resolvedMethod.getProfilingInfo();
 
-        PTXCompilationResult kernelCompResult = new PTXCompilationResult(resolvedMethod.getName());
+        PTXCompilationResult kernelCompResult = new PTXCompilationResult(buildFunctionName(resolvedMethod, task), taskMeta);
         CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
         Set<ResolvedJavaMethod> methods = new HashSet<>();
@@ -462,7 +465,7 @@ public class PTXCompiler {
         while (!worklist.isEmpty()) {
             final ResolvedJavaMethod currentMethod = worklist.pop();
             Sketch currentSketch = TornadoSketcher.lookup(currentMethod);
-            final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName());
+            final PTXCompilationResult compResult = new PTXCompilationResult(currentMethod.getName(), taskMeta);
             final StructuredGraph graph = (StructuredGraph) currentSketch.getGraph().getMutableCopy(null);
 
             PTXCompilationRequest methodCompilationRequest = PTXCompilationRequest.PTXCompilationRequestBuilder
@@ -520,6 +523,31 @@ public class PTXCompiler {
         return kernelCompResult;
 
         //return hardCodedKernel();
+    }
+
+    public static String buildFunctionName(ResolvedJavaMethod method, CompilableTask task) {
+        StringBuilder sb = new StringBuilder(method.getName());
+
+        for (Object arg : task.getArguments()) {
+            //Object is either array or primitive
+            sb.append('_');
+            Class<?> argClass = arg.getClass();
+            if (RuntimeUtilities.isBoxedPrimitiveClass(argClass)) {
+                // Only need to append type
+                sb.append(RuntimeUtilities.toUnboxedPrimitiveClass(argClass).getName());
+            }
+            else if (RuntimeUtilities.isPrimitiveArray(argClass)) {
+                // Need to append type and length
+                sb.append(argClass.getComponentType().getName());
+                sb.append(Array.getLength(arg));
+            }
+            else {
+                shouldNotReachHere("Argument to kernel not a primitive or array: " + arg);
+            }
+        }
+
+        System.out.println(sb);
+        return sb.toString();
     }
 
     static PTXCompilationResult hardCodedKernel() {
