@@ -10,23 +10,41 @@ public class CUDAStream extends TornadoLogger {
 
     private native static int writeArrayDtoH(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents);
     private native static int writeArrayDtoH(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents);
+    private native static int writeArrayDtoH(long bufferId, long offset, long length, long[] array, long hostOffset, int[] waitEvents);
 
     private native static int writeArrayDtoHAsync(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents);
     private native static int writeArrayDtoHAsync(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents);
+    private native static int writeArrayDtoHAsync(long bufferId, long offset, long length, long[] array, long hostOffset, int[] waitEvents);
 
-    private native static void writeArrayHtoD(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents);
     private native static void writeArrayHtoD(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents);
+    private native static void writeArrayHtoD(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents);
+    private native static void writeArrayHtoD(long bufferId, long offset, long length, long[] array, long hostOffset, int[] waitEvents);
 
-    private native static int writeArrayHtoDAsync(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents);
     private native static int writeArrayHtoDAsync(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents);
+    private native static int writeArrayHtoDAsync(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents);
+    private native static int writeArrayHtoDAsync(long bufferId, long offset, long length, long[] array, long hostOffset, int[] waitEvents);
 
     private native static int cuLaunchKernel(byte[] module, String name, int gridDimX, int gridDimY, int gridDimZ, int blockDimX, int blockDimY, int blockDimZ, long sharedMemBytes, byte[] stream, byte[] args);
+
+    public int enqueueKernelLaunch(CUDAModule module, byte[] kernelParams, int[] gridDim, int[] blockDim) {
+        return cuLaunchKernel(module.nativeModule, module.kernelFunctionName,
+                              gridDim[0], gridDim[1], gridDim[2],
+                              blockDim[0], blockDim[1], blockDim[2],
+                              0, null,
+                              kernelParams
+        );
+    }
 
     public int enqueueRead(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
         return writeArrayDtoH(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
     public int enqueueRead(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents) {
+        writeArrayDtoH(bufferId, offset, length, array, hostOffset, waitEvents);
+        return -1;
+    }
+
+    public int enqueueRead(long bufferId, long offset, long length, long[] array, long hostOffset, int[] waitEvents) {
         writeArrayDtoH(bufferId, offset, length, array, hostOffset, waitEvents);
         return -1;
     }
@@ -39,12 +57,20 @@ public class CUDAStream extends TornadoLogger {
         return writeArrayDtoHAsync(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
+    public int enqueueAsyncRead(long bufferId, long offset, long length, long[] array, long hostOffset, int[] waitEvents) {
+        return writeArrayDtoHAsync(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
 
     public void enqueueWrite(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
         writeArrayHtoD(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
     public void enqueueWrite(long bufferId, long offset, long length, int[] array, long hostOffset, int[] waitEvents) {
+        writeArrayHtoD(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
+    public void enqueueWrite(long bufferId, long offset, long length, long[] array, int hostOffset, int[] waitEvents) {
         writeArrayHtoD(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
@@ -56,12 +82,7 @@ public class CUDAStream extends TornadoLogger {
         return writeArrayHtoDAsync(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
-    public int enqueueKernelLaunch(CUDAModule module, byte[] kernelParams, int[] gridDim, int[] blockDim) {
-        return cuLaunchKernel(module.nativeModule, module.kernelFunctionName,
-                              gridDim[0], gridDim[1], gridDim[2],
-                              blockDim[0], blockDim[1], blockDim[2],
-                              0, null,
-                              kernelParams
-        );
+    public int enqueueAsyncWrite(long bufferId, long offset, long length, long[] array, long hostOffset, int[] waitEvents) {
+        return writeArrayHtoDAsync(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 }

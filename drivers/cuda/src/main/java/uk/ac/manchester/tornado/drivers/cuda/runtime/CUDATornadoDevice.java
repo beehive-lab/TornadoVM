@@ -23,6 +23,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResult
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompiler;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAByteBuffer;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAIntArrayWrapper;
+import uk.ac.manchester.tornado.drivers.cuda.mm.CUDALongArrayWrapper;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.*;
@@ -177,7 +178,7 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
         } else if (type == double[].class) {
             //result = new OCLDoubleArrayWrapper(device, batchSize);
         } else if (type == long[].class) {
-            //result = new OCLLongArrayWrapper(device, batchSize);
+            result = new CUDALongArrayWrapper(deviceContext);
         } else if (type == char[].class) {
             //result = new OCLCharArrayWrapper(device, batchSize);
         } else {
