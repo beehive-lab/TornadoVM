@@ -207,4 +207,6 @@ public interface TornadoDevice {
     String getDeviceOpenCLCVersion();
 
     Object getDeviceInfo();
+
+    int getDriverIndex();
 }

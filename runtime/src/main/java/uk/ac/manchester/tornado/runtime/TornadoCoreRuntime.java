@@ -185,6 +185,17 @@ public class TornadoCoreRuntime extends TornadoLogger implements TornadoRuntimeC
         return objectMappings.get(object);
     }
 
+    @Override
+    public <D extends TornadoDriver> int getDriverIndex(Class<D> driverClass) {
+        for (int driverIndex = 0; driverIndex < drivers.length; driverIndex++) {
+            if (drivers[driverIndex].getClass() == driverClass) {
+                return driverIndex;
+            }
+        }
+        shouldNotReachHere("Could not find index for driver: " + driverClass);
+        return -1;
+    }
+
     public MetaAccessProvider getMetaAccess() {
         return vmBackend.getMetaAccess();
     }

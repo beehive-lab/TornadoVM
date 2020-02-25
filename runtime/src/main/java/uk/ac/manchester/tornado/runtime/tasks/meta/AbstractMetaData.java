@@ -93,8 +93,8 @@ public abstract class AbstractMetaData implements TaskMetaDataInterface {
      * @param device
      */
     public void setDevice(TornadoDevice device) {
-        this.driverIndex = DEFAULT_DRIVER_INDEX;
-        this.deviceIndex = getDeviceIndex(DEFAULT_DRIVER_INDEX, device);
+        this.driverIndex = device.getDriverIndex();
+        this.deviceIndex = getDeviceIndex(driverIndex, device);
         if (device instanceof TornadoAcceleratorDevice) {
             this.device = (TornadoAcceleratorDevice) device;
         }

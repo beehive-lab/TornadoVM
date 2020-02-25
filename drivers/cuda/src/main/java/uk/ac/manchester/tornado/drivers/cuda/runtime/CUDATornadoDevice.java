@@ -428,6 +428,11 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
     }
 
     @Override
+    public int getDriverIndex() {
+        return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(CUDADriver.class);
+    }
+
+    @Override
     public String toString() {
 
         return device.getDeviceName();

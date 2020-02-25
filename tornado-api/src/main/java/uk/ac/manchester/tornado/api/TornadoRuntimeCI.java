@@ -60,4 +60,5 @@ public interface TornadoRuntimeCI {
 
     TornadoGlobalObjectState resolveObject(Object object);
 
+    <D extends TornadoDriver> int getDriverIndex(Class<D> driverClass);
 }

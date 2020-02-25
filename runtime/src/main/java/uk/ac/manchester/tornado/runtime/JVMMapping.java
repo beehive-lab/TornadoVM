@@ -239,4 +239,9 @@ public class JVMMapping implements TornadoAcceleratorDevice {
         return null;
     }
 
+    @Override
+    public int getDriverIndex() {
+        return 0;
+    }
+
 }

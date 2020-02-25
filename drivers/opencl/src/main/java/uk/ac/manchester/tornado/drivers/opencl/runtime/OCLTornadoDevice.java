@@ -671,4 +671,9 @@ public class OCLTornadoDevice implements TornadoAcceleratorDevice {
         return device.getDeviceInfo();
     }
 
+    @Override
+    public int getDriverIndex() {
+        return TornadoCoreRuntime.getTornadoRuntime().getDriverIndex(OCLDriver.class);
+    }
+
 }
