@@ -21,10 +21,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.PTXProviders;
 import uk.ac.manchester.tornado.drivers.cuda.graal.backend.PTXBackend;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResult;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompiler;
-import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAByteBuffer;
-import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAIntArrayWrapper;
-import uk.ac.manchester.tornado.drivers.cuda.mm.CUDALongArrayWrapper;
-import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
+import uk.ac.manchester.tornado.drivers.cuda.mm.*;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.*;
 import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
@@ -169,17 +166,17 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
         if (type == int[].class) {
             result = new CUDAIntArrayWrapper(deviceContext);
         } else if (type == short[].class) {
-            //result = new OCLShortArrayWrapper(device, batchSize);
+            result = new CUDAShortArrayWrapper(deviceContext);
         } else if (type == byte[].class) {
-            //result = new OCLByteArrayWrapper(device, batchSize);
+            result = new CUDAByteArrayWrapper(deviceContext);
         } else if (type == float[].class) {
-            //result = new OCLFloatArrayWrapper(device, batchSize);
+            result = new CUDAFloatArrayWrapper(deviceContext);
         } else if (type == double[].class) {
-            //result = new OCLDoubleArrayWrapper(device, batchSize);
+            result = new CUDADoubleArrayWrapper(deviceContext);
         } else if (type == long[].class) {
             result = new CUDALongArrayWrapper(deviceContext);
         } else if (type == char[].class) {
-            //result = new OCLCharArrayWrapper(device, batchSize);
+            result = new CUDACharArrayWrapper(deviceContext);
         } else {
             TornadoInternalError.unimplemented("array of type %s", type.getName());
         }

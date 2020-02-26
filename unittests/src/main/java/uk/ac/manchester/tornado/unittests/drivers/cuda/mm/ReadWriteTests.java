@@ -6,9 +6,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADriver;
-import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAByteBuffer;
-import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAIntArrayWrapper;
-import uk.ac.manchester.tornado.drivers.cuda.mm.CUDALongArrayWrapper;
+import uk.ac.manchester.tornado.drivers.cuda.mm.*;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -29,7 +27,7 @@ public class ReadWriteTests extends TornadoTestBase {
     }
 
     @Test
-    public void testByteArrayReadWrite() {
+    public void testByteBufferReadWrite() {
         byte[] a = new byte[NUM_ELEMENTS];
         byte[] b = new byte[NUM_ELEMENTS];
 
@@ -46,6 +44,54 @@ public class ReadWriteTests extends TornadoTestBase {
 
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             assertEquals(1, otherCudaBuffer.buffer().array()[i]);
+        }
+    }
+
+    @Test
+    public void testByteArrayReadWrite() {
+        byte[] a = new byte[NUM_ELEMENTS];
+        byte[] b = new byte[NUM_ELEMENTS];
+
+        Arrays.fill(a, (byte) 1);
+        Arrays.fill(b, (byte) 2);
+
+        CUDAByteArrayWrapper arrayWrapper = new CUDAByteArrayWrapper(context);
+
+        try {
+            arrayWrapper.allocate(a, 0);
+        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
+            e.printStackTrace();
+        }
+
+        arrayWrapper.enqueueWrite(a, 0, 0, null, false);
+        arrayWrapper.enqueueRead(b, 0, null, false);
+
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            assertEquals(1, b[i]);
+        }
+    }
+
+    @Test
+    public void testCharArrayReadWrite() {
+        char[] a = new char[NUM_ELEMENTS];
+        char[] b = new char[NUM_ELEMENTS];
+
+        Arrays.fill(a, (char) 1);
+        Arrays.fill(b, (char) 2);
+
+        CUDACharArrayWrapper arrayWrapper = new CUDACharArrayWrapper(context);
+
+        try {
+            arrayWrapper.allocate(a, 0);
+        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
+            e.printStackTrace();
+        }
+
+        arrayWrapper.enqueueWrite(a, 0, 0, null, false);
+        arrayWrapper.enqueueRead(b, 0, null, false);
+
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            assertEquals(1, b[i]);
         }
     }
 
@@ -94,6 +140,54 @@ public class ReadWriteTests extends TornadoTestBase {
 
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             assertEquals(1, b[i]);
+        }
+    }
+
+    @Test
+    public void testFloatArrayReadWrite() {
+        float[] a = new float[NUM_ELEMENTS];
+        float[] b = new float[NUM_ELEMENTS];
+
+        Arrays.fill(a, (float) 1.0);
+        Arrays.fill(b, (float) 2.0);
+
+        CUDAFloatArrayWrapper arrayWrapper = new CUDAFloatArrayWrapper(context);
+
+        try {
+            arrayWrapper.allocate(a, 0);
+        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
+            e.printStackTrace();
+        }
+
+        arrayWrapper.enqueueWrite(a, 0, 0, null, false);
+        arrayWrapper.enqueueRead(b, 0, null, false);
+
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            assertEquals(1, b[i], 0.1);
+        }
+    }
+
+    @Test
+    public void testDoubleArrayReadWrite() {
+        double[] a = new double[NUM_ELEMENTS];
+        double[] b = new double[NUM_ELEMENTS];
+
+        Arrays.fill(a, (double) 1.0);
+        Arrays.fill(b, (double) 2.0);
+
+        CUDADoubleArrayWrapper arrayWrapper = new CUDADoubleArrayWrapper(context);
+
+        try {
+            arrayWrapper.allocate(a, 0);
+        } catch (TornadoOutOfMemoryException | TornadoMemoryException e) {
+            e.printStackTrace();
+        }
+
+        arrayWrapper.enqueueWrite(a, 0, 0, null, false);
+        arrayWrapper.enqueueRead(b, 0, null, false);
+
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            assertEquals(1, b[i], 0.1);
         }
     }
 }

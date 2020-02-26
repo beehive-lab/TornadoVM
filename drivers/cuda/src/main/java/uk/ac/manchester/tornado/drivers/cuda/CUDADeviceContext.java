@@ -133,8 +133,9 @@ public class CUDADeviceContext
     }
 
     public void dumpEvents() {
-        //TODO: Implement
-        unimplemented();
+        // TODO: Implement
+        // This prints out all the current events
+        //unimplemented();
     }
 
     public int enqueueKernelLaunch(CUDAModule module, CallStack stack, long batchThreads) {
@@ -194,11 +195,23 @@ public class CUDADeviceContext
         return args.array();
     }
 
+    public boolean shouldCompile(String name) {
+        return !codeCache.isCached(name);
+    }
+
     /*
      * SYNC READS
      */
 
     public int readBuffer(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
+    public int readBuffer(long bufferId, long offset, long length, short[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
+    public int readBuffer(long bufferId, long offset, long length, char[] array, long hostOffset, int[] waitEvents) {
         return stream.enqueueRead(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
@@ -210,11 +223,27 @@ public class CUDADeviceContext
         return stream.enqueueRead(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
+    public int readBuffer(long bufferId, long offset, long length, float[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
+    public int readBuffer(long bufferId, long offset, long length, double[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
     /*
      * ASYNC READS
      */
 
     public int enqueueReadBuffer(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
+    public int enqueueReadBuffer(long bufferId, long offset, long length, short[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
+    public int enqueueReadBuffer(long bufferId, long offset, long length, char[] array, long hostOffset, int[] waitEvents) {
         return stream.enqueueAsyncRead(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
@@ -226,11 +255,27 @@ public class CUDADeviceContext
         return stream.enqueueAsyncRead(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
+    public int enqueueReadBuffer(long bufferId, long offset, long length, float[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
+    public int enqueueReadBuffer(long bufferId, long offset, long length, double[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncRead(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
     /*
      * SYNC WRITES
      */
 
     public void writeBuffer(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
+    public void writeBuffer(long bufferId, long offset, long length, short[] array, long hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
+    public void writeBuffer(long bufferId, long offset, long length, char[] array, long hostOffset, int[] waitEvents) {
         stream.enqueueWrite(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
@@ -242,11 +287,27 @@ public class CUDADeviceContext
         stream.enqueueWrite(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
+    public void writeBuffer(long bufferId, long offset, long length, float[] array, int hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
+    public void writeBuffer(long bufferId, long offset, long length, double[] array, int hostOffset, int[] waitEvents) {
+        stream.enqueueWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
     /*
      * ASYNC WRITES
      */
 
     public int enqueueWriteBuffer(long bufferId, long offset, long length, byte[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
+    public int enqueueWriteBuffer(long bufferId, long offset, long length, short[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
+    public int enqueueWriteBuffer(long bufferId, long offset, long length, char[] array, long hostOffset, int[] waitEvents) {
         return stream.enqueueAsyncWrite(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
@@ -258,7 +319,11 @@ public class CUDADeviceContext
         return stream.enqueueAsyncWrite(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 
-    public boolean shouldCompile(String name) {
-        return !codeCache.isCached(name);
+    public int enqueueWriteBuffer(long bufferId, long offset, long length, float[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(bufferId, offset, length, array, hostOffset, waitEvents);
+    }
+
+    public int enqueueWriteBuffer(long bufferId, long offset, long length, double[] array, long hostOffset, int[] waitEvents) {
+        return stream.enqueueAsyncWrite(bufferId, offset, length, array, hostOffset, waitEvents);
     }
 }

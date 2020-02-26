@@ -8,87 +8,101 @@
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
- * Method:    writeArrayDtoH
+ * Method:    writeArrayDtoH(Async)
  * Signature: (JJJ[BJ[I)I
  */
-COPY_ARRAY_D_TO_H_SYNC(__JJJ_3BJ_3I, jbyte, Byte)
+COPY_ARRAY_D_TO_H(__JJJ_3BJ_3I, jbyte, Byte)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
- * Method:    writeArrayDtoH
+ * Method:    writeArrayDtoH(Async)
+ * Signature: (JJJ[SJ[I)I
+ */
+COPY_ARRAY_D_TO_H(__JJJ_3SJ_3I, jshort, Short)
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
+ * Method:    writeArrayDtoHAsync
+ * Signature: (JJJ[CJ[I)I
+ */
+COPY_ARRAY_D_TO_H(__JJJ_3CJ_3I, jchar, Char)
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
+ * Method:    writeArrayDtoH(Async)
  * Signature: (JJJ[IJ[I)I
  */
-COPY_ARRAY_D_TO_H_SYNC(__JJJ_3IJ_3I, jint, Int)
+COPY_ARRAY_D_TO_H(__JJJ_3IJ_3I, jint, Int)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
- * Method:    writeArrayDtoH
+ * Method:    writeArrayDtoH(Async)
  * Signature: (JJJ[JJ[I)I
  */
-COPY_ARRAY_D_TO_H_SYNC(__JJJ_3JJ_3I, jlong, Long)
+COPY_ARRAY_D_TO_H(__JJJ_3JJ_3I, jlong, Long)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
- * Method:    writeArrayDtoHAsync
- * Signature: (JJJ[BJ[I)I
+ * Method:    writeArrayDtoH(Async)
+ * Signature: (JJJ[FJ[I)I
  */
-COPY_ARRAY_D_TO_H_ASYNC(__JJJ_3BJ_3I, jbyte, Byte)
+COPY_ARRAY_D_TO_H(__JJJ_3FJ_3I, jfloat, Float)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
- * Method:    writeArrayDtoHAsync
- * Signature: (JJJ[IJ[I)I
+ * Method:    writeArrayDtoH(Async)
+ * Signature: (JJJ[DJ[I)I
  */
-COPY_ARRAY_D_TO_H_ASYNC(__JJJ_3IJ_3I, jint, Int)
+COPY_ARRAY_D_TO_H(__JJJ_3DJ_3I, jdouble, Double)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
- * Method:    writeArrayDtoHAsync
- * Signature: (JJJ[JJ[I)I
- */
-COPY_ARRAY_D_TO_H_ASYNC(__JJJ_3JJ_3I, jlong, Long)
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
- * Method:    writeArrayHtoD
+ * Method:    writeArrayHtoD(Async)
  * Signature: (JJJ[BJ[I)V
  */
-COPY_ARRAY_H_TO_D_SYNC(__JJJ_3BJ_3I, jbyte, Byte)
+COPY_ARRAY_H_TO_D(__JJJ_3BJ_3I, jbyte, Byte)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
- * Method:    writeArrayHtoD
+ * Method:    writeArrayHtoD(Async)
+ * Signature: (JJJ[SJ[I)V
+ */
+COPY_ARRAY_H_TO_D(__JJJ_3SJ_3I, jshort, Short)
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
+ * Method:    writeArrayHtoD(Async)
+ * Signature: (JJJ[CJ[I)I
+ */
+COPY_ARRAY_H_TO_D(__JJJ_3CJ_3I, jchar, Char)
+
+/*
+ * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
+ * Method:    writeArrayHtoD(Async)
  * Signature: (JJJ[IJ[I)V
  */
-COPY_ARRAY_H_TO_D_SYNC(__JJJ_3IJ_3I, jint, Int)
+COPY_ARRAY_H_TO_D(__JJJ_3IJ_3I, jint, Int)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
- * Method:    writeArrayHtoD
+ * Method:    writeArrayHtoD(Async)
  * Signature: (JJJ[JJ[I)V
  */
-COPY_ARRAY_H_TO_D_SYNC(__JJJ_3JJ_3I, jlong, Long)
+COPY_ARRAY_H_TO_D(__JJJ_3JJ_3I, jlong, Long)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
- * Method:    writeArrayHtoDAsync
- * Signature: (JJJ[BJ[I)I
+ * Method:    writeArrayHtoD(Async)
+ * Signature: (JJJ[FJ[I)V
  */
-COPY_ARRAY_H_TO_D_ASYNC(__JJJ_3BJ_3I, jbyte, Byte)
+COPY_ARRAY_H_TO_D(__JJJ_3FJ_3I, jfloat, Float)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
- * Method:    writeArrayHtoDAsync
- * Signature: (JJJ[IJ[I)I
+ * Method:    writeArrayHtoD(Async)
+ * Signature: (JJJ[DJ[I)V
  */
-COPY_ARRAY_H_TO_D_ASYNC(__JJJ_3IJ_3I, jint, Int)
-
-/*
- * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
- * Method:    writeArrayHtoDAsync
- * Signature: (JJJ[JJ[I)I
- */
-COPY_ARRAY_H_TO_D_ASYNC(__JJJ_3JJ_3I, jlong, Long)
+COPY_ARRAY_H_TO_D(__JJJ_3DJ_3I, jdouble, Double)
 
 /*
  * Class:     uk_ac_manchester_tornado_drivers_cuda_CUDAStream
