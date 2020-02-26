@@ -24,7 +24,13 @@ TornadoVM has been succefully tested on the following platforms:
 
 ## Installation
 
-### 1. Compile JDK 1.8 with JVMCI-8 support
+We currently have two setups: 
+
+  * TornadoVM with JDK 8 with JVMCI-8 support: see the installation steps [here](INSTALL.md#1-Compile-JDK-1.8-with-JVMCI-8-support)
+  * TornadoVM with GraalVM (either with JDK 8 or JDK 11): see the installation guide [here](assembly/src/docs/10_INSTALL_WITH_GRAALVM.md)
+
+
+### 1. Compile JDK 8 with JVMCI-8 support
 TornadoVM is built by using a JDK 1.8 version with JVMCI-8 support. The directory which contains the Java binary is used as both the JAVA_HOME (Step 2) and the JVMCI root path (Step 3).
 
 Before building the new JDK, the JAVA_HOME environment variable should point to an already existing installation of a JDK 8 >= 1.8.0_141.
