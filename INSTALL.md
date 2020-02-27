@@ -166,7 +166,7 @@ $ tornado uk.ac.manchester.tornado.examples.HelloWorld
 Use the following command to identify the ids of the Tornado-compatible heterogeneous devices: 
 
 ```bash
-tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceOutput
+tornado uk.ac.manchester.tornado.drivers.opencl.TornadoDeviceQuery
 ```
 Tornado device output corresponds to:
 ```bash
@@ -175,7 +175,7 @@ Tornado device=<driverNumber>:<deviceNumber>
 Example output:
 ```bash
 Number of Tornado drivers: 1
-Number of devices: 3
+Number of devices        : 3
 
 Tornado device=0:0
   NVIDIA CUDA -- GeForce GTX 1050

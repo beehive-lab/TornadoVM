@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
  * </p>
  *
  */
-public class TornadoDeviceOutput {
+public class TornadoDeviceQuery {
 
     public static void main(String[] args) {
 
