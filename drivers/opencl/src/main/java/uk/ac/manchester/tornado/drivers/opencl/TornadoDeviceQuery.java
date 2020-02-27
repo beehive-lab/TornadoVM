@@ -2,7 +2,7 @@
  * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
- * Copyright (c) 2013-2019, APT Group, School of Computer Science,
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -60,7 +60,7 @@ public class TornadoDeviceQuery {
             verboseFlag = args[0];
         }
 
-        StringBuffer deviceInfoBuffer = new StringBuffer().append("\n");
+        StringBuilder deviceInfoBuffer = new StringBuilder().append("\n");
         final int numDrivers = TornadoCoreRuntime.getTornadoRuntime().getNumDrivers();
         deviceInfoBuffer.append("Number of Tornado drivers: " + numDrivers + "\n");
 
