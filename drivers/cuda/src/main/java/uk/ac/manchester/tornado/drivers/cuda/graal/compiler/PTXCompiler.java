@@ -546,7 +546,6 @@ public class PTXCompiler {
             }
         }
 
-        System.out.println(sb);
         return sb.toString();
     }
 

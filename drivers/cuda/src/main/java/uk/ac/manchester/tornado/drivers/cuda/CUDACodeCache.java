@@ -24,7 +24,6 @@ public class CUDACodeCache {
         String cacheKey = result.getName();
 
         if (!cache.containsKey(cacheKey)) {
-            System.out.println("CACHE MISS");
             if (PRINT_SOURCE) {
                 String source = new String(result.getTargetCode());
                 System.out.println(source);

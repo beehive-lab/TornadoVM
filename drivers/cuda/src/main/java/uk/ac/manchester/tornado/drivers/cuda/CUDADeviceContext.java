@@ -158,7 +158,7 @@ public class CUDADeviceContext
             defaultBlocks[i] = occupancyCalculator.getMaximalBlockSize(threadLimitByModule, maxBlocks, i);
         }
 
-        System.out.println("Executing with blocks: " + Arrays.toString(defaultBlocks));
+        //System.out.println("Executing with blocks: " + Arrays.toString(defaultBlocks));
         return defaultBlocks;
     }
 
@@ -172,7 +172,7 @@ public class CUDADeviceContext
             defaultGrids[i] = Math.min(workSize / blocks[i], maxGridSizes[i]);
         }
 
-        System.out.println("Executing with grids: " + Arrays.toString(defaultGrids));
+        //System.out.println("Executing with grids: " + Arrays.toString(defaultGrids));
         return defaultGrids;
     }
 

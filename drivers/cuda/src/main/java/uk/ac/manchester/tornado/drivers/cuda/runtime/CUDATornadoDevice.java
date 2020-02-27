@@ -87,7 +87,6 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
             result = PTXCompiler.compileSketchForDevice(sketch, executable, providers, getBackend());
         }
         else {
-            System.out.println("CACHE HIT");
             result = new PTXCompilationResult(PTXCompiler.buildFunctionName(resolvedMethod, executable), taskMeta);
         }
 
