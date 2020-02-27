@@ -15,7 +15,7 @@ $ make
 $ tornado --devices
 ```
 
-### 2. Enter a bash shell as a root user, in order to get access to the Xilinx FPGA.
+### 2. Enter a bash shell as root user, in order to get access to the Xilinx FPGA.
 ```
 $ sudo -E /bin/bash
 $ source /home/centos/scripts/sudo_tornado_aws_setup.sh
@@ -33,7 +33,7 @@ FLAGS=-O3 -j12
 DIRECTORY_BITSTREAM=fpga-source-comp/
 ```
 
-## Run a program that wants to offload a task on the FPGA. Be aware to dump the terminal output to a file (*_output.log_*), 
+## Run a program that offloads a task on the FPGA. Be aware to log the terminal output to a file (*_output.log_*), 
 as the compilation may take a few hours and the connection may be terminated with a broken pipe
 (e.g. packet_write_wait: Connection to 174.129.48.160 port 22: Broken pipe).
 ```
@@ -76,7 +76,7 @@ This command will return the following message:
     ]
 }
 ```
-When the state change from pending to available the awsxlcbin binary code can be executed via TornadoVM to the AWS FPGA.
+When the state change from pending to available, the awsxlcbin binary code can be executed via TornadoVM to the AWS FPGA.
 
 ### 5. Now that the AFI is available, enter as the root user to a bash shell, and run the program.
 
