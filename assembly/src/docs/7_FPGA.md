@@ -6,10 +6,12 @@ Tornado supports execution and prototyping with OpenCL compatible Intel/Altera F
 
 ### Pre-requisites
 
-We have currently tested with a Nallatech-A385 FPGA (Intel Arria 10 GT1150).
+We have currently tested with an Intel Nallatech-A385 FPGA (Intel Arria 10 GT1150) and a Xilinx KCU1500 FPGA card.
+We have also tested it on the AWS EC2 F1 instance with xilinx_aws-vu9p-f1-04261818_dynamic_5_0 device.
 
-* Quartus Version: 17.1.0 Build 240
-* Tornado Version: 0.4
+* HLS Versions: Intel Quartus 17.1.0 Build 240, Xilinx SDAccel 2018.2, Xilinx SDAccel 2018.3
+* Tornado Version: > 0.4
+* AWS AMI Version: 1.6.0
 
 If the OpenCL ICD loaders are installed correclty, the output of the ```clinfo``` it shoudl be the following:  
 ```bash
@@ -32,6 +34,35 @@ $ clinfo
    Device OpenCL C Version                         OpenCL C 1.0
    Device Type                                     Accelerator
 ```
+## Update the *_etc/fpga.conf_* file with the necessary information (i.e. fpga plarform name (DEVICE_NAME), HLS compiler flags (FLAGS), HLS directory (DIRECTORY_BITSTREAM).
+```$ vim etc/fpga.conf```
+
+### Example of configuration file for Intel Nallatech-A385 FPGA (Intel Arria 10 GT1150): 
+```
+[device]
+DEVICE_NAME=p385a_sch_ax115
+[flags]
+FLAGS=-v -fast-compile -high-effort -fp-relaxed -report -incremental -profile
+DIRECTORY_BITSTREAM=fpga-source-comp/
+```
+
+### Example of configuration file for Xilinx KCU1500: 
+```
+[device]
+DEVICE_NAME=xilinx_kcu1500_dynamic_5_0
+[flags]
+FLAGS=-O3 -j12
+DIRECTORY_BITSTREAM=fpga-source-comp/
+```
+
+### Example of configuration file for AWS xilinx_aws-vu9p-f1-04261818_dynamic_5_0: 
+```
+DEVICE_NAME=/home/centos/src/project_data/aws-fpga/SDAccel/aws_platform/xilinx_aws-vu9p-f1-04261818_dynamic_5_0/xilinx_aws-vu9p-f1-04261818_dynamic_5_0.xpfm
+[flags]
+FLAGS=-O3 -j12
+DIRECTORY_BITSTREAM=fpga-source-comp/
+```
+
 
 ## Execution Modes  
 
