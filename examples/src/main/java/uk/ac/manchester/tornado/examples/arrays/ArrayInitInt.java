@@ -7,7 +7,7 @@ import java.util.Arrays;
 
 //TODO: These examples seem pretty simple and dumb I just used these for testing
 // and therefore could be deleted afterwards
-public class ArrayInit {
+public class ArrayInitInt {
 
     public static void init(int[] a) {
         for (@Parallel int i = 0; i < a.length; i++) {
@@ -24,7 +24,7 @@ public class ArrayInit {
         System.out.println("Before: " + Arrays.toString(test));
 
         new TaskSchedule("s0")
-                .task("t0", ArrayInit::init, test)
+                .task("t0", ArrayInitInt::init, test)
                 .streamOut(test)
                 .execute();
 

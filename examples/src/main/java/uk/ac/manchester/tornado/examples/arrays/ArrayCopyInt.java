@@ -7,7 +7,7 @@ import java.util.Arrays;
 
 //TODO: These examples seem pretty simple and dumb I just used these for testing
 // and therefore could be deleted afterwards
-public class ArrayCopy {
+public class ArrayCopyInt {
     public static void copy(int[] a, int[] b) {
         for (@Parallel int i = 0; i < a.length; i++) {
             a[i] = b[i];
@@ -25,7 +25,7 @@ public class ArrayCopy {
         System.out.println("Before: " + Arrays.toString(dest));
 
         new TaskSchedule("s0")
-                .task("t0", ArrayCopy::copy, dest, test)
+                .task("t0", ArrayCopyInt::copy, dest, test)
                 .streamOut(dest)
                 .execute();
 

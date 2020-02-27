@@ -139,10 +139,8 @@ public class PTXLIRStmt {
             //ld.u64 	%rd9, [%rd8];
             asm.emitSymbol(TAB);
             asm.emit("ld.");
-            if (address.getBase() == paramSpace) {
-                asm.emit(address.getBase().memorySpace.name());
-                asm.emitSymbol(DOT);
-            }
+            asm.emit(address.getBase().memorySpace.name());
+            asm.emitSymbol(DOT);
             asm.emit(dest.getPlatformKind().toString());
             asm.emitSymbol(TAB);
 

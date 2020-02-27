@@ -17,7 +17,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXBinary;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.PTXLIRStmt;
 
 import static uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.PTXBuiltInRegisterArray;
-import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBinaryOp.MUL_LU;
+import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXBinaryOp.MUL_LO;
 
 @NodeInfo
 public class GlobalThreadSizeNode extends FloatingNode implements LIRLowerable {
@@ -43,7 +43,7 @@ public class GlobalThreadSizeNode extends FloatingNode implements LIRLowerable {
         Variable gridDim = ptxNodeBuilder.getBuiltInAllocation(builtIns.gridDim);
         Variable blockDim = ptxNodeBuilder.getBuiltInAllocation(builtIns.blockDim);
 
-        tool.append(new PTXLIRStmt.AssignStmt(result, new PTXBinary.Expr(MUL_LU, kind, gridDim, blockDim)));
+        tool.append(new PTXLIRStmt.AssignStmt(result, new PTXBinary.Expr(MUL_LO, kind, gridDim, blockDim)));
         gen.setResult(this, result);
     }
 

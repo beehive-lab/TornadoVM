@@ -42,8 +42,7 @@ public class PTXArithmeticTool extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitMul(Value a, Value b, boolean setFlags) {
-        unimplemented();
-        return null;
+        return emitBinaryAssign(PTXBinaryOp.MUL, LIRKind.combine(a, b), a, b);
     }
 
     @Override

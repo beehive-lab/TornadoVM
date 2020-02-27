@@ -396,7 +396,8 @@ public class PTXAssembler extends Assembler {
         public static final PTXBinaryOp RELATIONAL_LT = new PTXBinaryOp("<");
         public static final PTXBinaryOp RELATIONAL_GTE = new PTXBinaryOp(">=");
         public static final PTXBinaryOp RELATIONAL_LTE = new PTXBinaryOp("<=");
-        public static final PTXBinaryOp MUL_LU = new PTXBinaryOp("mul.lo");
+        public static final PTXBinaryOp MUL = new PTXBinaryOp("mul");
+        public static final PTXBinaryOp MUL_LO = new PTXBinaryOp("mul.lo");
         public static final PTXBinaryOp SETP_LT = new PTXBinaryOp("setp.lt");
 
         public PTXBinaryOp(String opcode) {

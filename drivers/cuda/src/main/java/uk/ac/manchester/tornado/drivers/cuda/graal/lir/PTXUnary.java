@@ -8,12 +8,10 @@ import org.graalvm.compiler.lir.Variable;
 import uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.PTXMemoryBase;
 import uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.PTXCompilationResultBuilder;
-import uk.ac.manchester.tornado.drivers.cuda.graal.meta.PTXMemorySpace;
 
 import static org.graalvm.compiler.lir.LIRInstruction.Use;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.PTXArchitecture.paramSpace;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryOp;
-import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssembler.PTXUnaryTemplate;
 import static uk.ac.manchester.tornado.drivers.cuda.graal.asm.PTXAssemblerConstants.*;
 
 public class PTXUnary {
@@ -117,22 +115,4 @@ public class PTXUnary {
         }
     }
 
-    public static class PTXAddressCast extends UnaryConsumer {
-        private final PTXMemoryBase base;
-
-        PTXAddressCast(PTXMemoryBase base, LIRKind lirKind) {
-            super(PTXUnaryTemplate.CAST_TO_POINTER, lirKind, null);
-            this.base = base;
-        }
-
-        @Override
-        public void emit(PTXCompilationResultBuilder crb, PTXAssembler asm, Variable dest) {
-            PTXKind oclKind = (PTXKind) getPlatformKind();
-            asm.emit(((PTXUnaryTemplate) opcode).getTemplate(), base.memorySpace.name() + " " + oclKind.toString());
-        }
-
-        PTXMemorySpace getMemorySpace() {
-            return base.memorySpace;
-        }
-    }
 }
