@@ -69,6 +69,8 @@ public class PTXHotSpotBackendFactory {
             TornadoReplacements replacements = new TornadoReplacements(graalDebugHandlersFactory, p, snippetReflection, bytecodeProvider, target);
             plugins = createGraphBuilderPlugins(metaAccess, replacements);
 
+            replacements.setGraphBuilderPlugins(plugins);
+
             suites = new PTXSuitesProvider(options, plugins, metaAccess, compilerConfiguration, addressLowering);
             providers = new PTXProviders(metaAccess,
                                          codeCache,

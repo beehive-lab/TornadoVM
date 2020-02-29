@@ -32,14 +32,12 @@ public class PTXLoweringProvider extends DefaultJavaLoweringProvider {
 
     @Override
     protected JavaKind getStorageKind(ResolvedJavaField field) {
-        unimplemented();
-        return null;
+        return field.getJavaKind();
     }
 
     @Override
     public int fieldOffset(ResolvedJavaField field) {
-        unimplemented();
-        return 0;
+        return field.getOffset();
     }
 
     @Override
