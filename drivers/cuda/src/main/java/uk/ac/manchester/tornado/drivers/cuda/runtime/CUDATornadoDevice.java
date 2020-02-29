@@ -153,7 +153,7 @@ public class CUDATornadoDevice implements TornadoAcceleratorDevice {
             }
 
         } else if (!type.isPrimitive() && !type.isArray()) {
-            //result = new OCLObjectWrapper(device, arg, batchSize);
+            result = new CUDAObjectWrapper(getDeviceContext(), arg, batchSize);
         }
 
         TornadoInternalError.guarantee(result != null, "Unable to create buffer for object: " + type);

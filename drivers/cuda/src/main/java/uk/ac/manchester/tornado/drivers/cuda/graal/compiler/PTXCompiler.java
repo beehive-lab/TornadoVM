@@ -536,13 +536,13 @@ public class PTXCompiler {
                 // Only need to append type
                 sb.append(RuntimeUtilities.toUnboxedPrimitiveClass(argClass).getName());
             }
-            else if (RuntimeUtilities.isPrimitiveArray(argClass)) {
+            else if (argClass.isArray() && RuntimeUtilities.isPrimitiveArray(argClass)) {
                 // Need to append type and length
                 sb.append(argClass.getComponentType().getName());
                 sb.append(Array.getLength(arg));
             }
             else {
-                shouldNotReachHere("Argument to kernel not a primitive or array: " + arg);
+                sb.append(argClass.getName().replace('.', '_'));
             }
         }
 
